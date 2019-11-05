@@ -128,8 +128,6 @@ class vcd_utility : public HLS_step
    /// The name of the present state signal
    std::string present_state_name;
 
-   bool one_hot_encoding{false};
-
    unsigned long long GetClockPeriod(const vcd_parser::vcd_trace_t& vcd_trace) const;
 
    /**
@@ -156,10 +154,10 @@ class vcd_utility : public HLS_step
 
    void update_discr_list(const vcd_trace_head& t, const uint64_t c_context, const std::string& c_val, const unsigned int el_idx, const std::string::size_type first_c_bit, const std::string::size_type c_size, const unsigned int base_index);
 
-   void print_failed_vcd_head(const vcd_trace_head& t, const int verbosity) const;
+   void print_failed_vcd_head(const vcd_trace_head& t, bool one_hot_encoding, const int verbosity) const;
 
-   void print_discrepancy(const DiscrepancyLog& l, const int verbosity) const;
+   void print_discrepancy(const DiscrepancyLog& l, bool one_hot_encoding, const int verbosity) const;
 
-   std::string compute_fsm_state_from_vcd_string(const std::string& vcd_state_string) const;
+   std::string compute_fsm_state_from_vcd_string(const std::string& vcd_state_string, bool one_hot_encoding) const;
 };
 #endif

@@ -94,10 +94,10 @@ class vcd_parser
     * this is the type used to select which signals have to be filtered during
     * parsing.
     * the key of the map is a std::string representing a scope.
-    * the value type is a CustomUnorderedSet containing all the names of the
+    * the value type is a UnorderedSetStd containing all the names of the
     * signal that have to be selected in that scope
     */
-   typedef CustomUnorderedMap<std::string, UnorderedSetStdStable<std::string>> vcd_filter_t;
+   typedef UnorderedMapStd<std::string, UnorderedSetStdStable<std::string>> vcd_filter_t;
 
    /**
     * this type is the result of a parse.
@@ -105,7 +105,7 @@ class vcd_parser
     * the secondary key is the name of the signal.
     * the value type is std::list of sig_variation representing the waveform
     */
-   typedef CustomUnorderedMap<std::string, CustomUnorderedMapStable<std::string, std::list<sig_variation>>> vcd_trace_t;
+   typedef UnorderedMapStd<std::string, CustomUnorderedMapStable<std::string, std::list<sig_variation>>> vcd_trace_t;
 
    /**
     * parses a file selecting only a predefined set of signals.
@@ -114,7 +114,7 @@ class vcd_parser
     * selected if this parameter is empty
     * @return: the traces of the selected vcd signals
     */
-   vcd_trace_t parse_vcd(const std::string& vcd_file_to_parse, const CustomUnorderedMapStable<std::string, UnorderedSetStdStable<std::string>>& selected_signals);
+   vcd_trace_t parse_vcd(const std::string& vcd_file_to_parse, const vcd_parser::vcd_filter_t& selected_signals);
 
  private:
    /**

@@ -46,6 +46,7 @@
 
 // includes from parser/discrepancy/
 #include "DiscrepancyOpInfo.hpp"
+#include "vcd_parser.hpp"
 
 // includes from tree/
 #include "tree_node.hpp"
@@ -139,7 +140,7 @@ struct Discrepancy
     * A map to store the vcd signals to be dumped. The key is the scope, and
     * the mapped set contains all the signals to be dumped for that scope
     */
-   CustomUnorderedMapStable<std::string, UnorderedSetStdStable<std::string>> selected_vcd_signals;
+   vcd_parser::vcd_filter_t selected_vcd_signals;
 
    /**
     * A map to store the name of the output signal of every operation.

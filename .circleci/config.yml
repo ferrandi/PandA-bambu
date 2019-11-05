@@ -29,8 +29,8 @@ jobs:
         name: make -f Makefile.init
         command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then make -f Makefile.init; fi
     - run:
-        name: mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt  --with-opt-level=0 && make -j4
-        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j4; fi
+        name: mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt  --with-opt-level=0 && make -j2
+        command: if [ "$CIRCLE_NODE_INDEX" == "0" ]; then mkdir build && cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-verilator --enable-glpk --enable-opt && make -j2; fi
     - save_cache:
         key: v1-dep-{{ .Branch }}-{{ epoch }}
         paths:

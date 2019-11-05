@@ -588,9 +588,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
    bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
-#if HAVE_I386_CLANG7_COMPILER
-   enable_LTO = enable_LTO || (GccWrapper_CompilerTarget::CT_I386_CLANG7 == Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler));
-#endif
+//#if HAVE_I386_CLANG7_COMPILER
+//   enable_LTO = enable_LTO || (GccWrapper_CompilerTarget::CT_I386_CLANG7 == Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler));
+//#endif
    for(auto& source_file : source_files)
    {
       if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -2791,7 +2791,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #endif
                                       ,
                                       const std::string&
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+#if HAVE_I386_CLANG4_COMPILER
+                                          //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           GepiCanon_plugin_name
 #endif
                                       ,
@@ -2801,7 +2802,8 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #endif
                                       ,
                                       const std::string&
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
+#if HAVE_I386_CLANG4_COMPILER
+                                          //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER
                                           CSROA_plugin_name
 #endif
                                       ,
