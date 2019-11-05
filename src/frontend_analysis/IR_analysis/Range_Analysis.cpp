@@ -6622,10 +6622,10 @@ namespace RangeAnalysis
 
    Range_Analysis::~Range_Analysis() = default;
 
-   const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> 
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> 
    Range_Analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
    {
-      std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+      CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
       switch(relationship_type)
       {
          case DEPENDENCE_RELATIONSHIP:
