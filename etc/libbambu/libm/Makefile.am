@@ -261,11 +261,11 @@ endif
 if BUILD_I386_CLANG7
 pkglib_LIBRARIES += libm_clang7.a libm_clang7_std.a
 libm_clang7_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
-libm_clang7_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG6
-libm_clang7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
+libm_clang7_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG7
+libm_clang7_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG7 $(common_treegccflags_clang) -C
 libm_clang7_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
-libm_clang7_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG6
-libm_clang7_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG6 $(common_treegccflags_clang) -C
+libm_clang7_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG7
+libm_clang7_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG7 $(common_treegccflags_clang) -C
 
 pkglib_LIBRARIES += libm_clang7_subnormals.a libm_clang7_subnormals_std.a
 libm_clang7_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)

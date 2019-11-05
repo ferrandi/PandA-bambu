@@ -10,6 +10,7 @@ lib_discrepancy_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS/vcd \
    -I$(top_srcdir)/src/parser/discrepancy \
+   -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)

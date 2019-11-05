@@ -25,7 +25,7 @@ Vagrant.configure(2) do |config|
      cd build && ../configure --prefix=/opt/panda --enable-verilator --enable-glpk --disable-release --enable-experimental --enable-flopoco --enable-opt --with-opt-level=2 && make -j2 && make install
      cd ../.. && chown -R vagrant:vagrant PandA-bambu
      mv PandA-bambu /home/vagrant/
-     cd /opt/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf hls testbench && echo "Bambu is correctly working!!"
+     cd /opt/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf arf_hls arf_testbench && echo "Bambu is correctly working!!"
      cd /home/vagrant/
      chown -R vagrant:vagrant panda
      apt-get clean -y

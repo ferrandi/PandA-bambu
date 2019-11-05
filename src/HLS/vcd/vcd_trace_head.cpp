@@ -311,7 +311,7 @@ void vcd_trace_head::update()
       op_start_time = sp_var_it->time_stamp;
       ++sp_var_it;
    }
-   THROW_ASSERT(op_start_time >= fsm_ss_it->time_stamp, "operation start time is before starting state\n");
+   THROW_ASSERT(op_start_time >= fsm_ss_it->time_stamp, "operation start time is before starting state" + STR(op_start_time) + " " + STR(fsm_ss_it->time_stamp));
    /*
     * here we know the correct starting state and the start time of the
     * operation. we know detect the number of consecutive state executions
