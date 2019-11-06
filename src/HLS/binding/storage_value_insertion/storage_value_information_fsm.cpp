@@ -54,7 +54,7 @@ bool StorageValueInformationFsm::is_a_storage_value(vertex, unsigned int var_ind
 
 unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigned int var_index)
 {
-   THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing -- ORIGINAL getsvindex");
+   THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing");
    return storage_index_map.find(var_index)->second;
 }
 
