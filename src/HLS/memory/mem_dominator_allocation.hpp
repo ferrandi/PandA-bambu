@@ -45,13 +45,13 @@
 #include "memory_allocation.hpp"
 
 /// STL includes
-#include <set>
+#include "custom_set.hpp"
 #include <vector>
 
 class mem_dominator_allocation : public memory_allocation
 {
  protected:
-   std::vector<unsigned int> getFunctionAllocationOrder(std::set<unsigned int> top_functions);
+   std::vector<unsigned int> getFunctionAllocationOrder(CustomOrderedSet<unsigned int> top_functions);
 
  public:
    /**

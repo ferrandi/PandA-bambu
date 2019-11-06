@@ -44,7 +44,7 @@
 #include "graph.hpp"
 
 /// STD include
-#include <unordered_map>
+#include "custom_map.hpp"
 
 /// utility include
 #include "refcount.hpp"
@@ -66,7 +66,7 @@ class StorageValueInformation
    std::vector<unsigned int> variable_index_vect;
 
    /// relation between var written and operations
-   std::unordered_map<unsigned int, vertex> vw2vertex;
+   CustomUnorderedMap<unsigned int, vertex> vw2vertex;
 
    /// The HLS manager
    const HLS_managerConstRef HLS_mgr;

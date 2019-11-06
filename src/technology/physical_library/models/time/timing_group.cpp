@@ -50,7 +50,7 @@ timing_group::timing_group() : intrinsic_rise(0.0), intrinsic_fall(0.0)
 {
 }
 
-void timing_group::xwrite(xml_element* pin_node, const std::set<std::string>& input_set)
+void timing_group::xwrite(xml_element* pin_node, const CustomOrderedSet<std::string>& input_set)
 {
    attributeRef att;
 

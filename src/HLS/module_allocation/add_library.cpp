@@ -72,8 +72,8 @@
 #include "allocation_information.hpp"
 
 /// STL includes
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 
 AddLibrarySpecialization::AddLibrarySpecialization(const bool _interfaced) : interfaced(_interfaced)
 {
@@ -97,12 +97,12 @@ add_library::add_library(const ParameterConstRef _parameters, const HLS_managerR
 
 add_library::~add_library() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> add_library::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto* const add_library_specialization = GetPointer<const AddLibrarySpecialization>(hls_flow_step_specialization);
    THROW_ASSERT(hls_flow_step_specialization, "Empty specialization type");
    THROW_ASSERT(add_library_specialization, "Wrong specialization type: " + hls_flow_step_specialization->GetKindText());
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

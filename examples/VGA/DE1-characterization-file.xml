@@ -469,16 +469,16 @@
       <name>STD_FU</name>
       <cell>
         <name>ARRAY_1D_STD_BRAM</name>
-        <attribute name="area" value_type="float64">378</attribute>
-        <attribute name="REGISTERS" value_type="float64">203</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">378</attribute>
+        <attribute name="area" value_type="float64">511</attribute>
+        <attribute name="REGISTERS" value_type="float64">283</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">511</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_11</channels_type>
         <bram_load_latency>2</bram_load_latency>
-        <characterization_timestamp>2017-05-18T14:30:30</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.9558925562493803"/>
-        <operation operation_name="STORE" execution_time="4.9558925562493803"/>
+        <characterization_timestamp>2017-05-23T10:59:54</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="5.3470217089081382"/>
+        <operation operation_name="STORE" execution_time="5.3470217089081382"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM" path="ARRAY_1D_STD_BRAM">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM"/>
@@ -486,6 +486,7 @@
             <parameter name="BUS_PIPELINED">1</parameter>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -598,16 +599,16 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_3</name>
-        <attribute name="area" value_type="float64">282</attribute>
-        <attribute name="REGISTERS" value_type="float64">260</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">282</attribute>
+        <attribute name="area" value_type="float64">480</attribute>
+        <attribute name="REGISTERS" value_type="float64">285</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">480</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_11</channels_type>
         <bram_load_latency>3</bram_load_latency>
-        <characterization_timestamp>2016-01-08T18:54:23</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="4.5269352648257133"/>
-        <operation operation_name="STORE" execution_time="4.5269352648257133"/>
+        <characterization_timestamp>2017-05-23T10:59:54</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="4.8830509302212022"/>
+        <operation operation_name="STORE" execution_time="4.8830509302212022"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_3" path="ARRAY_1D_STD_BRAM_3">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_3"/>
@@ -615,6 +616,7 @@
             <parameter name="BUS_PIPELINED">1</parameter>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -727,16 +729,16 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_4</name>
-        <attribute name="area" value_type="float64">363</attribute>
-        <attribute name="REGISTERS" value_type="float64">262</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">363</attribute>
+        <attribute name="area" value_type="float64">472</attribute>
+        <attribute name="REGISTERS" value_type="float64">358</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">472</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_11</channels_type>
         <bram_load_latency>4</bram_load_latency>
-        <characterization_timestamp>2017-01-23T14:18:01</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.3530042918454934"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.3530042918454934"/>
+        <characterization_timestamp>2017-05-23T10:59:57</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.1889788889597552"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.1889788889597552"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_4" path="ARRAY_1D_STD_BRAM_4">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_4"/>
@@ -744,6 +746,7 @@
             <parameter name="BUS_PIPELINED">1</parameter>
             <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -856,24 +859,25 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1</name>
-        <attribute name="area" value_type="float64">551</attribute>
-        <attribute name="REGISTERS" value_type="float64">404</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">551</attribute>
+        <attribute name="area" value_type="float64">870</attribute>
+        <attribute name="REGISTERS" value_type="float64">446</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">870</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_N1</channels_type>
         <bram_load_latency>2</bram_load_latency>
-        <characterization_timestamp>2016-01-08T18:54:23</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="5.6821410307403823"/>
-        <operation operation_name="STORE" execution_time="5.6821410307403823"/>
+        <characterization_timestamp>2017-05-23T11:00:11</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="6.0009601536245807"/>
+        <operation operation_name="STORE" execution_time="6.0009601536245807"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_N1" path="ARRAY_1D_STD_BRAM_N1">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1"/>
             <parameter name="BRAM_BITSIZE">32</parameter>
             <parameter name="BUS_PIPELINED">1</parameter>
-            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
-            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -986,24 +990,25 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_3</name>
-        <attribute name="area" value_type="float64">551</attribute>
-        <attribute name="REGISTERS" value_type="float64">409</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">551</attribute>
+        <attribute name="area" value_type="float64">893</attribute>
+        <attribute name="REGISTERS" value_type="float64">451</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">893</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_N1</channels_type>
         <bram_load_latency>3</bram_load_latency>
-        <characterization_timestamp>2016-01-08T18:54:23</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="5.3760550508037204"/>
-        <operation operation_name="STORE" execution_time="5.3760550508037204"/>
+        <characterization_timestamp>2017-05-23T11:00:04</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="5.6731151075055308"/>
+        <operation operation_name="STORE" execution_time="5.6731151075055308"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_N1_3" path="ARRAY_1D_STD_BRAM_N1_3">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_N1_3"/>
             <parameter name="BRAM_BITSIZE">32</parameter>
             <parameter name="BUS_PIPELINED">1</parameter>
-            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
-            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1123,7 +1128,7 @@
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_N1</channels_type>
         <bram_load_latency>4</bram_load_latency>
-        <characterization_timestamp>2017-01-23T14:18:11</characterization_timestamp>
+        <characterization_timestamp>2017-05-23T11:00:19</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.8430498443564818"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.8430498443564818"/>
         <circuit>
@@ -1134,6 +1139,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1246,84 +1252,85 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS</name>
-        <attribute name="area" value_type="float64">358</attribute>
-        <attribute name="REGISTERS" value_type="float64">356</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">358</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.7109812974042491"/>
-        <operation operation_name="STORE" execution_time="4.7109812974042491"/>
+        <attribute name="area" value_type="float64">442</attribute>
+        <attribute name="REGISTERS" value_type="float64">362</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">442</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T10:59:50</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="5.1480051480051481"/>
+        <operation operation_name="STORE" execution_time="5.1480051480051481"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_3</name>
-        <attribute name="area" value_type="float64">356</attribute>
-        <attribute name="REGISTERS" value_type="float64">356</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">356</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
+        <attribute name="area" value_type="float64">423</attribute>
+        <attribute name="REGISTERS" value_type="float64">362</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">423</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T10:59:51</characterization_timestamp>
         <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" execution_time="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_4</name>
-        <attribute name="area" value_type="float64">448</attribute>
-        <attribute name="REGISTERS" value_type="float64">438</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">448</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>2017-01-23T12:22:19</characterization_timestamp>
+        <attribute name="area" value_type="float64">456</attribute>
+        <attribute name="REGISTERS" value_type="float64">444</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">456</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:01:04</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS</name>
-        <attribute name="area" value_type="float64">409</attribute>
-        <attribute name="REGISTERS" value_type="float64">405</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">409</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.4279135671271694"/>
-        <operation operation_name="STORE" execution_time="4.4279135671271694"/>
+        <attribute name="area" value_type="float64">536</attribute>
+        <attribute name="REGISTERS" value_type="float64">412</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">536</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:01:08</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.9620403910087827"/>
+        <operation operation_name="STORE" execution_time="4.9620403910087827"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS_3</name>
-        <attribute name="area" value_type="float64">408</attribute>
-        <attribute name="REGISTERS" value_type="float64">406</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">408</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.1889788889597552"/>
-        <operation operation_name="STORE" execution_time="3.1889788889597552"/>
+        <attribute name="area" value_type="float64">516</attribute>
+        <attribute name="REGISTERS" value_type="float64">413</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">516</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:01:11</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.7489690335157828"/>
+        <operation operation_name="STORE" execution_time="3.7489690335157828"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS_4</name>
-        <attribute name="area" value_type="float64">528</attribute>
-        <attribute name="REGISTERS" value_type="float64">489</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">528</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>2017-01-23T12:22:19</characterization_timestamp>
+        <attribute name="area" value_type="float64">549</attribute>
+        <attribute name="REGISTERS" value_type="float64">496</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">549</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:01:10</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN</name>
-        <attribute name="area" value_type="float64">680</attribute>
-        <attribute name="REGISTERS" value_type="float64">518</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">680</attribute>
+        <attribute name="area" value_type="float64">1167</attribute>
+        <attribute name="REGISTERS" value_type="float64">568</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1167</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_NN</channels_type>
         <bram_load_latency>2</bram_load_latency>
-        <characterization_timestamp>2016-01-08T18:54:23</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="6.5858798735511064"/>
-        <operation operation_name="STORE" execution_time="6.5858798735511064"/>
+        <characterization_timestamp>2017-05-23T11:02:13</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="6.1739828363277152"/>
+        <operation operation_name="STORE" execution_time="6.1739828363277152"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_NN" path="ARRAY_1D_STD_BRAM_NN">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN"/>
             <parameter name="BRAM_BITSIZE">32</parameter>
             <parameter name="BUS_PIPELINED">1</parameter>
-            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
-            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1436,24 +1443,25 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_3</name>
-        <attribute name="area" value_type="float64">680</attribute>
-        <attribute name="REGISTERS" value_type="float64">524</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">680</attribute>
+        <attribute name="area" value_type="float64">1180</attribute>
+        <attribute name="REGISTERS" value_type="float64">574</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1180</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_NN</channels_type>
         <bram_load_latency>3</bram_load_latency>
-        <characterization_timestamp>2016-01-08T18:54:23</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="5.6798818584573443"/>
-        <operation operation_name="STORE" execution_time="5.6798818584573443"/>
+        <characterization_timestamp>2017-05-23T11:02:04</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="5.5260831122900083"/>
+        <operation operation_name="STORE" execution_time="5.5260831122900083"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_NN_3" path="ARRAY_1D_STD_BRAM_NN_3">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_3"/>
             <parameter name="BRAM_BITSIZE">32</parameter>
             <parameter name="BUS_PIPELINED">1</parameter>
-            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_a.mem&quot;&quot;</parameter>
-            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.mem&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
+            <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1566,16 +1574,16 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_4</name>
-        <attribute name="area" value_type="float64">1109</attribute>
-        <attribute name="REGISTERS" value_type="float64">737</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">1109</attribute>
+        <attribute name="area" value_type="float64">1132</attribute>
+        <attribute name="REGISTERS" value_type="float64">738</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1132</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
         <memory_type>SYNCHRONOUS_UNALIGNED</memory_type>
         <channels_type>MEM_ACC_NN</channels_type>
         <bram_load_latency>4</bram_load_latency>
-        <characterization_timestamp>2017-01-23T14:18:09</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.9109859595604051"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.9109859595604051"/>
+        <characterization_timestamp>2017-05-23T11:02:14</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="4.0299830740710894"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="4.0299830740710894"/>
         <circuit>
           <component_o id="ARRAY_1D_STD_BRAM_NN_4" path="ARRAY_1D_STD_BRAM_NN_4">
             <structural_type_descriptor id_type="ARRAY_1D_STD_BRAM_NN_4"/>
@@ -1584,6 +1592,7 @@
             <parameter name="MEMORY_INIT_file_a">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="MEMORY_INIT_file_b">&quot;&quot;array_b.data&quot;&quot;</parameter>
             <parameter name="PRIVATE_MEMORY">0</parameter>
+            <parameter name="READ_ONLY_MEMORY">0</parameter>
             <parameter name="USE_SPARSE_MEMORY">1</parameter>
             <parameter name="address_space_begin">0</parameter>
             <parameter name="address_space_rangesize">4</parameter>
@@ -1696,148 +1705,150 @@
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS</name>
-        <attribute name="area" value_type="float64">422</attribute>
-        <attribute name="REGISTERS" value_type="float64">422</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">422</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.7180938900684124"/>
-        <operation operation_name="STORE" execution_time="4.7180938900684124"/>
+        <attribute name="area" value_type="float64">499</attribute>
+        <attribute name="REGISTERS" value_type="float64">426</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">499</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:01:43</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="5.4109626102483634"/>
+        <operation operation_name="STORE" execution_time="5.4109626102483634"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_3</name>
-        <attribute name="area" value_type="float64">422</attribute>
-        <attribute name="REGISTERS" value_type="float64">422</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">422</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
+        <attribute name="area" value_type="float64">481</attribute>
+        <attribute name="REGISTERS" value_type="float64">428</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">481</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:02:21</characterization_timestamp>
         <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" execution_time="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_4</name>
-        <attribute name="area" value_type="float64">511</attribute>
-        <attribute name="REGISTERS" value_type="float64">504</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">511</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>2017-01-23T12:22:22</characterization_timestamp>
+        <attribute name="area" value_type="float64">527</attribute>
+        <attribute name="REGISTERS" value_type="float64">510</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">527</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:02:25</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS</name>
-        <attribute name="area" value_type="float64">541</attribute>
-        <attribute name="REGISTERS" value_type="float64">520</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">541</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.7929447852760738"/>
-        <operation operation_name="STORE" execution_time="4.7929447852760738"/>
+        <attribute name="area" value_type="float64">693</attribute>
+        <attribute name="REGISTERS" value_type="float64">528</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">693</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:02:28</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.9519659304743984"/>
+        <operation operation_name="STORE" execution_time="4.9519659304743984"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS_3</name>
-        <attribute name="area" value_type="float64">532</attribute>
-        <attribute name="REGISTERS" value_type="float64">522</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">532</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.1889788889597552"/>
-        <operation operation_name="STORE" execution_time="3.1889788889597552"/>
+        <attribute name="area" value_type="float64">714</attribute>
+        <attribute name="REGISTERS" value_type="float64">530</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">714</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:02:44</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="4.1529963868931432"/>
+        <operation operation_name="STORE" execution_time="4.1529963868931432"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS_4</name>
-        <attribute name="area" value_type="float64">686</attribute>
-        <attribute name="REGISTERS" value_type="float64">606</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">686</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>2017-01-23T12:22:30</characterization_timestamp>
+        <attribute name="area" value_type="float64">700</attribute>
+        <attribute name="REGISTERS" value_type="float64">614</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">700</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:03:03</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS</name>
-        <attribute name="area" value_type="float64">212</attribute>
-        <attribute name="REGISTERS" value_type="float64">211</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">212</attribute>
-        <attribute name="BRAM" value_type="float64">4096</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.3029259896729775"/>
-        <operation operation_name="STORE" execution_time="4.3029259896729775"/>
+        <attribute name="area" value_type="float64">255</attribute>
+        <attribute name="REGISTERS" value_type="float64">214</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">255</attribute>
+        <attribute name="BRAM" value_type="float64">8192</attribute>
+        <characterization_timestamp>2017-05-23T11:03:09</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.7680350927382831"/>
+        <operation operation_name="STORE" execution_time="4.7680350927382831"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_3</name>
-        <attribute name="area" value_type="float64">178</attribute>
-        <attribute name="REGISTERS" value_type="float64">150</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">178</attribute>
+        <attribute name="area" value_type="float64">241</attribute>
+        <attribute name="REGISTERS" value_type="float64">214</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">241</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
-        <characterization_timestamp>2017-05-18T14:30:24</characterization_timestamp>
+        <characterization_timestamp>2017-05-23T11:03:20</characterization_timestamp>
         <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" execution_time="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_4</name>
-        <attribute name="area" value_type="float64">195</attribute>
-        <attribute name="REGISTERS" value_type="float64">191</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">195</attribute>
+        <attribute name="area" value_type="float64">258</attribute>
+        <attribute name="REGISTERS" value_type="float64">255</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">258</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
-        <characterization_timestamp>2017-05-18T14:30:24</characterization_timestamp>
+        <characterization_timestamp>2017-05-23T11:03:21</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_BUS</name>
-        <attribute name="area" value_type="float64">252</attribute>
-        <attribute name="REGISTERS" value_type="float64">184</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">252</attribute>
+        <attribute name="area" value_type="float64">345</attribute>
+        <attribute name="REGISTERS" value_type="float64">264</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">345</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
-        <characterization_timestamp>2017-05-18T14:30:23</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.758958739827726"/>
-        <operation operation_name="STORE" execution_time="4.758958739827726"/>
+        <characterization_timestamp>2017-05-23T11:03:26</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="4.76598989610142"/>
+        <operation operation_name="STORE" execution_time="4.76598989610142"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_BUS_3</name>
-        <attribute name="area" value_type="float64">257</attribute>
-        <attribute name="REGISTERS" value_type="float64">185</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">257</attribute>
+        <attribute name="area" value_type="float64">350</attribute>
+        <attribute name="REGISTERS" value_type="float64">265</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">350</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
-        <characterization_timestamp>2017-05-18T14:30:27</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.5369433735365896"/>
-        <operation operation_name="STORE" execution_time="3.5369433735365896"/>
+        <characterization_timestamp>2017-05-23T11:03:31</characterization_timestamp>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="3.8540100975064551"/>
+        <operation operation_name="STORE" execution_time="3.8540100975064551"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_BUS_4</name>
-        <attribute name="area" value_type="float64">259</attribute>
-        <attribute name="REGISTERS" value_type="float64">227</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">259</attribute>
+        <attribute name="area" value_type="float64">350</attribute>
+        <attribute name="REGISTERS" value_type="float64">307</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">350</attribute>
         <attribute name="BRAM" value_type="float64">8192</attribute>
-        <characterization_timestamp>2017-05-18T14:30:24</characterization_timestamp>
+        <characterization_timestamp>2017-05-23T11:03:33</characterization_timestamp>
         <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="3.1889788889597552"/>
         <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="3.1889788889597552"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_DISTRAM_N1_SDS</name>
-        <attribute name="area" value_type="float64">1</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD"/>
-        <operation operation_name="STORE"/>
+        <attribute name="area" value_type="float64">2471</attribute>
+        <attribute name="REGISTERS" value_type="float64">858</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2471</attribute>
+        <characterization_timestamp>2017-05-24T09:52:49</characterization_timestamp>
+        <operation operation_name="LOAD" execution_time="5.3339022829101772"/>
+        <operation operation_name="STORE" execution_time="5.3339022829101772"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_DISTRAM_NN_SDS</name>
-        <attribute name="area" value_type="float64">1284</attribute>
-        <attribute name="REGISTERS" value_type="float64">662</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">1284</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" execution_time="4.2489908646696408"/>
-        <operation operation_name="STORE" execution_time="4.2489908646696408"/>
+        <attribute name="area" value_type="float64">2607</attribute>
+        <attribute name="REGISTERS" value_type="float64">927</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2607</attribute>
+        <characterization_timestamp>2017-05-24T09:52:54</characterization_timestamp>
+        <operation operation_name="LOAD" execution_time="6.1610498428932292"/>
+        <operation operation_name="STORE" execution_time="6.1610498428932292"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_DISTRAM_SDS</name>
-        <attribute name="area" value_type="float64">595</attribute>
-        <attribute name="REGISTERS" value_type="float64">459</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">595</attribute>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="LOAD" execution_time="3.7870181019465274"/>
-        <operation operation_name="STORE" execution_time="3.7870181019465274"/>
+        <attribute name="area" value_type="float64">1101</attribute>
+        <attribute name="REGISTERS" value_type="float64">718</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1101</attribute>
+        <characterization_timestamp>2017-05-24T09:51:55</characterization_timestamp>
+        <operation operation_name="LOAD" execution_time="4.8480147379648031"/>
+        <operation operation_name="STORE" execution_time="4.8480147379648031"/>
       </cell>
       <cell>
         <name>ASSIGN_REAL_FU</name>
@@ -9895,178 +9906,12 @@
         <operation operation_name="lt_expr" supported_types="INT:8" execution_time="2.031983419015301"/>
       </cell>
       <cell>
-        <name>lut_expr_FU_0_1_1</name>
-        <attribute name="area" value_type="float64">1</attribute>
-        <attribute name="REGISTERS" value_type="float64">1</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
-        <template name="lut_expr_FU" parameter="0 1 1"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:55:59</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:1"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_0_2_2</name>
-        <attribute name="area" value_type="float64">3</attribute>
-        <attribute name="REGISTERS" value_type="float64">3</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
-        <template name="lut_expr_FU" parameter="0 2 2"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:56:00</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:2" execution_time="0.74799910240107703"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_0_3_3</name>
-        <attribute name="area" value_type="float64">3</attribute>
-        <attribute name="REGISTERS" value_type="float64">3</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
-        <template name="lut_expr_FU" parameter="0 3 3"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:56:00</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:3"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_0_4_4</name>
-        <attribute name="area" value_type="float64">4</attribute>
-        <attribute name="REGISTERS" value_type="float64">4</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
-        <template name="lut_expr_FU" parameter="0 4 4"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:55:59</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:4"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_0_5_5</name>
-        <attribute name="area" value_type="float64">5</attribute>
-        <attribute name="REGISTERS" value_type="float64">5</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">5</attribute>
-        <template name="lut_expr_FU" parameter="0 5 5"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:56:32</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:5"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_0_6_6</name>
-        <attribute name="area" value_type="float64">6</attribute>
-        <attribute name="REGISTERS" value_type="float64">6</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">6</attribute>
-        <template name="lut_expr_FU" parameter="0 6 6"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:56:33</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:6"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_1_0_1</name>
-        <attribute name="area" value_type="float64">2</attribute>
-        <attribute name="REGISTERS" value_type="float64">2</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
-        <template name="lut_expr_FU" parameter="1 0 1"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:56:35</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:1" execution_time="0.74799910240107703"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_1_1_1</name>
-        <attribute name="area" value_type="float64">3</attribute>
-        <attribute name="REGISTERS" value_type="float64">3</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
-        <template name="lut_expr_FU" parameter="1 1 1"/>
-        <characterization_timestamp>2017-01-26T10:56:35</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:1" execution_time="0.8819975480468164"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_2_0_2</name>
-        <attribute name="area" value_type="float64">4</attribute>
-        <attribute name="REGISTERS" value_type="float64">4</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
-        <template name="lut_expr_FU" parameter="2 0 2"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:57:08</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:2" execution_time="0.88000281600901131"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_2_2_2</name>
-        <attribute name="area" value_type="float64">7</attribute>
-        <attribute name="REGISTERS" value_type="float64">6</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">7</attribute>
-        <template name="lut_expr_FU" parameter="2 2 2"/>
-        <characterization_timestamp>2017-01-26T10:57:10</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:2" execution_time="1.2360022742441847"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_3_0_3</name>
-        <attribute name="area" value_type="float64">5</attribute>
-        <attribute name="REGISTERS" value_type="float64">5</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">5</attribute>
-        <template name="lut_expr_FU" parameter="3 0 3"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:57:11</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:3" execution_time="0.87899723994866652"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_3_3_3</name>
-        <attribute name="area" value_type="float64">11</attribute>
-        <attribute name="REGISTERS" value_type="float64">9</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">11</attribute>
-        <template name="lut_expr_FU" parameter="3 3 3"/>
-        <characterization_timestamp>2017-01-26T10:57:11</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:3" execution_time="1.4549898878202798"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_4_0_4</name>
+        <name>lut_expr_FU</name>
         <attribute name="area" value_type="float64">7</attribute>
         <attribute name="REGISTERS" value_type="float64">7</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">7</attribute>
-        <template name="lut_expr_FU" parameter="4 0 4"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2017-01-26T10:57:47</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:4" execution_time="0.97700138734197006"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_4_4_4</name>
-        <attribute name="area" value_type="float64">14</attribute>
-        <attribute name="REGISTERS" value_type="float64">12</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">14</attribute>
-        <template name="lut_expr_FU" parameter="4 4 4"/>
-        <characterization_timestamp>2017-01-26T10:57:48</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:4" execution_time="1.8479847726054737"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_5_0_5</name>
-        <attribute name="area" value_type="float64">11</attribute>
-        <attribute name="REGISTERS" value_type="float64">10</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">11</attribute>
-        <template name="lut_expr_FU" parameter="5 0 5"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:57:48</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:5" execution_time="1.3680077702841351"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_5_5_5</name>
-        <attribute name="area" value_type="float64">19</attribute>
-        <attribute name="REGISTERS" value_type="float64">15</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">19</attribute>
-        <template name="lut_expr_FU" parameter="5 5 5"/>
-        <characterization_timestamp>2017-01-26T10:57:49</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:5" execution_time="1.8490098552225283"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_6_0_6</name>
-        <attribute name="area" value_type="float64">13</attribute>
-        <attribute name="REGISTERS" value_type="float64">12</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
-        <template name="lut_expr_FU" parameter="6 0 6"/>
-        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2017-01-26T10:58:16</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:6" execution_time="1.3790060124662145"/>
-      </cell>
-      <cell>
-        <name>lut_expr_FU_6_6_6</name>
-        <attribute name="area" value_type="float64">23</attribute>
-        <attribute name="REGISTERS" value_type="float64">18</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">23</attribute>
-        <template name="lut_expr_FU" parameter="6 6 6"/>
-        <characterization_timestamp>2017-01-26T10:58:17</characterization_timestamp>
-        <operation operation_name="lut_expr" supported_types="UINT:6" execution_time="2.2750022750022749"/>
+        <operation operation_name="lut_expr" execution_time="0.97700138734197006"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>
@@ -11555,8 +11400,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <template name="pointer_plus_expr_FU" parameter="0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.6130128037627385"/>
+        <characterization_timestamp>2017-05-24T17:31:17</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.6629740093736687"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_0_1_1</name>
@@ -11565,8 +11410,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
         <template name="pointer_plus_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.74900195489510235"/>
+        <characterization_timestamp>2017-05-24T17:31:15</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.74799910240107703"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_0_32_32</name>
@@ -11575,18 +11420,18 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="pointer_plus_expr_FU" parameter="0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.8960532980091167"/>
+        <characterization_timestamp>2017-05-24T17:31:19</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.9929723686312091"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_0_64_64</name>
-        <attribute name="area" value_type="float64">128</attribute>
+        <attribute name="area" value_type="float64">132</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">132</attribute>
         <template name="pointer_plus_expr_FU" parameter="0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:64" execution_time="6.498148027812074"/>
+        <characterization_timestamp>2017-05-24T17:31:23</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:64" execution_time="6.5741897311156396"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_0_8_8</name>
@@ -11595,8 +11440,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">16</attribute>
         <template name="pointer_plus_expr_FU" parameter="0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.896993265673907"/>
+        <characterization_timestamp>2017-05-24T17:31:15</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.9260029660445677"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_16_0_16</name>
@@ -11605,8 +11450,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <template name="pointer_plus_expr_FU" parameter="16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.6130128037627385"/>
+        <characterization_timestamp>2017-05-24T17:31:17</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.6629740093736687"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_16_16_16</name>
@@ -11614,8 +11459,8 @@
         <attribute name="REGISTERS" value_type="float64">48</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
         <template name="pointer_plus_expr_FU" parameter="16 16 16"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.7129679869777537"/>
+        <characterization_timestamp>2017-05-24T17:31:18</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.7170221437304711"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_1_0_1</name>
@@ -11624,8 +11469,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
         <template name="pointer_plus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.74900195489510235"/>
+        <characterization_timestamp>2017-05-24T17:31:15</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.74799910240107703"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_1_1_1</name>
@@ -11633,8 +11478,8 @@
         <attribute name="REGISTERS" value_type="float64">3</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
         <template name="pointer_plus_expr_FU" parameter="1 1 1"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.8770006577504933"/>
+        <characterization_timestamp>2017-05-24T17:31:15</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.8819975480468164"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_32_0_32</name>
@@ -11643,8 +11488,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="pointer_plus_expr_FU" parameter="32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.8960532980091167"/>
+        <characterization_timestamp>2017-05-24T17:31:19</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.9929723686312091"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_32_32_32</name>
@@ -11652,27 +11497,27 @@
         <attribute name="REGISTERS" value_type="float64">96</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">96</attribute>
         <template name="pointer_plus_expr_FU" parameter="32 32 32"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:32" execution_time="4.0059287745863879"/>
+        <characterization_timestamp>2017-05-24T17:31:19</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:32" execution_time="4.0170322165983769"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_64_0_64</name>
-        <attribute name="area" value_type="float64">128</attribute>
+        <attribute name="area" value_type="float64">132</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">132</attribute>
         <template name="pointer_plus_expr_FU" parameter="64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:64" execution_time="6.498148027812074"/>
+        <characterization_timestamp>2017-05-24T17:31:23</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:64" execution_time="6.5741897311156396"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_64_64_64</name>
-        <attribute name="area" value_type="float64">192</attribute>
+        <attribute name="area" value_type="float64">193</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">193</attribute>
         <template name="pointer_plus_expr_FU" parameter="64 64 64"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:64" execution_time="6.5741897311156396"/>
+        <characterization_timestamp>2017-05-24T17:32:21</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:64" execution_time="6.6128818939293748"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_8_0_8</name>
@@ -11681,8 +11526,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">16</attribute>
         <template name="pointer_plus_expr_FU" parameter="8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.896993265673907"/>
+        <characterization_timestamp>2017-05-24T17:31:15</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.9260029660445677"/>
       </cell>
       <cell>
         <name>pointer_plus_expr_FU_8_8_8</name>
@@ -11690,8 +11535,8 @@
         <attribute name="REGISTERS" value_type="float64">24</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">24</attribute>
         <template name="pointer_plus_expr_FU" parameter="8 8 8"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.9590173568937821"/>
+        <characterization_timestamp>2017-05-24T17:32:12</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.963016764163166"/>
       </cell>
       <cell>
         <name>realpart_expr_FU</name>
@@ -15914,7 +15759,7 @@
         <template name="ui_dot_prod_expr_FU" parameter="0 1 1 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="UINT:1" execution_time="1.0269998254100297"/>
+        <operation operation_name="dot_prod_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0269998254100297"/>
       </cell>
       <cell>
         <name>ui_dot_prod_expr_FU_0_32_32_64_0</name>
@@ -16179,7 +16024,7 @@
         <template name="ui_dot_prod_expr_FU" parameter="1 0 1 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="UINT:1" execution_time="1.0269998254100297"/>
+        <operation operation_name="dot_prod_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0269998254100297"/>
       </cell>
       <cell>
         <name>ui_dot_prod_expr_FU_1_1_0_2</name>
@@ -16189,7 +16034,7 @@
         <template name="ui_dot_prod_expr_FU" parameter="1 1 0 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="UINT:1" execution_time="1.2669935510028254"/>
+        <operation operation_name="dot_prod_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.2669935510028254"/>
       </cell>
       <cell>
         <name>ui_dot_prod_expr_FU_1_1_1_2</name>
@@ -16198,7 +16043,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">6</attribute>
         <template name="ui_dot_prod_expr_FU" parameter="1 1 1 2"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="dot_prod_expr" supported_types="UINT:1" execution_time="1.0549969932585692"/>
+        <operation operation_name="dot_prod_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0549969932585692"/>
       </cell>
       <cell>
         <name>ui_dot_prod_expr_FU_32_0_32_64_0</name>
@@ -18127,7 +17972,7 @@
         <template name="ui_minus_expr_FU" parameter="0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:16" execution_time="2.7129679869777537"/>
+        <operation operation_name="minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.7129679869777537"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_0_1_1</name>
@@ -18137,7 +17982,7 @@
         <template name="ui_minus_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:1" execution_time="0.8770006577504933"/>
+        <operation operation_name="minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_0_32_32</name>
@@ -18147,7 +17992,7 @@
         <template name="ui_minus_expr_FU" parameter="0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:32" execution_time="4.0059287745863879"/>
+        <operation operation_name="minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="4.0059287745863879"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_0_64_64</name>
@@ -18157,7 +18002,7 @@
         <template name="ui_minus_expr_FU" parameter="0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:64" execution_time="6.5798131333070149"/>
+        <operation operation_name="minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.5798131333070149"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_0_8_8</name>
@@ -18167,7 +18012,7 @@
         <template name="ui_minus_expr_FU" parameter="0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:8" execution_time="1.9590173568937821"/>
+        <operation operation_name="minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.9590173568937821"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_16_0_16</name>
@@ -18177,7 +18022,7 @@
         <template name="ui_minus_expr_FU" parameter="16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:16" execution_time="2.7129679869777537"/>
+        <operation operation_name="minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.7129679869777537"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_16_16_16</name>
@@ -18186,7 +18031,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
         <template name="ui_minus_expr_FU" parameter="16 16 16"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:16" execution_time="2.7129679869777537"/>
+        <operation operation_name="minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.7129679869777537"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_1_0_1</name>
@@ -18196,7 +18041,7 @@
         <template name="ui_minus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:1" execution_time="0.8770006577504933"/>
+        <operation operation_name="minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_1_1_1</name>
@@ -18205,7 +18050,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
         <template name="ui_minus_expr_FU" parameter="1 1 1"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:1" execution_time="0.8770006577504933"/>
+        <operation operation_name="minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_32_0_32</name>
@@ -18215,7 +18060,7 @@
         <template name="ui_minus_expr_FU" parameter="32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:32" execution_time="4.0059287745863879"/>
+        <operation operation_name="minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="4.0059287745863879"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_32_32_32</name>
@@ -18224,7 +18069,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">96</attribute>
         <template name="ui_minus_expr_FU" parameter="32 32 32"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:32" execution_time="4.0059287745863879"/>
+        <operation operation_name="minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="4.0059287745863879"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_64_0_64</name>
@@ -18234,7 +18079,7 @@
         <template name="ui_minus_expr_FU" parameter="64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:64" execution_time="6.5798131333070149"/>
+        <operation operation_name="minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.5798131333070149"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_64_64_64</name>
@@ -18243,7 +18088,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
         <template name="ui_minus_expr_FU" parameter="64 64 64"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:64" execution_time="6.5798131333070149"/>
+        <operation operation_name="minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.5798131333070149"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_8_0_8</name>
@@ -18253,7 +18098,7 @@
         <template name="ui_minus_expr_FU" parameter="8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:8" execution_time="1.9590173568937821"/>
+        <operation operation_name="minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.9590173568937821"/>
       </cell>
       <cell>
         <name>ui_minus_expr_FU_8_8_8</name>
@@ -18262,7 +18107,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">24</attribute>
         <template name="ui_minus_expr_FU" parameter="8 8 8"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="minus_expr" supported_types="UINT:8" execution_time="1.9590173568937821"/>
+        <operation operation_name="minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.9590173568937821"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_0_16_16_0</name>
@@ -19127,7 +18972,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
         <template name="ui_negate_expr_FU" parameter="1 1"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="negate_expr" supported_types="UINT:1" execution_time="0.74799910240107703"/>
+        <operation operation_name="negate_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.74799910240107703"/>
       </cell>
       <cell>
         <name>ui_negate_expr_FU_32_32</name>
@@ -19174,7 +19019,7 @@
         <template name="ui_plus_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="plus_expr" commutative="1" supported_types="UINT:1" execution_time="0.8770006577504933"/>
+        <operation operation_name="plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
       </cell>
       <cell>
         <name>ui_plus_expr_FU_0_32_32</name>
@@ -19233,7 +19078,7 @@
         <template name="ui_plus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="plus_expr" commutative="1" supported_types="UINT:1" execution_time="0.8770006577504933"/>
+        <operation operation_name="plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
       </cell>
       <cell>
         <name>ui_plus_expr_FU_1_1_1</name>
@@ -19242,7 +19087,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
         <template name="ui_plus_expr_FU" parameter="1 1 1"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="plus_expr" commutative="1" supported_types="UINT:1" execution_time="0.8770006577504933"/>
+        <operation operation_name="plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
       </cell>
       <cell>
         <name>ui_plus_expr_FU_32_0_32</name>
@@ -19308,8 +19153,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.6130128037627385"/>
+        <characterization_timestamp>2017-05-24T17:32:14</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.6629740093736687"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_0_1_1</name>
@@ -19318,8 +19163,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.74900195489510235"/>
+        <characterization_timestamp>2017-05-24T17:32:14</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.74799910240107703"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_0_32_32</name>
@@ -19328,18 +19173,18 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.8960532980091167"/>
+        <characterization_timestamp>2017-05-24T17:32:21</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.9929723686312091"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_0_64_64</name>
-        <attribute name="area" value_type="float64">128</attribute>
+        <attribute name="area" value_type="float64">132</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">132</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.498148027812074"/>
+        <characterization_timestamp>2017-05-24T17:32:24</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.5741897311156396"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_0_8_8</name>
@@ -19348,8 +19193,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">16</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.896993265673907"/>
+        <characterization_timestamp>2017-05-24T17:32:17</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.9260029660445677"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_16_0_16</name>
@@ -19358,8 +19203,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.6130128037627385"/>
+        <characterization_timestamp>2017-05-24T17:32:14</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.6629740093736687"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_16_16_16</name>
@@ -19367,8 +19212,8 @@
         <attribute name="REGISTERS" value_type="float64">48</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="16 16 16"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.7129679869777537"/>
+        <characterization_timestamp>2017-05-24T17:32:23</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.7170221437304711"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_1_0_1</name>
@@ -19377,8 +19222,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.74900195489510235"/>
+        <characterization_timestamp>2017-05-24T17:32:14</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.74799910240107703"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_1_1_1</name>
@@ -19386,8 +19231,8 @@
         <attribute name="REGISTERS" value_type="float64">3</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="1 1 1"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
+        <characterization_timestamp>2017-05-24T17:32:50</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8819975480468164"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_32_0_32</name>
@@ -19396,8 +19241,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.8960532980091167"/>
+        <characterization_timestamp>2017-05-24T17:32:21</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.9929723686312091"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_32_32_32</name>
@@ -19405,27 +19250,27 @@
         <attribute name="REGISTERS" value_type="float64">96</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">96</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="32 32 32"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="4.0059287745863879"/>
+        <characterization_timestamp>2017-05-24T17:32:53</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="4.0170322165983769"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_64_0_64</name>
-        <attribute name="area" value_type="float64">128</attribute>
+        <attribute name="area" value_type="float64">132</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">132</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.498148027812074"/>
+        <characterization_timestamp>2017-05-24T17:32:24</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.5741897311156396"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_64_64_64</name>
-        <attribute name="area" value_type="float64">192</attribute>
+        <attribute name="area" value_type="float64">193</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">192</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">193</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="64 64 64"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.5741897311156396"/>
+        <characterization_timestamp>2017-05-24T17:32:56</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="6.6128818939293748"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_8_0_8</name>
@@ -19434,8 +19279,8 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">16</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.896993265673907"/>
+        <characterization_timestamp>2017-05-24T17:32:17</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.9260029660445677"/>
       </cell>
       <cell>
         <name>ui_pointer_plus_expr_FU_8_8_8</name>
@@ -19443,8 +19288,8 @@
         <attribute name="REGISTERS" value_type="float64">24</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">24</attribute>
         <template name="ui_pointer_plus_expr_FU" parameter="8 8 8"/>
-        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.9590173568937821"/>
+        <characterization_timestamp>2017-05-24T17:32:54</characterization_timestamp>
+        <operation operation_name="pointer_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.963016764163166"/>
       </cell>
       <cell>
         <name>ui_rrotate_expr_FU_0_16_16</name>
@@ -19740,10 +19585,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="0 16 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:33:48</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_1_1_1</name>
@@ -19753,10 +19598,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="0 1 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:33:44</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_32_32_32</name>
@@ -19766,10 +19611,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="0 32 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:34:02</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_64_64_64</name>
@@ -19779,10 +19624,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="0 64 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:34:15</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_8_8_8</name>
@@ -19792,10 +19637,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="0 8 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:34:12</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_16_0_16_16</name>
@@ -19805,10 +19650,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="16 0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:34:16</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_16_16_0_16</name>
@@ -19818,10 +19663,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="16 16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:34:20</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_16_16_16_16</name>
@@ -19830,10 +19675,10 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">93</attribute>
         <template name="ui_ternary_alu_expr_FU" parameter="16 16 16 16"/>
         <characterization_timestamp>2016-01-08T15:34:37</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.3449923962633061"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_1_0_1_1</name>
@@ -19843,10 +19688,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="1 0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:34:36</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_1_1_0_1</name>
@@ -19856,10 +19701,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="1 1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:34:40</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_1_1_1_1</name>
@@ -19868,10 +19713,10 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">7</attribute>
         <template name="ui_ternary_alu_expr_FU" parameter="1 1 1 1"/>
         <characterization_timestamp>2016-01-08T15:34:55</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.411990624382254"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_32_0_32_32</name>
@@ -19881,10 +19726,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="32 0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:35:14</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_32_32_0_32</name>
@@ -19894,10 +19739,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="32 32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:35:15</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_32_32_32_32</name>
@@ -19906,10 +19751,10 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">170</attribute>
         <template name="ui_ternary_alu_expr_FU" parameter="32 32 32 32"/>
         <characterization_timestamp>2016-01-08T15:35:22</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.6599501924383064"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_64_0_64_64</name>
@@ -19919,10 +19764,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="64 0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:35:28</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_64_64_0_64</name>
@@ -19932,10 +19777,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="64 64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:35:44</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_64_64_64_64</name>
@@ -19944,10 +19789,10 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">337</attribute>
         <template name="ui_ternary_alu_expr_FU" parameter="64 64 64 64"/>
         <characterization_timestamp>2016-01-08T15:35:53</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="8.5829542528538312"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_8_0_8_8</name>
@@ -19957,10 +19802,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="8 0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:35:35</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_8_8_0_8</name>
@@ -19970,10 +19815,10 @@
         <template name="ui_ternary_alu_expr_FU" parameter="8 8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:35:49</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_8_8_8_8</name>
@@ -19982,10 +19827,10 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
         <template name="ui_ternary_alu_expr_FU" parameter="8 8 8 8"/>
         <characterization_timestamp>2016-01-08T15:36:14</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_plus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.8540100975064551"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_0_16_16_16</name>
@@ -19995,7 +19840,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="0 16 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:36:10</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_0_1_1_1</name>
@@ -20005,7 +19850,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="0 1 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:36:12</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_0_32_32_32</name>
@@ -20015,7 +19860,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="0 32 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:36:27</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_0_64_64_64</name>
@@ -20025,7 +19870,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="0 64 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:36:40</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_0_8_8_8</name>
@@ -20035,7 +19880,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="0 8 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:36:38</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_16_0_16_16</name>
@@ -20045,7 +19890,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="16 0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:36:43</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_16_16_0_16</name>
@@ -20055,7 +19900,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="16 16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:36:46</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_16_16_16_16</name>
@@ -20064,7 +19909,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">71</attribute>
         <template name="ui_ternary_mm_expr_FU" parameter="16 16 16 16"/>
         <characterization_timestamp>2016-01-08T15:37:06</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_1_0_1_1</name>
@@ -20074,7 +19919,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="1 0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:37:03</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_1_1_0_1</name>
@@ -20084,7 +19929,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="1 1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:37:04</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_1_1_1_1</name>
@@ -20093,7 +19938,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
         <template name="ui_ternary_mm_expr_FU" parameter="1 1 1 1"/>
         <characterization_timestamp>2016-01-08T15:37:18</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_32_0_32_32</name>
@@ -20103,7 +19948,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="32 0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:37:37</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_32_32_0_32</name>
@@ -20113,7 +19958,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="32 32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:37:38</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_32_32_32_32</name>
@@ -20122,7 +19967,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">142</attribute>
         <template name="ui_ternary_mm_expr_FU" parameter="32 32 32 32"/>
         <characterization_timestamp>2016-01-08T15:37:43</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_64_0_64_64</name>
@@ -20132,7 +19977,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="64 0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:37:52</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_64_64_0_64</name>
@@ -20142,7 +19987,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="64 64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:38:09</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_64_64_64_64</name>
@@ -20151,7 +19996,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">284</attribute>
         <template name="ui_ternary_mm_expr_FU" parameter="64 64 64 64"/>
         <characterization_timestamp>2016-01-08T15:38:10</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_8_0_8_8</name>
@@ -20161,7 +20006,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="8 0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:37:57</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_8_8_0_8</name>
@@ -20171,7 +20016,7 @@
         <template name="ui_ternary_mm_expr_FU" parameter="8 8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:38:11</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_mm_expr_FU_8_8_8_8</name>
@@ -20180,7 +20025,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <template name="ui_ternary_mm_expr_FU" parameter="8 8 8 8"/>
         <characterization_timestamp>2016-01-08T15:38:29</characterization_timestamp>
-        <operation operation_name="ternary_mm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_0_16_16_16</name>
@@ -20190,7 +20035,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="0 16 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:38:31</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_0_1_1_1</name>
@@ -20200,7 +20045,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="0 1 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:38:32</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_0_32_32_32</name>
@@ -20210,7 +20055,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="0 32 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:38:49</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_0_64_64_64</name>
@@ -20220,7 +20065,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="0 64 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:39:01</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_0_8_8_8</name>
@@ -20230,7 +20075,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="0 8 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:38:59</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_16_0_16_16</name>
@@ -20240,7 +20085,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="16 0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:39:04</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_16_16_0_16</name>
@@ -20250,7 +20095,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="16 16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:39:05</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_16_16_16_16</name>
@@ -20259,7 +20104,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">71</attribute>
         <template name="ui_ternary_mp_expr_FU" parameter="16 16 16 16"/>
         <characterization_timestamp>2016-01-08T15:39:25</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:16" execution_time="4.0879731828959205"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="4.0879731828959205"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_1_0_1_1</name>
@@ -20269,7 +20114,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="1 0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:39:22</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_1_1_0_1</name>
@@ -20279,7 +20124,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="1 1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:39:22</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_1_1_1_1</name>
@@ -20288,7 +20133,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
         <template name="ui_ternary_mp_expr_FU" parameter="1 1 1 1"/>
         <characterization_timestamp>2016-01-08T15:39:40</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_32_0_32_32</name>
@@ -20298,7 +20143,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="32 0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:39:59</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_32_32_0_32</name>
@@ -20308,7 +20153,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="32 32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:40:01</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_32_32_32_32</name>
@@ -20317,7 +20162,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">142</attribute>
         <template name="ui_ternary_mp_expr_FU" parameter="32 32 32 32"/>
         <characterization_timestamp>2016-01-08T15:40:04</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_64_0_64_64</name>
@@ -20327,7 +20172,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="64 0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:40:11</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_64_64_0_64</name>
@@ -20337,7 +20182,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="64 64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:40:28</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_64_64_64_64</name>
@@ -20346,7 +20191,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">284</attribute>
         <template name="ui_ternary_mp_expr_FU" parameter="64 64 64 64"/>
         <characterization_timestamp>2016-01-08T15:40:28</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_8_0_8_8</name>
@@ -20356,7 +20201,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="8 0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:40:18</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_8_8_0_8</name>
@@ -20366,7 +20211,7 @@
         <template name="ui_ternary_mp_expr_FU" parameter="8 8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:40:31</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_mp_expr_FU_8_8_8_8</name>
@@ -20375,7 +20220,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <template name="ui_ternary_mp_expr_FU" parameter="8 8 8 8"/>
         <characterization_timestamp>2016-01-08T15:40:49</characterization_timestamp>
-        <operation operation_name="ternary_mp_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_mp_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_plus_expr_FU_0_16_16_16</name>
@@ -20395,7 +20240,7 @@
         <template name="ui_ternary_plus_expr_FU" parameter="0 1 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1" execution_time="1.0210020113739624"/>
+        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0210020113739624"/>
       </cell>
       <cell>
         <name>ui_ternary_plus_expr_FU_0_32_32_32</name>
@@ -20464,7 +20309,7 @@
         <template name="ui_ternary_plus_expr_FU" parameter="1 0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1" execution_time="1.0210020113739624"/>
+        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0210020113739624"/>
       </cell>
       <cell>
         <name>ui_ternary_plus_expr_FU_1_1_0_1</name>
@@ -20474,7 +20319,7 @@
         <template name="ui_ternary_plus_expr_FU" parameter="1 1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1" execution_time="1.0210020113739624"/>
+        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0210020113739624"/>
       </cell>
       <cell>
         <name>ui_ternary_plus_expr_FU_1_1_1_1</name>
@@ -20483,7 +20328,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
         <template name="ui_ternary_plus_expr_FU" parameter="1 1 1 1"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1" execution_time="1.0210020113739624"/>
+        <operation operation_name="ternary_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0210020113739624"/>
       </cell>
       <cell>
         <name>ui_ternary_plus_expr_FU_32_0_32_32</name>
@@ -20580,7 +20425,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="0 16 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:40:56</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="3.8910505836575875"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.8910505836575875"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_0_1_1_1</name>
@@ -20590,7 +20435,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="0 1 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:40:55</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_0_32_32_32</name>
@@ -20600,7 +20445,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="0 32 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:41:08</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_0_64_64_64</name>
@@ -20610,7 +20455,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="0 64 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:41:23</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_0_8_8_8</name>
@@ -20620,7 +20465,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="0 8 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:41:20</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_16_0_16_16</name>
@@ -20630,7 +20475,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="16 0 16 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:41:21</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="3.8910505836575875"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.8910505836575875"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_16_16_0_16</name>
@@ -20640,7 +20485,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="16 16 0 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:41:25</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="3.8910505836575875"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.8910505836575875"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_16_16_16_16</name>
@@ -20649,7 +20494,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">71</attribute>
         <template name="ui_ternary_pm_expr_FU" parameter="16 16 16 16"/>
         <characterization_timestamp>2016-01-08T15:41:43</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:16" execution_time="3.8910505836575875"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.8910505836575875"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_1_0_1_1</name>
@@ -20659,7 +20504,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="1 0 1 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:41:45</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_1_1_0_1</name>
@@ -20669,7 +20514,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="1 1 0 1"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:41:45</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_1_1_1_1</name>
@@ -20678,7 +20523,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
         <template name="ui_ternary_pm_expr_FU" parameter="1 1 1 1"/>
         <characterization_timestamp>2016-01-08T15:41:59</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:1" execution_time="1.0220037405336904"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0220037405336904"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_32_0_32_32</name>
@@ -20688,7 +20533,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="32 0 32 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:42:19</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_32_32_0_32</name>
@@ -20698,7 +20543,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="32 32 0 32"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:42:19</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_32_32_32_32</name>
@@ -20707,7 +20552,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">142</attribute>
         <template name="ui_ternary_pm_expr_FU" parameter="32 32 32 32"/>
         <characterization_timestamp>2016-01-08T15:42:20</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:32" execution_time="5.2159399123722094"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="5.2159399123722094"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_64_0_64_64</name>
@@ -20717,7 +20562,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="64 0 64 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:42:28</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_64_64_0_64</name>
@@ -20727,7 +20572,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="64 64 0 64"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:42:40</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_64_64_64_64</name>
@@ -20736,7 +20581,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">284</attribute>
         <template name="ui_ternary_pm_expr_FU" parameter="64 64 64 64"/>
         <characterization_timestamp>2016-01-08T15:42:42</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:64" execution_time="7.8167747987180487"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="7.8167747987180487"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_8_0_8_8</name>
@@ -20746,7 +20591,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="8 0 8 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:42:35</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_8_8_0_8</name>
@@ -20756,7 +20601,7 @@
         <template name="ui_ternary_pm_expr_FU" parameter="8 8 0 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>2016-01-08T15:42:42</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_ternary_pm_expr_FU_8_8_8_8</name>
@@ -20765,7 +20610,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <template name="ui_ternary_pm_expr_FU" parameter="8 8 8 8"/>
         <characterization_timestamp>2016-01-08T15:42:52</characterization_timestamp>
-        <operation operation_name="ternary_pm_expr" supported_types="UINT:8" execution_time="3.209036647198511"/>
+        <operation operation_name="ternary_pm_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.209036647198511"/>
       </cell>
       <cell>
         <name>ui_trunc_div_expr_FU_0_16_16_0</name>
@@ -21591,7 +21436,7 @@
         <template name="ui_trunc_mod_expr_FU" parameter="0 1 1"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="trunc_mod_expr" supported_types="UINT:1" execution_time="0.74900195489510235"/>
+        <operation operation_name="trunc_mod_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.74900195489510235"/>
       </cell>
       <cell>
         <name>ui_trunc_mod_expr_FU_0_32_32_0</name>
@@ -21913,7 +21758,7 @@
         <template name="ui_trunc_mod_expr_FU" parameter="1 0 1"/>
         <characterizing_constant_value>21845</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="trunc_mod_expr" supported_types="UINT:1"/>
+        <operation operation_name="trunc_mod_expr" supported_types="UINT:1|VECTOR_BOOL:1"/>
       </cell>
       <cell>
         <name>ui_trunc_mod_expr_FU_1_1_1</name>
@@ -21922,7 +21767,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
         <template name="ui_trunc_mod_expr_FU" parameter="1 1 1"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="trunc_mod_expr" supported_types="UINT:1" execution_time="0.8770006577504933"/>
+        <operation operation_name="trunc_mod_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.8770006577504933"/>
       </cell>
       <cell>
         <name>ui_trunc_mod_expr_FU_32_0_32_0</name>
@@ -31478,7 +31323,7 @@
         <template name="ui_widen_sum_expr_FU" parameter="0 1 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="widen_sum_expr" commutative="1" supported_types="UINT:1" execution_time="0.75300070782066542"/>
+        <operation operation_name="widen_sum_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.75300070782066542"/>
       </cell>
       <cell>
         <name>ui_widen_sum_expr_FU_0_32_64</name>
@@ -31537,7 +31382,7 @@
         <template name="ui_widen_sum_expr_FU" parameter="1 0 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="widen_sum_expr" commutative="1" supported_types="UINT:1" execution_time="0.75300070782066542"/>
+        <operation operation_name="widen_sum_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.75300070782066542"/>
       </cell>
       <cell>
         <name>ui_widen_sum_expr_FU_1_1_2</name>
@@ -31546,7 +31391,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
         <template name="ui_widen_sum_expr_FU" parameter="1 1 2"/>
         <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
-        <operation operation_name="widen_sum_expr" commutative="1" supported_types="UINT:1" execution_time="0.88999644001424005"/>
+        <operation operation_name="widen_sum_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.88999644001424005"/>
       </cell>
       <cell>
         <name>ui_widen_sum_expr_FU_32_0_64</name>

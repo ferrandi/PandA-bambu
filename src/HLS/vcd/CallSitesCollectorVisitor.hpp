@@ -42,8 +42,8 @@
 
 #include <boost/graph/visitors.hpp>
 
-#include <unordered_map>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 CONSTREF_FORWARD_DECL(CallGraphManager);
 REF_FORWARD_DECL(HLS_manager);

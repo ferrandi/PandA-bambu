@@ -54,8 +54,8 @@
 #include <string>
 
 /// STL include
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 /// technology/physical_library/models includes
@@ -76,9 +76,9 @@ SimulationEvaluation::SimulationEvaluation(const ParameterConstRef _Param, const
 
 SimulationEvaluation::~SimulationEvaluation() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> SimulationEvaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

@@ -96,7 +96,7 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
     * Create the frontend design flow steps
     * @param hls_flow_steps is the set of steps to be created
     */
-   const DesignFlowStepSet CreateHLSFlowSteps(const std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const;
+   const DesignFlowStepSet CreateHLSFlowSteps(const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const;
 
    /**
     * The same as CreateHLSFlowSteps, but just for one step

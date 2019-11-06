@@ -68,8 +68,8 @@
 #include "add_library.hpp"
 
 /// STL includes
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 
 /// utility include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
@@ -82,9 +82,9 @@ module_interface::module_interface(const ParameterConstRef _parameters, const HL
 
 module_interface::~module_interface() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> module_interface::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

@@ -48,7 +48,6 @@
 #define PARAMETRIC_LIST_BASED_HPP
 
 #include <iosfwd>
-#include <map>
 #include <set>
 #include <vector>
 
@@ -60,7 +59,6 @@
 #include "refcount.hpp"
 #include "rehashed_heap.hpp"
 #include "scheduling.hpp"
-#include <unordered_map>
 
 /**
  * @name forward declarations
@@ -159,11 +157,8 @@ class parametric_list_based : public Scheduling
    /// The dependence graph with feedbacks
    OpGraphConstRef flow_graph_with_feedbacks;
 
-   /// Entry vertex
-   vertex entry_vertex;
-
    /// The starting time given the scheduling (used for chaining)
-   vertex2obj<double> starting_time;
+   vertex2float starting_time;
 
    /// The ending time given the scheduling (used for chaining)
    OpVertexMap<double> ending_time;
@@ -172,7 +167,7 @@ class parametric_list_based : public Scheduling
    double clock_cycle;
 
    /// memoization table used for connection estimation
-   std::unordered_map<std::pair<vertex, unsigned int>, bool> is_complex;
+   CustomUnorderedMapUnstable<std::pair<vertex, unsigned int>, bool> is_complex;
 
    /// Number of executions
    size_t executions_number;
@@ -212,12 +207,10 @@ class parametric_list_based : public Scheduling
    /**
     * Update the resource map
     * @param used_resources_fu is the resource map.
-    * @param current_vertex is the vertex for which an update is required.
-    * @param current_starting_time is the starting time of the operation of current_vertex
     * @param fu_type is the functional unit type on which operation is scheduled
     * @return true if the assignment is feasible
     */
-   bool BB_update_resources_use(unsigned int& used_resources, const vertex& current_vertex, const double& current_starting_time, const unsigned int fu_type) const;
+   bool BB_update_resources_use(unsigned int& used_resources, const unsigned int fu_type) const;
 
    /**
     * Adds the vertex v to the priority queues
@@ -282,7 +275,7 @@ class parametric_list_based : public Scheduling
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

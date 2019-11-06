@@ -45,13 +45,12 @@
 #ifndef CALL_GRAPH_MANAGER_HPP
 #define CALL_GRAPH_MANAGER_HPP
 
-#include "call_graph.hpp"                     // for CallGraph (ptr o...
+#include "call_graph.hpp" // for CallGraph (ptr o...
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "graph.hpp"                          // for vertex, EdgeDesc...
 #include "refcount.hpp"                       // for CONSTREF_FORWARD...
 #include <boost/graph/depth_first_search.hpp> // for default_dfs_visitor
-#include <map>                                // for map
-#include <set>                                // for set
-#include <unordered_set>                      // for unordered_set
 
 CONSTREF_FORWARD_DECL(application_manager);
 CONSTREF_FORWARD_DECL(CallGraph);
@@ -79,7 +78,7 @@ class CallGraphManager
    const tree_managerConstRef tree_manager;
 
    /// put into relation function F_i and the list of functions called by F_i
-   std::map<unsigned int, std::set<unsigned int>> called_by;
+   std::map<unsigned int, CustomOrderedSet<unsigned int>> called_by;
 
    /// put into relation function F_i and the vertex in the call graph representing it
    std::map<unsigned int, vertex> functionID_vertex_map;
@@ -91,16 +90,16 @@ class CallGraphManager
    const bool allow_recursive_functions;
 
    /// Root functions
-   std::set<unsigned int> root_functions;
+   CustomOrderedSet<unsigned int> root_functions;
 
    /// source code functions directly or indirectly called by the root functions
-   std::set<unsigned int> reached_body_functions;
+   CustomOrderedSet<unsigned int> reached_body_functions;
 
    /// library functions directly or indirectly called by the root functions
-   std::set<unsigned int> reached_library_functions;
+   CustomOrderedSet<unsigned int> reached_library_functions;
 
    /// set of functions whose address is taken
-   std::set<unsigned int> addressed_functions;
+   CustomOrderedSet<unsigned int> addressed_functions;
 
    /// set of input parameters
    const ParameterConstRef Param;
@@ -152,20 +151,20 @@ class CallGraphManager
     * Return a subset of the call graph
     * @param vertices is the subset of vertices to be considered
     */
-   const CallGraphConstRef CGetCallSubGraph(const std::unordered_set<vertex>& vertices) const;
+   const CallGraphConstRef CGetCallSubGraph(const CustomUnorderedSet<vertex>& vertices) const;
 
    /**
     * Returns the set of functions called by a function
     * @param index is the index of the caller function
     */
-   const std::set<unsigned int> get_called_by(unsigned int index) const;
+   const CustomOrderedSet<unsigned int> get_called_by(unsigned int index) const;
 
    /**
     * Returns the set of functions called by an operation vertex
     * @param cfg is the pointer to the graph which the operation belongs to
     * @param caller is the caller vertex
     */
-   const std::unordered_set<unsigned int> get_called_by(const OpGraphConstRef cfg, const vertex& caller) const;
+   const CustomUnorderedSet<unsigned int> get_called_by(const OpGraphConstRef cfg, const vertex& caller) const;
 
    /**
     * Given a vertex of the call graph, this returns the index of the corresponding function
@@ -185,26 +184,26 @@ class CallGraphManager
     * Returns the root functions (i.e., the functions that are not called by any other ones
     * @return the set of top function
     */
-   const std::set<unsigned int> GetRootFunctions() const;
+   const CustomOrderedSet<unsigned int> GetRootFunctions() const;
 
    /**
     * Returns the source code functions called by the root functions
     * @return the set of top function
     */
-   std::set<unsigned int> GetReachedBodyFunctions() const;
+   CustomOrderedSet<unsigned int> GetReachedBodyFunctions() const;
 
    /**
     * compute the list of reached function starting from a given function
     * @param from_f is the starting function
     * @return the set of top function
     */
-   std::set<unsigned int> GetReachedBodyFunctionsFrom(unsigned int from_f) const;
+   CustomOrderedSet<unsigned int> GetReachedBodyFunctionsFrom(unsigned int from_f) const;
 
    /**
     * Returns the library functions called by the root functions
     * @return the set of library function (without implementation)
     */
-   std::set<unsigned int> GetReachedLibraryFunctions() const;
+   CustomOrderedSet<unsigned int> GetReachedLibraryFunctions() const;
 
    /**
     * return true in case the vertex has been already created
@@ -278,7 +277,7 @@ class CallGraphManager
    /**
     * Returns a set containing all the reachable addressed_functions
     */
-   std::set<unsigned int> GetAddressedFunctions() const;
+   CustomOrderedSet<unsigned int> GetAddressedFunctions() const;
 };
 typedef refcount<CallGraphManager> CallGraphManagerRef;
 typedef refcount<const CallGraphManager> CallGraphManagerConstRef;
@@ -296,10 +295,10 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
    const CallGraphManager* call_graph_manager;
 
    /// The list of encountered body functions
-   std::set<unsigned int>& body_functions;
+   CustomOrderedSet<unsigned int>& body_functions;
 
    /// The list of encountered library functions
-   std::set<unsigned int>& library_functions;
+   CustomOrderedSet<unsigned int>& library_functions;
 
  public:
    /**
@@ -309,7 +308,7 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
     * @param body_functions is where results will be stored
     * @param library_functions is where results will be stored
     */
-   CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager, std::set<unsigned int>& body_functions, std::set<unsigned int>& library_functions);
+   CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager, CustomOrderedSet<unsigned int>& body_functions, CustomOrderedSet<unsigned int>& library_functions);
 
    void back_edge(const EdgeDescriptor& edge, const CallGraph& call_graph);
 

@@ -47,10 +47,8 @@
 #include <llvm/Analysis/InlineCost.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
-#if !defined(__APPLE__)
 #include <llvm/IR/GetElementPtrTypeIterator.h>
 #include <llvm/IR/IntrinsicInst.h>
-#endif
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 #include <stack>
@@ -1666,7 +1664,7 @@ void expand_alloca(llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL, st
 
          std::string new_alloca_name = alloca_inst->getName().str() + "." + std::to_string(idx);
          llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(element,
-#if __clang_major__ > 4 && !defined(__APPLE__)
+#if __clang_major__ > 4
                                                                   DL.getAllocaAddrSpace(),
 #endif
                                                                   new_alloca_name, alloca_inst);
@@ -1684,7 +1682,7 @@ void expand_alloca(llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL, st
 
          std::string new_alloca_name = alloca_inst->getName().str() + "." + std::to_string(idx);
          llvm::AllocaInst* new_alloca_inst = new llvm::AllocaInst(element_ty,
-#if __clang_major__ > 4 && !defined(__APPLE__)
+#if __clang_major__ > 4
                                                                   DL.getAllocaAddrSpace(),
 #endif
                                                                   new_alloca_name, alloca_inst);
@@ -3916,7 +3914,7 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
             llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
-#if __clang_major__ >= 6 && !defined(__APPLE__)
+#if __clang_major__ >= 6
             llvm::simplifyCFG(&*BBIt++, TTI, 1);
 #else
             llvm::SimplifyCFG(&*BBIt++, TTI, 1);
@@ -3943,7 +3941,7 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
 
                if(Allocas.empty())
                   break;
-#if __clang_major__ != 4 && !defined(__APPLE__)
+#if __clang_major__ != 4
                llvm::PromoteMemToReg(Allocas, DT, &AC);
 #else
                llvm::PromoteMemToReg(Allocas, DT, nullptr, &AC);

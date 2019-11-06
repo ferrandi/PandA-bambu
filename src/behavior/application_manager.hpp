@@ -48,11 +48,8 @@
 #include "config_HAVE_PRAGMA_BUILT.hpp"
 
 #include <cstddef> // for size_t
-#include <set>     // for set
 #include <string>  // for string
-#if HAVE_CODESIGN
-#include <unordered_map>
-#endif
+
 #include "custom_map.hpp" // for CustomMap
 #include "custom_set.hpp" // for CustomSet
 #include "graph.hpp"      // for vertex
@@ -86,10 +83,10 @@ class application_manager
 
 #if HAVE_CODESIGN
    /// The actor graphs (const version): key is the function indexi
-   std::unordered_map<unsigned int, ActorGraphManagerConstRef> const_output_actor_graphs;
+   CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef> const_output_actor_graphs;
 
    /// The actor graphs: key is the function index
-   std::unordered_map<unsigned int, ActorGraphManagerRef> output_actor_graphs;
+   CustomUnorderedMap<unsigned int, ActorGraphManagerRef> output_actor_graphs;
 #endif
 
    /// class containing all the parameters
@@ -104,7 +101,7 @@ class application_manager
    const bool single_root_function;
 
    /// store memory objects which can be written
-   std::set<unsigned int> written_objects;
+   CustomOrderedSet<unsigned int> written_objects;
 
 #if HAVE_PRAGMA_BUILT
    /// class representing the source code pragmas
@@ -134,7 +131,7 @@ class application_manager
 #endif
 
    /// The original input file and the actual source code file to be elaborated
-   CustomMap<std::string, std::string> input_files;
+   std::map<std::string, std::string> input_files;
 
    /**
     * Constructor
@@ -195,13 +192,13 @@ class application_manager
     * Returns the set of functions whose implementation is present in the parsed
     * input specification (i.e. which has a non empty graph)
     */
-   std::set<unsigned int> get_functions_with_body() const;
+   CustomOrderedSet<unsigned int> get_functions_with_body() const;
 
    /**
     * Returns the set of functions whose implementation is not present in the parsed
     * input specification (i.e. the ones with an empty Control Flow Graph)
     */
-   std::set<unsigned int> get_functions_without_body() const;
+   CustomOrderedSet<unsigned int> get_functions_without_body() const;
 
    /**
     * Adds a global variable
@@ -241,7 +238,7 @@ class application_manager
    /**
     * Return the set of variables modified by a store
     */
-   const std::set<unsigned int>& get_written_objects() const;
+   const CustomOrderedSet<unsigned int>& get_written_objects() const;
 
    /**
     * set the value of the address bitsize
@@ -269,7 +266,7 @@ class application_manager
     * Returns the top actor graph for each function
     * @return the top actor graph for each function
     */
-   const std::unordered_map<unsigned int, ActorGraphManagerConstRef>& CGetActorGraphs() const;
+   const CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef>& CGetActorGraphs() const;
 
    /**
     * Returns the top actor graph for a function
@@ -282,7 +279,7 @@ class application_manager
     * Returns the top actor graph for each function
     * @return the top actor graph for each function
     */
-   std::unordered_map<unsigned int, ActorGraphManagerRef> GetActorGraphs();
+   CustomUnorderedMap<unsigned int, ActorGraphManagerRef> GetActorGraphs();
 
    /**
     * Returns the top actor graph for a function

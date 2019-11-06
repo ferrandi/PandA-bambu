@@ -65,8 +65,8 @@
 #include "storage_value_information.hpp"
 
 /// STL includes
+#include "custom_set.hpp"
 #include <list>
-#include <set>
 #include <utility>
 
 /// technology/physical_library include
@@ -107,9 +107,9 @@ void reg_binding::print_el(const_iterator& it) const
                       it->second->get_string());
 }
 
-std::set<unsigned int> reg_binding::get_vars(const unsigned int& r) const
+CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) const
 {
-   std::set<unsigned int> vars;
+   CustomOrderedSet<unsigned int> vars;
    THROW_ASSERT(reg2storage_values.find(r) != reg2storage_values.end() && !reg2storage_values.find(r)->second.empty(), "at least a storage value has to be mapped on register r");
 
    auto rs_it_end = reg2storage_values.find(r)->second.end();
@@ -120,7 +120,7 @@ std::set<unsigned int> reg_binding::get_vars(const unsigned int& r) const
 
 unsigned int reg_binding::compute_bitsize(unsigned int r)
 {
-   std::set<unsigned int> reg_vars = get_vars(r);
+   CustomOrderedSet<unsigned int> reg_vars = get_vars(r);
    unsigned int max_bits = 0;
    for(unsigned int reg_var : reg_vars)
    {
@@ -178,8 +178,8 @@ void reg_binding::compute_is_without_enable()
    {
       vertex v = *ss_it;
       unsigned int dummy_offset = HLS->Rliv->is_a_dummy_state(v) ? 1 : 0;
-      const std::set<unsigned int>& LI = HLS->Rliv->get_live_in(v);
-      const std::set<unsigned int>::const_iterator li_it_end = LI.end();
+      const CustomOrderedSet<unsigned int>& LI = HLS->Rliv->get_live_in(v);
+      const CustomOrderedSet<unsigned int>::const_iterator li_it_end = LI.end();
       for(auto li_it = LI.begin(); li_it != li_it_end; ++li_it)
       {
          if(n_in.find(*li_it) == n_in.end())
@@ -187,8 +187,8 @@ void reg_binding::compute_is_without_enable()
          else
             n_in[*li_it] = n_in[*li_it] + 1 + dummy_offset;
       }
-      const std::set<unsigned int>& LO = HLS->Rliv->get_live_out(v);
-      const std::set<unsigned int>::const_iterator lo_it_end = LO.end();
+      const CustomOrderedSet<unsigned int>& LO = HLS->Rliv->get_live_out(v);
+      const CustomOrderedSet<unsigned int>::const_iterator lo_it_end = LO.end();
       for(auto lo_it = LO.begin(); lo_it != lo_it_end; ++lo_it)
       {
          if(n_out.find(*lo_it) == n_out.end())
@@ -204,8 +204,8 @@ void reg_binding::compute_is_without_enable()
 
    for(unsigned int i = 0; i < get_used_regs(); i++)
    {
-      const std::set<unsigned int>& store_vars_set = get_vars(i);
-      const std::set<unsigned int>::const_iterator svs_it_end = store_vars_set.end();
+      const CustomOrderedSet<unsigned int>& store_vars_set = get_vars(i);
+      const CustomOrderedSet<unsigned int>::const_iterator svs_it_end = store_vars_set.end();
       bool all_woe = true;
       for(auto svs_it = store_vars_set.begin(); svs_it != svs_it_end && all_woe; ++svs_it)
       {

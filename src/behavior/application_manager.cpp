@@ -151,12 +151,12 @@ void application_manager::add_global_variable(unsigned int var)
    global_variables.insert(var);
 }
 
-std::set<unsigned int> application_manager::get_functions_with_body() const
+CustomOrderedSet<unsigned int> application_manager::get_functions_with_body() const
 {
    return call_graph_manager->GetReachedBodyFunctions();
 }
 
-std::set<unsigned int> application_manager::get_functions_without_body() const
+CustomOrderedSet<unsigned int> application_manager::get_functions_without_body() const
 {
    return call_graph_manager->GetReachedLibraryFunctions();
 }
@@ -297,7 +297,7 @@ void application_manager::AddActorGraphManager(const unsigned int function_index
    output_actor_graphs[function_index] = actor_graph_manager;
 }
 
-const std::unordered_map<unsigned int, ActorGraphManagerConstRef>& application_manager::CGetActorGraphs() const
+const CustomUnorderedMap<unsigned int, ActorGraphManagerConstRef>& application_manager::CGetActorGraphs() const
 {
    return const_output_actor_graphs;
 }
@@ -314,13 +314,13 @@ ActorGraphManagerRef application_manager::GetActorGraph(const unsigned int funct
    return output_actor_graphs.find(function_index)->second;
 }
 
-std::unordered_map<unsigned int, ActorGraphManagerRef> application_manager::GetActorGraphs()
+CustomUnorderedMap<unsigned int, ActorGraphManagerRef> application_manager::GetActorGraphs()
 {
    return output_actor_graphs;
 }
 #endif
 
-const std::set<unsigned int>& application_manager::get_written_objects() const
+const CustomOrderedSet<unsigned int>& application_manager::get_written_objects() const
 {
    return written_objects;
 }

@@ -72,7 +72,7 @@ DesignFlowStep_Status unique_binding::InternalExec()
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
 
    VertexIterator vIt, vItEnd;
-   std::map<unsigned int, std::set<unsigned int>> black_list;
+   std::map<unsigned int, CustomOrderedSet<unsigned int>> black_list;
    std::map<unsigned int, std::list<std::pair<std::string, vertex>>> fu_ops;
    for(boost::tie(vIt, vItEnd) = boost::vertices(*data); vIt != vItEnd; vIt++)
    {
@@ -84,7 +84,7 @@ DesignFlowStep_Status unique_binding::InternalExec()
       else
          fu_ops[fu].push_back(std::make_pair(GET_NAME(data, *vIt), *vIt));
       if(black_list.find(fu) == black_list.end())
-         black_list[fu] = std::set<unsigned int>();
+         black_list[fu] = CustomOrderedSet<unsigned int>();
    }
    for(auto& fu_op : fu_ops)
    {

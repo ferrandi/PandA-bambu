@@ -78,8 +78,8 @@
 #include <string>
 
 /// STL includes
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 #include <utility>
 
 /// technology include
@@ -103,7 +103,7 @@ TasteInterfaceGeneration::TasteInterfaceGeneration(const ParameterConstRef _Para
 
 TasteInterfaceGeneration::~TasteInterfaceGeneration() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TasteInterfaceGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TasteInterfaceGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto temp_ret = module_interface::ComputeHLSRelationships(relationship_type);
    auto ret = temp_ret;

@@ -44,8 +44,8 @@
 #include "hls_manager.hpp"
 
 /// STD include
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"

@@ -101,9 +101,9 @@ CSE::CSE(const ParameterConstRef _parameters, const application_managerRef _AppM
 
 CSE::~CSE() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> CSE::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
@@ -155,7 +155,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tree_nodeRef right_part)
 {
-   const std::set<unsigned int>& fun_mem_data = function_behavior->get_function_mem();
+   const CustomOrderedSet<unsigned int>& fun_mem_data = function_behavior->get_function_mem();
    tree_nodeRef op0_type = tree_helper::get_type_node(GET_NODE(ga->op0));
    tree_nodeRef op1_type = tree_helper::get_type_node(right_part);
    bool is_a_vector_bitfield = false;
@@ -400,7 +400,7 @@ DesignFlowStep_Status CSE::InternalExec()
    /// store the GCC BB graph ala boost::graph
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   std::unordered_map<unsigned int, vertex> inverse_vertex_map;
+   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(auto block : sl->list_of_bloc)
    {
@@ -431,7 +431,7 @@ DesignFlowStep_Status CSE::InternalExec()
    refcount<dominance<BBGraph>> bb_dominators;
    bb_dominators = refcount<dominance<BBGraph>>(new dominance<BBGraph>(*GCC_bb_graph, inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], parameters));
    bb_dominators->calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
-   const std::unordered_map<vertex, vertex>& bb_dominator_map = bb_dominators->get_dominator_map();
+   const auto& bb_dominator_map = bb_dominators->get_dominator_map();
 
    BBGraphRef bb_domGraph(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
    for(auto it : bb_dominator_map)

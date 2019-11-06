@@ -73,7 +73,7 @@
 #include <string>
 
 /// STL includes
-#include <map>
+#include "custom_map.hpp"
 #include <vector>
 
 /// technology/physical_library include

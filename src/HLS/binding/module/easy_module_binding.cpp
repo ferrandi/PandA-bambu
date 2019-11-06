@@ -57,20 +57,14 @@
 #include "Parameter.hpp"
 #include "dbgPrintHelper.hpp"
 
-#include <iosfwd>
-#include <string>
-
 /// HLS include
 #include "hls.hpp"
 
 /// HLS/allocation_information include
 #include "allocation_information.hpp"
 
-/// STL include
-#include <map>
-#include <set>
-#include <tuple>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// tree include
 #include "behavioral_helper.hpp"
@@ -80,6 +74,11 @@
 /// utility include
 #include "cpu_time.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+
+#include "custom_set.hpp"
+#include <iosfwd>
+#include <string>
+#include <tuple>
 
 easy_module_binding::easy_module_binding(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::EASY_MODULE_BINDING)
@@ -105,9 +104,9 @@ void easy_module_binding::Initialize()
    }
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> easy_module_binding::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -191,62 +190,62 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    }
    else
    {
-   std::set<vertex> easy_bound_vertices;
-   for(const auto op : sdg->CGetOperations())
-   {
-      if(fu.get_index(op) != INFINITE_UINT)
-         continue;
-      fu_unit = fu.get_assign(op);
-      if(allocation_information->is_vertex_bounded(fu_unit) ||
-         (allocation_information->is_memory_unit(fu_unit) &&
-          (!allocation_information->is_readonly_memory_unit(fu_unit) || (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
-          allocation_information->get_number_channels(fu_unit) == 1) ||
-         n_shared_fu.find(fu_unit)->second == 1)
+      CustomOrderedSet<vertex> easy_bound_vertices;
+      for(const auto op : sdg->CGetOperations())
       {
-         fu.bind(op, fu_unit, 0);
-         easy_bound_vertices.insert(op);
-         const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
-         if(node_id)
+         if(fu.get_index(op) != INFINITE_UINT)
+            continue;
+         fu_unit = fu.get_assign(op);
+         if(allocation_information->is_vertex_bounded(fu_unit) ||
+            (allocation_information->is_memory_unit(fu_unit) &&
+             (!allocation_information->is_readonly_memory_unit(fu_unit) || (!allocation_information->is_one_cycle_direct_access_memory_unit(fu_unit) && (!parameters->isOption(OPT_rom_duplication) || !parameters->getOption<bool>(OPT_rom_duplication)))) &&
+             allocation_information->get_number_channels(fu_unit) == 1) ||
+            n_shared_fu.find(fu_unit)->second == 1)
          {
-            INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                           "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
-         }
-      }
-      auto tn = HLS->allocation_information->get_fu(fu_unit);
-      if(GetPointer<functional_unit>(tn))
-      {
-         if(GetPointer<functional_unit>(tn)->CM)
-         {
-            auto fuUnitModule = GetPointer<functional_unit>(tn)->CM->get_circ();
-            if(GetPointer<module>(fuUnitModule))
+            fu.bind(op, fu_unit, 0);
+            easy_bound_vertices.insert(op);
+            const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
+            if(node_id)
             {
-               auto multiplicity = GetPointer<module>(fuUnitModule)->get_multi_unit_multiplicity();
-               if(multiplicity)
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                              "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
+            }
+         }
+         auto tn = HLS->allocation_information->get_fu(fu_unit);
+         if(GetPointer<functional_unit>(tn))
+         {
+            if(GetPointer<functional_unit>(tn)->CM)
+            {
+               auto fuUnitModule = GetPointer<functional_unit>(tn)->CM->get_circ();
+               if(GetPointer<module>(fuUnitModule))
                {
-                  auto& ops = GetPointer<functional_unit>(tn)->get_operations();
-                  auto index = 0u;
-                  for(auto o : ops)
+                  auto multiplicity = GetPointer<module>(fuUnitModule)->get_multi_unit_multiplicity();
+                  if(multiplicity)
                   {
-                     if(GetPointer<operation>(o)->get_name() == sdg->CGetOpNodeInfo(op)->GetOperation())
-                        break;
-                     ++index;
-                  }
-                  index = index % multiplicity;
-                  fu.bind(op, fu_unit, index);
-                  easy_bound_vertices.insert(op);
-                  const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
-                  if(node_id)
-                  {
-                     INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                                    "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first +
-                                        "(" + STR(index) + ")");
+                     auto& ops = GetPointer<functional_unit>(tn)->get_operations();
+                     auto index = 0u;
+                     for(auto o : ops)
+                     {
+                        if(GetPointer<operation>(o)->get_name() == sdg->CGetOpNodeInfo(op)->GetOperation())
+                           break;
+                        ++index;
+                     }
+                     index = index % multiplicity;
+                     fu.bind(op, fu_unit, index);
+                     easy_bound_vertices.insert(op);
+                     const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
+                     if(node_id)
+                     {
+                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                                       "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first +
+                                           "(" + STR(index) + ")");
+                     }
                   }
                }
             }
          }
       }
-   }
-   INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
    }
    STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)

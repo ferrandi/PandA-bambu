@@ -73,7 +73,7 @@ REF_FORWARD_DECL(type_casting);
 struct type_casting : public tree_node_visitor
 {
    /// default constructor
-   explicit type_casting(std::unordered_set<unsigned int>& _types) : types(_types)
+   explicit type_casting(CustomUnorderedSet<unsigned int>& _types) : types(_types)
    {
    }
 
@@ -86,10 +86,10 @@ struct type_casting : public tree_node_visitor
 
  private:
    /// set of types used in type casting
-   std::unordered_set<unsigned int>& types;
+   CustomUnorderedSet<unsigned int>& types;
 
    /// already visited
-   std::unordered_set<unsigned int> visited;
+   CustomUnorderedSet<unsigned int> visited;
 };
 
 #endif

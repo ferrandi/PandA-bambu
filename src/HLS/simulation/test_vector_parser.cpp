@@ -72,8 +72,8 @@
 #include "xml_document.hpp"
 
 /// STL include
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 #include <utility>
 
 /// tree/ include
@@ -282,9 +282,9 @@ DesignFlowStep_Status TestVectorParser::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestVectorParser::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestVectorParser::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

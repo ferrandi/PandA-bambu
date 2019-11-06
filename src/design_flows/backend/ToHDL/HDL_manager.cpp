@@ -73,7 +73,7 @@
 
 /// boost include
 #include <boost/algorithm/string.hpp>
-#include <boost/date_time/posix_time/posix_time.hpp>
+#include <boost/algorithm/string/case_conv.hpp>
 
 /// design_flows include
 #include "design_flow_manager.hpp"
@@ -86,8 +86,8 @@
 #include "hls_manager.hpp"
 
 /// STL include
-#include <map>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <utility>
 
 /// technology includes
@@ -126,11 +126,9 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
 {
    language_writerRef writer = language_writer::create_writer(language, TM, parameters);
 
-   boost::posix_time::ptime current_time = boost::posix_time::second_clock::local_time();
-
    writer->write_comment(std::string("\n"));
    writer->write_comment(std::string("Politecnico di Milano\n"));
-   writer->write_comment(std::string("Code created using ") + PACKAGE_NAME + " - " + parameters->PrintVersion() + std::string(" - Date " + boost::posix_time::to_simple_string(current_time)) + "\n");
+   writer->write_comment(std::string("Code created using ") + PACKAGE_NAME + " - " + parameters->PrintVersion() + std::string(" - Date " + TimeStamp::GetCurrentTimeStamp()) + "\n");
    if(parameters->isOption(OPT_cat_args))
       writer->write_comment(parameters->getOption<std::string>(OPT_program_name) + " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
 

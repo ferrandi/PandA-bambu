@@ -50,13 +50,15 @@
 #include <boost/pending/disjoint_sets.hpp>
 #include <boost/version.hpp>
 
+#include "custom_set.hpp"
+
 /// Predicate functor object used to select the proper set of vertices
 template <typename Graph>
 struct cc_compatibility_graph_vertex_selector
 {
  public:
    typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_descriptor;
-   typedef std::unordered_set<vertex_descriptor> SET_container;
+   typedef CustomUnorderedSet<vertex_descriptor> SET_container;
    /// constructor
    cc_compatibility_graph_vertex_selector() : all(true), support(nullptr)
    {

@@ -81,8 +81,8 @@
 #include <fstream>
 
 /// STL include
+#include "custom_set.hpp"
 #include <cstdlib>
-#include <unordered_set>
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -103,9 +103,9 @@ multi_way_if::multi_way_if(const ParameterConstRef _parameters, const applicatio
 
 multi_way_if::~multi_way_if() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> multi_way_if::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -204,11 +204,11 @@ void multi_way_if::UpdateCfg(unsigned int pred_bb, unsigned int curr_bb)
 
 DesignFlowStep_Status multi_way_if::InternalExec()
 {
-   std::unordered_map<unsigned int, vertex> inverse_vertex_map;
+   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
 
-   std::set<unsigned int> bb_to_be_removed;
+   CustomOrderedSet<unsigned int> bb_to_be_removed;
    for(auto block : sl->list_of_bloc)
    {
       inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
@@ -359,7 +359,7 @@ DesignFlowStep_Status multi_way_if::InternalExec()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed");
    }
-   std::set<unsigned int>::iterator it_tbr, it_tbr_end = bb_to_be_removed.end();
+   CustomOrderedSet<unsigned int>::iterator it_tbr, it_tbr_end = bb_to_be_removed.end();
    for(it_tbr = bb_to_be_removed.begin(); it_tbr != it_tbr_end; ++it_tbr)
    {
       sl->list_of_bloc.erase(*it_tbr);

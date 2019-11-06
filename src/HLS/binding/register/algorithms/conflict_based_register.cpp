@@ -79,9 +79,9 @@ void conflict_based_register::create_conflict_graph()
    const std::list<vertex>::const_iterator vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
-      const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
       register_lower_bound = std::max(static_cast<unsigned int>(live.size()), register_lower_bound);
-      const std::set<unsigned int>::const_iterator k_end = live.end();
+      const CustomOrderedSet<unsigned int>::const_iterator k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
          auto k_inner = k;

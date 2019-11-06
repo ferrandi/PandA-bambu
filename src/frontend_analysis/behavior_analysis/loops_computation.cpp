@@ -61,16 +61,16 @@
 #include <iosfwd>
 
 loops_computation::loops_computation(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_IDENTIFICATION, _design_flow_manager, _parameters)
+    : FunctionFrontendFlowStep(_AppM, _function_id, LOOPS_COMPUTATION, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 loops_computation::~loops_computation() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> loops_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> loops_computation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -115,8 +115,8 @@ DesignFlowStep_Status loops_computation::InternalExec()
       /// FIXME: zero loop
       if((*loop)->GetId() == 0)
          continue;
-      const std::unordered_set<vertex> blocks = (*loop)->get_blocks();
-      std::unordered_set<vertex>::const_iterator bb_it, bb_it_end = blocks.end();
+      const CustomUnorderedSet<vertex> blocks = (*loop)->get_blocks();
+      CustomUnorderedSet<vertex>::const_iterator bb_it, bb_it_end = blocks.end();
       for(bb_it = blocks.begin(); bb_it != bb_it_end; ++bb_it)
       {
          const BBNodeInfoRef bb_node_info = fbb->GetBBNodeInfo(*bb_it);

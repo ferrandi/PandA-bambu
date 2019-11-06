@@ -43,12 +43,12 @@
 #ifndef CDFG_EDGE_INFO_HPP
 #define CDFG_EDGE_INFO_HPP
 
-#include "edge_info.hpp" // for EdgeInfo
-#include "refcount.hpp"  // for CONSTREF_FORWARD...
-#include <limits>        // for numeric_limits
-#include <map>           // for map
-#include <set>           // for set
-#include <string>        // for string
+#include "custom_map.hpp" // for map
+#include "custom_set.hpp" // for set
+#include "edge_info.hpp"  // for EdgeInfo
+#include "refcount.hpp"   // for CONSTREF_FORWARD...
+#include <limits>         // for numeric_limits
+#include <string>         // for string
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 
@@ -92,7 +92,7 @@ struct CdfgEdgeInfo : public EdgeInfo
 {
  protected:
    /// edge labels; key is the selector
-   std::map<int, std::set<unsigned int>> labels;
+   std::map<int, CustomOrderedSet<unsigned int>> labels;
 
  public:
    /// Constructor
@@ -135,7 +135,7 @@ struct CdfgEdgeInfo : public EdgeInfo
     * @param type is the type
     * @return the nodeID of type type
     */
-   const std::set<unsigned int>& get_nodeID(const int type) const;
+   const CustomOrderedSet<unsigned int>& get_nodeID(const int type) const;
 
    /**
     * Return the string of the labels associated with the edge

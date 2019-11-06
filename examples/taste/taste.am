@@ -1,0 +1,12 @@
+EXTRA_DIST += \
+   %D%/bambu.sh \
+   %D%/DataView.aadl\
+   %D%/DataView.asn\
+   %D%/InterfaceView.aadl\
+   %D%/source_file.c\
+   %D%/taste_list\
+   %D%/taste.sh\
+   %D%/taste-types.asn
+
+TESTS += \
+   %D%/bambu.sh

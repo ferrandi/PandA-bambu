@@ -55,7 +55,7 @@
 #include "refcount.hpp"
 
 /// STL include
-#include <unordered_map>
+#include "custom_map.hpp"
 
 REF_FORWARD_DECL(ActorGraphBackend);
 REF_FORWARD_DECL(ActorGraphWriter);
@@ -90,7 +90,7 @@ class ActorGraphBackend
    const PartitioningManagerConstRef partitioning_manager;
 
    /// The map containing all the actor graph writers
-   const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends;
+   const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends;
 
    /// The writer used to print the content of an actor
    const CWriterRef c_writer;
@@ -118,7 +118,7 @@ class ActorGraphBackend
     * @param parameters is the set of input parameters
     * @param verbose specifies if comments have to be printed
     */
-   ActorGraphBackend(const PartitioningManagerConstRef& partitioning_manager, const std::unordered_map<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends, const CWriterRef& c_writer, const IndentedOutputStreamRef& indented_output_stream,
+   ActorGraphBackend(const PartitioningManagerConstRef& partitioning_manager, const CustomUnorderedMap<ActorGraph_Type, ActorGraphBackendRef>& actor_graph_backends, const CWriterRef& c_writer, const IndentedOutputStreamRef& indented_output_stream,
                      const ParameterConstRef& parameters, const bool verbose);
 
    /**

@@ -55,7 +55,6 @@
 #include <boost/lexical_cast.hpp> // for lexical_cast
 #include <boost/tuple/tuple.hpp>  // for tie
 #include <list>                   // for list
-#include <unordered_set>          // for unordered_set
 #include <utility>                // for pair
 
 operations_graph_constructor::operations_graph_constructor(OpGraphsCollectionRef _og) : og(std::move(_og)), op_graph(new OpGraph(og, -1))
@@ -100,6 +99,11 @@ void operations_graph_constructor::RemoveEdge(const vertex source, const vertex 
 void operations_graph_constructor::RemoveSelector(const EdgeDescriptor edge, const int selector)
 {
    og->RemoveSelector(edge, selector);
+}
+
+void operations_graph_constructor::CompressEdges()
+{
+   og->CompressEdges();
 }
 
 void operations_graph_constructor::add_edge_info(const vertex src, const vertex tgt, const int selector, unsigned int NodeID)

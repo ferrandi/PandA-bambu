@@ -64,7 +64,7 @@
 #include "tree_manager.hpp"        // for tree_managerConstRef
 
 /// STL include
-#include <set>
+#include "custom_set.hpp"
 
 BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, BAMBU_FRONTEND_FLOW, _design_flow_manager, _parameters)
 {
@@ -73,9 +73,9 @@ BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const D
 
 BambuFrontendFlow::~BambuFrontendFlow() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -233,7 +233,7 @@ void BambuFrontendFlow::ComputeRelationships(DesignFlowStepSet& relationship, co
 #if HAVE_EXPERIMENTAL
       const auto TM = AppM->get_tree_manager();
       const FrontendFlowStepFactory* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-      std::set<FrontendFlowStepType> step_types;
+      CustomOrderedSet<FrontendFlowStepType> step_types;
       if(parameters->isOption(OPT_chaining) and parameters->getOption<bool>(OPT_chaining))
          step_types.insert(PARALLEL_REGIONS_GRAPH_COMPUTATION);
       step_types.insert(EXTENDED_PDG_COMPUTATION);

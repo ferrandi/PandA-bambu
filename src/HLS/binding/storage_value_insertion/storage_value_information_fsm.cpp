@@ -47,18 +47,18 @@ StorageValueInformationFsm::StorageValueInformationFsm(const HLS_managerConstRef
 
 StorageValueInformationFsm::~StorageValueInformation() = default;
 
-bool StorageValueInformationFsm::is_a_storage_value(vertex, unsigned int var_index)
+bool StorageValueInformationFsm::is_a_storage_value(vertex, unsigned int var_index) override
 {
    return storage_index_map.find(var_index) != storage_index_map.end();
 }
 
-unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigned int var_index)
+unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigned int var_index) override
 {
    THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing");
    return storage_index_map.find(var_index)->second;
 }
 
-void StorageValueInformationFsm::set_storage_value_index(vertex, unsigned int variable, unsigned int sv)
+void StorageValueInformationFsm::set_storage_value_index(vertex, unsigned int variable, unsigned int sv) override
 {
    storage_index_map[variable] = sv;
 }

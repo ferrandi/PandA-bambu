@@ -54,8 +54,8 @@
 #include "graph.hpp"
 
 /// STL include
-#include <unordered_map>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// Utility include
 #include "dbgPrintHelper.hpp"
@@ -88,9 +88,9 @@ class pragma_manager
 
    const tree_managerRef TM;
 
-   std::set<std::string> BlackBoxFunctions;
+   CustomOrderedSet<std::string> BlackBoxFunctions;
 
-   std::map<std::string, std::unordered_set<std::string>> FunctionCallPragmas;
+   std::map<std::string, CustomUnorderedSet<std::string>> FunctionCallPragmas;
 
    /// Function defintion pragmas
    std::map<std::string, std::list<std::string>> function_definition_pragmas;
@@ -155,16 +155,16 @@ class pragma_manager
     */
    const std::list<std::string> GetFunctionDefinitionPragmas(const std::string& function_name) const;
 
-   std::unordered_set<std::string> getFunctionCallPragmas(const std::string& Name) const;
+   CustomUnorderedSet<std::string> getFunctionCallPragmas(const std::string& Name) const;
 
    /**
     * Add a set of definition pragmas to a function
     * @param function_name is the name of the function
     * @param is the set of pragmas to be added
     */
-   void AddFunctionDefinitionPragmas(const std::string& name, const std::unordered_set<std::string>& pragmas);
+   void AddFunctionDefinitionPragmas(const std::string& name, const CustomUnorderedSet<std::string>& pragmas);
 
-   void addFunctionCallPragmas(const std::string& Name, const std::unordered_set<std::string>& Pragmas);
+   void addFunctionCallPragmas(const std::string& Name, const CustomUnorderedSet<std::string>& Pragmas);
 
    unsigned int addBlackBoxPragma(const std::string& function_name);
 
@@ -220,7 +220,7 @@ class pragma_manager
     * @param clauses_list is the string containing the clauses
     * @return the extracted clauses
     */
-   std::unordered_map<std::string, std::string> ExtractClauses(const std::string& clauses_list) const;
+   CustomUnorderedMapUnstable<std::string, std::string> ExtractClauses(const std::string& clauses_list) const;
 };
 
 /// Refcount definition for the class

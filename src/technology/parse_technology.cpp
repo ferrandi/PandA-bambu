@@ -347,7 +347,7 @@ void write_technology_File(unsigned int type,
                                dv_type
 #endif
                            ,
-                           const std::set<std::string>&
+                           const CustomOrderedSet<std::string>&
 #if HAVE_EXPERIMENTAL || HAVE_FROM_LIBERTY
                                libraries
 #endif
@@ -423,12 +423,12 @@ void write_xml_technology_File(const std::string& f, library_manager* LM, Target
 }
 
 #if HAVE_FROM_LIBERTY
-void write_lib_technology_File(const std::string& f, technology_managerRef const& TM, const std::set<std::string>& libraries)
+void write_lib_technology_File(const std::string& f, technology_managerRef const& TM, const CustomOrderedSet<std::string>& libraries)
 {
    try
    {
       size_t count_cells = 0;
-      for(std::set<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); ++n)
+      for(CustomOrderedSet<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); ++n)
       {
          if(WORK_LIBRARY == *n or DESIGN == *n or PROXY_LIBRARY == *n)
             continue;
@@ -473,12 +473,12 @@ void write_lib_technology_File(const std::string& f, library_manager* LM, Target
 #endif
 
 #if HAVE_EXPERIMENTAL
-void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type, const std::set<std::string>& libraries)
+void write_lef_technology_File(const std::string& f, technology_managerRef const& TM, TargetDevice_Type dv_type, const CustomOrderedSet<std::string>& libraries)
 {
    try
    {
       size_t count_cells = 0;
-      for(std::set<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); ++n)
+      for(CustomOrderedSet<std::string>::const_iterator n = libraries.begin(); n != libraries.end(); ++n)
       {
          if(WORK_LIBRARY == *n)
             continue;

@@ -1,0 +1,25 @@
+EXTRA_DIST +=\
+   %D%/btn_ctrl.c\
+   %D%/btn_ctrl.h\
+   %D%/btn_ctrl.v\
+   %D%/constraints_STD.xml\
+   %D%/COPYING\
+   %D%/get_ticks.c\
+   %D%/get_ticks.h\
+   %D%/get_ticks.v\
+   %D%/IPs.xml\
+   %D%/main.c\
+   %D%/Nexys4_Master.sdc\
+   %D%/plot.c\
+   %D%/plot.h\
+   %D%/plot.v\
+   %D%/program_NEXYS4.sh\
+   %D%/program_nexys4.tcl\
+   %D%/README.txt\
+   %D%/sevensegments_ctrl.c\
+   %D%/sevensegments_ctrl.h\
+   %D%/sevensegments_ctrl.v\
+   %D%/synthesize_NEXYS4.sh
+TESTS+=%D%/synthesize_NEXYS4.sh
+
+

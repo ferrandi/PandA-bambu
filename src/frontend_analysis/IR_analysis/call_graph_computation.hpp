@@ -51,7 +51,7 @@
 #include "refcount.hpp"
 #include "utility.hpp"
 
-#include <map>
+#include "custom_map.hpp"
 
 /**
  * @name forward declarations
@@ -78,7 +78,7 @@ class call_graph_computation : public ApplicationFrontendFlowStep
    unsigned int current;
 
    /// set of already examined addr_expr used to avoid circular recursion
-   std::set<tree_nodeRef> already_visited;
+   CustomOrderedSet<tree_nodeRef> already_visited;
 
    /**
     * Recursive analysis of the tree nodes looking for call expressions.
@@ -93,7 +93,7 @@ class call_graph_computation : public ApplicationFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

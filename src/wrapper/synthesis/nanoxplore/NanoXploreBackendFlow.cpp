@@ -219,7 +219,7 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    if(design_values[NANOXPLORE_SLACK] != 0.0)
    {
       auto clk_val = boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]);
-      auto del_val =  design_values[NANOXPLORE_SLACK];
+      auto del_val = design_values[NANOXPLORE_SLACK];
       double exec_time = clk_val - del_val;
       if(clk_val < del_val)
          THROW_ERROR("the timing analysis is not consistent with the specified clock period");

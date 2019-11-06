@@ -55,7 +55,7 @@
 #include <string>
 
 /// STL include
-#include <unordered_set>
+#include "custom_set.hpp"
 
 /// technology include
 #include "technology_manager.hpp"
@@ -70,9 +70,9 @@ LoadDefaultTechnology::LoadDefaultTechnology(const technology_managerRef _TM, co
 
 LoadDefaultTechnology::~LoadDefaultTechnology() = default;
 
-const std::unordered_set<TechnologyFlowStep_Type> LoadDefaultTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
+const CustomUnorderedSet<TechnologyFlowStep_Type> LoadDefaultTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType) const
 {
-   return std::unordered_set<TechnologyFlowStep_Type>();
+   return CustomUnorderedSet<TechnologyFlowStep_Type>();
 }
 
 DesignFlowStep_Status LoadDefaultTechnology::Exec()

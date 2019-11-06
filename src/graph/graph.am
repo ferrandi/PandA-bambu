@@ -1,0 +1,14 @@
+noinst_HEADERS += graph/edge_info.hpp graph/graph.hpp graph/graph_info.hpp graph/node_info.hpp graph/typed_node_info.hpp graph/Vertex.hpp
+noinst_LTLIBRARIES += lib_graph.la
+lib_graph_la_CPPFLAGS = \
+   -I$(top_srcdir)/src \
+   -I$(top_srcdir)/src/behavior \
+   -I$(top_srcdir)/src/graph \
+   -I$(top_srcdir)/src/utility \
+   -I$(top_srcdir)/src/tree \
+   $(AM_CPPFLAGS)
+lib_graph_la_SOURCES = \
+   graph/graph.cpp \
+   graph/node_info.cpp \
+   graph/typed_node_info.cpp
+

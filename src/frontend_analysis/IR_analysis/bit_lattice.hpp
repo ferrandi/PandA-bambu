@@ -48,9 +48,9 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <deque>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "refcount.hpp"
 
@@ -75,18 +75,18 @@ class BitLatticeManipulator
     * @brief Map of the current bit-values of each variable.
     * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or backward_transfer.
     */
-   std::unordered_map<unsigned int, std::deque<bit_lattice>> current;
+   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> current;
 
    /**
     * @brief Map of the best bit-values of each variable.
     * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or backward_transfer.
     */
-   std::unordered_map<unsigned int, std::deque<bit_lattice>> best;
+   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> best;
 
    /**
     * @brief Set storing the signed ssa
     */
-   std::unordered_set<unsigned int> signed_var;
+   CustomUnorderedSet<unsigned int> signed_var;
 
    /// The debug level of methods of this class - it cannot be named debug_level because of ambiguity of FrontendFlowStep::debug_level derived classes
    const int bl_debug_level;

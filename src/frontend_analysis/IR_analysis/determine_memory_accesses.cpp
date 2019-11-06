@@ -76,9 +76,9 @@ determine_memory_accesses::determine_memory_accesses(const ParameterConstRef _pa
 
 determine_memory_accesses::~determine_memory_accesses() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> determine_memory_accesses::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> determine_memory_accesses::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -1085,9 +1085,11 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(tn);
-         analyze_node(GET_INDEX_NODE(tl->valu), left_p, dynamic_address, no_dynamic_address);
-         if(tl->chan)
-            analyze_node(GET_INDEX_NODE(tl->chan), left_p, dynamic_address, no_dynamic_address);
+         while(tl)
+         {
+            analyze_node(GET_INDEX_NODE(tl->valu), left_p, dynamic_address, no_dynamic_address);
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         }
          break;
       }
       case var_decl_K:

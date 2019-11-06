@@ -75,16 +75,16 @@
 
 /// STL includes
 #include <algorithm>
-#include <map>
-#include <set>
 #include <tuple>
-#include <unordered_map>
 
-const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&, const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+
+const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&, const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>
 AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef allocation_information)
 {
-   static CustomMap<unsigned int, std::unordered_map<unsigned int, double>> mux_timing_db;
-   static CustomMap<unsigned int, std::unordered_map<unsigned int, double>> mux_area_db;
+   static CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_timing_db;
+   static CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_area_db;
    if(mux_timing_db.empty() or mux_area_db.empty())
    {
       // const unsigned int debug_level = 0;
@@ -170,9 +170,9 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
                   {
                      for(; prev_non_null + 1 < n_ins; ++prev_non_null)
                      {
-                        mux_area_db.find(module_prec)->second[prev_non_null + 1] =
+                        mux_area_db[module_prec][prev_non_null + 1] =
                             mux_area_db.find(module_prec)->second.find(prev_non_null)->second + (mux_area_db.find(module_prec)->second.find(n_ins)->second - mux_area_db.find(module_prec)->second.find(prev_non_null)->second) / (n_ins - prev_non_null);
-                        mux_timing_db.find(module_prec)->second[prev_non_null + 1] =
+                        mux_timing_db[module_prec][prev_non_null + 1] =
                             mux_timing_db.find(module_prec)->second.find(prev_non_null)->second + (mux_timing_db.find(module_prec)->second.find(n_ins)->second - mux_timing_db.find(module_prec)->second.find(prev_non_null)->second) / (n_ins - prev_non_null);
                      }
                   }
@@ -186,7 +186,7 @@ AllocationInformation::InitializeMuxDB(const AllocationInformationConstRef alloc
       // THROW_WARNING(STR(mux_timing_db.size()));
       // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized mux databases");
    }
-   return std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&, const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&>(mux_timing_db, mux_area_db);
+   return std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&, const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>(mux_timing_db, mux_area_db);
 }
 
 const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned int>&> AllocationInformation::InitializeDSPDB(const AllocationInformationConstRef allocation_information)
@@ -254,12 +254,12 @@ unsigned int AllocationInformation::get_number_fu(unsigned int fu_name) const
    return tech_constraints[fu_name];
 }
 
-const std::set<unsigned int>& AllocationInformation::can_implement_set(const vertex v) const
+const CustomOrderedSet<unsigned int>& AllocationInformation::can_implement_set(const vertex v) const
 {
    return can_implement_set(op_graph->CGetOpNodeInfo(v)->GetNodeId());
 }
 
-const std::set<unsigned int>& AllocationInformation::can_implement_set(const unsigned int v) const
+const CustomOrderedSet<unsigned int>& AllocationInformation::can_implement_set(const unsigned int v) const
 {
    const auto entry_string_cst = std::string("Entry");
    const auto exit_string_cst = std::string("Exit");
@@ -372,10 +372,10 @@ double AllocationInformation::get_attribute_of_fu_per_op(const vertex v, const O
          return "Exit";
       return GetPointer<const gimple_node>(TreeM->CGetTreeNode(node_id))->operation;
    }();
-   const std::set<unsigned int>& fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, node_operation))->second;
+   const CustomOrderedSet<unsigned int>& fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, node_operation))->second;
 
    std::string op_name = tree_helper::normalized_ID(g->CGetOpNodeInfo(v)->GetOperation());
-   const std::set<unsigned int>::const_iterator f_end = fu_set.end();
+   const CustomOrderedSet<unsigned int>::const_iterator f_end = fu_set.end();
    auto f_i = fu_set.begin();
    flag = false;
    while(CF && f_i != f_end && ((*CF)(*f_i) <= 0 || (binding.find(node_id) != binding.end() && binding.find(node_id)->second.second != *f_i)))
@@ -484,10 +484,10 @@ unsigned int AllocationInformation::min_number_of_resources(const vertex v) cons
 {
    const auto operation = GET_NAME(op_graph, v);
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   const std::set<unsigned int>& fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
+   const CustomOrderedSet<unsigned int>& fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
    unsigned int min_num_res = INFINITE_UINT;
-   const std::set<unsigned int>::const_iterator f_end = fu_set.end();
+   const CustomOrderedSet<unsigned int>::const_iterator f_end = fu_set.end();
 
    for(auto f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
@@ -1051,10 +1051,10 @@ unsigned int AllocationInformation::max_number_of_resources(const vertex v) cons
 {
    const auto operation = GET_NAME(op_graph, v);
    const auto node_id = op_graph->CGetOpNodeInfo(v)->GetNodeId();
-   const std::set<unsigned int>& fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
+   const CustomOrderedSet<unsigned int>& fu_set = node_id_to_fus.find(std::pair<unsigned int, std::string>(node_id, operation))->second;
 
    unsigned int tot_num_res = 0;
-   const std::set<unsigned int>::const_iterator f_end = fu_set.end();
+   const CustomOrderedSet<unsigned int>::const_iterator f_end = fu_set.end();
 
    for(auto f_i = fu_set.begin(); f_i != f_end; ++f_i)
    {
@@ -2102,13 +2102,13 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi: " + target->ToString());
             const auto gp = GetPointer<const gimple_phi>(target);
-            std::set<unsigned int> phi_inputs;
+            CustomOrderedSet<unsigned int> phi_inputs;
             for(const auto& def_edge : gp->CGetDefEdgesList())
             {
                if(def_edge.first->index && !behavioral_helper->is_a_constant(def_edge.first->index))
                   phi_inputs.insert(def_edge.first->index);
             }
-            size_t curr_in_degree = phi_inputs.size();
+            size_t curr_in_degree = static_cast<size_t>(phi_inputs.size());
             if(curr_in_degree > 4)
                curr_in_degree = 4;
             ret_value = std::max(ret_value, curr_in_degree);
@@ -2154,7 +2154,7 @@ unsigned int AllocationInformation::GetFuType(const unsigned int operation) cons
    unsigned int fu_type = 0;
    if(not is_vertex_bounded_with(operation, fu_type))
    {
-      const std::set<unsigned int>& fu_set = can_implement_set(operation);
+      const CustomOrderedSet<unsigned int>& fu_set = can_implement_set(operation);
       if(fu_set.size() > 1)
       {
          for(const auto fu : fu_set)

@@ -3,10 +3,11 @@ Seventh public release of PandA framework.
 
 New features introduced:
 - Added support to BRAVE FPGAs (https://www.esa.int/Our_Activities/Space_Engineering_Technology/Shaping_the_Future/High_Density_European_Rad-Hard_SRAM-Based_FPGA-_First_Validated_Prototypes_BRAVE). Both NG-Medium and NG-Large are supported.
+- added support to TASTE model-based design flow (https://taste.tools/). A new option has been added to activate the customized HLS flow: --experimental-setup=BAMBU-TASTE.
 - Added support for Hardware Discrepancy Analysis.  Reference paper: Pietro Fezzardi, Marco Lattuada, Fabrizio Ferrandi, Using Efficient Path Profiling to Optimize Memory Consumption of On-Chip Debugging for High-Level Synthesis. ACM Trans. Embedded Comput. Syst. 16(5): 149:1-149:19 (2017).
 - Added support for OpenMP for. Reference papers:  M. Minutoli, V. G. Castellana, A. Tumeo, M. Lattuada, and F. Ferrandi, “Efficient Synthesis of Graph Methods: A Dynamically Scheduled Architecture,” in Proceedings of the 35th International Conference on Computer-Aided Design, New York, NY, USA, 2016, p. 128:1–128:8.  V. G. Castellana, M. Minutoli, A. Morari, A. Tumeo, M. Lattuada, and F. Ferrandi, “High level synthesis of RDF queries for graph analytics,” in Proceedings of the IEEE/ACM International Conference on Computer-Aided Design, 2015, pp. 323-330. 
 - Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
-- Added support to CLANG/LLVM compiler version 4, 5, 6 and 7. On multiple files LTO is exploited.
+- Added support to CLANG/LLVM compiler version 4, 5, 6 and 7. On multiple files, LTO is exploited.
 - Added to CLANG/LLVM based analysis an interprocedural value range analysis based on the following paper: Fernando Magno Quintao Pereira, Raphael Ernani Rodrigues, and Victor Hugo Sperle Campos. "A fast and low-overhead technique to secure programs against integer overflows", In Proceedings of the 2013 IEEE/ACM International Symposium on Code Generation and Optimization (CGO) (CGO '13). Washington, DC, USA, 1-11.
     The implementation started from code available at this link:https://code.google.com/archive/p/range-analysis/.
     The original code went through a deep revision and it has been changed to be compatible to a recent version of LLVM. Some extensions have been also added:
@@ -48,9 +49,11 @@ New features introduced:
 - Extented the VHDL support to other bambu library components.
 - If it is supported, the compiler used to compile the PandA framework uses the c++17 standard (-std=c++17), otherwise, it uses c++11 standard.
 - Integrated Mockturtle library from EPFL (https://github.com/lsils/mockturtle) to simplify LUT-based expressions.
-- Added examples parallel_queries from ICCAD15 and ICCAD16 papers.
+- Integrated Abseil C++ libraries (https://abseil.io/)
+- Added examples of parallel_queries from ICCAD15 and ICCAD16 papers.
 - Added PNNL19 tutorial material.
 - Added PACT19 tutorial material.
+- Improved makefile parallelization.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

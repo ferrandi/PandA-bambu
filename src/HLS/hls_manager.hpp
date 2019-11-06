@@ -193,7 +193,7 @@ class HLS_manager : public application_manager
    /**
     * Returns all the implementations resulting from the synthesis
     */
-   std::set<hlsRef> GetAllImplementations() const;
+   CustomOrderedSet<hlsRef> GetAllImplementations() const;
 
    /**
     * Return if single write memory is exploited

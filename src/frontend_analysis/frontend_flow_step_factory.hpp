@@ -46,12 +46,12 @@
 
 #include "config_HAVE_ARCH_BUILT.hpp" // for HAVE_ARCH_BUILT
 
+#include "custom_set.hpp"               // for unordered_set
 #include "design_flow_step.hpp"         // for DesignFlowStep (...
 #include "design_flow_step_factory.hpp" // for DesignFlowStepFa...
 #include "frontend_flow_step.hpp"       // for FrontendFlowStep...
 #include "refcount.hpp"                 // for REF_FORWARD_DECL
 #include <string>                       // for string
-#include <unordered_set>                // for unordered_set
 
 /// Forward declaration
 REF_FORWARD_DECL(application_manager);
@@ -99,7 +99,7 @@ class FrontendFlowStepFactory : public DesignFlowStepFactory
     * Create the frontend design flow steps
     * @param frontend_flow_step_types is the set of frontend flow transformation to be considered
     */
-   const DesignFlowStepSet GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const;
+   const DesignFlowStepSet GenerateFrontendSteps(const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const;
 
    /**
     * Create the frontend design flow step

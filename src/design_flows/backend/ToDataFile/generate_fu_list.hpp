@@ -53,10 +53,10 @@ class GenerateFuList : public ToDataFileStep, public FunctionalUnitStep
 {
  private:
    /// The set of list of cells
-   std::set<std::string> cells;
+   CustomOrderedSet<std::string> cells;
 
    /// The list of components to be added to the list; if the list is empty, all the components will be added
-   std::set<std::string> components_to_be_characterized;
+   CustomOrderedSet<std::string> components_to_be_characterized;
 
    /// The current functional unit
    std::string component;

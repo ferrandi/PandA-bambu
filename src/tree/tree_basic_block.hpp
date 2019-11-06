@@ -51,8 +51,8 @@
 
 /// STL include
 #include <list>
-//#include <map>
-#include <set>
+//#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <vector>
 
 /// Utility include
@@ -117,10 +117,10 @@ struct bloc
    unsigned int loop_id;
 
    /// Live_In of the basic block
-   std::set<unsigned int> live_in;
+   CustomOrderedSet<unsigned int> live_in;
 
    /// Live_Out of the basic block
-   std::set<unsigned int> live_out;
+   CustomOrderedSet<unsigned int> live_out;
 
    /// store the relation between the phi defs inserted in the live_out set and phi uses
    // std::map<unsigned int, unsigned int> live_out_phi_defs;

@@ -49,7 +49,7 @@
 #include <string>
 
 /// STL includes
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <vector>
 
 /// technology include
@@ -351,9 +351,9 @@ DesignFlowStep_Status FixCharacterization::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const std::unordered_set<TechnologyFlowStep_Type> FixCharacterization::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<TechnologyFlowStep_Type> FixCharacterization::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<TechnologyFlowStep_Type> relationships;
+   CustomUnorderedSet<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):

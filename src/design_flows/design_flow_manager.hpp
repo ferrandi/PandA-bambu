@@ -43,14 +43,13 @@
 
 #include "config_HAVE_STDCXX_11.hpp" // for HAVE_STDCXX_11
 
-#include "custom_map.hpp" // for CustomMap
-#include "graph.hpp"      // for vertex, Paramete...
-#include "refcount.hpp"   // for REF_FORWARD_DECL
-#include <cstddef>        // for size_t
-#include <functional>     // for binary_function
-#include <set>            // for set
-#include <string>         // for string
-#include <unordered_map>  // for unordered_map
+#include "custom_map.hpp"
+#include "graph.hpp"    // for vertex, Paramete...
+#include "refcount.hpp" // for REF_FORWARD_DECL
+#include <cstddef>      // for size_t
+#include <functional>   // for binary_function
+#include <set>          // for set
+#include <string>       // for string
 
 class DesignFlowStepSet;
 CONSTREF_FORWARD_DECL(DesignFlowGraph);
@@ -111,7 +110,7 @@ class DesignFlowManager
    std::set<vertex, DesignFlowStepNecessitySorter> possibly_ready;
 
    /// The registered factories
-   std::unordered_map<std::string, DesignFlowStepFactoryConstRef> design_flow_step_factories;
+   CustomUnorderedMap<std::string, DesignFlowStepFactoryConstRef> design_flow_step_factories;
 
 #ifndef NDEBUG
    /// This structure stores "history of design flow graph manager - vertices"
@@ -125,7 +124,7 @@ class DesignFlowManager
    /// First key is the iteration
    /// Second key is the edge
    /// Value is the selector
-   CustomMap<size_t, std::unordered_map<EdgeDescriptor, int>> edge_history;
+   CustomMap<size_t, CustomUnorderedMapStable<EdgeDescriptor, int>> edge_history;
 
    /// The name of each vertex (we have to store since it is possible that it cannot be recomputed at the end - for example because the corresponding task graph has been deallocated)
    CustomMap<vertex, std::string> step_names;

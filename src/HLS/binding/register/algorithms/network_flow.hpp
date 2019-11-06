@@ -46,9 +46,9 @@
 
 #include "refcount.hpp"
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <iosfwd>
-#include <map>
-#include <set>
 #include <vector>
 
 #include "graph.hpp"
@@ -270,7 +270,7 @@ class network_flow
 
  private:
    typedef std::pair<network_flow_graph_type::vertex_descriptor, network_flow_graph_type::vertex_descriptor> vertex_pair;
-   std::set<vertex_pair> inserted_edges; // used to remember the edges added to represent the residual network
+   CustomOrderedSet<vertex_pair> inserted_edges; // used to remember the edges added to represent the residual network
 
    int debug_level; // the debug level
 

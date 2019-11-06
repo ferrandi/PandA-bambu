@@ -73,9 +73,9 @@ SwitchFix::SwitchFix(const application_managerRef _AppM, unsigned int _function_
 
 SwitchFix::~SwitchFix() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> SwitchFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowStep::FunctionRelationship>> SwitchFix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -121,7 +121,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->BB" + boost::lexical_cast<std::string>(basic_block.first) + " ends with a switch");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if some successor has more than two gimple_label");
          /// The set of basic blocks which contain more than a label; this fix has to be performed before multiple_pred_switch check
-         std::unordered_set<unsigned int> multiple_labels_blocks;
+         CustomUnorderedSet<unsigned int> multiple_labels_blocks;
          for(const auto succ : basic_block.second->list_of_succ)
          {
             const auto succ_list_of_stmt = list_of_block.find(succ)->second->CGetStmtList();
@@ -135,13 +135,13 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-         std::unordered_set<unsigned int>::iterator multiple_labels_block, multiple_labels_block_end = multiple_labels_blocks.end();
+         CustomUnorderedSet<unsigned int>::iterator multiple_labels_block, multiple_labels_block_end = multiple_labels_blocks.end();
          for(multiple_labels_block = multiple_labels_blocks.begin(); multiple_labels_block != multiple_labels_block_end; ++multiple_labels_block)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Splitting BB" + boost::lexical_cast<std::string>(*multiple_labels_block));
             /// Compute the case labels of the switch
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computing case labels");
-            std::unordered_set<tree_nodeRef> cases;
+            CustomUnorderedSet<tree_nodeRef> cases;
             const tree_vec* tv = GetPointer<tree_vec>(GET_NODE(gs->op1));
             std::vector<tree_nodeRef>::const_iterator it, it_end = tv->list_of_op.end();
             for(it = tv->list_of_op.begin(); it != it_end; ++it)
@@ -258,13 +258,13 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          }
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
             WriteBBGraphDot("BB_After_" + GetName() + "_BB" + STR(basic_block.first) + ".dot");
-         std::unordered_set<unsigned int> to_be_fixed;
+         CustomUnorderedSet<unsigned int> to_be_fixed;
          for(const auto succ : basic_block.second->list_of_succ)
          {
             if(list_of_block.find(succ)->second->list_of_pred.size() > 1)
                to_be_fixed.insert(succ);
          }
-         std::unordered_set<unsigned int>::const_iterator t, t_end = to_be_fixed.end();
+         CustomUnorderedSet<unsigned int>::const_iterator t, t_end = to_be_fixed.end();
          for(t = to_be_fixed.begin(); t != t_end; ++t)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Fixing BB" + STR(*t));
@@ -379,7 +379,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             auto new_gwi = GetPointer<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
 
             /// Map between label decl index and corresponding case value
-            std::unordered_map<unsigned int, TreeNodeConstSet> case_labels;
+            CustomUnorderedMap<unsigned int, TreeNodeConstSet> case_labels;
             const auto gotos = GetPointer<const tree_vec>(GET_NODE(gs->op1));
             for(const auto& goto_ : gotos->list_of_op)
             {

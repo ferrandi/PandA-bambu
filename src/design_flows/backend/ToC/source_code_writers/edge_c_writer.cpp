@@ -70,7 +70,7 @@
 #include "tree_reindex.hpp"
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 
 /// utility include
 #include "indented_output_stream.hpp"
@@ -132,7 +132,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    const BBGraphConstRef bb_fcfgGraph = local_rec_function_behavior->CGetBBGraph(FunctionBehavior::FBB);
    const BBGraphInfoConstRef bb_graph_info = bb_fcfgGraph->CGetBBGraphInfo();
    const OpGraphConstRef cfgGraph = local_rec_function_behavior->CGetOpGraph(FunctionBehavior::FCFG);
-   const std::unordered_map<unsigned int, vertex>& bb_index_map = bb_graph_info->bb_index_map;
+   const CustomUnorderedMap<unsigned int, vertex>& bb_index_map = bb_graph_info->bb_index_map;
    const BehavioralHelperConstRef behavioral_helper = local_rec_function_behavior->CGetBehavioralHelper();
    unsigned int funId = behavioral_helper->get_function_index();
 
@@ -168,7 +168,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    const BBNodeInfoConstRef bb_node_info_pd = bb_fcfgGraph->CGetBBNodeInfo(bb_PD);
    const unsigned int bb_number_PD = bb_node_info_pd->block->number;
    std::string frontier_string;
-   std::set<vertex>::iterator bb_frontier_begin, bb_frontier_end = bb_frontier.end();
+   CustomOrderedSet<vertex>::iterator bb_frontier_begin, bb_frontier_end = bb_frontier.end();
    for(bb_frontier_begin = bb_frontier.begin(); bb_frontier_begin != bb_frontier_end; ++bb_frontier_begin)
    {
       frontier_string += "BB" + boost::lexical_cast<std::string>(bb_fcfgGraph->CGetBBNodeInfo(*bb_frontier_begin)->block->number) + " ";
@@ -955,8 +955,8 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                   if(not(FB_CFG_SELECTOR & bb_fcfgGraph->GetSelector(*ei)))
                      in_edge_counter++;
                }
-               std::set<unsigned int>::const_iterator eIdBeg, eIdEnd;
-               std::set<unsigned int> Set = bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
+               CustomOrderedSet<unsigned int>::const_iterator eIdBeg, eIdEnd;
+               CustomOrderedSet<unsigned int> Set = bb_fcfgGraph->CGetBBEdgeInfo(*oE)->get_labels(CFG_SELECTOR);
                for(eIdBeg = Set.begin(), eIdEnd = Set.end(); eIdBeg != eIdEnd; ++eIdBeg)
                {
                   if(*eIdBeg == default_COND)
@@ -1188,7 +1188,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--BB" + boost::lexical_cast<std::string>(bb_number) + " written");
 }
 
-void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, const var_pp_functorConstRef variableFunctor, vertex bb_start, std::set<vertex> bb_end)
+void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, const var_pp_functorConstRef variableFunctor, vertex bb_start, CustomOrderedSet<vertex> bb_end)
 {
    const FunctionBehaviorConstRef function_behavior = AppM->CGetFunctionBehavior(function_index);
    const BehavioralHelperConstRef behavioral_helper = function_behavior->CGetBehavioralHelper();
@@ -1217,7 +1217,7 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
    basic_blocks_labels.clear();
    VertexIterator vi, vi_end;
    vertex bbentry;
-   std::set<vertex> bb_exit;
+   CustomOrderedSet<vertex> bb_exit;
    if(!bb_start)
       bbentry = bb_fcfgGraph->CGetBBGraphInfo()->entry_vertex;
    else
@@ -1277,7 +1277,7 @@ void EdgeCWriter::writeRoutineInstructions(const unsigned int function_index, co
          }
       }
    }
-   std::set<vertex> not_yet_considered;
+   CustomOrderedSet<vertex> not_yet_considered;
    std::set_difference(goto_list.begin(), goto_list.end(),                           /*first set*/
                        bb_analyzed.begin(), bb_analyzed.end(),                       /*second set*/
                        std::inserter(not_yet_considered, not_yet_considered.begin()) /*result*/

@@ -48,7 +48,7 @@ class StorageValueInformationFsm : public StorageValueInformation
 protected:
 
   /// put into relation variables/values with storage values
-  std::unordered_map<unsigned int, unsigned int> storage_index_map;
+  CustomUnorderedMap<unsigned int, unsigned int> storage_index_map;
 
 public:
   /**

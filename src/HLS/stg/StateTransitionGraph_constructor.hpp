@@ -89,7 +89,7 @@ class StateTransitionGraph_constructor
     * @param end_op is a list of operation vertices that will end in the created state
     * @return the created vertex
     */
-   vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op, const std::set<unsigned int>& BB_ids);
+   vertex create_state(const std::list<vertex>& exec_op, const std::list<vertex>& start_op, const std::list<vertex>& end_op, const CustomOrderedSet<unsigned int>& BB_ids);
 
    /**
     *  create the STG entry vertex
@@ -121,7 +121,7 @@ class StateTransitionGraph_constructor
     */
    void set_condition(const EdgeDescriptor& e, transition_type t, vertex ops);
 
-   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const std::set<vertex>& ops, vertex ref_state);
+   void set_unbounded_condition(const EdgeDescriptor& e, transition_type t, const CustomOrderedSet<vertex>& ops, vertex ref_state);
 
    /**
     * @brief function setting the condition on edge derived from switch statements
@@ -130,7 +130,7 @@ class StateTransitionGraph_constructor
     * @param labels are the the switch guards/labels associated with the edge
     * @param has_default is true when with the edge is associated the default guard/label
     */
-   void set_switch_condition(const EdgeDescriptor& e, vertex op, const std::set<unsigned>& labels, bool has_default);
+   void set_switch_condition(const EdgeDescriptor& e, vertex op, const CustomOrderedSet<unsigned>& labels, bool has_default);
 
    /**
     * @brief copy condition from one edge to another

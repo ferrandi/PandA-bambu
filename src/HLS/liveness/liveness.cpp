@@ -84,12 +84,12 @@ void liveness::set_live_in(const vertex& v, unsigned int var)
    live_in[v].insert(var);
 }
 
-void liveness::set_live_in(const vertex& v, const std::set<unsigned int>& live_set)
+void liveness::set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>& live_set)
 {
    live_in[v].insert(live_set.begin(), live_set.end());
 }
 
-void liveness::set_live_in(const vertex& v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last)
+void liveness::set_live_in(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last)
 {
    live_in[v].insert(first, last);
 }
@@ -99,7 +99,7 @@ void liveness::erase_el_live_in(const vertex& v, unsigned int var)
    live_in[v].erase(var);
 }
 
-const std::set<unsigned int>& liveness::get_live_in(const vertex& v) const
+const CustomOrderedSet<unsigned int>& liveness::get_live_in(const vertex& v) const
 {
    if(live_in.find(v) != live_in.end())
       return live_in.find(v)->second;
@@ -112,12 +112,12 @@ void liveness::set_live_out(const vertex& v, unsigned int var)
    live_out[v].insert(var);
 }
 
-void liveness::set_live_out(const vertex& v, const std::set<unsigned int>& vars)
+void liveness::set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>& vars)
 {
    live_out[v].insert(vars.begin(), vars.end());
 }
 
-void liveness::set_live_out(const vertex& v, const std::set<unsigned int>::const_iterator first, const std::set<unsigned int>::const_iterator last)
+void liveness::set_live_out(const vertex& v, const CustomOrderedSet<unsigned int>::const_iterator first, const CustomOrderedSet<unsigned int>::const_iterator last)
 {
    live_out[v].insert(first, last);
 }
@@ -127,7 +127,7 @@ void liveness::erase_el_live_out(const vertex& v, unsigned int var)
    live_out[v].erase(var);
 }
 
-const std::set<unsigned int>& liveness::get_live_out(const vertex& v) const
+const CustomOrderedSet<unsigned int>& liveness::get_live_out(const vertex& v) const
 {
    if(live_out.find(v) != live_out.end())
       return live_out.find(v)->second;
@@ -146,7 +146,7 @@ bool liveness::has_op_where_defined(unsigned int var) const
    return (var_op_definition.find(var) != var_op_definition.end());
 }
 
-const std::set<vertex>& liveness::get_state_in(vertex state, vertex op, unsigned int var) const
+const CustomOrderedSet<vertex>& liveness::get_state_in(vertex state, vertex op, unsigned int var) const
 {
    THROW_ASSERT(state_in_definitions.find(state) != state_in_definitions.end(), "state never used " + get_name(state));
    THROW_ASSERT(state_in_definitions.find(state)->second.find(op) != state_in_definitions.find(state)->second.end(), "op never used in state " + get_name(state));
@@ -170,7 +170,7 @@ void liveness::add_state_in_for_var(unsigned int var, vertex op, vertex state, v
    state_in_definitions[state][op][var].insert(state_in);
 }
 
-const std::set<vertex>& liveness::get_state_out(vertex state, vertex op, unsigned int var) const
+const CustomOrderedSet<vertex>& liveness::get_state_out(vertex state, vertex op, unsigned int var) const
 {
    THROW_ASSERT(state_out_definitions.find(state) != state_out_definitions.end(), "state never used " + get_name(state));
    THROW_ASSERT(state_out_definitions.find(state)->second.find(op) != state_out_definitions.find(state)->second.end(), "op never used in state " + get_name(state));
@@ -194,13 +194,13 @@ void liveness::add_state_out_for_var(unsigned int var, vertex op, vertex state, 
    state_out_definitions[state][op][var].insert(state_in);
 }
 
-const std::set<vertex>& liveness::get_state_where_end(vertex op) const
+const CustomOrderedSet<vertex>& liveness::get_state_where_end(vertex op) const
 {
    THROW_ASSERT(ending_operations.find(op) != ending_operations.end(), "op never ending in a state ");
    return ending_operations.find(op)->second;
 }
 
-const std::set<vertex>& liveness::get_state_where_run(vertex op) const
+const CustomOrderedSet<vertex>& liveness::get_state_where_run(vertex op) const
 {
    THROW_ASSERT(running_operations.find(op) != running_operations.end(), "op never running in a state ");
    return running_operations.find(op)->second;
@@ -218,9 +218,9 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
 {
    // if(!HLS)
    {
-      const std::set<vertex>& op1_run = get_state_where_run(op1);
-      const std::set<vertex>& op2_run = get_state_where_run(op2);
-      const std::set<vertex>::const_iterator op1_run_it_end = op1_run.end();
+      const CustomOrderedSet<vertex>& op1_run = get_state_where_run(op1);
+      const CustomOrderedSet<vertex>& op2_run = get_state_where_run(op2);
+      const CustomOrderedSet<vertex>::const_iterator op1_run_it_end = op1_run.end();
       for(auto op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
          if(op2_run.find(*op1_run_it) != op2_run.end())
             return true;
@@ -239,7 +239,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
          unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);
          unsigned int bb_index2 = GET_BB_INDEX(dfg, op2);
-         const std::unordered_map<unsigned int, vertex> & bb_index_map = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
+         const CustomUnorderedMap<unsigned int, vertex> & bb_index_map = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
          vertex bb_1 = bb_index_map.find(bb_index1)->second;
          vertex bb_2 = bb_index_map.find(bb_index2)->second;
          if(bb_1 != bb_2 && non_in_parallel(bb_1, bb_2, FB->CGetBBGraph(FunctionBehavior::CDG_BB)))

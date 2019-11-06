@@ -43,10 +43,10 @@
 #ifndef LEVEL_CONSTRUCTOR_HPP
 #define LEVEL_CONSTRUCTOR_HPP
 
+#include "custom_map.hpp"
 #include "graph.hpp" // for vertex
 #include "refcount.hpp"
 #include <deque>
-#include <map>
 
 /**
  * @name forward declarations

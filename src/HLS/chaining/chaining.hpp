@@ -48,8 +48,8 @@ REF_FORWARD_DECL(chaining);
 #include "graph.hpp"
 #include "op_graph.hpp"
 
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 class chaining : public HLSFunctionStep
 {
@@ -59,7 +59,7 @@ class chaining : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

@@ -55,7 +55,7 @@ class xml_element;
 
 #include "exceptions.hpp"
 
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 class target_technology

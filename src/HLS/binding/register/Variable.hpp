@@ -44,8 +44,8 @@
 #ifndef VARIABLE_HPP
 #define VARIABLE_HPP
 
+#include "custom_map.hpp"
 #include <iosfwd>
-#include <map>
 
 #include "graph.hpp"
 

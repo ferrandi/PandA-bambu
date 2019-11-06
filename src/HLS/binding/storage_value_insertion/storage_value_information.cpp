@@ -163,7 +163,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    {
       // check if v1 or v2 drive complex operations
       // variable coming from the Entry vertex have to be neglected in this analysis
-      std::set<unsigned int> op_succ_of_v1_port0, op_succ_of_v1_port1, op_succ_of_v1_port2;
+      CustomOrderedSet<unsigned int> op_succ_of_v1_port0, op_succ_of_v1_port1, op_succ_of_v1_port2;
       if(!(GET_TYPE(data, v1) & TYPE_ENTRY))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE first variable");
@@ -187,7 +187,7 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
       }
 
-      std::set<unsigned int> op_succ_of_v2_port0, op_succ_of_v2_port1, op_succ_of_v2_port2;
+      CustomOrderedSet<unsigned int> op_succ_of_v2_port0, op_succ_of_v2_port1, op_succ_of_v2_port2;
       if(!(GET_TYPE(data, v2) & TYPE_ENTRY))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "-->Statement with USE second variable");

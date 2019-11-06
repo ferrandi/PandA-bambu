@@ -47,8 +47,8 @@
 #include <string>
 
 /// STL include
+#include "custom_map.hpp"
 #include <list>
-#include <map>
 
 /// Utility include
 #include "refcount.hpp"

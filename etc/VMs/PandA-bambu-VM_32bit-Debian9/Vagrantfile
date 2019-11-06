@@ -1,0 +1,37 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure(2) do |config|
+  config.vm.box = "koalephant/debian9-i386"
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+  config.vm.provider "virtualbox" do |vb|
+     vb.memory = "4096"
+     vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
+     vb.customize [ 'modifyvm', :id, '--vram', '64']
+     vb.name = "PandA-bambu-VM_32bit-Debian9"
+  end
+  config.vm.provision "shell", inline: <<-SHELL
+     apt-get update -y
+     DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
+     apt-get install -y linux-headers-$(uname -r) build-essential dkms
+     apt-get install -y autoconf autoconf-archive libtool make gcc g++ gcc-multilib gcc-6-plugin-dev gfortran gfortran-multilib libcloog-ppl1 clang-4.0 libclang-4.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz verilator pkg-config libsuitesparse-dev libglpk-dev
+     apt-get install -y git
+     apt-get autoremove -y
+     git clone https://github.com/ferrandi/PandA-bambu.git
+     cd PandA-bambu
+     git checkout taste_test
+     make -f Makefile.init
+     mkdir build
+     cd build && ../configure --prefix=/opt/panda --enable-verilator --enable-glpk --disable-release --enable-experimental --enable-flopoco --enable-opt --with-opt-level=2 && make -j2 && make install
+     cd ../.. && chown -R vagrant:vagrant PandA-bambu
+     mv PandA-bambu /home/vagrant/
+     cd /opt/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf arf_hls arf_testbench && echo "Bambu is correctly working!!"
+     cd /home/vagrant/
+     chown -R vagrant:vagrant panda
+     apt-get clean -y
+     echo "export PATH=/opt/panda/bin:$PATH" >> /home/vagrant/.bashrc
+     echo "vagrant:password" | chpasswd
+     dd if=/dev/zero of=/EMPTY bs=1M
+     rm -f /EMPTY
+  SHELL
+end

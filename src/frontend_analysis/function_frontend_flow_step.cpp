@@ -42,14 +42,16 @@
  *
  */
 #include "function_frontend_flow_step.hpp"
-#include "Parameter.hpp"                               // for Parameter
-#include "application_manager.hpp"                     // for application_m...
-#include "basic_block.hpp"                             // for BBGraphsColle...
-#include "behavioral_helper.hpp"                       // for BehavioralHelper
-#include "call_graph.hpp"                              // for CallGraph
-#include "call_graph_manager.hpp"                      // for CallGraphMana...
-#include "cdfg_edge_info.hpp"                          // for CFG_SELECTOR
-#include "custom_set.hpp"                              // for CustomSet
+
+#include "Parameter.hpp"           // for Parameter
+#include "application_manager.hpp" // for application_m...
+#include "basic_block.hpp"         // for BBGraphsColle...
+#include "behavioral_helper.hpp"   // for BehavioralHelper
+#include "call_graph.hpp"          // for CallGraph
+#include "call_graph_manager.hpp"  // for CallGraphMana...
+#include "cdfg_edge_info.hpp"      // for CFG_SELECTOR
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"                          // for DEBUG_LEVEL_V...
 #include "design_flow_graph.hpp"                       // for DesignFlowGraph
 #include "design_flow_manager.hpp"                     // for DesignFlowMan...
@@ -72,8 +74,6 @@
 #include <boost/lexical_cast.hpp>             // for lexical_cast
 #include <boost/tuple/tuple.hpp>              // for tie
 #include <iostream>                           // for ios_base::fai...
-#include <unordered_map>                      // for unordered_map
-#include <unordered_set>                      // for unordered_set
 #include <utility>                            // for pair
 
 FunctionFrontendFlowStep::FunctionFrontendFlowStep(const application_managerRef _AppM, const unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager,
@@ -111,7 +111,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
 {
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const auto* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(CGetDesignFlowStepFactory());
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships = ComputeFrontendRelationships(relationship_type);
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> frontend_relationships = ComputeFrontendRelationships(relationship_type);
 
    /// Precedence step whose symbolic application frontend flow step has to be executed can be considered as dependence step
    if(relationship_type == DEPENDENCE_RELATIONSHIP)
@@ -140,7 +140,7 @@ void FunctionFrontendFlowStep::ComputeRelationships(DesignFlowStepSet& relations
          }
       }
    }
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>>::const_iterator frontend_relationship, frontend_relationship_end = frontend_relationships.end();
    for(frontend_relationship = frontend_relationships.begin(); frontend_relationship != frontend_relationship_end; ++frontend_relationship)
    {
       switch(frontend_relationship->second)
@@ -254,7 +254,7 @@ void FunctionFrontendFlowStep::WriteBBGraphDot(const std::string& filename) cons
    auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(bb_graph_info, parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   std::unordered_map<unsigned int, vertex> inverse_vertex_map;
+   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    const tree_nodeConstRef function_tree_node = AppM->get_tree_manager()->CGetTreeNode(function_id);
    const auto fd = GetPointer<const function_decl>(function_tree_node);
    const auto sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));

@@ -49,15 +49,20 @@
 
 /// behavior include
 #include "application_manager.hpp"
+#include "basic_block.hpp"
 #include "function_behavior.hpp"
 #include "op_graph.hpp"
 #include "operations_graph_constructor.hpp"
 
 /// tree include
 #include "behavioral_helper.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 DataDependenceComputation::DataDependenceComputation(const application_managerRef _AppM, unsigned int _function_id, const FrontendFlowStepType _frontend_flow_step_type, const DesignFlowManagerConstRef _design_flow_manager,
                                                      const ParameterConstRef _parameters)
@@ -79,7 +84,9 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
 #endif
    )
    {
-      return Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      auto res = Computedependencies<unsigned int>(DFG_AGG_SELECTOR, FB_DFG_AGG_SELECTOR, ADG_AGG_SELECTOR, FB_ADG_AGG_SELECTOR);
+      do_dependence_reduction();
+      return res;
    }
 #if HAVE_ZEBU_BUILT && HAVE_EXPERIMENTAL
    else if(frontend_flow_step_type == DYNAMIC_AGGREGATE_DATA_FLOW_ANALYSIS)
@@ -94,6 +101,103 @@ DesignFlowStep_Status DataDependenceComputation::InternalExec()
    return DesignFlowStep_Status::ABORTED;
 }
 
+static void ordered_dfs(unsigned u, const OpGraphConstRef avg, CustomUnorderedMap<vertex, unsigned>& pos, std::vector<vertex>& rev_pos, std::vector<bool>& vis, CustomUnorderedSet<std::pair<unsigned, unsigned>>& keep)
+{
+   vis[u] = true;
+   CustomOrderedSet<unsigned> to;
+   OutEdgeIterator ei, ei_end;
+   auto statement = rev_pos.at(u);
+   for(boost::tie(ei, ei_end) = boost::out_edges(statement, *avg); ei != ei_end; ei++)
+   {
+      auto vi = boost::target(*ei, *avg);
+      if(pos.find(vi) != pos.end())
+         to.insert(pos.find(vi)->second);
+   }
+   for(auto dest : to)
+   {
+      if(!vis[dest])
+      {
+         keep.insert(std::make_pair(u, dest));
+         ordered_dfs(dest, avg, pos, rev_pos, vis, keep);
+      }
+   }
+}
+
+void DataDependenceComputation::do_dependence_reduction()
+{
+   const BBGraphRef bb_fcfg = function_behavior->GetBBGraph(FunctionBehavior::BB);
+   const OpGraphConstRef avg = function_behavior->CGetOpGraph(FunctionBehavior::AGG_VIRTUALG);
+   if(parameters->getOption<bool>(OPT_print_dot))
+   {
+      std::string file_name;
+      file_name = "AGG_VIRTUALG.dot";
+      function_behavior->CGetOpGraph(FunctionBehavior::AGG_VIRTUALG)->WriteDot(file_name, 1);
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---do_dependence_reduction");
+   VertexIterator basic_block, basic_block_end;
+   for(boost::tie(basic_block, basic_block_end) = boost::vertices(*bb_fcfg); basic_block != basic_block_end; basic_block++)
+   {
+      const auto bb_node_info = bb_fcfg->CGetBBNodeInfo(*basic_block);
+      CustomUnorderedMap<vertex, unsigned> pos;
+      std::vector<vertex> rev_pos;
+      unsigned posIndex = 0;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(bb_node_info->get_bb_index()));
+      for(const auto statement : bb_node_info->statements_list)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing operation " + GET_NAME(avg, statement));
+         pos[statement] = posIndex;
+         ++posIndex;
+         rev_pos.push_back(statement);
+      }
+      std::vector<bool> vis(posIndex, false);
+      const auto n_stmts = bb_node_info->statements_list.size();
+      CustomUnorderedSet<std::pair<unsigned, unsigned>> keep;
+      for(posIndex = 0; posIndex < n_stmts; ++posIndex)
+      {
+         if(!vis.at(posIndex))
+         {
+            ordered_dfs(posIndex, avg, pos, rev_pos, vis, keep);
+            for(unsigned posIndex0 = posIndex + 1; posIndex0 < n_stmts; ++posIndex0)
+               if(vis.at(posIndex0))
+                  vis[posIndex0] = false;
+         }
+      }
+      for(const auto statement : bb_node_info->statements_list)
+      {
+         vertex vi;
+         OutEdgeIterator ei, ei_end;
+         std::list<EdgeDescriptor> to_be_removed;
+         for(boost::tie(ei, ei_end) = boost::out_edges(statement, *avg); ei != ei_end; ei++)
+         {
+            vi = boost::target(*ei, *avg);
+            if(pos.find(vi) != pos.end())
+            {
+               auto key = std::make_pair(pos.at(statement), pos.at(vi));
+               if(keep.find(key) == keep.end())
+               {
+                  to_be_removed.push_back(*ei);
+               }
+            }
+         }
+         for(auto e0 : to_be_removed)
+         {
+            function_behavior->ogc->RemoveSelector(e0, DFG_AGG_SELECTOR);
+            function_behavior->ogc->RemoveSelector(e0, ADG_AGG_SELECTOR);
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(bb_node_info->get_bb_index()));
+   }
+   function_behavior->ogc->CompressEdges();
+   if(parameters->getOption<bool>(OPT_print_dot))
+   {
+      std::string file_name;
+      file_name = "AGG_VIRTUALG-post.dot";
+      function_behavior->CGetOpGraph(FunctionBehavior::AGG_VIRTUALG)->WriteDot(file_name, 1);
+      file_name = "OP_FFLSAODG2.dot";
+      function_behavior->CGetOpGraph(FunctionBehavior::FFLSAODG)->WriteDot(file_name, 1);
+   }
+}
+
 template <typename type>
 DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int dfg_selector, const int fb_dfg_selector, const int adg_selector, const int fb_adg_selector)
 {
@@ -104,7 +208,7 @@ DesignFlowStep_Status DataDependenceComputation::Computedependencies(const int d
    const std::string function_name = behavioral_helper->get_function_name();
 #endif
    // Maps between a variable and its definitions
-   std::map<type, std::set<vertex>> defs, overs;
+   std::map<type, CustomOrderedSet<vertex>> defs, overs;
    VertexIterator vi, vi_end;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing definitions");
    for(boost::tie(vi, vi_end) = boost::vertices(*cfg); vi != vi_end; vi++)

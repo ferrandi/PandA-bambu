@@ -67,8 +67,8 @@ REF_FORWARD_DECL(XMLDomParser);
 class xml_element;
 typedef refcount<std::istream> fileIO_istreamRef;
 
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <string>
 #include <vector>
 
@@ -148,7 +148,7 @@ class BackendFlow
    DesignParametersRef default_flow_parameters;
 
    /// list of undefined parameters
-   std::set<std::string> undefined_parameters;
+   CustomOrderedSet<std::string> undefined_parameters;
 
    /// set of design parameters with the actual values
    DesignParametersRef actual_parameters;
@@ -258,7 +258,7 @@ class BackendFlow
    /**
     * Sets parameters
     */
-   void set_initial_parameters(const DesignParametersRef& flow_parameters, const std::set<std::string>& undefined_parameters);
+   void set_initial_parameters(const DesignParametersRef& flow_parameters, const CustomOrderedSet<std::string>& undefined_parameters);
 
    /**
     * Sets actual parameters

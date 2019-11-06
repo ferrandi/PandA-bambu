@@ -53,14 +53,10 @@
 
 /// STL includes
 #include <deque>
-#include <map>
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
-/// utility include
+#include "custom_map.hpp"
 #include "custom_set.hpp"
 
 //#define HC_APPROACH
@@ -318,7 +314,7 @@ class CdfcGraph : public graph
     * @param selector is the selector which identifies the edges of this graph
     * @param vertices is the set of vertexes on which the graph is filtered.
     */
-   CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int selector, const std::unordered_set<vertex>& vertices);
+   CdfcGraph(const CdfcGraphsCollectionRef cdfc_graphs_collection, const int selector, const CustomUnorderedSet<vertex>& vertices);
 
    /**
     * Destructor
@@ -362,7 +358,7 @@ enum conn_code
 
 /// put into relation an operation vertex with its sources
 /// op vertex -> vector of port index -> set of pair < conn code, pair of < tree_var/storage_value, null/vertex> >
-typedef std::unordered_map<vertex, std::vector<std::set<std::pair<conn_code, std::pair<unsigned int, vertex>>>>> connection_relation;
+typedef CustomUnorderedMap<vertex, std::vector<CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>>> connection_relation;
 
 /**
  * Class managing the module allocation.
@@ -378,15 +374,15 @@ class cdfc_module_binding : public fu_binding_creator
                                  std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
    bool false_loop_search_cdfc_more(cdfc_vertex src, unsigned int level, unsigned k, cdfc_vertex start, const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg, std::deque<cdfc_edge>& candidate_edges, std::vector<bool>& visited,
                                     std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
-   bool can_be_clustered(vertex v, OpGraphConstRef fdfg, const fu_bindingConstRef fu, const std::unordered_map<vertex, double>& slack_time, const double mux_time);
+   bool can_be_clustered(vertex v, OpGraphConstRef fdfg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time);
 
-   int weight_computation(bool cond1, bool cond2, vertex v1, vertex v2, const double mux_time, const OpGraphConstRef fdfg, const fu_bindingConstRef fu, const std::unordered_map<vertex, double>& slack_time, std::unordered_map<vertex, double>& starting_time,
+   int weight_computation(bool cond1, bool cond2, vertex v1, vertex v2, const double mux_time, const OpGraphConstRef fdfg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time,
 #ifdef HC_APPROACH
                           spec_hierarchical_clustering& hc,
 #endif
                           connection_relation& con_rel, double controller_delay, unsigned int prec);
 
-   void update_slack_starting_time(const OpGraphConstRef sdg, OpVertexSet& sorted_vertices, std::unordered_map<vertex, double>& slack_time, std::unordered_map<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
+   void update_slack_starting_time(const OpGraphConstRef sdg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
                                    bool only_forward);
 
    void initialize_connection_relation(connection_relation& con_rel, OpVertexSet& all_candidate_vertices);
@@ -395,8 +391,8 @@ class cdfc_module_binding : public fu_binding_creator
    static const int COMPATIBILITY_EDGE = 2;
 
    /// record if a vertex has to be clustered or not
-   std::unordered_map<vertex, bool> can_be_clustered_table;
-   std::unordered_map<std::pair<vertex, unsigned int>, bool> is_complex;
+   CustomUnorderedMap<vertex, bool> can_be_clustered_table;
+   CustomUnorderedMapUnstable<std::pair<vertex, unsigned int>, bool> is_complex;
 
  public:
    /**

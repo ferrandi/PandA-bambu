@@ -112,7 +112,7 @@ class memory_allocation : public HLS_step
 {
  protected:
    /// list of functions to be analyzed
-   std::set<unsigned int> func_list;
+   CustomOrderedSet<unsigned int> func_list;
 
    /// The memory allocation policy
    const MemoryAllocation_Policy memory_allocation_policy;
@@ -141,7 +141,7 @@ class memory_allocation : public HLS_step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * Execute the step

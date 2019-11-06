@@ -122,8 +122,8 @@ void StateTransitionGraphManager::compute_min_max()
       return;
    std::list<vertex> sorted_vertices;
    ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
-   std::unordered_map<vertex, unsigned int> CSteps_min;
-   std::unordered_map<vertex, unsigned int> CSteps_max;
+   CustomUnorderedMap<vertex, unsigned int> CSteps_min;
+   CustomUnorderedMap<vertex, unsigned int> CSteps_max;
    const std::list<vertex>::iterator it_sv_end = sorted_vertices.end();
    for(auto it_sv = sorted_vertices.begin(); it_sv != it_sv_end; ++it_sv)
    {
@@ -153,9 +153,9 @@ vertex StateTransitionGraphManager::get_entry_state() const
    return STG_graph->CGetStateTransitionGraphInfo()->entry_node;
 }
 
-std::set<vertex> StateTransitionGraphManager::get_states(const vertex& op, StateTypes statetypes) const
+CustomOrderedSet<vertex> StateTransitionGraphManager::get_states(const vertex& op, StateTypes statetypes) const
 {
-   std::set<vertex> vertex_set;
+   CustomOrderedSet<vertex> vertex_set;
    VertexIterator v, vend;
    for(boost::tie(v, vend) = boost::vertices(*STG_graph); v != vend; v++)
    {
@@ -190,17 +190,17 @@ std::set<vertex> StateTransitionGraphManager::get_states(const vertex& op, State
    return vertex_set;
 }
 
-std::set<vertex> StateTransitionGraphManager::get_ending_states(const vertex& op) const
+CustomOrderedSet<vertex> StateTransitionGraphManager::get_ending_states(const vertex& op) const
 {
    return get_states(op, StateTransitionGraphManager::StateTypes::ENDING);
 }
 
-std::set<vertex> StateTransitionGraphManager::get_starting_states(const vertex& op) const
+CustomOrderedSet<vertex> StateTransitionGraphManager::get_starting_states(const vertex& op) const
 {
    return get_states(op, StateTransitionGraphManager::StateTypes::STARTING);
 }
 
-std::set<vertex> StateTransitionGraphManager::get_execution_states(const vertex& op) const
+CustomOrderedSet<vertex> StateTransitionGraphManager::get_execution_states(const vertex& op) const
 {
    return get_states(op, StateTypes::EXECUTING);
 }
@@ -246,7 +246,7 @@ void StateTransitionGraphManager::print_statistics() const
    }
 }
 
-void StateTransitionGraphManager::add_multi_unbounded_obj(vertex s, const std::set<vertex>& ops)
+void StateTransitionGraphManager::add_multi_unbounded_obj(vertex s, const CustomOrderedSet<vertex>& ops)
 {
    if(multi_unbounded_table.find(s) == multi_unbounded_table.end())
    {

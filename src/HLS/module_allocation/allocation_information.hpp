@@ -163,10 +163,10 @@ class AllocationInformation : public HLSFunctionIR
    unsigned int n_complex_operations{0};
 
    /// map between the functional unit identifier and the pair (library, fu) of names for the unit
-   std::unordered_map<unsigned int, std::pair<std::string, std::string>> id_to_fu_names;
+   CustomUnorderedMap<unsigned int, std::pair<std::string, std::string>> id_to_fu_names;
 
    /// Store the set of functional units (identifiers) uniquely bounded
-   std::set<unsigned int> is_vertex_bounded_rel;
+   CustomOrderedSet<unsigned int> is_vertex_bounded_rel;
 
    /// Stores the list of the functional units
    std::vector<technology_nodeRef> list_of_FU;
@@ -193,15 +193,15 @@ class AllocationInformation : public HLSFunctionIR
    std::vector<unsigned int> tech_constraints;
 
    /// for each operation (node-id, operation) return the set of functional unit that can be used
-   std::unordered_map<std::pair<unsigned int, std::string>, std::set<unsigned int>> node_id_to_fus;
+   CustomUnorderedMap<std::pair<unsigned int, std::string>, CustomOrderedSet<unsigned int>> node_id_to_fus;
 
    /// reverse map putting into relation functional units with the operations that can be mapped on
-   std::unordered_map<unsigned int, std::set<unsigned int>> fus_to_node_id;
+   CustomUnorderedMap<unsigned int, CustomOrderedSet<unsigned int>> fus_to_node_id;
 
    /// Puts into relation operation with type and functional units.
    /// A pair(node_id, operation_type-fu) means that the fu is used to implement the operation associated with the tree node node_id of type operation_type
    /// If the operation_type of the operation is different from the current one, the binding refers to an old version of the operation
-   std::unordered_map<unsigned int, std::pair<std::string, unsigned int>> binding;
+   CustomUnorderedMap<unsigned int, std::pair<std::string, unsigned int>> binding;
 
    /// size of each memory unit in bytes
    std::map<unsigned int, unsigned int> memory_units_sizes;
@@ -213,10 +213,10 @@ class AllocationInformation : public HLSFunctionIR
    std::map<std::string, std::string> precomputed_pipeline_unit;
 
    /// store all cond_expr units having a Boolean condition
-   std::unordered_set<unsigned int> single_bool_test_cond_expr_units;
+   CustomUnorderedSet<unsigned int> single_bool_test_cond_expr_units;
 
    /// in case of pointer plus expr between constants: no wire delay
-   std::unordered_set<unsigned int> simple_pointer_plus_expr;
+   CustomUnorderedSet<unsigned int> simple_pointer_plus_expr;
 
    /// The roots used to compute a ssa
    mutable CustomMap<unsigned int, CustomSet<unsigned int>> ssa_roots;
@@ -237,10 +237,10 @@ class AllocationInformation : public HLSFunctionIR
    mutable CustomMap<unsigned int, unsigned int> zero_distance_ops_bb_version;
 
    /// store mux timing for the current technology
-   CustomMap<unsigned int, std::unordered_map<unsigned int, double>> mux_timing_db;
+   CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_timing_db;
 
    /// store mux timing for the current technology
-   CustomMap<unsigned int, std::unordered_map<unsigned int, double>> mux_area_db;
+   CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>> mux_area_db;
 
    /// store DSP x sizes
    std::vector<unsigned int> DSP_x_db;
@@ -327,7 +327,8 @@ class AllocationInformation : public HLSFunctionIR
     * @param allocation_information is a reference to an instance of this class
     * @return the pair mux_timing_db, mux_area_db
     */
-   static const std::pair<const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&, const CustomMap<unsigned int, std::unordered_map<unsigned int, double>>&> InitializeMuxDB(const AllocationInformationConstRef allocation_information);
+   static const std::pair<const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&, const CustomMap<unsigned int, CustomUnorderedMapStable<unsigned int, double>>&>
+   InitializeMuxDB(const AllocationInformationConstRef allocation_information);
 
    /**
     * Compute the values for the initialization of the DSP characteristics database
@@ -387,8 +388,8 @@ class AllocationInformation : public HLSFunctionIR
     * @param v is the vertex.
     * @param g is the graph of the vertex v.
     */
-   const std::set<unsigned int>& can_implement_set(const vertex v) const;
-   const std::set<unsigned int>& can_implement_set(const unsigned int v) const;
+   const CustomOrderedSet<unsigned int>& can_implement_set(const vertex v) const;
+   const CustomOrderedSet<unsigned int>& can_implement_set(const unsigned int v) const;
 
    /**
     * Return if any functional unit has been allocated for an operation

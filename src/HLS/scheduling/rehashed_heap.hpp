@@ -48,14 +48,13 @@
 #define REHASHED_HEAP_HPP
 
 #include <algorithm>
-#include <map>
 #include <queue>
 #include <vector>
 
+#include "custom_map.hpp"
 #include "graph.hpp"
 #include "priority.hpp"
 #include "refcount.hpp"
-#include <unordered_map>
 
 /**
  * @name Forward declarations.
@@ -99,7 +98,7 @@ struct rehashed_heap : public std::priority_queue<vertex, std::vector<vertex>, p
  * Class used to represent a tree of priority queues.
  */
 template <class _Type>
-struct tree_rehashed_heap : public std::unordered_map<vertex, std::vector<rehashed_heap<_Type>>>
+struct tree_rehashed_heap : public CustomUnorderedMap<vertex, std::vector<rehashed_heap<_Type>>>
 {
    /**
     * Return the vertex with the highest priority. Precondition: empty() is false.
@@ -109,7 +108,7 @@ struct tree_rehashed_heap : public std::unordered_map<vertex, std::vector<rehash
     * @param b_tag filled with the branch tag when found is true.
     * @param found is true when there exists a queue with candidate vertices.
     */
-   typename std::vector<rehashed_heap<_Type>>::iterator top(const std::unordered_map<vertex, std::set<unsigned int>>& curren_black_list, const priority_data<_Type>& priority_functor, vertex& controlling_vertex, unsigned int& b_tag, bool& found)
+   typename std::vector<rehashed_heap<_Type>>::iterator top(const CustomUnorderedMap<vertex, CustomOrderedSet<unsigned int>>& curren_black_list, const priority_data<_Type>& priority_functor, vertex& controlling_vertex, unsigned int& b_tag, bool& found)
    {
       found = false;
       typename std::vector<rehashed_heap<_Type>>::iterator res;

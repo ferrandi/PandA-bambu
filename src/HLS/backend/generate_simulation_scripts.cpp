@@ -69,9 +69,9 @@
 #include <string>
 
 /// STL include
+#include "custom_set.hpp"
 #include <list>
 #include <tuple>
-#include <unordered_set>
 
 // include from wrapper/synthesis
 #include "BackendFlow.hpp"
@@ -95,9 +95,9 @@ GenerateSimulationScripts::GenerateSimulationScripts(const ParameterConstRef _pa
 
 GenerateSimulationScripts::~GenerateSimulationScripts() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> GenerateSimulationScripts::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

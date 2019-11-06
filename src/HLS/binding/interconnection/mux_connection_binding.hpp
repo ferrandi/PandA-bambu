@@ -53,29 +53,8 @@ class array_ref;
 
 #include "hls_manager.hpp"
 
-#include <unordered_map>
-
 REF_FORWARD_DECL(conn_binding);
 CONSTREF_FORWARD_DECL(OpGraph);
-
-/**
- * Definition of hash function for EdgeDescriptor
- */
-namespace std
-{
-   template <>
-   struct hash<std::tuple<generic_objRef, unsigned int>> : public unary_function<std::tuple<generic_objRef, unsigned int>, size_t>
-   {
-      size_t operator()(std::tuple<generic_objRef, unsigned int> p) const
-      {
-         size_t hash_value = 0;
-         boost::hash_combine(hash_value, std::get<0>(p));
-         boost::hash_combine(hash_value, std::get<1>(p));
-
-         return hash_value;
-      }
-   };
-} // namespace std
 
 /**
  * @class mux_connection_binding
@@ -94,17 +73,17 @@ class mux_connection_binding : public conn_binding_creator
    typedef std::pair<unsigned int, unsigned int> resource_id_type;
 
    /// store the registers for each resource and for each port
-   std::map<resource_id_type, std::map<unsigned int, std::set<unsigned int>>> regs_in;
+   std::map<resource_id_type, std::map<unsigned int, CustomOrderedSet<unsigned int>>> regs_in;
    /// store the chained storage values for each resource and for each port
-   std::map<resource_id_type, std::map<unsigned int, std::set<unsigned int>>> chained_in;
+   std::map<resource_id_type, std::map<unsigned int, CustomOrderedSet<unsigned int>>> chained_in;
    /// store the resource in IN for each resource and for each port
-   std::map<resource_id_type, std::map<unsigned int, std::set<resource_id_type>>> module_in;
+   std::map<resource_id_type, std::map<unsigned int, CustomOrderedSet<resource_id_type>>> module_in;
 
    /// store the operations for which a port swapping is beneficial
-   std::set<vertex> swap_computed_table;
+   CustomOrderedSet<vertex> swap_computed_table;
 
    /// store the operations for which a port swapping is not beneficial
-   std::set<vertex> noswap_computed_table;
+   CustomOrderedSet<vertex> noswap_computed_table;
 
    /// variable used to assign a unique id to sparse logic
    unsigned int id;

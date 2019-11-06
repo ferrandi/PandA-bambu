@@ -75,7 +75,7 @@
 #include <iosfwd>
 
 /// STL include
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <vector>
 
 /// Utility include

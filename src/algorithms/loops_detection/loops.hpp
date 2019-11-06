@@ -51,17 +51,17 @@
 
 /// Autoheader include
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include <cstddef>       // for size_t
-#include <list>          // for list
-#include <set>           // for set
-#include <string>        // for string
-#include <unordered_map> // for unordered_map
-#include <unordered_set> // for unordered_set
-#include <utility>       // for pair
-#include <vector>        // for vector
 
+#include "custom_map.hpp" // for unordered_map
+#include "custom_set.hpp" // for unordered_set
 #include "graph.hpp"
 #include "refcount.hpp"
+
+#include <cstddef> // for size_t
+#include <list>    // for list
+#include <string>  // for string
+#include <utility> // for pair
+#include <vector>  // for vector
 
 /**
  * @name forward declarations
@@ -99,7 +99,7 @@ class Loops
    int debug_level;
 
    /// Maps between basic block and loop to which it belongs
-   std::unordered_map<vertex, LoopRef> block_to_loop;
+   CustomUnorderedMap<vertex, LoopRef> block_to_loop;
 
    /// List of found loops
    std::list<LoopRef> modifiable_loops_list;
@@ -107,7 +107,7 @@ class Loops
 
    typedef std::pair<vertex, vertex> vertex_pair;
 
-   bool is_edge_in_list(std::unordered_set<vertex_pair>& l, vertex source, vertex target);
+   bool is_edge_in_list(CustomUnorderedSet<vertex_pair>& l, vertex source, vertex target);
 
    Loops() = delete;
 
@@ -124,11 +124,11 @@ class Loops
     * @param node is current vertex
     * @param header is the entry of the reducible loop
     */
-   void DetectReducibleLoop(const BBGraphRef djg, std::set<vertex>& visited, LoopRef loop, vertex node, vertex header);
+   void DetectReducibleLoop(const BBGraphRef djg, CustomOrderedSet<vertex>& visited, LoopRef loop, vertex node, vertex header);
 
    void DetectIrreducibleLoop(const BBGraphRef djg, unsigned int min_level, unsigned int max_level, std::vector<std::list<vertex>>& level_vertices_rel);
 
-   void tarjan_scc(const BBGraphRef djg, vertex v, std::unordered_map<vertex, unsigned int>& dfs_order, std::unordered_map<vertex, unsigned int>& lowlink, std::list<vertex>& s, std::set<vertex>& u, unsigned int& max_dfs);
+   void tarjan_scc(const BBGraphRef djg, vertex v, CustomUnorderedMap<vertex, unsigned int>& dfs_order, CustomUnorderedMap<vertex, unsigned int>& lowlink, std::list<vertex>& s, CustomOrderedSet<vertex>& u, unsigned int& max_dfs);
 
    bool stack_contains(std::list<vertex> stack, vertex v);
 

@@ -44,16 +44,16 @@
  */
 #ifndef CALL_GRAPH_HPP
 #define CALL_GRAPH_HPP
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "edge_info.hpp"  // for EdgeInfo, EdgeIn...
 #include "graph.hpp"      // for graph, vertex
 #include "graph_info.hpp" // for GraphInfo
 #include "node_info.hpp"  // for NodeInfo
 #include "refcount.hpp"   // for refcount, Refcou...
-#include <iosfwd>         // for ostream
-#include <map>            // for map
-#include <set>            // for set
-#include <string>         // for string
-#include <unordered_set>  // for unordered_set
+
+#include <iosfwd> // for ostream
+#include <string> // for string
 
 REF_FORWARD_DECL(FunctionBehavior);
 
@@ -77,9 +77,9 @@ struct FunctionInfo : public NodeInfo
 struct FunctionEdgeInfo : public EdgeInfo
 {
    /// the index of the statements of the caller function where the target is called;
-   std::set<unsigned int> direct_call_points;
-   std::set<unsigned int> indirect_call_points;
-   std::set<unsigned int> function_addresses;
+   CustomOrderedSet<unsigned int> direct_call_points;
+   CustomOrderedSet<unsigned int> indirect_call_points;
+   CustomOrderedSet<unsigned int> function_addresses;
 
    enum class CallType
    {
@@ -166,7 +166,7 @@ class CallGraph : public graph
     * @param selector is the selector of the view
     * @param vertices is the set of vertices to be considered
     */
-   CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int selector, const std::unordered_set<vertex>& vertices);
+   CallGraph(const CallGraphsCollectionRef call_graphs_collection, const int selector, const CustomUnorderedSet<vertex>& vertices);
 
    /**
     * Destructor

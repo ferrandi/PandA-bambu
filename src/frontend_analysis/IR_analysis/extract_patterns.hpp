@@ -62,7 +62,7 @@ class statement_list;
 class extract_patterns : public FunctionFrontendFlowStep
 {
  private:
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /**
     * look for ternary plus expressions

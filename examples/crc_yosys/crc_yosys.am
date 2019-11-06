@@ -1,0 +1,5 @@
+EXTRA_DIST += %D%/spec.c \
+             %D%/bambu_yosys.sh \
+             %D%/test.xml %D%/README.txt
+
+

@@ -60,23 +60,19 @@
 /// graph include
 #include "graph.hpp"
 
+/// utility include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "refcount.hpp"
+
 /// Std include
 #include <fstream>
 #include <iosfwd>
+#include <list>
 #include <ostream>
 #include <sstream>
-
-/// Stl include
-#include <list>
-#include <map>
-#include <set>
 #include <string>
-#include <unordered_set>
 #include <vector>
-
-/// utility include
-#include "custom_set.hpp"
-#include "refcount.hpp"
 
 CONSTREF_FORWARD_DECL(BehavioralHelper);
 CONSTREF_FORWARD_DECL(CBackendInformation);
@@ -95,7 +91,7 @@ class CBackend : public DesignFlowStep
 {
  protected:
    /// The set of already analyzed nodes during search of header to include; it is used to avoid infinite recursion
-   std::unordered_set<unsigned int> already_visited;
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /// The output stream
    const IndentedOutputStreamRef indented_output_stream;
@@ -119,7 +115,7 @@ class CBackend : public DesignFlowStep
     * @param funParams is the list of function parameters
     * @param computed_variables is the set where the computed variables will be stored
     */
-   void compute_variables(const OpGraphConstRef inGraph, const std::unordered_set<unsigned int>& gblVariables, std::list<unsigned int>& funParams, std::unordered_set<unsigned int>& computed_variables);
+   void compute_variables(const OpGraphConstRef inGraph, const CustomUnorderedSet<unsigned int>& gblVariables, std::list<unsigned int>& funParams, CustomUnorderedSet<unsigned int>& computed_variables);
 
    /**
     * Analyze a variable or a type to identify the includes to be added
@@ -127,7 +123,7 @@ class CBackend : public DesignFlowStep
     * @param BH is the behavioral helper
     * @param includes is where include has to be inseted
     */
-   virtual void AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef BH, std::set<std::string>& includes);
+   virtual void AnalyzeInclude(unsigned int index, const BehavioralHelperConstRef BH, CustomOrderedSet<std::string>& includes);
 
    /**
     * Writes the file header, i.e the comments at the beginning of the file
@@ -191,10 +187,10 @@ class CBackend : public DesignFlowStep
    friend class CBackendStepFactory;
 
    /// This set usually is equal to the set of functions without a body.
-   std::set<unsigned int> functions_to_be_declared;
+   CustomOrderedSet<unsigned int> functions_to_be_declared;
 
    ///
-   std::set<unsigned int> functions_to_be_defined;
+   CustomOrderedSet<unsigned int> functions_to_be_defined;
 
    /**
     * Constructor

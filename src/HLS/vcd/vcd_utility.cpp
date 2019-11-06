@@ -99,6 +99,7 @@
 
 // external include
 #include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/algorithm/string/case_conv.hpp>
 #include <cfloat>
 #include <fstream>
 #include <utility>
@@ -140,9 +141,9 @@ vcd_utility::vcd_utility(const ParameterConstRef _parameters, const HLS_managerR
    THROW_ASSERT(HLSMgr->RDiscr, "Discr data structure is not correctly initialized");
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> vcd_utility::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -186,7 +187,7 @@ static const std::list<sig_variation>& get_signal_variations(const vcd_parser::v
 
 unsigned long long vcd_utility::GetClockPeriod(const vcd_parser::vcd_trace_t& vcd_trace) const
 {
-   std::string& top_scope = Discr->unfolded_v_to_scope.at(Discr->unfolded_root_v);
+   std::string top_scope = Discr->unfolded_v_to_scope.at(Discr->unfolded_root_v);
    const std::string controller_scope = top_scope + "Controller_i" + STR(HIERARCHY_SEPARATOR);
    const std::string clock_signal_name = STR(CLOCK_PORT_NAME);
    const std::list<sig_variation>& clock_sig_variations = get_signal_variations(vcd_trace, controller_scope, clock_signal_name);
@@ -211,11 +212,14 @@ DesignFlowStep_Status vcd_utility::Exec()
       vendor = tgt_device->get_parameter<std::string>("vendor");
       boost::algorithm::to_lower(vendor);
    }
-   one_hot_encoding = false;
-   if(parameters->getOption<std::string>(OPT_fsm_encoding) == "one-hot")
-      one_hot_encoding = true;
-   else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx")
-      one_hot_encoding = true;
+   auto isOneHot = [&](unsigned int funId) -> bool {
+      auto one_hot_encoding = false;
+      if(parameters->getOption<std::string>(OPT_fsm_encoding) == "one-hot")
+         one_hot_encoding = true;
+      else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" && HLSMgr->get_HLS(funId)->STG->get_number_of_states() < 256)
+         one_hot_encoding = true;
+      return one_hot_encoding;
+   };
 
    const CallGraphManagerConstRef cg_man = HLSMgr->CGetCallGraphManager();
    const CallGraphConstRef cg = cg_man->CGetCallGraph();
@@ -318,7 +322,7 @@ DesignFlowStep_Status vcd_utility::Exec()
          vertex first_state = boost::target(*oe, *stg);
          const unsigned int initial_state_id = stg->CGetStateTransitionGraphInfo()->vertex_to_state_id.at(first_state);
 
-         op_id_to_scope_to_vcd_head.at(op_info.op_id).insert(std::make_pair(scope, vcd_trace_head(op_info, fullsigname, present_state_vars, op_out_vars, start_vars, initial_state_id, GetClockPeriod(vcd_trace), HLSMgr, TM, one_hot_encoding)));
+         op_id_to_scope_to_vcd_head.at(op_info.op_id).insert(std::make_pair(scope, vcd_trace_head(op_info, fullsigname, present_state_vars, op_out_vars, start_vars, initial_state_id, GetClockPeriod(vcd_trace), HLSMgr, TM, isOneHot(op_info.stg_fun_id))));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed scope " + scope);
       }
 
@@ -359,7 +363,7 @@ DesignFlowStep_Status vcd_utility::Exec()
                vcd_head.advance();
                if(vcd_head.state == vcd_trace_head::init_fail)
                {
-                  print_failed_vcd_head(vcd_head, OUTPUT_LEVEL_VERBOSE);
+                  print_failed_vcd_head(vcd_head, isOneHot(op_info.stg_fun_id), OUTPUT_LEVEL_VERBOSE);
                }
                break;
             }
@@ -426,7 +430,7 @@ DesignFlowStep_Status vcd_utility::Exec()
                         "|       HARD DISCREPANCIES       |\n"
                         "\\--------------------------------/");
          for(const auto& l : discr_list)
-            print_discrepancy(l, OUTPUT_LEVEL_NONE);
+            print_discrepancy(l, isOneHot(l.fun_id), OUTPUT_LEVEL_NONE);
       }
       if(not soft_discr_list.empty())
       {
@@ -436,7 +440,7 @@ DesignFlowStep_Status vcd_utility::Exec()
                         "|       SOFT DISCREPANCIES       |\n"
                         "\\--------------------------------/");
          for(const auto& l : soft_discr_list)
-            print_discrepancy(l, OUTPUT_LEVEL_NONE);
+            print_discrepancy(l, isOneHot(l.fun_id), OUTPUT_LEVEL_NONE);
       }
       first_discrepancy_print = false;
    }
@@ -472,7 +476,7 @@ DesignFlowStep_Status vcd_utility::Exec()
                               "|       PERSISTING ERRORS      |\n"
                               "\\------------------------------/");
             }
-            print_failed_vcd_head(t.second, OUTPUT_LEVEL_NONE);
+            print_failed_vcd_head(t.second, isOneHot(t.second.op_info.stg_fun_id), OUTPUT_LEVEL_NONE);
             persisting_warning = true;
          }
       }
@@ -894,8 +898,8 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
       {
          base_index = 0;
          const uint64_t c_addr = static_cast<unsigned int>(std::stoull(c_val.c_str(), nullptr, 2));
-         std::unordered_map<uint64_t, unsigned int> addr2base_index;
-         std::set<uint64_t> addrSet;
+         CustomUnorderedMap<uint64_t, unsigned int> addr2base_index;
+         CustomOrderedSet<uint64_t> addrSet;
          for(const auto& addr : Discr->c_addr_map.at(c_context))
          {
             addr2base_index[addr.second] = addr.first;
@@ -935,7 +939,7 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
                                                            STR(vcd_val.length()) + "\n");
 
       const bool to_resize = c_val.length() < vcd_val.length();
-      const std::string& resized_vcd_val = to_resize ? vcd_val.substr(vcd_val.length() - c_val.length()) : vcd_val;
+      const std::string resized_vcd_val = to_resize ? (vcd_val.substr(vcd_val.length() - c_val.length())) : vcd_val;
 
       if(c_val.length() == 32)
       {
@@ -977,7 +981,7 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
    }
 }
 
-void vcd_utility::print_discrepancy(const DiscrepancyLog& l, const int verbosity) const
+void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encoding, const int verbosity) const
 {
    std::string out_msg = "\n/--------------------------------------------------------------------\n"
                          "|  ERROR in signal " +
@@ -1011,7 +1015,7 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, const int verbosity
                          STR(l.op_start_time) +
                          "\n"
                          "|  when fsm state is " +
-                         compute_fsm_state_from_vcd_string(l.op_start_state) +
+                         compute_fsm_state_from_vcd_string(l.op_start_state, one_hot_encoding) +
                          "\n"
                          "|  assigned ssa id " +
                          STR(GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(l.ssa_id)))) +
@@ -1087,13 +1091,13 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, const int verbosity
    return;
 }
 
-void vcd_utility::print_failed_vcd_head(const vcd_trace_head& t, const int verbosity) const
+void vcd_utility::print_failed_vcd_head(const vcd_trace_head& t, bool one_hot_encoding, const int verbosity) const
 {
    std::string out_msg = "\n/--------------------------------------------------------------------\n"
                          "|  ERROR in signal " +
                          t.fullsigname + "\n";
 
-   const std::string state = compute_fsm_state_from_vcd_string(t.fsm_ss_it->value);
+   const std::string state = compute_fsm_state_from_vcd_string(t.fsm_ss_it->value, one_hot_encoding);
    switch(t.failed)
    {
       case vcd_trace_head::function_does_not_start:
@@ -1144,7 +1148,7 @@ void vcd_utility::print_failed_vcd_head(const vcd_trace_head& t, const int verbo
    INDENT_OUT_MEX(verbosity, output_level, out_msg);
 }
 
-std::string vcd_utility::compute_fsm_state_from_vcd_string(const std::string& vcd_state_string) const
+std::string vcd_utility::compute_fsm_state_from_vcd_string(const std::string& vcd_state_string, bool one_hot_encoding) const
 {
    if(vcd_state_string.find_first_not_of("01") != std::string::npos)
    {

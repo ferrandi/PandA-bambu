@@ -51,9 +51,9 @@
 #include "config_HAVE_STDCXX_0X.hpp"
 #include "config_HAVE_STDCXX_11.hpp"
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <vector>
 
 #include "dbgPrintHelper.hpp"
@@ -101,11 +101,11 @@ class flopoco_wrapper
    int debug_level;
 #endif
    /// Generated Functional Units
-   std::unordered_map<std::string, flopoco::Operator*> FUs;
+   CustomUnorderedMap<std::string, flopoco::Operator*> FUs;
    /// Set of Functional Units written to a .vhdl file
-   std::unordered_set<std::string> FU_files;
+   CustomUnorderedSet<std::string> FU_files;
    /// Maps a Functional Unit to its precision
-   std::unordered_map<std::string, std::pair<unsigned int, unsigned int>> FU_to_prec;
+   CustomUnorderedMap<std::string, std::pair<unsigned int, unsigned int>> FU_to_prec;
    /// Pretty print functor object used to indent the generated code
    simple_indent PP;
    /// Port types
@@ -251,7 +251,7 @@ class flopoco_wrapper
    /**
     * Returns the Functional Units that have been written to a VHDL file
     */
-   const std::unordered_set<std::string>& get_files_written()
+   const CustomUnorderedSet<std::string>& get_files_written()
    {
       return this->FU_files;
    }

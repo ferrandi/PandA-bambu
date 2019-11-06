@@ -39,12 +39,12 @@
 
 // include from STL
 #include <list>
-#include <map>
 #include <stack>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 // include from parser/vcd/
 #include "sig_variation.hpp"
@@ -74,7 +74,7 @@ class vcd_sig_info
     * lsb + 1) if the signal is a vector and in the vcd a different id is
     * used for every bit
     */
-   std::unordered_map<std::string, size_t> vcd_id_to_bit;
+   CustomUnorderedMap<std::string, size_t> vcd_id_to_bit;
 
    vcd_sig_info(std::string _type, const bool _is_vec, const size_t _msb, const size_t _lsb) : type(std::move(_type)), is_vec(_is_vec), msb(_msb), lsb(_lsb)
    {
@@ -94,10 +94,10 @@ class vcd_parser
     * this is the type used to select which signals have to be filtered during
     * parsing.
     * the key of the map is a std::string representing a scope.
-    * the value type is a std::unordered_set containing all the names of the
+    * the value type is a UnorderedSetStd containing all the names of the
     * signal that have to be selected in that scope
     */
-   typedef std::unordered_map<std::string, std::unordered_set<std::string>> vcd_filter_t;
+   typedef UnorderedMapStd<std::string, UnorderedSetStdStable<std::string>> vcd_filter_t;
 
    /**
     * this type is the result of a parse.
@@ -105,7 +105,7 @@ class vcd_parser
     * the secondary key is the name of the signal.
     * the value type is std::list of sig_variation representing the waveform
     */
-   typedef std::unordered_map<std::string, std::unordered_map<std::string, std::list<sig_variation>>> vcd_trace_t;
+   typedef UnorderedMapStd<std::string, CustomUnorderedMapStable<std::string, std::list<sig_variation>>> vcd_trace_t;
 
    /**
     * parses a file selecting only a predefined set of signals.
@@ -114,7 +114,7 @@ class vcd_parser
     * selected if this parameter is empty
     * @return: the traces of the selected vcd signals
     */
-   vcd_trace_t parse_vcd(const std::string& vcd_file_to_parse, const vcd_filter_t& selected_signals);
+   vcd_trace_t parse_vcd(const std::string& vcd_file_to_parse, const vcd_parser::vcd_filter_t& selected_signals);
 
  private:
    /**
@@ -141,7 +141,7 @@ class vcd_parser
 
    /**
     * set of signals to select from the vcd file.
-    * it it's empty all the signals will be selected, otherwise the data about
+    * if it's empty all the signals will be selected, otherwise the data about
     * uninteresting signals are discarded to save memory
     */
    vcd_filter_t filtered_signals;
@@ -161,7 +161,7 @@ class vcd_parser
    /**
     * maps every signal id in the vcd to the set of the corresponding pairs (scope, hdl signal name)
     */
-   std::map<std::string, std::unordered_set<std::pair<std::string, std::string>>> vcd_id_to_scope_and_name;
+   std::map<std::string, CustomUnorderedSet<std::pair<std::string, std::string>>> vcd_id_to_scope_and_name;
 
    /* Parses the simulation part in the vcd_file */
    int vcd_parse_sim();

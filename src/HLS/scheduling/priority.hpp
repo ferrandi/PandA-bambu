@@ -49,8 +49,8 @@
 
 #include "Vertex.hpp"
 
+#include "custom_map.hpp"
 #include "refcount.hpp"
-#include <unordered_map>
 
 #include "op_graph.hpp"
 
@@ -153,7 +153,7 @@ struct priority_fixed : public priority_data<int>
    /**
     * Constructor.
     */
-   explicit priority_fixed(const std::unordered_map<vertex, int>& priority_value);
+   explicit priority_fixed(const CustomUnorderedMapUnstable<vertex, int>& priority_value);
 
    /**
     * This specialization does not update the priorities at the end of the control step.

@@ -97,8 +97,8 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
 #include <list>
-#include <map>
 #include <vector>
 
 /// Task graph include
@@ -171,15 +171,15 @@ const std::list<std::string> pragma_manager::GetFunctionDefinitionPragmas(const 
    return std::list<std::string>();
 }
 
-std::unordered_set<std::string> pragma_manager::getFunctionCallPragmas(const std::string& Name) const
+CustomUnorderedSet<std::string> pragma_manager::getFunctionCallPragmas(const std::string& Name) const
 {
    if(FunctionCallPragmas.find(Name) != FunctionCallPragmas.end())
       return FunctionCallPragmas.find(Name)->second;
    else
-      return std::unordered_set<std::string>();
+      return CustomUnorderedSet<std::string>();
 }
 
-void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name, const std::unordered_set<std::string>& pragmas)
+void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name, const CustomUnorderedSet<std::string>& pragmas)
 {
    for(auto pragma : pragmas)
    {
@@ -240,9 +240,9 @@ void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_na
    }
 }
 
-void pragma_manager::addFunctionCallPragmas(const std::string& Name, const std::unordered_set<std::string>& Pragmas)
+void pragma_manager::addFunctionCallPragmas(const std::string& Name, const CustomUnorderedSet<std::string>& Pragmas)
 {
-   std::unordered_set<std::string>::const_iterator k, k_end = Pragmas.end();
+   CustomUnorderedSet<std::string>::const_iterator k, k_end = Pragmas.end();
    for(k = Pragmas.begin(); k != k_end; ++k)
    {
       FunctionCallPragmas[Name].insert(*k);
@@ -295,9 +295,9 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line) const
    return pragma_id;
 }
 
-std::unordered_map<std::string, std::string> pragma_manager::ExtractClauses(const std::string& clauses_list) const
+CustomUnorderedMapUnstable<std::string, std::string> pragma_manager::ExtractClauses(const std::string& clauses_list) const
 {
-   std::unordered_map<std::string, std::string> clauses_map;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses_map;
    if(!clauses_list.size())
       return clauses_map;
 

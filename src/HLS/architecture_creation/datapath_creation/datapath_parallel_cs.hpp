@@ -63,7 +63,7 @@ class datapath_parallel_cs : public classic_datapath
     * @param memory_modules
     * @param circuit
     */
-   void manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit);
+   void manage_extern_global_port_parallel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit);
 
    /**
     * @brief connect datapath with each kernel
@@ -88,7 +88,7 @@ class datapath_parallel_cs : public classic_datapath
     * @param relationship_type
     * @return
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
    /**
     * @brief for each port resize it depending on the type of bus port

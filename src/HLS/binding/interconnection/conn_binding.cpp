@@ -95,9 +95,9 @@
 #include "generic_obj.hpp"
 
 /// STL include
+#include "custom_set.hpp"
 #include <algorithm>
 #include <list>
-#include <set>
 #include <tuple>
 #include <utility>
 #include <vector>
@@ -404,7 +404,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
 {
    structural_objectRef circuit = SM->get_circ();
 
-   // std::set<std::pair<std::string, std::string> > already_considered;
+   // CustomOrderedSet<std::pair<std::string, std::string> > already_considered;
    for(std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); ++i)
    {
       generic_objRef src = std::get<0>(i->first);
@@ -894,7 +894,7 @@ void conn_binding::print() const
 
 unsigned int conn_binding::determine_bit_level_mux() const
 {
-   std::set<generic_objRef> mux;
+   CustomOrderedSet<generic_objRef> mux;
    for(const auto& it : conn_implementation)
    {
       if(!GetPointer<mux_conn>(it.second))

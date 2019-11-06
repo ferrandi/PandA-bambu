@@ -47,8 +47,8 @@
 #include "application_frontend_flow_step.hpp"
 
 /// STL include
-#include <unordered_map>
-#include <unordered_set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// Utility include
 #include "refcount.hpp"
@@ -69,10 +69,10 @@ class string_cst_fix : public ApplicationFrontendFlowStep
 {
  protected:
    /// Already visited address expression (used to avoid infinite recursion)
-   std::unordered_set<unsigned int> already_visited_ae;
+   CustomUnorderedSet<unsigned int> already_visited_ae;
 
    /// relation between constant string and read-only variable initialized with the string_cst.
-   std::unordered_map<unsigned int, tree_nodeRef> string_cst_map;
+   CustomUnorderedMap<unsigned int, tree_nodeRef> string_cst_map;
 
    /**
     * Recursive tree node analysis
@@ -83,7 +83,7 @@ class string_cst_fix : public ApplicationFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

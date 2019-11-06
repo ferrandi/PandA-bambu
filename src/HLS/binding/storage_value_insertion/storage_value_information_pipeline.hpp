@@ -46,7 +46,7 @@ class StorageValueInformationPipeline : public StorageValueInformation
 {
  private:
    /// put into relation variables/values with storage values
-   std::map<std::pair<vertex, unsigned int>, unsigned int> storage_index_double_map;
+   CustomUnorderedMap<std::pair<vertex, unsigned int>, unsigned int> storage_index_double_map;
 
  public:
    /**

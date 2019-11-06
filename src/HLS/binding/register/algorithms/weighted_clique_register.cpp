@@ -139,7 +139,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       num_registers = static_cast<unsigned int>(register_clique->num_vertices());
       for(unsigned int i = 0; i < num_registers; ++i)
       {
-         std::set<CG_vertex_descriptor> clique = register_clique->get_clique(i);
+         CustomOrderedSet<CG_vertex_descriptor> clique = register_clique->get_clique(i);
          auto v_end = clique.end();
          for(auto v = clique.begin(); v != v_end; ++v)
          {
@@ -153,7 +153,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       const std::list<vertex>::const_iterator vEnd = support.end();
       for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
       {
-         const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+         const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
          auto k_end = live.end();
          for(auto k = live.begin(); k != k_end; ++k)
          {

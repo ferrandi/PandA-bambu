@@ -39,6 +39,11 @@
  */
 #ifndef HASH_HELPER_HPP
 #define HASH_HELPER_HPP
+
+#include "custom_set.hpp"
+
+#if NO_ABSEIL_HASH
+
 #include <boost/functional/hash/hash.hpp>
 
 /// Hash function for std::vector
@@ -60,22 +65,14 @@ namespace std
    template <typename T, typename U>
    struct hash<std::pair<T, U>> : public std::unary_function<std::pair<T, U>, std::size_t>
    {
-    private:
-      const hash<T> Th;
-      const hash<U> Uh;
-
-    public:
-      /**
-       * Constructor
-       */
-      hash() : Th(), Uh()
-      {
-      }
-
       std::size_t operator()(const std::pair<T, U>& val) const
       {
-         return Th(val.first) ^ Uh(val.second);
+         size_t hash_value = 0;
+         boost::hash_combine(hash_value, val.first);
+         boost::hash_combine(hash_value, val.second);
+         return hash_value;
       }
    };
 } // namespace std
+#endif
 #endif

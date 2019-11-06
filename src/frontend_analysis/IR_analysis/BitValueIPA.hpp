@@ -63,13 +63,13 @@ class BitValueIPA : public ApplicationFrontendFlowStep, public BitLatticeManipul
     * stores the function ids of the functions whose Bit_Value intra procedural
     * steps have to be invalidated by this step
     */
-   std::set<unsigned int> fun_id_to_restart;
+   CustomOrderedSet<unsigned int> fun_id_to_restart;
 
    std::map<unsigned int, unsigned int> last_bitvalue_ver;
 
    std::map<unsigned int, unsigned int> last_bb_ver;
 
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type) override;
 

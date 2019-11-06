@@ -42,10 +42,6 @@
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
 
-/// STL include
-#include <set>
-#include <unordered_set>
-
 /// Utility include
 #include "custom_set.hpp"
 #include "refcount.hpp"
@@ -64,7 +60,7 @@ class constant_flop_wrapper : public FunctionFrontendFlowStep
 {
  protected:
    /// The set of already created functions
-   static std::set<std::string> operations;
+   static CustomOrderedSet<std::string> operations;
 
    /// Tree manager
    const tree_managerRef TreeM;
@@ -89,7 +85,7 @@ class constant_flop_wrapper : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

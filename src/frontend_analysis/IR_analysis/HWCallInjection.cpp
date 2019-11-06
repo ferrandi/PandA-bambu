@@ -51,7 +51,7 @@
 #include <string>
 
 /// STL includes
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <utility>
 #include <vector>
 
@@ -90,9 +90,9 @@ DesignFlowStep_Status HWCallInjection::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> HWCallInjection::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
    {
       case(DEPENDENCE_RELATIONSHIP):

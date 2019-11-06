@@ -59,9 +59,9 @@ parm_decl_taken_address_fix::parm_decl_taken_address_fix(const ParameterConstRef
 
 parm_decl_taken_address_fix::~parm_decl_taken_address_fix() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> parm_decl_taken_address_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> parm_decl_taken_address_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -100,7 +100,7 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
    const std::string fu_name = tree_helper::name_function(TM, function_id);
    THROW_ASSERT(not GetPointer<const function_type>(tree_helper::CGetType(tn))->varargs_flag, "function " + fu_name + " is varargs");
    // compute the set of parm_decl for which an address is taken
-   std::set<unsigned int> parm_decl_addr;
+   CustomOrderedSet<unsigned int> parm_decl_addr;
    std::map<unsigned int, tree_nodeRef> parm_decl_var_decl_rel;
    for(auto& block : sl->list_of_bloc)
    {

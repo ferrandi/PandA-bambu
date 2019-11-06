@@ -49,7 +49,7 @@
 #include "config_HAVE_LIBRARY_COMPILER.hpp"
 #include "config_HAVE_LIBRARY_CREATOR.hpp"
 
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 #include "refcount.hpp"

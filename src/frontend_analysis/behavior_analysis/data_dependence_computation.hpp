@@ -54,6 +54,9 @@ enum class FunctionBehavior_VariableAccessType;
 
 class DataDependenceComputation : public FunctionFrontendFlowStep
 {
+ private:
+   void do_dependence_reduction();
+
  protected:
    /**
     * Compute the dependencies

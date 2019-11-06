@@ -213,13 +213,13 @@ int main(int argc, char* argv_orig[])
 
          PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Created list of files: " + boost::lexical_cast<std::string>(input_files.size()) + " input source code files to be concatenated");
 
-         CustomMap<std::string, std::string> temp_input_files;
+         std::map<std::string, std::string> temp_input_files;
          for(const auto& input_file : input_files)
          {
             temp_input_files[input_file] = input_file;
          }
 
-         /// creating the tree manager from the datastructure
+         /// creating the tree manager from the data structure
          Wrap->FillTreeManager(TM, temp_input_files);
 
          // Dump the configuration file if it has been requested by the user. Note that if the configuration

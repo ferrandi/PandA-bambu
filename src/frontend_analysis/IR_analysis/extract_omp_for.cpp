@@ -59,7 +59,7 @@
 #include "design_flow_manager.hpp"
 
 /// STL include
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <utility>
 
 /// tree includes
@@ -83,10 +83,10 @@ ExtractOmpFor::~ExtractOmpFor()
 {
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ExtractOmpFor::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ExtractOmpFor::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    const auto TM = AppM->get_tree_manager();
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -144,7 +144,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped loop " + STR(loop->GetId()));
          continue;
       }
-      std::unordered_set<vertex> basic_blocks;
+      CustomUnorderedSet<vertex> basic_blocks;
       loop->get_recursively_bb(basic_blocks);
       THROW_ASSERT(basic_blocks.size() >= 1, "Unexpected pattern");
       if(basic_blocks.size() == 1)

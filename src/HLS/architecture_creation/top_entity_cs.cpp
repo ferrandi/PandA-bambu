@@ -63,8 +63,8 @@
 
 /// utility includes
 #include "dbgPrintHelper.hpp"
-#include "utility.hpp"
 #include "math_function.hpp"
+#include "utility.hpp"
 
 top_entity_cs::top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : top_entity(_parameters, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
