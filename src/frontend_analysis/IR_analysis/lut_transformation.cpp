@@ -182,8 +182,30 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
       return false;
    return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max);
 }
-#define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
-#define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
+bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
+{
+   auto c0 = tree_helper::CGetType(GET_CONST_NODE(ce->op1));
+   auto type_id0 = c0->index;
+   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+      return false;
+   auto c1 = tree_helper::CGetType(GET_CONST_NODE(ce->op2));
+   auto type_id1 = c1->index;
+   if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+      return false;
+   if(tree_helper::is_int(TM, GET_INDEX_NODE((ce->op1))) || tree_helper::is_int(TM, GET_INDEX_NODE((ce->op2))))
+      return false;
+   return tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1;
+}
+bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
+{
+   auto c0 = tree_helper::CGetType(GET_CONST_NODE(ne->op));
+   auto type_id0 = c0->index;
+   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+      return false;
+   if(tree_helper::is_int(TM, GET_INDEX_NODE((ne->op))))
+      return false;
+   return (tree_helper::Size(GET_NODE((ne)->op)) == 1);
+}
 
 #define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
 
