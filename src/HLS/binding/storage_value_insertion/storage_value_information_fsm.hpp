@@ -59,28 +59,28 @@ public:
   /**
    * Destructor
    */
-  ~StorageValueInformationFsm();
+//  ~StorageValueInformationFsm();
 
   /**
    * return true in case a storage value exist for the pair vertex variable
    * @param curr_vertex is the vertex
    * @param var_index is the variable
    */
-  bool is_a_storage_value(vertex curr_vertex, unsigned int var_index);
+  bool is_a_storage_value(vertex curr_vertex, unsigned int var_index) override;
 
   /**
    * Returns the index of the storage value associated with the variable in a given vertex
    * @param curr_vertex is the vertex
    * @param var_index is the variable
    */
-  unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index);
+  unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) override;
 
   /**
    * assign a strage value to a couple state-variable
    * @param curr_state is the current state
    * @param variable is the assigned variable
    * @param sv is the assigned storage value*/
-  void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv);
+  void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) override;
 };
 
 typedef refcount<StorageValueInformationFsm> StorageValueInformationFsmRef;
