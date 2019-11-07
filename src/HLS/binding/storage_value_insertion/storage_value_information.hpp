@@ -127,7 +127,7 @@ class StorageValueInformation
    int get_compatibility_weight(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 
    /**
-    * assign a strage value to a couple state-variable
+    * assign a storage value to a couple state-variable
     * @param curr_state is the current state
     * @param variable is the assigned variable
     * @param sv is the assigned storage value*/

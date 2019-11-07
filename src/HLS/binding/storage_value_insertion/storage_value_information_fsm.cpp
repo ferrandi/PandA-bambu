@@ -60,5 +60,5 @@ unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigne
 
 void StorageValueInformationFsm::set_storage_value_index(vertex, unsigned int variable, unsigned int sv) 
 {
-   storage_index_map[variable] = sv;
+    storage_index_map[variable] = sv;
 }

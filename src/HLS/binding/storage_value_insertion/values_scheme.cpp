@@ -93,7 +93,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
       const CustomOrderedSet<unsigned int>::const_iterator k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
-         if(HLS->storage_value_information->is_a_storage_value(*vIt, *k))
+         if(!HLS->storage_value_information->is_a_storage_value(*vIt, *k))
          {
             HLS->storage_value_information->set_storage_value_index(*vIt, *k, i);
             HLS->storage_value_information->variable_index_vect.push_back(*k);
