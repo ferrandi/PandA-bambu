@@ -1874,7 +1874,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       {
          auto* curr_op = GetPointer<operation>(*ops);
          std::string pipe_parameters_str = curr_op->pipe_parameters;
-         if(pipe_parameters_str != "" && fu_module->ExistsParameter(PIPE_PARAMETER))
+         if(pipe_parameters_str != "")
          {
             fu_module->SetParameter(PIPE_PARAMETER, pipe_parameters_str);
          }
