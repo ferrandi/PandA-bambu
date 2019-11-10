@@ -74,6 +74,8 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
 
    bool fix_nop;
 
+   bool use64bitMul;
+
    /**
     * Recursive examinate tree node
     */
