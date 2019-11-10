@@ -51,7 +51,7 @@
 #include "tree_common.hpp"
 #include "refcount.hpp"   // for REF_FORWARD_DECL
 
-REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 
 namespace RangeAnalysis
 {
@@ -193,7 +193,7 @@ namespace RangeAnalysis
    class Range_Analysis : public ApplicationFrontendFlowStep
    {
    private: 
-      std::map<tree_nodeRef, Range> ranges;
+      std::map<tree_nodeConstRef, Range> ranges;
 
    protected:
 
@@ -231,7 +231,7 @@ namespace RangeAnalysis
        */
       bool HasToBeExecuted() const override;
 
-      Range getRange(const tree_nodeRef ssa_name) const;
+      Range getRange(const tree_nodeConstRef ssa_name) const;
 
       /** Gets the maximum bit width of the operands in the instructions of the
        * function. This function is necessary because the class APInt only
