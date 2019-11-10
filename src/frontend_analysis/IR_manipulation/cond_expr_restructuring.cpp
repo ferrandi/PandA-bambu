@@ -32,7 +32,7 @@
  */
 /**
  * @file cond_expr_restructuring.cpp
- * @brief Analysis step restructing tree of cond_expr to reduce critical path delay
+ * @brief Analysis step restructuring tree of cond_expr to reduce critical path delay
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -342,46 +342,61 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          block.second->PushBefore(curr_stmt, *stmt);
          new_tree_nodes.push_back(curr_stmt);
 
-         /// Condition of the old root
-         tree_nodeRef first_cond;
-         if(first_operand_of_first)
-         {
-            first_cond = first_ce->op0;
-         }
-         else
-         {
-            first_cond = tree_man->CreateNotExpr(first_ce->op0, blocRef());
-            const auto not_first_cond_def = GetPointer<ssa_name>(GET_NODE(first_cond))->CGetDefStmt();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(not_first_cond_def));
-            block.second->PushBefore(not_first_cond_def, *stmt);
-            new_tree_nodes.push_back(not_first_cond_def);
-         }
-
-         /// Conditon of the second ce
-         tree_nodeRef second_cond;
-         if(first_operand_of_second)
-         {
-            second_cond = second_ce->op0;
-         }
-         else
-         {
-            second_cond = tree_man->CreateNotExpr(second_ce->op0, blocRef());
-            const auto not_second_cond_def = GetPointer<ssa_name>(GET_NODE(second_cond))->CGetDefStmt();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(not_second_cond_def));
-            block.second->PushBefore(not_second_cond_def, *stmt);
-            new_tree_nodes.push_back(not_second_cond_def);
-         }
-         /// Building the condition of the root cond expr
          tree_nodeRef and_first_cond;
-         if(first_cond->index == second_cond->index)
-            and_first_cond = first_cond;
+         if(GET_INDEX_NODE(first_ce->op0) == GET_INDEX_NODE(second_ce->op0))
+         {
+            /// simplified version
+            if(!first_operand_of_first && !first_operand_of_second)
+            {
+               tree_nodeRef lut_constant_node;
+               auto DefaultUnsignedLongLongInt = tree_man->CreateDefaultUnsignedLongLongInt();
+               lut_constant_node = TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
+               auto boolType = tree_man->create_boolean_type();
+               tree_nodeRef op2, op3, op4, op5, op6, op7, op8;
+               const std::string srcp_default = "<built-in>:0:0";
+               tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, first_ce->op0, op2, op3, op4, op5, op6, op7, op8, srcp_default);
+               auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, block.first, srcp_default);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT NOT " + STR(lut_ga));
+               block.second->PushBefore(lut_ga, *stmt);
+               new_tree_nodes.push_back(lut_ga);
+               and_first_cond = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
+            }
+            else if(first_operand_of_first && first_operand_of_second)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Simplified to identity");
+               and_first_cond = first_ce->op0;
+            }
+            else
+            {
+               auto boolType = tree_man->create_boolean_type();
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Simplified to 0");
+               and_first_cond = TM->CreateUniqueIntegerCst(0, boolType->index);
+            }
+         }
          else
          {
-            and_first_cond = tree_man->CreateAndExpr(first_cond, second_cond, blocRef());
-            auto curStmt = GetPointer<ssa_name>(GET_NODE(and_first_cond))->CGetDefStmt();
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(curStmt));
-            block.second->PushBefore(curStmt, *stmt);
-            new_tree_nodes.push_back(curStmt);
+            /// we are going to create a LUT
+            tree_nodeRef lut_constant_node;
+            auto DefaultUnsignedLongLongInt = tree_man->CreateDefaultUnsignedLongLongInt();
+            long long int lut_val;
+            if(!first_operand_of_first && !first_operand_of_second)
+               lut_val = 1;
+            else if(!first_operand_of_first && first_operand_of_second)
+               lut_val = 2;
+            else if(first_operand_of_first && !first_operand_of_second)
+               lut_val = 4;
+            else
+               lut_val = 8;
+            lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
+            auto boolType = tree_man->create_boolean_type();
+            tree_nodeRef op3, op4, op5, op6, op7, op8;
+            const std::string srcp_default = "<built-in>:0:0";
+            tree_nodeRef new_op1 = tree_man->create_lut_expr(boolType, lut_constant_node, second_ce->op0, first_ce->op0, op3, op4, op5, op6, op7, op8, srcp_default);
+            auto lut_ga = tree_man->CreateGimpleAssign(boolType, TM->CreateUniqueIntegerCst(0, boolType->index), TM->CreateUniqueIntegerCst(1, boolType->index), new_op1, block.first, srcp_default);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created LUT STD " + STR(lut_ga));
+            block.second->PushBefore(lut_ga, *stmt);
+            new_tree_nodes.push_back(lut_ga);
+            and_first_cond = GetPointer<gimple_assign>(GET_NODE(lut_ga))->op0;
          }
 
          /// Inserting last cond expr
@@ -401,8 +416,10 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          gimple_assign_schema[TOK(TOK_OP0)] = STR(first_ga->op0->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(root_cond_expr_id);
          TM->create_tree_node(root_gimple_node_id, gimple_assign_K, gimple_assign_schema);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->CGetTreeNode(root_gimple_node_id)));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + TM->CGetTreeNode(root_gimple_node_id)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Before " + (*stmt)->ToString());
          block.second->Replace(*stmt, TM->GetTreeReindex(root_gimple_node_id), true);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After " + (*stmt)->ToString());
          new_tree_nodes.push_back(TM->GetTreeReindex(root_gimple_node_id));
 #ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(root_gimple_node_id));
