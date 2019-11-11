@@ -997,7 +997,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                   continue;
                }
 
-               ///scheduling is now possible
+               /// scheduling is now possible
                /// update resource usage
                used_resources[fu_type]++;
 

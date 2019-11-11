@@ -89,7 +89,13 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters)), already_executed(false), changed_call_graph(false), fix_nop(false), use64bitMul(false)
+    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters),
+      TreeM(_AppM->get_tree_manager()),
+      tree_man(new tree_manipulation(TreeM, parameters)),
+      already_executed(false),
+      changed_call_graph(false),
+      fix_nop(false),
+      use64bitMul(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
