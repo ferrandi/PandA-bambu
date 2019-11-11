@@ -1697,8 +1697,6 @@ void Bit_Value::clear_current()
 
 DesignFlowStep_Status Bit_Value::InternalExec()
 {
-   bool restart;
-   bool changed;
    initialize();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing initial backward");
    backward();
@@ -1707,6 +1705,7 @@ DesignFlowStep_Status Bit_Value::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of initial backward:");
    print_bitstring_map(best);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
+   bool restart;
    do
    {
       clear_current();
@@ -1725,10 +1724,9 @@ DesignFlowStep_Status Bit_Value::InternalExec()
       print_bitstring_map(best);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
    } while(restart);
-
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of alg:");
    print_bitstring_map(best);
-   changed = update_IR();
+   auto changed = update_IR();
    BitLatticeManipulator::clear();
    direct_call_id_to_called_id.clear();
    arguments.clear();
