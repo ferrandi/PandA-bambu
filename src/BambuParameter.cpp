@@ -1637,7 +1637,6 @@ int BambuParameter::Exec()
          // interconnection
          case 'C':
          {
-            // TODO: anche qui potrei voler selezionare cosa fare
             if(std::string(optarg) == "M")
                setOption(OPT_datapath_interconnection_algorithm, HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING);
             else

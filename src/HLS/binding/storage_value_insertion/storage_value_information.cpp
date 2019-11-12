@@ -68,7 +68,6 @@ StorageValueInformation::~StorageValueInformation() = default;
 
 void StorageValueInformation::Initialize()
 {
-
    const hlsRef HLS = HLS_mgr->get_HLS(function_id);
    const FunctionBehaviorConstRef FB = HLS_mgr->CGetFunctionBehavior(function_id);
    data = FB->CGetOpGraph(FunctionBehavior::DFG);
