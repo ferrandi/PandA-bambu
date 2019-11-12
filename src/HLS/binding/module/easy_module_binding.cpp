@@ -164,7 +164,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    /// check easy binding and compute the list of vertices for which a sharing is possible
-   if(true)//FB->is_pipelining_enabled())
+   if(HLSMgr->GetFunctionBehavior(funId)->is_pipelining_enabled())
    {
        std::set<vertex> bound_vertices;
        std::map<unsigned int, unsigned int> fu_instances;
@@ -185,8 +185,6 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
                             "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
           }
        }
-       // TODO: sistemare questo output
-       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Pipelining bound operations:" + STR(bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
    }
    else
    {

@@ -53,7 +53,6 @@ class StorageValueInformationPipeline : public StorageValueInformation
     * Constructor
     */
    StorageValueInformationPipeline(const HLS_managerConstRef HLS_mgr, const unsigned int function_id);
-
    /**
     * Destructor
     */

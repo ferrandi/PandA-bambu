@@ -2549,13 +2549,13 @@ void mux_connection_binding::create_connections()
             {
                if(HLS->Rliv->has_state_out(*e_it, *op, var_written))
                {
-                  unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(*e_it, var_written);
-                  unsigned int r_index = HLS->Rreg->get_register(storage_value);
-                  generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
                   const CustomOrderedSet<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
                   const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                   for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                   {
+                     unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(*s_out_it, var_written);
+                     unsigned int r_index = HLS->Rreg->get_register(storage_value);
+                     generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
                      HLS->Rconn->add_data_transfer(fu_obj, tgt_reg_obj, 0, 0, data_transfer(var_written, tree_helper::size(TreeM, var_written), *e_it, *s_out_it, *op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "       - add data transfer from " << fu_obj->get_string() << " to " << tgt_reg_obj->get_string() << " from state "

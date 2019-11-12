@@ -60,6 +60,8 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
+#include "state_transition_graph_manager.hpp"
+
 StorageValueInformationPipeline::StorageValueInformationPipeline(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : StorageValueInformation::StorageValueInformation(_HLS_mgr, _function_id)
 {
 }
@@ -73,11 +75,15 @@ bool StorageValueInformationPipeline::is_a_storage_value(vertex state, unsigned 
 
 unsigned int StorageValueInformationPipeline::get_storage_value_index(vertex state, unsigned int var_index) 
 {
+   hlsRef HLS = HLS_mgr->get_HLS(function_id);
+   std::cout << "called get storage value onto state: " << HLS->STG->get_state_name(state) << " var_index: " << var_index << "\n";
    THROW_ASSERT(storage_index_double_map.find(std::make_pair(state, var_index)) != storage_index_double_map.end(), "the storage value is missing");
    return storage_index_double_map.find(std::make_pair(state, var_index))->second;
 }
 
 void StorageValueInformationPipeline::set_storage_value_index(vertex state, unsigned int variable, unsigned int sv) 
 {
+   hlsRef HLS = HLS_mgr->get_HLS(function_id);
+   std::cout << "called set storage value onto state: " << HLS->STG->get_state_name(state) << " variable: " << variable << "\n";
    storage_index_double_map[std::make_pair(state, variable)] = sv;
 }
