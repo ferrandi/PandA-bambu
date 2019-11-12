@@ -719,7 +719,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
       }
       else
       {
-         THROW_ERROR("Unit not currenty supported: " + fun_unit_name);
+         THROW_ERROR("Unit not currently supported: " + fun_unit_name);
       }
       const technology_nodeRef fu_lib_unit = allocation_information->get_fu(fu_type_id);
       THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + fun_unit_name);
