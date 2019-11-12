@@ -49,7 +49,7 @@ vcd_parser::vcd_parser(const ParameterConstRef& param) : debug_level(param->get_
 {
 }
 
-vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_parse, const vcd_filter_t &selected_signals)
+vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_parse, const vcd_filter_t& selected_signals)
 {
    // ---- initialization ----
    // open file

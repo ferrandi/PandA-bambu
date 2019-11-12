@@ -679,7 +679,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                }
                /// true if operation is schedulable
                /// check if there exist enough resources available
-               bool schedulable = BB_update_resources_use(used_resources[fu_type], fu_type);
+               if(used_resources.find(fu_type) == used_resources.end())
+                  used_resources[fu_type] = 0;
+               bool schedulable = used_resources.at(fu_type) != HLS->allocation_information->get_number_fu(fu_type);
                if(!schedulable)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---No free resource");
@@ -994,6 +996,10 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                   restarted_resources.at(fu_type).insert(current_vertex);
                   continue;
                }
+
+               /// scheduling is now possible
+               /// update resource usage
+               used_resources[fu_type]++;
 
                /// check if there exist enough resources available
                if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end())
