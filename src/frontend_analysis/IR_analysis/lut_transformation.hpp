@@ -91,6 +91,8 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const;
    bool CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const;
+   bool CHECK_COND_EXPR_SIZE(cond_expr* ce) const;
+   bool CHECK_NOT_EXPR_SIZE(unary_expr* ne) const;
    /**
     * @brief cannotBeLUT returns true in case the op is an operation that cannot be translated in a LUT
     * @param op is an operation
