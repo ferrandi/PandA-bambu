@@ -53,8 +53,11 @@ class array_ref;
 
 #include "hls_manager.hpp"
 
+#include "state_transition_graph.hpp"
+
 REF_FORWARD_DECL(conn_binding);
 CONSTREF_FORWARD_DECL(OpGraph);
+CONSTREF_FORWARD_DECL(StateTransitionGraph);
 
 /**
  * @class mux_connection_binding
@@ -180,6 +183,42 @@ class mux_connection_binding : public conn_binding_creator
     * check if the port has to be swapped
     */
    unsigned int swap_p(const OpGraphConstRef data, vertex op, unsigned int num, std::vector<HLS_manager::io_binding_type>& vars_read, const BehavioralHelperConstRef behavioral_helper, const tree_managerRef TreeM);
+};
+
+class last_intermediate_state{
+
+public:
+
+   last_intermediate_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph){}
+
+   vertex operator()(vertex top, vertex bottom) {
+      vertex ret_v = top;
+      std::list<boost::graph_traits<graphs_collection>::vertex_descriptor> running_vertices;
+      CustomUnorderedSet<boost::graph_traits<graphs_collection>::vertex_descriptor> encountered_vertices;
+      running_vertices.push_back(ret_v);
+      encountered_vertices.insert(ret_v);
+      while(not running_vertices.empty())
+      {
+         const boost::graph_traits<graphs_collection>::vertex_descriptor current = running_vertices.front();
+         running_vertices.pop_front();
+         boost::graph_traits<graph>::out_edge_iterator oe, oe_end;
+         for(boost::tie(oe, oe_end) = boost::out_edges(current, *state_graph); oe != oe_end; oe++)
+         {
+            const boost::graph_traits<graphs_collection>::vertex_descriptor target = boost::target(*oe, *state_graph);
+            if(target == bottom)
+               return current;
+            if(encountered_vertices.find(target) == encountered_vertices.end())
+            {
+               encountered_vertices.insert(target);
+               running_vertices.push_back(target);
+            }
+         }
+      }
+      THROW_ERROR("There is no connection from top to bottom state");
+      return top;
+   }
+private:
+   const StateTransitionGraphConstRef state_graph;
 };
 
 #endif
