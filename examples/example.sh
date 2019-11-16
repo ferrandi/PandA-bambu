@@ -26,7 +26,7 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-$dir_script/paralell_queries/context_switch_xilinx_10_1DB_simulate.sh $@
+$dir_script/parallel_queries/context_switch_xilinx_10_1DB_simulate.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

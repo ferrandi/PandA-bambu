@@ -89,14 +89,16 @@ void MemoryInitializationWriterBase::GoUp()
    status.back().second++;
    size_t expected_size = 0;
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--GoUp " + status.back().first->get_kind_text());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--GoUp - New status is " + PrintStatus());
 
    /// Second, according to the type let's how many elements have to have been processed
+   std::vector<unsigned int> array_dimensions;
    switch(status.back().first->get_kind())
    {
       case array_type_K:
          /// parameters cannot have this type, but global variables can
-         expected_size = tree_helper::get_array_num_elements(TM, status.back().first->index);
+         tree_helper::get_array_dimensions(TM, status.back().first->index, array_dimensions);
+         expected_size = array_dimensions.front();
          break;
       case complex_type_K:
          expected_size = 2;
@@ -161,7 +163,7 @@ void MemoryInitializationWriterBase::GoUp()
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
    }
    if(expected_size != 0 and expected_size != status.back().second)
-      THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text());
+      THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text() + " " + STR(expected_size) + " vs. " + STR(status.back().second));
 }
 
 void MemoryInitializationWriterBase::GoDown()
