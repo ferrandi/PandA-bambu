@@ -729,7 +729,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case RANGE_ANALYSIS:
       {
-            return DesignFlowStepRef(new RangeAnalysis::Range_Analysis(AppM, design_flow_manager.lock(), parameters));
+            return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
 #if HAVE_ZEBU_BUILT
