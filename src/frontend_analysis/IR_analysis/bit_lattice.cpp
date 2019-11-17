@@ -169,7 +169,6 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
          }
       }
    }
-
    auto a_it = longer.crbegin();
    auto b_it = shorter.crbegin();
    const auto a_end = longer.crend();
@@ -183,9 +182,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    {
       res.push_front(bit_lattice::X);
    }
-
    sign_reduce_bitstring(res, out_is_signed);
-
    if(out_is_signed)
    {
       const bool a_sign_is_x = _a.front() == bit_lattice::X;
@@ -196,7 +193,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
       {
          res.pop_front();
       }
-      if(sign_bit != bit_lattice::X)
+      if(sign_bit != bit_lattice::X && res.front() == bit_lattice::X)
       {
          res.pop_front();
          res.push_front(sign_bit);

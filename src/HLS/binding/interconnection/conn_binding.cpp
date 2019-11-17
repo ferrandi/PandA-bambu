@@ -425,9 +425,12 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          auto* src_obj = GetPointer<module>(src_module);
          for(unsigned int ind = 0; ind < src_obj->get_out_port_size(); ind++)
          {
-            if(src_obj->get_out_port(ind)->get_id() == DONE_PORT_NAME)
+            auto curr_port = src_obj->get_out_port(ind);
+            if(curr_port->get_id() == DONE_PORT_NAME)
                continue;
-            port_src = src_obj->get_out_port(ind);
+            if(GetPointer<port_o>(curr_port)->get_is_memory() || GetPointer<port_o>(curr_port)->get_is_global() || GetPointer<port_o>(curr_port)->get_is_extern())
+               continue;
+            port_src = curr_port;
             if(port_src->get_kind() == port_vector_o_K)
             {
                port_src = GetPointer<port_o>(port_src)->get_port(GetPointer<funit_obj>(src)->get_index() % GetPointer<port_o>(port_src)->get_ports_size());
@@ -437,6 +440,11 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       }
       else if(src_module->get_kind() == port_o_K || src_module->get_kind() == port_vector_o_K)
          port_src = src_module;
+      if(!port_src)
+      {
+         src_module->print(std::cerr);
+         THROW_ERROR("source module does not have the expected return_port: " + src_module->get_id() + " - " + src_module->get_path() + "\nCheck the module specification");
+      }
 
       THROW_ASSERT(tgt_module, "No object associated to " + tgt->get_string());
       if(tgt_module->get_kind() == component_o_K)
@@ -446,11 +454,14 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
 
          for(unsigned int ind = 0; ind < tgt_obj->get_in_port_size(); ind++)
          {
-            if(tgt_obj->get_in_port(ind)->get_id() == CLOCK_PORT_NAME || tgt_obj->get_in_port(ind)->get_id() == RESET_PORT_NAME || tgt_obj->get_in_port(ind)->get_id() == START_PORT_NAME)
+            auto curr_port = tgt_obj->get_in_port(ind);
+            if(curr_port->get_id() == CLOCK_PORT_NAME || curr_port->get_id() == RESET_PORT_NAME || curr_port->get_id() == START_PORT_NAME)
+               continue;
+            if(GetPointer<port_o>(curr_port)->get_is_memory() || GetPointer<port_o>(curr_port)->get_is_global() || GetPointer<port_o>(curr_port)->get_is_extern())
                continue;
             if(num == operand)
             {
-               port_tgt = tgt_obj->get_in_port(ind);
+               port_tgt = curr_port;
                if(port_tgt->get_kind() == port_vector_o_K)
                {
                   port_tgt = GetPointer<port_o>(port_tgt)->get_port(port_index);
@@ -466,6 +477,11 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
       }
       else if(tgt_module->get_kind() == port_o_K || tgt_module->get_kind() == port_vector_o_K)
          port_tgt = tgt_module;
+      if(!port_tgt)
+      {
+         tgt_module->print(std::cerr);
+         THROW_ERROR("target module does not have the expected input port: " + tgt_module->get_id() + " - " + tgt_module->get_path() + "\nCheck the module specification");
+      }
 
       structural_type_descriptorRef port_src_type = port_src->get_typeRef();
       structural_objectRef sign = src->get_out_sign();
@@ -683,7 +699,6 @@ void conn_binding::add_datapath_connection(const technology_managerRef TM, const
       {
          std::string library_name = TM->get_library(UUDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, UUDATA_CONVERTER_STD, library_name, circuit, TM);
-         std::cerr << "A001" << std::endl;
 #if 0
          std::string library_name = TM->get_library(FFDATA_CONVERTER_STD);
          c_obj = SM->add_module_from_technology_library(name, FFDATA_CONVERTER_STD, library_name, circuit, TM);
