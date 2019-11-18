@@ -47,7 +47,11 @@
 /// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 
+#include "custom_map.hpp"
+#include "exceptions.hpp"
 #include "refcount.hpp"
+#include <boost/lexical_cast.hpp>
+
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(target_device);
@@ -55,10 +59,6 @@ REF_FORWARD_DECL(target_technology);
 REF_FORWARD_DECL(technology_manager);
 REF_FORWARD_DECL(BackendFlow);
 class xml_element;
-
-#include "custom_map.hpp"
-
-#include "exceptions.hpp"
 
 /// definition of the supported types for target devices
 enum class TargetDevice_Type

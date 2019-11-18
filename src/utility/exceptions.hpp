@@ -34,7 +34,7 @@
  * @file exceptions.hpp
  * @brief exceptions managed by PandA
  *
- * This structure is used to manage the exception arised by the Panda toolset.
+ * This structure is used to manage the exception raised by the Panda toolset.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
@@ -51,18 +51,14 @@
 #include "config_HAVE_PRINT_STACK.hpp"
 
 /// STD include
-#include <cstdlib>
+#include <iostream>
 #include <string>
 #if HAVE_PRINT_STACK
 #include <cxxabi.h>
 #include <execinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
 #endif
-
-/// Utility include
-#include <boost/lexical_cast.hpp>
 
 extern int exit_code;
 
@@ -99,7 +95,7 @@ inline T& throw_error(const T& t, const std::string& expression,
 #ifdef NDEBUG
    throw std::string(std::string("error -> ") + expression + std::string("\n"));
 #else
-   throw std::string(std::string("error -> ") + expression + std::string("\n\t") + std::string(pp) + std::string("\n\t") + std::string(file) + std::string(":") + boost::lexical_cast<std::string>(line));
+   throw std::string(std::string("error -> ") + expression + std::string("\n\t") + std::string(pp) + std::string("\n\t") + std::string(file) + std::string(":") + std::to_string(line));
 #endif
    static T t_local = t;
    return t_local;
@@ -128,7 +124,7 @@ inline void throw_warning(const std::string& expression,
 #ifdef NDEBUG
    throw std::string(std::string("warning -> ") + expression + std::string("\n"));
 #else
-   throw std::string(std::string("warning -> ") + expression + std::string("\n\t") + std::string(pp) + std::string("\n\t") + std::string(file) + std::string(":") + boost::lexical_cast<std::string>(line));
+   throw std::string(std::string("warning -> ") + expression + std::string("\n\t") + std::string(pp) + std::string("\n\t") + std::string(file) + std::string(":") + std::to_string(line));
 #endif
 }
 

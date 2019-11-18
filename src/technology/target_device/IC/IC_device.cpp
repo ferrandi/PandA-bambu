@@ -139,7 +139,7 @@ void IC_device::load_devices(const target_deviceRef device)
 
    auto output_level = Param->getOption<int>(OPT_output_level);
 
-   /// creating the datastructure representing the target technology
+   /// creating the data structure representing the target technology
    target = target_technology::create_technology(target_technology::CMOS, Param);
 
    try

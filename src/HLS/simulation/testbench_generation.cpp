@@ -77,8 +77,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #if HAVE_TASTE
                                             or interface_type == HLSFlowStep_Type::TASTE_INTERFACE_GENERATION
 #endif
-                                        ? HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
-                                                                                                                                                                                                                                           HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
+                                        ?
+                                        HLSFlowStep_Type::MINIMAL_TESTBENCH_GENERATION :
+                                        HLSFlowStep_Type::WB4_TESTBENCH_GENERATION,
                                     HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
          break;
       }

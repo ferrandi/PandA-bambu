@@ -48,15 +48,15 @@
 /// Autoheader include
 #include "config_HAVE_CMOS_BUILT.hpp"
 
+#include "custom_map.hpp"
+#include "exceptions.hpp"
 #include "refcount.hpp"
+#include <boost/lexical_cast.hpp>
+#include <string>
+
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(target_technology);
 class xml_element;
-
-#include "exceptions.hpp"
-
-#include "custom_map.hpp"
-#include <string>
 
 class target_technology
 {

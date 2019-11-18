@@ -1161,6 +1161,8 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_c4_array_32bits.c \
 ./bambu_specific_test4/simple_c4_array_64bits.c \
 ./bambu_specific_test4/simple_test.c \
+./bambu_specific_test4/simpleif_c1_none.c \
+./bambu_specific_test4/simpleif_c1_none_test.xml \
 ./bambu_specific_test4.sh\
 ./bambu_specific_test4_list\
 ./function_pointers.sh\
