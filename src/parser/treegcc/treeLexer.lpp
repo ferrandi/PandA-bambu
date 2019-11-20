@@ -67,6 +67,9 @@ REF_FORWARD_DECL(TreeFlexLexer);
 #include "treeParser.h"
 #endif
 #include "treeLexer.hpp"
+
+#include <boost/lexical_cast.hpp>
+
 using namespace std;
 
 ///Skipping warnings due to flex

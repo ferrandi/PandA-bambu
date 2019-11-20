@@ -64,22 +64,20 @@
 #include "config_HAVE_TO_C_BUILT.hpp"
 #include "config_RELEASE.hpp"
 
-/// STD include
-#include <string>
-
-/// STL include
-#include <list>
-#include <vector>
-
 /// Utility include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 #include "exceptions.hpp"
 #include "refcount.hpp"
+
 #include <boost/algorithm/string.hpp>
+#include <boost/lexical_cast.hpp>
 #include <boost/preprocessor/cat.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
 #include <climits>
+#include <list>
+#include <string>
+#include <vector>
 
 /// forward decl of xml Element
 class xml_element;

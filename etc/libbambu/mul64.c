@@ -1,5 +1,5 @@
 /**
- * memcpy primitive adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
+ * umul64 primitive adapted to the PandA infrastructure by Fabrizio Ferrandi from Politecnico di Milano.
  * November, 10 2019.
  *
  */

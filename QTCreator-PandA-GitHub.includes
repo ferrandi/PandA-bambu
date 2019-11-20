@@ -51,13 +51,6 @@ ext/nodelib/include/nodelib
 ext/sollya
 ext/vflib/include
 ext/vflib/src
-ext/mockturtle/include
-ext/mockturtle/lib/kitty
-ext/mockturtle/lib/fmt
-ext/mockturtle/lib/sparsepp
-ext/mockturtle/lib/ez
-ext/mockturtle/lib/lorina
-ext/mockturtle/lib/rang
 src
 src/algorithms
 src/algorithms/bipartite_matching
@@ -373,7 +366,6 @@ src/wrapper/target_architectures/SimIt
 src/wrapper/target_architectures/tsim
 src/wrapper/treegcc
 etc/clang_plugin
-/usr/lib/llvm-5.0/include
 etc/clang_plugin/llvm
 etc/libbambu/ac_types/gdb
 etc/libbambu/ac_types
@@ -382,6 +374,12 @@ etc/libbambu/ac_types/pdfdocs
 etc/libbambu/ac_math/include
 etc/libbambu/ac_math/include/ac_math
 src/wrapper/synthesis/nanoxplore
+ext/mockturtle/include
+ext/mockturtle/lib/kitty
+ext/mockturtle/lib/sparsepp
+ext/mockturtle/lib/ez
+ext/mockturtle/lib/lorina
+ext/mockturtle/lib/rang
 ext/mockturtle/include/mockturtle
 ext/mockturtle/include/mockturtle/utils
 ext/mockturtle/include/mockturtle/networks/detail
@@ -406,7 +404,6 @@ ext/mockturtle/lib/kitty/kitty
 ext/mockturtle/lib/json/nlohmann
 ext/mockturtle/lib/ez/ez
 ext/mockturtle/lib/abcsat
-ext/mockturtle/lib/fmt/fmt
 ext/mockturtle/lib/abcsat/abc
 ext/abseil-cpp
-/usr/include
+

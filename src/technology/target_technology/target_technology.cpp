@@ -52,14 +52,15 @@
 #endif
 #include "FPGA_technology.hpp"
 
+#include "Parameter.hpp"
+#include "constant_strings.hpp"
+#include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-#include "Parameter.hpp"
-#include "constant_strings.hpp"
-#include "exceptions.hpp"
+#include <boost/lexical_cast.hpp>
 
 target_technology::target_technology(const ParameterConstRef& param) : Param(param), type(FPGA)
 {
