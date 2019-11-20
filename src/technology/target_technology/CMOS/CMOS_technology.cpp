@@ -48,15 +48,14 @@
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
-
-#include <boost/filesystem.hpp>
-
-#include <cmath>
-
 #include "exceptions.hpp"
 #include "fileIO.hpp"
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
+
+#include <boost/filesystem.hpp>
+#include <boost/lexical_cast.hpp>
+#include <cmath>
 
 CMOS_technology::CMOS_technology(const ParameterConstRef& param) : target_technology(param)
 {

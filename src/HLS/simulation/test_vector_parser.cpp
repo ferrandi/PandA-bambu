@@ -90,7 +90,7 @@
 
 TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
 {
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 TestVectorParser::~TestVectorParser() = default;
@@ -197,18 +197,25 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                {
                   THROW_ERROR("Missing input value for parameter: " + param);
                }
+               if((Enode)->get_attribute(param + ":output"))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  test_vector[param + ":output"] = STR((Enode)->get_attribute(param + ":output")->get_value());
+               }
             }
             if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
             {
-               /// If discrepancy is enabled, then xml output is ignored
-               if(not(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)))
-               {
-                  HLSMgr->RSim->results_available = true;
-                  test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Expected return value is " + test_vector["return"]);
-               }
+               HLSMgr->RSim->results_available = true;
+               test_vector["return"] = ((Enode)->get_attribute("return")->get_value());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Expected return value is " + test_vector["return"]);
             }
             test_vectors.emplace_back(std::move(test_vector));
+         }
+         /// If discrepancy is enabled, then xml output is ignored
+         if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy) and HLSMgr->RSim->results_available)
+         {
+            HLSMgr->RSim->results_available = false;
+            THROW_WARNING("Output stored in xml file will be ignored since discrepancy analysis is enabled");
          }
          return;
       }
