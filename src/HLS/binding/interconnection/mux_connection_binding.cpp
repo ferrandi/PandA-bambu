@@ -1311,7 +1311,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
    const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
-   last_intermediate_state fetch_previous(HLS->STG->GetStg());
+   last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled());
    for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
    {
       unsigned int tree_var_state_in;
@@ -1557,6 +1557,37 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                                    "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
                                                                       << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                   }
+               }
+            }
+         }
+      }
+      if(HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled())
+      {
+         vertex origin = *rs_it;
+         vertex target;
+         unsigned int origin_idx;
+         unsigned int target_idx;
+         unsigned int origin_reg_idx;
+         unsigned int target_reg_idx;
+         generic_objRef origin_reg;
+         generic_objRef target_reg;
+         CustomOrderedSet<unsigned int> out_vars = HLS->Rliv->get_live_out(origin);
+         for(auto& var : out_vars)
+         {
+            graph::out_edge_iterator out_edges, out_edges_end;
+            for(boost::tie(out_edges, out_edges_end) = boost::out_edges(origin, *(HLS->STG->GetStg())); out_edges != out_edges_end; ++out_edges)
+            {
+               target = boost::target(*out_edges, *(HLS->STG->GetStg()));
+               if(HLS->storage_value_information->is_a_storage_value(origin, var) && HLS->storage_value_information->is_a_storage_value(target, var))
+               {
+                  origin_idx = HLS->storage_value_information->get_storage_value_index(origin, var);
+                  target_idx = HLS->storage_value_information->get_storage_value_index(target, var);
+                  origin_reg_idx = HLS->Rreg->get_register(origin_idx);
+                  target_reg_idx = HLS->Rreg->get_register(target_idx);
+                  origin_reg = HLS->Rreg->get(origin_reg_idx);
+                  target_reg = HLS->Rreg->get(target_reg_idx);
+                  // Always add a data transfer on port 0 since it's always an input to reg_STD
+                  HLS->Rconn->add_data_transfer(origin_reg, target_reg, 0, port_index, data_transfer(var, precision, origin, target, op));
                }
             }
          }

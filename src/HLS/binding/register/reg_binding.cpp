@@ -292,7 +292,7 @@ std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
    std::string register_type_name;
    std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-   if(is_without_enable.find(i) != is_without_enable.end())
+   if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
       register_type_name = register_STD;
    else if(synch_reset == "no")
       register_type_name = register_SE;

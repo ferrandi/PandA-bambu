@@ -189,36 +189,26 @@ class last_intermediate_state{
 
 public:
 
-   last_intermediate_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph){}
+   last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable) : state_graph(input_state_graph), pipeline(enable){}
 
    vertex operator()(vertex top, vertex bottom) {
-      vertex ret_v = top;
-      std::list<boost::graph_traits<graphs_collection>::vertex_descriptor> running_vertices;
-      CustomUnorderedSet<boost::graph_traits<graphs_collection>::vertex_descriptor> encountered_vertices;
-      running_vertices.push_back(ret_v);
-      encountered_vertices.insert(ret_v);
-      while(not running_vertices.empty())
+      if(not pipeline)
+         return top;
+      graph::in_edge_iterator in_edge, in_edge_end;
+      bool multiple_in_edges = false;
+      vertex ret_v;
+      for(boost::tie(in_edge, in_edge_end) = boost::in_edges(bottom, *state_graph); in_edge != in_edge_end; ++in_edge)
       {
-         const boost::graph_traits<graphs_collection>::vertex_descriptor current = running_vertices.front();
-         running_vertices.pop_front();
-         boost::graph_traits<graph>::out_edge_iterator oe, oe_end;
-         for(boost::tie(oe, oe_end) = boost::out_edges(current, *state_graph); oe != oe_end; oe++)
-         {
-            const boost::graph_traits<graphs_collection>::vertex_descriptor target = boost::target(*oe, *state_graph);
-            if(target == bottom)
-               return current;
-            if(encountered_vertices.find(target) == encountered_vertices.end())
-            {
-               encountered_vertices.insert(target);
-               running_vertices.push_back(target);
-            }
-         }
+         ret_v = boost::source(*in_edge, *state_graph);
+         THROW_ASSERT(not multiple_in_edges, "A pipeline should not contain phi operations");
+         multiple_in_edges = true;
       }
-      THROW_ERROR("There is no connection from top to bottom state");
-      return top;
+      THROW_ASSERT(multiple_in_edges, "No input edge found");
+      return ret_v;
    }
 private:
    const StateTransitionGraphConstRef state_graph;
+   bool pipeline;
 };
 
 #endif
