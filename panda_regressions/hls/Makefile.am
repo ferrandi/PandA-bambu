@@ -1127,6 +1127,8 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test2/port_swapping_test2.c\
 ./bambu_specific_test2/ps_constraints.xml \
 ./bambu_specific_test2/multiarray.c \
+./bambu_specific_test2/test_without_c.c \
+./bambu_specific_test2/test_without_c.xml \
 ./bambu_specific_test3.sh\
 ./bambu_specific_test3_list\
 ./bambu_specific_test4/ac_types1.cpp \
