@@ -44,7 +44,10 @@ std::cout << "integer ii=0;\n";
 std::cout << "reg [" << _ports_out[1].type_size << "-1:0] " << _ports_out[1].name << ";\n";
 std::cout << "reg [" << _ports_out[2].type_size << "-1:0] " << _ports_out[2].name << ";\n";
 if(_np_out==9)
-  std::cout << "reg [" << _ports_out[4].type_size << "-1:0] " << _ports_out[4].name << ";\n";
+{
+  std::cout << "reg [" << _ports_out[7].type_size << "-1:0] " << _ports_out[7].name << ";\n";
+  std::cout << "reg [" << _ports_out[8].type_size << "-1:0] " << _ports_out[8].name << ";\n";
+}
 if(_np_in==9)
   std::cout << "reg [(PORTSIZE_" << _ports_out[0].name << "*BITSIZE_" << _ports_out[0].name << ")+(-1):0] " << _ports_out[0].name << ";\n";
 
