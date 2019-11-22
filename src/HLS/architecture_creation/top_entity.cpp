@@ -227,7 +227,9 @@ DesignFlowStep_Status top_entity::InternalExec()
       SM->add_connection(sync_datapath_controller, controller_start);
    structural_objectRef done_signal_out;
    if(HLS->registered_done_port and
-      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR))
+      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or
+       parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+       parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;

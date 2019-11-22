@@ -43,12 +43,14 @@ noinst_HEADERS += \
    architecture_creation/controller_creation/controller_creator_base_step.hpp \
    architecture_creation/controller_creation/control_flow_checker.hpp \
    architecture_creation/controller_creation/controller_cs.hpp \
-   architecture_creation/controller_creation/fsm_controller.hpp
+   architecture_creation/controller_creation/fsm_controller.hpp \
+   architecture_creation/controller_creation/pipeline_controller.hpp
 lib_controller_creation_la_SOURCES = \
    architecture_creation/controller_creation/controller_creator_base_step.cpp \
    architecture_creation/controller_creation/control_flow_checker.cpp \
    architecture_creation/controller_creation/controller_cs.cpp \
-   architecture_creation/controller_creation/fsm_controller.cpp
+   architecture_creation/controller_creation/fsm_controller.cpp \
+   architecture_creation/controller_creation/pipeline_controller.cpp
 
 #DOCUMENTATION STUFF
 PRJ_DOC += architecture_creation/controller_creation/controller.doc architecture_creation/controller_creation/fsm.doc

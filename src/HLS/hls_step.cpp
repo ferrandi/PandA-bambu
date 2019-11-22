@@ -300,6 +300,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
          return "ParallelControllerCreator";
 #endif
+      case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
+         return "PipelineControllerCreator";
       case HLSFlowStep_Type::PORT_SWAPPING:
          return "PortSwapping";
       case HLSFlowStep_Type::SCHED_CHAINING:

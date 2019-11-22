@@ -1647,6 +1647,8 @@ src/HLS/architecture_creation/controller_creation/controller_cs.cpp
 src/HLS/architecture_creation/controller_creation/controller_cs.hpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.cpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.hpp
+src/HLS/architecture_creation/controller_creation/pipeline_controller.cpp
+src/HLS/architecture_creation/controller_creation/pipeline_controller.hpp
 src/HLS/architecture_creation/datapath_creation/classic_datapath.cpp
 src/HLS/architecture_creation/datapath_creation/classic_datapath.hpp
 src/HLS/architecture_creation/datapath_creation/datapath_creator.cpp

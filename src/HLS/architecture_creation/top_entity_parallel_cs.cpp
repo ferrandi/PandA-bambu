@@ -205,7 +205,9 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    structural_objectRef controller_done = controller_circuit->find_member(DONE_PORT_NAME, port_o_K, controller_circuit);
    THROW_ASSERT(controller_done, "Done signal not found in the controller");
    if(HLS->registered_done_port &&
-      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR))
+      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or
+       parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+       parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;

@@ -1919,6 +1919,7 @@ int BambuParameter::Exec()
          case 'p':
          {
             setOption(OPT_pipelining, true);
+            setOption(OPT_controller_architecture, HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR);
             break;
          }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
@@ -2797,7 +2798,9 @@ void BambuParameter::CheckParameters()
    }
 
    /// controller options
-   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR)
+   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or
+      getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+      getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR)
       setOption(OPT_stg, true);
 
    /// chaining options

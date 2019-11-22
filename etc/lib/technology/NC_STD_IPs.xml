@@ -2784,6 +2784,58 @@ end process;
       </circuit>
     </cell>
     <cell>
+      <name>register_SHIFT</name>
+      <circuit>
+        <component_o id="register_SHIFT">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="register_SHIFT"/>
+          <parameter name="CONTROLLER_LENGTH">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SHIFT in1 out1 CONTROLLER_LENGTH" VERILOG_PROVIDED=
+"reg [CONTROLLER_LENGTH-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1[CONTROLLER_LENGTH-1];
+always @(posedge clock)
+  if(reset)
+    reg_out1 &lt;= CONTROLLER_LENGTH&apos;b0;
+  else
+    reg_out1 &lt;= reg_out1 &lt;&lt; 1 | in1;
+" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(CONTROLLER_LENGTH-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+out1 &lt;= reg_out1(CONTROLLER_LENGTH-1);
+process(clock)
+begin
+  if(clock&apos;event and clock = &apos;1&apos;) then
+    if(reset = &apos;1&apos;) then
+      reg_out1 = (others = &gt; &apos;0&apos;);
+    else
+      reg_out1(CONTROLLER_LENGTH-1 downto 1) &lt;= reg_out1(CONTROLLER_LENGTH-2 downto 0);
+      reg_out1(0) &lt;= in1;
+    end if;
+  end if;
+end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>split_signal</name>
       <attribute name="area" value_type="float64">0</attribute>
       <circuit>
