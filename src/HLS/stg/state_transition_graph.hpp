@@ -476,4 +476,59 @@ class TransitionWriter : public EdgeWriter
     */
    void operator()(std::ostream& out, const EdgeDescriptor& e) const override;
 };
+
+class last_intermediate_state
+{
+ public:
+   last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable) : state_graph(input_state_graph), pipeline(enable)
+   {
+   }
+
+   vertex operator()(vertex top, vertex bottom)
+   {
+      if(not pipeline)
+         return top;
+      graph::in_edge_iterator in_edge, in_edge_end;
+      bool multiple_in_edges = false;
+      vertex ret_v;
+      for(boost::tie(in_edge, in_edge_end) = boost::in_edges(bottom, *state_graph); in_edge != in_edge_end; ++in_edge)
+      {
+         ret_v = boost::source(*in_edge, *state_graph);
+         THROW_ASSERT(not multiple_in_edges, "A pipeline should not contain phi operations");
+         multiple_in_edges = true;
+      }
+      THROW_ASSERT(multiple_in_edges, "No input edge found");
+      return ret_v;
+   }
+
+ private:
+   const StateTransitionGraphConstRef state_graph;
+   bool pipeline;
+};
+
+class next_unique_state
+{
+ public:
+   next_unique_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph)
+   {
+   }
+
+   vertex operator()(vertex state)
+   {
+      graph::out_edge_iterator out_edge, out_edge_end;
+      bool multiple_out_edges = false;
+      vertex next_state;
+      for(boost::tie(out_edge, out_edge_end) = boost::out_edges(state, *state_graph); out_edge != out_edge_end; ++out_edge)
+      {
+         next_state = boost::target(*out_edge, *state_graph);
+         THROW_ASSERT(not multiple_out_edges, "First state has multiple out edges");
+         multiple_out_edges = true;
+      }
+      THROW_ASSERT(multiple_out_edges, "No output edge found");
+      return next_state;
+   }
+
+ private:
+   const StateTransitionGraphConstRef state_graph;
+};
 #endif

@@ -47,8 +47,8 @@
 #include "hls_manager.hpp"
 
 /// HLS/binding/storage_value_information includes
-#include "storage_value_information_pipeline.hpp"
 #include "storage_value_information_fsm.hpp"
+#include "storage_value_information_pipeline.hpp"
 
 /// HLS/liveness include
 #include "liveness.hpp"
@@ -60,6 +60,10 @@
 /// utility include
 #include "cpu_time.hpp"
 
+/// include pipelining structure helper
+#include "state_transition_graph.hpp"
+#include "state_transition_graph_manager.hpp"
+
 values_scheme::values_scheme(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager)
     : storage_value_insertion(_Param, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::VALUES_SCHEME_STORAGE_VALUE_INSERTION)
 {
@@ -70,7 +74,7 @@ values_scheme::~values_scheme() = default;
 void values_scheme::Initialize()
 {
    HLSFunctionStep::Initialize();
-   if(true)
+   if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
       HLS->storage_value_information = StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
    else
       HLS->storage_value_information = StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId));
@@ -82,8 +86,13 @@ DesignFlowStep_Status values_scheme::InternalExec()
    long step_time;
    START_TIME(step_time);
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
+   const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    unsigned int i = 0;
+   vertex current_vertex;
+   vertex start_state = HLS->STG->get_entry_state();
    const std::list<vertex>& support = HLS->Rliv->get_support();
+   last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled());
+   next_unique_state get_next(HLS->STG->GetStg());
 
    const std::list<vertex>::const_iterator vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
@@ -96,8 +105,36 @@ DesignFlowStep_Status values_scheme::InternalExec()
          if(!HLS->storage_value_information->is_a_storage_value(*vIt, *k))
          {
             HLS->storage_value_information->set_storage_value_index(*vIt, *k, i);
-            HLS->storage_value_information->variable_index_vect.push_back(*k);
+            HLS->storage_value_information->variable_index_map[i] = *k;
             i++;
+         }
+      }
+      if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
+      {
+         std::list<vertex> starting_ops = HLS->STG->GetStg()->GetStateInfo(*vIt)->starting_operations;
+         const std::list<vertex>::const_iterator opEnd = starting_ops.end();
+         vertex state_0 = get_next(start_state);
+         for(auto opIt = starting_ops.begin(); opIt != opEnd; ++opIt)
+         {
+            std::vector<HLS_manager::io_binding_type> inVars = HLSMgr->get_required_values(HLS->functionId, *opIt);
+            for(unsigned int num = 0; num != inVars.size(); num++)
+            {
+               unsigned int var = std::get<0>(inVars[num]);
+               if(tree_helper::is_parameter(TreeM, var))
+               {
+                  current_vertex = *vIt;
+                  while(current_vertex != state_0)
+                  {
+                     if(!HLS->storage_value_information->is_a_storage_value(current_vertex, var))
+                     {
+                        HLS->storage_value_information->set_storage_value_index(current_vertex, var, i);
+                        HLS->storage_value_information->variable_index_map[i] = var;
+                        i++;
+                     }
+                     current_vertex = fetch_previous(start_state, current_vertex);
+                  }
+               }
+            }
          }
       }
    }

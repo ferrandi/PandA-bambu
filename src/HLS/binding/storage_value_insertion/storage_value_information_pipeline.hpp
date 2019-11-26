@@ -73,7 +73,7 @@ class StorageValueInformationPipeline : public StorageValueInformation
    unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) override;
 
    /**
-    * assign a strage value to a couple state-variable
+    * assign a storage value to a couple state-variable
     * @param curr_state is the current state
     * @param variable is the assigned variable
     * @param sv is the assigned storage value*/

@@ -51,12 +51,12 @@
 
 #include "allocation_information.hpp"
 #include "fu_binding.hpp"
+#include "function_behavior.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "liveness.hpp"
 #include "reg_binding.hpp"
 #include "storage_value_information.hpp"
-#include "function_behavior.hpp"
 
 /// parser/treegcc include
 #include "token_interface.hpp"

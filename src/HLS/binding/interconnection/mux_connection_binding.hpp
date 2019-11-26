@@ -184,31 +184,4 @@ class mux_connection_binding : public conn_binding_creator
     */
    unsigned int swap_p(const OpGraphConstRef data, vertex op, unsigned int num, std::vector<HLS_manager::io_binding_type>& vars_read, const BehavioralHelperConstRef behavioral_helper, const tree_managerRef TreeM);
 };
-
-class last_intermediate_state{
-
-public:
-
-   last_intermediate_state(StateTransitionGraphConstRef input_state_graph, bool enable) : state_graph(input_state_graph), pipeline(enable){}
-
-   vertex operator()(vertex top, vertex bottom) {
-      if(not pipeline)
-         return top;
-      graph::in_edge_iterator in_edge, in_edge_end;
-      bool multiple_in_edges = false;
-      vertex ret_v;
-      for(boost::tie(in_edge, in_edge_end) = boost::in_edges(bottom, *state_graph); in_edge != in_edge_end; ++in_edge)
-      {
-         ret_v = boost::source(*in_edge, *state_graph);
-         THROW_ASSERT(not multiple_in_edges, "A pipeline should not contain phi operations");
-         multiple_in_edges = true;
-      }
-      THROW_ASSERT(multiple_in_edges, "No input edge found");
-      return ret_v;
-   }
-private:
-   const StateTransitionGraphConstRef state_graph;
-   bool pipeline;
-};
-
 #endif

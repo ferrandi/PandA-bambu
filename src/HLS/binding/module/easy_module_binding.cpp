@@ -166,25 +166,25 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    /// check easy binding and compute the list of vertices for which a sharing is possible
    if(HLSMgr->GetFunctionBehavior(funId)->is_pipelining_enabled())
    {
-       std::set<vertex> bound_vertices;
-       std::map<unsigned int, unsigned int> fu_instances;
-       for(const auto op : sdg->CGetOperations())
-       {
-          if(fu.get_index(op) != INFINITE_UINT)
-             continue;
-          fu_unit = fu.get_assign(op);
-          if(fu_instances.find(fu_unit) == fu_instances.end())
-             fu_instances.insert(std::pair<unsigned int, unsigned int>(fu_unit, 0));
-          fu.bind(op, fu_unit, fu_instances[fu_unit]);
-          fu_instances[fu_unit]++;
-          bound_vertices.insert(op);
-          const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
-          if(node_id)
-          {
-             INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                            "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
-          }
-       }
+      std::set<vertex> bound_vertices;
+      std::map<unsigned int, unsigned int> fu_instances;
+      for(const auto op : sdg->CGetOperations())
+      {
+         if(fu.get_index(op) != INFINITE_UINT)
+            continue;
+         fu_unit = fu.get_assign(op);
+         if(fu_instances.find(fu_unit) == fu_instances.end())
+            fu_instances.insert(std::pair<unsigned int, unsigned int>(fu_unit, 0));
+         fu.bind(op, fu_unit, fu_instances[fu_unit]);
+         fu_instances[fu_unit]++;
+         bound_vertices.insert(op);
+         const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
+         if(node_id)
+         {
+            INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
+                           "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
+         }
+      }
    }
    else
    {

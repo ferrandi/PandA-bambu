@@ -1312,11 +1312,13 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
    const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
    const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
    last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled());
+   next_unique_state get_next(HLS->STG->GetStg());
    for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
    {
       unsigned int tree_var_state_in;
       if(!is_not_a_phi)
       {
+         THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled(), "A pipelined function should not contain any phi operations");
          const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(*rs_it);
          if(state_info && state_info->is_duplicated && !state_info->all_paths)
          {
@@ -1355,13 +1357,13 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
 
          if(!is_not_a_phi)
          {
+            THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled(), "A pipelined function should not contain any phi operations");
             vertex src_state = *s_in_it;
             if(src_state == NULL_VERTEX)
                std::swap(src_state, state);
             if(tree_helper::is_parameter(TreeM, tree_var))
             {
                unsigned int base_index = extract_parm_decl(tree_var, TreeM);
-               // TODO: Se voglio avere una pipeline funzionante e' essenziale che anche i parametri di input della funzione siano registrati per ogni stage di liveness che precede il loro utilizzo
                const generic_objRef fu_src_obj = input_ports[base_index];
                THROW_ASSERT(fu_src_obj, "unexpected condition");
                HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, src_state, state, op));
@@ -1431,9 +1433,38 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
          else
          {
             vertex tgt_state = *s_in_it;
-            if(tree_helper::is_parameter(TreeM, tree_var))
+            if(tree_helper::is_parameter(TreeM, tree_var) && not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
             {
-               // TODO: Se voglio avere una pipeline funzionante e' essenziale che anche i parametri di input della funzione siano registrati per ogni stage di liveness che precede il loro utilizzo
+               unsigned int base_index = extract_parm_decl(tree_var, TreeM);
+               const generic_objRef fu_src_obj = input_ports[base_index];
+               THROW_ASSERT(fu_src_obj, "unexpected condition");
+               HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                                                              << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+            }
+            else if(tree_helper::is_parameter(TreeM, tree_var))
+            {
+               // Primary inputs need a dedicated register per each state if we
+               // want to preserve their values along pipeline steps
+               unsigned int storage_value;
+               unsigned int r_index;
+               while(state != get_next(HLS->STG->get_entry_state()))
+               {
+                  THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var), "The chain of registers propagating a primary input is broken");
+                  storage_value = HLS->storage_value_information->get_storage_value_index(fetch_previous(state, tgt_state), tree_var);
+                  r_index = HLS->Rreg->get_register(storage_value);
+                  reg_obj = HLS->Rreg->get(r_index);
+                  THROW_ASSERT(reg_obj != fu_obj, "There is a loop in the propagation chain");
+                  HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
+                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                                                   << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                  tgt_state = state;
+                  state = fetch_previous(HLS->STG->get_entry_state(), state);
+                  fu_obj = reg_obj;
+                  port_num = 0;
+               }
                unsigned int base_index = extract_parm_decl(tree_var, TreeM);
                const generic_objRef fu_src_obj = input_ports[base_index];
                THROW_ASSERT(fu_src_obj, "unexpected condition");
@@ -2658,7 +2689,6 @@ unsigned int mux_connection_binding::mux_interconnection()
       unsigned int operand = std::get<1>(connection.first);
       unsigned int port_index = std::get<2>(connection.first);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Unit: " + unit->get_string() + "(" + std::to_string(operand) + ":" + std::to_string(port_index) + "): " + std::to_string(connection.second.size()) + " connections");
-
       allocated_mux += input_logic(connection.second, unit, operand, port_index, iteration);
       ++iteration;
    }

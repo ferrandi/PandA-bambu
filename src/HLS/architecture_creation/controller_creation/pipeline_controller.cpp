@@ -99,7 +99,7 @@
 #include "technology_node.hpp"
 
 #include "copyrights_strings.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "string_manipulation.hpp"
 
 pipeline_controller::pipeline_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
@@ -123,13 +123,7 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
 
    SM->set_top_info("Controller_i", module_type);
    structural_objectRef circuit = this->SM->get_circ();
-   // Now the top circuit is created, just as an empty box. <circuit> is a reference to the structural object that
-   // will contain all the circuit components
-
    circuit->set_black_box(false);
-   /* Il mio componente arriva da una libreria */
-
-   // Add clock, reset, done and command ports
    this->add_common_ports(circuit);
    structural_objectRef clock_port = circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit);
    structural_objectRef reset_port = circuit->find_member(RESET_PORT_NAME, port_o_K, circuit);
@@ -139,11 +133,9 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Determining size of the controller...");
    unsigned int num_states = HLS->STG->get_number_of_states();
 
-   std::string name = "controller_" + function_name; // How to set the name, should?
+   std::string name = "controller_" + function_name;
    std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_SHIFT);
    structural_objectRef controller = SM->add_module_from_technology_library(name, register_SHIFT, library, circuit, HLS->HLS_T->get_technology_manager());
-   if(controller->ExistsParameter("CONTROLLER_LENGTH"))
-       std::cout << "################################# Esiste CONTROLLER_LENGTH\n";
    controller->SetParameter("CONTROLLER_LENGTH", std::to_string(num_states));
    structural_objectRef port_ck = controller->find_member(CLOCK_PORT_NAME, port_o_K, controller);
    SM->add_connection(clock_port, port_ck);
