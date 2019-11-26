@@ -36,20 +36,25 @@
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
- * $Revision$
- * $Date$
- * Last modified by $Author$
- *
  */
 
 #ifndef _BIT_LATTICE_HPP_
 #define _BIT_LATTICE_HPP_
+
+/// Header include
+#include "frontend_flow_step.hpp"
+
+/// STD include
+#include <string>
+
+/// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <deque>
-#include <unordered_map>
-#include <unordered_set>
 
 #include "refcount.hpp"
 
+CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 
@@ -70,18 +75,21 @@ class BitLatticeManipulator
     * @brief Map of the current bit-values of each variable.
     * Map storing the current bit-values of the variables at the end of each iteration of forward_transfer or backward_transfer.
     */
-   std::unordered_map<unsigned int, std::deque<bit_lattice>> current;
+   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> current;
 
    /**
     * @brief Map of the best bit-values of each variable.
     * Map storing the best bit-values of the variables at the end of all the iterations of forward_transfer or backward_transfer.
     */
-   std::unordered_map<unsigned int, std::deque<bit_lattice>> best;
+   CustomUnorderedMap<unsigned int, std::deque<bit_lattice>> best;
 
    /**
     * @brief Set storing the signed ssa
     */
-   std::unordered_set<unsigned int> signed_var;
+   CustomUnorderedSet<unsigned int> signed_var;
+
+   /// The debug level of methods of this class - it cannot be named debug_level because of ambiguity of FrontendFlowStep::debug_level derived classes
+   const int bl_debug_level;
 
    bit_lattice bit_sup(const bit_lattice a, const bit_lattice b) const;
 
@@ -167,7 +175,7 @@ class BitLatticeManipulator
    /**
     * Constructor
     */
-   explicit BitLatticeManipulator(const tree_managerConstRef& _TM);
+   explicit BitLatticeManipulator(const tree_managerConstRef TM, const int debug_level);
 
    /**
     * Destructor

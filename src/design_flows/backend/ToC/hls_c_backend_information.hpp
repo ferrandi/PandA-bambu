@@ -45,9 +45,9 @@
 #include "c_backend_information.hpp"
 
 /// STL include
-#include <map>
-#include <vector>
+#include "custom_map.hpp"
 #include <string>
+#include <vector>
 
 CONSTREF_FORWARD_DECL(HLS_manager);
 

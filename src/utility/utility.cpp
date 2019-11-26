@@ -35,40 +35,45 @@
  * @brief This file collects some utility functions and macros.
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 #include "utility.hpp"
 
-#include <boost/date_time/posix_time/posix_time_types.hpp>
-#include <boost/date_time/posix_time/time_formatters.hpp>
-#include <boost/date_time/time_parsing.hpp>
+#include <chrono>
+#include <iomanip>
+#include <sstream>
 
-TimeStamp::TimeStamp() : boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>("1970-01-01T00:00:00", 'T'))
+TimeStamp::TimeStamp() : timestamp("1970-01-01T00:00:00")
 {
 }
 
-TimeStamp::TimeStamp(boost::posix_time::ptime timestamp) : boost::posix_time::ptime(timestamp)
+TimeStamp::TimeStamp(const std::string& _timestamp) : timestamp(_timestamp)
 {
 }
 
-TimeStamp::TimeStamp(const std::string& timestamp) : boost::posix_time::ptime(boost::date_time::parse_delimited_time<boost::posix_time::ptime>(timestamp, 'T'))
+std::string TimeStamp::GetCurrentTimeStamp()
 {
+   auto now = std::chrono::system_clock::now();
+   auto in_time_t = std::chrono::system_clock::to_time_t(now);
+#if !defined(__clang__) && __GNUC__ < 5
+   char buffer[32];
+   strftime(buffer, sizeof(buffer), "%Y-%m-%dT%H:%M:%S", std::localtime(&in_time_t));
+   return std::string(buffer);
+#else
+   std::stringstream ss;
+   ss << std::put_time(std::localtime(&in_time_t), "%Y-%m-%dT%H:%M:%S");
+   return ss.str();
+#endif
 }
 
-TimeStamp TimeStamp::GetCurrentTimeStamp()
+std::ostream& operator<<(std::ostream& os, const TimeStamp& t)
 {
-   return TimeStamp(boost::posix_time::second_clock::local_time());
-}
-
-std::ostream& operator<<(std::ostream& os, const TimeStamp& timestamp)
-{
-   if(timestamp.is_special())
-   {
-      os << "Unknown";
-   }
-   else
-   {
-      os << boost::posix_time::to_iso_extended_string(timestamp);
-   }
+   os << t.timestamp;
    return os;
+}
+
+bool operator<=(const TimeStamp& timestamp1, const TimeStamp& timestamp2)
+{
+   return timestamp1.timestamp <= timestamp2.timestamp;
 }

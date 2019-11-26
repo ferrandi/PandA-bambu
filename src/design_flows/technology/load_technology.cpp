@@ -48,7 +48,7 @@
 #include <string>
 
 /// STL include
-#include <unordered_set>
+#include "custom_set.hpp"
 
 /// technology includes
 #include "parse_technology.hpp"
@@ -70,9 +70,9 @@ LoadTechnology::LoadTechnology(const technology_managerRef _TM, const target_dev
 
 LoadTechnology::~LoadTechnology() = default;
 
-const std::unordered_set<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<TechnologyFlowStep_Type> LoadTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<TechnologyFlowStep_Type> relationships;
+   CustomUnorderedSet<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):

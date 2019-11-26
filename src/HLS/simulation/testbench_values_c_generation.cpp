@@ -104,9 +104,9 @@ TestbenchValuesCGeneration::~TestbenchValuesCGeneration()
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchValuesCGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchValuesCGeneration::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -216,7 +216,9 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
       }
       else
       {
+#if !defined(__APPLE__)
          compiler_flags += " -Wl,--allow-multiple-definition ";
+#endif
          for(const auto& input_file : parameters->getOption<const CustomSet<std::string>>(OPT_input_file))
          {
             file_sources.push_back(input_file);

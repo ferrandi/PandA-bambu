@@ -50,14 +50,11 @@
 #include <iosfwd>
 #include <limits>
 #include <string>
-
-/// STL include
-#include <map>
-#include <set>
 #include <utility>
 
 /// utility includes
 #include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "refcount.hpp"
 #include "utility.hpp"
 

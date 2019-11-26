@@ -71,15 +71,15 @@ class gimple_node;
 class dead_code_elimination : public FunctionFrontendFlowStep
 {
  private:
-   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+   std::map<unsigned int, bool> last_writing_memory;
 
-   std::map<unsigned int, unsigned int> last_bb_ver;
+   std::map<unsigned int, bool> last_reading_memory;
 
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    void kill_uses(const tree_managerRef TM, tree_nodeRef op0) const;
    void kill_vdef(const tree_managerRef TM, tree_nodeRef vdef);

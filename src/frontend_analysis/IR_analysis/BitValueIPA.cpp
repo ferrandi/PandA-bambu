@@ -61,8 +61,9 @@
 // include from src/frontend_analysis/
 #include "function_frontend_flow_step.hpp"
 
-// include from src/tree/
 #include "behavioral_helper.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
@@ -71,23 +72,28 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-BitValueIPA::BitValueIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par) : ApplicationFrontendFlowStep(AM, BIT_VALUE_IPA, dfm, par), BitLatticeManipulator(AM->get_tree_manager())
+/// STD include
+#include <string>
+#include <utility>
+
+BitValueIPA::BitValueIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
+    : ApplicationFrontendFlowStep(AM, BIT_VALUE_IPA, dfm, par), BitLatticeManipulator(AM->get_tree_manager(), parameters->get_class_debug_level(GET_CLASS(*this)))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
 BitValueIPA::~BitValueIPA() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BitValueIPA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BitValueIPA::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
@@ -147,11 +153,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
-   std::set<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
-   std::set<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
+   CustomOrderedSet<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
 
    /// In case of indirect calls (e.g., pointer to function) no Bit Value IPA can be done.
-   std::unordered_set<vertex> vertex_subset;
+   CustomUnorderedSet<vertex> vertex_subset;
    for(auto cvertex : reached_body_fun_ids)
       vertex_subset.insert(CGMan->GetVertex(cvertex));
    const CallGraphConstRef subgraph = CGMan->CGetCallSubGraph(vertex_subset);
@@ -297,8 +303,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Backward");
 
-            if(current.find(fu_id) == current.end())
-               current[fu_id] = best.at(fu_id);
+            current.insert(std::make_pair(fu_id, best.at(fu_id)));
 
             std::deque<bit_lattice> res = create_x_bitstring(1);
 
@@ -397,8 +402,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Forward");
 
-            if(current.find(fu_id) == current.end())
-               current[fu_id] = best.at(fu_id);
+            current.insert(std::make_pair(fu_id, best.at(fu_id)));
 
             std::deque<bit_lattice> res = create_x_bitstring(1);
 
@@ -511,8 +515,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Backward");
 
-               if(current.find(pd_id) == current.end())
-                  current[pd_id] = best.at(pd_id);
+               current.insert(std::make_pair(pd_id, best.at(pd_id)));
 
                std::deque<bit_lattice> res = create_x_bitstring(1);
 #if HAVE_ASSERTS
@@ -628,8 +631,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Forward");
 
-               if(current.find(pd_id) == current.end())
-                  current[pd_id] = best.at(pd_id);
+               current.insert(std::make_pair(pd_id, best.at(pd_id)));
 
                std::deque<bit_lattice> res = create_x_bitstring(1);
 
@@ -881,8 +883,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
    BitLatticeManipulator::clear();
 
-   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
-   std::map<unsigned int, unsigned int> cur_bb_ver;
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
       const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);

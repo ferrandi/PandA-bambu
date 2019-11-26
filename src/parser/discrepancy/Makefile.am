@@ -1,5 +1,7 @@
 #this file is src/parser/discrepancy/Makefile.am
 noinst_LTLIBRARIES = lib_discrepancy_parser.la
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
+METASOURCES = AUTO
 
 lib_discrepancy_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
@@ -8,11 +10,11 @@ lib_discrepancy_parser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/HLS/vcd \
    -I$(top_srcdir)/src/parser/discrepancy \
+   -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
-METASOURCES = AUTO
 AM_YFLAGS = -d -l --report=state,lookahead,itemset
 AM_LFLAGS = -L -B -+  -olex.yy.c
 

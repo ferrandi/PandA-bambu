@@ -1,0 +1,2 @@
+EXTRA_DIST += %D%/constraints_STD.xml  %D%/COPYING  %D%/DE1-characterization-file.xml  %D%/delay.c  %D%/Documentation/Documentation_EN.txt %D%/Documentation/Schematics/Vga_adapter_Schematics.png  %D%/DE1_pin_assignments.qsf  %D%/PLOT_IPs.xml  %D%/script.sh  %D%/vgatest.c %D%/synthesize.sh %D%/leds_ctrl.c %D%/leds_ctrl.v %D%/plot.c %D%/plot.v %D%/DE1_design.sdc
+TESTS+=%D%/synthesize.sh

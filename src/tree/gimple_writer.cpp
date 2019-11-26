@@ -43,13 +43,13 @@
 /// Header include
 #include "gimple_writer.hpp"
 
+#include "custom_map.hpp"                     // for unordered_map<>:...
 #include <algorithm>                          // for transform
 #include <boost/algorithm/string/replace.hpp> // for replace_all
 #include <boost/lexical_cast.hpp>             // for lexical_cast
 #include <cctype>                             // for toupper
 #include <cstddef>                            // for size_t
 #include <string>                             // for string, operator+
-#include <unordered_map>                      // for unordered_map<>:...
 #include <utility>                            // for pair, operator!=
 #include <vector>                             // for vector, vector<>...
 
@@ -1550,8 +1550,8 @@ void GimpleWriter::operator()(const omp_for_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " parallel for";
-   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
-   std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+   const CustomUnorderedMapUnstable<std::string, std::string>& clauses = obj->clauses;
+   CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
@@ -1562,8 +1562,8 @@ void GimpleWriter::operator()(const omp_simd_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " simd";
-   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
-   std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+   const CustomUnorderedMapUnstable<std::string, std::string>& clauses = obj->clauses;
+   CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
@@ -1574,8 +1574,8 @@ void GimpleWriter::operator()(const omp_declare_simd_pragma* obj, unsigned int& 
 {
    mask = NO_VISIT;
    os << " declare simd";
-   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
-   std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+   const CustomUnorderedMapUnstable<std::string, std::string>& clauses = obj->clauses;
+   CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
@@ -1586,8 +1586,8 @@ void GimpleWriter::operator()(const omp_target_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " target";
-   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
-   std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+   const CustomUnorderedMapUnstable<std::string, std::string>& clauses = obj->clauses;
+   CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
@@ -1598,8 +1598,8 @@ void GimpleWriter::operator()(const omp_critical_pragma* obj, unsigned int& mask
 {
    mask = NO_VISIT;
    os << " critical";
-   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
-   std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+   const CustomUnorderedMapUnstable<std::string, std::string>& clauses = obj->clauses;
+   CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");
@@ -1610,8 +1610,8 @@ void GimpleWriter::operator()(const omp_task_pragma* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    os << " task";
-   const std::unordered_map<std::string, std::string>& clauses = obj->clauses;
-   std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+   const CustomUnorderedMapUnstable<std::string, std::string>& clauses = obj->clauses;
+   CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
    for(clause = clauses.begin(); clause != clause_end; ++clause)
    {
       os << " " + clause->first + (clause->second != "" ? "(" + clause->second + ")" : "");

@@ -105,7 +105,7 @@ void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
    indented_output_stream->Append("#include <stdlib.h>\n");
    indented_output_stream->Append("#include <stdio.h>\n");
    indented_output_stream->Append("\n");
-   std::set<unsigned int> functions = AppM->get_functions_with_body();
+   CustomOrderedSet<unsigned int> functions = AppM->get_functions_with_body();
    for(const auto function : functions)
    {
       const auto function_behavior = AppM->CGetFunctionBehavior(function);

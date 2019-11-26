@@ -46,7 +46,7 @@
 
 #include "memory_allocation.hpp"
 REF_FORWARD_DECL(memory_symbol);
-#include <map>
+#include "custom_map.hpp"
 
 class mem_xml_allocation : public memory_allocation
 {

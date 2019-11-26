@@ -109,10 +109,10 @@ static bool is_binary_string_repr(const std::string& s, unsigned int id, bool on
    return compute_state_id(s, one_hot_fsm_encoding) == id;
 }
 
-static bool string_represents_one_of_the_states(const std::string& val, const std::set<unsigned int>& state_ids, bool one_hot_fsm_encoding)
+static bool string_represents_one_of_the_states(const std::string& val, const CustomOrderedSet<unsigned int>& state_ids, bool one_hot_fsm_encoding)
 {
-   const std::set<unsigned int>::iterator s_it = state_ids.begin();
-   const std::set<unsigned int>::iterator s_end = state_ids.cend();
+   const auto s_it = state_ids.begin();
+   const auto s_end = state_ids.cend();
    const auto isbinstr = [&val, one_hot_fsm_encoding](const unsigned s) { return is_binary_string_repr(val, s, one_hot_fsm_encoding); };
    return std::find_if(s_it, s_end, isbinstr) != s_end;
 }
@@ -311,7 +311,7 @@ void vcd_trace_head::update()
       op_start_time = sp_var_it->time_stamp;
       ++sp_var_it;
    }
-   THROW_ASSERT(op_start_time >= fsm_ss_it->time_stamp, "operation start time is before starting state\n");
+   THROW_ASSERT(op_start_time >= fsm_ss_it->time_stamp, "operation start time is before starting state" + STR(op_start_time) + " " + STR(fsm_ss_it->time_stamp));
    /*
     * here we know the correct starting state and the start time of the
     * operation. we know detect the number of consecutive state executions

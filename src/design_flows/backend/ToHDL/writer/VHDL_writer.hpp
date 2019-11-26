@@ -53,17 +53,17 @@
 #include <string>
 
 /// STL include
+#include "custom_set.hpp"
 #include <list>
-#include <set>
 #include <vector>
 
 struct VHDL_writer : public language_writer
 {
  protected:
    static const char* tokenNames[];
-   std::set<std::string> keywords;
+   CustomOrderedSet<std::string> keywords;
 
-   std::set<std::string> list_of_comp_already_def;
+   CustomOrderedSet<std::string> list_of_comp_already_def;
 
    /// The technology manager
    const technology_managerConstRef TM;
@@ -77,7 +77,7 @@ struct VHDL_writer : public language_writer
       return "VHDL";
    }
    /**
-    * Return the filename extension associted with the VHDL_writer.
+    * Return the filename extension associated with the VHDL_writer.
     */
    std::string get_extension() const override
    {
@@ -98,6 +98,13 @@ struct VHDL_writer : public language_writer
     * @param cir is the object for which the size has been computed.
     */
    std::string type_converter_size(const structural_objectRef& cir) override;
+
+   /**
+    * return the slice in case of a port owned by a port vector
+    * @param port is the port
+    * @return a string in case of a port owned by a port vector
+    */
+   std::string may_slice_string(const structural_objectRef& cir);
 
    /**
     * Write used library.

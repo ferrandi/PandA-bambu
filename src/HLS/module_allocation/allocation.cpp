@@ -83,13 +83,12 @@
 
 /// STL includes
 #include <algorithm>
-#include <map>
-#include <set>
 #include <tuple>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 static bool is_other_port(const structural_objectRef& port)
 {
@@ -154,17 +153,16 @@ void allocation::Initialize()
    TM = HLS_T->get_technology_manager();
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
          if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
+            ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
          }
          ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::CALLED_FUNCTIONS));
          ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
@@ -1174,8 +1172,8 @@ DesignFlowStep_Status allocation::InternalExec()
    }
    auto tech_vec = HLS_C->tech_constraints;
    auto binding_constraints = HLS_C->binding_constraints;
-   std::unordered_map<std::string, std::map<unsigned int, unsigned int>> fu_name_to_id;
-   std::set<vertex> vertex_analysed;
+   CustomUnorderedMap<std::string, std::map<unsigned int, unsigned int>> fu_name_to_id;
+   CustomOrderedSet<vertex> vertex_analysed;
    OpVertexSet support_ops(function_behavior->CGetOpGraph(FunctionBehavior::CFG));
    support_ops.insert(HLS->operations.begin(), HLS->operations.end());
    const OpGraphConstRef g = function_behavior->CGetOpGraph(FunctionBehavior::CFG, support_ops);
@@ -1911,9 +1909,9 @@ DesignFlowStep_Status allocation::InternalExec()
                      "---Operation for which does not exist a functional unit in the resource library: " + tree_helper::normalized_ID(g->CGetOpNodeInfo(ve)->GetOperation()) + " in vertex: " + GET_NAME(g, ve) + " with vertex type: " + node_info->node_kind +
                          " and vertex prec:" + precisions);
    }
-   if(vertex_to_analyse.size() > vertex_analysed.size())
+   if(vertex_to_analyse.size() > static_cast<size_t>(vertex_analysed.size()))
       THROW_ERROR("Vertices not completely allocated");
-   /// These data struture are filled only once
+   /// These data structure are filled only once
    if(!allocation_information->node_id_to_fus.empty())
    {
       for(const auto& op : allocation_information->node_id_to_fus)
@@ -2431,7 +2429,7 @@ bool allocation::HasToBeExecuted() const
    {
       std::map<unsigned int, unsigned int> cur_bb_ver;
       const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-      std::set<unsigned int> funcs = call_graph_manager->GetReachedBodyFunctions();
+      CustomOrderedSet<unsigned int> funcs = call_graph_manager->GetReachedBodyFunctions();
       if(funId and funcs.find(funId) == funcs.end())
          return false;
       const auto called_functions = call_graph_manager->GetReachedBodyFunctionsFrom(funId);

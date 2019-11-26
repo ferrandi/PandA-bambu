@@ -51,13 +51,13 @@ struct filter_clique
    {
    }
 
-   virtual bool select_candidate_to_remove(const std::set<C_vertex>& candidate_clique, C_vertex& v, const std::map<C_vertex, vertex_type>& converter, const cc_compatibility_graph& cg) const = 0;
+   virtual bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>& candidate_clique, C_vertex& v, const std::map<C_vertex, vertex_type>& converter, const cc_compatibility_graph& cg) const = 0;
 };
 
 template <typename vertex_type>
 struct no_filter_clique : public filter_clique<vertex_type>
 {
-   bool select_candidate_to_remove(const std::set<C_vertex>&, C_vertex&, const std::map<C_vertex, vertex_type>&, const cc_compatibility_graph&) const override
+   bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>&, C_vertex&, const std::map<C_vertex, vertex_type>&, const cc_compatibility_graph&) const override
    {
       return false;
    }

@@ -59,10 +59,10 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
 #include <tuple>
-#include <unordered_set>
 #include <vector>
 
 /// tree include
@@ -79,7 +79,7 @@
 TestbenchMemoryAllocation::TestbenchMemoryAllocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
     : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION)
 {
-   flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
+   flag_cpp = _HLSMgr.get()->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
               (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -94,7 +94,6 @@ DesignFlowStep_Status TestbenchMemoryAllocation::Exec()
 
 void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 {
-   const HLSFlowStep_Type interface_type = parameters->getOption<HLSFlowStep_Type>(OPT_interface_type);
    const tree_managerConstRef TM = HLSMgr->get_tree_manager();
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    THROW_ASSERT(top_function_ids.size() == 1, "Multiple top functions");
@@ -162,7 +161,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
             tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+            if(flag_cpp)
             {
                unsigned int ptd_base_type = 0;
                if(pt_node->get_kind() == pointer_type_K)
@@ -250,9 +249,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    return;
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchMemoryAllocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

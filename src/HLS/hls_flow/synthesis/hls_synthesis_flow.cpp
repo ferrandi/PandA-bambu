@@ -51,8 +51,8 @@
 #include "hls_manager.hpp"
 
 /// STL include
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 
 /// tree include
 #include "behavioral_helper.hpp"
@@ -66,9 +66,9 @@ HLSSynthesisFlow::HLSSynthesisFlow(const ParameterConstRef _parameters, const HL
 
 HLSSynthesisFlow::~HLSSynthesisFlow() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSSynthesisFlow::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

@@ -44,36 +44,26 @@
 /// Header include
 #include "rebuild_initializations.hpp"
 
-/// Behavior include
-#include "application_manager.hpp"
-#include "behavioral_helper.hpp"
-#include "function_behavior.hpp"
-
-/// Parameter include
 #include "Parameter.hpp"
-
-/// parser/treegcc include
-#include "token_interface.hpp"
-
-/// STD include
-#include <fstream>
-
-/// STL includes
-#include <set>
-#include <unordered_map>
-#include <unordered_set>
-#include <utility>
-#include <vector>
-
-/// Tree include
+#include "application_manager.hpp"
 #include "basic_block.hpp"
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "behavioral_helper.hpp"
+#include "custom_map.hpp"
+#include "custom_set.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "function_behavior.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "token_interface.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+
+/// STD include
+#include <fstream>
+#include <utility>
+#include <vector>
 
 rebuild_initialization::rebuild_initialization(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, REBUILD_INITIALIZATION, _design_flow_manager, Param)
@@ -81,9 +71,9 @@ rebuild_initialization::rebuild_initialization(const ParameterConstRef Param, co
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> rebuild_initialization::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> rebuild_initialization::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -215,9 +205,9 @@ rebuild_initialization2::rebuild_initialization2(const ParameterConstRef Param, 
    debug_level = Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> rebuild_initialization2::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> rebuild_initialization2::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -536,7 +526,7 @@ bool rebuild_initialization2::extract_var_decl(const mem_ref* me, unsigned& vd_i
 #define unexpetedPattern2(node, VD) foundNonConstant(VD)
 #endif
 
-tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, std::set<unsigned>& nonConstantVars, TreeNodeMap<std::map<long long int, tree_nodeRef>>& inits, tree_managerRef TM)
+tree_nodeRef getAssign(tree_nodeRef SSAop, unsigned vd_index, CustomOrderedSet<unsigned>& nonConstantVars, TreeNodeMap<std::map<long long int, tree_nodeRef>>& inits, tree_managerRef TM)
 {
    THROW_ASSERT(SSAop->get_kind() == ssa_name_K, "unexpected condition");
    auto* ssa_var = GetPointer<ssa_name>(SSAop);
@@ -569,7 +559,7 @@ bool rebuild_initialization2::look_for_ROMs()
    std::map<unsigned, unsigned> var_writing_BB_relation;
    std::map<unsigned, unsigned> var_writing_size_relation;
    std::map<unsigned, unsigned> var_writing_elts_size_relation;
-   std::set<unsigned> nonConstantVars;
+   CustomOrderedSet<unsigned> nonConstantVars;
    TreeNodeMap<std::map<long long int, tree_nodeRef>> inits;
 
    /// for each basic block B in CFG compute constantVars candidates
@@ -578,7 +568,7 @@ bool rebuild_initialization2::look_for_ROMs()
       // used to collect the reads of a given variable done in the same basic block.
       // This is done to avoid to classify a variable constant in case is first
       // written the read and then written again.
-      std::set<unsigned> VarsReadSeen;
+      CustomOrderedSet<unsigned> VarsReadSeen;
       auto B = Bit.second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining for write BB" + STR(B->number));
       const auto& list_of_stmt = B->CGetStmtList();
@@ -918,13 +908,13 @@ bool rebuild_initialization2::look_for_ROMs()
       if(not_supported)
          break;
    }
-   if(not_supported || var_writing_BB_relation.empty() || var_writing_BB_relation.size() == nonConstantVars.size())
+   if(not_supported || var_writing_BB_relation.empty() || var_writing_BB_relation.size() == static_cast<size_t>(nonConstantVars.size()))
       return false;
 
    /// compute the CFG
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraphRef GCC_bb_graph(new BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR));
-   std::unordered_map<unsigned int, vertex> inverse_vertex_map;
+   CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(auto block : sl->list_of_bloc)
    {
@@ -1028,7 +1018,7 @@ bool rebuild_initialization2::look_for_ROMs()
    }
 
    /// list all constant variables found
-   std::set<unsigned> ConstantVars;
+   CustomOrderedSet<unsigned> ConstantVars;
    for(auto vars : var_writing_BB_relation)
    {
       if(nonConstantVars.find(vars.first) == nonConstantVars.end())

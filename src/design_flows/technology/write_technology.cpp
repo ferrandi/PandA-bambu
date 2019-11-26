@@ -106,9 +106,9 @@ DesignFlowStep_Status WriteTechnology::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-const std::unordered_set<TechnologyFlowStep_Type> WriteTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<TechnologyFlowStep_Type> WriteTechnology::ComputeTechnologyRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<TechnologyFlowStep_Type> relationships;
+   CustomUnorderedSet<TechnologyFlowStep_Type> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):

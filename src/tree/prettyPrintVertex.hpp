@@ -48,9 +48,9 @@
 /// Graph include
 #include "graph.hpp"
 
+#include "custom_set.hpp"
 #include <ostream>
 #include <string> // for string
-#include <unordered_set>
 
 /// Utility include
 #include "refcount.hpp"
@@ -126,7 +126,7 @@ struct prettyPrintVertex
     */
    static void print_forward_declaration(std::ostream& os, unsigned int type, simple_indent& PP, const BehavioralHelperConstRef BH);
 
-   static void get_internal_vars(const vertex& v, const OpGraphConstRef g, std::unordered_set<unsigned int>& list_of_variables, const BehavioralHelperConstRef BH);
+   static void get_internal_vars(const vertex& v, const OpGraphConstRef g, CustomUnorderedSet<unsigned int>& list_of_variables, const BehavioralHelperConstRef BH);
 
  private:
    /**

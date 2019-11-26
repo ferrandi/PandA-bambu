@@ -58,7 +58,9 @@
 #include "token_interface.hpp"
 
 /// tree includes
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "design_flow_graph.hpp"
+#include "design_flow_manager.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
@@ -67,9 +69,42 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+#include <set>
+
+void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   switch(relationship_type)
+   {
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         break;
+      }
+      case DEPENDENCE_RELATIONSHIP:
+      {
+         break;
+      }
+      case INVALIDATION_RELATIONSHIP:
+      {
+         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS && AppM->CGetFunctionBehavior(function_id)->is_pipelining_enabled())
+         {
+            const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);
+            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+            THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
+            const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+            const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+            relationship.insert(design_flow_step);
+         }
+         break;
+      }
+      default:
+         THROW_UNREACHABLE("");
+   }
+   FunctionFrontendFlowStep::ComputeRelationships(relationship, relationship_type);
+}
+
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BuildVirtualPhi::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -342,7 +377,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created volatile ssa _" + STR(ssa_vers));
 
       /// Set of basic blocks belonging to the loop
-      std::unordered_set<vertex> loop_basic_blocks;
+      CustomUnorderedSet<vertex> loop_basic_blocks;
       loops->CGetLoop(loop_id)->get_recursively_bb(loop_basic_blocks);
 
       /// Set of basic blocks to be analyzed
@@ -395,7 +430,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       }
       else
       {
-         std::unordered_set<vertex> loop_bbs;
+         CustomUnorderedSet<vertex> loop_bbs;
          loops->CGetLoop(loop_id)->get_recursively_bb(loop_bbs);
          for(const auto& loop_bb : loop_bbs)
          {
@@ -427,6 +462,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Single entry BB");
             boost::tie(ie, ie_end) = boost::in_edges(current, *basic_block_graph);
             const auto source = boost::source(*ie, *basic_block_graph);
+            THROW_ASSERT(reaching_defs.at(virtual_ssa_definition.first).find(source) != reaching_defs.at(virtual_ssa_definition.first).end(), "unexpected condition");
             reaching_defs[virtual_ssa_definition.first][current] = reaching_defs[virtual_ssa_definition.first][source];
          }
          else

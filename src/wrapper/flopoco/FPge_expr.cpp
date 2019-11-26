@@ -65,12 +65,12 @@
 #include "FPAdderSinglePath.hpp"
 #include "FPge_expr.hpp"
 
+#include "custom_map.hpp"
 #include <cmath>
 #include <cstdlib>
 #include <iomanip>
 #include <list>
 #include <locale>
-#include <map>
 #include <sstream>
 #include <string>
 #include <vector>

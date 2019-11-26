@@ -121,9 +121,9 @@ TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef
 
 TestbenchGenerationBaseStep::~TestbenchGenerationBaseStep() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchGenerationBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> TestbenchGenerationBaseStep::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -477,10 +477,151 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          if(!portInst)
          {
             portInst = mod->find_member(par + "_d0", port_o_K, cir);
+            if(portInst)
+            {
+               auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+               if(InterfaceType == port_o::port_interface::PI_DOUT)
+               {
+                  const auto manage_pidout = [&](const std::string& portID) {
+                     auto port_name = portInst->get_id();
+                     auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d" + portID).size() : 0;
+                     THROW_ASSERT(port_name.substr(terminate) == "_d" + portID, "inconsistent interface");
+                     auto orig_name = port_name.substr(0, terminate);
+                     auto port_addr = mod->find_member(orig_name + "_address" + portID, port_o_K, cir);
+                     THROW_ASSERT(port_addr && GetPointer<port_o>(port_addr)->get_port_interface() == port_o::port_interface::PI_ADDRESS, "inconsistent interface");
+                     auto port_ce = mod->find_member(orig_name + "_ce" + portID, port_o_K, cir);
+                     THROW_ASSERT(port_ce && GetPointer<port_o>(port_ce)->get_port_interface() == port_o::port_interface::PI_CHIPENABLE, "inconsistent interface");
+                     auto port_we = mod->find_member(orig_name + "_we" + portID, port_o_K, cir);
+                     THROW_ASSERT(port_we && GetPointer<port_o>(port_we)->get_port_interface() == port_o::port_interface::PI_WRITEENABLE, "inconsistent interface");
+                     auto port_q = mod->find_member(orig_name + "_q" + portID, port_o_K, cir);
+                     std::string mem_aggregated;
+                     {
+                        auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
+                        unsigned bitsize = 0;
+                        if(port_bitwidth <= 512)
+                           bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+                        else
+                        {
+                           if(port_bitwidth % 8)
+                              bitsize = 8 * (port_bitwidth / 8) + 8;
+                           else
+                              bitsize = port_bitwidth;
+                        }
+                        mem_aggregated = "{";
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index)
+                              mem_aggregated += ", ";
+                           mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name.substr(0, port_name.size() - 1) + "0 + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + " + port_addr->get_id() + "*" +
+                                             STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
+                        }
+                        mem_aggregated += "}";
+                     }
+                     writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
+                     writer->write(STR(STD_OPENING_CHAR));
+                     writer->write("begin\n");
+                     writer->write("if (" + port_ce->get_id() + " == 1'b1 && " + port_we->get_id() + " == 1'b1)\n");
+                     writer->write(STR(STD_OPENING_CHAR));
+                     writer->write("begin\n");
+                     writer->write(mem_aggregated + " <= " + port_name + ";\n");
+                     writer->write(STR(STD_CLOSING_CHAR));
+                     writer->write("end\n");
+                     if(port_q)
+                     {
+                        writer->write("else if (" + port_ce->get_id() + " == 1'b1)\n");
+                        writer->write(STR(STD_OPENING_CHAR));
+                        writer->write("begin\n");
+                        writer->write(port_q->get_id() + " <= " + mem_aggregated + ";\n");
+                        writer->write(STR(STD_CLOSING_CHAR));
+                        writer->write("end\n");
+                     }
+                     writer->write(STR(STD_CLOSING_CHAR));
+                     writer->write("end\n");
+                  };
+                  manage_pidout("0");
+
+                  portInst = mod->find_member(par + "_d1", port_o_K, cir);
+                  if(portInst)
+                  {
+                     InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+                     if(InterfaceType == port_o::port_interface::PI_DOUT)
+                     {
+                        manage_pidout("1");
+                     }
+                  }
+                  continue;
+               }
+               else
+                  portInst = structural_objectRef();
+            }
          }
          if(!portInst)
          {
             portInst = mod->find_member(par + "_q0", port_o_K, cir);
+            if(portInst)
+            {
+               auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+               if(InterfaceType == port_o::port_interface::PI_DIN)
+               {
+                  const auto manage_pidin = [&](const std::string& portID) {
+                     auto port_name = portInst->get_id();
+                     auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q" + portID).size() : 0;
+                     THROW_ASSERT(port_name.substr(terminate) == "_q" + portID, "inconsistent interface");
+                     auto orig_name = port_name.substr(0, terminate);
+                     auto port_addr = mod->find_member(orig_name + "_address" + portID, port_o_K, cir);
+                     THROW_ASSERT(port_addr && GetPointer<port_o>(port_addr)->get_port_interface() == port_o::port_interface::PI_ADDRESS, "inconsistent interface");
+                     auto port_ce = mod->find_member(orig_name + "_ce" + portID, port_o_K, cir);
+                     THROW_ASSERT(port_ce && GetPointer<port_o>(port_ce)->get_port_interface() == port_o::port_interface::PI_CHIPENABLE, "inconsistent interface");
+                     std::string mem_aggregated;
+                     {
+                        auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
+                        unsigned bitsize = 0;
+                        if(port_bitwidth <= 512)
+                           bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+                        else
+                        {
+                           if(port_bitwidth % 8)
+                              bitsize = 8 * (port_bitwidth / 8) + 8;
+                           else
+                              bitsize = port_bitwidth;
+                        }
+                        mem_aggregated = "{";
+                        for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
+                        {
+                           if(bitsize_index)
+                              mem_aggregated += ", ";
+                           mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name.substr(0, port_name.size() - 1) + "0 + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + " + port_addr->get_id() + "*" +
+                                             STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
+                        }
+                        mem_aggregated += "}";
+                     }
+                     writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
+                     writer->write(STR(STD_OPENING_CHAR));
+                     writer->write("begin\n");
+                     writer->write("if (" + port_ce->get_id() + " == 1'b1)\n");
+                     writer->write(STR(STD_OPENING_CHAR));
+                     writer->write("begin\n");
+                     writer->write(port_name + " <= " + mem_aggregated + ";\n");
+                     writer->write(STR(STD_CLOSING_CHAR));
+                     writer->write("end\n");
+                     writer->write(STR(STD_CLOSING_CHAR));
+                     writer->write("end\n");
+                  };
+                  manage_pidin("0");
+                  portInst = mod->find_member(par + "_q1", port_o_K, cir);
+                  if(portInst)
+                  {
+                     InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
+                     if(InterfaceType == port_o::port_interface::PI_DIN)
+                     {
+                        manage_pidin("1");
+                     }
+                  }
+                  continue;
+               }
+               else
+                  portInst = structural_objectRef();
+            }
          }
          THROW_ASSERT(portInst, "unexpected condition: " + par);
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
@@ -506,106 +647,6 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
             writer->write("registered_" + orig_name + " <= " + orig_name + ";\n");
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-         }
-         else if(InterfaceType == port_o::port_interface::PI_DOUT)
-         {
-            auto port_name = portInst->get_id();
-            auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_d0").size() : 0;
-            THROW_ASSERT(port_name.substr(terminate) == "_d0", "inconsistent interface");
-            auto orig_name = port_name.substr(0, terminate);
-            auto port_addr = mod->find_member(orig_name + "_address0", port_o_K, cir);
-            THROW_ASSERT(port_addr && GetPointer<port_o>(port_addr)->get_port_interface() == port_o::port_interface::PI_ADDRESS, "inconsistent interface");
-            auto port_ce = mod->find_member(orig_name + "_ce0", port_o_K, cir);
-            THROW_ASSERT(port_ce && GetPointer<port_o>(port_ce)->get_port_interface() == port_o::port_interface::PI_CHIPENABLE, "inconsistent interface");
-            auto port_we = mod->find_member(orig_name + "_we0", port_o_K, cir);
-            THROW_ASSERT(port_we && GetPointer<port_o>(port_we)->get_port_interface() == port_o::port_interface::PI_WRITEENABLE, "inconsistent interface");
-            auto port_q = mod->find_member(orig_name + "_q0", port_o_K, cir);
-            std::string mem_aggregated;
-            {
-               auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-               unsigned bitsize = 0;
-               if(port_bitwidth <= 512)
-                  bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
-               else
-               {
-                  if(port_bitwidth % 8)
-                     bitsize = 8 * (port_bitwidth / 8) + 8;
-                  else
-                     bitsize = port_bitwidth;
-               }
-               mem_aggregated = "{";
-               for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-               {
-                  if(bitsize_index)
-                     mem_aggregated += ", ";
-                  mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name + " + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + " + port_addr->get_id() + "*" + STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
-               }
-               mem_aggregated += "}";
-            }
-            writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            writer->write("if (" + port_ce->get_id() + " == 1'b1 && " + port_we->get_id() + " == 1'b1)\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            writer->write(mem_aggregated + " <= " + port_name + ";\n");
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-            if(port_q)
-            {
-               writer->write("else if (" + port_ce->get_id() + " == 1'b1)\n");
-               writer->write(STR(STD_OPENING_CHAR));
-               writer->write("begin\n");
-               writer->write(port_q->get_id() + " <= " + mem_aggregated + ";\n");
-               writer->write(STR(STD_CLOSING_CHAR));
-               writer->write("end\n");
-            }
-            writer->write(STR(STD_CLOSING_CHAR));
-            writer->write("end\n");
-         }
-         else if(InterfaceType == port_o::port_interface::PI_DIN)
-         {
-            auto port_name = portInst->get_id();
-            auto terminate = port_name.size() > 3 ? port_name.size() - std::string("_q0").size() : 0;
-            THROW_ASSERT(port_name.substr(terminate) == "_q0", "inconsistent interface");
-            auto orig_name = port_name.substr(0, terminate);
-            auto port_addr = mod->find_member(orig_name + "_address0", port_o_K, cir);
-            THROW_ASSERT(port_addr && GetPointer<port_o>(port_addr)->get_port_interface() == port_o::port_interface::PI_ADDRESS, "inconsistent interface");
-            auto port_ce = mod->find_member(orig_name + "_ce0", port_o_K, cir);
-            THROW_ASSERT(port_ce && GetPointer<port_o>(port_ce)->get_port_interface() == port_o::port_interface::PI_CHIPENABLE, "inconsistent interface");
-            std::string mem_aggregated;
-            {
-               auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
-               unsigned bitsize = 0;
-               if(port_bitwidth <= 512)
-                  bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
-               else
-               {
-                  if(port_bitwidth % 8)
-                     bitsize = 8 * (port_bitwidth / 8) + 8;
-                  else
-                     bitsize = port_bitwidth;
-               }
-               mem_aggregated = "{";
-               for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
-               {
-                  if(bitsize_index)
-                     mem_aggregated += ", ";
-                  mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name + " + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + " + port_addr->get_id() + "*" + STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
-               }
-               mem_aggregated += "}";
-            }
-            writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            writer->write("if (" + port_ce->get_id() + " == 1'b1)\n");
-            writer->write(STR(STD_OPENING_CHAR));
-            writer->write("begin\n");
-            writer->write(port_name + " <= " + mem_aggregated + ";\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
             writer->write(STR(STD_CLOSING_CHAR));
@@ -1664,8 +1705,8 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
       if(writeP)
          writer->write("\n");
    }
-   writer->write("reg signed [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
-   writer->write("reg signed [7:0] _bambu_databyte_;\n\n");
+   writer->write("reg [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
+   writer->write("reg [7:0] _bambu_databyte_;\n\n");
    writer->write("reg [3:0] __state, __next_state;\n");
    writer->write("reg start_results_comparison;\n");
    writer->write("reg next_start_port;\n");

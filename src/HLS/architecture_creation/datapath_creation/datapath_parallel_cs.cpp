@@ -58,16 +58,14 @@
 
 /// STD include
 #include <cmath>
-#include <string>
-
-/// STL includes
 #include <list>
-#include <set>
+#include <string>
 #include <tuple>
-#include <unordered_set>
 
 /// utility includes
+#include "custom_set.hpp"
 #include "dbgPrintHelper.hpp"
+#include "math_function.hpp"
 #include "utility.hpp"
 
 datapath_parallel_cs::datapath_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
@@ -82,9 +80,9 @@ datapath_parallel_cs::~datapath_parallel_cs()
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> datapath_parallel_cs::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -138,7 +136,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
 
    instantiate_component_parallel(clock, reset);
 
-   std::set<structural_objectRef> memory_modules;
+   CustomOrderedSet<structural_objectRef> memory_modules;
    const structural_managerRef& SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
@@ -155,10 +153,10 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    const auto kernel_function_name = HLSMgr->CGetFunctionBehavior(kernel_function_id)->CGetBehavioralHelper()->get_function_name();
    std::string kernel_library = HLS->HLS_T->get_technology_manager()->get_library(kernel_function_name);
    structural_objectRef kernel_mod;
-   unsigned int addr_kernel = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+   int addr_kernel = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kernel)
       addr_kernel = 1;
-   for(unsigned int i = 0; i < HLS->Param->getOption<unsigned int>(OPT_num_threads); ++i)
+   for(unsigned int i = 0; i < parameters->getOption<unsigned int>(OPT_num_accelerators); ++i)
    {
       std::string kernel_module_name = kernel_function_name + "_" + STR(i);
       kernel_mod = SM->add_module_from_technology_library(kernel_module_name, kernel_function_name, kernel_library, circuit, HLS->HLS_T->get_technology_manager());
@@ -170,7 +168,7 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    manage_extern_global_port_parallel(SM, memory_modules, datapath_cir);
    memory::propagate_memory_parameters(const_cast<structural_objectRef&>(kernel_mod), SM); // propagate memory_parameter to datapath_parallel
 
-   for(unsigned int i = 0; i < HLS->Param->getOption<unsigned int>(OPT_num_threads); ++i)
+   for(unsigned int i = 0; i < parameters->getOption<unsigned int>(OPT_num_accelerators); ++i)
    {
       kernel_mod = circuit->find_member(kernel_function_name + "_" + STR(i), component_o_K, circuit);
       THROW_ASSERT(kernel_mod, "");
@@ -185,7 +183,7 @@ void datapath_parallel_cs::add_ports()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added standard port kernel");
    const structural_managerRef& SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   unsigned int num_thread = HLS->Param->getOption<unsigned int>(OPT_num_threads);
+   unsigned int num_thread = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start adding new ports");
    SM->add_port_vector(STR(DONE_PORT_NAME) + "_accelerator", port_o::OUT, num_thread, circuit, bool_type);
@@ -295,13 +293,13 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Instantiated memory_ctrl_parallel!");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter memory_ctrl_parallel!");
-   GetPointer<module>(mem_par_mod)->SetParameter("NUM_CHANNEL", STR(HLS->Param->getOption<unsigned int>(OPT_channels_number)));
-   GetPointer<module>(mem_par_mod)->SetParameter("NUM_ACC", STR(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
-   unsigned int addr_task = static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_context_switch)));
+   GetPointer<module>(mem_par_mod)->SetParameter("NUM_CHANNEL", STR(parameters->getOption<unsigned int>(OPT_channels_number)));
+   GetPointer<module>(mem_par_mod)->SetParameter("NUM_ACC", STR(parameters->getOption<unsigned int>(OPT_num_accelerators)));
+   int addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!addr_task)
       addr_task = 1;
    GetPointer<module>(mem_par_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
-   unsigned int addr_kern = static_cast<unsigned int>(log2(parameters->getOption<unsigned int>(OPT_num_threads)));
+   int addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kern)
       addr_kern = 1;
    GetPointer<module>(mem_par_mod)->SetParameter("ADDR_ACC", STR(addr_kern));
@@ -312,8 +310,8 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
 
 void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_par_mod)
 {
-   unsigned int memory_channel = HLS->Param->getOption<unsigned int>(OPT_channels_number);
-   unsigned int num_kernel = HLS->Param->getOption<unsigned int>(OPT_num_threads);
+   unsigned int memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
+   unsigned int num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
    for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_in_port_size(); j++) // resize input port
    {
       structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_in_port(j);
@@ -359,7 +357,7 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
    GetPointer<port_o>(port)->add_n_ports(vector_size, port);
 }
 
-void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit)
+void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit)
 {
    structural_objectRef cir_port;
    structural_objectRef mem_paral_port;

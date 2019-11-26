@@ -54,13 +54,11 @@
 
 /// STL include
 #include <algorithm>
-#include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
-/// utility include
 #include "custom_map.hpp"
+#include "custom_set.hpp"
 
 #include <ostream>
 #include <string>
@@ -98,7 +96,6 @@ class simple_indent;
 
 #define HIERARCHY_SEPARATOR "/"
 
-#define DISCREPANCY_PARAMETER "DISCREPANCY_PARAMETER"
 #define MEMORY_PARAMETER "MEMORY_PARAMETER"
 #define PIPE_PARAMETER "PIPE_PARAMETER"
 #define VALUE_PARAMETER "VALUE_PARAMETER"
@@ -458,7 +455,8 @@ class structural_object
    /**
     * Return the equation associated with the output port of the component
     */
-   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM, std::set<structural_objectRef>& analyzed, const std::set<structural_objectRef>& input_ports, const std::set<structural_objectRef>& output_ports) const;
+   std::string get_equation(const structural_objectRef out_obj, const technology_managerConstRef TM, CustomOrderedSet<structural_objectRef>& analyzed, const CustomOrderedSet<structural_objectRef>& input_ports,
+                            const CustomOrderedSet<structural_objectRef>& output_ports) const;
 #endif
 
    /**

@@ -62,16 +62,8 @@
 
 #include "math_function.hpp"
 
-/// STD include
-#include <string>
-
-/// STL includes
-#include <algorithm>
-#include <map>
-#include <set>
-#include <tuple>
-#include <unordered_set>
-#include <vector>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// tree includes
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
@@ -81,6 +73,12 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+
+/// STD include
+#include <algorithm>
+#include <string>
+#include <tuple>
+#include <vector>
 
 MemoryAllocationSpecialization::MemoryAllocationSpecialization(const MemoryAllocation_Policy _memory_allocation_policy, const MemoryAllocation_ChannelsType _memory_allocation_channels_type)
     : memory_allocation_policy(_memory_allocation_policy), memory_allocation_channels_type(_memory_allocation_channels_type)
@@ -150,16 +148,17 @@ memory_allocation::memory_allocation(const ParameterConstRef _parameters, const 
                    _hls_flow_step_specialization :
                    HLSFlowStepSpecializationConstRef(new MemoryAllocationSpecialization(_parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy), _parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type)))),
       /// NOTE: hls_flow_step_specialization and not _hls_flow_step_specialization is correct
-      memory_allocation_policy(GetPointer<const MemoryAllocationSpecialization>(hls_flow_step_specialization)->memory_allocation_policy)
+      memory_allocation_policy(GetPointer<const MemoryAllocationSpecialization>(hls_flow_step_specialization)->memory_allocation_policy),
+      memory_version(0)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
 memory_allocation::~memory_allocation() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> memory_allocation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -190,19 +189,19 @@ void memory_allocation::setup_memory_allocation()
    {
       const FunctionBehaviorConstRef function_behavior = HLSMgr->CGetFunctionBehavior(It);
       /// add parm_decls that have to be copied
-      const std::set<unsigned int>& parm_decl_copied = function_behavior->get_parm_decl_copied();
+      const CustomOrderedSet<unsigned int>& parm_decl_copied = function_behavior->get_parm_decl_copied();
       for(unsigned int p : parm_decl_copied)
       {
          HLSMgr->Rmem->add_parm_decl_copied(p);
       }
       /// add parm_decls that have to be stored
-      const std::set<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
+      const CustomOrderedSet<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
       for(unsigned int p : parm_decl_stored)
       {
          HLSMgr->Rmem->add_parm_decl_stored(p);
       }
       /// add actual parameters that have to be loaded
-      const std::set<unsigned int>& parm_decl_loaded = function_behavior->get_parm_decl_loaded();
+      const CustomOrderedSet<unsigned int>& parm_decl_loaded = function_behavior->get_parm_decl_loaded();
       for(unsigned int p : parm_decl_loaded)
       {
          HLSMgr->Rmem->add_actual_parm_loaded(p);
@@ -292,7 +291,7 @@ void memory_allocation::finalize_memory_allocation()
       }
       if(function_behavior->has_packed_vars())
          has_misaligned_indirect_ref = true;
-      const std::set<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
+      const CustomOrderedSet<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
       for(unsigned int p : parm_decl_stored)
       {
          maximum_bus_size = std::max(maximum_bus_size, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, p)));
@@ -306,7 +305,7 @@ void memory_allocation::finalize_memory_allocation()
       auto fd = GetPointer<function_decl>(fnode);
       std::string fname;
       tree_helper::get_mangled_fname(fd, fname);
-      std::unordered_set<vertex> RW_stmts;
+      CustomUnorderedSet<vertex> RW_stmts;
       if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
       {
          for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
@@ -373,7 +372,7 @@ void memory_allocation::finalize_memory_allocation()
                const tree_nodeRef var_tn = TreeM->get_tree_node_const(var);
                auto* vd = GetPointer<var_decl>(var_tn);
                if(vd && (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TreeM, var) || call_graph_manager->ExistsAddressedFunction()))
-                  has_intern_shared_data = true; /// an external component can access the var possibly (global and volative vars)
+                  has_intern_shared_data = true; /// an external component can access the var possibly (global and volatile vars)
             }
             unsigned int value_bitsize;
             if(GET_TYPE(g, *v) & TYPE_STORE)

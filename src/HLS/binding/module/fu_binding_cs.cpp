@@ -48,17 +48,17 @@
 #include "structural_manager.hpp"
 #include "structural_objects.hpp"
 #include "technology_manager.hpp"
-
 /// STD include
 #include <cmath>
 #include <string>
 
 /// STL include
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// utility include
 #include "dbgPrintHelper.hpp"
+#include "math_function.hpp"
 
 fu_binding_cs::fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int _function_id, const ParameterConstRef _parameters) : fu_binding(_HLSMgr, _function_id, _parameters)
 {
@@ -100,8 +100,8 @@ void fu_binding_cs::instantiate_component_kernel(const HLS_managerRef HLSMgr, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Added Scheduler");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting setting parameter scheduler!");
-   GetPointer<module>(scheduler_mod)->SetParameter("NUM_TASKS", STR(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
-   unsigned int addr_acc = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+   GetPointer<module>(scheduler_mod)->SetParameter("NUM_TASKS", STR(parameters->getOption<unsigned int>(OPT_context_switch)));
+   int addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_acc)
       addr_acc = 1;
    GetPointer<module>(scheduler_mod)->SetParameter("ADDR_ACC", STR(addr_acc));
@@ -190,14 +190,14 @@ void fu_binding_cs::connect_selector_kernel(const hlsRef HLS)
 {
    const structural_managerRef SM = HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   unsigned int num_slots = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch))); // resize selector-port
+   int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch)); // resize selector-port
    if(!num_slots)
       num_slots = 1;
-   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", num_slots));
+   structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
 
    structural_objectRef scheduler_mod = circuit->find_member("scheduler_kernel", component_o_K, circuit);
    structural_objectRef port_selector = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, scheduler_mod);
-   port_selector->type_resize(num_slots);
+   port_selector->type_resize(static_cast<unsigned>(num_slots));
    structural_objectRef selector_regFile_scheduler = scheduler_mod->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, scheduler_mod);
    structural_objectRef selector_regFile_datapath = circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, circuit);
    structural_objectRef selector_regFile_sign = SM->add_sign(STR(SELECTOR_REGISTER_FILE) + "_signal", circuit, port_type);
@@ -227,21 +227,24 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
       if(curr_gate->ExistsParameter("TAG_MEM_REQ"))
       {
-         unsigned int tag_num = 0;
-         unsigned int addr_tasks = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_context_switch)));
+         unsigned long long int tag_num = 0;
+         int addr_tasks = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
          if(!addr_tasks)
             addr_tasks = 1;
-         unsigned int addr_acc = static_cast<unsigned int>(log2(HLS->Param->getOption<unsigned int>(OPT_num_threads)));
+         int addr_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
          if(!addr_acc)
             addr_acc = 1;
-         unsigned int bit_atomic = addr_tasks + addr_acc;
-         tag_num = static_cast<unsigned int>(pow(2, bit_atomic));
+         int bit_atomic = addr_tasks + addr_acc;
+         if(bit_atomic >= 64)
+            THROW_ERROR("too large tag value for TAG_MEM_REQ");
+         tag_num = 1ULL << bit_atomic;
          curr_gate->SetParameter("TAG_MEM_REQ", STR(tag_num));
       }
    }
 }
 
-void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS,
+                                                         unsigned int& _unique_id)
 {
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
@@ -256,9 +259,9 @@ void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HL
       fu_binding::manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, unique_id);
 }
 
-void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
-   std::map<structural_objectRef, std::set<structural_objectRef>> primary_outs;
+   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> primary_outs;
    structural_objectRef cir_port;
    structural_objectRef sche_port;
    structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
@@ -344,9 +347,9 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected memory_port of scheduler");
 }
 
-void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef SM, const std::set<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
-   std::map<structural_objectRef, std::set<structural_objectRef>> primary_outs;
+   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> primary_outs;
    structural_objectRef cir_port;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Start merging, splitting for hierarchical");
    for(const auto memory_module : memory_modules)

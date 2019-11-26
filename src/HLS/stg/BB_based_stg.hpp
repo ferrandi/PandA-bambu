@@ -55,7 +55,7 @@ class BB_based_stg : public STG_creator
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -86,7 +86,7 @@ class BB_based_stg : public STG_creator
     * overlap the execution of the last state of the bb ending the cycle
     * with the execution of the first state of the bb that begins the cycle.
     */
-   void optimize_cycles(vertex bbEndingCycle, std::unordered_map<vertex, vertex>& first_state, std::unordered_map<vertex, vertex>& last_state, std::map<vertex, std::list<vertex>>& global_starting_ops, std::map<vertex, std::list<vertex>>& global_ending_ops,
+   void optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vertex, vertex>& first_state, CustomUnorderedMap<vertex, vertex>& last_state, std::map<vertex, std::list<vertex>>& global_starting_ops, std::map<vertex, std::list<vertex>>& global_ending_ops,
                         std::map<vertex, std::list<vertex>>& global_executing_ops, std::map<vertex, std::list<vertex>>& global_onfly_ops);
 
    /**
@@ -133,7 +133,7 @@ class BB_based_stg : public STG_creator
     * operations included in the ignoreList will not be considered in
     * this analysis.
     */
-   void compute_use_def(const std::list<vertex>& opEndingList, const std::list<vertex>& opRuningList, const std::list<vertex>& ignoreList, std::set<unsigned int>& useSet, std::set<unsigned int>& defSet, const OpGraphConstRef data);
+   void compute_use_def(const std::list<vertex>& opEndingList, const std::list<vertex>& opRuningList, const std::list<vertex>& ignoreList, CustomOrderedSet<unsigned int>& useSet, CustomOrderedSet<unsigned int>& defSet, const OpGraphConstRef data);
 
    /**
     * Copies all the operations of the state to move in the following.
@@ -141,7 +141,7 @@ class BB_based_stg : public STG_creator
     * The state to move, and all the edges to/from it are not modified by this method.
     */
    void move_without_duplication(const vertex stateToMove, const vertex secondLastState, const vertex dest_first_state, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
-                                 const std::map<vertex, std::list<vertex>>& global_ending_ops, const std::set<unsigned int>& defSet, const std::set<unsigned int>& useSet);
+                                 const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet, const CustomOrderedSet<unsigned int>& useSet);
 
    /**
     * Duplicates the first state of the destination bb and copies all the operations
@@ -151,7 +151,7 @@ class BB_based_stg : public STG_creator
     * The state to move, and all the edges to/from it are not modified by this method.
     */
    void move_with_duplication(const vertex stateToMove, const vertex secondLastState, const vertex dest_first_state, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
-                              const std::map<vertex, std::list<vertex>>& global_ending_ops, const std::set<unsigned int>& defSet, const std::set<unsigned int>& useSet);
+                              const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet, const CustomOrderedSet<unsigned int>& useSet);
    /**
     * If hardware discrepancy analysis is activated, use this function to
     * compute the edge increments for the Efficient Path Profiling (EPP) on the STG.

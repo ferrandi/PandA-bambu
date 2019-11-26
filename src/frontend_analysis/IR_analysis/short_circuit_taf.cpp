@@ -60,6 +60,12 @@
 /// Parameter include
 #include "Parameter.hpp"
 
+/// design flow manager include
+#include "design_flow_manager.hpp"
+
+/// HLS includes
+#include "hls_manager.hpp"
+
 /// parser/treegcc include
 #include "token_interface.hpp"
 
@@ -67,7 +73,13 @@
 #include <fstream>
 
 /// STL include
-#include <unordered_set>
+#include "custom_set.hpp"
+#include <utility>
+#include <vector>
+
+/// design_flows/technology includes
+#include "technology_flow_step.hpp"
+#include "technology_flow_step_factory.hpp"
 
 /// tree includes
 #include "behavioral_helper.hpp"
@@ -79,9 +91,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// design_flow_manager include
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
-#include "design_flow_manager.hpp"
+/// utility includes
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 
 short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -92,9 +103,9 @@ short_circuit_taf::short_circuit_taf(const ParameterConstRef _parameters, const 
 
 short_circuit_taf::~short_circuit_taf() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> short_circuit_taf::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -109,6 +120,15 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
 #endif
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         /// We can check if single_write_memory is true only after technology was loaded
+         const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
+         if(design_flow_manager.lock()->GetStatus(technology_flow_signature) == DesignFlowStep_Status::EMPTY)
+         {
+            if(GetPointer<const HLS_manager>(AppM) and not GetPointer<const HLS_manager>(AppM)->IsSingleWriteMemory())
+            {
+               relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
+            }
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -138,7 +158,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
-         relationships.insert(std::make_pair(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
          relationships.insert(std::make_pair(INTERFACE_INFER, SAME_FUNCTION));
          break;
       }
@@ -176,7 +195,7 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    std::map<unsigned int, blocRef>::iterator it, it_end = list_of_bloc.end();
 
    /// compute merging candidates
-   std::unordered_set<unsigned int> merging_candidates;
+   CustomUnorderedSet<unsigned int> merging_candidates;
    for(it = list_of_bloc.begin(); it != it_end; ++it)
    {
       if(it->first == bloc::ENTRY_BLOCK_ID || it->first == bloc::EXIT_BLOCK_ID)
@@ -224,8 +243,8 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    do
    {
       mergeable_pair_found = false;
-      std::unordered_set<unsigned int>::const_iterator it_mc_end = merging_candidates.end();
-      for(std::unordered_set<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; ++it_mc)
+      CustomUnorderedSet<unsigned int>::const_iterator it_mc_end = merging_candidates.end();
+      for(CustomUnorderedSet<unsigned int>::const_iterator it_mc = merging_candidates.begin(); !mergeable_pair_found && it_mc != it_mc_end; ++it_mc)
       {
          merging_candidate = *it_mc;
          mergeable_pair_found = check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc);

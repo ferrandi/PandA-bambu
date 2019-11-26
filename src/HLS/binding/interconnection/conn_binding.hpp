@@ -48,7 +48,6 @@
 #include "config_HAVE_UNORDERED.hpp"
 
 #include <iosfwd>
-#include <map>
 #include <string>
 
 #include "refcount.hpp"
@@ -64,13 +63,9 @@ REF_FORWARD_DECL(conn_binding);
 CONSTREF_FORWARD_DECL(OpGraph);
 class GenericObjUnsignedIntSorter;
 
-#include "graph.hpp"
-
-/// HLS/virtual_components include
+#include "custom_map.hpp"
 #include "generic_obj.hpp"
-
-/// STL include
-#include <unordered_map>
+#include "graph.hpp"
 
 /// definition of the data transfer (tree_node, precision, from, to, data_transferred, current_op). Note that from/to can represent either chained vertices or STG states
 typedef std::tuple<unsigned int, unsigned int, vertex, vertex, vertex> data_transfer;
@@ -143,9 +138,9 @@ class conn_binding
 
    /// definition of sources of a connection
 #if HAVE_UNORDERED
-   typedef std::unordered_map<generic_objRef, std::set<data_transfer>> ConnectionSources;
+   typedef CustomUnorderedMap<generic_objRef, CustomOrderedSet<data_transfer>> ConnectionSources;
 #else
-   typedef std::map<generic_objRef, std::set<data_transfer>, GenericObjSorter> ConnectionSources;
+   typedef std::map<generic_objRef, CustomOrderedSet<data_transfer>, GenericObjSorter> ConnectionSources;
 #endif
 
  protected:
@@ -186,7 +181,7 @@ class conn_binding
    std::map<std::pair<std::string, unsigned int>, unsigned int> interconnection_elements;
 
    /// set of other command ports
-   std::set<generic_objRef> command_ports;
+   CustomOrderedSet<generic_objRef> command_ports;
 
    /// selector ports
 #if HAVE_UNORDERED
@@ -201,9 +196,9 @@ class conn_binding
 
    /// set containing all the sparse logic contained into the datapath
 #if HAVE_UNORDERED
-   std::unordered_set<generic_objRef> sparse_logic;
+   CustomUnorderedSet<generic_objRef> sparse_logic;
 #else
-   std::set<generic_objRef, GenericObjSorter> sparse_logic;
+   CustomOrderedSet<generic_objRef, GenericObjSorter> sparse_logic;
 #endif
 
    /// map between the input of the unit and the corresponding incoming connections.
@@ -395,7 +390,7 @@ class conn_binding
     * Returns set of generic command ports
     * @return a set of all refcount to generic_obj's associated to ports
     */
-   std::set<generic_objRef> get_command_ports() const
+   CustomOrderedSet<generic_objRef> get_command_ports() const
    {
       return command_ports;
    }

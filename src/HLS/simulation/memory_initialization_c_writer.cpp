@@ -58,6 +58,17 @@ MemoryInitializationCWriter::MemoryInitializationCWriter(const IndentedOutputStr
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
+static bool is_all_8zeros(const std::string& str)
+{
+   size_t size = str.size();
+   if(size % 8 != 0 || size == 8)
+      return false;
+   for(size_t i = 0; i < size; ++i)
+      if(str.at(i) != '0')
+         return false;
+   return true;
+}
+
 void MemoryInitializationCWriter::Process(const std::string& content)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing C code to write " + content + " in binary form to initialize memory");
@@ -203,9 +214,20 @@ void MemoryInitializationCWriter::Process(const std::string& content)
          break;
       case TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION:
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
-         for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+         if(is_all_8zeros(binary_value))
          {
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
+            indented_output_stream->Append("for (__testbench_index = 0; "
+                                           "__testbench_index < " +
+                                           STR(binary_value.size() / 8) + "; " +
+                                           "++__testbench_index)\n"
+                                           "   fprintf(__bambu_testbench_fp, \"m00000000\\n\");\n");
+         }
+         else
+         {
+            for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+            {
+               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
+            }
          }
          break;
       case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:

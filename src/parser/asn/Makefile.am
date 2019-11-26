@@ -1,5 +1,7 @@
 #this file is src/parser/asn/Makefile.am
 noinst_LTLIBRARIES = lib_asnparser.la
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
+METASOURCES = AUTO
 
 lib_asnparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/ \
@@ -11,10 +13,8 @@ lib_asnparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/intermediate_representations/aadl_asn \
    -I$(top_srcdir)/src/parser \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR)\
-   $(all_includes)
+   $(AM_CPPFLAGS)
 
-METASOURCES = AUTO
 AM_LFLAGS = -L -B -+  -olex.yy.c
 
 noinst_HEADERS = asn_parser.hpp asn_lexer.hpp asn_parser_node.hpp

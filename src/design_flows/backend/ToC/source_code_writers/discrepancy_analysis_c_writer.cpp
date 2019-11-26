@@ -314,9 +314,9 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       const StateTransitionGraphManagerConstRef STGMan = hls->STG;
       const StateTransitionGraphInfoConstRef stg_info = STGMan->CGetStg()->CGetStateTransitionGraphInfo();
 
-      std::set<unsigned int> init_state_ids;
-      std::set<unsigned int> exec_state_ids;
-      std::set<unsigned int> end_state_ids;
+      CustomOrderedSet<unsigned int> init_state_ids;
+      CustomOrderedSet<unsigned int> exec_state_ids;
+      CustomOrderedSet<unsigned int> end_state_ids;
 
       for(const auto& s : STGMan->get_starting_states(statement))
          init_state_ids.insert(stg_info->vertex_to_state_id.at(s));

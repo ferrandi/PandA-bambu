@@ -48,7 +48,7 @@
 #ifndef SCHEDULING_HPP
 #define SCHEDULING_HPP
 
-#include <unordered_map>
+#include "custom_map.hpp"
 
 #include "graph.hpp"
 #include "hls_function_step.hpp"
@@ -69,16 +69,16 @@ class Scheduling : public HLSFunctionStep
     */
    //@{
    /// store for each switch the number of outgoing branches.
-   std::unordered_map<vertex, unsigned int> switch_map_size;
+   CustomUnorderedMap<vertex, unsigned int> switch_map_size;
 
    /// for each controlling vertex, it defines a relation between switch tags and branch tags
-   std::unordered_map<vertex, std::unordered_map<unsigned int, unsigned int>> switch_normalizing_map;
+   CustomUnorderedMap<vertex, CustomUnorderedMapUnstable<unsigned int, unsigned int>> switch_normalizing_map;
    //@}
 
  protected:
    /// Map for speculation property of each operation vertex. If true, it means that vertex is speculative executed,
    /// false otherwise
-   std::unordered_map<vertex, bool> spec;
+   CustomUnorderedMap<vertex, bool> spec;
 
    /// flag to check speculation
    const bool speculation;
@@ -89,7 +89,7 @@ class Scheduling : public HLSFunctionStep
     * @param cdg is the controlling dependency graph.
     * @param switch_set is filled with the switch tags in case the source of e is a switch vertex.
     */
-   unsigned int compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg, std::set<unsigned int>::const_iterator& switch_it, std::set<unsigned int>::const_iterator& switch_it_end) const;
+   unsigned int compute_b_tag(const EdgeDescriptor& e, const OpGraphConstRef cdg, CustomOrderedSet<unsigned int>::const_iterator& switch_it, CustomOrderedSet<unsigned int>::const_iterator& switch_it_end) const;
 
    /**
     * Return the number of branches associated with the controlling vertex.
@@ -125,7 +125,7 @@ class Scheduling : public HLSFunctionStep
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**
@@ -145,7 +145,7 @@ class Scheduling : public HLSFunctionStep
     * It returns speculation property map
     * @return the map associated
     */
-   const std::unordered_map<vertex, bool>& get_spec() const
+   const CustomUnorderedMap<vertex, bool>& get_spec() const
    {
       return spec;
    }

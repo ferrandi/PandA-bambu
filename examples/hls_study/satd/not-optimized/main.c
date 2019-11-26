@@ -5,7 +5,7 @@
 #pragma map call_hw VIRTEX5 0
 void
 __attribute__ ((noinline))  
-satd( unsigned char* pix , int* i_satd_result)
+satd( unsigned char pix[32] , int* i_satd_result)
 {
   
   int16_t tmp[4][4];

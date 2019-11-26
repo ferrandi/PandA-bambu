@@ -51,10 +51,6 @@
 /// STD include
 #include <iosfwd>
 
-/// STL include
-#include <map>
-#include <unordered_map>
-
 /// utility includes
 #include "refcount.hpp"
 #include "strong_typedef.hpp"
@@ -83,7 +79,6 @@ REF_FORWARD_DECL(fu_binding);
 #include "graph.hpp"
 #include "hash_helper.hpp"
 #include <iosfwd>
-#include <unordered_map>
 
 /**
  * Absolute Control step
@@ -145,13 +140,13 @@ class Schedule
 
    /// map between the operation index and the clock cycle on which the operation starts its execution
    /// NOTE: it must be a map to know which is the last step
-   CustomMap<unsigned int, ControlStep> op_starting_cycle;
+   CustomUnorderedMapUnstable<unsigned int, ControlStep> op_starting_cycle;
 
    /// The reverse of op_starting_cycle
    CustomMap<ControlStep, CustomSet<unsigned int>> starting_cycles_to_ops;
 
    /// map between the operation index and the clock cycle on which the operations ends its execution
-   CustomMap<unsigned int, ControlStep> op_ending_cycle;
+   CustomUnorderedMapUnstable<unsigned int, ControlStep> op_ending_cycle;
 
    /// The absolute starting time of each operation as computed by the scheduling
    /// Key is the index of the gimple operation
@@ -167,7 +162,7 @@ class Schedule
 
    /// Map for speculation property of each operation vertex. If true, it means that vertex is speculative executed,
    /// false otherwise
-   std::unordered_map<vertex, bool> spec;
+   CustomUnorderedMap<vertex, bool> spec;
 
    /// slack map
    std::map<vertex, double> op_slack;
@@ -244,7 +239,7 @@ class Schedule
    /**
     * Sets the speculation map
     */
-   void set_spec(const std::unordered_map<vertex, bool>& spec_map)
+   void set_spec(const CustomUnorderedMap<vertex, bool>& spec_map)
    {
       spec = spec_map;
    }
@@ -252,7 +247,7 @@ class Schedule
    /**
     * Returns the speculation map
     */
-   std::unordered_map<vertex, bool> get_spec() const
+   CustomUnorderedMap<vertex, bool> get_spec() const
    {
       return spec;
    }

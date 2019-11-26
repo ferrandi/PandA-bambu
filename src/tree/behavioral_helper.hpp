@@ -48,12 +48,12 @@
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_FROM_PRAGMA_BUILT.hpp"
 
-#include <list> // for list
-#include <map>
-#include <set>    // for set
+#include "custom_map.hpp"
+#include "custom_set.hpp" // for set
+#include "custom_set.hpp"
+#include <list>   // for list
 #include <string> // for string
 #include <tuple>
-#include <unordered_set>
 #include <utility> // for pair
 
 /// graph include
@@ -472,7 +472,7 @@ class BehavioralHelper
     * Returns the types of the parameters
     * @return the types of the parameters
     */
-   virtual const std::unordered_set<unsigned int> GetParameterTypes() const;
+   virtual const CustomUnorderedSet<unsigned int> GetParameterTypes() const;
 
    /**
     * Return the list of index of original parameters of the function
@@ -504,7 +504,7 @@ class BehavioralHelper
     * reference storing at the end true only if the variable has an initialization objetct.
     * In case the variable does not have an initialization object this function returns 0.
     */
-   virtual unsigned int GetInit(unsigned int var, std::unordered_set<unsigned int>& list_of_variables) const;
+   virtual unsigned int GetInit(unsigned int var, CustomUnorderedSet<unsigned int>& list_of_variables) const;
 
    /**
     * return the attributes associated with the variable.
@@ -541,12 +541,12 @@ class BehavioralHelper
    /**
     * Get the global variables read by the correspondent function
     */
-   std::set<unsigned int> get_read_global_variables() const;
+   CustomOrderedSet<unsigned int> get_read_global_variables() const;
 
    /**
     * Get the global variables written by the correspondent function
     */
-   std::set<unsigned int> get_written_global_variables() const;
+   CustomOrderedSet<unsigned int> get_written_global_variables() const;
 
    /**
     * Add the initialization of a variables
@@ -670,7 +670,7 @@ class BehavioralHelper
     * @param nodeid is the statement analyzed
     * @param types is the set of types type-casted by nodeid
     */
-   virtual void get_typecast(unsigned int nodeid, std::unordered_set<unsigned int>& types) const;
+   virtual void get_typecast(unsigned int nodeid, CustomUnorderedSet<unsigned int>& types) const;
 
    /**
     * Return true if node is the default ssa_name
@@ -694,7 +694,7 @@ class BehavioralHelper
    bool IsOmpBodyLoop() const;
 #endif
 
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    /**
     * Return true if the function is an omp atomic instruction
     */

@@ -56,7 +56,7 @@
 #include <utility>                        // for pair
 
 #if HAVE_UNORDERED
-BBExecutions::BBExecutions(const BBGraphConstRef) : std::unordered_map<vertex, unsigned long long int>()
+BBExecutions::BBExecutions(const BBGraphConstRef) : CustomUnorderedMap<vertex, unsigned long long int>()
 {
 }
 #else
@@ -66,7 +66,7 @@ BBExecutions::BBExecutions(const BBGraphConstRef _bb_graph) : std::map<vertex, u
 #endif
 
 #if HAVE_UNORDERED
-BBEdgeExecutions::BBEdgeExecutions(const BBGraphConstRef) : std::unordered_map<EdgeDescriptor, unsigned long long int>()
+BBEdgeExecutions::BBEdgeExecutions(const BBGraphConstRef) : CustomUnorderedMap<EdgeDescriptor, unsigned long long int>()
 {
 }
 #else
@@ -144,14 +144,14 @@ void ProfilingInformation::WriteToXml(xml_element* root, const BBGraphConstRef f
    {
       xml_element* loop_xml = path_profiling_xml->add_child_element(STR_XML_host_profiling_paths_loop);
       WRITE_XNVM2(STR_XML_host_profiling_id, boost::lexical_cast<std::string>(loop->first), loop_xml);
-      const std::map<std::set<unsigned int>, long double>& loop_path_profiling = loop->second;
-      std::map<std::set<unsigned int>, long double>::const_iterator loop_path, loop_path_end = loop_path_profiling.end();
+      const std::map<CustomOrderedSet<unsigned int>, long double>& loop_path_profiling = loop->second;
+      std::map<CustomOrderedSet<unsigned int>, long double>::const_iterator loop_path, loop_path_end = loop_path_profiling.end();
       for(loop_path = loop_path_profiling.begin(); loop_path != loop_path_end; ++loop_path)
       {
          xml_element* path = loop_xml->add_child_element(STR_XML_host_profiling_path);
          std::string cer_path_string;
-         const std::set<unsigned int>& cer_path = loop_path->first;
-         std::set<unsigned int>::const_iterator cer, cer_end = cer_path.end();
+         const CustomOrderedSet<unsigned int>& cer_path = loop_path->first;
+         CustomOrderedSet<unsigned int>::const_iterator cer, cer_end = cer_path.end();
          for(cer = cer_path.begin(); cer != cer_end; ++cer)
          {
             cer_path_string += boost::lexical_cast<std::string>(*cer) + "#";

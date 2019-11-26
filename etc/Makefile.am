@@ -25,6 +25,7 @@ EXTRA_DIST = Doxyfile \
              VMs/PandA-bambu-VM_64bit-macport/script.sh VMs/PandA-bambu-VM_64bit-macport/Vagrantfile\
              VMs/PandA-bambu-VM_64bit-precise/script.sh VMs/PandA-bambu-VM_64bit-precise/Vagrantfile \
              VMs/PandA-bambu-VM_64bit-trusty/script.sh VMs/PandA-bambu-VM_64bit-trusty/Vagrantfile \
+             VMs/PandA-bambu-VM_32bit-Debian9/script.sh VMs/PandA-bambu-VM_32bit-Debian9/Vagrantfile \
              VMs/PandA-bambu-VM_64bit-xenial/script.sh VMs/PandA-bambu-VM_64bit-xenial/Vagrantfile
 
 .PHONY documentation: documentation-recursive

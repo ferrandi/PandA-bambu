@@ -47,6 +47,7 @@
 #include "omp_functions.hpp"
 
 /// utility include
+#include "math_function.hpp"
 #include "utility.hpp"
 
 mem_dominator_allocation_cs::mem_dominator_allocation_cs(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization,
@@ -63,14 +64,14 @@ mem_dominator_allocation_cs::~mem_dominator_allocation_cs()
 DesignFlowStep_Status mem_dominator_allocation_cs::Exec()
 {
    mem_dominator_allocation::Exec(); // exec of hierarchical class
-   unsigned int tag_index = 0;
-   unsigned int context_switch = static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_context_switch)));
+   int tag_index = 0;
+   int context_switch = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!context_switch)
       context_switch = 1;
-   unsigned int num_threads = static_cast<unsigned int>(log2(parameters->getOption<int>(OPT_num_threads)));
-   if(!num_threads)
-      num_threads = 1;
-   tag_index = context_switch + num_threads + 2; // tag_index is log2(switch)+log2(thread)+2
-   GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(tag_index);
+   int num_bits_acc = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
+   if(!num_bits_acc)
+      num_bits_acc = 1;
+   tag_index = context_switch + num_bits_acc + 2; // tag_index is log2(switch)+log2(thread)+2
+   GetPointer<memory_cs>(HLSMgr->Rmem)->set_bus_tag_bitsize(static_cast<unsigned>(tag_index));
    return DesignFlowStep_Status::SUCCESS;
 }

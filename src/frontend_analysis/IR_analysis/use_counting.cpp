@@ -36,9 +36,6 @@
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -56,16 +53,18 @@
 #include "design_flow_manager.hpp"
 
 /// design_flows/technology includes
-#if HAVE_BAMBU_BUILT
 #include "technology_flow_step.hpp"
 #include "technology_flow_step_factory.hpp"
-#endif
 
 /// Parameter include
 #include "Parameter.hpp"
 
 /// HLS includes
 #include "hls_manager.hpp"
+
+/// STL includes
+#include "custom_set.hpp"
+#include <utility>
 
 /// tree include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
@@ -85,14 +84,13 @@ use_counting::use_counting(const ParameterConstRef _parameters, const applicatio
 
 use_counting::~use_counting() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> use_counting::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          /// We can check if single_write_memory is true only after technology was loaded
          const std::string technology_flow_signature = TechnologyFlowStep::ComputeSignature(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
          if(design_flow_manager.lock()->GetStatus(technology_flow_signature) == DesignFlowStep_Status::EMPTY)
@@ -102,9 +100,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
             }
          }
-#else
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CLEAN_VIRTUAL_PHI, SAME_FUNCTION));
-#endif
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -113,25 +108,13 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HWCALL_INJECTION, SAME_FUNCTION));
-#endif
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, SAME_FUNCTION));
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION2, SAME_FUNCTION));
-#endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ARRAY_REF_FIX, SAME_FUNCTION));
-#endif
-#if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
-#endif
-#if HAVE_ZEBU_BUILT
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_PHINODES, SAME_FUNCTION));
-#endif
          break;
       }
       default:
@@ -186,7 +169,7 @@ DesignFlowStep_Status use_counting::InternalExec()
       for(auto statement_node : it->second->CGetStmtList())
       {
          /// [breadshe] This set contains the ssa_name nodes "used" by the statement
-         std::set<tree_nodeRef> ssa_uses;
+         CustomOrderedSet<tree_nodeRef> ssa_uses;
          analyze_node(statement_node, ssa_uses);
          /// [breadshe] Add current statement to the use_stmts corresponding to the ssa_name nodes contained in ssa_uses
          for(const auto& ssa_use : ssa_uses)
@@ -197,7 +180,7 @@ DesignFlowStep_Status use_counting::InternalExec()
       }
       for(auto phi_node : it->second->CGetPhiList())
       {
-         std::set<tree_nodeRef> ssa_uses;
+         CustomOrderedSet<tree_nodeRef> ssa_uses;
          analyze_node(phi_node, ssa_uses);
          for(const auto& ssa_use : ssa_uses)
          {
@@ -213,7 +196,7 @@ DesignFlowStep_Status use_counting::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void use_counting::analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_uses)
+void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>& ssa_uses)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString());
@@ -392,12 +375,14 @@ void use_counting::analyze_node(tree_nodeRef& tn, std::set<tree_nodeRef>& ssa_us
       case tree_list_K:
       {
          auto* tl = GetPointer<tree_list>(curr_tn);
-         if(tl->purp)
-            analyze_node(tl->purp, ssa_uses);
-         if(tl->valu)
-            analyze_node(tl->valu, ssa_uses);
-         if(tl->chan)
-            analyze_node(tl->chan, ssa_uses);
+         while(tl)
+         {
+            if(tl->purp)
+               analyze_node(tl->purp, ssa_uses);
+            if(tl->valu)
+               analyze_node(tl->valu, ssa_uses);
+            tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
+         }
          break;
       }
       case gimple_multi_way_if_K:

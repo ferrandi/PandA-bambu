@@ -59,8 +59,8 @@
 #include <string>
 
 /// STL includes
-#include <map>
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <vector>
 
 /// technology include
@@ -82,6 +82,7 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "math_function.hpp"
 #include "string_manipulation.hpp"
+#include <boost/algorithm/string/case_conv.hpp>
 
 FunctionalUnitStep::FunctionalUnitStep(const target_managerRef _target, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : DesignFlowStep(_design_flow_manager, _parameters), TM(_target->get_technology_manager()), target(_target), has_first_synthesis_id(0)
@@ -97,7 +98,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
 
    bool is_commutative = true;
 
-   std::set<unsigned int> precision;
+   CustomOrderedSet<unsigned int> precision;
    std::map<unsigned int, std::vector<std::string>> pipe_parameters;
    std::map<unsigned int, std::vector<std::string>> portsize_parameters;
    auto* fu_curr = GetPointer<functional_unit>(f_unit);
@@ -256,11 +257,12 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          bool is_xilinx = vendor == "xilinx";
          bool is_lattice = vendor == "lattice";
          bool is_altera = vendor == "altera";
+         bool is_nanoxplore = vendor == "nanoxplore";
 #endif
 
          if(!(NPF->exist_NP_functionality(NP_functionality::VERILOG_PROVIDED)
 #if HAVE_FLOPOCO
-              || (NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) && (is_xilinx || is_altera || is_lattice))
+              || (NPF->exist_NP_functionality(NP_functionality::FLOPOCO_PROVIDED) && (is_xilinx || is_altera || is_lattice || is_nanoxplore))
 #endif
               || (NPF->exist_NP_functionality(NP_functionality::VHDL_PROVIDED)) || (NPF->exist_NP_functionality(NP_functionality::SYSTEM_VERILOG_PROVIDED))) ||
             fu_base_name == LUT_GATE_STD || fu_base_name == AND_GATE_STD || fu_base_name == NAND_GATE_STD || fu_base_name == OR_GATE_STD || fu_base_name == NOR_GATE_STD || fu_base_name == XOR_GATE_STD || fu_base_name == XNOR_GATE_STD ||

@@ -683,7 +683,7 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    unsigned int ssa_tree_node_index = TM->new_tree_node_id();
    TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
 
-   std::unordered_map<unsigned int, unsigned int> remapping;
+   CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
    tree_node_dup tnd(remapping, TM);
    remapping[ga->op0->index] = ssa_tree_node_index;
 
@@ -835,7 +835,7 @@ bool Vectorize::LookForScalar(const tree_nodeConstRef tree_node)
    }
    return false;
 }
-#if HAVE_UNORDERED
+#if HAVE_UNORDERED && NO_ABSEIL_HASH
 /**
  * Definition of hash function for std::tyuple<unsigned int, vertex, unsigned int>
  */
@@ -1243,9 +1243,9 @@ void Vectorize::SetPredication()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created predicated statements");
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Vectorize::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> Vectorize::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -1837,7 +1837,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   THROW_ASSERT(GET_CONST_NODE(ae->op)->get_kind() == function_decl_K, STR(ae->op));
                   AppM->GetCallGraphManager()->RemoveCallPoint(function_id, ae->op->index, tn->index);
                }
-               std::unordered_map<size_t, unsigned int> scalar_to_ssa;
+               CustomUnorderedMap<size_t, unsigned int> scalar_to_ssa;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating replicas of scalar");
                for(size_t scalar = 1; scalar <= parallel_degree; scalar++)
                {

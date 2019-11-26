@@ -43,13 +43,13 @@
 #ifndef TREE_NODES_MERGER_HPP
 #define TREE_NODES_MERGER_HPP
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include "refcount.hpp"
 #include "tree_node.hpp"
 #include "tree_node_mask.hpp"
 #include <boost/preprocessor/facilities/empty.hpp>
 #include <boost/preprocessor/seq/for_each.hpp>
-#include <unordered_map>
-#include <unordered_set>
 
 /**
  * @name forward declarations
@@ -63,7 +63,7 @@ REF_FORWARD_DECL(bloc);
 struct tree_node_reached : public tree_node_mask
 {
    /// default constructor
-   tree_node_reached(std::unordered_map<unsigned int, unsigned int>& _remap, std::unordered_set<unsigned int>& _not_yet_remapped, const tree_managerRef _TM) : remap(_remap), TM(_TM), not_yet_remapped(_not_yet_remapped)
+   tree_node_reached(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap, CustomUnorderedSet<unsigned int>& _not_yet_remapped, const tree_managerRef _TM) : remap(_remap), TM(_TM), not_yet_remapped(_not_yet_remapped)
    {
    }
    /// tree_node visitors
@@ -72,17 +72,17 @@ struct tree_node_reached : public tree_node_mask
 
  private:
    /// remap old indexes in new indexes
-   std::unordered_map<unsigned int, unsigned int>& remap;
+   CustomUnorderedMapUnstable<unsigned int, unsigned int>& remap;
    /// tree manager
    const tree_managerRef TM;
    /// tree_node not yet added to the Tree Manager
-   std::unordered_set<unsigned int>& not_yet_remapped;
+   CustomUnorderedSet<unsigned int>& not_yet_remapped;
 };
 
 struct tree_node_index_factory : public tree_node_mask
 {
    /// default constructor
-   tree_node_index_factory(std::unordered_map<unsigned int, unsigned int>& _remap, const tree_managerRef _TM) : remap(_remap), TM(_TM), curr_tree_node_ptr(nullptr), curr_bloc(nullptr)
+   tree_node_index_factory(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap, const tree_managerRef _TM) : remap(_remap), TM(_TM), curr_tree_node_ptr(nullptr), curr_bloc(nullptr)
    {
    }
    /// tree_node visitors
@@ -99,7 +99,7 @@ struct tree_node_index_factory : public tree_node_mask
 
  private:
    /// remap old indexes in new indexes
-   std::unordered_map<unsigned int, unsigned int>& remap;
+   CustomUnorderedMapUnstable<unsigned int, unsigned int>& remap;
 
    /// tree manager
    const tree_managerRef TM;

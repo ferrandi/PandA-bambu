@@ -60,7 +60,7 @@
 #include <string>
 
 /// STL include
-#include <unordered_map>
+#include "custom_map.hpp"
 
 /// utility include
 #include "refcount.hpp"
@@ -105,7 +105,6 @@ enum class HLSFlowStep_Type
    AXI4LITE_INTERFACE_GENERATION,
 #endif
    BB_STG_CREATOR,
-   HLS_BIT_VALUE,
    CALL_GRAPH_UNFOLDING,
    CDFC_MODULE_BINDING,
 #if HAVE_EXPERIMENTAL
@@ -162,6 +161,8 @@ enum class HLSFlowStep_Type
    GENERATE_TASTE_HDL_ARCHITECTURE,
    GENERATE_TASTE_SYNTHESIS_SCRIPT,
 #endif
+   HLS_BIT_VALUE,
+   HLS_FUNCTION_BIT_VALUE,
    HLS_SYNTHESIS_FLOW,
    HW_PATH_COMPUTATION,
    HW_DISCREPANCY_ANALYSIS,
@@ -199,7 +200,7 @@ enum class HLSFlowStep_Type
 #if HAVE_FROM_PRAGMA_BUILT
    OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW,
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
    OMP_FUNCTION_ALLOCATION,
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
@@ -270,7 +271,7 @@ class HLS_step : public DesignFlowStep
 {
  protected:
    /// Map hls step name to enum
-   static std::unordered_map<std::string, HLSFlowStep_Type> command_line_name_to_enum;
+   static CustomUnorderedMap<std::string, HLSFlowStep_Type> command_line_name_to_enum;
 
    /// information about all the HLS synthesis
    const HLS_managerRef HLSMgr;
@@ -285,7 +286,7 @@ class HLS_step : public DesignFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   virtual const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
+   virtual const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const;
 
  public:
    /**

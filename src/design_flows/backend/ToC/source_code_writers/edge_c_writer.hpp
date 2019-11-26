@@ -56,7 +56,6 @@
 /// STL include
 #include <deque>
 #include <list>
-#include <map>
 #include <set>
 #include <vector>
 
@@ -69,7 +68,7 @@ CONSTREF_FORWARD_DECL(OpGraph);
 CONSTREF_FORWARD_DECL(Parameter);
 
 /**
- * Class use to write the C code with instruented edges
+ * Class use to write the C code with instrumented edges
  */
 class EdgeCWriter : public virtual CWriter
 {
@@ -82,7 +81,7 @@ class EdgeCWriter : public virtual CWriter
    virtual void print_edge(EdgeDescriptor e, unsigned int index);
 
    /**
-    * Print operatations needed to store into symbol table information about last path
+    * Print operations needed to store into symbol table information about last path
     * @param fun_id is the index of the function
     * @param loop_id is the index of the loop
     */
@@ -111,7 +110,7 @@ class EdgeCWriter : public virtual CWriter
     * @param bb_start is the first basic block to be printed
     * @param bb_end is the set of first basic block not to be printed
     */
-   void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, const var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX, std::set<vertex> bb_end = std::set<vertex>()) override;
+   void writeRoutineInstructions(const unsigned int function_index, const OpVertexSet& instructions, const var_pp_functorConstRef variableFunctor, vertex bb_start = NULL_VERTEX, CustomOrderedSet<vertex> bb_end = CustomOrderedSet<vertex>()) override;
 
  protected:
    /// Increment which should be added before the label in a basic block

@@ -71,7 +71,7 @@
 #include <unistd.h>
 
 /// STL include
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <utility>
 
 #define MODELSIM_BIN (STR(MENTOR_MODELSIM_BIN) != "0" ? STR(MENTOR_MODELSIM_BIN) + "/" : std::string(""))

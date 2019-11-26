@@ -83,9 +83,9 @@
 #include <string>
 
 /// STL includes
+#include "custom_set.hpp"
 #include <list>
 #include <tuple>
-#include <unordered_set>
 
 // include from tree/
 #include "behavioral_helper.hpp"
@@ -104,9 +104,9 @@ CTestbenchExecution::CTestbenchExecution(const ParameterConstRef Param, const HL
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> CTestbenchExecution::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> CTestbenchExecution::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:

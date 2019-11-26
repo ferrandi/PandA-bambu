@@ -70,9 +70,9 @@
 #include "memory.hpp"
 
 /// STL includes
-#include <set>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 
 /// technology include
 #include "technology_manager.hpp"
@@ -90,14 +90,14 @@ HLS_step::HLS_step(const ParameterConstRef _parameters, const HLS_managerRef _HL
 {
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLS_step::ComputeHLSRelationships(const DesignFlowStep::RelationshipType) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLS_step::ComputeHLSRelationships(const DesignFlowStep::RelationshipType) const
 {
-   return std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>();
+   return CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>>();
 }
 
 HLS_step::~HLS_step() = default;
 
-std::unordered_map<std::string, HLSFlowStep_Type> HLS_step::command_line_name_to_enum;
+CustomUnorderedMap<std::string, HLSFlowStep_Type> HLS_step::command_line_name_to_enum;
 
 const std::string HLS_step::GetSignature() const
 {
@@ -137,8 +137,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
 #endif
       case HLSFlowStep_Type::BB_STG_CREATOR:
          return "BBStgCreator";
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
-         return "HLSBitValue";
       case HLSFlowStep_Type::CDFC_MODULE_BINDING:
          return "CdfcModuleBinding";
       case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
@@ -232,6 +230,10 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::GENERATE_TASTE_SYNTHESIS_SCRIPT:
          return "GenerateTasteSynthesisScript";
 #endif
+      case HLSFlowStep_Type::HLS_BIT_VALUE:
+         return "HLSBitValue";
+      case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
+         return "HLSFunctionBitValue";
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
          return "HLSFlow";
 #if HAVE_ILP_BUILT && HAVE_EXPERIMENTAL
@@ -286,7 +288,7 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
          return "OmpForWrapperCSSynthesisFlow";
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
          return "OmpFunctionAllocation";
 #endif
@@ -390,7 +392,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
    const auto* hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-   std::set<unsigned int> functions = call_graph_manager->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> functions = call_graph_manager->GetReachedBodyFunctions();
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
    const technology_managerRef TM = HLS_T->get_technology_manager();
@@ -401,7 +403,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
       unsigned int memcpy_function_id = TreeM->function_index("__internal_bambu_memcpy");
       functions.insert(memcpy_function_id);
    }
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
    for(auto const step_to_be_created : steps_to_be_created)
    {
       switch(std::get<2>(step_to_be_created))

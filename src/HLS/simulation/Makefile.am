@@ -1,5 +1,7 @@
 #this file is src/HLS/simulation/Makefile.am
 noinst_LTLIBRARIES =  lib_simulation.la
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
+METASOURCES = AUTO
 
 lib_simulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
@@ -25,6 +27,7 @@ lib_simulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/vcd \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/parser/discrepancy \
+   -I$(top_srcdir)/src/parser/vcd \
    -I$(top_srcdir)/src/parser/polixml \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
@@ -34,9 +37,8 @@ lib_simulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \
    -I$(top_srcdir)/src/wrapper/treegcc \
-   -I$(BOOST_DIR) $(all_includes)
+   $(AM_CPPFLAGS)
 
-METASOURCES = AUTO
 AM_YFLAGS = -d -l --report=state,lookahead,itemset
 AM_LFLAGS = -L -B -+  -olex.yy.c
 
@@ -87,7 +89,4 @@ BUILT_SOURCES = c_initialization_yparser.h c_initialization_flex_lexer.cpp c_ini
 endif
 CLEANFILES = $(BUILT_SOURCES) *.output
 
-#DOCUMENTATION STUFF
-
-#do not touch the following line
 

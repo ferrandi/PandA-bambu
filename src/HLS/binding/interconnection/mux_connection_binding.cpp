@@ -90,8 +90,6 @@
 #include "direct_conn.hpp"
 #include "mux_conn.hpp"
 
-#include "Vertex.hpp"
-
 #include "tree_reindex.hpp"
 
 #include "Parameter.hpp"
@@ -300,8 +298,8 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(ar
 void mux_connection_binding::create_single_conn(const OpGraphConstRef data, const vertex& op, generic_objRef fu_obj_src, generic_objRef fu_obj, unsigned int port_num, unsigned int port_index, unsigned int tree_var, unsigned int precision,
                                                 bool is_not_a_phi)
 {
-   const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
-   const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+   const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
+   const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
    for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
    {
       vertex state = *rs_it;
@@ -333,8 +331,8 @@ void mux_connection_binding::create_single_conn(const OpGraphConstRef data, cons
          }
          /// instead of tree_var we use cur_phi_tree_var when we look into the state in data structure since tree_var can be modified in the mean time
          THROW_ASSERT(HLS->Rliv->has_state_in(state, op, cur_phi_tree_var), " no state in for @" + STR(tree_var));
-         const std::set<vertex>& states_in = HLS->Rliv->get_state_in(state, op, cur_phi_tree_var);
-         const std::set<vertex>::const_iterator s_in_it_end = states_in.end();
+         const CustomOrderedSet<vertex>& states_in = HLS->Rliv->get_state_in(state, op, cur_phi_tree_var);
+         const CustomOrderedSet<vertex>::const_iterator s_in_it_end = states_in.end();
          for(auto s_in_it = states_in.begin(); s_in_it != s_in_it_end; ++s_in_it)
          {
             HLS->Rconn->add_data_transfer(fu_obj_src, fu_obj, port_num, port_index, data_transfer(tree_var, precision, *s_in_it, state, op));
@@ -1311,8 +1309,8 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
 {
    THROW_ASSERT(tree_var, "a non-null tree var is expected");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-   const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
-   const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+   const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
+   const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
    for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
    {
       unsigned int tree_var_state_in;
@@ -1347,8 +1345,8 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
       else
          tree_var_state_in = tree_var;
       THROW_ASSERT(HLS->Rliv->has_state_in(*rs_it, op, tree_var_state_in), " no state in for @" + STR(tree_var_state_in) + " - " + (is_not_a_phi ? " not a phi" : "phi") + " - " + HLS->Rliv->get_name(*rs_it) + " for op " + GET_NAME(data, op));
-      const std::set<vertex>& states_in = HLS->Rliv->get_state_in(*rs_it, op, tree_var_state_in);
-      const std::set<vertex>::const_iterator s_in_it_end = states_in.end();
+      const CustomOrderedSet<vertex>& states_in = HLS->Rliv->get_state_in(*rs_it, op, tree_var_state_in);
+      const CustomOrderedSet<vertex>::const_iterator s_in_it_end = states_in.end();
       for(auto s_in_it = states_in.begin(); s_in_it != s_in_it_end; ++s_in_it)
       {
          vertex state = *rs_it;
@@ -1372,7 +1370,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             else
             {
                vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
-               const std::set<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+               const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                {
                   if(def_op_ending_states.find(src_state) != def_op_ending_states.end())
@@ -1444,7 +1442,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             else
             {
                vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
-               const std::set<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+               const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(state);
                if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                {
@@ -1634,7 +1632,7 @@ void mux_connection_binding::create_connections()
       generic_objRef sel_port = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::WRENABLE, reg_obj, r);
       GetPointer<register_obj>(reg_obj)->set_wr_enable(sel_port);
    }
-   std::set<unsigned int> setFu = HLS->Rfu->get_allocation_list();
+   CustomOrderedSet<unsigned int> setFu = HLS->Rfu->get_allocation_list();
    for(unsigned int i : setFu)
    {
       // number of instance functional unit i
@@ -1686,8 +1684,8 @@ void mux_connection_binding::create_connections()
             if(!selector_obj)
                THROW_ERROR("Functional unit " + HLS->allocation_information->get_string_name(fu) + " does not exist or it does not have selector " + data->CGetOpNodeInfo(*op)->GetOperation() + "(" + STR(idx) +
                            ") Operation: " + STR(data->CGetOpNodeInfo(*op)->GetNodeId()));
-            const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(*op);
-            const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+            const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(*op);
+            const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
             for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
             {
                GetPointer<commandport_obj>(selector_obj)->add_activation(commandport_obj::transition(*rs_it, NULL_VERTEX, commandport_obj::data_operation_pair(0, *op)));
@@ -2246,10 +2244,10 @@ void mux_connection_binding::create_connections()
       {
          /// phi must be differently managed
          unsigned int var_written = HLSMgr->get_produced_value(HLS->functionId, *op);
-         std::set<unsigned int> source_already_analyzed;
-         const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
+         CustomOrderedSet<unsigned int> source_already_analyzed;
+         const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
          THROW_ASSERT(ending_states.size() == 1 || is_PC || HLS->STG->GetStg()->CGetStateInfo(*ending_states.begin())->is_duplicated, "phis cannot run in more than one state");
-         const std::set<vertex>::const_iterator e_it_end = ending_states.end();
+         const CustomOrderedSet<vertex>::const_iterator e_it_end = ending_states.end();
          for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
          {
             const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(*e_it);
@@ -2328,8 +2326,8 @@ void mux_connection_binding::create_connections()
                                  vertex src_def_op = HLS->Rliv->get_op_where_defined(cur_phi_tree_var);
                                  fu_src_obj = HLS->Rfu->get(src_def_op);
                               }
-                              const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
-                              const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
+                              const CustomOrderedSet<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
+                              const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                               for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
                                  HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
@@ -2373,8 +2371,8 @@ void mux_connection_binding::create_connections()
                                  fu_src_obj = HLS->Rfu->get(src_def_op);
                               }
 
-                              const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
-                              const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
+                              const CustomOrderedSet<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
+                              const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                               for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
                                  HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
@@ -2418,8 +2416,8 @@ void mux_connection_binding::create_connections()
                                  fu_src_obj = HLS->Rfu->get(src_def_op);
                               }
 
-                              const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
-                              const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
+                              const CustomOrderedSet<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
+                              const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                               for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                               {
                                  HLS->Rconn->add_data_transfer(fu_src_obj, conv_port, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
@@ -2462,8 +2460,8 @@ void mux_connection_binding::create_connections()
                               vertex src_def_op = HLS->Rliv->get_op_where_defined(cur_phi_tree_var);
                               fu_src_obj = HLS->Rfu->get(src_def_op);
                            }
-                           const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
-                           const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
+                           const CustomOrderedSet<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
+                           const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                            for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                            {
                               HLS->Rconn->add_data_transfer(fu_src_obj, tgt_reg_obj, 0, 0, data_transfer(cur_phi_tree_var, in_bitsize, *e_it, *s_out_it, *op));
@@ -2500,8 +2498,8 @@ void mux_connection_binding::create_connections()
             unsigned int node_id = data->CGetOpNodeInfo(*op)->GetNodeId();
             std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
             generic_objRef TargetPort = HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::MULTIIF, *op, data);
-            const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
-            const std::set<vertex>::const_iterator e_it_end = ending_states.end();
+            const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
+            const CustomOrderedSet<vertex>::const_iterator e_it_end = ending_states.end();
             for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0, data_transfer(node_id, var_read.size(), *e_it, NULL_VERTEX, *op));
@@ -2516,8 +2514,8 @@ void mux_connection_binding::create_connections()
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (boolean value)");
             generic_objRef TargetPort = HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::CONDITION, *op, data);
-            const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
-            const std::set<vertex>::const_iterator e_it_end = ending_states.end();
+            const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
+            const CustomOrderedSet<vertex>::const_iterator e_it_end = ending_states.end();
             for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0, data_transfer(var_written, tree_helper::size(TreeM, var_written), *e_it, NULL_VERTEX, *op));
@@ -2530,8 +2528,8 @@ void mux_connection_binding::create_connections()
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: (switch value)");
             generic_objRef TargetPort = HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::SWITCH, *op, data);
-            const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
-            const std::set<vertex>::const_iterator e_it_end = ending_states.end();
+            const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
+            const CustomOrderedSet<vertex>::const_iterator e_it_end = ending_states.end();
             for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                HLS->Rconn->add_data_transfer(fu_obj, TargetPort, 0, 0, data_transfer(var_written, tree_helper::size(TreeM, var_written), *e_it, NULL_VERTEX, *op));
@@ -2545,8 +2543,8 @@ void mux_connection_binding::create_connections()
          else
          {
             PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - Write: " + behavioral_helper->PrintVariable(var_written));
-            const std::set<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
-            const std::set<vertex>::const_iterator e_it_end = ending_states.end();
+            const CustomOrderedSet<vertex>& ending_states = HLS->Rliv->get_state_where_end(*op);
+            const CustomOrderedSet<vertex>::const_iterator e_it_end = ending_states.end();
             for(auto e_it = ending_states.begin(); e_it_end != e_it; ++e_it)
             {
                if(HLS->Rliv->has_state_out(*e_it, *op, var_written))
@@ -2554,8 +2552,8 @@ void mux_connection_binding::create_connections()
                   unsigned int storage_value = HLS->storage_value_information->get_storage_value_index(*e_it, var_written);
                   unsigned int r_index = HLS->Rreg->get_register(storage_value);
                   generic_objRef tgt_reg_obj = HLS->Rreg->get(r_index);
-                  const std::set<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
-                  const std::set<vertex>::const_iterator s_out_it_end = states_out.end();
+                  const CustomOrderedSet<vertex>& states_out = HLS->Rliv->get_state_out(*e_it, *op, var_written);
+                  const CustomOrderedSet<vertex>::const_iterator s_out_it_end = states_out.end();
                   for(auto s_out_it = states_out.begin(); s_out_it != s_out_it_end; ++s_out_it)
                   {
                      HLS->Rconn->add_data_transfer(fu_obj, tgt_reg_obj, 0, 0, data_transfer(var_written, tree_helper::size(TreeM, var_written), *e_it, *s_out_it, *op));
@@ -2585,15 +2583,15 @@ void mux_connection_binding::create_connections()
    const std::list<vertex>::const_iterator vEnd = support.end();
    for(std::list<vertex>::const_iterator vIt = support.begin(); vIt != vEnd; vIt++)
    {
-      const std::set<unsigned int>& live_in = HLS->Rliv->get_live_in(*vIt);
-      for(std::set<unsigned int>::const_iterator k = live_in.begin(); k != live_in.end(); ++k)
+      const CustomOrderedSet<unsigned int>& live_in = HLS->Rliv->get_live_in(*vIt);
+      for(CustomOrderedSet<unsigned int>::const_iterator k = live_in.begin(); k != live_in.end(); ++k)
       {
          if(!HLS->Rliv->has_state_in(*vIt, *k)) continue;
-         const std::set<vertex>& states_in = HLS->Rliv->get_state_in(*vIt,*k);
-         const std::set<vertex>::const_iterator si_it_end = states_in.end();
-         for(std::set<vertex>::const_iterator si_it=states_in.begin(); si_it != si_it_end; si_it++)
+         const CustomOrderedSet<vertex>& states_in = HLS->Rliv->get_state_in(*vIt,*k);
+         const CustomOrderedSet<vertex>::const_iterator si_it_end = states_in.end();
+         for(CustomOrderedSet<vertex>::const_iterator si_it=states_in.begin(); si_it != si_it_end; si_it++)
          {
-            const std::set<unsigned int>& live_in_src = HLS->Rliv->get_live_in(*si_it);
+            const CustomOrderedSet<unsigned int>& live_in_src = HLS->Rliv->get_live_in(*si_it);
             if (live_in_src.find(*k) == live_in_src.end()) continue;
             unsigned int storage_value_src = HLS->storage_value_information->get_storage_value_index(*si_it, *k);
             unsigned int r_index_src = HLS->Rreg->get_register(storage_value_src);
@@ -2669,7 +2667,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
    for(const auto& src : srcs)
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     * Source: " + src.first->get_string() + " ");
-      const std::set<data_transfer>& vars = src.second;
+      const CustomOrderedSet<data_transfer>& vars = src.second;
       THROW_ASSERT(vars.size(), "A connection should contain at least one data-transfer");
       for(const auto& var : vars)
       {
@@ -2826,9 +2824,9 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
 
       fu_binding& fu = *(HLS->Rfu);
       resource_id_type resource_id = std::make_pair(fu.get_assign(op), fu.get_index(op));
-      std::map<unsigned int, std::set<unsigned int>> regs_in_op;
-      std::map<unsigned int, std::set<unsigned int>> chained_in_op;
-      std::map<unsigned int, std::set<resource_id_type>> module_in_op;
+      std::map<unsigned int, CustomOrderedSet<unsigned int>> regs_in_op;
+      std::map<unsigned int, CustomOrderedSet<unsigned int>> chained_in_op;
+      std::map<unsigned int, CustomOrderedSet<resource_id_type>> module_in_op;
       bool has_constant = false;
       for(unsigned int port_index = 0; port_index < vars_read.size() && !has_constant; ++port_index)
       {
@@ -2839,8 +2837,8 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                has_constant = true;
             else
             {
-               const std::set<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
-               const std::set<vertex>::const_iterator rs_it_end = running_states.end();
+               const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
+               const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
                for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
                {
                   vertex state = *rs_it;
@@ -2853,7 +2851,7 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                   {
                      vertex def_op = HLS->Rliv->get_op_where_defined(tree_var);
                      {
-                        const std::set<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
+                        const CustomOrderedSet<vertex>& def_op_ending_states = HLS->Rliv->get_state_where_end(def_op);
                         if((GET_TYPE(data, def_op) & TYPE_PHI) == 0)
                         {
                            if(def_op_ending_states.find(state) != def_op_ending_states.end())
@@ -2897,29 +2895,31 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
          size_t n_mux_in_b_0;
          size_t n_mux_in_b_1;
 
-         n_mux_in_a_0 += regs_in.find(resource_id) == regs_in.end() ? 0 : (regs_in.find(resource_id)->second.find(0) == regs_in.find(resource_id)->second.end() ? 0 : regs_in.find(resource_id)->second.find(0)->second.size());
-         n_mux_in_a_0 += chained_in.find(resource_id) == chained_in.end() ? 0 : (chained_in.find(resource_id)->second.find(0) == chained_in.find(resource_id)->second.end() ? 0 : chained_in.find(resource_id)->second.find(0)->second.size());
-         n_mux_in_a_0 += module_in.find(resource_id) == module_in.end() ? 0 : (module_in.find(resource_id)->second.find(0) == module_in.find(resource_id)->second.end() ? 0 : module_in.find(resource_id)->second.find(0)->second.size());
+         n_mux_in_a_0 += regs_in.find(resource_id) == regs_in.end() ? 0 : (regs_in.find(resource_id)->second.find(0) == regs_in.find(resource_id)->second.end() ? 0 : static_cast<size_t>(regs_in.find(resource_id)->second.find(0)->second.size()));
+         n_mux_in_a_0 +=
+             chained_in.find(resource_id) == chained_in.end() ? 0 : (chained_in.find(resource_id)->second.find(0) == chained_in.find(resource_id)->second.end() ? 0 : static_cast<size_t>(chained_in.find(resource_id)->second.find(0)->second.size()));
+         n_mux_in_a_0 += module_in.find(resource_id) == module_in.end() ? 0 : (module_in.find(resource_id)->second.find(0) == module_in.find(resource_id)->second.end() ? 0 : static_cast<size_t>(module_in.find(resource_id)->second.find(0)->second.size()));
 
-         n_mux_in_a_1 += regs_in.find(resource_id) == regs_in.end() ? 0 : (regs_in.find(resource_id)->second.find(1) == regs_in.find(resource_id)->second.end() ? 0 : regs_in.find(resource_id)->second.find(1)->second.size());
-         n_mux_in_a_1 += chained_in.find(resource_id) == chained_in.end() ? 0 : (chained_in.find(resource_id)->second.find(1) == chained_in.find(resource_id)->second.end() ? 0 : chained_in.find(resource_id)->second.find(1)->second.size());
-         n_mux_in_a_1 += module_in.find(resource_id) == module_in.end() ? 0 : (module_in.find(resource_id)->second.find(1) == module_in.find(resource_id)->second.end() ? 0 : module_in.find(resource_id)->second.find(1)->second.size());
+         n_mux_in_a_1 += regs_in.find(resource_id) == regs_in.end() ? 0 : (regs_in.find(resource_id)->second.find(1) == regs_in.find(resource_id)->second.end() ? 0 : static_cast<size_t>(regs_in.find(resource_id)->second.find(1)->second.size()));
+         n_mux_in_a_1 +=
+             chained_in.find(resource_id) == chained_in.end() ? 0 : (chained_in.find(resource_id)->second.find(1) == chained_in.find(resource_id)->second.end() ? 0 : static_cast<size_t>(chained_in.find(resource_id)->second.find(1)->second.size()));
+         n_mux_in_a_1 += module_in.find(resource_id) == module_in.end() ? 0 : (module_in.find(resource_id)->second.find(1) == module_in.find(resource_id)->second.end() ? 0 : static_cast<size_t>(module_in.find(resource_id)->second.find(1)->second.size()));
 
          n_mux_in_b_0 = n_mux_in_a_0;
          n_mux_in_b_1 = n_mux_in_a_1;
 
-         const std::map<unsigned int, std::set<unsigned int>>::const_iterator rio_it_end = regs_in_op.end();
-         for(std::map<unsigned int, std::set<unsigned int>>::const_iterator rio_it = regs_in_op.begin(); rio_it != rio_it_end; ++rio_it)
+         const std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator rio_it_end = regs_in_op.end();
+         for(std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator rio_it = regs_in_op.begin(); rio_it != rio_it_end; ++rio_it)
          {
             if(rio_it->first == 0)
             {
                if(regs_in.find(resource_id)->second.find(0) == regs_in.find(resource_id)->second.end())
                {
-                  n_mux_in_a_0 += rio_it->second.size();
+                  n_mux_in_a_0 += static_cast<size_t>(rio_it->second.size());
                }
                else
                {
-                  const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
                   for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(0)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(0)->second.end())
@@ -2930,11 +2930,11 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                }
                if(regs_in.find(resource_id)->second.find(1) == regs_in.find(resource_id)->second.end())
                {
-                  n_mux_in_b_1 += rio_it->second.size();
+                  n_mux_in_b_1 += static_cast<size_t>(rio_it->second.size());
                }
                else
                {
-                  const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
                   for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(1)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(1)->second.end())
@@ -2947,10 +2947,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             else
             {
                if(regs_in.find(resource_id)->second.find(1) == regs_in.find(resource_id)->second.end())
-                  n_mux_in_a_1 += rio_it->second.size();
+                  n_mux_in_a_1 += static_cast<size_t>(rio_it->second.size());
                else
                {
-                  const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
                   for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(1)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(1)->second.end())
@@ -2960,10 +2960,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                   }
                }
                if(regs_in.find(resource_id)->second.find(0) == regs_in.find(resource_id)->second.end())
-                  n_mux_in_b_0 += rio_it->second.size();
+                  n_mux_in_b_0 += static_cast<size_t>(rio_it->second.size());
                else
                {
-                  const std::set<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator rio2_it_end = rio_it->second.end();
                   for(auto rio2_it = rio_it->second.begin(); rio2_it != rio2_it_end; ++rio2_it)
                   {
                      if(regs_in.find(resource_id)->second.find(0)->second.find(*rio2_it) == regs_in.find(resource_id)->second.find(0)->second.end())
@@ -2975,16 +2975,16 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             }
          }
 
-         const std::map<unsigned int, std::set<unsigned int>>::const_iterator cio_it_end = chained_in_op.end();
-         for(std::map<unsigned int, std::set<unsigned int>>::const_iterator cio_it = chained_in_op.begin(); cio_it != cio_it_end; ++cio_it)
+         const std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator cio_it_end = chained_in_op.end();
+         for(std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator cio_it = chained_in_op.begin(); cio_it != cio_it_end; ++cio_it)
          {
             if(cio_it->first == 0)
             {
                if(chained_in.find(resource_id)->second.find(0) == chained_in.find(resource_id)->second.end())
-                  n_mux_in_a_0 += cio_it->second.size();
+                  n_mux_in_a_0 += static_cast<size_t>(cio_it->second.size());
                else
                {
-                  const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
                   for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(0)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(0)->second.end())
@@ -2994,10 +2994,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                   }
                }
                if(chained_in.find(resource_id)->second.find(1) == chained_in.find(resource_id)->second.end())
-                  n_mux_in_b_1 += cio_it->second.size();
+                  n_mux_in_b_1 += static_cast<size_t>(cio_it->second.size());
                else
                {
-                  const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
                   for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(1)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(1)->second.end())
@@ -3010,10 +3010,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             else
             {
                if(chained_in.find(resource_id)->second.find(1) == chained_in.find(resource_id)->second.end())
-                  n_mux_in_a_1 += cio_it->second.size();
+                  n_mux_in_a_1 += static_cast<size_t>(cio_it->second.size());
                else
                {
-                  const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
                   for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(1)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(1)->second.end())
@@ -3023,10 +3023,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                   }
                }
                if(chained_in.find(resource_id)->second.find(0) == chained_in.find(resource_id)->second.end())
-                  n_mux_in_b_0 += cio_it->second.size();
+                  n_mux_in_b_0 += static_cast<size_t>(cio_it->second.size());
                else
                {
-                  const std::set<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
+                  const CustomOrderedSet<unsigned int>::const_iterator cio2_it_end = cio_it->second.end();
                   for(auto cio2_it = cio_it->second.begin(); cio2_it != cio2_it_end; ++cio2_it)
                   {
                      if(chained_in.find(resource_id)->second.find(0)->second.find(*cio2_it) == chained_in.find(resource_id)->second.find(0)->second.end())
@@ -3038,16 +3038,16 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             }
          }
 
-         const std::map<unsigned int, std::set<resource_id_type>>::const_iterator mio_it_end = module_in_op.end();
-         for(std::map<unsigned int, std::set<resource_id_type>>::const_iterator mio_it = module_in_op.begin(); mio_it != mio_it_end; ++mio_it)
+         const std::map<unsigned int, CustomOrderedSet<resource_id_type>>::const_iterator mio_it_end = module_in_op.end();
+         for(std::map<unsigned int, CustomOrderedSet<resource_id_type>>::const_iterator mio_it = module_in_op.begin(); mio_it != mio_it_end; ++mio_it)
          {
             if(mio_it->first == 0)
             {
                if(module_in.find(resource_id)->second.find(0) == module_in.find(resource_id)->second.end())
-                  n_mux_in_a_0 += mio_it->second.size();
+                  n_mux_in_a_0 += static_cast<size_t>(mio_it->second.size());
                else
                {
-                  const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
+                  const CustomOrderedSet<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
                   for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(0)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(0)->second.end())
@@ -3057,10 +3057,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                   }
                }
                if(module_in.find(resource_id)->second.find(1) == module_in.find(resource_id)->second.end())
-                  n_mux_in_b_1 += mio_it->second.size();
+                  n_mux_in_b_1 += static_cast<size_t>(mio_it->second.size());
                else
                {
-                  const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
+                  const CustomOrderedSet<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
                   for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(1)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(1)->second.end())
@@ -3073,10 +3073,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             else
             {
                if(module_in.find(resource_id)->second.find(1) == module_in.find(resource_id)->second.end())
-                  n_mux_in_a_1 += mio_it->second.size();
+                  n_mux_in_a_1 += static_cast<size_t>(mio_it->second.size());
                else
                {
-                  const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
+                  const CustomOrderedSet<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
                   for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(1)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(1)->second.end())
@@ -3086,10 +3086,10 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
                   }
                }
                if(module_in.find(resource_id)->second.find(0) == module_in.find(resource_id)->second.end())
-                  n_mux_in_b_0 += mio_it->second.size();
+                  n_mux_in_b_0 += static_cast<size_t>(mio_it->second.size());
                else
                {
-                  const std::set<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
+                  const CustomOrderedSet<resource_id_type>::const_iterator mio2_it_end = mio_it->second.end();
                   for(auto mio2_it = mio_it->second.begin(); mio2_it != mio2_it_end; ++mio2_it)
                   {
                      if(module_in.find(resource_id)->second.find(0)->second.find(*mio2_it) == module_in.find(resource_id)->second.find(0)->second.end())

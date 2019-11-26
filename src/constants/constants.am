@@ -1,0 +1,54 @@
+noinst_HEADERS += constants/file_IO_constants.hpp constants/treegcc_xml.hpp constants/constants.hpp constants/copyrights_strings.hpp
+
+if BUILD_BAMBU
+   noinst_HEADERS += constants/bambu_results_xml.hpp constants/testbench_generation_constants.hpp
+endif
+
+if BUILD_LIB_FROM_AADL_ASN
+   noinst_HEADERS += constants/aadl_constants.hpp
+endif
+
+if BUILD_LIB_FROM_C
+   noinst_HEADERS += constants/treegcc_constants.hpp
+endif
+
+if BUILD_LIB_FROM_DATA_XML
+   noinst_HEADERS += constants/data_xml.hpp
+endif
+
+if BUILD_LIB_FROM_PRAGMA
+   noinst_HEADERS += constants/pragma_constants.hpp
+endif
+
+if BUILD_LIB_HLS
+   noinst_HEADERS += constants/allocation_constants.hpp constants/constraints_xml.hpp
+endif
+
+if BUILD_LIB_HOST_PROFILING
+   noinst_HEADERS += constants/host_profiling_constants.hpp constants/host_profiling_xml.hpp
+endif
+
+if BUILD_LIB_TECHNOLOGY
+   noinst_HEADERS += constants/technology_xml.hpp
+endif
+
+if BUILD_LIB_TO_DATAFILE
+   noinst_HEADERS += constants/latex_table_constants.hpp constants/latex_table_xml.hpp
+endif
+
+if BUILD_SPIDER
+   noinst_HEADERS += constants/experimental_setup_xml.hpp
+endif
+
+if BUILD_SYNTHESIS
+   noinst_HEADERS += constants/synthesis_constants.hpp
+endif
+
+if BUILD_TASTE
+   noinst_HEADERS += constants/taste_constants.hpp
+endif
+
+if USE_WEIGHT_MODELS_XML
+   noinst_HEADERS += constants/weights_xml.hpp
+endif
+

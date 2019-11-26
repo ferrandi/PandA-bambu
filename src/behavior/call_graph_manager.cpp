@@ -105,7 +105,7 @@ void CallGraphManager::AddFunction(unsigned int new_function_id, const FunctionB
       vertex v = call_graphs_collection->AddVertex(NodeInfoRef(new FunctionInfo()));
       GET_NODE_INFO(call_graphs_collection.get(), FunctionInfo, v)->nodeID = new_function_id;
       functionID_vertex_map[new_function_id] = v;
-      called_by[new_function_id] = std::set<unsigned int>();
+      called_by[new_function_id] = CustomOrderedSet<unsigned int>();
       call_graph->GetCallGraphInfo()->behaviors[new_function_id] = fun_behavior;
       ComputeRootAndReachedFunctions();
    }
@@ -342,9 +342,9 @@ bool CallGraphManager::ExistsAddressedFunction() const
    return false;
 }
 
-std::set<unsigned int> CallGraphManager::GetAddressedFunctions() const
+CustomOrderedSet<unsigned int> CallGraphManager::GetAddressedFunctions() const
 {
-   std::set<unsigned int> reachable_addressed_fun_ids;
+   CustomOrderedSet<unsigned int> reachable_addressed_fun_ids;
    std::set_intersection(reached_body_functions.cbegin(), reached_body_functions.cend(), addressed_functions.cbegin(), addressed_functions.cend(), std::inserter(reachable_addressed_fun_ids, reachable_addressed_fun_ids.begin()));
    return reachable_addressed_fun_ids;
 }
@@ -359,7 +359,7 @@ const CallGraphConstRef CallGraphManager::CGetCallGraph() const
    return call_graph;
 }
 
-const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const std::unordered_set<vertex>& vertices) const
+const CallGraphConstRef CallGraphManager::CGetCallSubGraph(const CustomUnorderedSet<vertex>& vertices) const
 {
    return CallGraphConstRef(new CallGraph(call_graphs_collection, STD_SELECTOR | FEEDBACK_SELECTOR, vertices));
 }
@@ -384,15 +384,15 @@ unsigned int CallGraphManager::get_function(vertex node) const
    return 0;
 }
 
-const std::set<unsigned int> CallGraphManager::get_called_by(unsigned int index) const
+const CustomOrderedSet<unsigned int> CallGraphManager::get_called_by(unsigned int index) const
 {
    if(called_by.find(index) != called_by.end())
       return called_by.at(index);
    else
-      return std::set<unsigned int>();
+      return CustomOrderedSet<unsigned int>();
 }
 
-const std::unordered_set<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg, const vertex& caller) const
+const CustomUnorderedSet<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg, const vertex& caller) const
 {
    return cfg->CGetOpNodeInfo(caller)->called;
 }
@@ -505,21 +505,21 @@ void CallGraphManager::ComputeRootAndReachedFunctions()
    }
 }
 
-const std::set<unsigned int> CallGraphManager::GetRootFunctions() const
+const CustomOrderedSet<unsigned int> CallGraphManager::GetRootFunctions() const
 {
    THROW_ASSERT(boost::num_vertices(*call_graph) == 0 or root_functions.size(), "Root functions have not yet been computed");
    return root_functions;
 }
 
-std::set<unsigned int> CallGraphManager::GetReachedBodyFunctions() const
+CustomOrderedSet<unsigned int> CallGraphManager::GetReachedBodyFunctions() const
 {
    return reached_body_functions;
 }
 
-std::set<unsigned int> CallGraphManager::GetReachedBodyFunctionsFrom(unsigned int from) const
+CustomOrderedSet<unsigned int> CallGraphManager::GetReachedBodyFunctionsFrom(unsigned int from) const
 {
-   std::set<unsigned int> dummy;
-   std::set<unsigned int> f_list;
+   CustomOrderedSet<unsigned int> dummy;
+   CustomOrderedSet<unsigned int> f_list;
 
    CalledFunctionsVisitor vis(allow_recursive_functions, this, f_list, dummy);
    std::vector<boost::default_color_type> color_vec(boost::num_vertices(*call_graph));
@@ -528,12 +528,12 @@ std::set<unsigned int> CallGraphManager::GetReachedBodyFunctionsFrom(unsigned in
    return f_list;
 }
 
-std::set<unsigned int> CallGraphManager::GetReachedLibraryFunctions() const
+CustomOrderedSet<unsigned int> CallGraphManager::GetReachedLibraryFunctions() const
 {
    return reached_library_functions;
 }
 
-CalledFunctionsVisitor::CalledFunctionsVisitor(const bool _allow_recursive_functions, const CallGraphManager* _call_graph_manager, std::set<unsigned int>& _body_functions, std::set<unsigned int>& _library_functions)
+CalledFunctionsVisitor::CalledFunctionsVisitor(const bool _allow_recursive_functions, const CallGraphManager* _call_graph_manager, CustomOrderedSet<unsigned int>& _body_functions, CustomOrderedSet<unsigned int>& _library_functions)
     : allow_recursive_functions(_allow_recursive_functions), call_graph_manager(_call_graph_manager), body_functions(_body_functions), library_functions(_library_functions)
 {
 }

@@ -55,6 +55,8 @@
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
 
 /// Graph include
 #include "basic_block.hpp"
@@ -67,7 +69,7 @@
 #include <fstream>
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 /// Tree include
@@ -87,7 +89,13 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters)), already_executed(false), changed_call_graph(false), fix_nop(false)
+    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters),
+      TreeM(_AppM->get_tree_manager()),
+      tree_man(new tree_manipulation(TreeM, parameters)),
+      already_executed(false),
+      changed_call_graph(false),
+      fix_nop(false),
+      use64bitMul(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -100,14 +108,14 @@ void hls_div_cg_ext::Initialize()
 
 hls_div_cg_ext::~hls_div_cg_ext() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> hls_div_cg_ext::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          break;
       }
       case DEPENDENCE_RELATIONSHIP:
@@ -124,7 +132,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+               relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -159,6 +167,13 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
 
    std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end;
+
+   THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
+   const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
+   if(hls_target->get_target_device()->has_parameter("use_soft_64_mul") && hls_target->get_target_device()->get_parameter<size_t>("use_soft_64_mul"))
+   {
+      use64bitMul = true;
+   }
 
    it_end = blocks.end();
    for(it = blocks.begin(); it != it_end; ++it)
@@ -392,12 +407,57 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
                   }
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
 
-                  const std::set<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
+                  const CustomOrderedSet<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
                   if(called_by_set.find(called_function_id) == called_by_set.end())
                   {
                      changed_call_graph = true;
                   }
                   AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+               }
+               break;
+            }
+            case mult_expr_K:
+            {
+               if(use64bitMul)
+               {
+                  unsigned int expr_type_index;
+                  tree_nodeRef expr_type = tree_helper::get_type_node(GET_NODE(be->op0), expr_type_index);
+                  unsigned int bitsize0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op0)));
+                  unsigned int bitsize1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(be->op1)));
+                  unsigned int bitsize = std::max(bitsize0, bitsize1);
+                  if(expr_type->get_kind() == integer_type_K && bitsize == 64)
+                  {
+                     bool unsignedp = tree_helper::is_unsigned(TreeM, expr_type_index);
+                     std::string fu_name = "__umul64";
+                     unsigned int called_function_id = TreeM->function_index(fu_name);
+                     THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
+                     THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call to " + fu_name);
+                     std::vector<tree_nodeRef> args;
+                     args.push_back(be->op0);
+                     args.push_back(be->op1);
+                     auto callExpr = tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp);
+                     bool CEunsignedp = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(callExpr));
+                     if(CEunsignedp != unsignedp)
+                     {
+                        std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
+                        ne_schema[TOK(TOK_TYPE)] = STR(expr_type_index);
+                        ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                        ne_schema[TOK(TOK_OP)] = STR(callExpr->index);
+                        const auto ne_id = TreeM->new_tree_node_id();
+                        TreeM->create_tree_node(ne_id, nop_expr_K, ne_schema);
+                        callExpr = TreeM->GetTreeReindex(ne_id);
+                        fix_nop = true;
+                     }
+                     TreeM->ReplaceTreeNode(current_statement, current_tree_node, callExpr);
+
+                     const CustomOrderedSet<unsigned int> called_by_set = AppM->CGetCallGraphManager()->get_called_by(function_id);
+                     if(called_by_set.find(called_function_id) == called_by_set.end())
+                     {
+                        changed_call_graph = true;
+                     }
+                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                  }
                }
                break;
             }

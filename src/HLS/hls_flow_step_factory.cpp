@@ -139,10 +139,8 @@
 
 /// HLS/function_allocation
 #include "fun_dominator_allocation.hpp"
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
-#include "omp_function_allocation.hpp"
-#endif
 #if HAVE_FROM_PRAGMA_BUILT
+#include "omp_function_allocation.hpp"
 #include "omp_function_allocation_CS.hpp"
 #endif
 
@@ -222,6 +220,7 @@
 #include "add_library.hpp"
 #include "allocation.hpp"
 #include "hls_bit_value.hpp"
+#include "hls_function_bit_value.hpp"
 #if HAVE_FROM_PRAGMA_BUILT
 #include "omp_allocation.hpp"
 #endif
@@ -269,7 +268,7 @@
 #include <string>
 
 /// STL includes
-#include <unordered_set>
+#include "custom_set.hpp"
 #include <utility>
 
 /// tree include
@@ -324,11 +323,6 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
       case HLSFlowStep_Type::BB_STG_CREATOR:
       {
          design_flow_step = DesignFlowStepRef(new BB_based_stg(parameters, HLS_mgr, funId, design_flow_manager.lock()));
-         break;
-      }
-      case HLSFlowStep_Type::HLS_BIT_VALUE:
-      {
-         design_flow_step = DesignFlowStepRef(new hls_bit_value(parameters, HLS_mgr, funId, design_flow_manager.lock()));
          break;
       }
       case HLSFlowStep_Type::CALL_GRAPH_UNFOLDING:
@@ -538,6 +532,16 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
+      case HLSFlowStep_Type::HLS_BIT_VALUE:
+      {
+         design_flow_step = DesignFlowStepRef(new HLSBitValue(parameters, HLS_mgr, design_flow_manager.lock()));
+         break;
+      }
+      case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
+      {
+         design_flow_step = DesignFlowStepRef(new HLSFunctionBitValue(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
       case HLSFlowStep_Type::HLS_SYNTHESIS_FLOW:
       {
          design_flow_step = DesignFlowStepRef(new HLSSynthesisFlow(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -654,7 +658,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
       {
          design_flow_step = DesignFlowStepRef(new OmpFunctionAllocation(parameters, HLS_mgr, design_flow_manager.lock()));
@@ -858,7 +862,7 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
    return design_flow_step;
 }
 
-const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
+const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>>& hls_flow_steps) const
 {
    const CallGraphManagerConstRef call_graph_manager = HLS_mgr->CGetCallGraphManager();
    DesignFlowStepSet ret;
@@ -871,6 +875,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::DRY_RUN_EVALUATION:
          case HLSFlowStep_Type::EVALUATION:
          case HLSFlowStep_Type::GENERATE_HDL:
+         case HLSFlowStep_Type::HLS_BIT_VALUE:
          case HLSFlowStep_Type::TEST_VECTOR_PARSER:
          case HLSFlowStep_Type::TESTBENCH_MEMORY_ALLOCATION:
          case HLSFlowStep_Type::TESTBENCH_VALUES_C_GENERATION:
@@ -913,7 +918,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
          case HLSFlowStep_Type::AXI4LITE_INTERFACE_GENERATION:
 #endif
          case HLSFlowStep_Type::BB_STG_CREATOR:
-         case HLSFlowStep_Type::HLS_BIT_VALUE:
+         case HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE:
          case HLSFlowStep_Type::CDFC_MODULE_BINDING:
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::CHAINING_BASED_LIVENESS:
@@ -992,7 +997,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 #if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FOR_WRAPPER_CS_SYNTHESIS_FLOW:
 #endif
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT
+#if HAVE_FROM_PRAGMA_BUILT
          case HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION:
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
@@ -1045,7 +1050,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::unorde
 
 const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>& hls_flow_step) const
 {
-   std::unordered_set<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> hls_flow_steps;
+   CustomUnorderedSet<std::pair<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef>> hls_flow_steps;
    hls_flow_steps.insert(hls_flow_step);
    return CreateHLSFlowSteps(hls_flow_steps);
 }

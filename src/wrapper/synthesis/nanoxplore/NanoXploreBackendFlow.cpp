@@ -217,7 +217,14 @@ void NanoXploreBackendFlow::CheckSynthesisResults()
    time_m = time_model::create_model(TargetDevice_Type::FPGA, Param);
    auto* lut_m = GetPointer<LUT_model>(time_m);
    if(design_values[NANOXPLORE_SLACK] != 0.0)
-      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) - design_values[NANOXPLORE_SLACK]);
+   {
+      auto clk_val = boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]);
+      auto del_val = design_values[NANOXPLORE_SLACK];
+      double exec_time = clk_val - del_val;
+      if(clk_val < del_val)
+         THROW_ERROR("the timing analysis is not consistent with the specified clock period");
+      lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, exec_time);
+   }
    else
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
    if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and

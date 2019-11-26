@@ -1,5 +1,7 @@
 #this file is src/parser/pragma/Makefile.am
 noinst_LTLIBRARIES = lib_pragmaparser.la
+AM_CXXFLAGS = -Wno-switch-enum
+AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
 
 lib_pragmaparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
@@ -7,7 +9,7 @@ lib_pragmaparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/graph \
    -I$(top_srcdir)/src/pragma \
    -I$(top_srcdir)/src/utility \
-   -I$(BOOST_DIR) $(all_includes) -Wno-switch-enum
+   $(AM_CPPFLAGS)
 
 METASOURCES = AUTO
 

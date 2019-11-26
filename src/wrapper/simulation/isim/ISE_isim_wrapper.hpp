@@ -50,7 +50,7 @@
 CONSTREF_FORWARD_DECL(Parameter);
 class xml_element;
 
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 #include <vector>
 

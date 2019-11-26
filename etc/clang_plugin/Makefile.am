@@ -43,7 +43,7 @@ CLANG7_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
 
 ###### clang 4.0
 if BUILD_I386_CLANG4_EMPTY_PLUGIN
-all: $(I386_CLANG4_EMPTY_PLUGIN) bambuS2S-4
+all: $(I386_CLANG4_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG4_SSA_PLUGIN
@@ -83,7 +83,7 @@ $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
@@ -99,7 +99,7 @@ $(I386_CLANG4_SSA_PLUGIN) : clang4_plugin_dumpGimpleSSA.o clang4_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
@@ -116,7 +116,7 @@ $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
@@ -132,7 +132,7 @@ $(I386_CLANG4_SSA_PLUGINCPP) : clang4_plugin_dumpGimpleSSACpp.o clang4_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
@@ -150,7 +150,7 @@ $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang4_dumpGimple.o clang4_HardekopfLin_AA.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
@@ -166,7 +166,7 @@ $(I386_CLANG4_EMPTY_PLUGIN) : clang4_plugin_dumpGimpleEmpty.o clang4_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang4_dumpGimple.o clang4_RangeAnalysis.o clang4_eSSA.o clang4_my_OrderedInstructions.o';\
 	if test -n "$$compile_options"; then \
@@ -183,7 +183,7 @@ $(I386_CLANG4_EXPANDMEMOPS_PLUGIN) : clang4_plugin_expandMemOps.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_expandMemOps.o $$compile_options -o clang4_plugin_expandMemOps_opt.so; \
@@ -198,7 +198,7 @@ $(I386_CLANG4_GEPICANON_PLUGIN) : clang4_plugin_GepiCanon.o clang4_GepiCanon.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_GepiCanon.o clang4_GepiCanon.o $$compile_options -o clang4_plugin_GepiCanon_opt.so; \
@@ -213,7 +213,7 @@ $(I386_CLANG4_CSROA_PLUGIN) : clang4_plugin_CSROA.o clang4_CSROA.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_CSROA.o clang4_CSROA.o $$compile_options -o clang4_plugin_CSROA_opt.so; \
@@ -229,7 +229,7 @@ $(I386_CLANG4_TOPFNAME_PLUGIN) : clang4_plugin_topfname.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_topfname.o $$compile_options -o clang4_plugin_topfname_opt.so; \
@@ -244,7 +244,7 @@ $(I386_CLANG4_ASTANALYZER_PLUGIN) : clang4_plugin_ASTAnalyzer.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_ASTAnalyzer.o $$compile_options -o clang4_plugin_ASTAnalyzer.so; \
@@ -452,7 +452,7 @@ bambuS2S-4: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 ###### clang 5.0
 if BUILD_I386_CLANG5_EMPTY_PLUGIN
-all: $(I386_CLANG5_EMPTY_PLUGIN) bambuS2S-5
+all: $(I386_CLANG5_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG5_SSA_PLUGIN
@@ -493,7 +493,7 @@ $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -509,7 +509,7 @@ $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -526,7 +526,7 @@ $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -542,7 +542,7 @@ $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -560,7 +560,7 @@ $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -576,7 +576,7 @@ $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -593,7 +593,7 @@ $(I386_CLANG5_EXPANDMEMOPS_PLUGIN) : clang5_plugin_expandMemOps.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_expandMemOps.o $$compile_options -o clang5_plugin_expandMemOps_opt.so; \
@@ -608,7 +608,7 @@ $(I386_CLANG5_GEPICANON_PLUGIN) : clang5_plugin_GepiCanon.o clang5_GepiCanon.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_GepiCanon.o clang5_GepiCanon.o $$compile_options -o clang5_plugin_GepiCanon_opt.so; \
@@ -623,7 +623,7 @@ $(I386_CLANG5_CSROA_PLUGIN) : clang5_plugin_CSROA.o clang5_CSROA.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_CSROA.o clang5_CSROA.o $$compile_options -o clang5_plugin_CSROA_opt.so; \
@@ -638,7 +638,7 @@ $(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) opt_clang5_plugin_topfname.o $$compile_options -o clang5_plugin_topfname_opt.so; \
@@ -653,7 +653,7 @@ $(I386_CLANG5_ASTANALYZER_PLUGIN) : clang5_plugin_ASTAnalyzer.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_ASTAnalyzer.o $$compile_options -o clang5_plugin_ASTAnalyzer.so; \
@@ -850,7 +850,7 @@ bambuS2S-5: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 ###### clang 6.0
 if BUILD_I386_CLANG6_EMPTY_PLUGIN
-all: $(I386_CLANG6_EMPTY_PLUGIN) bambuS2S-6
+all: $(I386_CLANG6_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG6_SSA_PLUGIN
@@ -890,7 +890,7 @@ $(I386_CLANG6_SSA_PLUGIN) : clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -906,7 +906,7 @@ $(I386_CLANG6_SSA_PLUGIN) : clang6_plugin_dumpGimpleSSA.o clang6_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -923,7 +923,7 @@ $(I386_CLANG6_SSA_PLUGINCPP) : clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -939,7 +939,7 @@ $(I386_CLANG6_SSA_PLUGINCPP) : clang6_plugin_dumpGimpleSSACpp.o clang6_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -957,7 +957,7 @@ $(I386_CLANG6_EMPTY_PLUGIN) : clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang6_dumpGimple.o clang6_HardekopfLin_AA.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -973,7 +973,7 @@ $(I386_CLANG6_EMPTY_PLUGIN) : clang6_plugin_dumpGimpleEmpty.o clang6_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang6_dumpGimple.o clang6_RangeAnalysis.o clang6_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -990,7 +990,7 @@ $(I386_CLANG6_EXPANDMEMOPS_PLUGIN) : clang6_plugin_expandMemOps.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_expandMemOps.o $$compile_options -o clang6_plugin_expandMemOps_opt.so; \
@@ -1005,7 +1005,7 @@ $(I386_CLANG6_GEPICANON_PLUGIN) : clang6_plugin_GepiCanon.o clang6_GepiCanon.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_GepiCanon.o clang6_GepiCanon.o $$compile_options -o clang6_plugin_GepiCanon_opt.so; \
@@ -1020,7 +1020,7 @@ $(I386_CLANG6_CSROA_PLUGIN) : clang6_plugin_CSROA.o clang6_CSROA.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_CSROA.o clang6_CSROA.o $$compile_options -o clang6_plugin_CSROA_opt.so; \
@@ -1035,7 +1035,7 @@ $(I386_CLANG6_TOPFNAME_PLUGIN) : clang6_plugin_topfname.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) opt_clang6_plugin_topfname.o $$compile_options -o clang6_plugin_topfname_opt.so; \
@@ -1050,7 +1050,7 @@ $(I386_CLANG6_ASTANALYZER_PLUGIN) : clang6_plugin_ASTAnalyzer.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG6_PLUGIN_COMPILER) clang6_plugin_ASTAnalyzer.o $$compile_options -o clang6_plugin_ASTAnalyzer.so; \
@@ -1245,7 +1245,7 @@ bambuS2S-6: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 
 ###### clang 7.0
 if BUILD_I386_CLANG7_EMPTY_PLUGIN
-all: $(I386_CLANG7_EMPTY_PLUGIN) bambuS2S-7
+all: $(I386_CLANG7_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG7_SSA_PLUGIN
@@ -1285,7 +1285,7 @@ $(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -1301,7 +1301,7 @@ $(I386_CLANG7_SSA_PLUGIN) : clang7_plugin_dumpGimpleSSA.o clang7_dumpGimple.o cl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -1318,7 +1318,7 @@ $(I386_CLANG7_SSA_PLUGINCPP) : clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -1334,7 +1334,7 @@ $(I386_CLANG7_SSA_PLUGINCPP) : clang7_plugin_dumpGimpleSSACpp.o clang7_dumpGimpl
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -1352,7 +1352,7 @@ $(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti -lbdd';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
 	esac;\
 	obj_list='clang7_dumpGimple.o clang7_HardekopfLin_AA.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -1368,7 +1368,7 @@ $(I386_CLANG7_EMPTY_PLUGIN) : clang7_plugin_dumpGimpleEmpty.o clang7_dumpGimple.
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	obj_list='clang7_dumpGimple.o clang7_RangeAnalysis.o clang7_eSSA.o';\
 	if test -n "$$compile_options"; then \
@@ -1385,7 +1385,7 @@ $(I386_CLANG7_EXPANDMEMOPS_PLUGIN) : clang7_plugin_expandMemOps.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_expandMemOps.o $$compile_options -o clang7_plugin_expandMemOps_opt.so; \
@@ -1400,7 +1400,7 @@ $(I386_CLANG7_GEPICANON_PLUGIN) : clang7_plugin_GepiCanon.o clang7_GepiCanon.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_GepiCanon.o clang7_GepiCanon.o $$compile_options -o clang7_plugin_GepiCanon_opt.so; \
@@ -1415,7 +1415,7 @@ $(I386_CLANG7_CSROA_PLUGIN) : clang7_plugin_CSROA.o clang7_CSROA.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_CSROA.o clang7_CSROA.o $$compile_options -o clang7_plugin_CSROA_opt.so; \
@@ -1430,7 +1430,7 @@ $(I386_CLANG7_TOPFNAME_PLUGIN) : clang7_plugin_topfname.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) opt_clang7_plugin_topfname.o $$compile_options -o clang7_plugin_topfname_opt.so; \
@@ -1445,7 +1445,7 @@ $(I386_CLANG7_ASTANALYZER_PLUGIN) : clang7_plugin_ASTAnalyzer.o
 	  darwin*) \
 	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
 	  *) \
-	    compile_options='-fPIC -shared -fno-rtti';;\
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG7_PLUGIN_COMPILER) clang7_plugin_ASTAnalyzer.o $$compile_options -o clang7_plugin_ASTAnalyzer.so; \

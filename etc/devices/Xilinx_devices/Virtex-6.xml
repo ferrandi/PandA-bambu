@@ -115,7 +115,6 @@
       <param name="detail">Print a more verbose map report.</param>
       <param name="logic_opt on">Perform post-placement physical synthesis combinatorial logic optimizations during timing driven packing (default is off).</param>
       <param name="ol high">Effort level</param>
-      <param name="global_opt speed" condition="${__connect_iob__}">Perform global optimization before mapping (default is off)</param>
       <param name="mt 2">Multi-threading. Default is "off". When "on", software will decide how many processors it should use (depending on what's available).</param>
       <param name="ir off">Do not use RLOC constraints to generate RPMs. Default is "off". Use RLOCs to group logic together within a Slice, but not to control the relative placement of Slices with respect to each other.</param>
       <param name="pr off">Pack internal flops/latches into input IOBs (i), output IOBs (o), both types of IOBs (b), or internal fabric such as slices, BRAMs, or DSP blocks (off). (default is off).</param>

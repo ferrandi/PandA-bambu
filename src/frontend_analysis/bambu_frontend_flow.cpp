@@ -64,7 +64,7 @@
 #include "tree_manager.hpp"        // for tree_managerConstRef
 
 /// STL include
-#include <set>
+#include "custom_set.hpp"
 
 BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, BAMBU_FRONTEND_FLOW, _design_flow_manager, _parameters)
 {
@@ -73,9 +73,9 @@ BambuFrontendFlow::BambuFrontendFlow(const application_managerRef _AppM, const D
 
 BambuFrontendFlow::~BambuFrontendFlow() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BambuFrontendFlow::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -86,18 +86,14 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BLOCK_FIX, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CALL_EXPR_FIX, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_SYSTEM_TYPE, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(OP_CONTROL_DEPENDENCE_COMPUTATION, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UN_COMPARISON_LOWERING, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SCALAR_SSA_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(AGGREGATE_DATA_FLOW_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SWITCH_FIX, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PREDICATE_STATEMENTS, WHOLE_APPLICATION));
-         if(parameters->IsParameter("ConstantFloating") and parameters->GetParameter<unsigned int>("ConstantFloating"))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CONSTANT_FLOP_WRAPPER, WHOLE_APPLICATION));
-         }
 #if HAVE_EXPERIMENTAL
          if(parameters->getOption<bool>(OPT_speculative))
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPECULATION_EDGES_COMPUTATION, WHOLE_APPLICATION));
@@ -147,12 +143,9 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(REBUILD_INITIALIZATION2, WHOLE_APPLICATION));
          //         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IPA_POINT_TO_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PARM2SSA, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DETERMINE_MEMORY_ACCESSES, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(NI_SSA_LIVENESS, WHOLE_APPLICATION));
-         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CALL_GRAPH_BUILTIN_CALL, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, WHOLE_APPLICATION));
 #if HAVE_PRAGMA_BUILT
@@ -163,9 +156,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          if(parameters->getOption<int>(OPT_parse_pragma))
          {
-#if HAVE_EXPERIMENTAL
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CHECK_CRITICAL_SESSION, WHOLE_APPLICATION));
-#endif
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LOOPS_ANALYSIS_BAMBU, WHOLE_APPLICATION));
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_ATOMIC, WHOLE_APPLICATION));
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_OMP_FOR, WHOLE_APPLICATION));
@@ -243,7 +233,7 @@ void BambuFrontendFlow::ComputeRelationships(DesignFlowStepSet& relationship, co
 #if HAVE_EXPERIMENTAL
       const auto TM = AppM->get_tree_manager();
       const FrontendFlowStepFactory* frontend_flow_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
-      std::set<FrontendFlowStepType> step_types;
+      CustomOrderedSet<FrontendFlowStepType> step_types;
       if(parameters->isOption(OPT_chaining) and parameters->getOption<bool>(OPT_chaining))
          step_types.insert(PARALLEL_REGIONS_GRAPH_COMPUTATION);
       step_types.insert(EXTENDED_PDG_COMPUTATION);

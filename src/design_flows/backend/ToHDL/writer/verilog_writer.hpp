@@ -50,18 +50,19 @@
 #include <string>
 
 /// STL include
+#include "custom_set.hpp"
 #include <list>
 #include <map>
-#include <set>
 #include <vector>
 
 class verilog_writer : public language_writer
 {
  protected:
-   /// map putting into relation standard gates with the corresponding built-in verilog statements.
+   static const char* tokenNames[];
+   /// map putting into relation standard gates with the corresponding built-in Verilog statements.
    static const std::map<std::string, std::string> builtin_to_verilog_keyword;
 
-   static const std::set<std::string> keywords;
+   CustomOrderedSet<std::string> keywords;
 
  public:
    /**
@@ -72,7 +73,7 @@ class verilog_writer : public language_writer
       return "verilog";
    }
    /**
-    * Return the filename extension associted with the verilog_writer.
+    * Return the filename extension associated with the verilog_writer.
     */
    std::string get_extension() const override
    {
@@ -177,8 +178,8 @@ class verilog_writer : public language_writer
     */
    void write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig) override;
    /**
-    * Module can be parametrized with respect different features. Port vectors are parametrized with the number of port associated,
-    * while ports are parametrized in case the type is a integer with the number of bits. The id of the module is modified
+    * Module can be parameterized with respect different features. Port vectors areparameterizedd with the number of port associated,
+    * while ports are parameterized in case the type is a integer with the number of bits. The id of the module is modified
     * by adding the parameters at its end. For example an AND_GATE with a port_vector of 2 will be declared as: AND_GATE_2.
     * Moreover, a multiplier with the first input of four bits, the second input with eight bits and an output of twelve bits will be
     * declared as: MULT_4_8_12.

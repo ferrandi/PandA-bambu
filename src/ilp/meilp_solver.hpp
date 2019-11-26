@@ -45,20 +45,18 @@
 #ifndef MEILP_SOLVER_HPP
 #define MEILP_SOLVER_HPP
 
-#include <cstddef>
-/// STD include
-#include <iosfwd>
-/// STL include
-#include <map>
-#include <string>
-#include <unordered_map>
-#include <vector>
-
 /// Autoheader include
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_GLPK.hpp"
 #include "config_HAVE_LP_SOLVE.hpp"
+
+#include <cstddef>
+#include <iosfwd>
+#include <string>
+#include <vector>
+
 /// Utility include
+#include "custom_map.hpp"
 #include "refcount.hpp"
 
 /**
@@ -109,10 +107,10 @@ class meilp_solver
    std::map<int, int> priority;
 
    /// The lower bound of the variables. They will be really set by solve method
-   std::unordered_map<int, double> lower_bounds;
+   CustomUnorderedMap<int, double> lower_bounds;
 
    /// The upper bound of the variables. They will be really set by solve method
-   std::unordered_map<int, double> upper_bounds;
+   CustomUnorderedMap<int, double> upper_bounds;
 
    /**
     * Constructor

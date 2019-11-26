@@ -98,12 +98,12 @@ unsigned int BBNodeInfo::get_bb_index() const
    return block->number;
 }
 
-const std::set<unsigned int>& BBNodeInfo::get_live_in() const
+const CustomOrderedSet<unsigned int>& BBNodeInfo::get_live_in() const
 {
    return block->live_in;
 }
 
-const std::set<unsigned int>& BBNodeInfo::get_live_out() const
+const CustomOrderedSet<unsigned int>& BBNodeInfo::get_live_out() const
 {
    return block->live_out;
 }
@@ -143,17 +143,17 @@ BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector) : graph(_g.get()
 {
 }
 
-BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, std::unordered_set<vertex>& sub) : graph(_g.get(), _selector, sub)
+BBGraph::BBGraph(const BBGraphsCollectionRef _g, int _selector, CustomUnorderedSet<vertex>& sub) : graph(_g.get(), _selector, sub)
 {
 }
 
 void BBGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
-   const std::unordered_set<vertex> annotated = std::unordered_set<vertex>();
+   const CustomUnorderedSet<vertex> annotated = CustomUnorderedSet<vertex>();
    WriteDot(file_name, annotated, detail_level);
 }
 
-void BBGraph::WriteDot(const std::string& file_name, const std::unordered_set<vertex>& annotated, const int) const
+void BBGraph::WriteDot(const std::string& file_name, const CustomUnorderedSet<vertex>& annotated, const int) const
 {
    const auto bb_graph_info = CGetBBGraphInfo();
    const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)->CGetBehavioralHelper()->get_function_name();
@@ -196,12 +196,12 @@ bool BBEdgeInfo::switch_p() const
    return !cdg_edge_T() and !cdg_edge_F() and !cfg_edge_T() and !cfg_edge_F() and (labels.find(CDG_SELECTOR) != labels.end() or labels.find(CFG_SELECTOR) != labels.end());
 }
 
-const std::set<unsigned int> BBEdgeInfo::get_labels(const int selector) const
+const CustomOrderedSet<unsigned int> BBEdgeInfo::get_labels(const int selector) const
 {
    if(labels.find(selector) != labels.end())
       return labels.find(selector)->second;
    else
-      return std::set<unsigned int>();
+      return CustomOrderedSet<unsigned int>();
 }
 
 #if !HAVE_UNORDERED

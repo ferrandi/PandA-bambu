@@ -110,24 +110,23 @@ if BUILD_TRNG
 endif
 
 lib_bambu_la_LIBADD += \
-   $(top_builddir)/src/algorithms/lib_algorithms.la \
-   $(top_builddir)/src/behavior/lib_behavior.la \
-   $(top_builddir)/src/circuit/lib_circuit.la \
-   $(top_builddir)/src/circuit/lib_structuralIO.la \
-   $(top_builddir)/src/design_flows/lib_design_flows.la \
-   $(top_builddir)/src/design_flows/backend/lib_backend.la \
-   $(top_builddir)/src/frontend_analysis/lib_frontend_analysis.la \
-   $(top_builddir)/src/graph/lib_graph.la \
+   lib_algorithms.la \
+   lib_behavior.la \
+   lib_circuit.la \
+   lib_structuralIO.la \
+   lib_design_flows.la \
+   lib_backend.la \
+   lib_frontend_analysis.la \
+   lib_graph.la \
    $(top_builddir)/src/HLS/lib_HLS.la \
    $(top_builddir)/src/parser/lib_parser.la \
    $(top_builddir)/src/parser/polixml/lib_xml_dom_parser.la \
-   $(top_builddir)/src/polixml/lib_polixml.la \
-   $(top_builddir)/src/technology/lib_technology.la \
-   $(top_builddir)/src/tree/lib_tree.la \
-   $(top_builddir)/src/tree/lib_tree_manipulation.la \
-   $(top_builddir)/src/utility/lib_utility.la \
-   $(top_builddir)/src/wrapper/lib_wrapper.la \
-   $(BOOST_DATE_TIME_LIB) \
+   lib_polixml.la \
+   lib_technology.la \
+   lib_tree.la \
+   lib_tree_manipulation.la \
+   lib_utility.la \
+   lib_wrapper.la \
    $(BOOST_FILESYSTEM_LIB) \
    $(BOOST_SYSTEM_LIB)
 
@@ -142,10 +141,6 @@ if BUILD_LIB_2LEV
       $(top_builddir)/src/logic_synthesis/lib_logic_synthesis.la
 endif
 
-if BUILD_LIB_AIG
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/circuit/aig/lib_aig.la
-endif
 
 if BUILD_LIB_ARCH
    lib_bambu_la_LIBADD += \
@@ -171,13 +166,11 @@ if BUILD_LIB_FROM_C
 endif
 
 if BUILD_LIB_ILP
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/ilp/lib_ilp.la
+   lib_bambu_la_LIBADD += lib_ilp.la
 endif
 
 if BUILD_LIB_INTERMEDIATE_REPRESENTATIONS
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/intermediate_representations/lib_intermediate_representations.la
+   lib_bambu_la_LIBADD += lib_intermediate_representations.la
 endif
 
 if BUILD_LIB_LOGIC_SYNTHESIS
@@ -191,8 +184,7 @@ if BUILD_LIB_OBJECT_CODE_WRAPPER
 endif
 
 if BUILD_LIB_PRAGMA
-   lib_bambu_la_LIBADD += \
-      $(top_builddir)/src/pragma/libpragma.la
+   lib_bambu_la_LIBADD += libpragma.la
 endif
 
 if BUILD_LIB_PROBABILITY_DISTRIBUTION
@@ -210,6 +202,8 @@ if BUILD_TRNG
       $(top_builddir)/ext/trng-4.17/src/libtrng4.la
 endif
 
-bambu_LDADD = lib_bambu.la 
+lib_bambu_la_LIBADD += $(top_builddir)/ext/abseil-cpp/libabseil.la
+
+bambu_LDADD = lib_bambu.la @PTHREAD_HACK@
 
 

@@ -40,47 +40,27 @@
 /// Header include
 #include "basic_blocks_profiling.hpp"
 
-///. include
 #include "Parameter.hpp"
-
-/// behavior includes
 #include "application_manager.hpp"
+#include "behavioral_helper.hpp"
+#include "c_backend.hpp"
+#include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
-#include "function_behavior.hpp"
-#include "profiling_information.hpp"
-
-/// constants include
-#include "host_profiling_constants.hpp"
-
-/// design_flows includes
+#include "custom_set.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
-
-/// design_flows/backend/ToC include
-#include "c_backend_step_factory.hpp"
-
-/// design_flows/backend/ToC/progModels include
-#include "c_backend.hpp"
+#include "fileIO.hpp"
+#include "function_behavior.hpp"
+#include "gcc_wrapper.hpp"
+#include "hash_helper.hpp"
+#include "host_profiling_constants.hpp"
+#include "profiling_information.hpp"
+#include "string_manipulation.hpp"
 
 /// STD include
 #include <string>
-
-/// STL includes
-#include <set>
-#include <unordered_set>
 #include <utility>
 #include <vector>
-
-/// tree include
-#include "behavioral_helper.hpp"
-
-/// utility include
-#include "fileIO.hpp"
-
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
-#include "hash_helper.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
     : ApplicationFrontendFlowStep(_AppM, BASIC_BLOCKS_PROFILING, _design_flow_manager, _parameters), profiling_source_file(parameters->getOption<std::string>(OPT_output_temporary_directory) + "/host_profiling.c")
@@ -90,9 +70,9 @@ BasicBlocksProfiling::BasicBlocksProfiling(const application_managerRef _AppM, c
 
 BasicBlocksProfiling::~BasicBlocksProfiling() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> BasicBlocksProfiling::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    return relationships;
 }
 
@@ -178,7 +158,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
 
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      std::set<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+      CustomOrderedSet<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
       for(const auto function : functions)
       {
          AppM->CGetFunctionBehavior(function)->CGetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_profiling.dot");
@@ -189,7 +169,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
 
 void BasicBlocksProfiling::Initialize()
 {
-   std::set<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
    for(auto function : functions)
    {
       AppM->GetFunctionBehavior(function)->profiling_information->Clear();

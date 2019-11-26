@@ -44,9 +44,6 @@
 /// Autoheader includes
 #include "config_HAVE_FLOPOCO.hpp"
 
-/// boost include
-#include <boost/date_time/posix_time/posix_time.hpp>
-
 /// circuit include
 #include "structural_objects.hpp"
 
@@ -564,7 +561,15 @@ void RTLCharacterization::add_input_register(structural_objectRef port_in, const
                                              structural_objectRef e_port, structural_managerRef SM)
 {
    structural_objectRef r_signal;
-   structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
+   structural_objectRef reg_mod;
+   if(port_in->get_typeRef()->type == structural_type_descriptor::INT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library, circuit, TM);
+   else if(port_in->get_typeRef()->type == structural_type_descriptor::UINT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT, register_library, circuit, TM);
+   else if(port_in->get_typeRef()->type == structural_type_descriptor::REAL)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL, register_library, circuit, TM);
+   else
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
    GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_in));
    GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_in));
 
@@ -588,7 +593,15 @@ void RTLCharacterization::add_output_register(structural_managerRef SM, structur
                                               structural_objectRef clock_port, const std::string& register_library)
 {
    structural_objectRef r_signal;
-   structural_objectRef reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
+   structural_objectRef reg_mod;
+   if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_INT, register_library, circuit, TM);
+   else if(port_out->get_typeRef()->type == structural_type_descriptor::UINT)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_UINT, register_library, circuit, TM);
+   else if(port_out->get_typeRef()->type == structural_type_descriptor::REAL)
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME_REAL, register_library, circuit, TM);
+   else
+      reg_mod = SM->add_module_from_technology_library(port_prefix + "_REG", register_AR_NORETIME, register_library, circuit, TM);
    GetPointer<module>(reg_mod)->get_in_port(2)->type_resize(GET_TYPE_SIZE(port_out));
    GetPointer<module>(reg_mod)->get_out_port(0)->type_resize(GET_TYPE_SIZE(port_out));
 
@@ -687,12 +700,14 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
 #endif
       structural_managerRef SM = structural_managerRef(new structural_manager(parameters));
       /// main circuit type
-      structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(fu_name + "_wrapper"));
+      auto top_wrapper_name = "top" + fu_name + "_wrapper";
+      boost::replace_all(top_wrapper_name, "__", "");
+      structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(top_wrapper_name));
       /// setting top circuit component
-      SM->set_top_info(fu_name + "_wrapper", module_type);
+      SM->set_top_info(top_wrapper_name, module_type);
       structural_objectRef circuit = SM->get_circ();
       THROW_ASSERT(circuit, "Top circuit is missing");
-      structural_objectRef template_circuit = SM->add_module_from_technology_library(fu_base_name, fu_base_name, LM->get_library_name(), circuit, TM);
+      structural_objectRef template_circuit = SM->add_module_from_technology_library(fu_base_name + "_inst0", fu_base_name, LM->get_library_name(), circuit, TM);
 
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " - Generating HDL of functional unit " + fu_name);
       auto* spec_module = GetPointer<module>(template_circuit);
@@ -838,7 +853,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
       }
 
-      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
+      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
       one_port = SM->add_constant(fu_name + "_constant_" + STR(1), circuit, bool_type, STR(1));
       std::string register_library = TM->get_library(register_AR_NORETIME);
       structural_objectRef clock_port, reset_port;

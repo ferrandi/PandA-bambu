@@ -60,8 +60,8 @@
 #include "Parameter.hpp"
 
 /// STL include
+#include "custom_set.hpp"
 #include <list>
-#include <unordered_set>
 
 /// Utility include
 #include "boost/lexical_cast.hpp"
@@ -78,9 +78,9 @@ AddBbEcfgEdges::AddBbEcfgEdges(const application_managerRef _AppM, unsigned int 
 
 AddBbEcfgEdges::~AddBbEcfgEdges() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddBbEcfgEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> AddBbEcfgEdges::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -126,7 +126,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
 
       /// add Extended edges to manage in/out dependencies when we have multi-entries in a loop (aka irreducible loop)
-      std::unordered_set<vertex> loop_bbs;
+      CustomUnorderedSet<vertex> loop_bbs;
       (*loop)->get_recursively_bb(loop_bbs);
       for(auto cur_bb1 : (*loop)->get_entries())
       {
@@ -175,12 +175,12 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
       }
 
       /// Sources of feedback loop
-      std::unordered_set<vertex> sources;
+      CustomUnorderedSet<vertex> sources;
 
       /// The targets of the flow edges they can be different from landing_pads of this loop if the edge which connects a block
       /// of the loop to a landing_pads is the feedback edge of an external loop. In this case the block must be connected to the
       /// landing pads of the external loop
-      std::unordered_set<vertex> targets;
+      CustomUnorderedSet<vertex> targets;
 
       /// compute sources
       for(auto sp_back_edge : (*loop)->get_sp_back_edges())
@@ -194,7 +194,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
          }
       }
       /// Landing pads
-      std::unordered_set<vertex> landing_pads = (*loop)->GetLandingPadBlocks();
+      CustomUnorderedSet<vertex> landing_pads = (*loop)->GetLandingPadBlocks();
       LoopConstRef other_loop = *loop;
       /// While at least one landing pad of the current loop or of one of its ancestor is reached with a feedback edge
       while([&]() -> bool {
@@ -215,7 +215,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
                   }
                   else
                   {
-                     std::unordered_set<vertex> bb_loops;
+                     CustomUnorderedSet<vertex> bb_loops;
                      other_loop->get_recursively_bb(bb_loops);
                      if(bb_loops.find(source) != bb_loops.end())
                      {
@@ -234,7 +234,7 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
       }
       targets.insert(landing_pads.begin(), landing_pads.end());
 
-      std::unordered_set<vertex>::const_iterator s, s_end = sources.end(), t, t_end = targets.end();
+      CustomUnorderedSet<vertex>::const_iterator s, s_end = sources.end(), t, t_end = targets.end();
       for(s = sources.begin(); s != s_end; ++s)
       {
          for(t = targets.begin(); t != t_end; ++t)

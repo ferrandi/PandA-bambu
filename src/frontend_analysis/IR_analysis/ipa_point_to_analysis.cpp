@@ -77,7 +77,7 @@ struct function_information
    /// variables or passes them to another function
    bool preserving;
    /// called functions, directly or through function pointers
-   std::set<unsigned int> called_functions;
+   CustomOrderedSet<unsigned int> called_functions;
    /// list of statements to be processed
    std::list<unsigned int> stmts_list;
    explicit function_information(unsigned int _topo_id) : topo_id(_topo_id), preserving(true)
@@ -92,7 +92,7 @@ void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigne
    const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
    CG->CGetCallGraph()->TopologicalSort(topology_sorted_vertex);
 
-   std::set<unsigned> reachable_functions;
+   CustomOrderedSet<unsigned> reachable_functions;
 
    /// check if the root function is an empty function: compiler optimizations may kill everything
    auto top_functions = CG->GetRootFunctions();
@@ -137,9 +137,9 @@ ipa_point_to_analysis::ipa_point_to_analysis(const application_managerRef _AppM,
 
 ipa_point_to_analysis::~ipa_point_to_analysis() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ipa_point_to_analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ipa_point_to_analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -158,7 +158,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MEM_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, ALL_FUNCTIONS));
@@ -224,12 +224,12 @@ class worklist_queue
 
 DesignFlowStep_Status ipa_point_to_analysis::Exec()
 {
-   std::unordered_set<unsigned int> pointing_to_ssa_vars;
-   std::unordered_map<unsigned int, unsigned int> topo_stmt_order;
-   // std::unordered_map<unsigned int,unsigned int> topo_func_parameter_order;
+   CustomUnorderedSet<unsigned int> pointing_to_ssa_vars;
+   CustomUnorderedMapUnstable<unsigned int, unsigned int> topo_stmt_order;
+   // CustomUnorderedMap<unsigned int,unsigned int> topo_func_parameter_order;
    unsigned int curr_topo_order = 0;
    /// array storing the functions for which the address has been taken by some gimple node.
-   std::set<unsigned int> addr_taken_functions;
+   CustomOrderedSet<unsigned int> addr_taken_functions;
    worklist_queue wl;
 
    std::map<unsigned int, function_informationRef> function_information_map;

@@ -31,12 +31,9 @@
  *
  */
 /**
- * @file FunctionCallTypeCleanup.hpp
+ * @file FunctionCallTypeCleanup.cpp
  *
  * @author Pietro Fezzardi <pietrofezzardi@gmail.com>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
 
@@ -307,13 +304,15 @@ void FunctionCallTypeCleanup::Initialize()
 {
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> FunctionCallTypeCleanup::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> FunctionCallTypeCleanup::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
+         /// Workaround: this should be a precedence, but when this is added later for functions added during call graph extension is added as unnecessary and it is not updated before its execution
+         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -324,7 +323,6 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));

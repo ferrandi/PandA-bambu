@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,72 +31,73 @@
  *
  */
 /**
- * @file hls_bit_value.cpp
- * @brief Wrapper for bit value analysis in the HLS context
+ * @file hls_bit_value.hpp
+ * @brief Composed step to describe HLSFunction on all functions
  *
- * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
  */
 
+/// Header include
 #include "hls_bit_value.hpp"
 
-#include "behavioral_helper.hpp"
-#include "exceptions.hpp"
-#include "function_behavior.hpp"
-#include "hls.hpp"
-#include "hls_manager.hpp"
-#include "utility.hpp"
+/// . include
+#include "Parameter.hpp"
 
-/// design_flow includes
+/// behavior includes
+#include "application_frontend_flow_step.hpp"
+#include "call_graph_manager.hpp"
+
+/// design_flows includes
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-/// frontend_analysis includes
-#include "application_frontend_flow_step.hpp"
-#include "frontend_flow_step.hpp"
+/// frontend_flow includes
 #include "frontend_flow_step_factory.hpp"
 #include "function_frontend_flow_step.hpp"
 
-#include <boost/algorithm/string.hpp>
-#include <boost/lexical_cast.hpp>
-
-#include <cmath>
-#include <map>
-#include <vector>
-
-#include <iosfwd>
-
-#include "Parameter.hpp"
-#include "dbgPrintHelper.hpp"
-
 /// HLS includes
-#include "hls_flow_step_factory.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "hls_function_step.hpp"
+#include "hls_manager.hpp"
 
-hls_bit_value::hls_bit_value(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, unsigned _funId, const DesignFlowManagerConstRef _design_flow_manager)
-    : HLSFunctionStep(_parameters, _HLSMgr, _funId, _design_flow_manager, HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef())
+/// . utility includes
+#include "custom_set.hpp"
+#include "utility.hpp"
+
+/// STL includes
+#include <tuple>
+
+HLSBitValue::HLSBitValue(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
+    : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::HLS_BIT_VALUE, HLSFlowStepSpecializationConstRef())
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
 
-hls_bit_value::~hls_bit_value() = default;
+HLSBitValue::~HLSBitValue() = default;
 
-void hls_bit_value::Initialize()
+void HLSBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
 {
-   HLSFunctionStep::Initialize();
-}
-
-void hls_bit_value::ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type)
-{
-   const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   if(GetStatus() == DesignFlowStep_Status::SUCCESS)
+   if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
-      if(relationship_type == INVALIDATION_RELATIONSHIP)
+      CustomSet<unsigned int> changed_functions;
+      const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
+      const auto reached_body_fun_ids = call_graph_manager->GetReachedBodyFunctions();
+      for(const auto reached_body_fun_id : reached_body_fun_ids)
       {
-         if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
+         const auto hls_function_bit_value_signature = HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE, HLSFlowStepSpecializationConstRef(), reached_body_fun_id);
+         const auto status = design_flow_manager.lock()->GetStatus(hls_function_bit_value_signature);
+         if(status == DesignFlowStep_Status::SUCCESS)
+         {
+            changed_functions.insert(reached_body_fun_id);
+         }
+         else
+         {
+            THROW_ASSERT(status == DesignFlowStep_Status::UNCHANGED, "");
+         }
+      }
+      if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
+      {
+         if(not changed_functions.empty())
          {
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_IPA));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
@@ -105,29 +106,31 @@ void hls_bit_value::ComputeRelationships(DesignFlowStepSet& relationship, const 
                                                            GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateApplicationFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_IPA);
             relationship.insert(design_flow_step);
          }
-         else
+      }
+      else
+      {
+         for(const auto changed_function : changed_functions)
          {
-            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, funId));
+            vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_OPT, changed_function));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
             const DesignFlowStepRef design_flow_step = frontend_step != NULL_VERTEX ?
                                                            design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step :
-                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, funId);
+                                                           GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE_OPT, changed_function);
             relationship.insert(design_flow_step);
          }
       }
    }
-   HLSFunctionStep::ComputeRelationships(relationship, relationship_type);
+   HLS_step::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> hls_bit_value::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> HLSBitValue::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         ret.insert(std::make_tuple(HLSFlowStep_Type::INITIALIZE_HLS, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
-         ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+         ret.insert(std::make_tuple(HLSFlowStep_Type::HLS_FUNCTION_BIT_VALUE, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -144,16 +147,12 @@ const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-DesignFlowStep_Status hls_bit_value::InternalExec()
+DesignFlowStep_Status HLSBitValue::Exec()
 {
-   unsigned int curr_address_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int default_address_bitsize = parameters->isOption(OPT_addr_bus_bitsize) ? parameters->getOption<unsigned int>(OPT_addr_bus_bitsize) : 32;
-   if(default_address_bitsize != curr_address_bitsize)
-   {
-      const DesignFlowStepRef design_flow_step = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"))->CreateFunctionFrontendFlowStep(FrontendFlowStepType::BIT_VALUE, funId);
-      design_flow_step->Initialize();
-      const DesignFlowStep_Status return_status = design_flow_step->Exec();
-      return return_status;
-   }
-   return DesignFlowStep_Status::UNCHANGED;
+   return DesignFlowStep_Status::EMPTY;
+}
+
+bool HLSBitValue::HasToBeExecuted() const
+{
+   return true;
 }

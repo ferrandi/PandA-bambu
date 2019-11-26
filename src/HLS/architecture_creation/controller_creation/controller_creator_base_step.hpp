@@ -54,9 +54,9 @@
 #include <fstream>
 
 /// STL includes
-#include <map>
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <tuple>
-#include <unordered_set>
 
 /// utility include
 #include "refcount.hpp"
@@ -82,7 +82,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

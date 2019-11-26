@@ -34,8 +34,8 @@
 
 #include "function_frontend_flow_step.hpp"
 
+#include "custom_map.hpp"
 #include <list>
-#include <map>
 
 #include "refcount.hpp"
 
@@ -51,7 +51,7 @@ class HWCallInjection : public FunctionFrontendFlowStep
    /// True if already executed
    bool already_executed;
 
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
    bool isHardwareCall(tree_nodeRef FD);
 

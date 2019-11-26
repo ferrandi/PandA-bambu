@@ -45,11 +45,11 @@
 #include "function_frontend_flow_step.hpp"
 
 /// STD include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <algorithm>
 #include <cmath>
 #include <list>
-#include <map>
-#include <set>
 #include <string>
 #include <vector>
 /// Utility include
@@ -91,6 +91,8 @@ class lut_transformation : public FunctionFrontendFlowStep
 
    bool CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const;
    bool CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const;
+   bool CHECK_COND_EXPR_SIZE(cond_expr* ce) const;
+   bool CHECK_NOT_EXPR_SIZE(unary_expr* ne) const;
    /**
     * @brief cannotBeLUT returns true in case the op is an operation that cannot be translated in a LUT
     * @param op is an operation
@@ -126,7 +128,7 @@ class lut_transformation : public FunctionFrontendFlowStep
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
-   const std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
    /**

@@ -69,9 +69,9 @@ REF_FORWARD_DECL(Discrepancy);
 #include "UnfoldedCallInfo.hpp"
 #include "UnfoldedFunctionInfo.hpp"
 
-#include <set>
+#include "custom_set.hpp"
 #include <string>
-#include <map>
+#include "custom_map.hpp"
 #include <list>
 #include <climits>
 }
@@ -135,7 +135,7 @@ void yyerror
    char * svalue;
    unsigned int uintval;
    bool boolval;
-   std::set<unsigned int> *uintSet;
+   CustomOrderedSet<unsigned int> *uintSet;
    std::pair<unsigned int, uint64_t> * addr_table_line_val;
    struct {
       unsigned long n_cycles;
@@ -144,9 +144,9 @@ void yyerror
       bool is_bounded_op;
    } op_info;
    struct {
-      std::set<unsigned int> *start;
-      std::set<unsigned int> *exec;
-      std::set<unsigned int> *end;
+      CustomOrderedSet<unsigned int> *start;
+      CustomOrderedSet<unsigned int> *exec;
+      CustomOrderedSet<unsigned int> *end;
    } sched_info;
    struct {
       char * ssa_name;
@@ -359,7 +359,7 @@ sched_data  : SCHEDULE STARTSTATE statelist SEMI EXSTATE statelist SEMI ENDSTATE
 
 statelist   : UNUMBER
             {
-               $$ = new std::set<unsigned int>();
+               $$ = new CustomOrderedSet<unsigned int>();
                $$->insert($1);
             }
             | statelist UNUMBER

@@ -49,14 +49,13 @@
 
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
-#include <deque>         // for deque
-#include <functional>    // for binary_function
-#include <iosfwd>        // for ostream, size_t
-#include <map>           // for map, _Rb_tree_co...
-#include <set>           // for set
-#include <typeindex>     // for hash
-#include <unordered_map> // for hash, unordered_map
-#include <unordered_set> // for unordered_set
+#include <deque>      // for deque
+#include <functional> // for binary_function
+#include <iosfwd>     // for ostream, size_t
+#include <typeindex>  // for hash
+
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 
 /// Behavior include (because of enums)
 #if HAVE_EXPERIMENTAL
@@ -144,6 +143,8 @@ enum class FunctionBehavior_VariableType
    VIRTUAL
 };
 
+#if NO_ABSEIL_HASH
+
 /**
  * Definition of hash function for FunctionBehavior_VariableAccessType
  */
@@ -176,6 +177,7 @@ namespace std
    };
 } // namespace std
 
+#endif
 /**
  *
  */
@@ -345,6 +347,9 @@ class FunctionBehavior
    const ParallelRegionsGraphRef prg;
 #endif
 
+   /// Anti + Data flow graph on aggregates
+   const OpGraphRef agg_virtualg;
+
 #if HAVE_HOST_PROFILING_BUILT
    /// Profiling information about this function
    const ProfilingInformationRef profiling_information;
@@ -366,24 +371,24 @@ class FunctionBehavior
    LoopsRef loops;
 
    /// this set represents the memory variables accessed by the function
-   std::set<unsigned int> mem_nodeID;
+   CustomOrderedSet<unsigned int> mem_nodeID;
 
    /// store memory objects which can be indirectly addressed through a dynamic address computation
-   std::set<unsigned int> dynamic_address;
+   CustomOrderedSet<unsigned int> dynamic_address;
 
    /// this set represents the parameters that have to be copied from the caller
-   std::set<unsigned int> parm_decl_copied;
+   CustomOrderedSet<unsigned int> parm_decl_copied;
 
    /// this set represents the actual parameters that has to be loaded into the formal parameter from the actual parameter
-   std::set<unsigned int> parm_decl_loaded;
+   CustomOrderedSet<unsigned int> parm_decl_loaded;
 
    /// this set represents the formal parameters that has to be stored into the formal parameter from the actual parameter
-   std::set<unsigned int> parm_decl_stored;
+   CustomOrderedSet<unsigned int> parm_decl_stored;
 
    /// The set of input parameters
    const ParameterConstRef parameters;
 
-   /// the function derefernce a pointer initialized with constant address.
+   /// the function dereference a pointer initialized with constant address.
    bool dereference_unknown_address;
 
    /// true when at least one pointer conversion happen
@@ -404,7 +409,10 @@ class FunctionBehavior
    bool has_undefined_function_receiveing_pointers;
 
    /// set of global variables
-   std::set<unsigned int> state_variables;
+   CustomOrderedSet<unsigned int> state_variables;
+
+   /// when true pipelining has been requested for this function
+   bool pipelining_enabled;
 
  public:
    /**
@@ -452,6 +460,7 @@ class FunctionBehavior
 #if HAVE_EXPERIMENTAL
       RPDG, /**< Reduced Program Dependence graph */
 #endif
+      AGG_VIRTUALG /**< Anti + Data flow graph dependence between aggregates */
    };
 
    /**
@@ -470,10 +479,10 @@ class FunctionBehavior
    };
 
    /// Mutual exclusion between basic blocks (based on control flow graph with flow edges)
-   std::unordered_map<vertex, std::unordered_set<vertex>> bb_reachability;
+   CustomUnorderedMapStable<vertex, CustomUnorderedSet<vertex>> bb_reachability;
 
    /// Reachability between basic blocks based on control flow graph with feedback
-   std::unordered_map<vertex, std::unordered_set<vertex>> feedback_bb_reachability;
+   CustomUnorderedMapStable<vertex, CustomUnorderedSet<vertex>> feedback_bb_reachability;
 
    /// reference to the operations graph constructor
    const operations_graph_constructorRef ogc;
@@ -520,7 +529,7 @@ class FunctionBehavior
    /**
     * Returns the set of local variables
     */
-   std::set<unsigned int> get_local_variables(const application_managerConstRef AppM) const;
+   CustomOrderedSet<unsigned int> get_local_variables(const application_managerConstRef AppM) const;
 
    /**
     * Return the vector of vertex index sorted in topological order.
@@ -697,27 +706,27 @@ class FunctionBehavior
    /**
     * Returns the set of memory variables
     */
-   const std::set<unsigned int>& get_function_mem() const;
+   const CustomOrderedSet<unsigned int>& get_function_mem() const;
 
    /**
     * Returns the set of variables for which a dynamic address computation maybe required
     */
-   const std::set<unsigned int>& get_dynamic_address() const;
+   const CustomOrderedSet<unsigned int>& get_dynamic_address() const;
 
    /**
     * Returns the set of parameters to be copied
     */
-   const std::set<unsigned int>& get_parm_decl_copied() const;
+   const CustomOrderedSet<unsigned int>& get_parm_decl_copied() const;
 
    /**
     * Returns the set of the actual parameters that has to be loaded into the formal parameter
     */
-   const std::set<unsigned int>& get_parm_decl_loaded() const;
+   const CustomOrderedSet<unsigned int>& get_parm_decl_loaded() const;
 
    /**
     * Returns the set of the formal parameters that has to be stored into the formal parameter
     */
-   const std::set<unsigned int>& get_parm_decl_stored() const;
+   const CustomOrderedSet<unsigned int>& get_parm_decl_stored() const;
 
    /**
     * Set the use of dereferences of unknown address.
@@ -835,6 +844,15 @@ class FunctionBehavior
    bool has_packed_vars() const
    {
       return packed_vars;
+   }
+   bool is_pipelining_enabled() const
+   {
+      return pipelining_enabled;
+   }
+
+   void set_pipelining_enabled(bool f)
+   {
+      pipelining_enabled = f;
    }
 
    /**

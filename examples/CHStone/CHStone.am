@@ -1,0 +1,156 @@
+EXTRA_DIST += %D%/adpcm/adpcm.c %D%/aes/aes_enc.c\
+%D%/aes/aes.c\
+%D%/aes/aes.h\
+%D%/aes/aes_func.c\
+%D%/aes/aes_dec.c\
+%D%/aes/aes_key.c\
+%D%/blowfish/bf_cfb64.c\
+%D%/blowfish/bf.c\
+%D%/blowfish/bf_locl.h\
+%D%/blowfish/bf_enc.c\
+%D%/blowfish/bf_skey.c\
+%D%/blowfish/bf_pi.h\
+%D%/blowfish/blowfish.h\
+%D%/dfadd/SPARC-GCC.h\
+%D%/dfadd/dfadd.c\
+%D%/dfadd/softfloat.h\
+%D%/dfadd/softfloat-macros\
+%D%/dfadd/softfloat.c\
+%D%/dfadd/milieu.h\
+%D%/dfadd/softfloat-specialize\
+%D%/dfdiv/SPARC-GCC.h\
+%D%/dfdiv/softfloat.h\
+%D%/dfdiv/softfloat-macros\
+%D%/dfdiv/softfloat.c\
+%D%/dfdiv/milieu.h\
+%D%/dfdiv/dfdiv.c\
+%D%/dfdiv/softfloat-specialize\
+%D%/dfmul/dfmul.c\
+%D%/dfmul/SPARC-GCC.h\
+%D%/dfmul/softfloat.h\
+%D%/dfmul/softfloat-macros\
+%D%/dfmul/softfloat.c\
+%D%/dfmul/milieu.h\
+%D%/dfmul/softfloat-specialize\
+%D%/dfsin/SPARC-GCC.h\
+%D%/dfsin/softfloat.h\
+%D%/dfsin/dfsin.c\
+%D%/dfsin/softfloat-macros\
+%D%/dfsin/softfloat.c\
+%D%/dfsin/milieu.h\
+%D%/dfsin/softfloat-specialize\
+%D%/gsm/add.c\
+%D%/gsm/gsm.c\
+%D%/gsm/lpc.c\
+%D%/gsm/private.h\
+%D%/jpeg/decode.c\
+%D%/jpeg/chenidct.c\
+%D%/jpeg/jfif_read.c\
+%D%/jpeg/jpeg2bmp.c\
+%D%/jpeg/init.h\
+%D%/jpeg/huffman.c\
+%D%/jpeg/marker.c\
+%D%/jpeg/huffman.h\
+%D%/jpeg/decode.h\
+%D%/jpeg/main.c\
+%D%/jpeg/global.h\
+%D%/mips/mips.c\
+%D%/mips/imem.h\
+%D%/motion/motion.c\
+%D%/motion/getvlc.h\
+%D%/motion/getvlc.c\
+%D%/motion/mpeg2dec.h\
+%D%/motion/config.h\
+%D%/motion/mpeg2.c\
+%D%/motion/global.h\
+%D%/motion/getbits.c\
+%D%/sha/sha.h\
+%D%/sha/sha.c\
+%D%/sha/sha_driver.c\
+%D%/README_CHSTONE.txt \
+%D%/list \
+%D%/5CSEMA5F31C6_10.0_O2_sdc_aligned_access.sh\
+%D%/5CSEMA5F31C6_10.0_O3_sdc.sh\
+%D%/5CSEMA5F31C6_15.0_O2_sdc_aligned_access.sh\
+%D%/5CSEMA5F31C6_15.0_O3_sdc.sh\
+%D%/5CSEMA5F31C6_O3_list \
+%D%/5CSEMA5F31C6_O3_adpcm_constraints.xml \
+%D%/5SGXEA7N2F45C1_05.0_O2_sdc_aligned_access.sh\
+%D%/5SGXEA7N2F45C1_05.0_O3_sdc.sh\
+%D%/5SGXEA7N2F45C1_10.0_O2_sdc_aligned_access.sh\
+%D%/5SGXEA7N2F45C1_10.0_O3_sdc.sh\
+%D%/all.sh\
+%D%/altera.sh\
+%D%/bambu_dfadd_sdc.sh\
+%D%/EP2C70F896C6-R_10.0_O2_sdc_aligned_access.sh\
+%D%/EP2C70F896C6-R_10.0_O3_sdc.sh\
+%D%/EP2C70F896C6-R_15.0_O2_sdc_aligned_access.sh\
+%D%/EP2C70F896C6-R_15.0_O3_sdc.sh\
+%D%/EP2C70F896C6-R_O3_adpcm_constraints.xml \
+%D%/EP2C70F896C6-R_O3_list\
+%D%/xc7vx330t-1ffg1157_10.0_O2_sdc_aligned_access.sh\
+%D%/xc7vx330t-1ffg1157_10.0_O3_sdc.sh\
+%D%/xc7vx690t-3ffg1930-VVD_05.0_O2_sdc_aligned_access.sh\
+%D%/xc7vx690t-3ffg1930-VVD_05.0_O3_sdc.sh\
+%D%/xc7vx690t-3ffg1930-VVD_10.0_O2_sdc_aligned_access.sh\
+%D%/xc7vx690t-3ffg1930-VVD_10.0_O3_sdc.sh\
+%D%/xc7z020-1clg484-VVD_10.0_O2_sdc_aligned_access.sh\
+%D%/xc7z020-1clg484-VVD_10.0_O3_sdc.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_access.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O3_sdc.sh\
+%D%/xilinx.sh\
+%D%/LFE335EA8FN484C_15.0_O2_sdc_aligned_access.sh \
+%D%/LFE335EA8FN484C_15.0_O3_sdc.sh \
+%D%/lattice.sh \
+%D%/lattice_ECP3_list \
+%D%/ECP3_CHStone_constraints/adpcm_constraints.xml \
+%D%/ECP3_CHStone_constraints/dfdiv_hls_div_constraints.xml \
+%D%/ECP3_CHStone_constraints/dfsin_hls_div_constraints.xml \
+%D%/ECP3_CHStone_constraints/jpeg_constraints.xml\
+%D%/CHStone_5CSEMA5F31C6_10.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_5CSEMA5F31C6_10.0_O3_sdc.tex\
+%D%/CHStone_5CSEMA5F31C6_15.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_5CSEMA5F31C6_15.0_O3_sdc.tex\
+%D%/CHStone_5SGXEA7N2F45C1_05.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_5SGXEA7N2F45C1_05.0_O3_sdc.tex\
+%D%/CHStone_5SGXEA7N2F45C1_10.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_5SGXEA7N2F45C1_10.0_O3_sdc.tex\
+%D%/CHStone_EP2C70F896C6-R_10.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_EP2C70F896C6-R_10.0_O3_sdc.tex\
+%D%/CHStone_EP2C70F896C6-R_15.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_EP2C70F896C6-R_15.0_O3_sdc.tex\
+%D%/CHStone_LFE335EA8FN484C_15.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_LFE335EA8FN484C_15.0_O3_sdc.tex\
+%D%/CHStone_xc7vx330t-1ffg1157_10.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_xc7vx330t-1ffg1157_10.0_O3_sdc.tex\
+%D%/CHStone_xc7vx690t-3ffg1930-VVD_05.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_xc7vx690t-3ffg1930-VVD_05.0_O3_sdc.tex\
+%D%/CHStone_xc7vx690t-3ffg1930-VVD_10.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_xc7vx690t-3ffg1930-VVD_10.0_O3_sdc.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_10.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_10.0_O3_sdc.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_access.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O3_sdc.tex\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.sh\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.tex\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC5.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC6.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC7.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC8.sh\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC5.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC6.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC7.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessGCC8.tex
+
+
+TESTS += \
+  %D%/bambu_dfadd_sdc.sh
+
+
+

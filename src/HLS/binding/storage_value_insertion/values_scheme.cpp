@@ -85,8 +85,8 @@ DesignFlowStep_Status values_scheme::InternalExec()
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       // std::cerr << "current state for sv " << HLS->Rliv->get_name(*vIt) << std::endl;
-      const std::set<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-      const std::set<unsigned int>::const_iterator k_end = live.end();
+      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
+      const CustomOrderedSet<unsigned int>::const_iterator k_end = live.end();
       for(auto k = live.begin(); k != k_end; ++k)
       {
          if(HLS->storage_value_information->storage_index_map.find(*k) == HLS->storage_value_information->storage_index_map.end())

@@ -325,10 +325,10 @@ FrontendFlowStepFactory::FrontendFlowStepFactory(const application_managerRef _A
 
 FrontendFlowStepFactory::~FrontendFlowStepFactory() = default;
 
-const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const std::unordered_set<FrontendFlowStepType>& frontend_flow_step_types) const
+const DesignFlowStepSet FrontendFlowStepFactory::GenerateFrontendSteps(const CustomUnorderedSet<FrontendFlowStepType>& frontend_flow_step_types) const
 {
    DesignFlowStepSet frontend_flow_steps;
-   std::unordered_set<FrontendFlowStepType>::const_iterator frontend_flow_step_type, frontend_flow_step_type_end = frontend_flow_step_types.end();
+   CustomUnorderedSet<FrontendFlowStepType>::const_iterator frontend_flow_step_type, frontend_flow_step_type_end = frontend_flow_step_types.end();
    for(frontend_flow_step_type = frontend_flow_step_types.begin(); frontend_flow_step_type != frontend_flow_step_type_end; ++frontend_flow_step_type)
    {
       frontend_flow_steps.insert(GenerateFrontendStep(*frontend_flow_step_type));
@@ -446,13 +446,14 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_ZEBU_BUILT
       case LOOPS_ANALYSIS_ZEBU:
 #endif
-      case LOOPS_IDENTIFICATION:
+      case LOOPS_COMPUTATION:
 #if HAVE_ZEBU_BUILT
       case LOOPS_REBUILDING:
 #endif
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
+      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -594,7 +595,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
-      case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif
@@ -696,10 +696,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new ipa_point_to_analysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-      case MEM_CG_EXT:
-      {
-         return DesignFlowStepRef(new mem_cg_ext(AppM, design_flow_manager.lock(), parameters));
-      }
       case PARM2SSA:
       {
          return DesignFlowStepRef(new parm2ssa(AppM, design_flow_manager.lock(), parameters));
@@ -844,13 +840,14 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_ZEBU_BUILT
       case LOOPS_ANALYSIS_ZEBU:
 #endif
-      case LOOPS_IDENTIFICATION:
+      case LOOPS_COMPUTATION:
 #if HAVE_ZEBU_BUILT
       case LOOPS_REBUILDING:
 #endif
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
+      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -1063,12 +1060,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       {
          return DesignFlowStepRef(new call_expr_fix(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-#if HAVE_BAMBU_BUILT
       case CALL_GRAPH_BUILTIN_CALL:
       {
          return DesignFlowStepRef(new CallGraphBuiltinCall(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-#endif
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case CHECK_CRITICAL_SESSION:
       {
@@ -1249,7 +1244,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new LoopsAnalysisZebu(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-      case LOOPS_IDENTIFICATION:
+      case LOOPS_COMPUTATION:
       {
          return DesignFlowStepRef(new loops_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
@@ -1265,6 +1260,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new lut_transformation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
+      case MEM_CG_EXT:
+      {
+         return DesignFlowStepRef(new mem_cg_ext(AppM, function_id, design_flow_manager.lock(), parameters));
+      }
       case MEMORY_DATA_FLOW_ANALYSIS:
       {
          return DesignFlowStepRef(new MemoryDataFlowAnalysis(AppM, function_id, design_flow_manager.lock(), parameters));
@@ -1554,7 +1553,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
-      case MEM_CG_EXT:
       case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):

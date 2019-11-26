@@ -55,9 +55,9 @@
 #include <boost/algorithm/string/replace.hpp> // for replace_all
 #include <cstddef>                            // for size_t
 
-#include <string>        // for operator+, string
-#include <unordered_map> // for unordered_map, unor...
-#include <vector>        // for vector, allocator
+#include "custom_map.hpp" // for unordered_map, unor...
+#include <string>         // for operator+, string
+#include <vector>         // for vector, allocator
 
 /// Behavior include
 #include "application_manager.hpp"
@@ -1108,7 +1108,7 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
    {
       return_value += tree_helper::print_type(TM, get_type(var), false, false, init_has_to_be_printed, var, vppf);
       unsigned int attributes = get_attributes(var);
-      std::unordered_set<unsigned int> list_of_variables;
+      CustomUnorderedSet<unsigned int> list_of_variables;
       const unsigned int init = GetInit(var, list_of_variables);
       if(attributes)
          return_value += " " + print_attributes(attributes, vppf);
@@ -3637,8 +3637,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       {
          res += "target";
          const auto* otp = GetPointer<const omp_target_pragma>(node);
-         const std::unordered_map<std::string, std::string>& clauses = otp->clauses;
-         std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+         const CustomUnorderedMapUnstable<std::string, std::string>& clauses = otp->clauses;
+         CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
          for(clause = clauses.begin(); clause != clause_end; ++clause)
          {
             res += " " + clause->first + "(" + clause->second + ")";
@@ -3649,8 +3649,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       {
          res += "task";
          const auto* otp = GetPointer<const omp_task_pragma>(node);
-         const std::unordered_map<std::string, std::string>& clauses = otp->clauses;
-         std::unordered_map<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
+         const CustomUnorderedMapUnstable<std::string, std::string>& clauses = otp->clauses;
+         CustomUnorderedMapUnstable<std::string, std::string>::const_iterator clause, clause_end = clauses.end();
          for(clause = clauses.begin(); clause != clause_end; ++clause)
          {
             res += " " + clause->first + "(" + clause->second + ")";
@@ -5000,9 +5000,9 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
    }
 }
 
-const std::unordered_set<unsigned int> BehavioralHelper::GetParameterTypes() const
+const CustomUnorderedSet<unsigned int> BehavioralHelper::GetParameterTypes() const
 {
-   std::unordered_set<unsigned int> ret;
+   CustomUnorderedSet<unsigned int> ret;
    tree_nodeRef node = TM->get_tree_node_const(function_index);
    auto* fd = GetPointer<function_decl>(node);
    if(!fd)
@@ -5151,7 +5151,7 @@ unsigned int BehavioralHelper::get_attributes(unsigned int var) const
    return 0;
 }
 
-unsigned int BehavioralHelper::GetInit(unsigned int var, std::unordered_set<unsigned int>& list_of_variables) const
+unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsigned int>& list_of_variables) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Get init of " + PrintVariable(var));
    if(initializations.find(var) != initializations.end())
@@ -5440,7 +5440,7 @@ void BehavioralHelper::clear_renaming_table()
    vars_renaming_table.clear();
 }
 
-void BehavioralHelper::get_typecast(unsigned int nodeid, std::unordered_set<unsigned int>& types) const
+void BehavioralHelper::get_typecast(unsigned int nodeid, CustomUnorderedSet<unsigned int>& types) const
 {
    type_casting Visitor(types);
    tree_nodeRef tn = TM->get_tree_node_const(nodeid);
@@ -5473,7 +5473,7 @@ bool BehavioralHelper::IsOmpBodyLoop() const
 }
 #endif
 
-#if HAVE_EXPERIMENTAL && HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
+#if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
 bool BehavioralHelper::IsOmpAtomic() const
 {
    const auto fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_index));

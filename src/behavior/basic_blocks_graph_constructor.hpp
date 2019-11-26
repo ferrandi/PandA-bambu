@@ -44,9 +44,9 @@
 #ifndef BASIC_BLOCKS_GRAPH_CONSTRUCTOR_HPP
 #define BASIC_BLOCKS_GRAPH_CONSTRUCTOR_HPP
 
+#include "custom_map.hpp"
 #include "graph.hpp"
 #include "refcount.hpp"
-#include <unordered_map>
 
 /**
  * @name Forward declarations
@@ -71,7 +71,7 @@ class BasicBlocksGraphConstructor
    const BBGraphRef bb_graph;
 
    /// Map between basic block node index and vertices
-   std::unordered_map<unsigned int, vertex>& bb_index_map;
+   CustomUnorderedMap<unsigned int, vertex>& bb_index_map;
 
  public:
    /**

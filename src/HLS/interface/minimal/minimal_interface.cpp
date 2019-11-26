@@ -70,9 +70,9 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
-#include <set>
 #include <utility>
 #include <vector>
 
@@ -125,7 +125,8 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 
    build_wrapper(wrappedObj, interfaceObj, SM_minimal_interface);
 
-   memory::propagate_memory_parameters(HLS->top->get_circ(), SM_minimal_interface);
+   if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+      memory::propagate_memory_parameters(HLS->top->get_circ(), SM_minimal_interface);
    // Generation completed, the new created module substitutes the current top-level one
    HLS->top = SM_minimal_interface;
    return DesignFlowStep_Status::SUCCESS;
@@ -167,8 +168,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
    }
 
-   std::set<structural_objectRef> portsToSkip;
-   std::set<structural_objectRef> portsToConstant;
+   CustomOrderedSet<structural_objectRef> portsToSkip;
+   CustomOrderedSet<structural_objectRef> portsToConstant;
    const auto& DesignInterface = HLSMgr->design_interface;
 
    /// list of ports that have to be connected to constant 0
@@ -188,7 +189,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
 
    std::map<structural_objectRef, structural_objectRef> portsToConnect;
 
-   std::set<std::string> param_renamed;
+   CustomOrderedSet<std::string> param_renamed;
    if(!DesignInterface.empty())
    {
       const auto TM = HLSMgr->get_tree_manager();

@@ -58,7 +58,7 @@
 #include <fstream>
 
 /// STL include
-#include <map>
+#include "custom_map.hpp"
 #include <string>
 
 /// Tree include
@@ -82,9 +82,9 @@ string_cst_fix::string_cst_fix(const application_managerRef _AppM, const DesignF
 
 string_cst_fix::~string_cst_fix() = default;
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> string_cst_fix::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -112,7 +112,7 @@ DesignFlowStep_Status string_cst_fix::Exec()
 {
    const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
    const tree_managerRef TM = AppM->get_tree_manager();
-   std::set<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
 
    for(unsigned int function_id : reached_body_fun_ids)
    {

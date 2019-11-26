@@ -11,22 +11,25 @@ Vagrant.configure(2) do |config|
      vb.name = "PandA-bambu-VM_64bit-macport"
   end
   config.vm.provision "shell", inline: <<-SHELL
-     curl -fsSL https://distfiles.macports.org/MacPorts/MacPorts-2.5.4-10.12-Sierra.pkg -o MacPorts-2.5.4-10.12-Sierra.pkg
-     sudo installer -pkg ./MacPorts-2.5.4-10.12-Sierra.pkg -target /
+     curl -fsSL https://distfiles.macports.org/MacPorts/MacPorts-2.6.2-10.12-Sierra.pkg -o MacPorts-2.6.2-10.12-Sierra.pkg
+     sudo installer -pkg ./MacPorts-2.6.2-10.12-Sierra.pkg -target /
      sudo touch /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
      sudo /usr/sbin/softwareupdate -i "$(/usr/sbin/softwareupdate -l | grep -B 1 -E 'Command Line (Developer|Tools)' |  awk -F'*' '/^ +\\*/ {print $2}' | grep '10.12' | sort | sed 's/^ *//' | tail -n1)"
      sudo rm -rf /tmp/.com.apple.dt.CommandLineTools.installondemand.in-progress
      sudo /usr/bin/xcode-select --switch /Library/Developer/CommandLineTools
      export PATH=/opt/local/bin:/opt/local/sbin:$PATH
      sudo port -d selfupdate
-     sudo port -N -q install git autoconf autoconf-archive automake bison flex boost libtool SuiteSparse glpk iverilog clang-4.0 mpfi coreutils
+     sudo port -N -q install git autoconf autoconf-archive automake bison flex boost libtool SuiteSparse glpk iverilog clang-5.0 mpfi coreutils
      sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
      make -f Makefile.init
      mkdir build
-     cd build && ../configure --prefix=/Users/vagrant/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang4=/opt/local/bin/clang-mp-4.0 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
-     cd /Users/vagrant/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf hls testbench && echo "Bambu is correctly working!!"
+     cd build && ../configure --prefix=/Users/vagrant/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang5=/opt/local/bin/clang-mp-5.0 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
+     cd /Users/vagrant/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf arf_hls arf_testbench && echo "Bambu is correctly working!!"
+     cd /Users/vagrant/
+     chown -R vagrant:staff panda
+     chown -R vagrant:staff PandA-bambu
      dd if=/dev/zero of=/EMPTY bs=1M
      rm -f /EMPTY
   SHELL

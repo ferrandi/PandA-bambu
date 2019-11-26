@@ -78,9 +78,9 @@
 #include <string>
 
 /// STL include
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
-#include <set>
 #include <vector>
 
 /// technology/physical_library include
@@ -140,7 +140,7 @@ void HLSCWriter::WriteHeader()
       auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
       if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
       {
-         std::set<std::string> includes;
+         CustomOrderedSet<std::string> includes;
          const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
          for(auto argInclude : DesignInterfaceArgsInclude)
             includes.insert(argInclude.second);
@@ -384,177 +384,72 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
 
 void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx)
 {
-   const HLSFlowStep_Type interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
    for(const auto& p : behavioral_helper->get_parameters())
    {
       unsigned int type_id = behavioral_helper->get_type(p);
       std::string type = behavioral_helper->print_type(type_id);
-      std::string param = behavioral_helper->PrintVariable(p);
+      const std::string param = behavioral_helper->PrintVariable(p);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing initialization of " + param);
       if(behavioral_helper->is_a_pointer(p))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Pointer");
-         if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+
+         std::string test_v = "{0}";
+         if(curr_test_vector.find(param) != curr_test_vector.end())
+            test_v = curr_test_vector.find(param)->second;
+
+         std::string temp_variable;
+         bool is_a_true_pointer = true;
+         if(flag_cpp)
          {
-            bool reference_type_p = false;
-            unsigned int base_type = tree_helper::get_type_index(TM, p);
-            tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            if(pt_node->get_kind() == pointer_type_K)
+            auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
+            auto fd = GetPointer<function_decl>(fnode);
+            std::string fname;
+            tree_helper::get_mangled_fname(fd, fname);
+            auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
+            if(DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end())
             {
-               reference_type_p = false;
-               base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-            }
-            else if(pt_node->get_kind() == reference_type_K)
-            {
-               reference_type_p = true;
-               base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
-            }
-            else
-               THROW_ERROR("A pointer type is expected");
-            bool interfaceBaseAlloc = false;
-            if(flag_cpp)
-            {
-               auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
-               auto fd = GetPointer<function_decl>(fnode);
-               std::string fname;
-               tree_helper::get_mangled_fname(fd, fname);
-               auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-               if(DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end())
+               const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.find(fname)->second;
+               auto argTypename = DesignInterfaceArgsTypename.find(param)->second;
+               if((*argTypename.rbegin()) == '*')
                {
-                  const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.find(fname)->second;
-                  auto argTypename = DesignInterfaceArgsTypename.find(param)->second;
-                  if((*argTypename.rbegin()) != '*')
-                     reference_type_p = true;
-                  if((*argTypename.rbegin()) == '*')
-                  {
-                     interfaceBaseAlloc = true;
-                     std::string arraySize;
-                     if(hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname) != hls_c_backend_information->HLSMgr->design_interface_arraysize.end() &&
-                        hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.find(param) != hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.end())
-                     {
-                        arraySize = hls_c_backend_information->HLSMgr->design_interface_arraysize.find(fname)->second.find(param)->second;
-                     }
-                     indented_output_stream->Append(param + " = (" + argTypename + ")malloc(" + (arraySize == "" ? std::string("") : (arraySize + "*")) + "sizeof(" + argTypename.substr(0, argTypename.size() - 1) + "));\n");
-                  }
-               }
-            }
-            std::string test_v = "0";
-            if(curr_test_vector.find(param) != curr_test_vector.end())
-               test_v = curr_test_vector.find(param)->second;
-
-            std::vector<std::string> splitted = SplitString(test_v, ",");
-
-            unsigned int base_type_bytesize = tree_helper::size(TM, base_type) / 8;
-            if(base_type_bytesize == 0) // must be at least a byte
-               base_type_bytesize = 1;
-
-            if(!interfaceBaseAlloc && (splitted.size() != 1 || !reference_type_p || !flag_cpp))
-            {
-               var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
-               indented_output_stream->Append((*var_functor)(p));
-
-               indented_output_stream->Append(" = (" + type + ")malloc(" + STR(base_type_bytesize * splitted.size()) + ");\n");
-            }
-
-            // check for regularity
-            bool all_equal = splitted.size() > 1;
-            for(unsigned int i = 1; i < splitted.size(); i++)
-               if(splitted[i] != splitted[0])
-                  all_equal = false;
-
-            for(unsigned int i = 0; i < splitted.size(); i++)
-            {
-               if(!reference_type_p && !interfaceBaseAlloc && (behavioral_helper->is_a_struct(base_type) || behavioral_helper->is_an_union(base_type)))
-               {
-                  std::vector<std::string> splitted_fields = SplitString(splitted[i], "|");
-                  const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(base_type));
-                  size_t n_values = splitted_fields.size();
-                  unsigned int index = 0;
-                  for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
-                  {
-                     if(index < n_values)
-                     {
-                        indented_output_stream->Append(param + "[" + STR(i) + "]." + behavioral_helper->PrintVariable(tree_helper::get_field_idx(TM, base_type, index)) + " = " + splitted_fields[index] + ";\n");
-                     }
-                     else
-                     {
-                        indented_output_stream->Append(param + "[" + STR(i) + "]." + behavioral_helper->PrintVariable(tree_helper::get_field_idx(TM, base_type, index)) + " = 0;\n");
-                     }
-                  }
-               }
-               else if(!reference_type_p && !interfaceBaseAlloc && (behavioral_helper->is_an_array(base_type)))
-               {
-                  unsigned int num_elements = tree_helper::get_array_num_elements(TM, base_type);
-                  if(splitted.size() == 1)
-                  {
-                     for(unsigned int l = 0; l < num_elements; l++)
-                     {
-                        indented_output_stream->Append("(*" + param + ")" + "[" + STR(l) + "] = " + splitted[i] + ";\n");
-                     }
-                  }
-                  else
-                  {
-                     unsigned int elmts_type = behavioral_helper->GetElements(base_type);
-                     while(behavioral_helper->is_an_array(elmts_type))
-                     {
-                        elmts_type = behavioral_helper->GetElements(elmts_type);
-                     }
-                     indented_output_stream->Append("(*(((" + behavioral_helper->print_type(elmts_type) + "*)" + param + ") + " + STR(i) + ")) = " + splitted[i] + ";\n");
-                  }
+                  temp_variable = argTypename.substr(0, argTypename.size() - 1) + " " + param + "_temp[]";
                }
                else
                {
-                  if(all_equal)
-                  {
-                     indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n");
-                     indented_output_stream->Append(param + "[__testbench_index2] = " + splitted[0] + ";\n");
-                     break;
-                  }
+                  is_a_true_pointer = false;
+                  if((*argTypename.rbegin()) == '&')
+                     temp_variable = argTypename.substr(0, argTypename.size() - 1) + " " + param + "_temp";
                   else
-                  {
-                     if(flag_cpp && splitted.size() == 1 && reference_type_p)
-                        indented_output_stream->Append(param + " = " + splitted[i] + ";\n");
-                     else
-                        indented_output_stream->Append(param + "[" + STR(i) + "] = " + splitted[i] + ";\n");
-                  }
+                     temp_variable = argTypename + " " + param + "_temp";
                }
             }
-            std::string memory_addr;
-            THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p) != hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.end(), "parameter does not have an address");
-            memory_addr = STR(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p)->second);
-
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + param + " value: " + memory_addr + "\\n\");\n");
-
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + ConvertInBinary(memory_addr, 32, false, false) + "\\n\");\n");
          }
-         else
+         if(temp_variable == "")
          {
-            std::string test_v = "{0}";
-            if(curr_test_vector.find(param) != curr_test_vector.end())
-               test_v = curr_test_vector.find(param)->second;
-
             var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
-            std::string temp_variable = tree_helper::print_type(TM, tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, p)), false, false, false, p, var_functor);
+            temp_variable = tree_helper::print_type(TM, tree_helper::get_pointed_type(TM, tree_helper::get_type_index(TM, p)), false, false, false, p, var_functor);
             const auto first_square = temp_variable.find("[");
             if(first_square == std::string::npos)
                temp_variable = temp_variable + "_temp[]";
             else
                temp_variable.insert(first_square, "_temp[]");
-            std::string temp_initialization = temp_variable + " = " + test_v + ";\n";
-
-            unsigned int base_type = tree_helper::get_type_index(TM, p);
-            tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            indented_output_stream->Append(temp_initialization);
-            indented_output_stream->Append(behavioral_helper->PrintVariable(p) + " = " + behavioral_helper->PrintVariable(p) + "_temp;\n");
-
-            std::string memory_addr;
-            THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p) != hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.end(), "parameter does not have an address");
-            memory_addr = STR(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p)->second);
-
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + param + " value: " + memory_addr + "\\n\");\n");
-
-            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + ConvertInBinary(memory_addr, 32, false, false) + "\\n\");\n");
          }
+         auto temp_initialization = temp_variable + " = " + ((test_v.front() != '{' && test_v.back() != '}' && is_a_true_pointer) ? "{" + test_v + "}" : test_v) + ";\n";
+
+         unsigned int base_type = tree_helper::get_type_index(TM, p);
+         tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
+         indented_output_stream->Append(temp_initialization);
+         indented_output_stream->Append(param + " = " + param + "_temp;\n");
+
+         std::string memory_addr;
+         THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p) != hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.end(), "parameter does not have an address");
+         memory_addr = STR(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p)->second);
+
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + param + " value: " + memory_addr + "\\n\");\n");
+
+         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + ConvertInBinary(memory_addr, 32, false, false) + "\\n\");\n");
+
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       else
@@ -885,7 +780,6 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
 
 void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 {
-   const HLSFlowStep_Type interface_type = Param->getOption<HLSFlowStep_Type>(OPT_interface_type);
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(Param));
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    // print base address
@@ -957,8 +851,16 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                if(test_v.back() == '}')
                   test_v.pop_back();
             }
+            else
+            {
+               if(test_v.front() != '{' && test_v.back() != '}')
+               {
+                  test_v = std::string("{") + test_v;
+                  test_v = test_v + "}";
+               }
+            }
          }
-         else if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         else if(flag_cpp)
          {
             test_v = "0";
          }
@@ -991,111 +893,143 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Symbol: " + param + " Reserved memory " + STR(reserved_mem_bytes) + " - Test vector is " + test_v);
 
          /// FIXME: for c++ code the old code is still used
-         if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION or is_memory)
+         if(flag_cpp or is_memory)
          {
             size_t printed_bytes = 0;
             std::string bits_offset = "";
             std::vector<std::string> splitted = SplitString(test_v, ",");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Processing c++ init " + test_v);
-            for(unsigned int i = 0; i < splitted.size(); i++)
-            {
-               THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
-               unsigned int base_type = tree_helper::get_type_index(TM, l);
-
-               std::string initial_string = splitted[i];
-               std::string binary_string;
-               if(is_memory)
+            const auto isAllZero = [&]() -> bool {
+               if(splitted.size() == 0)
+                  return false;
+               const auto first_string = splitted.at(0);
+               const auto size_vec = first_string.size();
+               if(size_vec % 8)
+                  return false;
+               for(auto strIndex = 0u; strIndex < size_vec; ++strIndex)
                {
-                  printed_bytes += WriteBinaryMemoryInit(initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
+                  if(first_string.at(strIndex) != '0')
+                     return false;
                }
-               else
+               for(unsigned int i = 1; i < splitted.size(); i++)
                {
-                  std::string init_value_copy = initial_string;
-                  boost::replace_all(init_value_copy, "\\", "\\\\");
-                  boost::replace_all(init_value_copy, "\n", "");
-                  boost::replace_all(init_value_copy, "\"", "");
-                  if(output_level > OUTPUT_LEVEL_MINIMUM)
-                     indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param /*+ " value: " + init_value_copy */ + "\\n\");\n");
-                  tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-                  unsigned int ptd_base_type = 0;
-                  if(pt_node->get_kind() == pointer_type_K)
-                     ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-                  else if(pt_node->get_kind() == reference_type_K)
-                     ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
-                  else
-                     THROW_ERROR("A pointer type is expected");
-                  tree_nodeRef ptd_base_type_node;
-                  if(pt_node->get_kind() == pointer_type_K)
-                     ptd_base_type_node = GET_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-                  else if(pt_node->get_kind() == reference_type_K)
-                     ptd_base_type_node = GET_NODE(GetPointer<reference_type>(pt_node)->refd);
-                  else
-                     THROW_ERROR("A pointer type is expected");
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed base type is " + ptd_base_type_node->get_kind_text());
-                  unsigned int data_bitsize = tree_helper::size(TM, ptd_base_type);
-                  if(behavioral_helper->is_a_struct(ptd_base_type))
-                  {
-                     std::vector<std::string> splitted_fields = SplitString(initial_string, "|");
-                     const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
-                     size_t n_values = splitted_fields.size();
-                     unsigned int index = 0;
-                     for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
-                     {
-                        const tree_nodeConstRef field_type = *it;
-                        unsigned int field_size = tree_helper::Size(field_type);
-                        if(index < n_values)
-                        {
-                           binary_string = ConvertInBinary(splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
-                        }
-                        else
-                        {
-                           binary_string = ConvertInBinary("0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
-                        }
+                  if(first_string != splitted.at(i))
+                     return false;
+               }
+               return true;
+            }();
+            if(is_memory && isAllZero)
+            {
+               auto nZeroBytes = splitted.size() * (splitted.at(0).size() / 8);
+               printed_bytes += nZeroBytes;
+               indented_output_stream->Append("for (__testbench_index = 0; "
+                                              "__testbench_index < " +
+                                              STR(nZeroBytes) + "; " +
+                                              "++__testbench_index)\n"
+                                              "   fprintf(__bambu_testbench_fp, \"m00000000\\n\");\n");
+            }
+            else
+            {
+               for(unsigned int i = 0; i < splitted.size(); i++)
+               {
+                  THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
+                  unsigned int base_type = tree_helper::get_type_index(TM, l);
 
-                        printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
+                  std::string initial_string = splitted[i];
+                  std::string binary_string;
+                  if(is_memory)
+                  {
+                     printed_bytes += WriteBinaryMemoryInit(initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
+                  }
+                  else
+                  {
+                     std::string init_value_copy = initial_string;
+                     boost::replace_all(init_value_copy, "\\", "\\\\");
+                     boost::replace_all(init_value_copy, "\n", "");
+                     boost::replace_all(init_value_copy, "\"", "");
+                     if(output_level > OUTPUT_LEVEL_MINIMUM)
+                        indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param /*+ " value: " + init_value_copy */ + "\\n\");\n");
+                     tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
+                     unsigned int ptd_base_type = 0;
+                     if(pt_node->get_kind() == pointer_type_K)
+                        ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+                     else if(pt_node->get_kind() == reference_type_K)
+                        ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
+                     else
+                        THROW_ERROR("A pointer type is expected");
+                     tree_nodeRef ptd_base_type_node;
+                     if(pt_node->get_kind() == pointer_type_K)
+                        ptd_base_type_node = GET_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+                     else if(pt_node->get_kind() == reference_type_K)
+                        ptd_base_type_node = GET_NODE(GetPointer<reference_type>(pt_node)->refd);
+                     else
+                        THROW_ERROR("A pointer type is expected");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed base type is " + ptd_base_type_node->get_kind_text());
+                     unsigned int data_bitsize = tree_helper::size(TM, ptd_base_type);
+                     if(behavioral_helper->is_a_struct(ptd_base_type))
+                     {
+                        std::vector<std::string> splitted_fields = SplitString(initial_string, "|");
+                        const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
+                        size_t n_values = splitted_fields.size();
+                        unsigned int index = 0;
+                        for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
+                        {
+                           const tree_nodeConstRef field_type = *it;
+                           unsigned int field_size = tree_helper::Size(field_type);
+                           if(index < n_values)
+                           {
+                              binary_string = ConvertInBinary(splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                           }
+                           else
+                           {
+                              binary_string = ConvertInBinary("0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                           }
+
+                           printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
+                        }
                      }
-                  }
-                  else if(behavioral_helper->is_an_union(ptd_base_type))
-                  {
-                     unsigned int max_bitsize_field = 0;
-                     tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
-                     binary_string = ConvertInBinary("0", max_bitsize_field, false, false);
-                     printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
-                  }
-                  else if(behavioral_helper->is_an_array(ptd_base_type))
-                  {
-                     unsigned int elmts_type = behavioral_helper->GetElements(ptd_base_type);
-
-                     while(behavioral_helper->is_an_array(elmts_type))
-                        elmts_type = behavioral_helper->GetElements(elmts_type);
-
-                     data_bitsize = tree_helper::get_array_data_bitsize(TM, ptd_base_type);
-
-                     unsigned int num_elements = 1;
-                     if(splitted.size() == 1)
-                        num_elements = tree_helper::get_array_num_elements(TM, ptd_base_type);
-
-                     indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
-
-                     binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
-                     printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
-                     indented_output_stream->Append("}\n");
-                  }
-                  else
-                  {
-                     binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
-
-                     if(data_bitsize == 1)
+                     else if(behavioral_helper->is_an_union(ptd_base_type))
                      {
-                        data_bitsize = 8;
-                        binary_string = "0000000" + binary_string;
+                        unsigned int max_bitsize_field = 0;
+                        tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
+                        binary_string = ConvertInBinary("0", max_bitsize_field, false, false);
+                        printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
+                     }
+                     else if(behavioral_helper->is_an_array(ptd_base_type))
+                     {
+                        unsigned int elmts_type = behavioral_helper->GetElements(ptd_base_type);
+
+                        while(behavioral_helper->is_an_array(elmts_type))
+                           elmts_type = behavioral_helper->GetElements(elmts_type);
+
+                        data_bitsize = tree_helper::get_array_data_bitsize(TM, ptd_base_type);
+
+                        unsigned int num_elements = 1;
+                        if(splitted.size() == 1)
+                           num_elements = tree_helper::get_array_num_elements(TM, ptd_base_type);
+
+                        indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
+
+                        binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
+                        printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                        indented_output_stream->Append("}\n");
                      }
                      else
                      {
-                        THROW_ASSERT(data_bitsize % 8 == 0, "unexpected case");
-                     }
+                        binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
 
-                     printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                        if(data_bitsize == 1)
+                        {
+                           data_bitsize = 8;
+                           binary_string = "0000000" + binary_string;
+                        }
+                        else
+                        {
+                           THROW_ASSERT(data_bitsize % 8 == 0, "unexpected case");
+                        }
+
+                        printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                     }
                   }
                }
             }
@@ -1319,7 +1253,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef behavioral_he
    const auto type = TM->CGetTreeNode(type_index);
    switch(type->get_kind())
    {
-      /// FIXME: real numbers at the moment have to be considered diffently because of computation of ulp
+      /// FIXME: real numbers at the moment have to be considered differently because of computation of ulp
       case real_type_K:
       {
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + param + "\\n\");\n");

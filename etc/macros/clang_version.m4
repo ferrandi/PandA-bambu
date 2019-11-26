@@ -23,7 +23,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       dnl check for clang
       I386_CLANG4_VERSION=`$compiler --version | grep "4\.0\."`
       if test x"$I386_CLANG4_VERSION" = "x"; then
-         I386_CLANG4_VERSION=""
+         I386_CLANG4_VERSION="0.0.0"
       else
          I386_CLANG4_VERSION="4.0.0"
       fi
@@ -407,7 +407,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       dnl check for clang
       I386_CLANG5_VERSION=`$compiler --version | grep "5\.0\."`
       if test x"$I386_CLANG5_VERSION" = "x"; then
-         I386_CLANG5_VERSION=""
+         I386_CLANG5_VERSION="0.0.0"
       else
          I386_CLANG5_VERSION="5.0.0"
       fi
@@ -791,7 +791,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       dnl check for clang
       I386_CLANG6_VERSION=`$compiler --version | grep "\.0\."`
       if test x"$I386_CLANG6_VERSION" = "x"; then
-         I386_CLANG6_VERSION=""
+         I386_CLANG6_VERSION="0.0.0"
       else
          I386_CLANG6_VERSION="6.0.0"
       fi
@@ -1184,13 +1184,13 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       dnl check for clang
       I386_CLANG7_VERSION=`$compiler --version | grep "\.0\."`
       if test x"$I386_CLANG7_VERSION" = "x"; then
-         I386_CLANG7_VERSION=""
+         I386_CLANG7_VERSION="0.0.0"
       else
          I386_CLANG7_VERSION="7.0.0"
       fi
 
       AS_VERSION_COMPARE($1, [7.0.0], MIN_CLANG7=[7.0.0], MIN_CLANG7=$1, MIN_CLANG7=$1)
-      AS_VERSION_COMPARE([9.0.0], $2, MAX_CLANG7=[9.0.0], MAX_CLANG7=$2, MAX_CLANG7=$2)
+      AS_VERSION_COMPARE([8.0.0], $2, MAX_CLANG7=[8.0.0], MAX_CLANG7=$2, MAX_CLANG7=$2)
       AS_VERSION_COMPARE($I386_CLANG7_VERSION, $MIN_CLANG7, echo "checking $compiler >= $MIN_CLANG7... no"; min=no, echo "checking $compiler >= $MIN_CLANG7... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG7... yes"; min=yes)
       if test "$min" = "no" ; then
          continue;

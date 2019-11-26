@@ -2259,7 +2259,18 @@ namespace llvm
       else if(TREE_CODE(t) == GT(ALLOCAVAR_DECL))
       {
          const alloca_var* av = reinterpret_cast<const alloca_var*>(t);
-         return std::max(8u, 8 * av->alloc_inst->getAlignment());
+         auto algn = av->alloc_inst->getAlignment();
+         if(algn == 0)
+         {
+            auto arraySize = av->alloc_inst->getArraySize();
+            if(isa<llvm::ConstantInt>(arraySize) && cast<llvm::ConstantInt>(arraySize)->getZExtValue() == 1)
+            {
+               auto allocType = av->alloc_inst->getAllocatedType();
+               auto typeSize = allocType->isSized() ? DL->getTypeAllocSizeInBits(allocType) : 8ULL;
+               algn = typeSize/8ULL;
+            }
+         }
+         return std::max(8u, 8 * algn);
       }
       else
          return TYPE_ALIGN(TREE_TYPE(t));

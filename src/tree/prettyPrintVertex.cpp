@@ -53,7 +53,7 @@
 #include "simple_indent.hpp" // for simple_indent
 #include "var_pp_functor.hpp"
 
-void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef g, std::unordered_set<unsigned int>& list_of_variables, const BehavioralHelperConstRef BH)
+void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef g, CustomUnorderedSet<unsigned int>& list_of_variables, const BehavioralHelperConstRef BH)
 {
    const unsigned int node_id = g->CGetOpNodeInfo(v)->GetNodeId();
    if(node_id)

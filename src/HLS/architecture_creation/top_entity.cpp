@@ -68,10 +68,10 @@
 #include <string>
 
 /// STL includes
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <list>
-#include <map>
 #include <tuple>
-#include <unordered_set>
 
 /// technology/physical_library include
 #include "copyrights_strings.hpp"
@@ -86,9 +86,9 @@ top_entity::top_entity(const ParameterConstRef _parameters, const HLS_managerRef
 
 top_entity::~top_entity() = default;
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> top_entity::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> top_entity::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -231,7 +231,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
-      std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+      std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
       if(synch_reset == "sync")
          delay_unit = flipflop_SR;
       else
@@ -301,7 +301,8 @@ DesignFlowStep_Status top_entity::InternalExec()
    this->add_command_signals(circuit);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tCommand ports added!");
 
-   memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
+   if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+      memory::propagate_memory_parameters(HLS->datapath->get_circ(), HLS->top);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
    return DesignFlowStep_Status::SUCCESS;

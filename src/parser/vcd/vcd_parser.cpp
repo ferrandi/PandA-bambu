@@ -49,7 +49,7 @@ vcd_parser::vcd_parser(const ParameterConstRef& param) : debug_level(param->get_
 {
 }
 
-vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_parse, const vcd_parser::vcd_filter_t& selected_signals)
+vcd_parser::vcd_trace_t vcd_parser::parse_vcd(const std::string& vcd_file_to_parse, const vcd_filter_t& selected_signals)
 {
    // ---- initialization ----
    // open file
@@ -208,7 +208,7 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
             /* This is a hierarchical reference so we shouldn't modify ref -- quirky behavior from VCS */
             msb = size - 1;
             lsb = 0;
-            /* this is the case of signal (like integer) that are difined in the VCD in the same way of bit but they are arrays */
+            /* this is the case of signal (like integer) that are defined in the VCD in the same way of bit but they are arrays */
             if(msb > 0)
             {
                isvect = true;
@@ -235,7 +235,7 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
          {
             msb = size - 1;
             lsb = 0;
-            /* this is the case of signal (like integer) that are difined in the VCD in the same way of bit but they are arrays */
+            /* this is the case of signal (like integer) that are defined in the VCD in the same way of bit but they are arrays */
             if(msb > 0)
             {
                isvect = true;
@@ -248,6 +248,7 @@ int vcd_parser::vcd_parse_def_var(const std::string& scope)
       /* if check fails do nothing: this signal is useless */
       if(!check_filter_list(scope, ref))
       {
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Filtered SIGNAL: " + scope + ref);
          return 0;
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "SELECTED SIGNAL: " + scope + ref);
@@ -509,7 +510,6 @@ bool vcd_parser::check_filter_list(const std::string& scope_str, const std::stri
    {
       return false;
    }
-
    const auto scope_it = filtered_signals.find(scope_str);
    if(scope_it == filtered_signals.end())
    {

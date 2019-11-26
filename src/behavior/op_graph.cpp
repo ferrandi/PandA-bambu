@@ -249,11 +249,11 @@ void OpGraphsCollection::Clear()
 }
 
 #if HAVE_UNORDERED
-OpVertexSet::OpVertexSet(const OpGraphConstRef) : std::unordered_set<vertex>()
+OpVertexSet::OpVertexSet(const OpGraphConstRef) : CustomUnorderedSet<vertex>()
 {
 }
 
-OpEdgeSet::OpEdgeSet(const OpGraphConstRef) : std::unordered_set<EdgeDescriptor>()
+OpEdgeSet::OpEdgeSet(const OpGraphConstRef) : CustomUnorderedSet<EdgeDescriptor>()
 {
 }
 
@@ -293,7 +293,7 @@ OpGraph::OpGraph(OpGraphsCollectionRef _op_graphs_collection, int _selector) : g
 {
 }
 
-OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector, const std::unordered_set<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& _sub) : graph(_op_graphs_collection.get(), _selector, _sub)
+OpGraph::OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int _selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& _sub) : graph(_op_graphs_collection.get(), _selector, _sub)
 {
 }
 
@@ -311,11 +311,11 @@ void OpGraph::WriteDot(const std::string& file_name, const int detail_level) con
    InternalWriteDot<const OpWriter, const OpEdgeWriter>(full_name, op_label_writer, op_edge_property_writer);
 }
 
-std::unordered_map<vertex, OpVertexSet> OpGraph::GetSrcVertices(const OpVertexSet& toCheck, int edgeType) const
+CustomUnorderedMap<vertex, OpVertexSet> OpGraph::GetSrcVertices(const OpVertexSet& toCheck, int edgeType) const
 {
    null_deleter null;
    OpGraphConstRef thisRef(this, null);
-   std::unordered_map<vertex, OpVertexSet> retVal;
+   CustomUnorderedMap<vertex, OpVertexSet> retVal;
    OpVertexSet::const_iterator vertIter, vertIterEnd;
    for(vertIter = toCheck.begin(), vertIterEnd = toCheck.end(); vertIter != vertIterEnd; ++vertIter)
    {

@@ -56,7 +56,7 @@ void functions::map_shared_function(unsigned int funID_scope, const std::string&
    proxied_functions[fun] = funID_scope;
 }
 
-const std::set<std::string>& functions::get_shared_functions(unsigned int funID_scope) const
+const CustomOrderedSet<std::string>& functions::get_shared_functions(unsigned int funID_scope) const
 {
    return shared_functions.at(funID_scope);
 }
@@ -76,7 +76,7 @@ void functions::add_shared_function_proxy(unsigned int funID_scope, const std::s
    shared_function_proxy[funID_scope].insert(fun);
 }
 
-const std::set<std::string>& functions::get_proxied_shared_functions(unsigned int funID_scope) const
+const CustomOrderedSet<std::string>& functions::get_proxied_shared_functions(unsigned int funID_scope) const
 {
    THROW_ASSERT(has_proxied_shared_functions(funID_scope), "No proxy functions for " + STR(funID_scope));
    return shared_function_proxy.at(funID_scope);

@@ -45,8 +45,8 @@
 #ifndef REG_BINDING_HPP
 #define REG_BINDING_HPP
 
+#include "custom_map.hpp"
 #include <iosfwd>
-#include <map>
 #include <string>
 
 #include "Variable.hpp"
@@ -96,10 +96,10 @@ class reg_binding : public variable2obj<generic_objRef>
    const HLS_managerRef HLSMgr;
 
    /// map between the register and the associated storage value
-   std::map<unsigned int, std::set<unsigned int>> reg2storage_values;
+   std::map<unsigned int, CustomOrderedSet<unsigned int>> reg2storage_values;
 
    /// store the set of register without enable
-   std::set<unsigned int> is_without_enable;
+   CustomOrderedSet<unsigned int> is_without_enable;
 
    /// when true all registers do not require write enable: pipelining comes for free
    bool all_regs_without_enable;
@@ -209,7 +209,7 @@ class reg_binding : public variable2obj<generic_objRef>
     * @param r is the register
     * @return the set of associated variables
     */
-   std::set<unsigned int> get_vars(const unsigned int& r) const;
+   CustomOrderedSet<unsigned int> get_vars(const unsigned int& r) const;
 
    /**
     * return and set the bitsize associated with given register

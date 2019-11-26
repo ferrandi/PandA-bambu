@@ -46,12 +46,12 @@
 #ifndef EXT_TREE_NODE_HPP
 #define EXT_TREE_NODE_HPP
 
+#include "custom_map.hpp"  // for unordered_map
 #include "tree_common.hpp" // for GET_KIND, blackbox_pragma_K, call_hw_prag...
 #include "tree_node.hpp"
-#include <list>          // for list
-#include <string>        // for string
-#include <unordered_map> // for unordered_map
-#include <utility>       // for pair
+#include <list>    // for list
+#include <string>  // for string
+#include <utility> // for pair
 
 struct null_node : public tree_node
 {
@@ -359,7 +359,7 @@ struct omp_parallel_pragma : public omp_pragma
    }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
-   std::unordered_map<std::string, std::string> clauses;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// flag to check if this pragma is shortcut with a OpenMP sections pragma
    bool is_shortcut;
@@ -475,7 +475,7 @@ struct omp_section_pragma : public omp_pragma
 struct omp_target_pragma : public omp_pragma
 {
    /// Clauses associated with the directives
-   std::unordered_map<std::string, std::string> clauses;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// constructor
    explicit omp_target_pragma(unsigned int i);
@@ -502,7 +502,7 @@ struct omp_target_pragma : public omp_pragma
 struct omp_task_pragma : public omp_pragma
 {
    /// Clauses associated with the directives
-   std::unordered_map<std::string, std::string> clauses;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// constructor
    explicit omp_task_pragma(unsigned int i);
@@ -529,7 +529,7 @@ struct omp_task_pragma : public omp_pragma
 struct omp_critical_pragma : public omp_pragma
 {
    /// Clauses associated with the directives
-   std::unordered_map<std::string, std::string> clauses;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// constructor
    explicit omp_critical_pragma(unsigned int i);
@@ -587,7 +587,7 @@ struct omp_for_pragma : public omp_pragma
    }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
-   std::unordered_map<std::string, std::string> clauses;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_for_pragma)
@@ -616,7 +616,7 @@ struct omp_simd_pragma : public omp_pragma
    }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
-   std::unordered_map<std::string, std::string> clauses;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_simd_pragma)
@@ -645,7 +645,7 @@ struct omp_declare_simd_pragma : public omp_pragma
    }
 
    /// map between the clauses that can be associated with the OpenMP parallel pragma and their value (e.g. number of threads)
-   std::unordered_map<std::string, std::string> clauses;
+   CustomUnorderedMapUnstable<std::string, std::string> clauses;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(omp_declare_simd_pragma)

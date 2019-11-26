@@ -184,9 +184,16 @@ class HLS_manager : public application_manager
    bool is_register_compatible(unsigned int var) const;
 
    /**
+    * @brief is_reading_writing_function
+    * @param funID is the function identifier
+    * @return true in case the function performs at least a load or a store
+    */
+   bool is_reading_writing_function(unsigned funID) const;
+
+   /**
     * Returns all the implementations resulting from the synthesis
     */
-   std::set<hlsRef> GetAllImplementations() const;
+   CustomOrderedSet<hlsRef> GetAllImplementations() const;
 
    /**
     * Return if single write memory is exploited

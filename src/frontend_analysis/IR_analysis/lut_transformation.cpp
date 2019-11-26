@@ -32,7 +32,7 @@
  */
 /**
  * @file lut_transformation.cpp
- * @brief identify and optmize lut expressions.
+ * @brief identify and optimize lut expressions.
  * @author Marco Speziali
  * @author Davide Toschi
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -68,8 +68,6 @@
 #define ABC_NAMESPACE pabc
 #define ABC_NO_USE_READLINE
 #pragma endregion
-
-#define MAX_LUT_INT_SIZE 0
 
 #define FMT_HEADER_ONLY 1
 #ifndef __APPLE__
@@ -182,10 +180,32 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
-   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || GET_CONST_NODE(be->op0)->get_kind() == integer_cst_K || GET_CONST_NODE(be->op1)->get_kind() == integer_cst_K;
+   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max);
 }
-#define CHECK_COND_EXPR_SIZE(ce) (tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1)
-#define CHECK_NOT_EXPR_SIZE(ne) (tree_helper::Size(GET_NODE((ne)->op)) == 1)
+bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
+{
+   auto c0 = tree_helper::CGetType(GET_CONST_NODE(ce->op1));
+   auto type_id0 = c0->index;
+   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+      return false;
+   auto c1 = tree_helper::CGetType(GET_CONST_NODE(ce->op2));
+   auto type_id1 = c1->index;
+   if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+      return false;
+   if(tree_helper::is_int(TM, GET_INDEX_NODE((ce->op1))) || tree_helper::is_int(TM, GET_INDEX_NODE((ce->op2))))
+      return false;
+   return tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1;
+}
+bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
+{
+   auto c0 = tree_helper::CGetType(GET_CONST_NODE(ne->op));
+   auto type_id0 = c0->index;
+   if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+      return false;
+   if(tree_helper::is_int(TM, GET_INDEX_NODE((ne->op))))
+      return false;
+   return (tree_helper::Size(GET_NODE((ne)->op)) == 1);
+}
 
 #define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
 
@@ -197,7 +217,7 @@ bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
    return not(GetPointer<lut_expr>(op_node) || (GetPointer<truth_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<truth_not_expr>(op_node))) || (GetPointer<bit_not_expr>(op_node) && CHECK_NOT_EXPR_SIZE(GetPointer<bit_not_expr>(op_node))) ||
               (GetPointer<cond_expr>(op_node) && CHECK_COND_EXPR_SIZE(GetPointer<cond_expr>(op_node))) ||
               (VECT_CONTAINS(lutBooleanExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_BOOL_SIZE(GetPointer<binary_expr>(op_node))) ||
-              (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), MAX_LUT_INT_SIZE)));
+              (VECT_CONTAINS(lutIntegerExpressibleOperations, code) && GetPointer<binary_expr>(op_node) && CHECK_BIN_EXPR_INT_SIZE(GetPointer<binary_expr>(op_node), parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE"))));
 }
 
 #pragma endregion
@@ -350,7 +370,7 @@ class klut_network_ext : public mockturtle::klut_network
     */
    signal create_lut(std::vector<signal> s, uint64_t f)
    {
-      if(f==static_cast<uint64_t>(-1LL))
+      if(f == static_cast<uint64_t>(-1LL))
          return this->create_not(this->get_constant(false));
       kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
       std::stringstream resHex;
@@ -358,10 +378,12 @@ class klut_network_ext : public mockturtle::klut_network
       std::string res0 = resHex.str();
       if(tt.num_vars() > 1)
       {
-         auto nchar = (1u << s.size()) / 4;
-         while(nchar > res0.size())
+         while((res0.size() << 2) < tt.num_bits())
             res0 = "0" + res0;
       }
+      while((res0.size() << 2) > tt.num_bits() && tt.num_vars() > 1)
+         res0 = res0.substr(1);
+
       kitty::create_from_hex_string(tt, res0);
       return create_node(s, tt);
    }
@@ -736,7 +758,7 @@ static T ConvertHexToNumber(const std::string& hex0)
 static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network& klut)
 {
    std::vector<klut_network_node> luts;
-   std::map<mockturtle::klut_network::node, std::set<unsigned>> po_set;
+   std::map<mockturtle::klut_network::node, CustomOrderedSet<unsigned>> po_set;
 
    mockturtle::topo_view ntk_topo{klut};
 
@@ -1188,7 +1210,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          modified = true;
          continue;
       }
-      if(VECT_CONTAINS(lutIntegerExpressibleOperations, code1) && CHECK_BIN_EXPR_INT_SIZE(binaryExpression, MAX_LUT_INT_SIZE))
+      if(VECT_CONTAINS(lutIntegerExpressibleOperations, code1) && CHECK_BIN_EXPR_INT_SIZE(binaryExpression, parameters->GetParameter<unsigned int>("MAX_LUT_INT_SIZE")))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Integer operands");
 
@@ -1576,9 +1598,9 @@ DesignFlowStep_Status lut_transformation::InternalExec()
    return DesignFlowStep_Status::UNCHANGED;
 }
 
-const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> lut_transformation::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
       case(DEPENDENCE_RELATIONSHIP):
@@ -1612,7 +1634,7 @@ const std::unordered_set<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 bool lut_transformation::HasToBeExecuted() const
 {
    if(not parameters->getOption<int>(OPT_gcc_openmp_simd) && not parameters->isOption(OPT_context_switch))
-      return true;
+      return FunctionFrontendFlowStep::HasToBeExecuted();
    else
       return false;
 }

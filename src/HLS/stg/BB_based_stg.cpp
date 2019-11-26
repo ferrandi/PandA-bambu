@@ -91,10 +91,6 @@
 /// STD include
 #include <cmath>
 
-/// STL include
-#include <set>
-#include <unordered_map>
-
 /// technology includes
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
@@ -115,13 +111,13 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 
+#include "custom_map.hpp"
+#include "custom_set.hpp"
 #include <boost/foreach.hpp>
 #include <boost/graph/depth_first_search.hpp>
 #include <boost/graph/graph_traits.hpp>
 #include <boost/graph/incremental_components.hpp>
 #include <cmath>
-#include <set>
-#include <unordered_map>
 
 /// HLS/module_allocation include
 #include "allocation_information.hpp"
@@ -161,9 +157,9 @@ static void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, c
    statement_list.insert(it, stmt);
 }
 
-const std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> BB_based_stg::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> BB_based_stg::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::unordered_set<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
+   CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -204,9 +200,9 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    THROW_ASSERT(STG_builder, "STG constructor not properly initialized");
 
    /// first state of a basic-block
-   std::unordered_map<vertex, vertex> first_state;
+   CustomUnorderedMap<vertex, vertex> first_state;
    /// last state of a basic-block
-   std::unordered_map<vertex, vertex> last_state;
+   CustomUnorderedMap<vertex, vertex> last_state;
 
    const OpGraphConstRef dfgRef = HLSMgr->CGetFunctionBehavior(funId)->CGetOpGraph(FunctionBehavior::DFG);
 
@@ -223,7 +219,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    vertex previous;
    std::map<vertex, std::list<vertex>> call_states;
    std::map<vertex, std::list<vertex>> call_operations;
-   std::set<vertex> already_analyzed;
+   CustomOrderedSet<vertex> already_analyzed;
    VertexIterator vit, vend;
 
    /// contains the list of operations which are executing, starting, ending and "on-fly" in every state of the STG
@@ -251,8 +247,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    {
       /// the analysis has to be performed only on the reachable functions
       /// functions to be analyzed
-      std::set<unsigned int> sort_list = CGM->GetReachedBodyFunctions();
-      std::unordered_set<vertex> vertex_subset;
+      CustomOrderedSet<unsigned int> sort_list = CGM->GetReachedBodyFunctions();
+      CustomUnorderedSet<vertex> vertex_subset;
       for(auto cvertex : sort_list)
          vertex_subset.insert(CGM->GetVertex(cvertex));
       const CallGraphConstRef subgraph = CGM->CGetCallSubGraph(vertex_subset);
@@ -262,7 +258,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       for(boost::tie(ie_it, ie_it_end) = boost::in_edges(current_vertex, *subgraph); ie_it != ie_it_end; ++ie_it)
       {
          const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*ie_it, *subgraph);
-         n_call_sites += info->direct_call_points.size() + info->indirect_call_points.size();
+         n_call_sites += static_cast<size_t>(info->direct_call_points.size()) + static_cast<size_t>(info->indirect_call_points.size());
       }
       HLS->call_sites_number = n_call_sites;
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Number of function call sites = " + STR(n_call_sites));
@@ -328,7 +324,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
                      start_ops.push_back(*entry_ops_it);
                      end_ops.push_back(*entry_ops_it);
                   }
-                  std::set<unsigned int> BB_ids;
+                  CustomOrderedSet<unsigned int> BB_ids;
                   BB_ids.insert(entry_operations->get_bb_index());
                   vertex s_cur = STG_builder->create_state(exec_ops, start_ops, end_ops, BB_ids);
                   STG_builder->connect_state(last_state[bb_src], s_cur, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
@@ -426,7 +422,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             end_ops = ending_ops[l];
          if(onfly_ops.find(l) != onfly_ops.end())
             onf_ops = onfly_ops[l];
-         std::set<unsigned int> BB_ids;
+         CustomOrderedSet<unsigned int> BB_ids;
          BB_ids.insert(operations->get_bb_index());
          s_cur = STG_builder->create_state(exec_ops, start_ops, end_ops, BB_ids);
 
@@ -451,12 +447,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             THROW_ASSERT(call_operations.find(s_cur) != call_operations.end() && call_operations.find(s_cur)->second.begin() != call_operations.find(s_cur)->second.end(), "unexpected condition");
             std::list<vertex> call_ops(call_operations.find(s_cur)->second.begin(), call_operations.find(s_cur)->second.end()), empty_ops;
-            std::set<unsigned int> call_BB_ids;
+            CustomOrderedSet<unsigned int> call_BB_ids;
             call_BB_ids.insert(operations->get_bb_index());
             vertex s_call = STG_builder->create_state(call_ops, empty_ops, call_ops, call_BB_ids);
             HLS->STG->GetStg()->GetStateInfo(s_call)->is_dummy = true;
             call_states[s_cur].push_back(s_call);
-            std::set<vertex> ops;
+            CustomOrderedSet<vertex> ops;
             ops.insert(call_operations.find(s_cur)->second.begin(), call_operations.find(s_cur)->second.end());
             if(ops.size() > 1)
                HLS->STG->add_multi_unbounded_obj(s_cur, ops);
@@ -472,7 +468,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             {
                THROW_ASSERT(call_operations.find(previous) != call_operations.end() && call_operations.find(previous)->second.begin() != call_operations.find(previous)->second.end(), "unexpected condition");
                THROW_ASSERT(call_states.find(previous) != call_states.end(), "unexpected condition");
-               std::set<vertex> ops;
+               CustomOrderedSet<vertex> ops;
                ops.insert(call_operations.find(previous)->second.begin(), call_operations.find(previous)->second.end());
                auto call_sets = call_states.find(previous)->second;
                for(auto& call_set : call_sets)
@@ -499,7 +495,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             vertex waiting_state = call_states.find(s_cur)->second.front();
             EdgeDescriptor s_e = STG_builder->connect_state(s_cur, waiting_state, TransitionInfo::StateTransitionType::ST_EDGE_NORMAL);
 
-            std::set<vertex> ops;
+            CustomOrderedSet<vertex> ops;
             ops.insert(call_operations.find(s_cur)->second.begin(), call_operations.find(s_cur)->second.end());
             STG_builder->set_unbounded_condition(s_e, NOT_ALL_FINISHED, ops, s_cur);
 
@@ -557,7 +553,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          if(call_states.find(s_src) != call_states.end())
          {
             auto call_sets = call_states.find(s_src)->second;
-            std::set<vertex> ops;
+            CustomOrderedSet<vertex> ops;
             ops.insert(call_operations[s_src].begin(), call_operations[s_src].end());
             if(call_sets.begin() != call_sets.end())
             {
@@ -578,7 +574,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             THROW_ASSERT(call_operations.find(s_src) != call_operations.end() && call_operations.find(s_src)->second.size() != 0, "State " + HLS->STG->get_state_name(s_src) + " does not contain any call expression");
             auto call_sets = call_states.find(s_src)->second;
-            std::set<vertex> ops;
+            CustomOrderedSet<vertex> ops;
             ops.insert(call_operations.find(s_src)->second.begin(), call_operations.find(s_src)->second.end());
             for(auto& call_set : call_sets)
             {
@@ -590,12 +586,12 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             STG_builder->set_unbounded_condition(s_e, ALL_FINISHED, ops, s_src);
          }
       }
-      std::set<std::pair<vertex, unsigned int>> out_conditions;
+      CustomOrderedSet<std::pair<vertex, unsigned int>> out_conditions;
       /// compute the controlling vertex
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(bb_src);
       THROW_ASSERT(bb_node_info->statements_list.size(), "at least one operation should belong to this basic block");
       vertex last_operation = *(bb_node_info->statements_list.rbegin());
-      const std::set<unsigned int>& cfg_edge_ids = fbb->CGetBBEdgeInfo(*e)->get_labels(CFG_SELECTOR);
+      const CustomOrderedSet<unsigned int>& cfg_edge_ids = fbb->CGetBBEdgeInfo(*e)->get_labels(CFG_SELECTOR);
 
       if(cfg_edge_ids.size())
       {
@@ -611,7 +607,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          }
          else
          {
-            std::set<unsigned> labels;
+            CustomOrderedSet<unsigned> labels;
             bool has_default = false;
             for(auto label : cfg_edge_ids)
             {
@@ -713,7 +709,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          {
             if(stg_length.find(BB_id) != stg_length.end())
             {
-               stg_length.find(BB_id)->second++;
+               stg_length.at(BB_id)++;
             }
             else
             {
@@ -765,8 +761,8 @@ static void add_EPP_edges(const StateTransitionGraphManagerRef& STG)
     * Efficient Path Profiling, to handle feedback edges.
     * Dummy states are skipped, because they can be ignored.
     */
-   std::set<EdgeDescriptor> self_edges;
-   std::unordered_set<std::pair<vertex, vertex>> epp_edges_to_add;
+   CustomOrderedSet<EdgeDescriptor> self_edges;
+   CustomUnorderedSet<std::pair<vertex, vertex>> epp_edges_to_add;
    BOOST_FOREACH(const vertex v, boost::vertices(*stg))
    {
       if(stg->CGetStateInfo(v)->is_dummy)
@@ -804,7 +800,7 @@ static size_t compute_edge_increments(const StateTransitionGraphManagerRef& STG)
     * propagate them on the feedback edges that are temporarily removed so that
     * the algorithm can work properly.
     */
-   std::unordered_map<vertex, size_t> NumPaths;
+   CustomUnorderedMap<vertex, size_t> NumPaths;
    std::deque<vertex> reverse_v_list;
    epp_stg->ReverseTopologicalSort(reverse_v_list);
    for(const auto v : reverse_v_list)
@@ -950,7 +946,7 @@ void BB_based_stg::compute_EPP_edge_increments(const std::map<vertex, std::list<
  * overlap the execution of the last state of the bb ending the cycle
  * with the execution of the first state of the bb that begins the cycle.
  */
-void BB_based_stg::optimize_cycles(vertex bbEndingCycle, std::unordered_map<vertex, vertex>& first_state, std::unordered_map<vertex, vertex>& last_state, std::map<vertex, std::list<vertex>>& global_starting_ops,
+void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vertex, vertex>& first_state, CustomUnorderedMap<vertex, vertex>& last_state, std::map<vertex, std::list<vertex>>& global_starting_ops,
                                    std::map<vertex, std::list<vertex>>& global_ending_ops, std::map<vertex, std::list<vertex>>& global_executing_ops, std::map<vertex, std::list<vertex>>& global_onfly_ops)
 {
    const BBGraphConstRef fbb = HLSMgr->CGetFunctionBehavior(funId)->CGetBBGraph(FunctionBehavior::FBB);
@@ -1160,7 +1156,7 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, std::unordered_map<vert
     compute which variables are defined and used by the operations that will be
     moved, and check that it is possible to store in registers all the used variables
     */
-   std::set<unsigned int> useSet, defSet;
+   CustomOrderedSet<unsigned int> useSet, defSet;
    compute_use_def(lastStateEndingOpList, lastStateExecutingOpList, lastStateConditionalOpList, useSet, defSet, dfgRef);
 
    /*
@@ -1482,7 +1478,8 @@ bool BB_based_stg::res_const_operation(vertex& operation, std::list<vertex>& las
  * operations included in the ignoreList will not be considered in
  * this analysis.
  */
-void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const std::list<vertex>& opRuningList, const std::list<vertex>& ignoreList, std::set<unsigned int>& useSet, std::set<unsigned int>& defSet, const OpGraphConstRef data)
+void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const std::list<vertex>& opRuningList, const std::list<vertex>& ignoreList, CustomOrderedSet<unsigned int>& useSet, CustomOrderedSet<unsigned int>& defSet,
+                                   const OpGraphConstRef data)
 {
    /*
     Clear useSet and defSet
@@ -1528,7 +1525,8 @@ void BB_based_stg::compute_use_def(const std::list<vertex>& opEndingList, const 
  * The state to move, and all the edges to/from it are not modified by this method.
  */
 void BB_based_stg::move_without_duplication(const vertex stateToMove, const vertex secondLastState, const vertex destinationState, const std::map<vertex, std::list<vertex>>& global_starting_ops,
-                                            const std::map<vertex, std::list<vertex>>& global_executing_ops, const std::map<vertex, std::list<vertex>>& global_ending_ops, const std::set<unsigned int>& defSet, const std::set<unsigned int>& useSet)
+                                            const std::map<vertex, std::list<vertex>>& global_executing_ops, const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet,
+                                            const CustomOrderedSet<unsigned int>& useSet)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving without duplication");
    StateTransitionGraphManagerRef STGMan = HLS->STG;
@@ -1596,7 +1594,7 @@ void BB_based_stg::move_without_duplication(const vertex stateToMove, const vert
  * The state to move, and all the edges to/from it are not modified by this method.
  */
 void BB_based_stg::move_with_duplication(const vertex stateToMove, const vertex secondLastState, const vertex stateToClone, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
-                                         const std::map<vertex, std::list<vertex>>& global_ending_ops, const std::set<unsigned int>& defSet, const std::set<unsigned int>& useSet)
+                                         const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet, const CustomOrderedSet<unsigned int>& useSet)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving with duplication");
    StateTransitionGraphRef stg = HLS->STG->GetStg();

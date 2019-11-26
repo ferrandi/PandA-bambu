@@ -15,16 +15,14 @@ TVMArray a3[1];
 TVMArray b0[1];
 TVMArray b1[1];
 
-typedef float float16;
-
 __attribute__((noinline))
 void kernel(int32_t y_outer_x_outer_fused, float *compute, float* placeholder, float* placeholder1)
 {
-     float compute1[16];
-    (( float16*)(compute1 + 0))[0] = ((float16)(0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f));
-    int32_t k;
+    float compute1[16] = {0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f, 0.000000e+00f};
+    int32_t k, i;
     for (k = 0; k < 49; ++k) {
-      (( float16*)(compute1 + 0))[0] = ((( float16*)(compute1 + 0))[0] + ((( float16*)(placeholder + (k * 16)))[0] * (( float16*)(placeholder1 + ((y_outer_x_outer_fused * 784) + (k * 16))))[0]));
+      for(i=0; i < 16; ++i)
+        compute1[i] = compute1[i] + (placeholder + (k * 16))[i] * (placeholder1 + ((y_outer_x_outer_fused * 784) + (k * 16)))[i];
     }
     compute[y_outer_x_outer_fused] = 0.000000e+00f;
     compute[y_outer_x_outer_fused] = (compute[y_outer_x_outer_fused] + compute1[0]);
