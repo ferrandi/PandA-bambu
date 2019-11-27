@@ -86,8 +86,23 @@
 using APInt = Range::APInt;
 using UAPInt = boost::multiprecision::uint128_t;
 
+bool tree_reindexCompare::operator()(const tree_nodeConstRef &lhs, const tree_nodeConstRef &rhs) const
+{
+   return GET_INDEX_CONST_NODE(lhs) < GET_INDEX_CONST_NODE(rhs);
+}
+
 namespace 
 {
+   union IntFloat {
+      int i;
+      float f;
+   };
+
+   union LongDouble {
+      long l;
+      double d;
+   };
+
    // The number of bits needed to store the largest variable of the function (APInt).
    unsigned MAX_BIT_INT = 0;
    unsigned POINTER_BITSIZE = 32;
@@ -472,8 +487,17 @@ namespace
             switch(GET_CONST_NODE(ga->op1)->get_kind())
             {
                /// unary_expr cases
+               case view_convert_expr_K:
+               {
+                  if(Type->get_kind() == real_type_K)
+                  {
+                     return true;
+                  }
+               }
+               break;
+
                case nop_expr_K:
-               case fix_trunc_expr_K:
+               case abs_expr_K:
 
                /// binary_expr cases
                case plus_expr_K:
@@ -533,7 +557,7 @@ namespace
             return false;
       }
 
-      if(Type->get_kind() == integer_type_K || Type->get_kind() == integer_cst_K || Type->get_kind() == enumeral_type_K || Type->get_kind() == boolean_type_K)
+      if(Type->get_kind() == integer_type_K || Type->get_kind() == enumeral_type_K || Type->get_kind() == boolean_type_K)
       {
          return true;
       }
@@ -547,12 +571,33 @@ namespace
          return isIntegerType(GET_CONST_NODE(tn));
       }
       const auto type = tree_helper::CGetType(tn);
-      // TODO: maybe add enumaral_type_K too
-      if(type->get_kind() == integer_type_K)
+      if(type->get_kind() == integer_type_K || type->get_kind() == enumeral_type_K)
       {
          return true;
       }
       return false;
+   }
+
+   bool isSignedType(const tree_nodeConstRef tn)
+   {
+      if(tn->get_kind() == tree_reindex_K)
+      {
+         return isSignedType(GET_CONST_NODE(tn));
+      }
+      const auto type = tree_helper::CGetType(tn);
+      if(const auto* it = GetPointer<const integer_type>(type))
+      {
+         return !it->unsigned_flag;
+      }
+      if(const auto* en = GetPointer<const enumeral_type>(type))
+      {
+         return !en->unsigned_flag;
+      }
+      if(const auto* bt = GetPointer<const boolean_type>(type))
+      {
+         return false;
+      }
+      return true;
    }
 
    tree_nodeConstRef getGIMPLE_Type(const tree_nodeConstRef tn)
@@ -590,25 +635,77 @@ namespace
       const auto type = getGIMPLE_Type(tn);
       unsigned int bw = tree_helper::Size(type);
       THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
-         
+      APInt min, max;
       if(const auto* ic = GetPointer<const integer_cst>(tn))
       {
-         return Range(Regular, bw, APInt(ic->value), APInt(ic->value));
+         min = max = ic->value;
       }
-      if(const auto* it = GetPointer<const integer_type>(type))
+      else if(const auto* it = GetPointer<const integer_type>(type))
       {
-         return it->unsigned_flag ? Range(Regular, bw, getMinValue(bw), getMaxValue(bw)) : Range(Regular, bw, getSignedMinValue(bw), getSignedMaxValue(bw));
+         min = it->unsigned_flag ? getMinValue(bw) : getSignedMinValue(bw);
+         max = it->unsigned_flag ? getMaxValue(bw) : getSignedMaxValue(bw);
       }
-      if(const auto* et = GetPointer<const enumeral_type>(type))
+      else if(const auto* et = GetPointer<const enumeral_type>(type))
       {
-         return et->unsigned_flag ? Range(Regular, bw, getMinValue(bw), getMaxValue(bw)) : Range(Regular, bw, getSignedMinValue(bw), getSignedMaxValue(bw));
+         min = et->unsigned_flag ? getMinValue(bw) : getSignedMinValue(bw);
+         max = et->unsigned_flag ? getMaxValue(bw) : getSignedMaxValue(bw);
       }
-      if(type->get_kind() == boolean_type_K)
+      else if(type->get_kind() == boolean_type_K)
       {
-         return Range(Regular, 1, 0, 1);
+         min = 0;
+         max = 1;
+         bw = 1;
+      }
+      else if(const auto* rc = GetPointer<const real_cst>(tn))
+      {
+         if(bw == 32)
+         {
+            IntFloat fcst;
+            fcst.f = boost::lexical_cast<float>(rc->valr);
+            min = max = truncExt(fcst.i, bw, true);
+         }
+         else if(bw == 64)
+         {
+            LongDouble dcst;
+            dcst.d = boost::lexical_cast<double>(rc->valr);
+            min = max = truncExt(dcst.l, bw, true);
+         }
+         else
+         {
+            THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + boost::lexical_cast<std::string>(bw) + ")");
+         }
+      }
+      else if(const auto* rt = GetPointer<const real_type>(type))
+      {
+         min = Min;
+         max = Max;
+      }
+      else 
+      {
+         THROW_UNREACHABLE("Unable to define range for type " + type->get_kind_text() + " of " + tn->ToString());
       }
 
-      return Range(Regular, bw);
+      if(const auto* ssa = GetPointer<const ssa_name>(tn))
+      {
+         if(!ssa->bit_values.empty())
+         {
+            for(size_t bi = 0; bi < bw; ++bi)
+            {
+               char bitv = ssa->bit_values.at(bi);
+               if(bitv == '0')
+               {
+                  boost::multiprecision::bit_unset(min, bi);
+                  boost::multiprecision::bit_unset(max, bi);
+               }
+               else if(bitv == '1')
+               {
+                  boost::multiprecision::bit_set(min, bi);
+                  boost::multiprecision::bit_set(max, bi);
+               }
+            }
+         }
+      }
+      return Range(Regular, bw, min, max);
    }
 }
 
@@ -1578,9 +1675,9 @@ Range Range::And(const Range& other) const
    Range invres = inv1.Or(inv2);
 
    // negate the result of the 'or'
-   APInt invLower = ~invres.getUpper();
-   APInt invUpper = ~invres.getLower();
-   auto res = Range(Regular, bw, invLower, invUpper);
+   auto [min, max] = std::minmax(truncExt(~invres.l, bw, false), truncExt(~invres.u, bw, false));
+   PRINT_MSG("min: " + boost::lexical_cast<std::string>(min) + " max: " + boost::lexical_cast<std::string>(max));
+   auto res = Range(invres.type, bw, min, max);
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("And-res: " << res << std::endl);
    #endif
@@ -1787,8 +1884,8 @@ Range Range::Or(const Range& other) const
          res_u = maxOR(a, b, c, d);
          break;
    }
-   res_l = truncExt(res_l, MAX_BIT_INT, false);
-   res_u = truncExt(res_u, MAX_BIT_INT, false);
+   res_l = truncExt(res_l, bw, false);
+   res_u = truncExt(res_u, bw, false);
    if((res_l == Min) || (res_u == Max))
    {
       return Range(Regular, bw);
@@ -2159,6 +2256,47 @@ Range Range::Sle(const Range& other, unsigned bw) const
    }
 
    return Range(Regular, bw, 0, 1);
+}
+
+Range Range::abs() const
+{
+   if(isEmpty() || isUnknown())
+   {
+      return *this;
+   }
+   if(isAnti())
+   {
+      if(u < 0)
+      {
+         return Range(Anti, bw, -u, -l);
+      }
+      if(l < 0)
+      {
+         if(-l < u)
+         {
+            return Range(Anti, bw, -l, u);
+         }
+         else
+         {
+            return Range(Regular, bw);
+         }
+      }
+      return *this;
+   }
+
+   auto smin = getSignedMin();
+   auto smax = getSignedMax();
+
+   if(smax < 0)
+   {
+      return Range(Regular, bw, -smax, -smin);
+   }
+   if(smin < 0)
+   {
+      auto [min, max] = std::minmax({smax, -smin});
+      return Range(Regular, bw, min, max);
+   }
+   return *this;
 }
 
 // Truncate
@@ -2650,18 +2788,6 @@ VarNode::VarNode(const tree_nodeConstRef _V) : V(_V), interval(Unknown, getGIMPL
 {
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
-
-   // TODO: move this code inside addUnaryOp method
-   //if(dyn_cast<FPToSIInst>(_V))
-   //{
-   //   auto bw = _V->getType()->getPrimitiveSizeInBits();
-   //   interval = Range(Regular, bw, llvm::APInt::getSignedMinValue(bw).sext(MAX_BIT_INT), llvm::APInt::getSignedMaxValue(bw).sext(MAX_BIT_INT));
-   //}
-   //else if(dyn_cast<FPToUIInst>(_V))
-   //{
-   //   auto bw = _V->getType()->getPrimitiveSizeInBits();
-   //   interval = Range(Regular, bw, llvm::APInt::getMinValue(bw).sext(MAX_BIT_INT), llvm::APInt::getMaxValue(bw).sext(MAX_BIT_INT));
-   //}
 }
 
 /// The dtor.
@@ -3314,6 +3440,7 @@ Range UnaryOp::eval()
 {
    unsigned bw = getSink()->getBitWidth();
    Range oprnd = source->getRange();
+   bool oprndSigned = isSignedType(source->getValue());
    Range result(Unknown, bw, Min, Max);
 
    if(oprnd.isRegular() || oprnd.isAnti())
@@ -3324,6 +3451,14 @@ Range UnaryOp::eval()
             
       switch(this->getOpcode())
       {
+         case abs_expr_K:
+         {
+            if(oprndSigned)
+            {
+               result = oprnd.abs();
+            }
+         }
+         break;
          case nop_expr_K:
          {
             if(bw < getSource()->getBitWidth())
@@ -3332,34 +3467,23 @@ Range UnaryOp::eval()
             }
             else
             {
-               const auto type = tree_helper::CGetType(GET_CONST_NODE(getSource()->getValue()));
-               if(const auto* int_type = GetPointer<const integer_type>(type))
+               if(oprndSigned)
                {
-                  if(int_type->unsigned_flag)
-                  {
-                     result = oprnd.zextOrTrunc(bw);
-                  }
-                  else
-                  {
-                     result = oprnd.sextOrTrunc(bw);
-                  }
-               }
-               else if(type->get_kind() == boolean_type_K)
-               {
-                  result = oprnd.zextOrTrunc(bw);
+                  result = oprnd.sextOrTrunc(bw);
                }
                else
                {
-                  THROW_UNREACHABLE("Unhandled cast source type (" + type->get_kind_text() + ")");
+                  result = oprnd.zextOrTrunc(bw);
                }
             }
          }
          break;
-         
-         case fix_trunc_expr_K:
+         case view_convert_expr_K:
          {
-            // Cast source type is for sure a signed float
-            result = oprnd.sextOrTrunc(bw);
+            const auto sourceType = GetPointer<const ssa_name>(GET_CONST_NODE(getSource()->getValue()))->type;
+            const auto sinkType = GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue()))->type;
+            PRINT_MSG("View conversion from " + GET_CONST_NODE(sourceType)->get_kind_text() + " to " + GET_CONST_NODE(sinkType)->get_kind_text());
+            result = oprnd;
          }
          break;
          
@@ -3981,7 +4105,7 @@ Range TernaryOp::eval()
                         if(variable == opV1 || variable == opV2)
                         {
                            auto bw = op2.getBitWidth();
-                           Range CR(Regular, bw, constant->value, constant->value + 1);
+                           Range CR(Regular, bw, constant->value, constant->value);
                            kind pred = be->get_kind();
                            kind swappred = op_swap(pred);
 
@@ -4358,13 +4482,6 @@ void StoreOp::print(std::ostream& OS) const
 // Nuutila
 // ========================================================================== //
 // The VarNodes type.
-struct tree_reindexCompare
-{
-   bool operator()(const tree_nodeConstRef &lhs, const tree_nodeConstRef &rhs) const
-   {
-      return GET_INDEX_CONST_NODE(lhs) < GET_INDEX_CONST_NODE(rhs);
-   }
-};
 using VarNodes = std::map<tree_nodeConstRef, VarNode*, tree_reindexCompare>;
 
 // A map from variables to the operations where these variables are used.
@@ -5283,7 +5400,7 @@ class ConstraintGraph
             kind pred = bin_op->get_kind();
             kind swappred = op_swap(pred);
             unsigned bw = getGIMPLE_BW(variable);
-            Range CR(Regular, bw, constant->value, APInt(constant->value) + 1);
+            Range CR(Regular, bw, constant->value, constant->value);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
                "Variable bitwidth is " + boost::lexical_cast<std::string>(bw) + " and constant value is " + boost::lexical_cast<std::string>(constant->value));
@@ -5445,10 +5562,12 @@ class ConstraintGraph
          for(const auto& case_tag : CaseTags)
          {
             if(case_tag)
-            if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(case_tag)))
             {
-               APInt cval = tree_helper::get_integer_cst_value(ic);
-               antidefaultRange = antidefaultRange.unionWith(Range(Regular, bw, cval, cval));
+               if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(case_tag)))
+               {
+                  APInt cval = tree_helper::get_integer_cst_value(ic);
+                  antidefaultRange = antidefaultRange.unionWith(Range(Regular, bw, cval, cval));
+               }
             }
          }
 
@@ -5631,19 +5750,20 @@ class ConstraintGraph
 
       // Create the sink.
       VarNode* sink = addVarNode(assign->op0);
+      bool sourceSigned = isSignedType(un_op->op);
       // Create the source.
       VarNode* source = nullptr;
 
       switch(un_op->get_kind())
       {
+         case abs_expr_K:
          case fix_trunc_expr_K:
          case nop_expr_K:
+         case view_convert_expr_K:
             source = addVarNode(un_op->op);
             break;
 
-         case abs_expr_K:
          case convert_expr_K:
-         case view_convert_expr_K:
          default:
             return;
       }
@@ -5874,11 +5994,66 @@ class ConstraintGraph
    */
    }
 
-   void addStoreOp(const tree_nodeConstRef I, const tree_managerConstRef /*TM*/)
+   void addStoreOp(const tree_nodeConstRef I, const tree_managerConstRef TM)
    {
       const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(I));
       THROW_ASSERT(ga, "");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing store instruction");
+      VarNode* sink = addVarNode(ga->op0);
+      unsigned bw = getGIMPLE_BW(ga->op1);
+      Range intersection(Regular, bw, Min, Max);
+      const auto Op0 = GET_CONST_NODE(ga->op0);
+      CustomOrderedSet<unsigned int> res_set;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      if(tree_helper::is_fully_resolved(TM, Op0->index, res_set))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pointer is fully resolved");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         bool pointToConstants = true;
+         for(const auto& idx : res_set)
+         {
+            const auto TN = TM->CGetTreeNode(idx);
+            if(const auto* vd = GetPointer<const var_decl>(TN))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Points to " + TN->ToString() + 
+                  " (readonly = " + boost::lexical_cast<std::string>(vd->readonly_flag) + 
+                  ", defs = " + boost::lexical_cast<std::string>(vd->defs.size()) + ")");
+               if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
+               {
+                  for(const auto& [idx, valu] : constr->list_of_idx_valu)
+                  {
+                     StoreOp* storeOp;
+                     if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(idx)) && isIntegerType(idx))
+                     {
+                        storeOp = new StoreOp(sink, I, getGIMPLE_range(idx));
+                     }
+                     else
+                     {
+                        storeOp = new StoreOp(sink, I, Range(Empty, bw));
+                     }
+                     this->oprs.insert(storeOp);
+                     this->defMap[sink->getValue()] = storeOp;
+                     VarNode* source = addVarNode(ga->op1);
+                     storeOp->addSource(source);
+                     this->useMap.find(source->getValue())->second.insert(storeOp);
+                  }
+               }
+               else
+               {
+                  THROW_UNREACHABLE("Unhandled initializer " + GET_CONST_NODE(vd->init)->get_kind_text() + " " + GET_CONST_NODE(vd->init)->ToString());
+                  continue;
+               }
+            }
+            else
+            {
+               THROW_UNREACHABLE("Unknown tree node " + TN->get_kind_text() + " " + TN->ToString());
+               continue;
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      
       /*
       // LLVM implementation
    #if HAVE_LIBBDD
@@ -6852,9 +7027,9 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
          const auto& stmt_list = BB->CGetStmtList();
             
          if(stmt_list.size())
-         if(const auto* RI = GetPointer<const gimple_return>(GET_CONST_NODE(stmt_list.back())))
+         if(const auto* gr = GetPointer<const gimple_return>(GET_CONST_NODE(stmt_list.back())))
          {
-            returnValues.insert(RI->op);
+            returnValues.insert(gr->op);
          }
       }
    }
@@ -7050,9 +7225,9 @@ DesignFlowStep_Status RangeAnalysis::Exec()
       
    finalizeRangeAnalysis(CG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-      
+
    delete CG;
-   return DesignFlowStep_Status::UNCHANGED;
+   return DesignFlowStep_Status::SUCCESS;
 }
 
 void RangeAnalysis::Initialize()
@@ -7157,4 +7332,28 @@ void RangeAnalysis::finalizeRangeAnalysis(void* CGp)
          }
       }
    }
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range results for " + boost::lexical_cast<std::string>(ranges.size()) + " variables");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(auto [ssa_tr, range] : ranges)
+   {
+      auto* ssa = GetPointer<ssa_name>(GET_NODE(TM->GetTreeReindex(ssa_tr->index)));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ssa->ToString() + " " + GET_NODE(ssa->type)->get_kind_text() + " " + range.ToString());
+      if(!range.isUnknown() && !range.isEmpty())
+      {
+         bool isSigned = tree_helper::is_int(TM, ssa->index);
+         auto type_id = GET_INDEX_CONST_NODE(ssa->type);
+         if(isSigned)
+         {
+            ssa->min = TM->CreateUniqueIntegerCst(range.getSignedMin().convert_to<long long>(), type_id);
+            ssa->max = TM->CreateUniqueIntegerCst(range.getSignedMax().convert_to<long long>(), type_id);
+         }
+         else
+         {
+            ssa->min = TM->CreateUniqueIntegerCst(range.getUnsignedMin().convert_to<long long>(), type_id);
+            ssa->max = TM->CreateUniqueIntegerCst(range.getUnsignedMax().convert_to<long long>(), type_id);
+         }
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 }

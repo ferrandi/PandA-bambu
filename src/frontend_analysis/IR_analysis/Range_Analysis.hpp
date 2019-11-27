@@ -49,9 +49,12 @@
 
 #include "application_frontend_flow_step.hpp"
 #include "tree_common.hpp"
-#include "refcount.hpp"   // for REF_FORWARD_DECL
+#include "tree_node.hpp"
 
-CONSTREF_FORWARD_DECL(tree_node);
+struct tree_reindexCompare 
+{
+  bool operator()(const tree_nodeConstRef &lhs, const tree_nodeConstRef &rhs) const;
+};
 
 enum RangeType
 {
@@ -131,6 +134,7 @@ class Range
    Range Sge(const Range& other, unsigned bw) const;
    Range Slt(const Range& other, unsigned bw) const;
    Range Sle(const Range& other, unsigned bw) const;
+   Range abs() const;
    Range truncate(unsigned bitwidth) const;
    Range sextOrTrunc(unsigned bitwidth) const;
    Range zextOrTrunc(unsigned bitwidth) const;
@@ -149,7 +153,7 @@ static std::ostream& operator<<(std::ostream& OS, const Range& R);
 class RangeAnalysis : public ApplicationFrontendFlowStep
 {
  private: 
-   std::map<tree_nodeConstRef, Range> ranges;
+   std::map<tree_nodeConstRef, Range, tree_reindexCompare> ranges;
 
  protected:
 
