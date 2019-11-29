@@ -489,13 +489,17 @@ class last_intermediate_state
       if(not pipeline)
          return top;
       graph::in_edge_iterator in_edge, in_edge_end;
+#if HAVE_ASSERTS
       bool multiple_in_edges = false;
-      vertex ret_v;
+#endif
+      vertex ret_v = NULL_VERTEX;
       for(boost::tie(in_edge, in_edge_end) = boost::in_edges(bottom, *state_graph); in_edge != in_edge_end; ++in_edge)
       {
          ret_v = boost::source(*in_edge, *state_graph);
          THROW_ASSERT(not multiple_in_edges, "A pipeline should not contain phi operations");
+#if HAVE_ASSERTS
          multiple_in_edges = true;
+#endif
       }
       THROW_ASSERT(multiple_in_edges, "No input edge found");
       return ret_v;
@@ -516,13 +520,17 @@ class next_unique_state
    vertex operator()(vertex state)
    {
       graph::out_edge_iterator out_edge, out_edge_end;
+#if HAVE_ASSERTS
       bool multiple_out_edges = false;
-      vertex next_state;
+#endif
+      vertex next_state = NULL_VERTEX;
       for(boost::tie(out_edge, out_edge_end) = boost::out_edges(state, *state_graph); out_edge != out_edge_end; ++out_edge)
       {
          next_state = boost::target(*out_edge, *state_graph);
          THROW_ASSERT(not multiple_out_edges, "First state has multiple out edges");
+#if HAVE_ASSERTS
          multiple_out_edges = true;
+#endif
       }
       THROW_ASSERT(multiple_out_edges, "No output edge found");
       return next_state;
