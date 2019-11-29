@@ -533,7 +533,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
       proxy_op->supported_types = current_op->supported_types;
       proxy_op->pipe_parameters = current_op->pipe_parameters;
    }
-   /// add a fictious operation to allow bus merging
+   /// add a fictitious operation to allow bus merging
    TM->add_operation(PROXY_LIBRARY, wrapped_fu_name, wrapped_fu_name);
    auto* wrapper_fictious_op = GetPointer<operation>(wrapper_fu->get_operation(wrapped_fu_name));
    wrapper_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
@@ -734,7 +734,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
     *   (proxied function)
     *
     * The called layer connects the signals from the proxy to the real
-    * instantiation of the called function, wherever it wa allocated.
+    * instance of the called function, wherever it was allocated.
     * It is not handled here.
     * Here we're building the component that implements the proxy layer and we
     * have to add the ports for communication with the caller layer and the
@@ -869,7 +869,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
       proxy_op->supported_types = current_op->supported_types;
       proxy_op->pipe_parameters = current_op->pipe_parameters;
    }
-   /// add a fictious operation to allow bus merging
+   /// add a fictitious operation to allow bus merging
    TM->add_operation(PROXY_LIBRARY, proxied_fu_name, proxied_fu_name);
    auto* proxy_fictious_op = GetPointer<operation>(proxy_fu->get_operation(proxied_fu_name));
    proxy_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
