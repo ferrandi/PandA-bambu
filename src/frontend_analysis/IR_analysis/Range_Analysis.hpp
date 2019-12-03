@@ -51,6 +51,9 @@
 #include "tree_common.hpp"
 #include "tree_node.hpp"
 
+REF_FORWARD_DECL(Range);
+CONSTREF_FORWARD_DECL(Range);
+
 struct tree_reindexCompare 
 {
   bool operator()(const tree_nodeConstRef &lhs, const tree_nodeConstRef &rhs) const;
@@ -61,7 +64,8 @@ enum RangeType
    Empty,
    Unknown,
    Regular,
-   Anti
+   Anti,
+   Real
 };
 
 class Range
@@ -84,7 +88,7 @@ class Range
  public:
    Range(RangeType type, unsigned bw);
    Range(RangeType rType, unsigned bw, const APInt& lb, const APInt& ub);
-   ~Range() = default;
+   virtual ~Range() = default;
    Range(const Range& other) = default;
    Range(Range&&) = default;
    Range& operator=(const Range& other) = default;
@@ -96,56 +100,92 @@ class Range
    APInt getSignedMin() const;
    APInt getUnsignedMax() const;
    APInt getUnsignedMin() const;
-   Range getAnti() const;
+   RangeRef getAnti() const;
 
    bool isUnknown() const;
    void setUnknown();
    bool isRegular() const;
    bool isAnti() const;
    bool isEmpty() const;
-   bool isSameType(const Range& a, const Range& b) const;
-   bool isSameRange(const Range& a, const Range& b) const;
+   bool isReal() const;
+   bool isSameType(RangeConstRef other) const;
+   virtual bool isSameRange(RangeConstRef other) const;
    bool isSingleElement();
-   bool isFullSet() const;
+   virtual bool isFullSet() const;
    bool isMaxRange() const;
-   bool isConstant() const;
-   void print(std::ostream& OS) const;
+   virtual bool isConstant() const;
+   virtual Range* clone() const;
+   virtual void print(std::ostream& OS) const;
    std::string ToString() const;
 
-   Range add(const Range& other) const;
-   Range sub(const Range& other) const;
-   Range mul(const Range& other) const;
-   Range udiv(const Range& other) const;
-   Range sdiv(const Range& other) const;
-   Range urem(const Range& other) const;
-   Range srem(const Range& other) const;
-   Range shl(const Range& other) const;
-   Range shr(const Range& other, bool sign) const;
-   Range And(const Range& other) const;
-   Range Or(const Range& other) const;
-   Range Xor(const Range& other) const;
-   Range Eq(const Range& other, unsigned bw) const;
-   Range Ne(const Range& other, unsigned bw) const;
-   Range Ugt(const Range& other, unsigned bw) const;
-   Range Uge(const Range& other, unsigned bw) const;
-   Range Ult(const Range& other, unsigned bw) const;
-   Range Ule(const Range& other, unsigned bw) const;
-   Range Sgt(const Range& other, unsigned bw) const;
-   Range Sge(const Range& other, unsigned bw) const;
-   Range Slt(const Range& other, unsigned bw) const;
-   Range Sle(const Range& other, unsigned bw) const;
-   Range abs() const;
-   Range truncate(unsigned bitwidth) const;
-   Range sextOrTrunc(unsigned bitwidth) const;
-   Range zextOrTrunc(unsigned bitwidth) const;
+   RangeRef add(RangeConstRef other) const;
+   RangeRef sub(RangeConstRef other) const;
+   RangeRef mul(RangeConstRef other) const;
+   RangeRef udiv(RangeConstRef other) const;
+   RangeRef sdiv(RangeConstRef other) const;
+   RangeRef urem(RangeConstRef other) const;
+   RangeRef srem(RangeConstRef other) const;
+   RangeRef shl(RangeConstRef other) const;
+   RangeRef shr(RangeConstRef other, bool sign) const;
+   RangeRef And(RangeConstRef other) const;
+   RangeRef Or(RangeConstRef other) const;
+   RangeRef Xor(RangeConstRef other) const;
+   RangeRef Eq(RangeConstRef other, unsigned bw) const;
+   RangeRef Ne(RangeConstRef other, unsigned bw) const;
+   RangeRef Ugt(RangeConstRef other, unsigned bw) const;
+   RangeRef Uge(RangeConstRef other, unsigned bw) const;
+   RangeRef Ult(RangeConstRef other, unsigned bw) const;
+   RangeRef Ule(RangeConstRef other, unsigned bw) const;
+   RangeRef Sgt(RangeConstRef other, unsigned bw) const;
+   RangeRef Sge(RangeConstRef other, unsigned bw) const;
+   RangeRef Slt(RangeConstRef other, unsigned bw) const;
+   RangeRef Sle(RangeConstRef other, unsigned bw) const;
+   RangeRef abs() const;
+   RangeRef truncate(unsigned bitwidth) const;
+   RangeRef sextOrTrunc(unsigned bitwidth) const;
+   RangeRef zextOrTrunc(unsigned bitwidth) const;
    bool operator==(const Range& other) const;
    bool operator!=(const Range& other) const;
-   Range intersectWith(const Range& other) const;
-   Range unionWith(const Range& other) const;
-   Range BestRange(const Range& UR, const Range& SR, unsigned bw) const;
+   virtual RangeRef intersectWith(RangeConstRef other) const;
+   virtual RangeRef unionWith(RangeConstRef other) const;
+   RangeRef BestRange(RangeConstRef UR, RangeConstRef SR, unsigned bw) const;
 
-   static Range makeSatisfyingCmpRegion(kind pred, const Range& Other);
+   static RangeRef makeSatisfyingCmpRegion(kind pred, RangeConstRef Other);
    static unsigned neededBits(const APInt& a, const APInt& b, bool sign);
+};
+
+class RealRange : public Range
+{
+ private:
+  RangeRef sign;
+  RangeRef exponent;
+  RangeRef fractional;
+
+ public:
+  RealRange(const Range& s, const Range& e, const Range& f);
+  RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f);
+  RealRange(RangeConstRef vc);
+  ~RealRange() = default;
+  RealRange(const RealRange& other) = default;
+  RealRange(RealRange&&) = default;
+  RealRange& operator=(const RealRange& other) = default;
+  RealRange& operator=(RealRange&&) = default;
+  RangeRef getRange() const;
+
+  RangeRef getSign() const;
+  RangeRef getExponent() const;
+  RangeRef getFractional() const;
+  void setSign(RangeConstRef s);
+  void setExponent(RangeConstRef e);
+  void setFractional(RangeConstRef f);
+  bool isSameRange(RangeConstRef other) const override;
+  bool isFullSet() const override;
+  bool isConstant() const override;
+  Range* clone() const override;
+  void print(std::ostream& OS) const override;
+
+  RangeRef intersectWith(RangeConstRef other) const override;
+  RangeRef unionWith(RangeConstRef other) const override;
 };
 
 static std::ostream& operator<<(std::ostream& OS, const Range& R);
@@ -153,7 +193,7 @@ static std::ostream& operator<<(std::ostream& OS, const Range& R);
 class RangeAnalysis : public ApplicationFrontendFlowStep
 {
  private: 
-   std::map<tree_nodeConstRef, Range, tree_reindexCompare> ranges;
+   std::map<tree_nodeConstRef, RangeConstRef, tree_reindexCompare> ranges;
 
  protected:
 
@@ -191,7 +231,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
     */
    bool HasToBeExecuted() const override;
 
-   Range getRange(const tree_nodeConstRef ssa_name) const;
+   RangeConstRef getRange(const tree_nodeConstRef ssa_name) const;
 
    /** Gets the maximum bit width of the operands in the instructions of the
     * function. This function is necessary because the class APInt only
