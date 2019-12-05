@@ -1449,29 +1449,35 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                // want to preserve their values along pipeline steps
                unsigned int storage_value;
                unsigned int r_index;
-               while(state != get_next(HLS->STG->get_entry_state()))
+               unsigned int tgt_port = port_num;
+               vertex previous = fetch_previous(HLS->STG->get_entry_state(), tgt_state);
+               generic_objRef tgt_obj = fu_obj;
+               if(tgt_state != get_next(HLS->STG->get_entry_state()))
                {
-                  THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(state, tree_var), "The chain of registers propagating a primary input is broken");
-                  storage_value = HLS->storage_value_information->get_storage_value_index(fetch_previous(state, tgt_state), tree_var);
-                  r_index = HLS->Rreg->get_register(storage_value);
-                  reg_obj = HLS->Rreg->get(r_index);
-                  THROW_ASSERT(reg_obj != fu_obj, "There is a loop in the propagation chain");
-                  HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
-                  PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                "       - add data transfer from " << reg_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
-                                                                   << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
-                  tgt_state = state;
-                  state = fetch_previous(HLS->STG->get_entry_state(), state);
-                  fu_obj = reg_obj;
-                  port_num = 0;
+                  while(previous != get_next(HLS->STG->get_entry_state()))
+                  {
+                     THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(previous, tree_var), "The chain of registers propagating a primary input is broken");
+                     storage_value = HLS->storage_value_information->get_storage_value_index(previous, tree_var);
+                     r_index = HLS->Rreg->get_register(storage_value);
+                     reg_obj = HLS->Rreg->get(r_index);
+                     HLS->Rconn->add_data_transfer(reg_obj, tgt_obj, tgt_port, port_index, data_transfer(tree_var, precision, previous, tgt_state, op));
+                     PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                                   "       - add data transfer from " << reg_obj->get_string() << " to " << tgt_obj->get_string() << " port " << std::to_string(tgt_port) << ":" << std::to_string(port_index) << " from state "
+                                                                      << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                     THROW_ASSERT(reg_obj != tgt_obj, "There is a loop in the propagation chain");
+                     tgt_state = previous;
+                     previous = fetch_previous(HLS->STG->get_entry_state(), tgt_state);
+                     tgt_obj = reg_obj;
+                     tgt_port = 0;
+                  }
                }
                unsigned int base_index = extract_parm_decl(tree_var, TreeM);
                const generic_objRef fu_src_obj = input_ports[base_index];
                THROW_ASSERT(fu_src_obj, "unexpected condition");
-               HLS->Rconn->add_data_transfer(fu_src_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
+               HLS->Rconn->add_data_transfer(fu_src_obj, tgt_obj, tgt_port, port_index, data_transfer(tree_var, precision, previous, tgt_state, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << fu_obj->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
-                                                                              << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                             "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << tgt_obj->get_string() << " port " << std::to_string(tgt_port) << ":" << std::to_string(port_index) << " from state "
+                                                                              << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
             }
             else
             {

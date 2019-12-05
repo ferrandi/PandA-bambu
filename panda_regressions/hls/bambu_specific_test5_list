@@ -1,0 +1,5 @@
+bambu_specific_test5/adders.c
+bambu_specific_test5/multipliers.c
+bambu_specific_test5/mixed_operations.c
+bambu_specific_test5/if_clauses.c
+bambu_specific_test5/function_call.c

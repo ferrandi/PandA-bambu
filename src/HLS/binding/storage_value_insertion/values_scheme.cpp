@@ -105,16 +105,17 @@ DesignFlowStep_Status values_scheme::InternalExec()
          if(!HLS->storage_value_information->is_a_storage_value(*vIt, *k))
          {
             HLS->storage_value_information->set_storage_value_index(*vIt, *k, i);
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "In state " + HLS->Rliv->get_name(*vIt) + " variable " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(*k) + " is assigned to reg_" + std::to_string(i));
             HLS->storage_value_information->variable_index_map[i] = *k;
             i++;
          }
       }
       if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
       {
-         std::list<vertex> starting_ops = HLS->STG->GetStg()->GetStateInfo(*vIt)->starting_operations;
-         const std::list<vertex>::const_iterator opEnd = starting_ops.end();
+         std::list<vertex> running_ops = HLS->STG->GetStg()->GetStateInfo(*vIt)->executing_operations;
+         const std::list<vertex>::const_iterator opEnd = running_ops.end();
          vertex state_0 = get_next(start_state);
-         for(auto opIt = starting_ops.begin(); opIt != opEnd; ++opIt)
+         for(auto opIt = running_ops.begin(); opIt != opEnd; ++opIt)
          {
             std::vector<HLS_manager::io_binding_type> inVars = HLSMgr->get_required_values(HLS->functionId, *opIt);
             for(unsigned int num = 0; num != inVars.size(); num++)
@@ -128,6 +129,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
                      if(!HLS->storage_value_information->is_a_storage_value(current_vertex, var))
                      {
                         HLS->storage_value_information->set_storage_value_index(current_vertex, var, i);
+                        INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "In state " + HLS->Rliv->get_name(current_vertex) + " variable " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var) + " is assigned to reg_" + std::to_string(i));
                         HLS->storage_value_information->variable_index_map[i] = var;
                         i++;
                      }
