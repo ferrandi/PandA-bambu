@@ -446,7 +446,7 @@ void XilinxBackendFlow::parse_timing(const std::string& log_file)
                lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, boost::lexical_cast<double>(tk));
                if(boost::lexical_cast<double>(tk) > Param->getOption<double>(OPT_clock_period))
                {
-                  CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" + actual_parameters->component_name + ".log", STR_CST_synthesis_timing_violation_report);
+                  CopyFile(Param->getOption<std::string>(OPT_output_directory) + "/Synthesis/xst/" + actual_parameters->component_name + ".log", Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
                }
             }
          }
@@ -638,7 +638,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[VIVADO_XILINX_DESIGN_DELAY]);
          if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period))
          {
-            CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report], STR_CST_synthesis_timing_violation_report);
+            CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report], Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
          }
       }
       else

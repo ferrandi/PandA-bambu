@@ -247,7 +247,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
    lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, combinational_delay);
    if(combinational_delay > Param->getOption<double>(OPT_clock_period))
    {
-      CopyFile(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt", STR_CST_synthesis_timing_violation_report);
+      CopyFile(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt", Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
    }
 }
 
