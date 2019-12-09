@@ -2201,7 +2201,7 @@ double AllocationInformation::EstimateControllerDelay() const
       return 0.0;
    }
    size_t n_states = boost::num_vertices(*hls_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB));
-   double n_states_factor = static_cast<double>(n_states) / 30.0;
+   double n_states_factor = static_cast<double>(n_states) / NUM_CST_allocation_default_states_number_normalization_BB;
    if(hls->STG && hls->STG->get_number_of_states())
    {
       n_states = hls->STG->get_number_of_states();
@@ -3239,7 +3239,7 @@ ControlStep AllocationInformation::op_et_to_cycles(double et, double clock_perio
 bool AllocationInformation::CanBeMerged(const unsigned int first_operation, const unsigned int second_operation) const
 {
    if(first_operation == ENTRY_ID or second_operation == EXIT_ID)
-      return 0.0;
+      return true;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + STR(TreeM->CGetTreeNode(first_operation)) + " can be fused in " + STR(TreeM->CGetTreeNode(second_operation)));
    //   const auto first_delay = GetTimeLatency(first_operation, fu_binding::UNKNOWN);
    const auto second_delay = GetTimeLatency(second_operation, fu_binding::UNKNOWN);
