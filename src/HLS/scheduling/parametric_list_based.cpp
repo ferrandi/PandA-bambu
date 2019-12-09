@@ -345,7 +345,7 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > (current_cycle_ending_time) || unbounded));
    if(pipeliningCond)
       return;
-   cannotBeChained0 = current_starting_time >= (current_cycle_ending_time) ||
+   cannotBeChained0 = (current_starting_time >= current_cycle_ending_time) ||
                       ((!is_pipelined && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
    if(cannotBeChained0)
       return;
@@ -550,11 +550,13 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          for(auto arg2stms : bb2arg2stmtsR.second)
          {
             if(arg2stms.second.size() > 0)
+            {
                for(auto stmt : arg2stms.second)
                {
                   THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT=" + STR(stmt));
                   RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                }
+            }
          }
       }
    }
@@ -565,11 +567,13 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          for(auto arg2stms : bb2arg2stmtsW.second)
          {
             if(arg2stms.second.size() > 0)
+            {
                for(auto stmt : arg2stms.second)
                {
                   THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
                   RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
                }
+            }
          }
       }
    }
@@ -579,6 +583,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
       bool unbounded = false;
+      bool unbounded_RW = false;
       bool store_unbounded_check = false;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + std::to_string(schedule->num_scheduled()));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + std::to_string(already_sch));
@@ -728,7 +733,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                bool is_live = check_if_is_live_in_next_cycle(live_vertices, current_cycle, ending_time, clock_cycle);
                THROW_ASSERT(!(GET_TYPE(flow_graph, current_vertex) & (TYPE_WHILE | TYPE_FOR)), "not expected operation type");
                /// put these type of operations as last operation scheduled for the basic block
-               if((GET_TYPE(flow_graph, current_vertex) & (TYPE_IF | TYPE_RET | TYPE_SWITCH | TYPE_MULTIIF | TYPE_GOTO)) && (unbounded || is_live))
+               if((GET_TYPE(flow_graph, current_vertex) & (TYPE_IF | TYPE_RET | TYPE_SWITCH | TYPE_MULTIIF | TYPE_GOTO)) && (unbounded || unbounded_RW || is_live))
                {
                   if(black_list.find(fu_type) == black_list.end())
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -744,12 +749,20 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) + " postponed ");
                   continue;
                }
-               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded || is_live || store_unbounded_check))
+               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded || unbounded_RW || is_live || store_unbounded_check))
                {
                   if(black_list.find(fu_type) == black_list.end())
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
                   black_list.at(fu_type).insert(current_vertex);
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Scheduling of unbounded " + GET_NAME(flow_graph, current_vertex) + " postponed to the next cycle");
+                  continue;
+               }
+               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) != RW_stmts.end() && unbounded)
+               {
+                  if(black_list.find(fu_type) == black_list.end())
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  black_list.at(fu_type).insert(current_vertex);
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Scheduling of unbounded RW interface " + GET_NAME(flow_graph, current_vertex) + " postponed to the next cycle");
                   continue;
                }
 
@@ -1011,6 +1024,10 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                      THROW_WARNING("Operation execution time of the unbounded operation is greater than the clock period resource fraction (" + STR(clock_cycle) + ").\n\tExecution time " + STR(ex_time) + " of " + GET_NAME(flow_graph, current_vertex) +
                                    " of type " + flow_graph->CGetOpNodeInfo(current_vertex)->GetOperation() + "\nThis may prevent meeting the timing constraints.\n");
                   unbounded = true;
+               }
+               else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) != RW_stmts.end())
+               {
+                  unbounded_RW = true;
                }
                else
                {
