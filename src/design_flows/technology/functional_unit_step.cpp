@@ -419,7 +419,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                      technology_nodeRef tn = TM->get_fu(fu_name, LM);
                      if(!tn)
                      {
-                        // Analizing a template, specializations of that template won't be found in the library.
+                        // Analyzing a template, specializations of that template won't be found in the library.
                         technology_nodeRef fun_unit;
                         if(GetPointer<functional_unit_template>(f_unit))
                            fun_unit = GetPointer<functional_unit_template>(f_unit)->FU;
