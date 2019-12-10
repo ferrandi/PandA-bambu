@@ -1,10 +1,11 @@
-bambu_specific_test2/duff_device.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/dd_test1.xml
-bambu_specific_test2/irr1_a.c  bambu_specific_test2/irr3_b.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/dd_test1.xml
-bambu_specific_test2/irr2.c --generate-tb=a=2,b=5,c=10
-bambu_specific_test2/irr3_a.c  bambu_specific_test2/irr3_b.c --generate-tb=a=2,b=5,c=10
-bambu_specific_test2/irr4_a.c  bambu_specific_test2/irr4_b.c
-bambu_specific_test2/par-bool1.c --generate-tb=a=2,b=5,c=10,d=3,e=4,f=5,cond=1 --speculative-sdc-scheduling
-bambu_specific_test2/port_swapping_test.c bambu_specific_test2/ps_constraints.xml --no-chaining
-bambu_specific_test2/port_swapping_test2.c bambu_specific_test2/ps_constraints.xml --no-chaining
-bambu_specific_test2/complex_test.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/complex_test.xml
-bambu_specific_test2/multiarray.c --generate-tb=arr1="{{{3,0},{0,0}},{{8,3},{8,0}}}",arr2="{{{5,2},{0,1}},{{7,3},{5,0}}}",arr3="{{{3,0},{7,0}},{{3,5},{0,0}}}" --std=c99
+bambu_specific_test2/duff_device.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/dd_test1.xml --experimental-setup=BAMBU
+bambu_specific_test2/irr1_a.c  bambu_specific_test2/irr3_b.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/dd_test1.xml --experimental-setup=BAMBU
+bambu_specific_test2/irr2.c --generate-tb=a=2,b=5,c=10 --experimental-setup=BAMBU
+bambu_specific_test2/irr3_a.c  bambu_specific_test2/irr3_b.c --generate-tb=a=2,b=5,c=10 --experimental-setup=BAMBU
+bambu_specific_test2/irr4_a.c  bambu_specific_test2/irr4_b.c --experimental-setup=BAMBU
+bambu_specific_test2/par-bool1.c --generate-tb=a=2,b=5,c=10,d=3,e=4,f=5,cond=1 --speculative-sdc-scheduling --experimental-setup=BAMBU
+bambu_specific_test2/port_swapping_test.c bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU
+bambu_specific_test2/port_swapping_test2.c bambu_specific_test2/ps_constraints.xml --no-chaining --experimental-setup=BAMBU
+bambu_specific_test2/complex_test.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/complex_test.xml --experimental-setup=BAMBU
+bambu_specific_test2/multiarray.c --generate-tb=arr1="{{{3,0},{0,0}},{{8,3},{8,0}}}",arr2="{{{5,2},{0,1}},{{7,3},{5,0}}}",arr3="{{{3,0},{7,0}},{{3,5},{0,0}}}" --std=c99 --experimental-setup=BAMBU
+bambu_specific_test2/test_without_c.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/test_without_c.xml --experimental-setup=BAMBU-BALANCED-MP
