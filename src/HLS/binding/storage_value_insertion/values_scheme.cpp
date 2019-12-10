@@ -105,7 +105,6 @@ DesignFlowStep_Status values_scheme::InternalExec()
          if(!HLS->storage_value_information->is_a_storage_value(*vIt, *k))
          {
             HLS->storage_value_information->set_storage_value_index(*vIt, *k, i);
-            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "In state " + HLS->Rliv->get_name(*vIt) + " variable " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(*k) + " is assigned to reg_" + std::to_string(i));
             HLS->storage_value_information->variable_index_map[i] = *k;
             i++;
          }
@@ -129,7 +128,6 @@ DesignFlowStep_Status values_scheme::InternalExec()
                      if(!HLS->storage_value_information->is_a_storage_value(current_vertex, var))
                      {
                         HLS->storage_value_information->set_storage_value_index(current_vertex, var, i);
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "In state " + HLS->Rliv->get_name(current_vertex) + " variable " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var) + " is assigned to reg_" + std::to_string(i));
                         HLS->storage_value_information->variable_index_map[i] = var;
                         i++;
                      }

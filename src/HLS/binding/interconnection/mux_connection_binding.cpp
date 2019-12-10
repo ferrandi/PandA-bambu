@@ -1477,7 +1477,8 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                HLS->Rconn->add_data_transfer(fu_src_obj, tgt_obj, tgt_port, port_index, data_transfer(tree_var, precision, previous, tgt_state, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                              "       - add data transfer from primary input " << fu_src_obj->get_string() << " to " << tgt_obj->get_string() << " port " << std::to_string(tgt_port) << ":" << std::to_string(port_index) << " from state "
-                                                                              << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+                                                                              << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " +
+                                                                                     HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
             }
             else
             {
@@ -1501,6 +1502,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "       - register: " << r_index << " from " << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      reg_obj = HLS->Rreg->get(r_index);
+                     THROW_ASSERT(not(reg_obj == fu_obj && HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled()), "There can be no direct forwarding in pipelining");
                      if(reg_obj != fu_obj)
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
@@ -1600,32 +1602,45 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
       }
       if(HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled())
       {
-         vertex origin = *rs_it;
          vertex target;
+         vertex previous;
+         vertex def_op;
+         vertex top;
          unsigned int origin_idx;
          unsigned int target_idx;
          unsigned int origin_reg_idx;
          unsigned int target_reg_idx;
          generic_objRef origin_reg;
          generic_objRef target_reg;
-         CustomOrderedSet<unsigned int> out_vars = HLS->Rliv->get_live_out(origin);
-         for(auto& var : out_vars)
+         CustomOrderedSet<unsigned int> in_vars = HLS->Rliv->get_live_in(*rs_it);
+         for(auto& var : in_vars)
          {
-            graph::out_edge_iterator out_edges, out_edges_end;
-            for(boost::tie(out_edges, out_edges_end) = boost::out_edges(origin, *(HLS->STG->GetStg())); out_edges != out_edges_end; ++out_edges)
+            target = *rs_it;
+            previous = fetch_previous(HLS->STG->get_entry_state(), target);
+            def_op = HLS->Rliv->get_op_where_defined(var);
+            THROW_ASSERT(HLS->Rliv->get_state_where_end(def_op).size() == 1, "A pipelined operation has more than one ending state");
+            top = *HLS->Rliv->get_state_where_end(def_op).begin();
+            std::cout << "target is " + HLS->Rliv->get_name(target) + " top is " + HLS->Rliv->get_name(top) + " variable is " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var) + "\n";
+            THROW_ASSERT(target != top, "State defining a variable cannot have it as a live in variable");
+            THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(target, var), "There is a live in variable without any register");
+            while(previous != top)
             {
-               target = boost::target(*out_edges, *(HLS->STG->GetStg()));
-               if(HLS->storage_value_information->is_a_storage_value(origin, var) && HLS->storage_value_information->is_a_storage_value(target, var))
-               {
-                  origin_idx = HLS->storage_value_information->get_storage_value_index(origin, var);
-                  target_idx = HLS->storage_value_information->get_storage_value_index(target, var);
-                  origin_reg_idx = HLS->Rreg->get_register(origin_idx);
-                  target_reg_idx = HLS->Rreg->get_register(target_idx);
-                  origin_reg = HLS->Rreg->get(origin_reg_idx);
-                  target_reg = HLS->Rreg->get(target_reg_idx);
-                  // Always add a data transfer on port 0 since it's always an input to reg_STD
-                  HLS->Rconn->add_data_transfer(origin_reg, target_reg, 0, port_index, data_transfer(var, precision, origin, target, op));
-               }
+               THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(previous, var), "There is a live in variable without any register");
+               THROW_ASSERT(HLS->Rliv->get_live_in(previous).find(var) != HLS->Rliv->get_live_in(previous).end(), "The variable is not in live-in");
+               THROW_ASSERT(HLS->Rliv->get_live_out(previous).find(var) != HLS->Rliv->get_live_out(previous).end(), "The variable is not in live-out");
+               origin_idx = HLS->storage_value_information->get_storage_value_index(previous, var);
+               target_idx = HLS->storage_value_information->get_storage_value_index(target, var);
+               origin_reg_idx = HLS->Rreg->get_register(origin_idx);
+               target_reg_idx = HLS->Rreg->get_register(target_idx);
+               origin_reg = HLS->Rreg->get(origin_reg_idx);
+               target_reg = HLS->Rreg->get(target_reg_idx);
+               // Always add a data transfer on port 0 since it's always an input to reg_STD
+               HLS->Rconn->add_data_transfer(origin_reg, target_reg, 0, port_index, data_transfer(var, precision, previous, target, op));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
+                             "       - add data transfer from " << origin_reg->get_string() << " to " << target_reg->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                                                                << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(target) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
+               target = previous;
+               previous = fetch_previous(HLS->STG->get_entry_state(), target);
             }
          }
       }
