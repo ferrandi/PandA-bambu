@@ -10400,11 +10400,10 @@
       </cell>
       <cell>
         <name>lut_expr_FU</name>
-        <attribute name="area" value_type="float64">11</attribute>
-        <attribute name="REGISTERS" value_type="float64">12</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">11</attribute>
-        <characterization_timestamp>2017-01-26T11:23:42</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="1.8070112034694616"/>
+        <attribute name="area" value_type="float64">21</attribute>
+        <attribute name="REGISTERS" value_type="float64">38</attribute>
+        <characterization_timestamp>2019-12-11T12:56:35</characterization_timestamp>
+        <operation operation_name="lut_expr" execution_time="1.28"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>

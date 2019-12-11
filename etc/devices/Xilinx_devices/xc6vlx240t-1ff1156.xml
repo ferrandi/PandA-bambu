@@ -10597,13 +10597,13 @@
       </cell>
       <cell>
         <name>lut_expr_FU</name>
-        <attribute name="area" value_type="float64">8</attribute>
+        <attribute name="area" value_type="float64">13</attribute>
         <attribute name="REGISTERS" value_type="float64">7</attribute>
-        <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
-        <attribute name="SLICE" value_type="float64">3</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">8</attribute>
-        <characterization_timestamp>2017-05-05T23:06:49</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="1.026"/>
+        <attribute name="SLICE_LUTS" value_type="float64">8</attribute>
+        <attribute name="SLICE" value_type="float64">8</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <characterization_timestamp>2019-12-11T13:08:34</characterization_timestamp>
+        <operation operation_name="lut_expr" execution_time="1.0940000000000001"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>
