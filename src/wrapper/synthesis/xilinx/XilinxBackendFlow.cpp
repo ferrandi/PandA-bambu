@@ -502,7 +502,7 @@ void XilinxBackendFlow::xparse_timing(const std::string& fn, bool post)
                const auto* EnodeC = GetPointer<const xml_element>(iter_int);
                if(!EnodeC)
                   continue;
-               if(flow_name == "Characterization" and EnodeC->get_name() == "twBody")
+               if(flow_name == "Characterization" and EnodeC->get_name() == "twBody" && EnodeC->CGetDescendants("twErrRpt/twConst/twPathRpt/twConstPath/twSlack").size())
                {
                   const auto tw_slacks = EnodeC->CGetDescendants("twErrRpt/twConst/twPathRpt/twConstPath/twSlack");
                   if(tw_slacks.size() == 0)
@@ -636,7 +636,7 @@ void XilinxBackendFlow::CheckSynthesisResults()
       if(design_values[VIVADO_XILINX_DESIGN_DELAY] != 0.0)
       {
          lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[VIVADO_XILINX_DESIGN_DELAY]);
-         if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period))
+         if(design_values[VIVADO_XILINX_DESIGN_DELAY] > Param->getOption<double>(OPT_clock_period) and actual_parameters->parameter_values.find(PARAM_vivado_timing_report) != actual_parameters->parameter_values.end() and  ExistFile(actual_parameters->parameter_values.find(PARAM_vivado_timing_report)->second))
          {
             CopyFile(actual_parameters->parameter_values[PARAM_vivado_timing_report], Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
          }

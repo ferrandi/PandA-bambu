@@ -84,7 +84,7 @@ class FunctionalUnitStep : public virtual DesignFlowStep
     * @param constPort is the index of the constant port
     */
    virtual void AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index,
-                            const unsigned int constPort, const bool is_commutative) = 0;
+                            const unsigned int constPort, const bool is_commutative, size_t max_lut_size) = 0;
 
    /**
     * Analyze all the cells built starting from a template

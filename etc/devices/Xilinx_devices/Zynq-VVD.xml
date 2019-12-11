@@ -55,6 +55,9 @@
       <cmd name="    set design_slack [get_property SLACK $Timing_Paths]"/>
       <cmd name="    set design_skew [get_property SKEW $Timing_Paths]"/>
       <cmd name="    set uncertainty [get_property UNCERTAINTY $Timing_Paths]"/>
+      <cmd name="    if { [expr {$uncertainty ==  &quot;&quot;}] } {"/>
+      <cmd name="      set uncertainty 0"/>
+      <cmd name="    }"/>
       <cmd name="    set requirement [get_property REQUIREMENT $Timing_Paths]"/>
       <cmd name="    set design_datapath_delay [expr {abs($design_slack) + ($requirement) + ($design_skew) - $uncertainty}]"/>
       <cmd name="    puts $design_datapath_delay"/>
