@@ -1711,8 +1711,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       /// The operation execution  time
       double actual_execution_time = get_execution_time(fu_type, time_operation_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial execution time " + STR(actual_execution_time));
-      auto n_ins =  [&]() -> unsigned
-      {
+      auto n_ins = [&]() -> unsigned {
          unsigned res = 0;
          auto tn = TreeM->get_tree_node_const(time_operation_index);
          const auto ga = GetPointer<const gimple_assign>(tn);
@@ -2525,7 +2524,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       {
          const technology_managerRef TM = HLS_T->get_technology_manager();
          auto true_delay = [&]() -> double {
-            technology_nodeRef f_unit_ce = TM->get_fu(COND_EXPR_STD"_1_1_1_1", LIBRARY_STD_FU);
+            technology_nodeRef f_unit_ce = TM->get_fu(COND_EXPR_STD "_1_1_1_1", LIBRARY_STD_FU);
             auto* fu_ce = GetPointer<functional_unit>(f_unit_ce);
             technology_nodeRef op_ce_node = fu_ce->get_operation("cond_expr");
             auto* op_ce = GetPointer<operation>(op_ce_node);
@@ -2556,7 +2555,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    }
    else if(operation_name == "lut_expr")
    {
-      //std::cerr << "get_correction_time " << operation_name << " - " << n_ins << "\n";
+      // std::cerr << "get_correction_time " << operation_name << " - " << n_ins << "\n";
       if(HLS_T->get_target_device()->has_parameter("max_lut_size"))
       {
          const technology_managerRef TM = HLS_T->get_technology_manager();
@@ -2572,13 +2571,12 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             THROW_ERROR("unexpected condition");
          else
          {
-            auto delta_delay = (lut_delay*.7) / max_lut_size;
-            //std::cerr << "correction value = " << (max_lut_size-n_ins)*delta_delay << "\n";
-            res_value = res_value - n_ins*delta_delay;
+            auto delta_delay = (lut_delay * .7) / max_lut_size;
+            // std::cerr << "correction value = " << (max_lut_size-n_ins)*delta_delay << "\n";
+            res_value = res_value - n_ins * delta_delay;
          }
       }
    }
-
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Correction value after first correction " + STR(res_value));
    double bus_multiplier = 0;
