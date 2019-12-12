@@ -575,7 +575,6 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       {
          GetPointer<functional_unit>(new_techNode_obj)->add(techNode_fu);
       }
-
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Specialization completed");
    }
 }
