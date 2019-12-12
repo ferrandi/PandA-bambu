@@ -180,7 +180,14 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
       return false;
-   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max);
+   bool is_simple_case = [&]() -> bool {
+      if(GET_CONST_NODE(be->op1)->get_kind() != integer_cst_K)
+         return false;
+      auto* int_const = GetPointer<integer_cst>(GET_CONST_NODE(be->op1));
+      auto k = be->get_kind();
+      return (k == lt_expr_K || k == gt_expr_K) &&  int_const->value == 0 ;
+   }();
+   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || is_simple_case;
 }
 bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
 {
