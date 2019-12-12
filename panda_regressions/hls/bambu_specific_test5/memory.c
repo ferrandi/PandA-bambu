@@ -1,8 +1,7 @@
-int memory(int base)
+int memory(int base, int i)
 {
-   char str[26] = {'a','b','c','d'}; 
+   static char str[] = {'a','b','c','d'}; 
    //,'e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z'};
-   int i = 0;
    int flag = 0;
    flag += str[i] - base;
    i++;
