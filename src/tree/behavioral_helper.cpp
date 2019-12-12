@@ -5760,6 +5760,11 @@ bool BehavioralHelper::IsLoad(const unsigned int statement_index) const
    return tree_helper::IsLoad(TM, TM->CGetTreeNode(statement_index), fun_mem_data);
 }
 
+bool BehavioralHelper::IsLut(const unsigned int statement_index) const
+{
+   return tree_helper::IsLut(TM, TM->CGetTreeNode(statement_index));
+}
+
 void BehavioralHelper::InvaildateVariableName(const unsigned int index)
 {
    if(vars_symbol_table.find(index) != vars_symbol_table.end())
