@@ -682,6 +682,8 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                if(used_resources.find(fu_type) == used_resources.end())
                   used_resources[fu_type] = 0;
                bool schedulable = used_resources.at(fu_type) != HLS->allocation_information->get_number_fu(fu_type);
+               // TODO: sarebbe molto meglio trovare il vero numero di risorse e dove viene istanziato
+               schedulable = schedulable | HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled();
                if(!schedulable)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---No free resource");
@@ -1000,7 +1002,6 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                /// scheduling is now possible
                /// update resource usage
                used_resources[fu_type]++;
-
                /// check if there exist enough resources available
                if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end())
                {
@@ -1414,7 +1415,7 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
 bool parametric_list_based::BB_update_resources_use(unsigned int& used_resources, const unsigned int fu_type) const
 {
    if(used_resources == HLS->allocation_information->get_number_fu(fu_type))
-      return false;
+       return false;
    else
    {
       used_resources++;

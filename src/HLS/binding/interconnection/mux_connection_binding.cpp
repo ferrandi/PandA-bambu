@@ -1620,7 +1620,6 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             def_op = HLS->Rliv->get_op_where_defined(var);
             THROW_ASSERT(HLS->Rliv->get_state_where_end(def_op).size() == 1, "A pipelined operation has more than one ending state");
             top = *HLS->Rliv->get_state_where_end(def_op).begin();
-            std::cout << "target is " + HLS->Rliv->get_name(target) + " top is " + HLS->Rliv->get_name(top) + " variable is " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(var) + "\n";
             THROW_ASSERT(target != top, "State defining a variable cannot have it as a live in variable");
             THROW_ASSERT(HLS->storage_value_information->is_a_storage_value(target, var), "There is a live in variable without any register");
             while(previous != top)
