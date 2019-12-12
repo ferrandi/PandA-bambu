@@ -15,5 +15,5 @@ int memory(int base, int i)
    //i++;
    //flag += str[i] - base - i;
    //i++;
-   return flag;   
+   return flag;
 }

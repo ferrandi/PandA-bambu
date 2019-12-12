@@ -1174,7 +1174,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test5/mixed_operations.c \
 ./bambu_specific_test5/multipliers.c \
 ./bambu_specific_test5.sh\
-./bambu_specific_test5.list\
+./bambu_specific_test5_list\
 ./function_pointers.sh\
 ./function_pointers_list_bsearch\
 ./function_pointers_list_qsort\

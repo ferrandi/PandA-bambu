@@ -1,4 +1,4 @@
 <?xml version="1.0"?>
 <function>
-   <testbench base="97"/>
+   <testbench base="97" i="0"/>
 </function>
