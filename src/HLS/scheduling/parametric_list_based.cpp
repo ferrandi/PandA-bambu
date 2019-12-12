@@ -1259,6 +1259,11 @@ void parametric_list_based::compute_starting_ending_time_asap(const vertex v, co
    for(boost::tie(ei, ei_end) = boost::in_edges(v, *flow_graph); ei != ei_end; ei++)
    {
       vertex from_vertex = boost::source(*ei, *flow_graph);
+      if(GET_TYPE(flow_graph, from_vertex) & (TYPE_PHI|TYPE_VPHI))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping phi predecessor " + GET_NAME(flow_graph, from_vertex));
+         continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering predecessor " + GET_NAME(flow_graph, from_vertex));
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule->get_cstep(from_vertex).second;
@@ -2340,7 +2345,7 @@ bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v
       if(cs == schedule->get_cstep_end(current_op).second)
       {
          unsigned int from_fu_type = res_binding->get_assign(current_op);
-         if((GET_TYPE(flow_graph, current_op) & TYPE_LOAD) and (v_is_indirect or v_is_one_cycle_direct_access or HLS->allocation_information->is_indirect_access_memory_unit(from_fu_type)))
+         if((GET_TYPE(flow_graph, current_op) & TYPE_LOAD) and (v_is_indirect or (v_is_one_cycle_direct_access and HLS->allocation_information->is_one_cycle_direct_access_memory_unit(from_fu_type)) or HLS->allocation_information->is_indirect_access_memory_unit(from_fu_type)))
          {
             return true;
          }
