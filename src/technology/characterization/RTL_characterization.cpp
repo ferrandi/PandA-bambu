@@ -898,9 +898,9 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
             e_port = SM->add_constant("constant_0", circuit, port_in->get_typeRef(), STR(0xFF7F3F1F0F070301));
             SM->add_connection(port_in, e_port);
          }
-         else if(fu_base_name == LUT_EXPR_STD && i>max_lut_size)
+         else if(fu_base_name == LUT_EXPR_STD && i > max_lut_size)
          {
-            e_port = SM->add_constant("constant_"+STR(i), circuit, port_in->get_typeRef(), STR(0));
+            e_port = SM->add_constant("constant_" + STR(i), circuit, port_in->get_typeRef(), STR(0));
             SM->add_connection(port_in, e_port);
          }
          else if(isTemplate && i == constPort)

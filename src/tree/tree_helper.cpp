@@ -9032,7 +9032,6 @@ bool tree_helper::IsLoad(const tree_managerConstRef& TM, const tree_nodeConstRef
    return load_candidate;
 }
 
-
 bool tree_helper::IsLut(const tree_managerConstRef& TM, const tree_nodeConstRef& tn)
 {
    if(tn->get_kind() == tree_reindex_K)

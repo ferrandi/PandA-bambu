@@ -185,7 +185,7 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
          return false;
       auto* int_const = GetPointer<integer_cst>(GET_CONST_NODE(be->op1));
       auto k = be->get_kind();
-      return (k == lt_expr_K || k == gt_expr_K) &&  int_const->value == 0 ;
+      return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
    }();
    return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || is_simple_case;
 }
