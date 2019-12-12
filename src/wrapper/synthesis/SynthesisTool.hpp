@@ -79,6 +79,9 @@ class xml_element;
 #define PARAM_has_VHDL_library "has_VHDL_library"
 #define PARAM_VHDL_library "VHDL_library"
 
+/// used by Intel/Altera Characterization
+#define PARAM_fu "fu"
+
 class SynthesisTool
 {
  public:

@@ -892,7 +892,13 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          structural_objectRef port_in = spec_module->get_in_port(i);
          if(port_in->get_id() == CLOCK_PORT_NAME || port_in->get_id() == RESET_PORT_NAME || port_in->get_id() == START_PORT_NAME)
             continue;
-         if(isTemplate && i == constPort)
+         if(fu_base_name == LUT_EXPR_STD && i == 0)
+         {
+            resize_port(port_in, 64);
+            e_port = SM->add_constant("constant_0", circuit, port_in->get_typeRef(), STR(6148914691236517205));
+            SM->add_connection(port_in, e_port);
+         }
+         else if(isTemplate && i == constPort)
          {
             THROW_ASSERT(fu->characterizing_constant_value != "", "expected a value");
             e_port = SM->add_constant("constant_" + STR(constPort), circuit, port_in->get_typeRef(), fu->characterizing_constant_value);
