@@ -2283,7 +2283,7 @@ void allocation::IntegrateTechnologyLibraries()
       auto* fu_br = GetPointer<functional_unit>(current_fu);
       technology_nodeRef op_store_node = fu_br->get_operation("STORE");
       auto* op_store = GetPointer<operation>(op_store_node);
-      double store_delay = allocation_information->time_m_execution_time(op_store) - allocation_information->get_correction_time(current_size, "STORE") + allocation_information->get_setup_hold_time();
+      double store_delay = allocation_information->time_m_execution_time(op_store) - allocation_information->get_correction_time(current_size, "STORE", 0) + allocation_information->get_setup_hold_time();
       if(store_delay > clock_period)
          THROW_ERROR("clock constraint too tight: BRAMs for this device cannot run so fast... (" + current_fu->get_name() + ":" + STR(store_delay) + ">" + STR(clock_period) + ")");
    }

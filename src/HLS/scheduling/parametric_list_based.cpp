@@ -1327,7 +1327,7 @@ void parametric_list_based::compute_exec_stage_time(const unsigned int fu_type, 
       stage_period = clock_cycle - setup_hold_time - phi_extra_time - scheduling_mux_margins - EPSILON;
 
    /// corrections in case the unit first fits in a clock period and then after all the additions does not fit anymore
-   double initial_execution_time = HLS->allocation_information->get_execution_time(fu_type, v, flow_graph_with_feedbacks) - HLS->allocation_information->get_correction_time(fu_type, flow_graph_with_feedbacks->CGetOpNodeInfo(v)->GetOperation());
+   double initial_execution_time = HLS->allocation_information->get_execution_time(fu_type, v, flow_graph_with_feedbacks) - HLS->allocation_information->get_correction_time(fu_type, flow_graph_with_feedbacks->CGetOpNodeInfo(v)->GetOperation(), static_cast<unsigned>(flow_graph_with_feedbacks->CGetOpNodeInfo(v)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE).size()));
    if(initial_execution_time + setup_hold_time < clock_cycle && op_execution_time + setup_hold_time + phi_extra_time + scheduling_mux_margins >= clock_cycle)
    {
       op_execution_time = clock_cycle - setup_hold_time - phi_extra_time - scheduling_mux_margins - EPSILON;
