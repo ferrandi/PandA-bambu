@@ -317,6 +317,21 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
          is_combinational = true;
    }
+   else
+   {
+      library = TM->get_library(fu_name);
+      if(library.size())
+      {
+         const technology_nodeRef tn = TM->get_fu(fu_name, library);
+         actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
+         if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
+            is_combinational = true;
+         if(GetPointer<functional_unit>(tn)->fu_template_name.size())
+            actual_parameters->parameter_values[PARAM_fu] = GetPointer<functional_unit>(tn)->fu_template_name;
+         else
+            actual_parameters->parameter_values[PARAM_fu] = fu_name;
+      }
+   }
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(is_combinational);
    bool time_constrained = false;
    if(actual_parameters->parameter_values.find(PARAM_clk_period) != actual_parameters->parameter_values.end() and boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)

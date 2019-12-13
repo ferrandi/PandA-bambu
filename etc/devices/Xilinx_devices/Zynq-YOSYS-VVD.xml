@@ -102,6 +102,8 @@
       <cmd name="place_design"/>
       <cmd name="dump_statistics"/>
       <cmd name="route_design"/>
+      <cmd name="report_utilization -file $outputDir/post_route_util.rpt"/>
+      <cmd name="report_timing_summary -file $outputDir/post_route_timing_summary.rpt"/>
       <cmd name="dump_statistics"/>
       <cmd name="close_design"/>
       <cmd name="close_project"/>
@@ -212,7 +214,7 @@
       <cmd name="power_opt_design" condition="${__power_optimization__}"/>
       <cmd name="report_clock_utilization -file $outputDir/clock_util.rpt"/>
       <cmd name="# Optionally run optimization if there are timing violations after placement"/>
-      <cmd name="if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] &lt; 0} {"/>
+      <cmd name="if {[get_property SLACK [get_timing_paths -max_paths 1 -nworst 1 -setup]] &lt; 0.5} {"/>
       <cmd name="  puts &quot;Found setup timing violations => running physical optimization&quot;"/>
       <cmd name="  phys_opt_design"/>
       <cmd name="}"/>
