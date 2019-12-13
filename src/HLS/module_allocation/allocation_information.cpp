@@ -2571,9 +2571,9 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
             THROW_ERROR("unexpected condition");
          else
          {
-            auto delta_delay = (lut_delay * .7) / max_lut_size;
+            auto delta_delay = (lut_delay * .7) / static_cast<double>(max_lut_size);
             // std::cerr << "correction value = " << (max_lut_size-n_ins)*delta_delay << "\n";
-            res_value = res_value - n_ins * delta_delay;
+            res_value = res_value - static_cast<double>(n_ins) * delta_delay;
          }
       }
    }

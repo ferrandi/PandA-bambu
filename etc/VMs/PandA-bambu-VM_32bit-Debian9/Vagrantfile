@@ -19,7 +19,6 @@ Vagrant.configure(2) do |config|
      apt-get autoremove -y
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
-     git checkout taste_test
      make -f Makefile.init
      mkdir build
      cd build && ../configure --prefix=/opt/panda --enable-verilator --enable-glpk --disable-release --enable-experimental --enable-flopoco --enable-opt --with-opt-level=2 && make -j2 && make install
