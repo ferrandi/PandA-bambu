@@ -247,17 +247,17 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
       {
          const structural_objectRef obj = fu_curr->CM->get_circ();
          NP_functionalityRef NPF = GetPointer<module>(obj)->get_NP_functionality();
+         size_t max_lut_size = static_cast<size_t>(-1);
+         if(device->has_parameter("max_lut_size"))
+         {
+            max_lut_size = device->get_parameter<size_t>("max_lut_size");
+         }
 #if HAVE_FLOPOCO
          std::string vendor;
          if(device->has_parameter("vendor"))
          {
             vendor = device->get_parameter<std::string>("vendor");
             boost::algorithm::to_lower(vendor);
-         }
-         size_t max_lut_size = static_cast<size_t>(-1);
-         if(device->has_parameter("max_lut_size"))
-         {
-            max_lut_size = device->get_parameter<size_t>("max_lut_size");
          }
          bool is_xilinx = vendor == "xilinx";
          bool is_lattice = vendor == "lattice";
