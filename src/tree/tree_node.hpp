@@ -77,6 +77,7 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(Range);
 template <class value>
 class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
@@ -4577,6 +4578,9 @@ struct ssa_name : public tree_node
 
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
+
+   /// Range information about numerical values of the ssa variable
+   RangeConstRef range;
 
    /// point to solution
    PointToSolutionRef use_set;

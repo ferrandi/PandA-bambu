@@ -72,6 +72,7 @@ class Range
 {
  public:
    using APInt = boost::multiprecision::int128_t;
+   using bw_t = unsigned;
 
  private:
    /// The lower bound of the range.
@@ -79,21 +80,21 @@ class Range
    /// The upper bound of the range.
    APInt u;
    /// the range bit-width
-   unsigned bw;
+   bw_t bw;
    /// the range type
    RangeType type;
 
    void normalizeRange(const APInt& lb, const APInt& ub, RangeType rType);
 
  public:
-   Range(RangeType type, unsigned bw);
-   Range(RangeType rType, unsigned bw, const APInt& lb, const APInt& ub);
+   Range(RangeType type, bw_t bw);
+   Range(RangeType rType, bw_t bw, const APInt& lb, const APInt& ub);
    virtual ~Range() = default;
    Range(const Range& other) = default;
    Range(Range&&) = default;
    Range& operator=(const Range& other) = default;
    Range& operator=(Range&&) = default;
-   unsigned getBitWidth() const;
+   bw_t getBitWidth() const;
    const APInt &getLower() const;
    const APInt &getUpper() const;
    APInt getSignedMax() const;
@@ -130,29 +131,31 @@ class Range
    RangeRef And(RangeConstRef other) const;
    RangeRef Or(RangeConstRef other) const;
    RangeRef Xor(RangeConstRef other) const;
-   RangeRef Eq(RangeConstRef other, unsigned bw) const;
-   RangeRef Ne(RangeConstRef other, unsigned bw) const;
-   RangeRef Ugt(RangeConstRef other, unsigned bw) const;
-   RangeRef Uge(RangeConstRef other, unsigned bw) const;
-   RangeRef Ult(RangeConstRef other, unsigned bw) const;
-   RangeRef Ule(RangeConstRef other, unsigned bw) const;
-   RangeRef Sgt(RangeConstRef other, unsigned bw) const;
-   RangeRef Sge(RangeConstRef other, unsigned bw) const;
-   RangeRef Slt(RangeConstRef other, unsigned bw) const;
-   RangeRef Sle(RangeConstRef other, unsigned bw) const;
+   RangeRef Eq(RangeConstRef other, bw_t bw) const;
+   RangeRef Ne(RangeConstRef other, bw_t bw) const;
+   RangeRef Ugt(RangeConstRef other, bw_t bw) const;
+   RangeRef Uge(RangeConstRef other, bw_t bw) const;
+   RangeRef Ult(RangeConstRef other, bw_t bw) const;
+   RangeRef Ule(RangeConstRef other, bw_t bw) const;
+   RangeRef Sgt(RangeConstRef other, bw_t bw) const;
+   RangeRef Sge(RangeConstRef other, bw_t bw) const;
+   RangeRef Slt(RangeConstRef other, bw_t bw) const;
+   RangeRef Sle(RangeConstRef other, bw_t bw) const;
    RangeRef abs() const;
-   RangeRef truncate(unsigned bitwidth) const;
-   RangeRef sextOrTrunc(unsigned bitwidth) const;
-   RangeRef zextOrTrunc(unsigned bitwidth) const;
+   RangeRef truncate(bw_t bitwidth) const;
+   RangeRef sextOrTrunc(bw_t bitwidth) const;
+   RangeRef zextOrTrunc(bw_t bitwidth) const;
    bool operator==(const Range& other) const;
    bool operator!=(const Range& other) const;
    virtual RangeRef intersectWith(RangeConstRef other) const;
    virtual RangeRef unionWith(RangeConstRef other) const;
-   RangeRef BestRange(RangeConstRef UR, RangeConstRef SR, unsigned bw) const;
+   RangeRef BestRange(RangeConstRef UR, RangeConstRef SR, bw_t bw) const;
 
    static RangeRef makeSatisfyingCmpRegion(kind pred, RangeConstRef Other);
-   static unsigned neededBits(const APInt& a, const APInt& b, bool sign);
+   static bw_t neededBits(const APInt& a, const APInt& b, bool sign);
 };
+
+std::ostream& operator<<(std::ostream& OS, const Range& R);
 
 class RealRange : public Range
 {
@@ -188,12 +191,24 @@ class RealRange : public Range
   RangeRef unionWith(RangeConstRef other) const override;
 };
 
-static std::ostream& operator<<(std::ostream& OS, const Range& R);
-
 class RangeAnalysis : public ApplicationFrontendFlowStep
 {
- private: 
-   std::map<tree_nodeConstRef, RangeConstRef, tree_reindexCompare> ranges;
+   /// True if dead code elimination step must be restarted
+   bool dead_code_restart;
+   /// True if flop constant elimination step must be restarted
+   bool constant_flop_restart;
+
+   /** Gets the maximum bit width of the operands in the instructions of the
+    * function. This function is necessary because the class APInt only
+    * supports binary operations on operands that have the same number of
+    * bits; thus, all the APInts that we allocate to process the function will
+    * have the maximum bit size. The complexity of this function is linear on
+    * the number of operands used in the function.
+    */
+   Range::bw_t getFunction_BW(unsigned int F);
+   Range::bw_t getApplication_BW();
+
+   bool finalize(const void* CG);
 
  protected:
 
@@ -230,20 +245,6 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
-   RangeConstRef getRange(const tree_nodeConstRef ssa_name) const;
-
-   /** Gets the maximum bit width of the operands in the instructions of the
-    * function. This function is necessary because the class APInt only
-    * supports binary operations on operands that have the same number of
-    * bits; thus, all the APInts that we allocate to process the function will
-    * have the maximum bit size. The complexity of this function is linear on
-    * the number of operands used in the function.
-    */
-   unsigned getMaxBitWidth(unsigned int F);
-   unsigned getMaxBitWidth();
-   static void updateConstantIntegers(unsigned maxBitWidth);
-   void finalizeRangeAnalysis(void* CG);
 
 };
 

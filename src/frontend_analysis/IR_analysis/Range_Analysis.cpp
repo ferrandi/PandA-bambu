@@ -68,6 +68,7 @@
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_manipulation.hpp"
 #include "ext_tree_node.hpp"
 #include "tree_reindex.hpp"
 
@@ -83,33 +84,52 @@
 #define DEBUG_RA
 #define SCC_DEBUG
 
+#define CASE_MISCELLANEOUS       \
+   aggr_init_expr_K:             \
+   case case_label_expr_K:       \
+   case lut_expr_K:              \
+   case target_expr_K:           \
+   case target_mem_ref_K:        \
+   case target_mem_ref461_K:     \
+   case binfo_K:                 \
+   case block_K:                 \
+   case constructor_K:           \
+   case error_mark_K:            \
+   case identifier_node_K:       \
+   case ssa_name_K:              \
+   case statement_list_K:        \
+   case tree_list_K:             \
+   case tree_vec_K:              \
+   case call_expr_K
+
 using APInt = Range::APInt;
 using UAPInt = boost::multiprecision::uint128_t;
+using bw_t = Range::bw_t;
 
 union vcFloat {
    float flt;
    struct _FP_STRUCT_LAYOUT
    {
 #if __BYTE_ORDER == __BIG_ENDIAN
-      unsigned sign : 1;
-      unsigned exp : 8;
-      unsigned frac : 23;
+      uint32_t sign : 1;
+      uint32_t exp : 8;
+      uint32_t frac : 23;
 #else
-      int coded;
+      int32_t coded;
 #endif
    } bits __attribute__((packed));
 };
 
 union vcDouble {
-   float flt;
+   double dub;
    struct _FP_STRUCT_LAYOUT
    {
 #if __BYTE_ORDER == __BIG_ENDIAN
-      unsigned sign : 1;
-      unsigned exp : 11;
-      unsigned frac : 52;
+      uint64_t sign : 1;
+      uint64_t exp : 11;
+      uint64_t frac : 52;
 #else
-      long long coded;
+      int64_t coded;
 #endif
    } bits __attribute__((packed));
 };
@@ -121,104 +141,94 @@ bool tree_reindexCompare::operator()(const tree_nodeConstRef &lhs, const tree_no
 
 namespace 
 {
-   union IntFloat {
-      int i;
-      float f;
-   };
-
-   union LongDouble {
-      long l;
-      double d;
-   };
-
    // The number of bits needed to store the largest variable of the function (APInt).
-   unsigned MAX_BIT_INT = 0;
-   unsigned POINTER_BITSIZE = 32;
+   bw_t MAX_BIT_INT = 64;
 
    // ========================================================================== //
    // Static global functions and definitions
    // ========================================================================== //
 
-   APInt Min, Max;
-   APInt Epsilon = 1;
-
    // Used to print pseudo-edges in the Constraint Graph dot
    std::string pestring;
    std::stringstream pseudoEdgesString(pestring);
 
-   APInt getMaxValue(unsigned bitwidth)
+   APInt getMaxValue(bw_t bitwidth)
    {
       return APInt((boost::multiprecision::uint256_t(1) << bitwidth) - 1);
    }
 
-   APInt getMinValue(unsigned bitwidth)
+   APInt getMinValue(bw_t /*bitwidth*/)
    {
       return APInt(0);
    }
 
-   APInt getSignedMaxValue(unsigned bitwidth)
+   APInt getSignedMaxValue(bw_t bitwidth)
    {
       return (APInt(1) << (bitwidth - 1)) - 1;
    }
 
-   APInt getSignedMinValue(unsigned bitwidth)
+   APInt getSignedMinValue(bw_t bitwidth)
    {
       return -(APInt(1) << (bitwidth - 1));
    }
 
-   APInt truncExt(const APInt& x, unsigned bitwidth, bool sign)
+   APInt Min = getSignedMinValue(64), Max = getSignedMaxValue(64), Epsilon = 1;
+
+   APInt truncExt(const APInt& x, bw_t bitwidth, bool sign)
    {
       APInt bitmask = (APInt(1) << bitwidth) - 1;
       APInt new_val = x & bitmask;
-      if(sign && boost::multiprecision::bit_test(new_val, bitwidth - 1))
+      if(sign && boost::multiprecision::bit_test(new_val, static_cast<unsigned>(bitwidth - 1)))
       {
          return (APInt(-1) << bitwidth) + new_val;
       }
       return new_val;
    }
 
-   APInt lshr(const APInt& a, unsigned p)
-   {
-      APInt mask = (APInt(1) << (128 - p)) - 1;
-      return (a >> p) & mask;
-   }
+   //    APInt lshr(const APInt& a, bw_t p)
+   //    {
+   //       APInt mask = (APInt(1) << (128 - p)) - 1;
+   //       return (a >> p) & mask;
+   //    }
+   //    
+   //    UAPInt lshr(const UAPInt& a, bw_t p)
+   //    {
+   //       if(p > 128)
+   //       {
+   //          return 0;
+   //       }
+   //       UAPInt mask = (UAPInt(1) << (128 - p)) - 1;
+   //       return (a >> p) & mask;
+   //    }
 
-   UAPInt lshr(const UAPInt& a, unsigned p)
+   bw_t countLeadingZeros(const APInt& a, bw_t bw)
    {
-      if(p > 128)
+      THROW_ASSERT(bw > 0 && bw <= 128, "Bitwidth should be between 1 and 128");
+      int i = static_cast<int>(bw - 1);
+      for(; i >= 0; --i)
       {
-         return 0;
+         if(bit_test(a, static_cast<unsigned>(i)))
+         {
+            break;
+         }
       }
-      UAPInt mask = (UAPInt(1) << (128 - p)) - 1;
-      return (a >> p) & mask;
+      i++;
+      return static_cast<bw_t>(bw - static_cast<bw_t>(i));
    }
 
-   unsigned countLeadingZeros(const APInt& a, unsigned bw)
+   bw_t countLeadingOnes(const APInt& a, bw_t bw)
    {
-         int i = bw - 1;
-         for(; i >= 0; --i)
+      THROW_ASSERT(bw > 0 && bw <= 128, "Bitwidth should be between 1 and 128");
+      int i = static_cast<int>(bw - 1);
+      for(; i >= 0; --i)
+      {
+         if(!bit_test(a, static_cast<unsigned>(i)))
          {
-            if(bit_test(a, i))
-            {
-               break;
-            }
+            break;
          }
-         i++;
-         return bw - i;
-   }
-
-   unsigned countLeadingOnes(const APInt& a, unsigned bw)
-   {
-         int i = bw - 1;
-         for(; i >= 0; --i)
-         {
-            if(!bit_test(a, i))
-            {
-               break;
-            }
-         }
-         i++;
-         return bw - i;
+      }
+      i++;
+      return static_cast<bw_t>(bw - static_cast<bw_t>(i));
    }
 
    std::tuple<bool, uint8_t, uint32_t> float_view_convert(float fp)
@@ -226,12 +236,12 @@ namespace
       union vcFloat _flo;
       _flo.flt = (fp);
       #if __BYTE_ORDER == __BIG_ENDIAN
-         int f = _flo.bits.frac;
-         char e = _flo.bits.exp;
+         uint32_t f = _flo.bits.frac;
+         uint8_t e = _flo.bits.exp;
          bool s = _flo.bits.sign;
       #else
-         int f = (_flo.bits.coded) & 8388607;
-         char e = ((_flo.bits.coded) << 1) >> 23;
+         uint32_t f = (_flo.bits.coded) & 0b00000000011111111111111111111111;
+         uint8_t e = static_cast<uint8_t>(((_flo.bits.coded) << 1) >> 24);
          bool s = (_flo.bits.coded) < 0;
       #endif
       return {s, e, f};
@@ -239,15 +249,15 @@ namespace
 
    std::tuple<bool, uint16_t, uint64_t> double_view_convert(double d)
    {
-      union vcFloat _d;
-      _d.flt = (d);
+      union vcDouble _d;
+      _d.dub = (d);
       #if __BYTE_ORDER == __BIG_ENDIAN
-         int f = _d.bits.frac;
-         char e = _d.bits.exp;
+         uint64_t f = _d.bits.frac;
+         uint16_t e = _d.bits.exp;
          bool s = _d.bits.sign;
       #else
-         int f = (_d.bits.coded) & 8388607;
-         char e = ((_d.bits.coded) << 1) >> 23;
+         uint64_t f = (_d.bits.coded) & 0b0000000000001111111111111111111111111111111111111111111111111111;
+         uint16_t e = static_cast<uint16_t>(((_d.bits.coded) << 1) >> 53);
          bool s = (_d.bits.coded) < 0;
       #endif
       return {s, e, f};
@@ -261,6 +271,10 @@ namespace
          return lt_expr_K;
       case gt_expr_K:
          return le_expr_K;
+      case le_expr_K:
+         return gt_expr_K;
+      case lt_expr_K:
+         return ge_expr_K;
       case unge_expr_K:
          return unlt_expr_K;
       case ungt_expr_K:
@@ -270,82 +284,29 @@ namespace
       case unlt_expr_K:
          return unge_expr_K;
       case eq_expr_K:
+      case uneq_expr_K:
          return ne_expr_K;
       case ne_expr_K:
          return eq_expr_K;
-      case uneq_expr_K:
-         return ne_expr_K;
-      
-      case assert_expr_K:
-      case catch_expr_K:
-      case ceil_div_expr_K:
-      case ceil_mod_expr_K:
-      case complex_expr_K:
-      case compound_expr_K:
-      case eh_filter_expr_K:
-      case exact_div_expr_K:
-      case fdesc_expr_K:
-      case floor_div_expr_K:
-      case floor_mod_expr_K:
-      case goto_subroutine_K:
-      case in_expr_K:
-      case init_expr_K:
-      case le_expr_K:
-      case lrotate_expr_K:
-      case lshift_expr_K:
-      case lt_expr_K:
-      case max_expr_K:
-      case mem_ref_K:
-      case min_expr_K:
-      case minus_expr_K:
-      case modify_expr_K:
-      case mult_expr_K:
-      case mult_highpart_expr_K:
-      case ordered_expr_K:
-      case plus_expr_K:
-      case pointer_plus_expr_K:
-      case postdecrement_expr_K:
-      case postincrement_expr_K:
-      case predecrement_expr_K:
-      case preincrement_expr_K:
-      case range_expr_K:
-      case rdiv_expr_K:
-      case round_div_expr_K:
-      case round_mod_expr_K:
-      case rrotate_expr_K:
-      case rshift_expr_K:
-      case set_le_expr_K:
-      case trunc_div_expr_K:
-      case trunc_mod_expr_K:
-      case truth_and_expr_K:
-      case truth_andif_expr_K:
-      case truth_or_expr_K:
-      case truth_orif_expr_K:
-      case truth_xor_expr_K:
-      case try_catch_expr_K:
-      case try_finally_K:
-      case ltgt_expr_K:
-      case unordered_expr_K:
-      case widen_sum_expr_K:
-      case widen_mult_expr_K:
-      case with_size_expr_K:
-      case vec_lshift_expr_K:
-      case vec_rshift_expr_K:
-      case widen_mult_hi_expr_K:
-      case widen_mult_lo_expr_K:
-      case vec_pack_trunc_expr_K:
-      case vec_pack_sat_expr_K:
-      case vec_pack_fix_trunc_expr_K:
-      case vec_extracteven_expr_K:
-      case vec_extractodd_expr_K:
-      case vec_interleavehigh_expr_K:
-      case vec_interleavelow_expr_K:
-      case extract_bit_expr_K:
+
+      case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case CASE_UNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TYPE_NODES:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_CPP_NODES:
+      case CASE_MISCELLANEOUS:
       default:
          break;
       }
 
-      THROW_UNREACHABLE("Unhandled predicate (" + boost::lexical_cast<std::string>(op) + ")");
+      THROW_UNREACHABLE("Unhandled predicate (" + STR(op) + ")");
+      return static_cast<kind>(-1);
    }
 
    kind op_swap(kind op)
@@ -377,74 +338,24 @@ namespace
          case uneq_expr_K:
             return op;
          
-         case assert_expr_K:
-         case catch_expr_K:
-         case ceil_div_expr_K:
-         case ceil_mod_expr_K:
-         case complex_expr_K:
-         case compound_expr_K:
-         case eh_filter_expr_K:
-         case exact_div_expr_K:
-         case fdesc_expr_K:
-         case floor_div_expr_K:
-         case floor_mod_expr_K:
-         case goto_subroutine_K:
-         case in_expr_K:
-         case init_expr_K:
-         case lrotate_expr_K:
-         case lshift_expr_K:
-         case max_expr_K:
-         case mem_ref_K:
-         case min_expr_K:
-         case minus_expr_K:
-         case modify_expr_K:
-         case mult_expr_K:
-         case mult_highpart_expr_K:
-         case ordered_expr_K:
-         case plus_expr_K:
-         case pointer_plus_expr_K:
-         case postdecrement_expr_K:
-         case postincrement_expr_K:
-         case predecrement_expr_K:
-         case preincrement_expr_K:
-         case range_expr_K:
-         case rdiv_expr_K:
-         case round_div_expr_K:
-         case round_mod_expr_K:
-         case rrotate_expr_K:
-         case rshift_expr_K:
-         case set_le_expr_K:
-         case trunc_div_expr_K:
-         case trunc_mod_expr_K:
-         case truth_and_expr_K:
-         case truth_andif_expr_K:
-         case truth_or_expr_K:
-         case truth_orif_expr_K:
-         case truth_xor_expr_K:
-         case try_catch_expr_K:
-         case try_finally_K:
-         case ltgt_expr_K:
-         case unordered_expr_K:
-         case widen_sum_expr_K:
-         case widen_mult_expr_K:
-         case with_size_expr_K:
-         case vec_lshift_expr_K:
-         case vec_rshift_expr_K:
-         case widen_mult_hi_expr_K:
-         case widen_mult_lo_expr_K:
-         case vec_pack_trunc_expr_K:
-         case vec_pack_sat_expr_K:
-         case vec_pack_fix_trunc_expr_K:
-         case vec_extracteven_expr_K:
-         case vec_extractodd_expr_K:
-         case vec_interleavehigh_expr_K:
-         case vec_interleavelow_expr_K:
-         case extract_bit_expr_K:
+         case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+         case CASE_UNARY_EXPRESSION:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_TYPE_NODES:
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case CASE_FAKE_NODES:
+         case CASE_GIMPLE_NODES:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_MISCELLANEOUS:
          default:
             break;
       }
 
-      THROW_UNREACHABLE("Unhandled predicate (" + boost::lexical_cast<std::string>(op) + ")");
+      THROW_UNREACHABLE("Unhandled predicate (" + STR(op) + ")");
+      return static_cast<kind>(-1);
    }
 
    bool isCompare(kind c_type)
@@ -585,6 +496,21 @@ namespace
                case cond_expr_K:
                   break;
 
+               // Unary case
+               case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+               // Binary case
+               case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+               // Ternary case
+               case component_ref_K:case bit_field_ref_K:case bit_ior_concat_expr_K:case vtable_ref_K:case with_cleanup_expr_K:case obj_type_ref_K:case save_expr_K:case vec_cond_expr_K:case vec_perm_expr_K:case dot_prod_expr_K:case ternary_plus_expr_K:case ternary_pm_expr_K:case ternary_mp_expr_K:case ternary_mm_expr_K:
+               case CASE_QUATERNARY_EXPRESSION:
+               case CASE_TYPE_NODES:
+               case CASE_CST_NODES:
+               case CASE_DECL_NODES:
+               case CASE_FAKE_NODES:
+               case CASE_GIMPLE_NODES:
+               case CASE_PRAGMA_NODES:
+               case CASE_CPP_NODES:
+               case CASE_MISCELLANEOUS:
                default:
                   return false;
             }
@@ -613,6 +539,17 @@ namespace
          case gimple_return_K:
          case gimple_switch_K:
          case gimple_while_K:
+         case CASE_UNARY_EXPRESSION:
+         case CASE_BINARY_EXPRESSION:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_TYPE_NODES:
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case CASE_FAKE_NODES:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_MISCELLANEOUS:
          default:
             return false;
       }
@@ -653,7 +590,7 @@ namespace
       {
          return !en->unsigned_flag;
       }
-      if(const auto* bt = GetPointer<const boolean_type>(type))
+      if(GetPointer<const boolean_type>(type) != nullptr)
       {
          return false;
       }
@@ -677,12 +614,12 @@ namespace
       return tree_helper::CGetType(tn);
    }
 
-   unsigned int getGIMPLE_BW(const tree_nodeConstRef tn)
+   bw_t getGIMPLE_BW(const tree_nodeConstRef tn)
    {
       const auto type = getGIMPLE_Type(tn);
-      unsigned int size = tree_helper::Size(type);
+      auto size = tree_helper::Size(type);
       THROW_ASSERT(static_cast<bool>(size), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
-      return size;
+      return static_cast<bw_t>(size);
    }
 
    RangeRef getGIMPLE_range(const tree_nodeConstRef tn)
@@ -693,7 +630,7 @@ namespace
       }
 
       const auto type = getGIMPLE_Type(tn);
-      unsigned int bw = tree_helper::Size(type);
+      bw_t bw = static_cast<bw_t>(tree_helper::Size(type));
       THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
       APInt min, max;
       if(const auto* ic = GetPointer<const integer_cst>(tn))
@@ -728,9 +665,9 @@ namespace
             auto [s, e, f] = double_view_convert(boost::lexical_cast<double>(rc->valr.substr(0, rc->valr.size() - 1)));
             return RangeRef(new RealRange(Range(Regular, 1, s, s), Range(Regular, 11, e, e), Range(Regular, 52, f, f)));
          }
-         THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + boost::lexical_cast<std::string>(bw) + ")");
+         THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
       }
-      else if(const auto* rt = GetPointer<const real_type>(type))
+      else if(GetPointer<const real_type>(type) != nullptr)
       {
          if(bw == 32)
          {
@@ -740,7 +677,7 @@ namespace
          {
             return RangeRef(new RealRange(Range(Regular, 1), Range(Regular, 11), Range(Regular, 52)));
          }
-         THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + boost::lexical_cast<std::string>(bw) + ")");
+         THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
       }
       else 
       {
@@ -751,7 +688,7 @@ namespace
       {
          if(!ssa->bit_values.empty())
          {
-            for(size_t bi = 0; bi < bw; ++bi)
+            for(bw_t bi = 0; bi < bw; ++bi)
             {
                char bitv = ssa->bit_values.at(bi);
                if(bitv == '0')
@@ -774,14 +711,14 @@ namespace
 // ========================================================================== //
 // Range
 // ========================================================================== //
-Range::Range(RangeType rType, unsigned rbw) : l(Min), u(Max), bw(rbw), type(rType)
+Range::Range(RangeType rType, bw_t rbw) : l(Min), u(Max), bw(rbw), type(rType)
 {
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + boost::lexical_cast<std::string>(rbw) +")");
+   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
 }
 
-Range::Range(RangeType rType, unsigned rbw, const APInt& lb, const APInt& ub) : l(lb), u(ub), bw(rbw), type(rType)
+Range::Range(RangeType rType, bw_t rbw, const APInt& lb, const APInt& ub) : l(lb), u(ub), bw(rbw), type(rType)
 {
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + boost::lexical_cast<std::string>(rbw) +")");
+   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
    normalizeRange(lb, ub, rType);
 }
 
@@ -970,15 +907,15 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
    }
 }
 
-unsigned Range::neededBits(const APInt& a, const APInt& b, bool sign)
+bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
 {
-   auto unsigned_needed_bits = [](const APInt& x)
+   std::function<bw_t(const APInt&)> unsigned_needed_bits = [](const APInt& x)
    {
       if(x < 0)
       {
          return MAX_BIT_INT;
       }
-      auto i = 127;
+      bw_t i = 127;
       while(i > 0)
       {
          if(bit_test(x, i))
@@ -987,12 +924,12 @@ unsigned Range::neededBits(const APInt& a, const APInt& b, bool sign)
          }
          --i;
       }
-      return (unsigned)++i;
+      return ++i;
    };
 
-   auto signed_needed_bits = [](const APInt& x)
+   std::function<bw_t(const APInt&)> signed_needed_bits = [](const APInt& x)
    {
-      auto i = 127;
+      bw_t i = 127;
       while(i > 0)
       {
          if(!bit_test(x, i))
@@ -1001,7 +938,7 @@ unsigned Range::neededBits(const APInt& a, const APInt& b, bool sign)
          }
          --i;
       }
-      return (unsigned)(i + 2);
+      return i + 2;
    };
 
    if(sign)
@@ -1035,11 +972,11 @@ RangeRef Range::getAnti() const
    {
       THROW_UNREACHABLE("Real range is a storage class only");
    }
-
    THROW_UNREACHABLE("unexpected condition");
+   return nullptr;
 }
 
-unsigned Range::getBitWidth() const
+bw_t Range::getBitWidth() const
 {
    return bw;
 }
@@ -1230,9 +1167,16 @@ RangeRef Range::add(RangeConstRef other) const
       return RangeRef(new Range(Regular, bw, l + ol, u + ol));
    }
 
-   RangeRef AddU(new Range(Regular, bw, std::max(APInt(0), getUnsignedMin() + other->getUnsignedMin()), std::min(getUnsignedMax() + other->getUnsignedMax(), getMaxValue(bw))));
-   RangeRef AddS(new Range(Regular, bw, std::max(Min, getSignedMin() + other->getSignedMin()), std::min(getSignedMax() + other->getSignedMax(), Max)));
-   return BestRange(AddU, AddS, bw);
+   auto sMin = std::clamp(getSignedMin() + other->getSignedMin(), getSignedMinValue(bw), getSignedMaxValue(bw));
+   auto sMax = std::clamp(getSignedMax() + other->getSignedMax(), getSignedMinValue(bw), getSignedMaxValue(bw));
+   auto uMin = std::min(getUnsignedMin() + other->getUnsignedMin(), getMaxValue(bw));
+   auto uMax = std::min(getUnsignedMax() + other->getUnsignedMax(), getMaxValue(bw));
+
+   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
+   {
+      return RangeRef(new Range(Regular, bw, uMin, uMax));
+   }
+   return RangeRef(new Range(Regular, bw, sMin, sMax));
 }
 
 RangeRef Range::sub(RangeConstRef other) const
@@ -1297,10 +1241,16 @@ RangeRef Range::sub(RangeConstRef other) const
       return RangeRef(new Range(Anti, bw, upper + 1, lower - 1));
    }
 
-   RangeRef SubU(new Range(Regular, bw, std::max(APInt(0), getUnsignedMin() - other->getUnsignedMax()), std::min(getUnsignedMax() - other->getUnsignedMin(), getMaxValue(bw))));
-   RangeRef SubS(new Range(Regular, bw, std::max(Min, getSignedMin() - other->getSignedMax()), std::min(getSignedMax() - other->getSignedMin(), Max)));
+   auto sMin = std::clamp(getSignedMin() - other->getSignedMax(), getSignedMinValue(bw), getSignedMaxValue(bw));
+   auto sMax = std::clamp(getSignedMax() - other->getSignedMin(), getSignedMinValue(bw), getSignedMaxValue(bw));
+   auto uMin = getUnsignedMin() - other->getUnsignedMax();
+   auto uMax = getUnsignedMax() - other->getUnsignedMin();
 
-   return BestRange(SubU, SubS, bw);
+   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
+   {
+      return RangeRef(new Range(Regular, bw, uMin, uMax));
+   }
+   return RangeRef(new Range(Regular, bw, sMin, sMax));
 }
 
 RangeRef Range::mul(RangeConstRef other) const
@@ -1331,7 +1281,7 @@ RangeRef Range::mul(RangeConstRef other) const
    APInt Other_min = other->getUnsignedMin();
    APInt Other_max = other->getUnsignedMax();
 
-   auto Result_zext = Range(Regular, bw * 2, this_min * Other_min, this_max * Other_max);
+   auto Result_zext = Range(Regular, static_cast<bw_t>(bw * 2), this_min * Other_min, this_max * Other_max);
    auto UR = Result_zext.truncate(bw);
 
    // Now the signed range. Because we could be dealing with negative numbers
@@ -1346,7 +1296,7 @@ RangeRef Range::mul(RangeConstRef other) const
    Other_max = other->getSignedMax();
 
    auto [min, max] = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
-   Range Result_sext(Regular, bw * 2, min, max);
+   Range Result_sext(Regular, static_cast<bw_t>(bw * 2), min, max);
    auto SR = Result_sext.truncate(bw);
    return BestRange(UR, SR, bw);
 }
@@ -1624,8 +1574,8 @@ RangeRef Range::shl(RangeConstRef other) const
 
    const APInt& a = this->getLower();
    const APInt& b = this->getUpper();
-   const auto c = other->getUnsignedMin().convert_to<unsigned>();
-   const auto d = other->getUnsignedMax().convert_to<unsigned>();
+   const auto c = UAPInt(other->getUnsignedMin());
+   const auto d = UAPInt(other->getUnsignedMax());
 
    if(c >= bw)
    {
@@ -1641,7 +1591,7 @@ RangeRef Range::shl(RangeConstRef other) const
    }
    if((a == b) && (c == d)) // constant case
    {
-      auto minmax = truncExt(a << c, bw, true);
+      auto minmax = truncExt(a << c.convert_to<unsigned>(), bw, true);
       return RangeRef(new Range(Regular, bw, minmax, minmax));
    }
    if(a < 0 && b < 0)
@@ -1651,7 +1601,7 @@ RangeRef Range::shl(RangeConstRef other) const
       { // overflow
          return RangeRef(new Range(Regular, bw));
       }
-      return RangeRef(new Range(Regular, bw, truncExt(a << d, bw, true), truncExt(b << c, bw, true)));
+      return RangeRef(new Range(Regular, bw, truncExt(a << d.convert_to<unsigned>(), bw, true), truncExt(b << c.convert_to<unsigned>(), bw, true)));
    }
    if(a < 0 && b >= 0)
    {
@@ -1661,7 +1611,7 @@ RangeRef Range::shl(RangeConstRef other) const
       { // overflow
          return RangeRef(new Range(Regular, bw));
       }
-      return RangeRef(new Range(Regular, bw, truncExt(a << d, bw, true), truncExt(b << d, bw, true)));
+      return RangeRef(new Range(Regular, bw, truncExt(a << d.convert_to<unsigned>(), bw, true), truncExt(b << d.convert_to<unsigned>(), bw, true)));
    }
 
    UAPInt clZeros(countLeadingZeros(b, bw) - (MAX_BIT_INT - bw));
@@ -1670,7 +1620,7 @@ RangeRef Range::shl(RangeConstRef other) const
       return RangeRef(new Range(Regular, bw));
    }
 
-   return RangeRef(new Range(Regular, bw, truncExt(a << c, bw, true), truncExt(b << d, bw, true)));
+   return RangeRef(new Range(Regular, bw, truncExt(a << c.convert_to<unsigned>(), bw, true), truncExt(b << d.convert_to<unsigned>(), bw, true)));
 }
 
 RangeRef Range::shr(RangeConstRef other, bool sign) const
@@ -1771,7 +1721,7 @@ RangeRef Range::And(RangeConstRef other) const
 
    // negate the result of the 'or'
    auto [min, max] = std::minmax(truncExt(~invres->l, bw, false), truncExt(~invres->u, bw, false));
-   PRINT_MSG("min: " + boost::lexical_cast<std::string>(min) + " max: " + boost::lexical_cast<std::string>(max));
+   PRINT_MSG("min: " + STR(min) + " max: " + STR(max));
    RangeRef res(new Range(invres->type, bw, min, max));
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("And-res: " << *res << std::endl);
@@ -1922,19 +1872,19 @@ RangeRef Range::Or(RangeConstRef other) const
    //      if (a == Min || b == Max || c == Min || d == Max)
    //         return Range(Regular,bw);
 
-   unsigned char switchval = 0;
-   switchval += (a >= 0 ? 1 : 0);
-   switchval <<= 1;
-   switchval += (b >= 0 ? 1 : 0);
-   switchval <<= 1;
-   switchval += (c >= 0 ? 1 : 0);
-   switchval <<= 1;
-   switchval += (d >= 0 ? 1 : 0);
+   uint8_t switchval = 0;
+   switchval = static_cast<uint8_t>(switchval + (a >= 0 ? 1 : 0));
+   switchval = static_cast<uint8_t>(switchval << 1);
+   switchval = static_cast<uint8_t>(switchval + (b >= 0 ? 1 : 0));
+   switchval = static_cast<uint8_t>(switchval << 1);
+   switchval = static_cast<uint8_t>(switchval + (c >= 0 ? 1 : 0));
+   switchval = static_cast<uint8_t>(switchval << 1);
+   switchval = static_cast<uint8_t>(switchval + (d >= 0 ? 1 : 0));
 
    APInt res_l = Min, res_u = Max;
 
    #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("switchval " << (unsigned)switchval << std::endl);
+   PRINT_MSG("switchval " << static_cast<uint8_t>(switchval) << std::endl);
    #endif
 
    switch(switchval)
@@ -1975,6 +1925,8 @@ RangeRef Range::Or(RangeConstRef other) const
          res_l = minOR(a, b, c, d);
          res_u = maxOR(a, b, c, d);
          break;
+      default:
+         THROW_UNREACHABLE("Range::Or unreachable state");
    }
    if((res_l == Min) || (res_u == Max))
    {
@@ -2030,7 +1982,7 @@ RangeRef Range::Xor(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw));
 }
 
-RangeRef Range::Eq(RangeConstRef other, unsigned bw) const
+RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2045,7 +1997,7 @@ RangeRef Range::Eq(RangeConstRef other, unsigned bw) const
    {
       if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
       {
-         return RangeRef(new Range(Regular, bw, 0, 1));
+         return RangeRef(new Range(Regular, _bw, 0, 1));
       }
    }
    bool areTheyEqual = !this->intersectWith(other)->isEmpty();
@@ -2053,21 +2005,22 @@ RangeRef Range::Eq(RangeConstRef other, unsigned bw) const
 
    if(areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
    if(areTheyEqual && !areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(!areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
    THROW_UNREACHABLE("condition unexpected");
+   return nullptr;
 }
 
-RangeRef Range::Ne(RangeConstRef other, unsigned bw) const
+RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2082,28 +2035,29 @@ RangeRef Range::Ne(RangeConstRef other, unsigned bw) const
    {
       if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
       {
-         return RangeRef(new Range(Regular, bw, 0, 1));
+         return RangeRef(new Range(Regular, _bw, 0, 1));
       }
    }
    bool areTheyEqual = !this->intersectWith(other)->isEmpty();
    bool areTheyDifferent = !((l == u) && *this == *other);
    if(areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
    if(areTheyEqual && !areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
    if(!areTheyEqual && areTheyDifferent)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
 
    THROW_UNREACHABLE("condition unexpected");
+   return nullptr;
 }
 
-RangeRef Range::Ugt(RangeConstRef other, unsigned bw) const
+RangeRef Range::Ugt(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2116,7 +2070,7 @@ RangeRef Range::Ugt(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    UAPInt a(this->getUnsignedMin());
@@ -2125,17 +2079,17 @@ RangeRef Range::Ugt(RangeConstRef other, unsigned bw) const
    UAPInt d(other->getUnsignedMax());
    if(a > d)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(c >= b)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Uge(RangeConstRef other, unsigned bw) const
+RangeRef Range::Uge(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2148,7 +2102,7 @@ RangeRef Range::Uge(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    UAPInt a(this->getUnsignedMin());
@@ -2157,17 +2111,17 @@ RangeRef Range::Uge(RangeConstRef other, unsigned bw) const
    UAPInt d(other->getUnsignedMax());
    if(a >= d)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(c > b)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Ult(RangeConstRef other, unsigned bw) const
+RangeRef Range::Ult(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2180,7 +2134,7 @@ RangeRef Range::Ult(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    UAPInt a(this->getUnsignedMin());
@@ -2189,17 +2143,17 @@ RangeRef Range::Ult(RangeConstRef other, unsigned bw) const
    UAPInt d(other->getUnsignedMax());
    if(b < c)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(d <= a)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Ule(RangeConstRef other, unsigned bw) const
+RangeRef Range::Ule(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2212,7 +2166,7 @@ RangeRef Range::Ule(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    UAPInt a(this->getUnsignedMin());
@@ -2221,17 +2175,17 @@ RangeRef Range::Ule(RangeConstRef other, unsigned bw) const
    UAPInt d(other->getUnsignedMax());
    if(b <= c)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(d < a)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Sgt(RangeConstRef other, unsigned bw) const
+RangeRef Range::Sgt(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2244,7 +2198,7 @@ RangeRef Range::Sgt(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    APInt a = this->getSignedMin();
@@ -2253,17 +2207,17 @@ RangeRef Range::Sgt(RangeConstRef other, unsigned bw) const
    APInt d = other->getSignedMax();
    if(a > d)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(c >= b)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Sge(RangeConstRef other, unsigned bw) const
+RangeRef Range::Sge(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2276,7 +2230,7 @@ RangeRef Range::Sge(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    APInt a = this->getSignedMin();
@@ -2285,17 +2239,17 @@ RangeRef Range::Sge(RangeConstRef other, unsigned bw) const
    APInt d = other->getSignedMax();
    if(a >= d)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(c > b)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Slt(RangeConstRef other, unsigned bw) const
+RangeRef Range::Slt(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2308,7 +2262,7 @@ RangeRef Range::Slt(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    APInt a = this->getSignedMin();
@@ -2317,17 +2271,17 @@ RangeRef Range::Slt(RangeConstRef other, unsigned bw) const
    APInt d = other->getSignedMax();
    if(b < c)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(d <= a)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Sle(RangeConstRef other, unsigned bw) const
+RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2340,7 +2294,7 @@ RangeRef Range::Sle(RangeConstRef other, unsigned bw) const
    }
    if(isAnti() || other->isAnti())
    {
-      return RangeRef(new Range(Regular, bw, 0, 1));
+      return RangeRef(new Range(Regular, _bw, 0, 1));
    }
 
    APInt a = this->getSignedMin();
@@ -2349,14 +2303,14 @@ RangeRef Range::Sle(RangeConstRef other, unsigned bw) const
    APInt d = other->getSignedMax();
    if(b <= c)
    {
-      return RangeRef(new Range(Regular, bw, 1, 1));
+      return RangeRef(new Range(Regular, _bw, 1, 1));
    }
    if(d < a)
    {
-      return RangeRef(new Range(Regular, bw, 0, 0));
+      return RangeRef(new Range(Regular, _bw, 0, 0));
    }
 
-   return RangeRef(new Range(Regular, bw, 0, 1));
+   return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
 RangeRef Range::abs() const
@@ -2404,7 +2358,7 @@ RangeRef Range::abs() const
 // Truncate
 // - if the source range is entirely inside max bit range, it is the result
 // - else, the result is the max bit range
-RangeRef Range::truncate(unsigned bitwidth) const
+RangeRef Range::truncate(bw_t bitwidth) const
 {
    THROW_ASSERT(!isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2424,7 +2378,7 @@ RangeRef Range::truncate(unsigned bitwidth) const
    return RangeRef(new Range(Regular, bitwidth, maxlower, maxupper));
 }
 
-RangeRef Range::sextOrTrunc(unsigned bitwidth) const
+RangeRef Range::sextOrTrunc(bw_t bitwidth) const
 {
    THROW_ASSERT(!isReal(), "Real range is a storage class only");
    auto from_bw = bw;
@@ -2449,7 +2403,7 @@ RangeRef Range::sextOrTrunc(unsigned bitwidth) const
    return sextRes;
 }
 
-RangeRef Range::zextOrTrunc(unsigned bitwidth) const
+RangeRef Range::zextOrTrunc(bw_t bitwidth) const
 {
    THROW_ASSERT(!isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
@@ -2695,29 +2649,30 @@ RangeRef Range::unionWith(RangeConstRef other) const
    }
 
    THROW_UNREACHABLE("unsupported condition");
+   return nullptr;
 }
 
-RangeRef Range::BestRange(RangeConstRef UR, RangeConstRef SR, unsigned bw) const
+RangeRef Range::BestRange(RangeConstRef UR, RangeConstRef SR, bw_t _bw) const
 {
    if(UR->isFullSet() && SR->isFullSet())
    {
-      return RangeRef(new Range(Regular, bw));
+      return RangeRef(new Range(Regular, _bw));
    }
    if(UR->isFullSet())
    {
-      return SR->truncate(bw);
+      return SR->truncate(_bw);
    }
    if(SR->isFullSet())
    {
-      return UR->truncate(bw);
+      return UR->truncate(_bw);
    }
    auto nbitU = neededBits(UR->getUnsignedMin(), UR->getUnsignedMax(), false);
    auto nbitS = neededBits(SR->getSignedMin(), SR->getSignedMax(), true);
    if(nbitU < nbitS)
    {
-      return UR->truncate(bw);
+      return UR->truncate(_bw);
    }
-   return SR->truncate(bw);
+   return SR->truncate(_bw);
 }
 
 bool Range::operator==(const Range& other) const
@@ -2770,7 +2725,7 @@ void Range::print(std::ostream& OS) const
       {
          OS << "[" << l.str() << ",";
       }
-      OS << bw << ",";
+      OS << STR(bw) << ",";
       if(u == Max)
       {
          OS << "+inf]";
@@ -2798,7 +2753,7 @@ std::ostream& operator<<(std::ostream& OS, const Range& R)
 RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
 {
    THROW_ASSERT(!Other->isReal(), "Real range is a storage class only");
-   unsigned bw = Other->bw;
+   auto bw = Other->bw;
    if(Other->isUnknown())
    {
       return RangeRef(new Range(Unknown, bw));
@@ -2815,44 +2770,55 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
 
    switch (pred)
    {
-   case ge_expr_K:
-      return RangeRef(new Range(Regular, bw, Other->getSignedMax(), getSignedMaxValue(bw)));
-   case gt_expr_K:
-      return RangeRef(new Range(Regular, bw, Other->getSignedMax() + Epsilon, getSignedMaxValue(bw)));
-   case le_expr_K:
-      return RangeRef(new Range(Regular, bw, getSignedMinValue(bw), Other->getSignedMin()));
-   case lt_expr_K:
-      return RangeRef(new Range(Regular, bw, getSignedMinValue(bw), Other->getSignedMin() - Epsilon));
-   case unge_expr_K:
-      return RangeRef(new Range(Regular, bw, Other->getUnsignedMax(), getMaxValue(bw)));
-   case ungt_expr_K:
-      return RangeRef(new Range(Regular, bw, Other->getUnsignedMax() + Epsilon, getMaxValue(bw)));
-   case unle_expr_K:
-      return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin()));
-   case unlt_expr_K:
-      return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin() - Epsilon));
-   case eq_expr_K:
-      return RangeRef(Other->clone());
-   case ne_expr_K:
-      return Other->getAnti();
+      case ge_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getSignedMax(), getSignedMaxValue(bw)));
+      case gt_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getSignedMax() + Epsilon, getSignedMaxValue(bw)));
+      case le_expr_K:
+         return RangeRef(new Range(Regular, bw, getSignedMinValue(bw), Other->getSignedMin()));
+      case lt_expr_K:
+         return RangeRef(new Range(Regular, bw, getSignedMinValue(bw), Other->getSignedMin() - Epsilon));
+      case unge_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax(), getMaxValue(bw)));
+      case ungt_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax() + Epsilon, getMaxValue(bw)));
+      case unle_expr_K:
+         return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin()));
+      case unlt_expr_K:
+         return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin() - Epsilon));
+      case eq_expr_K:
+         return RangeRef(Other->clone());
+      case ne_expr_K:
+         return Other->getAnti();
    
-   case uneq_expr_K:
-   default:
-      break;
+      case uneq_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case CASE_UNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TYPE_NODES:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_CPP_NODES:
+      case CASE_MISCELLANEOUS:
+      default:
+         break;
    }
-
-   THROW_UNREACHABLE("Unhandled compare operation (" + boost::lexical_cast<std::string>(pred) + ")");
+   THROW_UNREACHABLE("Unhandled compare operation (" + STR(pred) + ")");
+   return nullptr;
 }
 
 // ========================================================================== //
 // RealRange
 // ========================================================================== //
-RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, s.getBitWidth() + e.getBitWidth() + f.getBitWidth()), sign(s.clone()), exponent(e.clone()), fractional(f.clone())
+RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())), sign(s.clone()), exponent(e.clone()), fractional(f.clone())
 {
    THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
 }
 
-RealRange::RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f) : Range(Real, s->getBitWidth() + e->getBitWidth() + f->getBitWidth()), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
+RealRange::RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
 {
    THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
 }
@@ -2916,7 +2882,7 @@ bool RealRange::isSameRange(RangeConstRef other) const
 {
    if(other->isReal())
    {
-      auto rOther = std::static_pointer_cast<const RealRange>(other);
+      auto rOther = RefcountCast<const RealRange>(other);
       return sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && fractional->isSameRange(rOther->fractional);
    }
    return false;
@@ -2940,7 +2906,7 @@ void RealRange::print(std::ostream& OS) const
    exponent->print(OS);
    OS << ", ";
    fractional->print(OS);
-   OS << ", " << getBitWidth() << "]";
+   OS << ", " << STR(getBitWidth()) << "]";
 }
 
 Range* RealRange::clone() const
@@ -2951,14 +2917,14 @@ Range* RealRange::clone() const
 RangeRef RealRange::intersectWith(RangeConstRef other) const
 {
    THROW_ASSERT(other->isReal(), "Real range should intersect with real range only");
-   auto rrOther = std::static_pointer_cast<const RealRange>(other);
+   auto rrOther = RefcountCast<const RealRange>(other);
    return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), fractional->intersectWith(rrOther->fractional)));
 }
 
 RangeRef RealRange::unionWith(RangeConstRef other) const
 {
    THROW_ASSERT(other->isReal(), "Real range should unite to real range only");
-   auto rrOther = std::static_pointer_cast<const RealRange>(other);
+   auto rrOther = RefcountCast<const RealRange>(other);
    return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), fractional->unionWith(rrOther->fractional)));
 }
 
@@ -2997,7 +2963,7 @@ class VarNode
    {
       return V;
    }
-   unsigned int getBitWidth() const
+   bw_t getBitWidth() const
    {
       return interval->getBitWidth();
    }
@@ -3182,7 +3148,7 @@ class BasicInterval
    std::string ToString() const;
 };
 
-BasicInterval::BasicInterval(RangeRef range) : range(range->clone())
+BasicInterval::BasicInterval(RangeRef _range) : range(_range->clone())
 {
 }
 
@@ -3267,22 +3233,22 @@ class SymbInterval : public BasicInterval
    void print(std::ostream& OS) const override;
 };
 
-SymbInterval::SymbInterval(RangeRef range, const tree_nodeConstRef bound, kind pred) : BasicInterval(range), bound(bound), pred(pred)
+SymbInterval::SymbInterval(RangeRef _range, const tree_nodeConstRef _bound, kind _pred) : BasicInterval(_range), bound(_bound), pred(_pred)
 {
 }
 
 SymbInterval::~SymbInterval() = default;
 
-RangeRef SymbInterval::fixIntersects(VarNode* bound, VarNode* sink)
+RangeRef SymbInterval::fixIntersects(VarNode* _bound, VarNode* _sink)
 {
    // Get the lower and the upper bound of the
    // node which bounds this intersection.
-   const auto boundRange = bound->getRange();
-   const auto sinkRange = sink->getRange();
+   const auto boundRange = _bound->getRange();
+   const auto sinkRange = _sink->getRange();
    THROW_ASSERT(!boundRange->isEmpty(), "Bound range should not be empty");
    THROW_ASSERT(!sinkRange->isEmpty(), "Sink range should not be empty");
 
-   auto IsAnti = bound->getRange()->isAnti() || sinkRange->isAnti();
+   auto IsAnti = _bound->getRange()->isAnti() || sinkRange->isAnti();
    APInt l = IsAnti ? (boundRange->isUnknown() ? Min : boundRange->getUnsignedMin()) : boundRange->getLower();
    APInt u = IsAnti ? (boundRange->isUnknown() ? Max : boundRange->getUnsignedMax()) : boundRange->getUpper();
 
@@ -3351,6 +3317,18 @@ RangeRef SymbInterval::fixIntersects(VarNode* bound, VarNode* sink)
 
             return RangeRef(new Range(Regular, bw, l, upper));
          }
+      case ne_expr_K:case uneq_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case CASE_UNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TYPE_NODES:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_CPP_NODES:
+      case CASE_MISCELLANEOUS:
       default:
          return RangeRef(new Range(Regular, bw));
    }
@@ -3390,6 +3368,18 @@ void SymbInterval::print(std::ostream& OS) const
          printVarName(bnd, OS);
          OS << " - 1), +inf]";
          break;
+      case ne_expr_K:case uneq_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case CASE_UNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TYPE_NODES:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_CPP_NODES:
+      case CASE_MISCELLANEOUS:
       default:
          OS << "Unknown Instruction.\n";
    }
@@ -3486,7 +3476,7 @@ class BasicOp
 
 /// We can not want people creating objects of this class,
 /// but we want to inherit of it.
-BasicOp::BasicOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const tree_nodeConstRef inst) : intersect(std::move(intersect)), sink(sink), inst(inst)
+BasicOp::BasicOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : intersect(std::move(_intersect)), sink(_sink), inst(_inst)
 {
 }
 
@@ -3497,7 +3487,7 @@ BasicOp::~BasicOp() = default;
 /// Replace symbolic intervals with hard-wired constants.
 void BasicOp::fixIntersects(VarNode* V)
 {
-   if(auto SI = std::dynamic_pointer_cast<SymbInterval>(getIntersect()))
+   if(auto SI = RefcountCast<SymbInterval>(getIntersect()))
    {
       this->setIntersect(SI->fixIntersects(V, getSink()));
    }
@@ -3538,7 +3528,7 @@ class PhiOp : public BasicOp
       sources.push_back(newsrc);
    }
    /// Return source identified by index
-   const VarNode* getSource(unsigned index) const
+   const VarNode* getSource(size_t index) const
    {
       return sources[index];
    }
@@ -3568,7 +3558,7 @@ class PhiOp : public BasicOp
 };
 
 // The ctor.
-PhiOp::PhiOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const tree_nodeConstRef inst) : BasicOp(std::move(intersect), sink, inst)
+PhiOp::PhiOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : BasicOp(std::move(_intersect), _sink, _inst)
 {
 }
 
@@ -3600,10 +3590,10 @@ RangeRef PhiOp::eval()
       #ifdef DEBUG_BASICOP_EVAL
       PRINT_MSG(" aux=" << *aux);
       #endif
-      auto intersect = result->intersectWith(aux);
-      if(!intersect->isEmpty())
+      auto _intersect = result->intersectWith(aux);
+      if(!_intersect->isEmpty())
       {
-         result = intersect;
+         result = _intersect;
       }
    }
    #ifdef DEBUG_BASICOP_EVAL
@@ -3695,7 +3685,8 @@ class UnaryOp : public BasicOp
    void print(std::ostream& OS) const override;
 };
 
-UnaryOp::UnaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, tree_nodeConstRef inst, VarNode* source, kind opcode) : BasicOp(std::move(intersect), sink, inst), source(source), opcode(opcode)
+UnaryOp::UnaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, tree_nodeConstRef _inst, VarNode* _source, kind _opcode) 
+   : BasicOp(std::move(_intersect), _sink, _inst), source(_source), opcode(_opcode)
 {
 }
 
@@ -3706,7 +3697,7 @@ UnaryOp::~UnaryOp() = default;
 /// the operation and the interval associated to the operation.
 RangeRef UnaryOp::eval()
 {
-   unsigned bw = getSink()->getBitWidth();
+   auto bw = getSink()->getBitWidth();
    RangeRef oprnd = source->getRange();
    bool oprndSigned = isSignedType(source->getValue());
    RangeRef result(new Range(Unknown, bw, Min, Max));
@@ -3750,6 +3741,18 @@ RangeRef UnaryOp::eval()
             result = RangeRef(new RealRange(oprnd));
             break;
          
+         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+         case CASE_BINARY_EXPRESSION:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_TYPE_NODES:
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case CASE_FAKE_NODES:
+         case CASE_GIMPLE_NODES:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_MISCELLANEOUS:
          default:
             THROW_UNREACHABLE("Unhandled unary operation");
             break;
@@ -3764,7 +3767,7 @@ RangeRef UnaryOp::eval()
    }
    else if(oprnd-> isReal())
    {
-      auto rr = std::static_pointer_cast<RealRange>(oprnd);
+      auto rr = RefcountCast<RealRange>(oprnd);
       switch (this->getOpcode())
       {
       case bit_and_expr_K:
@@ -3776,6 +3779,18 @@ RangeRef UnaryOp::eval()
       case view_convert_expr_K:
          return rr->getRange()->zextOrTrunc(bw);
       
+      case addr_expr_K:case abs_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case nop_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+      case assert_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case eq_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case ge_expr_K:case gt_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case le_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ne_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TYPE_NODES:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_CPP_NODES:
+      case CASE_MISCELLANEOUS:
       default:
          THROW_UNREACHABLE("Unhandled unary operation for real case");
       }
@@ -3785,10 +3800,10 @@ RangeRef UnaryOp::eval()
    if(!test)
    {
       auto aux = this->getIntersect()->getRange();
-      auto intersect = result->intersectWith(aux);
-      if(!intersect->isEmpty())
+      auto _intersect = result->intersectWith(aux);
+      if(!_intersect->isEmpty())
       {
-         result = intersect;
+         result = _intersect;
       }
       #ifdef DEBUG_BASICOP_EVAL
       PRINT_MSG("intersection: " << *result);
@@ -3805,66 +3820,61 @@ void UnaryOp::print(std::ostream& OS) const
    OS << " " << quot << this << quot << R"( [label=")";
 
    // Instruction bitwidth
-   unsigned bw = getSink()->getBitWidth();
+   auto bw = getSink()->getBitWidth();
 
-   switch(this->opcode)
+   if(opcode == nop_expr_K)
    {
-      case nop_expr_K:
+      if(bw < getSource()->getBitWidth())
       {
-         if(bw < getSource()->getBitWidth())
-         {
-            OS << "trunc i" << bw;
-         }
-         else
-         {
-            auto type = tree_helper::CGetType(GET_CONST_NODE(getSource()->getValue()));
-            if(const auto* int_type = GetPointer<const integer_type>(type))
-            {
-               if(int_type->unsigned_flag)
-               {
-                  OS << "zext i" << bw;
-               }
-               else
-               {
-                  OS << "sext i" << bw;
-               }
-            }
-            else if(type->get_kind() == boolean_type_K)
-            {
-               OS << "zext b" << bw;
-            }
-            else
-            {
-               THROW_UNREACHABLE("Source should be of type integer");
-            }
-         }
+         OS << "trunc i" << bw;
       }
-      break;
-         
-      case fix_trunc_expr_K:
+      else
       {
-         auto type = tree_helper::CGetType(GET_CONST_NODE(getSink()->getValue()));
+         auto type = tree_helper::CGetType(GET_CONST_NODE(getSource()->getValue()));
          if(const auto* int_type = GetPointer<const integer_type>(type))
          {
             if(int_type->unsigned_flag)
             {
-               OS << "fptoui i" << bw;
+               OS << "zext i" << bw;
             }
             else
             {
-               OS << "fptosi i" << bw;
+               OS << "sext i" << bw;
             }
+         }
+         else if(type->get_kind() == boolean_type_K)
+         {
+            OS << "zext b" << bw;
          }
          else
          {
-            THROW_UNREACHABLE("Sink should be of type integer");
+            THROW_UNREACHABLE("Source should be of type integer");
          }
       }
-      break;
-      default:
-         // Phi functions, Loads and Stores are handled here.
-         this->getIntersect()->print(OS);
-         break;
+   }
+   else if(opcode == fix_trunc_expr_K)
+   {
+      auto type = tree_helper::CGetType(GET_CONST_NODE(getSink()->getValue()));
+      if(const auto* int_type = GetPointer<const integer_type>(type))
+      {
+         if(int_type->unsigned_flag)
+         {
+            OS << "fptoui i" << bw;
+         }
+         else
+         {
+            OS << "fptosi i" << bw;
+         }
+      }
+      else
+      {
+         THROW_UNREACHABLE("Sink should be of type integer");
+      }
+   }
+   else
+   {
+      // Phi functions, Loads and Stores are handled here.
+      this->getIntersect()->print(OS);
    }
 
    OS << "\"]\n";
@@ -3947,8 +3957,8 @@ class SigmaOp : public UnaryOp
    void print(std::ostream& OS) const override;
 };
 
-SigmaOp::SigmaOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const tree_nodeConstRef inst, VarNode* source, VarNode* _SymbolicSource, kind opcode)
-      : UnaryOp(std::move(intersect), sink, inst, source, opcode), SymbolicSource(_SymbolicSource), unresolved(false)
+SigmaOp::SigmaOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source, VarNode* _SymbolicSource, kind _opcode)
+      : UnaryOp(std::move(_intersect), _sink, _inst, _source, _opcode), SymbolicSource(_SymbolicSource), unresolved(false)
 {
 }
 
@@ -3966,10 +3976,10 @@ RangeRef SigmaOp::eval()
    #endif
    if(!aux->isUnknown())
    {
-      auto intersect = result->intersectWith(aux);
-      if(!intersect->isEmpty())
+      auto _intersect = result->intersectWith(aux);
+      if(!_intersect->isEmpty())
       {
-         result = intersect;
+         result = _intersect;
       }
    }
    #ifdef DEBUG_BASICOP_EVAL
@@ -4000,15 +4010,15 @@ void SigmaOp::print(std::ostream& OS) const
    }
    if(SymbolicSource)
    {
-      const auto V = SymbolicSource->getValue();
-      if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+      const auto _V = SymbolicSource->getValue();
+      if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(_V)))
       {
          OS << " " << C->value << " -> " << quot << this << quot << "\n";
       }
       else
       {
          OS << " " << quot;
-         printVarName(V, OS);
+         printVarName(_V, OS);
          OS << quot << " -> " << quot << this << quot << "\n";
       }
    }
@@ -4080,10 +4090,11 @@ class BinaryOp : public BasicOp
 };
 
 // The ctor.
-BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const tree_nodeConstRef inst, VarNode* source1, VarNode* source2, kind opcode) : BasicOp(std::move(intersect), sink, inst), source1(source1), source2(source2), opcode(opcode)
+BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source1, VarNode* _source2, kind _opcode) 
+   : BasicOp(std::move(_intersect), _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
 {
-   const auto type = tree_helper::CGetType(GET_CONST_NODE(sink->getValue()));
-   THROW_ASSERT(type->get_kind() == integer_type_K || type->get_kind() == boolean_type_K, "Binary operation sink should be of integer type (" + GET_CONST_NODE(sink->getValue())->ToString() + ")");
+   const auto type = tree_helper::CGetType(GET_CONST_NODE(_sink->getValue()));
+   THROW_ASSERT(type->get_kind() == integer_type_K || type->get_kind() == boolean_type_K, "Binary operation sink should be of integer type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
 }
 
 /// Computes the interval of the sink based on the interval of the sources,
@@ -4095,7 +4106,7 @@ RangeRef BinaryOp::eval()
    auto op1 = this->getSource1()->getRange();
    auto op2 = this->getSource2()->getRange();
    // Instruction bitwidth
-   unsigned bw = getSink()->getBitWidth();
+   auto bw = getSink()->getBitWidth();
    RangeRef result(new Range(Unknown, bw));
 
    // only evaluate if all operands are Regular
@@ -4105,7 +4116,7 @@ RangeRef BinaryOp::eval()
       PRINT_MSG(getSink()->getValue()->ToString() << std::endl << *op1 << "," << *op2);
       #endif
       const auto type = tree_helper::CGetType(GET_CONST_NODE(getSink()->getValue()));
-      bool is_unsigned;
+      bool is_unsigned = false;
       if(const auto* int_type = GetPointer<const integer_type>(type))
       {
          is_unsigned = int_type->unsigned_flag;
@@ -4184,6 +4195,18 @@ RangeRef BinaryOp::eval()
             result = op1->Sle(op2, bw);
             break;
          
+         case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+         case CASE_UNARY_EXPRESSION:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_TYPE_NODES:
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case CASE_FAKE_NODES:
+         case CASE_GIMPLE_NODES:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_MISCELLANEOUS:
          default:
             THROW_UNREACHABLE("Unhandled binary operation (" + tree_node::GetString(this->getOpcode()) + ")");
             break;
@@ -4198,10 +4221,10 @@ RangeRef BinaryOp::eval()
          #ifdef DEBUG_BASICOP_EVAL
          PRINT_MSG("  aux=" << *aux);
          #endif
-         auto intersect = result->intersectWith(aux);
-         if(!intersect->isEmpty())
+         auto _intersect = result->intersectWith(aux);
+         if(!_intersect->isEmpty())
          {
-            result = intersect;
+            result = _intersect;
          }
       }
    }
@@ -4316,15 +4339,15 @@ class TernaryOp : public BasicOp
 };
 
 // The ctor.
-TernaryOp::TernaryOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const tree_nodeConstRef inst, VarNode* source1, VarNode* source2, VarNode* source3, kind opcode)
-      : BasicOp(std::move(intersect), sink, inst), source1(source1), source2(source2), source3(source3), opcode(opcode)
+TernaryOp::TernaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source1, VarNode* _source2, VarNode* _source3, kind _opcode)
+      : BasicOp(std::move(_intersect), _sink, _inst), source1(_source1), source2(_source2), source3(_source3), opcode(_opcode)
 {
-   const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(inst));
-   THROW_ASSERT(ga, "TernaryOp associated statement should be a gimple_assign " + GET_CONST_NODE(inst)->ToString());
+   const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(_inst));
+   THROW_ASSERT(ga, "TernaryOp associated statement should be a gimple_assign " + GET_CONST_NODE(_inst)->ToString());
    const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
    THROW_ASSERT(I, "TernaryOp operator should be a ternary_expr");
-   THROW_ASSERT(sink->getBitWidth() == source2->getBitWidth(), "Operator bitwidth mismatch");
-   THROW_ASSERT(sink->getBitWidth() == source3->getBitWidth(), "Operator bitwidth mismatch");
+   THROW_ASSERT(_sink->getBitWidth() == _source2->getBitWidth(), "Operator bitwidth mismatch");
+   THROW_ASSERT(_sink->getBitWidth() == _source3->getBitWidth(), "Operator bitwidth mismatch");
 }
 
 RangeRef TernaryOp::eval()
@@ -4333,7 +4356,7 @@ RangeRef TernaryOp::eval()
    auto op2 = this->getSource2()->getRange();
    auto op3 = this->getSource3()->getRange();
    // Instruction bitwidth
-   unsigned bw = getSink()->getBitWidth();
+   auto bw = getSink()->getBitWidth();
    RangeRef result(new Range(Unknown, bw, Min, Max));
 
    // only evaluate if all operands are Regular
@@ -4342,76 +4365,70 @@ RangeRef TernaryOp::eval()
       #ifdef DEBUG_BASICOP_EVAL
       PRINT_MSG(getSink()->getValue()->ToString() << std::endl << *op1 << "?" << *op2 << ":" << *op3);
       #endif
-      switch(this->getOpcode())
+      
+      if(this->getOpcode() == cond_expr_K)
       {
-         case cond_expr_K:
+         // Source1 is the selector
+         if(*op1 == *RangeRef(new Range(Regular, op1->getBitWidth(), 1, 1)))
          {
-            // Source1 is the selector
-            if(*op1 == *RangeRef(new Range(Regular, op1->getBitWidth(), 1, 1)))
+            result = op2;
+         }
+         else if(*op1 == *RangeRef(new Range(Regular, op1->getBitWidth(), 0, 0)))
+         {
+            result = op3;
+         }
+         else
+         {
+            const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(getInstruction()));
+            const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
+            const auto BranchVar = branchOpRecurse(I->op0);
+            std::vector<const struct binary_expr*> BranchConds;
+            // Check if branch variable is correlated with op1 or op2
+            if(GetPointer<const gimple_phi>(BranchVar) != nullptr)
             {
-               result = op2;
+               // TODO: find a way to propagate range from all phi edges when phi->res is one of the two result of the con_expr 
             }
-            else if(*op1 == *RangeRef(new Range(Regular, op1->getBitWidth(), 0, 0)))
+            else if(const auto* BranchExpr = GetPointer<const binary_expr>(BranchVar))
             {
-               result = op3;
+               BranchConds.push_back(BranchExpr);
             }
-            else
-            {
-               const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(getInstruction()));
-               const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
-               const auto BranchVar = branchOpRecurse(I->op0);
-               std::vector<const struct binary_expr*> BranchConds;
-               // Check if branch variable is correlated with op1 or op2
-               if(const auto* gp = GetPointer<const gimple_phi>(BranchVar))
-               {
-                  // TODO: find a way to propagate range from all phi edges when phi->res is one of the two result of the con_expr 
-               }
-               else if(const auto* BranchExpr = GetPointer<const binary_expr>(BranchVar))
-               {
-                  BranchConds.push_back(BranchExpr);
-               }
 
-               for(const auto* be : BranchConds)
+            for(const auto* be : BranchConds)
+            {
+               if(isCompare(be))
                {
-                  if(isCompare(be))
+                  const tree_nodeConstRef CondOp0 = be->op0;
+                  const tree_nodeConstRef CondOp1 = be->op1;
+                  if(GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K || GET_CONST_NODE(CondOp1)->get_kind() == integer_cst_K)
                   {
-                     const tree_nodeConstRef CondOp0 = be->op0;
-                     const tree_nodeConstRef CondOp1 = be->op1;
-                     if(GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K || GET_CONST_NODE(CondOp1)->get_kind() == integer_cst_K)
+                     const auto variable = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp1 : CondOp0;
+                     const auto* constant = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? GetPointer<const integer_cst>(GET_CONST_NODE(CondOp0)) : GetPointer<const integer_cst>(GET_CONST_NODE(CondOp1));
+                     auto opV1 = I->op1;
+                     auto opV2 = I->op2;
+                     if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) || GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
                      {
-                        const auto variable = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp1 : CondOp0;
-                        const auto* constant = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? GetPointer<const integer_cst>(GET_CONST_NODE(CondOp0)) : GetPointer<const integer_cst>(GET_CONST_NODE(CondOp1));
-                        auto opV1 = I->op1;
-                        auto opV2 = I->op2;
-                        if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) || GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
+                        RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
+                        kind pred = be->get_kind();
+                        kind swappred = op_swap(pred);
+
+                        auto tmpT = (variable == CondOp0) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
+                        THROW_ASSERT(!tmpT->isFullSet(), "");
+
+                        if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
                         {
-                           auto bw = op2->getBitWidth();
-                           RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
-                           kind pred = be->get_kind();
-                           kind swappred = op_swap(pred);
-
-                           auto tmpT = (variable == CondOp0) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
-                           THROW_ASSERT(!tmpT->isFullSet(), "");
-
-                           if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
-                           {
-                              RangeRef FValues(new Range(*tmpT->getAnti()));
-                              op3 = op3->intersectWith(FValues);
-                           }
-                           else
-                           {
-                              op2 = op2->intersectWith(tmpT);
-                           }
+                           RangeRef FValues(new Range(*tmpT->getAnti()));
+                           op3 = op3->intersectWith(FValues);
+                        }
+                        else
+                        {
+                           op2 = op2->intersectWith(tmpT);
                         }
                      }
                   }
                }
-               result = op2->unionWith(op3);
             }
-            break;
+            result = op2->unionWith(op3);
          }
-         default:
-            break;
       }
       #ifdef DEBUG_BASICOP_EVAL
       PRINT_MSG("=" << *result);
@@ -4420,10 +4437,10 @@ RangeRef TernaryOp::eval()
       if(!test)
       {
          auto aux = this->getIntersect()->getRange();
-         auto intersect = result->intersectWith(aux);
-         if(!intersect->isEmpty())
+         auto _intersect = result->intersectWith(aux);
+         if(!_intersect->isEmpty())
          {
-            result = intersect;
+            result = _intersect;
          }
       }
    }
@@ -4526,7 +4543,7 @@ class ControlDep : public BasicOp
    void print(std::ostream& OS) const override;
 };
 
-ControlDep::ControlDep(VarNode* sink, VarNode* source) : BasicOp(std::make_shared<BasicInterval>(), sink, nullptr), source(source)
+ControlDep::ControlDep(VarNode* _sink, VarNode* _source) : BasicOp(std::make_shared<BasicInterval>(), _sink, nullptr), source(_source)
 {
 }
 
@@ -4579,7 +4596,7 @@ class LoadOp : public BasicOp
       sources.push_back(newsrc);
    }
    /// Return source identified by index
-   const VarNode* getSource(unsigned index) const
+   const VarNode* getSource(size_t index) const
    {
       return sources[index];
    }
@@ -4592,7 +4609,7 @@ class LoadOp : public BasicOp
    void print(std::ostream& OS) const override;
 };
 
-LoadOp::LoadOp(std::shared_ptr<BasicInterval> intersect, VarNode* sink, const tree_nodeConstRef inst) : BasicOp(std::move(intersect), sink, inst)
+LoadOp::LoadOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : BasicOp(std::move(_intersect), _sink, _inst)
 {
 }
 
@@ -4600,7 +4617,7 @@ LoadOp::~LoadOp() = default;
 
 RangeRef LoadOp::eval()
 {
-   unsigned bw = getSink()->getBitWidth();
+   auto bw = getSink()->getBitWidth();
    RangeRef result(new Range(Unknown, bw, Min, Max));
    #ifdef DEBUG_BASICOP_EVAL
    PRINT_MSG(getSink()->getValue()->ToString());
@@ -4625,10 +4642,10 @@ RangeRef LoadOp::eval()
    if(!test)
    {
       auto aux = this->getIntersect()->getRange();
-      auto intersect = result->intersectWith(aux);
-      if(!intersect->isEmpty())
+      auto _intersect = result->intersectWith(aux);
+      if(!_intersect->isEmpty())
       {
-         result = intersect;
+         result = _intersect;
       }
    }
    return result;
@@ -4701,7 +4718,7 @@ class StoreOp : public BasicOp
       sources.push_back(newsrc);
    }
    /// Return source identified by index
-   const VarNode* getSource(unsigned index) const
+   const VarNode* getSource(size_t index) const
    {
       return sources[index];
    }
@@ -4714,7 +4731,7 @@ class StoreOp : public BasicOp
    void print(std::ostream& OS) const override;
 };
 
-StoreOp::StoreOp(VarNode* sink, const tree_nodeConstRef inst, RangeConstRef _init) : BasicOp(std::make_shared<BasicInterval>(), sink, inst), init(_init->clone())
+StoreOp::StoreOp(VarNode* _sink, const tree_nodeConstRef _inst, RangeConstRef _init) : BasicOp(std::make_shared<BasicInterval>(), _sink, _inst), init(_init->clone())
 {
 }
 
@@ -5138,7 +5155,7 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
 
    auto intervalWiden = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
    {
-      unsigned bw = oldInterval->getBitWidth();
+      auto bw = oldInterval->getBitWidth();
       if(oldInterval->isUnknown() || oldInterval->isEmpty() || oldInterval->isAnti() || newInterval->isEmpty() || newInterval->isAnti())
       {
          if(oldInterval->isAnti() && newInterval->isAnti() && newInterval != oldInterval)
@@ -5199,13 +5216,15 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
             }
          }
       }
+      THROW_UNREACHABLE("Meet::widen unreachable state");
+      return RangeRef(nullptr);
    };
 
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = std::static_pointer_cast<RealRange>(oldRange);
-      auto newRR = std::static_pointer_cast<RealRange>(newRange);
+      auto oldRR = RefcountCast<RealRange>(oldRange);
+      auto newRR = RefcountCast<RealRange>(newRange);
       RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
       RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
@@ -5249,7 +5268,7 @@ bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
       }
       else
       {
-         unsigned bw = oldInterval->getBitWidth();
+         auto bw = oldInterval->getBitWidth();
          const APInt& oldLower = oldInterval->getLower();
          const APInt& oldUpper = oldInterval->getUpper();
          const APInt& newLower = newInterval->getLower();
@@ -5270,13 +5289,15 @@ bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
             return RangeRef(new Range(Regular, bw, oldLower, Max));
          }
       }
+      THROW_UNREACHABLE("Meet::growth unreachable state");
+      return RangeRef(nullptr);
    }; 
 
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = std::static_pointer_cast<RealRange>(oldRange);
-      auto newRR = std::static_pointer_cast<RealRange>(newRange);
+      auto oldRR = RefcountCast<RealRange>(oldRange);
+      auto newRR = RefcountCast<RealRange>(newRange);
       RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
       RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
@@ -5316,7 +5337,7 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
    {
-      unsigned bw = oldInterval->getBitWidth();
+      auto bw = oldInterval->getBitWidth();
       RangeRef sinkInterval(newInterval->clone());
       if(oldInterval->isAnti() || newInterval->isAnti() || oldInterval->isEmpty() || newInterval->isEmpty())
       {
@@ -5396,8 +5417,8 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = std::static_pointer_cast<RealRange>(oldRange);
-      auto newRR = std::static_pointer_cast<RealRange>(newRange);
+      auto oldRR = RefcountCast<RealRange>(oldRange);
+      auto newRR = RefcountCast<RealRange>(newRange);
       RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
       RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
@@ -5430,7 +5451,7 @@ bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
 {
    auto oldRange = op->getSink()->getRange();
    auto newRange = op->eval();
-   char abstractState = op->getSink()->getAbstractState();
+   char _abstractState = op->getSink()->getAbstractState();
 
    auto intervalCrop = [](RangeConstRef oldInterval, RangeConstRef newInterval, char abstractState)
    {
@@ -5440,7 +5461,7 @@ bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
       }
       else
       {
-         unsigned bw = oldInterval->getBitWidth();
+         auto bw = oldInterval->getBitWidth();
          if((abstractState == '-' || abstractState == '?') && (newInterval->getLower() > oldInterval->getLower()))
          {
             return RangeRef(new Range(Regular, bw, newInterval->getLower(), oldInterval->getUpper()));
@@ -5457,19 +5478,19 @@ bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = std::static_pointer_cast<RealRange>(oldRange);
-      auto newRR = std::static_pointer_cast<RealRange>(newRange);
+      auto oldRR = RefcountCast<RealRange>(oldRange);
+      auto newRR = RefcountCast<RealRange>(newRange);
       RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
       RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
       {
-         newIntervals[i] = intervalCrop(oldIntervals[i], newIntervals[i], abstractState);
+         newIntervals[i] = intervalCrop(oldIntervals[i], newIntervals[i], _abstractState);
       }
       op->getSink()->setRange(RangeRef(new RealRange(newIntervals[0], newIntervals[1], newIntervals[2])));
    }
    else
    {
-      op->getSink()->setRange(intervalCrop(oldRange, newRange, abstractState));
+      op->getSink()->setRange(intervalCrop(oldRange, newRange, _abstractState));
    }
    
    const auto& sinkRange = op->getSink()->getRange();
@@ -5511,12 +5532,12 @@ class ValueBranchMap
    ValueBranchMap& operator=(ValueBranchMap&&) = delete;
 
    /// Get the "false side" of the branch
-   const unsigned int getBBIFalse() const
+   unsigned int getBBIFalse() const
    {
       return BBIFalse;
    }
    /// Get the "true side" of the branch
-   const unsigned int getBBITrue() const
+   unsigned int getBBITrue() const
    {
       return BBITrue;
    }
@@ -5531,7 +5552,7 @@ class ValueBranchMap
       return ItvF;
    }
    /// Get the value associated to the branch.
-   const tree_nodeConstRef getV() const
+   tree_nodeConstRef getV() const
    {
       return V;
    }
@@ -5556,7 +5577,7 @@ class ValueSwitchMap
    std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>> BBsuccs;
 
    public:
-   ValueSwitchMap(const tree_nodeConstRef V, std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>>& BBsuccs) : V(V), BBsuccs(BBsuccs)
+   ValueSwitchMap(const tree_nodeConstRef _V, std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>>& _BBsuccs) : V(_V), BBsuccs(_BBsuccs)
    {
    }
    ~ValueSwitchMap() = default;
@@ -5566,29 +5587,29 @@ class ValueSwitchMap
    ValueSwitchMap& operator=(ValueSwitchMap&&) = delete;
 
    /// Get the corresponding basic block
-   const unsigned int getBBI(unsigned idx) const
+   unsigned int getBBI(size_t idx) const
    {
       THROW_ASSERT(idx >= BBsuccs.size(), "Index out of bound");
       return BBsuccs.at(idx).second;
    }
    /// Get the interval associated to the switch case idx
-   std::shared_ptr<BasicInterval> getItv(unsigned idx) const
+   std::shared_ptr<BasicInterval> getItv(size_t idx) const
    {
       THROW_ASSERT(idx >= BBsuccs.size(), "Index out of bound");
       return BBsuccs.at(idx).first;
    }
    // Get how many cases this switch has
-   unsigned getNumOfCases() const
+   size_t getNumOfCases() const
    {
       return BBsuccs.size();
    }
    /// Get the value associated to the switch.
-   const tree_nodeConstRef getV() const
+   tree_nodeConstRef getV() const
    {
       return V;
    }
    /// Change the interval associated to the true side of the branch
-   void setItv(unsigned idx, std::shared_ptr<BasicInterval> Itv)
+   void setItv(size_t idx, std::shared_ptr<BasicInterval> Itv)
    {
       THROW_ASSERT(idx >= BBsuccs.size(), "Index out of bound");
       this->BBsuccs.at(idx).first = Itv;
@@ -5652,7 +5673,7 @@ class ConstraintGraph
       }
    }
    
-   void update(unsigned nIterations, const UseMap& compUseMap, std::set<tree_nodeConstRef, tree_reindexCompare>& actv)
+   void update(size_t nIterations, const UseMap& compUseMap, std::set<tree_nodeConstRef, tree_reindexCompare>& actv)
    {
       std::list<tree_nodeConstRef> queue(actv.begin(), actv.end());
       actv.clear();
@@ -5711,7 +5732,7 @@ class ConstraintGraph
 
    void buildValueBranchMap(const gimple_cond* br, const blocRef branchBB)
    {
-      THROW_ASSERT(GET_CONST_NODE(br->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch");
+      THROW_ASSERT(GET_CONST_NODE(br->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch (" + GET_CONST_NODE(br->op0)->get_kind_text() + " " + GET_CONST_NODE(br->op0)->ToString() + ")");
       const auto Cond = branchOpRecurse(br->op0);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition is " + Cond->get_kind_text());
@@ -5774,11 +5795,11 @@ class ConstraintGraph
          {
             kind pred = bin_op->get_kind();
             kind swappred = op_swap(pred);
-            unsigned bw = getGIMPLE_BW(variable);
+            auto bw = getGIMPLE_BW(variable);
             RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-               "Variable bitwidth is " + boost::lexical_cast<std::string>(bw) + " and constant value is " + boost::lexical_cast<std::string>(constant->value));
+               "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
 
             auto tmpT = (variable == bin_op->op0) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
             
@@ -5803,11 +5824,11 @@ class ConstraintGraph
                {
                   const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
 
-                  std::shared_ptr<BasicInterval> BT = std::make_shared<BasicInterval>(TValues);
-                  std::shared_ptr<BasicInterval> BF = std::make_shared<BasicInterval>(FValues);
+                  std::shared_ptr<BasicInterval> _BT = std::make_shared<BasicInterval>(TValues);
+                  std::shared_ptr<BasicInterval> _BF = std::make_shared<BasicInterval>(FValues);
 
-                  ValueBranchMap VBM(cast_inst->op, TrueBBI, FalseBBI, BT, BF);
-                  valuesBranchMap.insert(std::make_pair(cast_inst->op, VBM));
+                  ValueBranchMap _VBM(cast_inst->op, TrueBBI, FalseBBI, _BT, _BF);
+                  valuesBranchMap.insert(std::make_pair(cast_inst->op, _VBM));
                }
             }
          }
@@ -5816,13 +5837,13 @@ class ConstraintGraph
             kind pred = bin_op->get_kind();
             kind invPred = op_inv(pred);
 
-            unsigned bw0 = getGIMPLE_BW(bin_op->op0);
-            unsigned bw1 = getGIMPLE_BW(bin_op->op1);
+            auto bw0 = getGIMPLE_BW(bin_op->op0);
+            auto bw1 = getGIMPLE_BW(bin_op->op1);
             THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth "
-               "(Op0 = " + boost::lexical_cast<std::string>(bw0) + ", Op1 = " + boost::lexical_cast<std::string>(bw1) + ").");
+               "(Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
 
             RangeRef CR(new Range(Unknown, bw0));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + boost::lexical_cast<std::string>(bw0));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
 
             // Symbolic intervals for op0
             std::shared_ptr<BasicInterval> STOp0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
@@ -5879,38 +5900,37 @@ class ConstraintGraph
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
 
-   void buildValueMultiIfMap(const gimple_multi_way_if* mwi, const blocRef /*mwifBB*/, const tree_managerRef TM)
+   void buildValueMultiIfMap(const gimple_multi_way_if* mwi, const blocRef /*mwifBB*/, const tree_managerRef /*TM*/)
    {
       const auto& cond_list = mwi->list_of_cond;
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Multi-way if with " + boost::lexical_cast<std::string>(cond_list.size()) + " conditions");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Multi-way if with " + STR(cond_list.size()) + " conditions");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
       tree_nodeRef switch_ssa = nullptr;
       unsigned int DefaultBBI = 0;
       size_t i = 0;
-      std::vector<tree_nodeRef> CaseTags(mwi->list_of_cond.size());
+      std::vector<std::pair<tree_nodeRef, kind>> CaseTags(mwi->list_of_cond.size());
       for(const auto& [cond, BBI] : mwi->list_of_cond)
       {
-         auto& case_tag = CaseTags.at(i++);
+         auto& [case_tag, cmp_kind] = CaseTags.at(i++);
          if(cond)
          {
-            const auto* case_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(cond));
-            THROW_ASSERT(case_ssa, "Case conditional variable should be an ssa_name");
-            const auto* ssa_def = GetPointer<const gimple_assign>(GET_CONST_NODE(case_ssa->CGetDefStmt()));
-            THROW_ASSERT(ssa_def, "Case statement should be a gimple_assign");
-            const auto* eq_op = GetPointer<const eq_expr>(GET_CONST_NODE(ssa_def->op1));
-            THROW_ASSERT(eq_op, "Case statement should containt an eq_expr");
-            THROW_ASSERT(GET_CONST_NODE(eq_op->op0)->get_kind() == ssa_name_K, "First operand of eq_expr should be the switch variable");
+            THROW_ASSERT(GET_CONST_NODE(cond)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(cond)->get_kind_text() + " " + GET_CONST_NODE(cond)->ToString() + ")");
+            const auto case_compare = branchOpRecurse(cond);
+            const auto* cmp_op = GetPointer<const binary_expr>(case_compare);
+            THROW_ASSERT(cmp_op, "Case statement should contain a binary_expr (" + case_compare->get_kind_text() + " " + case_compare->ToString() + ")");
+            THROW_ASSERT(GET_CONST_NODE(cmp_op->op0)->get_kind() == ssa_name_K, "First operand of eq_expr should be the switch variable");
             if(switch_ssa == nullptr)
             {
-               switch_ssa = eq_op->op0;
+               switch_ssa = cmp_op->op0;
             }
             else
             {
-               THROW_ASSERT(switch_ssa->index == eq_op->op0->index, "Switch variable should be unique");
+               THROW_ASSERT(switch_ssa->index == cmp_op->op0->index, "Switch variable should be unique");
             }
-            case_tag = eq_op->op1;
+            case_tag = cmp_op->op1;
+            cmp_kind = cmp_op->get_kind();
          }
          else
          {
@@ -5933,7 +5953,7 @@ class ConstraintGraph
       if(static_cast<bool>(DefaultBBI))
       {
          RangeRef antidefaultRange(new Range(Empty, bw));
-         for(const auto& case_tag : CaseTags)
+         for(const auto& [case_tag, cmp_kind] : CaseTags)
          {
             if(case_tag)
             {
@@ -5941,6 +5961,10 @@ class ConstraintGraph
                {
                   APInt cval = tree_helper::get_integer_cst_value(ic);
                   antidefaultRange = antidefaultRange->unionWith(RangeRef(new Range(Regular, bw, cval, cval)));
+               }
+               else
+               {
+                  THROW_UNREACHABLE("Multi way if support only constant value comparisons");
                }
             }
          }
@@ -5957,7 +5981,7 @@ class ConstraintGraph
       i = 0;
       for(const auto& [cond, BBI] : cond_list)
       {
-         const auto& case_tag = CaseTags.at(i++);
+         const auto& [case_tag, cmp_kind] = CaseTags.at(i++);
          if(cond != nullptr)
          {
             const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(case_tag));
@@ -5966,7 +5990,7 @@ class ConstraintGraph
             // Create the interval using the intersection in the case.
             std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(Values);
             BBsuccs.push_back(std::make_pair(BI, BBI));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "case " + boost::lexical_cast<std::string>(cval) + ": " + BI->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "case " + STR(cval) + ": " + BI->ToString());
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -6006,7 +6030,7 @@ class ConstraintGraph
          const auto terminator = GET_CONST_NODE(stmt_list.back());
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "BB" + boost::lexical_cast<std::string>(BBI) + " has terminator type " + terminator->get_kind_text());
+            "BB" + STR(BBI) + " has terminator type " + terminator->get_kind_text());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          if(const auto* br = GetPointer<const gimple_cond>(terminator))
          {
@@ -6070,7 +6094,7 @@ class ConstraintGraph
 
             const ValueSwitchMap& VSM = vsmit->second;
             // Find out which case are we dealing with
-            for(unsigned idx = 0, e = VSM.getNumOfCases(); idx < e; ++idx)
+            for(size_t idx = 0, e = VSM.getNumOfCases(); idx < e; ++idx)
             {
                const unsigned int bbi = VSM.getBBI(idx);
                if(bbi == BBI)
@@ -6091,7 +6115,7 @@ class ConstraintGraph
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added SigmaOp with range " + BItv->ToString());
             VarNode* SymbSrc = nullptr;
-            if(auto symb = std::dynamic_pointer_cast<SymbInterval>(BItv))
+            if(auto symb = RefcountCast<SymbInterval>(BItv))
             {
                auto bound = symb->getBound();
                SymbSrc = addVarNode(bound);
@@ -6124,42 +6148,38 @@ class ConstraintGraph
 
       // Create the sink.
       VarNode* sink = addVarNode(assign->op0);
-      bool sourceSigned = isSignedType(un_op->op);
       // Create the source.
       VarNode* source = nullptr;
       const auto sourceType = tree_helper::CGetType(GET_CONST_NODE(un_op->op));
 
-      switch(un_op->get_kind())
+      if(un_op->get_kind() == view_convert_expr_K)
       {
-         case view_convert_expr_K:
+         source = addVarNode(un_op->op);
+         if(sourceType->get_kind() == real_type_K)
          {
-            source = addVarNode(un_op->op);
-            if(sourceType->get_kind() == real_type_K)
-            {
-               vcMap.insert({sink, source});
-            }
-         }  break;
-         case nop_expr_K:
+            vcMap.insert({sink, source});
+         }
+      }
+      else if(un_op->get_kind() == nop_expr_K)
+      {
+         source = addVarNode(un_op->op);
+         // TODO: check byte order is little endian
+         auto vc = vcMap.find(source);
+         if(vc != vcMap.end())
          {
-            source = addVarNode(un_op->op);
-            // TODO: check byte order is little endian
-            auto vc = vcMap.find(source);
-            if(vc != vcMap.end())
+            if(sourceType->get_kind() == integer_type_K)
             {
-               if(sourceType->get_kind() == integer_type_K)
-               {
-                  vcMap.insert({sink, vc->second});
-               }
+               vcMap.insert({sink, vc->second});
             }
-         }  break;
-         case abs_expr_K:
-         case fix_trunc_expr_K:
-            source = addVarNode(un_op->op);
-            break;
-
-         case convert_expr_K:
-         default:
-            return;
+         }
+      }
+      else if(un_op->get_kind() == abs_expr_K || un_op->get_kind() == fix_trunc_expr_K)
+      {
+         source = addVarNode(un_op->op);
+      }
+      else
+      {
+         return;
       }
       std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getGIMPLE_range(I));
       UnaryOp* UOp = new UnaryOp(BI, sink, I, source, un_op->get_kind());
@@ -6296,7 +6316,7 @@ class ConstraintGraph
       std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getGIMPLE_range(I));
       PhiOp* phiOp = new PhiOp(BI, sink, I);
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added PhiOp with range " + BI->ToString() + " and " + boost::lexical_cast<std::string>(phi->CGetDefEdgesList().size()) + " sources");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added PhiOp with range " + BI->ToString() + " and " + STR(phi->CGetDefEdgesList().size()) + " sources");
 
       // Insert the operation in the graph.
       this->oprs.insert(phiOp);
@@ -6322,7 +6342,7 @@ class ConstraintGraph
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       auto bw = getGIMPLE_BW(ga->op0);
       VarNode* sink = addVarNode(ga->op0);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + boost::lexical_cast<std::string>(bw) + ")");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
       RangeRef intersection(new Range(Regular, bw, Min, Max));
       const auto Op1 = GET_CONST_NODE(ga->op1);
@@ -6333,14 +6353,14 @@ class ConstraintGraph
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          bool pointToConstants = true;
          RangeRef res(new Range(Empty, bw));
-         for(const auto& idx : res_set)
+         for(const auto& index : res_set)
          {
-            const auto TN = TM->CGetTreeNode(idx);
+            const auto TN = TM->CGetTreeNode(index);
             if(const auto* vd = GetPointer<const var_decl>(TN))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Points to " + TN->ToString() + 
-                  " (readonly = " + boost::lexical_cast<std::string>(vd->readonly_flag) + 
-                  ", defs = " + boost::lexical_cast<std::string>(vd->defs.size()) + ")");
+                  " (readonly = " + STR(vd->readonly_flag) + 
+                  ", defs = " + STR(vd->defs.size()) + ")");
                if(!vd->readonly_flag)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed variable is not constant " + TN->ToString());
@@ -6438,7 +6458,7 @@ class ConstraintGraph
       THROW_ASSERT(ga, "");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing store instruction " + ga->ToString());
       VarNode* sink = addVarNode(ga->op0);
-      unsigned bw = getGIMPLE_BW(ga->op1);
+      auto bw = getGIMPLE_BW(ga->op1);
       Range intersection(Regular, bw, Min, Max);
       const auto Op0 = GET_CONST_NODE(ga->op0);
       CustomOrderedSet<unsigned int> res_set;
@@ -6447,15 +6467,15 @@ class ConstraintGraph
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pointer is fully resolved");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-         bool pointToConstants = true;
-         for(const auto& idx : res_set)
+         //    bool pointToConstants = true;
+         for(const auto& index : res_set)
          {
-            const auto TN = TM->CGetTreeNode(idx);
+            const auto TN = TM->CGetTreeNode(index);
             if(const auto* vd = GetPointer<const var_decl>(TN))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Points to " + TN->ToString() + 
-                  " (readonly = " + boost::lexical_cast<std::string>(vd->readonly_flag) + 
-                  ", defs = " + boost::lexical_cast<std::string>(vd->defs.size()) + ")");
+                  " (readonly = " + STR(vd->readonly_flag) + 
+                  ", defs = " + STR(vd->defs.size()) + ")");
                if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
                {
                   for(const auto& [idx, valu] : constr->list_of_idx_valu)
@@ -6562,15 +6582,15 @@ class ConstraintGraph
          {
             return addLoadOp(I_node, TM);
          }
-         else if(const auto* un_op = GetPointer<const unary_expr>(Op1))
+         else if(GetPointer<const unary_expr>(Op1) != nullptr)
          {
             return addUnaryOp(I_node);
          }
-         else if(const auto* bin_op = GetPointer<const binary_expr>(Op1))
+         else if(GetPointer<const binary_expr>(Op1) != nullptr)
          {
             return addBinaryOp(I_node);
          }
-         else if(const auto* ter_op = GetPointer<const ternary_expr>(Op1))
+         else if(GetPointer<const ternary_expr>(Op1) != nullptr)
          {
             return addTernaryOp(I_node);
          }
@@ -6771,7 +6791,7 @@ class ConstraintGraph
          // Handle PhiOp case
          else if(const PhiOp* pop = dynamic_cast<PhiOp*>(dfit->second))
          {
-            for(unsigned i = 0, e = pop->getNumSources(); i < e; ++i)
+            for(size_t i = 0, e = pop->getNumSources(); i < e; ++i)
             {
                const VarNode* source = pop->getSource(i);
                const auto sourceval = source->getValue();
@@ -6857,7 +6877,7 @@ class ConstraintGraph
          auto* uop = dynamic_cast<UnaryOp*>(op);
          if((uop != nullptr) && SymbInterval::classof(uop->getIntersect().get()))
          {
-            auto symbi = std::dynamic_pointer_cast<SymbInterval>(uop->getIntersect());
+            auto symbi = RefcountCast<SymbInterval>(uop->getIntersect());
             const auto V = symbi->getBound();
             auto p = symbMap.find(V);
             if(p != symbMap.end())
@@ -7002,7 +7022,7 @@ class ConstraintGraph
             auto argIt = std::find_if(args.begin(), args.end(), 
                [&](const tree_nodeRef& arg){ return GET_INDEX_NODE(arg) == GET_INDEX_NODE(SSA->var); });
             THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
-            unsigned int arg_pos = argIt - args.begin();
+            size_t arg_pos = static_cast<size_t>(argIt - args.begin());
             THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
 
             parmBind[arg_pos] = ssa;
@@ -7042,7 +7062,7 @@ class ConstraintGraph
          THROW_ASSERT(FD, "Function call should reference a function_decl node");
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "Analysing function call to " + tree_helper::print_function_name(TM, FD) + "( " + boost::lexical_cast<std::string>(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")"));
+            "Analysing function call to " + tree_helper::print_function_name(TM, FD) + "( " + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")"));
 
          auto it = callMap.find(FD->index);
          if(it == callMap.end())
@@ -7098,6 +7118,10 @@ class ConstraintGraph
    {
       return &parmMap;
    }
+   const VarNodes &getVars() const
+   {
+      return vars;
+   }
 
    /// Iterates through all instructions in the function and builds the graph.
    void buildGraph(unsigned int function_id, const application_managerConstRef AppM)
@@ -7106,10 +7130,10 @@ class ConstraintGraph
       const auto FB = AppM->CGetFunctionBehavior(function_id);
       const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
       const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
-      const std::string fn_name = tree_helper::print_function_name(TM, FD) + "(" + boost::lexical_cast<std::string>(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")");
+      const std::string fn_name = tree_helper::print_function_name(TM, FD) + "(" + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")");
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         "Analysing function " + fn_name + " with " + boost::lexical_cast<std::string>(SL->list_of_bloc.size()) + " blocks");
+         "Analysing function " + fn_name + " with " + STR(SL->list_of_bloc.size()) + " blocks");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
       buildValueMaps(SL->list_of_bloc, TM);
@@ -7221,7 +7245,7 @@ class ConstraintGraph
             }
             generateEntryPoints(component, entryPoints);
             // iterate a fixed number of time before widening
-            update(component.size() * 16, compUseMap, entryPoints);
+            update(component.size() * 16UL, compUseMap, entryPoints);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed constraint graph to " + printToFile("cgfixed.dot", parameters));
 
             generateEntryPoints(component, entryPoints);
@@ -7418,9 +7442,9 @@ class CropDFS : public ConstraintGraph
 
          // The use list.of sink
          const auto& L = compUseMap.at(sink->getValue());
-         for(BasicOp* op : L)
+         for(BasicOp* opr : L)
          {
-            activeOps.insert(op);
+            activeOps.insert(opr);
          }
       }
    }
@@ -7434,7 +7458,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
    const auto fd = TM->get_tree_node_const(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
    const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
-   const std::string fn_name = tree_helper::print_function_name(TM, FD) + "(" + boost::lexical_cast<std::string>(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")");
+   const std::string fn_name = tree_helper::print_function_name(TM, FD) + "(" + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal on function " + fn_name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
@@ -7617,7 +7641,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
-   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par)
+   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false), constant_flop_restart(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -7633,6 +7657,7 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
@@ -7641,6 +7666,33 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       }
       case INVALIDATION_RELATIONSHIP:
       {
+         switch(GetStatus())
+         {
+            case DesignFlowStep_Status::SUCCESS:
+            {
+               if(dead_code_restart)
+               {
+                  relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));   // TODO: could it be more specific?
+               }
+               //    if(constant_flop_restart)
+               //    {
+               //       relationships.insert(std::make_pair(CONSTANT_FLOP_WRAPPER, ALL_FUNCTIONS));   // TODO: could it be more specific?
+               //    }
+               break;
+            }
+            case DesignFlowStep_Status::UNCHANGED:
+            {
+               break;
+            }
+            case DesignFlowStep_Status::SKIPPED:
+            case DesignFlowStep_Status::UNEXECUTED:
+            case DesignFlowStep_Status::UNNECESSARY:
+            case DesignFlowStep_Status::ABORTED:
+            case DesignFlowStep_Status::EMPTY:
+            case DesignFlowStep_Status::NONEXISTENT:
+            default:
+               THROW_UNREACHABLE("Unexpected design flow step status for Range Analysis");
+         }
          break;
       }
       default:
@@ -7664,15 +7716,17 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    /// Build Constraint graph on every function
    ConstraintGraph* CG = new Cousot(debug_level);
 
-   MAX_BIT_INT = getMaxBitWidth();
-   updateConstantIntegers(MAX_BIT_INT);
+   MAX_BIT_INT = getApplication_BW();
+   // Updates the Min and Max values.
+   Min = getSignedMinValue(MAX_BIT_INT);
+   Max = getSignedMaxValue(MAX_BIT_INT);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-      "-->Maximum bitwidth is " + boost::lexical_cast<std::string>(MAX_BIT_INT) + " bits");
+      "-->Maximum bitwidth is " + STR(MAX_BIT_INT) + " bits");
 
    // Analyse only reached functions
    auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
-   for(unsigned int f : functions)
+   for(const auto f : functions)
    {
       CG->buildGraph(f, AppM);
    }
@@ -7682,12 +7736,12 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    {
       const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(top_fn));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         tree_helper::print_function_name(TM, FD) + "(" + boost::lexical_cast<std::string>(FD->list_of_args.size()) + " arguments) is top function");
+         tree_helper::print_function_name(TM, FD) + "(" + STR(FD->list_of_args.size()) + " arguments) is top function");
       functions.erase(top_fn);
    }
    // The two operations are split because the CallMap is built for all functions in buildGrap
    // then it is used from MatchParametersAndReturnValues
-   for(unsigned int f : functions)
+   for(const auto f : functions)
    {
       MatchParametersAndReturnValues(f, TM, CG, debug_level);
    }
@@ -7696,32 +7750,21 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 
    CG->findIntervals(parameters);
       
-   finalizeRangeAnalysis(CG);
+   bool newState = finalize(CG);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
    delete CG;
-   return DesignFlowStep_Status::SUCCESS;
+   return newState ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
 void RangeAnalysis::Initialize()
 {
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Initializing Range Analysis now");
 }
 
-RangeConstRef RangeAnalysis::getRange(const tree_nodeConstRef ssa_name) const
+bw_t RangeAnalysis::getFunction_BW(unsigned int F)
 {
-   THROW_ASSERT(ssa_name->get_kind() == tree_reindex_K, "Tree node should be a tree_reindex");
-   auto it = ranges.find(ssa_name);
-   if(it != ranges.end())
-   {
-      return it->second;
-   }
-
-   return RangeConstRef(new Range(Unknown, getGIMPLE_BW(ssa_name)));
-}
-
-unsigned RangeAnalysis::getMaxBitWidth(unsigned int F)
-{
-   unsigned int InstBitSize = 0, opBitSize = 0, max = 0;
+   bw_t InstBitSize = 0, max = 0;
 
    const auto TM = AppM->get_tree_manager();
    const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(F));
@@ -7754,14 +7797,14 @@ unsigned RangeAnalysis::getMaxBitWidth(unsigned int F)
    return max;
 }
 
-unsigned RangeAnalysis::getMaxBitWidth()
+bw_t RangeAnalysis::getApplication_BW()
 {
-   unsigned max = 0;
+   bw_t max = 0;
 
    const auto functions = AppM->get_functions_with_body();
    for(unsigned int f : functions)
    {
-      unsigned bitwidth = getMaxBitWidth(f);
+      auto bitwidth = getFunction_BW(f);
       if(bitwidth > max)
       {
          max = bitwidth;
@@ -7771,67 +7814,127 @@ unsigned RangeAnalysis::getMaxBitWidth()
    return max ? max : 1;
 }
 
-void RangeAnalysis::updateConstantIntegers(unsigned maxBitWidth)
+bool RangeAnalysis::finalize(const void* CGp)
 {
-   // Updates the Min and Max values.
-   Min = getSignedMinValue(maxBitWidth);
-   Max = getSignedMaxValue(maxBitWidth);
-}
-
-void RangeAnalysis::finalizeRangeAnalysis(void* CGp)
-{
-   ConstraintGraph* CG = reinterpret_cast<ConstraintGraph*>(CGp);
-   
+   const auto* CG = reinterpret_cast<const ConstraintGraph*>(CGp);
+   const auto& vars = CG->getVars();
    const auto TM = AppM->get_tree_manager();
-   const auto functions = AppM->get_functions_with_body();
-   for(unsigned int f : functions)
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   bool modified = false;
+   dead_code_restart = false;
+   auto updateSSALimits = [&](tree_nodeRef ssa_node)
    {
-      const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(f));
-      const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
-   
-      for(const auto& [BBI, BB] : SL->list_of_bloc)
+      auto* ssa = GetPointer<ssa_name>(GET_NODE(ssa_node));
+      if(ssa->range->isConstant())
       {
-         const auto& stmt_list = BB->CGetStmtList();
-         for(auto& stmt : stmt_list)
+         tree_nodeRef cst;
+         if(ssa->range->isReal())
          {
-            // TODO: use tree_helper::ComputeSSAUses(stmt) to get all ssa_name inside the statement
-            if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt)))
+            const auto rRange = RefcountCast<const RealRange>(ssa->range);
+            if(rRange->getBitWidth() == 32)
             {
-               if(GET_CONST_NODE(ga->op0)->get_kind() == ssa_name_K)
-               {
-                  ranges.insert(std::make_pair(ga->op0, CG->getRange(ga->op0)));
-               }
+               union vcFloat vc;
+               #if __BYTE_ORDER == __BIG_ENDIAN
+               vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
+               vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint8_t>();
+               vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint32_t>();
+               #else
+               vc.bits.coded = ((rRange->getSign()->getUnsignedMax()<<31) + (rRange->getExponent()->getUnsignedMax()<<23) + rRange->getFractional()->getUnsignedMax()).convert_to<int32_t>();
+               #endif
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
+               cst = tree_man->CreateRealCst(ssa->type, static_cast<long double>(vc.flt), TM->new_tree_node_id());
+            }
+            else
+            {
+               union vcDouble vc;
+               #if __BYTE_ORDER == __BIG_ENDIAN
+               vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
+               vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint16_t>();
+               vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint64_t>();
+               #else
+               vc.bits.coded = ((rRange->getSign()->getUnsignedMax()<<63) + (rRange->getExponent()->getUnsignedMax()<<52) + rRange->getFractional()->getUnsignedMax()).convert_to<int64_t>();
+               #endif
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
+               cst = tree_man->CreateRealCst(ssa->type, static_cast<long double>(vc.dub), TM->new_tree_node_id());
             }
          }
+         else
+         {
+            const bool is_unsigned = !tree_helper::is_int(TM, ssa->index);
+            if(is_unsigned)
+            {
+               cst = tree_man->CreateIntegerCst(ssa->type, ssa->range->getUnsignedMax().convert_to<long long>(), TM->new_tree_node_id());
+            }
+            else
+            {
+               cst = tree_man->CreateIntegerCst(ssa->type, ssa->range->getSignedMax().convert_to<long long>(), TM->new_tree_node_id());
+            }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->This variable have a constant value, it will be removed and replaced with " + GET_CONST_NODE(cst)->ToString());
+         const auto ssaUses = ssa->CGetUseStmts();
+         for(const auto& [use, count] : ssaUses)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage before: " + use->ToString());
+            TM->ReplaceTreeNode(use, ssa_node, cst);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage after: " + use->ToString());
+         }
+         if(ssa->CGetUseStmts().empty())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restarted dead code");
+            dead_code_restart = true;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-   }
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range results for " + boost::lexical_cast<std::string>(ranges.size()) + " variables");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for(auto [ssa_tr, range] : ranges)
-   {
-      auto* ssa = GetPointer<ssa_name>(GET_NODE(TM->GetTreeReindex(ssa_tr->index)));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ssa->ToString() + " " + GET_NODE(ssa->type)->get_kind_text() + " " + range->ToString());
-      if(range->isReal())
-      {
-         // TODO: find a way to store this result
-         continue;
-      }
-      if(!range->isUnknown() && !range->isEmpty())
+      else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty())
       {
          bool isSigned = tree_helper::is_int(TM, ssa->index);
          auto type_id = GET_INDEX_CONST_NODE(ssa->type);
          if(isSigned)
          {
-            ssa->min = TM->CreateUniqueIntegerCst(range->getSignedMin().convert_to<long long>(), type_id);
-            ssa->max = TM->CreateUniqueIntegerCst(range->getSignedMax().convert_to<long long>(), type_id);
+            ssa->min = TM->CreateUniqueIntegerCst(ssa->range->getSignedMin().convert_to<long long>(), type_id);
+            ssa->max = TM->CreateUniqueIntegerCst(ssa->range->getSignedMax().convert_to<long long>(), type_id);
          }
          else
          {
-            ssa->min = TM->CreateUniqueIntegerCst(range->getUnsignedMin().convert_to<long long>(), type_id);
-            ssa->max = TM->CreateUniqueIntegerCst(range->getUnsignedMax().convert_to<long long>(), type_id);
+            ssa->min = TM->CreateUniqueIntegerCst(ssa->range->getUnsignedMin().convert_to<long long>(), type_id);
+            ssa->max = TM->CreateUniqueIntegerCst(ssa->range->getUnsignedMax().convert_to<long long>(), type_id);
          }
+         // TODO: change ssa->type with correctly sized type
+      }
+   };
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range results for " + STR(vars.size()) + " variables");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(const auto& [var, node] : vars)
+   {
+      if(GetPointer<const cst_node>(GET_CONST_NODE(var)) != nullptr)
+      {
+         continue;
+      }
+      const auto ssaRef = TM->GetTreeReindex(GET_INDEX_CONST_NODE(var));
+      auto* ssa = GetPointer<ssa_name>(GET_NODE(ssaRef));
+      THROW_ASSERT(ssa, "Variable should be an ssa_name (" + GET_CONST_NODE(var)->get_kind_text() + " " + GET_CONST_NODE(var)->ToString() + ")");
+      auto range = node->getRange();
+      if(ssa->range)
+      {
+         if(*ssa->range != *range)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
+               "Modified range from " + ssa->range->ToString() + " to " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
+            ssa->range = range;
+            updateSSALimits(ssaRef);
+            modified = true;
+         }
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
+            "Added range " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
+         ssa->range = range;
+         updateSSALimits(ssaRef);
+         modified = true;
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   return modified;
 }

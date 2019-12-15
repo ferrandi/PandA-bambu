@@ -267,7 +267,7 @@ namespace eSSAInfo
 
     public:
       /// Constructor.
-      OrderedInstructions(BBGraphRef DT) : DT(DT)
+      OrderedInstructions(BBGraphRef _DT) : DT(_DT)
       {
       }
 
@@ -385,7 +385,7 @@ namespace eSSAInfo
 
    // Given a predicate info that is a type of branching terminator, get the
    // branching block.
-   const unsigned int getBranchBlock(const PredicateBase* PB)
+   unsigned int getBranchBlock(const PredicateBase* PB)
    {
       THROW_ASSERT(PredicateWithEdge::classof(PB), 
          "Only branches and switches should have PHIOnly defs that require branch blocks.");
@@ -494,7 +494,6 @@ namespace eSSAInfo
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + GET_NODE(Op)->ToString() + " eligible for renaming in BB" + boost::lexical_cast<std::string>(Succ->number));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            bool TakenEdge = (Succ->number == TrueBB->number);
 
             PredicateBase* PB = new PredicateWithEdge(gimple_cond_K, Op, BranchBB->number, Succ->number);
             addInfoFor(OperandRef(new Operand(Op, cond_stmt)), PB, OpsToRename, ValueInfoNums, ValueInfos);
@@ -877,7 +876,7 @@ namespace eSSAInfo
          }
       }
 
-      size_t Start = RevIter - RenameStack.rbegin();
+      auto Start = RevIter - RenameStack.rbegin();
       const auto& BBmap = DT->CGetBBGraphInfo()->bb_index_map;
       // The maximum number of things we should be trying to materialize at once
       // right now is 4, depending on if we had an assume, a branch, and both used
