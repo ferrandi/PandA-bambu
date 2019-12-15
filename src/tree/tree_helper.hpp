@@ -892,6 +892,14 @@ class tree_helper
     */
    static bool IsLoad(const tree_managerConstRef& TM, const tree_nodeConstRef& tn, const CustomOrderedSet<unsigned int>& fun_mem_data);
 
+   /**
+    * Return true in case the right operation is a lut_expr
+    * @param TM is the tree manager
+    * @param tn is the tree node
+    * @return if tn operation is a lut_expr
+    */
+   static bool IsLut(const tree_managerConstRef& TM, const tree_nodeConstRef& tn);
+
    /// Constructor
    tree_helper();
 

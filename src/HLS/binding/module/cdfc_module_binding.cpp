@@ -2115,7 +2115,9 @@ bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bi
    if(vars_read1.size() > 1)
    {
       double resource_area = allocation_information->compute_normalized_area(fu_s1);
-      double exec_time = allocation_information->get_worst_execution_time(fu_s1) - allocation_information->get_correction_time(fu_s1, fsdg->CGetOpNodeInfo(v)->GetOperation());
+      double exec_time =
+          allocation_information->get_worst_execution_time(fu_s1) -
+          allocation_information->get_correction_time(fu_s1, fsdg->CGetOpNodeInfo(v)->GetOperation(), static_cast<unsigned>(fsdg->CGetOpNodeInfo(v)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE).size()));
       // double stage_time = allocation_information->get_worst_stage_period(fu_s1);
       // if(exec_time == 0.0 && stage_time == 0.0) return true;
       if(exec_time < 1.0 || resource_area < 0.5)

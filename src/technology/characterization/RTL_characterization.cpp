@@ -669,7 +669,7 @@ const DesignFlowStepFactoryConstRef RTLCharacterization::CGetDesignFlowStepFacto
 }
 
 void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int prec, const std::vector<std::string>& portsize_parameters, const size_t portsize_index, const std::vector<std::string>& pipe_parameters, const size_t stage_index,
-                                      const unsigned int constPort, const bool is_commutative)
+                                      const unsigned int constPort, const bool is_commutative, size_t max_lut_size)
 {
    const auto fu_name = fu->get_name();
    const auto fu_base_name = fu->fu_template_name != "" ? fu->fu_template_name : fu_name;
@@ -892,7 +892,18 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          structural_objectRef port_in = spec_module->get_in_port(i);
          if(port_in->get_id() == CLOCK_PORT_NAME || port_in->get_id() == RESET_PORT_NAME || port_in->get_id() == START_PORT_NAME)
             continue;
-         if(isTemplate && i == constPort)
+         if(fu_base_name == LUT_EXPR_STD && i == 0)
+         {
+            resize_port(port_in, 64);
+            e_port = SM->add_constant("constant_0", circuit, port_in->get_typeRef(), STR(0xFF7F3F1F0F070301));
+            SM->add_connection(port_in, e_port);
+         }
+         else if(fu_base_name == LUT_EXPR_STD && i > max_lut_size)
+         {
+            e_port = SM->add_constant("constant_" + STR(i), circuit, port_in->get_typeRef(), STR(0));
+            SM->add_connection(port_in, e_port);
+         }
+         else if(isTemplate && i == constPort)
          {
             THROW_ASSERT(fu->characterizing_constant_value != "", "expected a value");
             e_port = SM->add_constant("constant_" + STR(constPort), circuit, port_in->get_typeRef(), fu->characterizing_constant_value);

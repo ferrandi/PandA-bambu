@@ -247,7 +247,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
    lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, combinational_delay);
    if(combinational_delay > Param->getOption<double>(OPT_clock_period))
    {
-      CopyFile(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt", STR_CST_synthesis_timing_violation_report);
+      CopyFile(actual_parameters->parameter_values[PARAM_top_id] + ".sta.rpt", Param->getOption<std::string>(OPT_output_directory) + "/" + flow_name + "/" + STR_CST_synthesis_timing_violation_report);
    }
 }
 
@@ -285,11 +285,14 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
-      sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+      if(get_flow_name() != "Characterization")
+      {
+         sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
+         sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_registers]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_registers] -to [all_outputs]\n";
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+      }
       sdc_file << "derive_pll_clocks\n";
       sdc_file << "derive_clock_uncertainty\n";
    }
