@@ -74,8 +74,6 @@
 #include "gcc_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define DEBUG_eSSA
-
 namespace eSSAInfo
 {
 
@@ -116,8 +114,7 @@ namespace eSSAInfo
       bool phiComesBefore(const struct gimple_node *A, const struct gimple_node *B)
       {
          const struct gimple_node* Phi = nullptr;
-         THROW_ASSERT(!(LastPhiFound == BBPhi->end() && NextPhiPos != 0),
-               "Phi supposed to be in NumberedPhis");
+         THROW_ASSERT(!(LastPhiFound == BBPhi->end() && NextPhiPos != 0), "Phi supposed to be in NumberedPhis");
       
          // Start the search with the instruction found in the last lookup round.
          auto II = BBPhi->begin();
@@ -147,8 +144,7 @@ namespace eSSAInfo
       bool instComesBefore(const struct gimple_node *A, const struct gimple_node *B)
       {
          const struct gimple_node* Inst = nullptr;
-         THROW_ASSERT(!(LastInstFound == BBInst->end() && NextInstPos != 0),
-               "Instruction supposed to be in NumberedInsts");
+         THROW_ASSERT(!(LastInstFound == BBInst->end() && NextInstPos != 0), "Instruction supposed to be in NumberedInsts");
       
          // Start the search with the instruction found in the last lookup round.
          auto II = BBInst->begin();
@@ -232,8 +228,8 @@ namespace eSSAInfo
 
       const auto BBAi_v = BBmap.find(BBIA);
       const auto BBBi_v = BBmap.find(BBIB);
-      THROW_ASSERT(BBAi_v != BBmap.end(), "Unknown BB index (" + boost::lexical_cast<std::string>(BBIA) + ")");
-      THROW_ASSERT(BBBi_v != BBmap.end(), "Unknown BB index (" + boost::lexical_cast<std::string>(BBIB) + ")");
+      THROW_ASSERT(BBAi_v != BBmap.end(), "Unknown BB index (" + STR(BBIA) + ")");
+      THROW_ASSERT(BBBi_v != BBmap.end(), "Unknown BB index (" + STR(BBIB) + ")");
 
       // An unreachable block is dominated by anything.
       if(!DT->IsReachable(BBmap.at(bloc::ENTRY_BLOCK_ID), BBBi_v->second))
@@ -289,7 +285,7 @@ namespace eSSAInfo
             if(OBB == OBBMap.end())
             {
                const auto BBvertex = BBmap.find(BBIA);
-               THROW_ASSERT(BBvertex != BBmap.end(), "Unknown BB index (" + boost::lexical_cast<std::string>(BBIA) + ")");
+               THROW_ASSERT(BBvertex != BBmap.end(), "Unknown BB index (" + STR(BBIA) + ")");
 
                OBB = OBBMap.insert({BBIA, std::make_unique<OrderedBasicBlock>(DT->CGetBBNodeInfo(BBvertex->second)->block)}).first;
             }
@@ -387,8 +383,7 @@ namespace eSSAInfo
    // branching block.
    unsigned int getBranchBlock(const PredicateBase* PB)
    {
-      THROW_ASSERT(PredicateWithEdge::classof(PB), 
-         "Only branches and switches should have PHIOnly defs that require branch blocks.");
+      THROW_ASSERT(PredicateWithEdge::classof(PB), "Only branches and switches should have PHIOnly defs that require branch blocks.");
       return reinterpret_cast<const PredicateWithEdge*>(PB)->From;
    }
 
@@ -458,7 +453,11 @@ namespace eSSAInfo
    }
 
    void processBranch(tree_nodeRef bi, std::set<OperandRef>& OpsToRename, std::map<tree_nodeRef, unsigned int>& ValueInfoNums, std::vector<eSSAInfo::ValueInfo>& ValueInfos, 
-      std::set<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, const std::map<unsigned int, blocRef> BBs, int debug_level)
+      std::set<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, const std::map<unsigned int, blocRef> BBs, int
+   #ifndef NDEBUG
+      debug_level
+   #endif
+      )
    {
       const auto* BI = GetPointer<gimple_cond>(GET_NODE(bi));
       THROW_ASSERT(BI, "Branch instruction should be gimple_cond");
@@ -479,8 +478,7 @@ namespace eSSAInfo
       // Can't insert conditional information if they all go to the same place.
       if(TrueBB->number == FalseBB->number)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->True and false edge target same block, skipping...");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---True and false edge target same block, skipping...");
          return;
       }
 
@@ -492,8 +490,7 @@ namespace eSSAInfo
             {
                continue;
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + GET_NODE(Op)->ToString() + " eligible for renaming in BB" + boost::lexical_cast<std::string>(Succ->number));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NODE(Op)->ToString() + " eligible for renaming in BB" + STR(Succ->number));
 
             PredicateBase* PB = new PredicateWithEdge(gimple_cond_K, Op, BranchBB->number, Succ->number);
             addInfoFor(OperandRef(new Operand(Op, cond_stmt)), PB, OpsToRename, ValueInfoNums, ValueInfos);
@@ -532,15 +529,18 @@ namespace eSSAInfo
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Unhandled condition type, skipping...");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Unhandled condition type, skipping...");
       }
    }
 
    // Process a block terminating switch, and place relevant operations to be
    // renamed into OpsToRename.
    void processMultiWayIf(tree_nodeRef mwii, std::set<OperandRef>& OpsToRename, std::map<tree_nodeRef, unsigned int>& ValueInfoNums, std::vector<eSSAInfo::ValueInfo>& ValueInfos, 
-      std::set<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, const std::map<unsigned int, blocRef> BBs, const tree_managerRef TM, int debug_level)
+      std::set<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, const std::map<unsigned int, blocRef> BBs, const tree_managerRef TM, int
+   #ifndef NDEBUG
+      debug_level
+   #endif
+      )
    {
       const auto* MWII = GetPointer<gimple_multi_way_if>(GET_NODE(mwii));
       THROW_ASSERT(MWII, "Multi way if instruction should be gimple_multi_way_if");
@@ -593,8 +593,7 @@ namespace eSSAInfo
       const auto* SwitchSSA = GetPointer<ssa_name>(GET_NODE(switch_ssa));
       if(SwitchSSA->CGetUseStmts().size() == MWII->list_of_cond.size())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Variable " + SwitchSSA->ToString() + " used only by multi-way if, skipping...");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + SwitchSSA->ToString() + " used only by multi-way if, skipping...");
          return;
       }
 
@@ -608,8 +607,7 @@ namespace eSSAInfo
             THROW_ASSERT(static_cast<bool>(BBs.count(BBI)), "Target BB should be in BB list");
             const auto& TargetBB = BBs.at(BBI);
             
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + SwitchSSA->ToString() + " eligible for renaming in BB" + boost::lexical_cast<std::string>(BBI));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + SwitchSSA->ToString() + " eligible for renaming in BB" + STR(BBI));
             auto* PS = new PredicateWithEdge(gimple_multi_way_if_K, switch_ssa, BranchBBI, TargetBB->number);
             addInfoFor(OperandRef(new Operand(switch_ssa, case_stmt)), PS, OpsToRename, ValueInfoNums, ValueInfos);
             if(TargetBB->list_of_pred.size() > 1)
@@ -816,7 +814,11 @@ namespace eSSAInfo
 
    // Convert the uses of Op into a vector of uses, associating global and local
    // DFS info with each one.
-   void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedSet, BBGraphRef DT, const std::unordered_map<unsigned int, DFSInfo>& DFSInfos, int debug_level)
+   void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedSet, BBGraphRef DT, const std::unordered_map<unsigned int, DFSInfo>& DFSInfos, int
+   #ifndef NDEBUG
+      debug_level
+   #endif
+      )
    {
       auto* op = GetPointer<ssa_name>(GET_NODE(Op));
       THROW_ASSERT(op, "Op is not an ssa_name (" + GET_NODE(Op)->get_kind_text() + ")");
@@ -847,11 +849,11 @@ namespace eSSAInfo
 
          const auto& BBmap = DT->CGetBBGraphInfo()->bb_index_map;
          auto DomNode_vertex = BBmap.find(IBlock);
-         THROW_ASSERT(DomNode_vertex != BBmap.end(), "BB" + boost::lexical_cast<std::string>(IBlock) + " not found in DT");
+         THROW_ASSERT(DomNode_vertex != BBmap.end(), "BB" + STR(IBlock) + " not found in DT");
          // It's possible our use is in an unreachable block. Skip it if so.
          if(!DT->IsReachable(BBmap.at(bloc::ENTRY_BLOCK_ID), DomNode_vertex->second))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--BB" + boost::lexical_cast<std::string>(IBlock) + " is unreachable from DT root");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BB" + STR(IBlock) + " is unreachable from DT root");
             continue;
          }
          const auto& DomNode_DFSInfo = DFSInfos.at(IBlock);
@@ -948,7 +950,7 @@ namespace eSSAInfo
          std::vector<eSSAInfo::ValueDFS> OrderedUses;
          const auto& ValueInfo = getValueInfo(Op->getOperand(), ValueInfoNums, ValueInfos);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "Analysing " + Op->getOperand()->ToString() + " with " + boost::lexical_cast<std::string>(ValueInfo.Infos.size()) + " possible copies");
+            "Analysing " + Op->getOperand()->ToString() + " with " + STR(ValueInfo.Infos.size()) + " possible copies");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          // Insert the possible copies into the def/use list.
          // They will become real copies if we find a real use for them, and never
@@ -1019,10 +1021,10 @@ namespace eSSAInfo
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-                  "RenameStack top DFS numbers are (" + boost::lexical_cast<std::string>(RenameStack.back().DFSIn) + "," + boost::lexical_cast<std::string>(RenameStack.back().DFSOut) + ")");
+                  "RenameStack top DFS numbers are (" + STR(RenameStack.back().DFSIn) + "," + STR(RenameStack.back().DFSOut) + ")");
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-               "Current DFS numbers are (" + boost::lexical_cast<std::string>(VD.DFSIn) + "," + boost::lexical_cast<std::string>(VD.DFSOut) + ")");
+               "Current DFS numbers are (" + STR(VD.DFSIn) + "," + STR(VD.DFSOut) + ")");
             bool ShouldPush = (VD.Def || PossibleCopy);
             bool OutOfScope = !stackIsInScope(RenameStack, VD, DT);
             if(OutOfScope || ShouldPush)
@@ -1038,8 +1040,7 @@ namespace eSSAInfo
             // with no renaming needed, just skip it.
             if(RenameStack.empty())
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Current use needs no renaming");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current use needs no renaming");
                continue;
             }
             // Skip values, only want to rename the uses
@@ -1060,8 +1061,7 @@ namespace eSSAInfo
             }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-               "-->Found replacement " + GET_NODE(Result.Def)->ToString() + " for " + GET_NODE(VD.U->getOperand())->ToString() + " in " + GET_NODE(VD.U->getUser())->ToString());
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               "---Found replacement " + GET_NODE(Result.Def)->ToString() + " for " + GET_NODE(VD.U->getOperand())->ToString() + " in " + GET_NODE(VD.U->getUser())->ToString());
             // TODO: fix phi ordering in OrderedBasicBlock
             THROW_ASSERT(valueComesBefore(OI, Result.Def, VD.U->getUser()), "Predicateinfo def should have dominated this use");
             auto* phi = GetPointer<gimple_phi>(GET_NODE(Result.Def));
@@ -1159,7 +1159,7 @@ DesignFlowStep_Status eSSA::InternalExec()
       }
    }
    DT->GetBBGraphInfo()->bb_index_map = inverse_vertex_map;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator tree computation completed (" + boost::lexical_cast<std::string>(DT->num_bblocks()) + " BB generated)");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator tree computation completed (" + STR(DT->num_bblocks()) + " BB generated)");
 
    // This stores info about each operand or comparison result we make copies
    // of.  The real ValueInfos start at index 1, index 0 is unused so that we can
@@ -1208,7 +1208,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    unsigned int DFSNum = 0;
    const auto& BBentry = DT->CGetBBNodeInfo(workStack.top().first)->block;
    DFSInfos[BBentry->number].DFSIn = DFSNum++;
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing BB" + boost::lexical_cast<std::string>(BBentry->number));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing BB" + STR(BBentry->number));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    BBvisit(BBentry);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1235,7 +1235,7 @@ DesignFlowStep_Status eSSA::InternalExec()
          DFSInfos[Child->number].DFSIn = DFSNum++;
          
          // Perform BB analysis for eSSA purpose
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing BB" + boost::lexical_cast<std::string>(Child->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing BB" + STR(Child->number));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          BBvisit(Child);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1246,7 +1246,7 @@ DesignFlowStep_Status eSSA::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator tree has some unreachable blocks");
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysis detected " + boost::lexical_cast<std::string>(OpsToRename.size()) + " operations to rename");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysis detected " + STR(OpsToRename.size()) + " operations to rename");
 
    if(OpsToRename.empty())
    {

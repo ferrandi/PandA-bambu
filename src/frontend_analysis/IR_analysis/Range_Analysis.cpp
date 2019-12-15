@@ -78,11 +78,13 @@
 
 #define RA_JUMPSET
 
+#ifndef NDEBUG
 #define DEBUG_RANGE_OP
 #define DEBUG_BASICOP_EVAL
 #define DEBUG_CGRAPH
 #define DEBUG_RA
 #define SCC_DEBUG
+#endif
 
 #define CASE_MISCELLANEOUS       \
    aggr_init_expr_K:             \
@@ -983,22 +985,22 @@ bw_t Range::getBitWidth() const
 
 const APInt &Range::getLower() const
 {
-   THROW_ASSERT(type != Real, "Real range is a storage class only");
-   THROW_ASSERT(type != Anti, "Lower bound not valid for Anti range");
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isAnti(), "Lower bound not valid for Anti range");
    return l;
 }
 
 const APInt &Range::getUpper() const
 {
-   THROW_ASSERT(type != Real, "Real range is a storage class only");
-   THROW_ASSERT(type != Anti, "Upper bound not valid for Anti range");
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isAnti(), "Upper bound not valid for Anti range");
    return u;
 }
 
 APInt Range::getSignedMax() const
 {
-   THROW_ASSERT(type != Real, "Real range is a storage class only");
-   THROW_ASSERT(type != Unknown && type != Empty, "Max not valid for Unknown/Empty range");
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "Max not valid for Unknown/Empty range");
    if(type == Regular)
    {
       auto maxS = getSignedMaxValue(bw);
@@ -1009,8 +1011,8 @@ APInt Range::getSignedMax() const
 
 APInt Range::getSignedMin() const
 {
-   THROW_ASSERT(type != Real, "Real range is a storage class only");
-   THROW_ASSERT(type != Unknown && type != Empty, "Min not valid for Unknown/Empty range");
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "Min not valid for Unknown/Empty range");
    if(type == Regular)
    {
       auto minS = getSignedMinValue(bw);
@@ -1026,8 +1028,8 @@ APInt Range::getSignedMin() const
 
 APInt Range::getUnsignedMax() const
 {
-   THROW_ASSERT(type != Real, "Real range is a storage class only");
-   THROW_ASSERT(type != Unknown && type != Empty, "UMax not valid for Unknown/Empty range");
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "UMax not valid for Unknown/Empty range");
    if(isAnti())
    {
       auto lb = l - Epsilon;
@@ -1039,8 +1041,8 @@ APInt Range::getUnsignedMax() const
 
 APInt Range::getUnsignedMin() const
 {
-   THROW_ASSERT(type != Real, "Real range is a storage class only");
-   THROW_ASSERT(type != Unknown && type != Empty, "UMin not valid for Unknown/Empty range");
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "UMin not valid for Unknown/Empty range");
    if(isAnti())
    {
       return (l > 0 || u < 0) ? getMinValue(bw) : (u + Epsilon);
@@ -4093,8 +4095,10 @@ class BinaryOp : public BasicOp
 BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source1, VarNode* _source2, kind _opcode) 
    : BasicOp(std::move(_intersect), _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
 {
+   #if HAVE_ASSERTS
    const auto type = tree_helper::CGetType(GET_CONST_NODE(_sink->getValue()));
    THROW_ASSERT(type->get_kind() == integer_type_K || type->get_kind() == boolean_type_K, "Binary operation sink should be of integer type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
+   #endif
 }
 
 /// Computes the interval of the sink based on the interval of the sources,
@@ -4342,12 +4346,14 @@ class TernaryOp : public BasicOp
 TernaryOp::TernaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source1, VarNode* _source2, VarNode* _source3, kind _opcode)
       : BasicOp(std::move(_intersect), _sink, _inst), source1(_source1), source2(_source2), source3(_source3), opcode(_opcode)
 {
+   #if HAVE_ASSERTS
    const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(_inst));
    THROW_ASSERT(ga, "TernaryOp associated statement should be a gimple_assign " + GET_CONST_NODE(_inst)->ToString());
    const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
    THROW_ASSERT(I, "TernaryOp operator should be a ternary_expr");
    THROW_ASSERT(_sink->getBitWidth() == _source2->getBitWidth(), "Operator bitwidth mismatch");
    THROW_ASSERT(_sink->getBitWidth() == _source3->getBitWidth(), "Operator bitwidth mismatch");
+   #endif
 }
 
 RangeRef TernaryOp::eval()
@@ -5838,9 +5844,10 @@ class ConstraintGraph
             kind invPred = op_inv(pred);
 
             auto bw0 = getGIMPLE_BW(bin_op->op0);
+            #if HAVE_ASSERTS
             auto bw1 = getGIMPLE_BW(bin_op->op1);
-            THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth "
-               "(Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
+            THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
+            #endif
 
             RangeRef CR(new Range(Unknown, bw0));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
@@ -7031,7 +7038,11 @@ class ConstraintGraph
       }
    }
 
-   bool storeFunctionCall(const tree_nodeConstRef tn, const tree_managerConstRef TM)
+   bool storeFunctionCall(const tree_nodeConstRef tn, const tree_managerConstRef 
+   #ifndef NDEBUG 
+   TM
+   #endif
+   )
    {
       tree_nodeRef fun_node = nullptr;
 
@@ -7060,9 +7071,8 @@ class ConstraintGraph
          
          const auto* FD = GetPointer<const function_decl>(GET_CONST_NODE(fun_node));
          THROW_ASSERT(FD, "Function call should reference a function_decl node");
-
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "Analysing function call to " + tree_helper::print_function_name(TM, FD) + "( " + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")"));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing function call to " + tree_helper::print_function_name(TM, FD) + 
+            "( " + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")"));
 
          auto it = callMap.find(FD->index);
          if(it == callMap.end())
@@ -7183,7 +7193,11 @@ class ConstraintGraph
       }
    }
 
-   void findIntervals(const ParameterConstRef parameters)
+   void findIntervals(const ParameterConstRef 
+   #ifndef NDEBUG
+      parameters
+   #endif
+      )
    {
       buildSymbolicIntersectMap();
       // List of SCCs
@@ -7193,6 +7207,7 @@ class ConstraintGraph
       {
          const auto& component = *sccList.components.at(n);
 
+         #ifndef NDEBUG
          if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Components:");
@@ -7204,6 +7219,7 @@ class ConstraintGraph
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-----------");
          }
+         #endif
          if(component.size() == 1)
          {
             VarNode* var = *component.begin();
@@ -7226,11 +7242,12 @@ class ConstraintGraph
             // Get the entry points of the SCC
             std::set<tree_nodeConstRef, tree_reindexCompare> entryPoints;
 
-               #ifdef RA_JUMPSET
+            #ifdef RA_JUMPSET
             // Create vector of constants inside component
             // Comment this line below to deactivate jump-set
             buildConstantVector(component, compUseMap);
             #endif
+            #ifndef NDEBUG
             if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
             {
                std::stringstream ss;
@@ -7243,12 +7260,14 @@ class ConstraintGraph
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ss.str());
                }
             }
+            #endif
             generateEntryPoints(component, entryPoints);
             // iterate a fixed number of time before widening
             update(component.size() * 16UL, compUseMap, entryPoints);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed constraint graph to " + printToFile("cgfixed.dot", parameters));
 
             generateEntryPoints(component, entryPoints);
+            #ifndef NDEBUG
             if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "entryPoints:");
@@ -7259,6 +7278,7 @@ class ConstraintGraph
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             }
+            #endif
             // First iterate till fix point
             preUpdate(compUseMap, entryPoints);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "fixIntersects");
@@ -7485,8 +7505,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
    const auto ret_type = tree_helper::GetFunctionReturnType(fd);
    bool noReturn = ret_type->get_kind() == void_type_K;
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-      "Function has " + (noReturn ? "no return type" : ("return type " + ret_type->get_kind_text())));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function has " + (noReturn ? "no return type" : ("return type " + ret_type->get_kind_text())));
 
    // Creates the data structure which receives the return values of the
    // function, if there is any
@@ -7721,8 +7740,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    Min = getSignedMinValue(MAX_BIT_INT);
    Max = getSignedMaxValue(MAX_BIT_INT);
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-      "-->Maximum bitwidth is " + STR(MAX_BIT_INT) + " bits");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Maximum bitwidth is " + STR(MAX_BIT_INT) + " bits");
 
    // Analyse only reached functions
    auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
@@ -7734,7 +7752,9 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal analysis...");
    for(const auto top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
    {
+      #ifndef NDEBUG
       const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(top_fn));
+      #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          tree_helper::print_function_name(TM, FD) + "(" + STR(FD->list_of_args.size()) + " arguments) is top function");
       functions.erase(top_fn);
@@ -7754,6 +7774,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
    delete CG;
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step completed");
    return newState ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
@@ -7883,6 +7904,9 @@ bool RangeAnalysis::finalize(const void* CGp)
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restarted dead code");
             dead_code_restart = true;
          }
+         #ifndef NDEBUG
+         AppM->RegisterTransformation(GetName(), cst);
+         #endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty())
@@ -7899,6 +7923,9 @@ bool RangeAnalysis::finalize(const void* CGp)
             ssa->min = TM->CreateUniqueIntegerCst(ssa->range->getUnsignedMin().convert_to<long long>(), type_id);
             ssa->max = TM->CreateUniqueIntegerCst(ssa->range->getUnsignedMax().convert_to<long long>(), type_id);
          }
+         #ifndef NDEBUG
+         AppM->RegisterTransformation(GetName(), nullptr);
+         #endif
          // TODO: change ssa->type with correctly sized type
       }
    };
