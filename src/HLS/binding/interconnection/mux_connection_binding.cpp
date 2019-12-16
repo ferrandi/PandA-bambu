@@ -1450,6 +1450,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                unsigned int storage_value;
                unsigned int r_index;
                unsigned int tgt_port = port_num;
+               unsigned int tgt_index = port_index;
                vertex previous = fetch_previous(HLS->STG->get_entry_state(), tgt_state);
                generic_objRef tgt_obj = fu_obj;
                if(tgt_state != get_next(HLS->STG->get_entry_state()))
@@ -1460,15 +1461,16 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      storage_value = HLS->storage_value_information->get_storage_value_index(previous, tree_var);
                      r_index = HLS->Rreg->get_register(storage_value);
                      reg_obj = HLS->Rreg->get(r_index);
-                     HLS->Rconn->add_data_transfer(reg_obj, tgt_obj, tgt_port, port_index, data_transfer(tree_var, precision, previous, tgt_state, op));
+                     HLS->Rconn->add_data_transfer(reg_obj, tgt_obj, tgt_port, tgt_index, data_transfer(tree_var, precision, previous, tgt_state, op));
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                                   "       - add data transfer from " << reg_obj->get_string() << " to " << tgt_obj->get_string() << " port " << std::to_string(tgt_port) << ":" << std::to_string(port_index) << " from state "
+                                   "       - add data transfer from " << reg_obj->get_string() << " to " << tgt_obj->get_string() << " port " << std::to_string(tgt_port) << ":" << std::to_string(tgt_index) << " from state "
                                                                       << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      THROW_ASSERT(reg_obj != tgt_obj, "There is a loop in the propagation chain");
                      tgt_state = previous;
                      previous = fetch_previous(HLS->STG->get_entry_state(), tgt_state);
                      tgt_obj = reg_obj;
                      tgt_port = 0;
+                     tgt_index = 0;
                   }
                }
                unsigned int base_index = extract_parm_decl(tree_var, TreeM);
@@ -1634,9 +1636,9 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                origin_reg = HLS->Rreg->get(origin_reg_idx);
                target_reg = HLS->Rreg->get(target_reg_idx);
                // Always add a data transfer on port 0 since it's always an input to reg_STD
-               HLS->Rconn->add_data_transfer(origin_reg, target_reg, 0, port_index, data_transfer(var, precision, previous, target, op));
+               HLS->Rconn->add_data_transfer(origin_reg, target_reg, 0, 0, data_transfer(var, precision, previous, target, op));
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
-                             "       - add data transfer from " << origin_reg->get_string() << " to " << target_reg->get_string() << " port " << std::to_string(port_num) << ":" << std::to_string(port_index) << " from state "
+                             "       - add data transfer from " << origin_reg->get_string() << " to " << target_reg->get_string() << " port " << std::to_string(0) << ":" << std::to_string(0) << " from state "
                                                                 << HLS->Rliv->get_name(previous) + " to state " + HLS->Rliv->get_name(target) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                target = previous;
                previous = fetch_previous(HLS->STG->get_entry_state(), target);

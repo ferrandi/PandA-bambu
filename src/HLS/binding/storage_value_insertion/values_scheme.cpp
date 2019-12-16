@@ -120,7 +120,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
             for(unsigned int num = 0; num != inVars.size(); num++)
             {
                unsigned int var = std::get<0>(inVars[num]);
-               if(tree_helper::is_parameter(TreeM, var))
+               if(var != 0 && tree_helper::is_parameter(TreeM, var))
                {
                   current_vertex = *vIt;
                   while(current_vertex != state_0)
