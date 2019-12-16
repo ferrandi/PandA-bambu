@@ -10992,8 +10992,8 @@
         <attribute name="REGISTERS" value_type="float64">5</attribute>
         <attribute name="SLICE_LUTS" value_type="float64">1</attribute>
         <attribute name="SLICE" value_type="float64">3</attribute>
-        <characterization_timestamp>2017-05-04T10:47:07</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="1.1339999999999999"/>
+        <characterization_timestamp>2019-12-11T13:13:17</characterization_timestamp>
+        <operation operation_name="lut_expr" execution_time="1.1539999999999999"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>

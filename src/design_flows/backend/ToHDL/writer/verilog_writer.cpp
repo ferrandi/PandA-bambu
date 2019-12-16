@@ -1,4 +1,4 @@
-/*
+﻿/*
  *
  *                   _/_/_/    _/_/   _/    _/ _/_/_/    _/_/
  *                  _/   _/ _/    _/ _/_/  _/ _/   _/ _/    _/
@@ -1013,7 +1013,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    auto n_states = static_cast<unsigned int>(list_of_states.size());
    unsigned int count = 0;
    unsigned int bitsnumber = language_writer::bitnumber(n_states - 1);
-   /// adjust in case states are not consecutives
+   /// adjust in case states are not consecutive
    unsigned max_value = 0;
    for(auto it = list_of_states.begin(); it != it_end; ++it)
    {

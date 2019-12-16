@@ -45,11 +45,12 @@
 #include "Parameter.hpp" // for ParameterConstRef
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
-#include "dbgPrintHelper.hpp"      // for INDENT_DBG_MEX, DEBUG_LEVEL_VERY_...
-#include "exceptions.hpp"          // for THROW_ASSERT, THROW_UNREACHABLE
-#include "hls.hpp"                 // for HLS_managerRef
-#include "hls_manager.hpp"         // for HLS_managerRef
-#include "hls_target.hpp"          // for target_deviceRef
+#include "dbgPrintHelper.hpp" // for INDENT_DBG_MEX, DEBUG_LEVEL_VERY_...
+#include "exceptions.hpp"     // for THROW_ASSERT, THROW_UNREACHABLE
+#include "hls.hpp"            // for HLS_managerRef
+#include "hls_manager.hpp"    // for HLS_managerRef
+#include "hls_target.hpp"     // for target_deviceRef
+#include "library_manager.hpp"
 #include "string_manipulation.hpp" // for STR GET_CLASS
 #include "technology_manager.hpp"  // for WORK_LIBRARY
 #include "technology_node.hpp"     // for functional_unit, operation (ptr o...
@@ -177,6 +178,19 @@ DesignFlowStep_Status add_library::InternalExec()
    THROW_ASSERT(HLS->top, "Top has not been set");
    std::string module_name = HLS->top->get_circ()->get_typeRef()->id_type;
    const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
+   const std::string wrapped_fu_name = WRAPPED_PROXY_PREFIX + module_name;
+   technology_nodeRef wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
+   if(wrapper_tn)
+   {
+      TM->get_library_manager(PROXY_LIBRARY)->remove_fu(wrapped_fu_name);
+   }
+   const std::string proxy_fu_name = PROXY_PREFIX + module_name;
+   technology_nodeRef proxy_tn = TM->get_fu(proxy_fu_name, PROXY_LIBRARY);
+   if(proxy_tn)
+   {
+      TM->get_library_manager(PROXY_LIBRARY)->remove_fu(proxy_fu_name);
+   }
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Adding " + module_name + " to " + WORK_LIBRARY + " - Object is " + HLS->top->get_circ()->get_path());
    TM->add_resource(WORK_LIBRARY, module_name, HLS->top);
    double clock_period_value = HLS->HLS_C->get_clock_period();

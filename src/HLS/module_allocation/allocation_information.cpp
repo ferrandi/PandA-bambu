@@ -1711,7 +1711,35 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       /// The operation execution  time
       double actual_execution_time = get_execution_time(fu_type, time_operation_index);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial execution time " + STR(actual_execution_time));
-      double initial_execution_time = actual_execution_time - get_correction_time(fu_type, GetPointer<const gimple_node>(TreeM->get_tree_node_const(time_operation_index))->operation);
+      auto n_ins = [&]() -> unsigned {
+         unsigned res = 0;
+         auto tn = TreeM->get_tree_node_const(time_operation_index);
+         const auto ga = GetPointer<const gimple_assign>(tn);
+         if(ga && GET_NODE(ga->op1)->get_kind() == lut_expr_K)
+         {
+            auto le = GetPointer<lut_expr>(GET_NODE(ga->op1));
+            if(le->op8)
+               res = 8;
+            else if(le->op7)
+               res = 7;
+            else if(le->op6)
+               res = 6;
+            else if(le->op5)
+               res = 5;
+            else if(le->op4)
+               res = 4;
+            else if(le->op3)
+               res = 3;
+            else if(le->op2)
+               res = 2;
+            else if(le->op1)
+               res = 1;
+            else
+               THROW_ERROR("unexpected condition");
+         }
+         return res;
+      }();
+      double initial_execution_time = actual_execution_time - get_correction_time(fu_type, GetPointer<const gimple_node>(TreeM->get_tree_node_const(time_operation_index))->operation, n_ins);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initial corrected execution time " + STR(initial_execution_time));
       double op_execution_time = initial_execution_time;
       if(op_execution_time <= 0.0)
@@ -1728,7 +1756,7 @@ std::pair<double, double> AllocationInformation::GetTimeLatency(const unsigned i
       {
          if(actual_stage_period > HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period())
             actual_stage_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
-         initial_stage_period = actual_stage_period - get_correction_time(fu_type, GetPointer<const gimple_node>(TreeM->get_tree_node_const(time_operation_index))->operation);
+         initial_stage_period = actual_stage_period - get_correction_time(fu_type, GetPointer<const gimple_node>(TreeM->get_tree_node_const(time_operation_index))->operation, n_ins);
       }
       double stage_period = initial_stage_period;
 
@@ -2201,7 +2229,7 @@ double AllocationInformation::EstimateControllerDelay() const
       return 0.0;
    }
    size_t n_states = boost::num_vertices(*hls_manager->CGetFunctionBehavior(function_index)->CGetBBGraph(FunctionBehavior::BB));
-   double n_states_factor = static_cast<double>(n_states) / 30.0;
+   double n_states_factor = static_cast<double>(n_states) / NUM_CST_allocation_default_states_number_normalization_BB;
    if(hls->STG && hls->STG->get_number_of_states())
    {
       n_states = hls->STG->get_number_of_states();
@@ -2240,7 +2268,7 @@ std::string AllocationInformation::get_latency_string(const std::string& lat) co
 }
 
 #define ARRAY_CORRECTION 0
-double AllocationInformation::get_correction_time(unsigned int fu, const std::string& operation_name) const
+double AllocationInformation::get_correction_time(unsigned int fu, const std::string& operation_name, unsigned int n_ins) const
 {
    double res_value = get_setup_hold_time();
    technology_nodeRef current_fu = get_fu(fu);
@@ -2492,10 +2520,17 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    {
       unsigned int prec = get_prec(fu);
       unsigned int fu_prec = resize_to_1_8_16_32_64_128_256_512(prec);
-      double true_delay = mux_time_unit(fu_prec);
-      const technology_managerRef TM = HLS_T->get_technology_manager();
       if(fu_prec > 1)
       {
+         const technology_managerRef TM = HLS_T->get_technology_manager();
+         auto true_delay = [&]() -> double {
+            technology_nodeRef f_unit_ce = TM->get_fu(COND_EXPR_STD "_1_1_1_1", LIBRARY_STD_FU);
+            auto* fu_ce = GetPointer<functional_unit>(f_unit_ce);
+            technology_nodeRef op_ce_node = fu_ce->get_operation("cond_expr");
+            auto* op_ce = GetPointer<operation>(op_ce_node);
+            double setup_time = get_setup_hold_time();
+            return time_m_execution_time(op_ce) - setup_time;
+         }();
          technology_nodeRef f_unit_ce = TM->get_fu(get_fu_name(fu).first, LIBRARY_STD_FU);
          auto* fu_ce = GetPointer<functional_unit>(f_unit_ce);
          technology_nodeRef op_ce_node = fu_ce->get_operation("cond_expr");
@@ -2517,6 +2552,30 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       double ce_delay = time_m_execution_time(op_ce) - setup_time;
       double correction = ce_delay;
       res_value = res_value + correction;
+   }
+   else if(operation_name == "lut_expr")
+   {
+      // std::cerr << "get_correction_time " << operation_name << " - " << n_ins << "\n";
+      if(HLS_T->get_target_device()->has_parameter("max_lut_size"))
+      {
+         const technology_managerRef TM = HLS_T->get_technology_manager();
+         technology_nodeRef f_unit_lut = TM->get_fu(LUT_EXPR_STD, LIBRARY_STD_FU);
+         auto* fu_lut = GetPointer<functional_unit>(f_unit_lut);
+         technology_nodeRef op_lut_node = fu_lut->get_operation(operation_name);
+         auto* op_lut = GetPointer<operation>(op_lut_node);
+         double setup_time = get_setup_hold_time();
+         double lut_delay = time_m_execution_time(op_lut) - setup_time;
+         res_value = res_value + lut_delay;
+         auto max_lut_size = HLS_T->get_target_device()->get_parameter<size_t>("max_lut_size");
+         if(n_ins > max_lut_size)
+            THROW_ERROR("unexpected condition");
+         else
+         {
+            auto delta_delay = (lut_delay * .7) / static_cast<double>(max_lut_size);
+            // std::cerr << "correction value = " << (max_lut_size-n_ins)*delta_delay << "\n";
+            res_value = res_value - static_cast<double>(n_ins) * delta_delay;
+         }
+      }
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Correction value after first correction " + STR(res_value));
@@ -2932,6 +2991,10 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Got connection time " + STR(first_operation) + "-->" + STR(second_operation) + ": " + STR(mux_delay));
       return mux_delay;
    }
+   else if(first_operation != ENTRY_ID && first_operation != EXIT_ID && second_operation != ENTRY_ID && second_operation != EXIT_ID && (behavioral_helper->IsLut(first_operation) or behavioral_helper->IsLut(second_operation)))
+   {
+      return 0;
+   }
    else
    {
       /// cond_expr additional delay
@@ -3239,7 +3302,7 @@ ControlStep AllocationInformation::op_et_to_cycles(double et, double clock_perio
 bool AllocationInformation::CanBeMerged(const unsigned int first_operation, const unsigned int second_operation) const
 {
    if(first_operation == ENTRY_ID or second_operation == EXIT_ID)
-      return 0.0;
+      return true;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + STR(TreeM->CGetTreeNode(first_operation)) + " can be fused in " + STR(TreeM->CGetTreeNode(second_operation)));
    //   const auto first_delay = GetTimeLatency(first_operation, fu_binding::UNKNOWN);
    const auto second_delay = GetTimeLatency(second_operation, fu_binding::UNKNOWN);
