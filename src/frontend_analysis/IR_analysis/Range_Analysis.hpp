@@ -195,8 +195,6 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
 {
    /// True if dead code elimination step must be restarted
    bool dead_code_restart;
-   /// True if flop constant elimination step must be restarted
-   bool constant_flop_restart;
 
    /** Gets the maximum bit width of the operands in the instructions of the
     * function. This function is necessary because the class APInt only

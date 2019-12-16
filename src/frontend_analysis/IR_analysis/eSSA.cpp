@@ -949,8 +949,7 @@ namespace eSSAInfo
       {
          std::vector<eSSAInfo::ValueDFS> OrderedUses;
          const auto& ValueInfo = getValueInfo(Op->getOperand(), ValueInfoNums, ValueInfos);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "Analysing " + Op->getOperand()->ToString() + " with " + STR(ValueInfo.Infos.size()) + " possible copies");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing " + Op->getOperand()->ToString() + " with " + STR(ValueInfo.Infos.size()) + " possible copies");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          // Insert the possible copies into the def/use list.
          // They will become real copies if we find a real use for them, and never
@@ -1014,17 +1013,17 @@ namespace eSSAInfo
             // We currently do not materialize copy over copy, but we should decide if
             // we want to.
             bool PossibleCopy = VD.PInfo != nullptr;
+            #ifndef NDEBUG
             if(RenameStack.empty())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "RenameStack empty");
             }
             else
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-                  "RenameStack top DFS numbers are (" + STR(RenameStack.back().DFSIn) + "," + STR(RenameStack.back().DFSOut) + ")");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "RenameStack top DFS numbers are (" + STR(RenameStack.back().DFSIn) + "," + STR(RenameStack.back().DFSOut) + ")");
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-               "Current DFS numbers are (" + STR(VD.DFSIn) + "," + STR(VD.DFSOut) + ")");
+            #endif
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current DFS numbers are (" + STR(VD.DFSIn) + "," + STR(VD.DFSOut) + ")");
             bool ShouldPush = (VD.Def || PossibleCopy);
             bool OutOfScope = !stackIsInScope(RenameStack, VD, DT);
             if(OutOfScope || ShouldPush)
@@ -1056,8 +1055,7 @@ namespace eSSAInfo
             // ends up with predicateinfo.
             if(!Result.Def)
             {
-               Result.Def = materializeStack(RenameStack, function_id, Op->getOperand(), PredicateMap, DT, 
-                  TM, tree_manipulationRef(new tree_manipulation(TM, parameters)));
+               Result.Def = materializeStack(RenameStack, function_id, Op->getOperand(), PredicateMap, DT, TM, tree_manipulationRef(new tree_manipulation(TM, parameters)));
             }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
@@ -1241,10 +1239,12 @@ DesignFlowStep_Status eSSA::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
    }
+   #ifndef NDEBUG
    if(DFSInfos.size() < (DT->num_bblocks() + 2))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Dominator tree has some unreachable blocks");
    }
+   #endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysis detected " + STR(OpsToRename.size()) + " operations to rename");
 

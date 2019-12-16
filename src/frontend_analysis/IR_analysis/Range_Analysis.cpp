@@ -461,14 +461,6 @@ namespace
             {
                /// unary_expr cases
                case view_convert_expr_K:
-               {
-                  if(Type->get_kind() == real_type_K)
-                  {
-                     return true;
-                  }
-               }
-               break;
-
                case nop_expr_K:
                case abs_expr_K:
 
@@ -556,7 +548,7 @@ namespace
             return false;
       }
 
-      if(Type->get_kind() == integer_type_K || Type->get_kind() == enumeral_type_K || Type->get_kind() == boolean_type_K)
+      if(Type->get_kind() == integer_type_K || Type->get_kind() == pointer_type_K || Type->get_kind() == enumeral_type_K || Type->get_kind() == boolean_type_K)
       {
          return true;
       }
@@ -570,7 +562,7 @@ namespace
          return isIntegerType(GET_CONST_NODE(tn));
       }
       const auto type = tree_helper::CGetType(tn);
-      if(type->get_kind() == integer_type_K || type->get_kind() == enumeral_type_K || type->get_kind() == boolean_type_K)
+      if(type->get_kind() == integer_type_K || type->get_kind() == pointer_type_K || type->get_kind() == enumeral_type_K || type->get_kind() == boolean_type_K)
       {
          return true;
       }
@@ -592,7 +584,7 @@ namespace
       {
          return !en->unsigned_flag;
       }
-      if(GetPointer<const boolean_type>(type) != nullptr)
+      if(GetPointer<const pointer_type>(type) != nullptr || GetPointer<const boolean_type>(type) != nullptr)
       {
          return false;
       }
@@ -680,6 +672,11 @@ namespace
             return RangeRef(new RealRange(Range(Regular, 1), Range(Regular, 11), Range(Regular, 52)));
          }
          THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
+      }
+      else if(GetPointer<const pointer_type>(type) != nullptr)
+      {
+         min = getMinValue(bw);
+         max = getMaxValue(bw);
       }
       else 
       {
@@ -1723,7 +1720,6 @@ RangeRef Range::And(RangeConstRef other) const
 
    // negate the result of the 'or'
    auto [min, max] = std::minmax(truncExt(~invres->l, bw, false), truncExt(~invres->u, bw, false));
-   PRINT_MSG("min: " + STR(min) + " max: " + STR(max));
    RangeRef res(new Range(invres->type, bw, min, max));
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("And-res: " << *res << std::endl);
@@ -2992,14 +2988,14 @@ VarNode::VarNode(const tree_nodeConstRef _V) : V(_V), abstractState(0)
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
    auto bw = getGIMPLE_BW(_V);
-   if(isIntegerType(_V))
-   {
-      interval.reset(new Range(Unknown, bw, Min, Max));
-   }
-   else
+   if(getGIMPLE_Type(V)->get_kind() == real_type_K)
    {
       THROW_ASSERT(bw == 64 || bw == 32, "Bitwidth not allowed for floating point variable");
       interval.reset(new RealRange(Range(Unknown, 1), bw == 64 ? Range(Unknown, 11) : Range(Unknown, 8), bw == 64 ? Range(Unknown, 52) : Range(Unknown, 23)));
+   }
+   else
+   {
+      interval.reset(new Range(Unknown, bw, Min, Max));
    }
 }
 
@@ -3017,19 +3013,7 @@ void VarNode::init(bool outside)
    }
    else
    {
-      if(isIntegerType(V))
-      {
-         if(!outside)
-         {
-            // Initialize with a basic, unknown, interval.
-            interval.reset(new Range(Unknown, bw));
-         }
-         else
-         {
-            interval.reset(new Range(Regular, bw));
-         }
-      }
-      else
+      if(getGIMPLE_Type(V)->get_kind() == real_type_K)
       {
          THROW_ASSERT(bw == 64 || bw == 32, "Bitwidth not allowed for floating point variable");
          if(!outside)
@@ -3040,6 +3024,18 @@ void VarNode::init(bool outside)
          else
          {
             interval.reset(new RealRange(Range(Regular, 1), bw == 64 ? Range(Regular, 11) : Range(Regular, 8), bw == 64 ? Range(Regular, 52) : Range(Regular, 23)));
+         }
+      }
+      else
+      {
+         if(!outside)
+         {
+            // Initialize with a basic, unknown, interval.
+            interval.reset(new Range(Unknown, bw));
+         }
+         else
+         {
+            interval.reset(new Range(Regular, bw));
          }
       }
    }
@@ -3701,6 +3697,7 @@ RangeRef UnaryOp::eval()
 {
    auto bw = getSink()->getBitWidth();
    RangeRef oprnd = source->getRange();
+   const auto resultType = getGIMPLE_Type(getSink()->getValue())->get_kind();
    bool oprndSigned = isSignedType(source->getValue());
    RangeRef result(new Range(Unknown, bw, Min, Max));
 
@@ -3740,7 +3737,14 @@ RangeRef UnaryOp::eval()
          }
          break;
          case view_convert_expr_K:
-            result = RangeRef(new RealRange(oprnd));
+            if(resultType == real_type_K)
+            {
+               result = RangeRef(new RealRange(oprnd));
+            }
+            else
+            {
+               result = oprnd->sextOrTrunc(bw);
+            }
             break;
          
          case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
@@ -3763,11 +3767,18 @@ RangeRef UnaryOp::eval()
       PRINT_MSG("=" << *result);
       #endif
    }
-   else if(oprnd-> isEmpty())
+   else if(oprnd->isEmpty())
    {
-      result = RangeRef(new Range(Empty, bw));
+      if(resultType == real_type_K)
+      {
+         result = RangeRef(new RealRange(RangeRef(new Range(Empty, bw))));
+      }
+      else
+      {
+         result = RangeRef(new Range(Empty, bw));
+      }
    }
-   else if(oprnd-> isReal())
+   else if(oprnd->isReal())
    {
       auto rr = RefcountCast<RealRange>(oprnd);
       switch (this->getOpcode())
@@ -3823,6 +3834,7 @@ void UnaryOp::print(std::ostream& OS) const
 
    // Instruction bitwidth
    auto bw = getSink()->getBitWidth();
+   bool oprndSigned = isSignedType(source->getValue());
 
    if(opcode == nop_expr_K)
    {
@@ -3832,31 +3844,26 @@ void UnaryOp::print(std::ostream& OS) const
       }
       else
       {
-         auto type = tree_helper::CGetType(GET_CONST_NODE(getSource()->getValue()));
-         if(const auto* int_type = GetPointer<const integer_type>(type))
+         if(getGIMPLE_Type(getSource()->getValue())->get_kind() == pointer_type_K)
          {
-            if(int_type->unsigned_flag)
-            {
-               OS << "zext i" << bw;
-            }
-            else
-            {
-               OS << "sext i" << bw;
-            }
-         }
-         else if(type->get_kind() == boolean_type_K)
-         {
-            OS << "zext b" << bw;
+            OS << "ptr_cast i" << bw;
          }
          else
          {
-            THROW_UNREACHABLE("Source should be of type integer");
+            if(oprndSigned)
+            {
+               OS << "sext i" << bw;
+            }
+            else
+            {
+               OS << "zext i" << bw;
+            }
          }
       }
    }
    else if(opcode == fix_trunc_expr_K)
    {
-      auto type = tree_helper::CGetType(GET_CONST_NODE(getSink()->getValue()));
+      auto type = getGIMPLE_Type(getSink()->getValue());
       if(const auto* int_type = GetPointer<const integer_type>(type))
       {
          if(int_type->unsigned_flag)
@@ -4096,7 +4103,7 @@ BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, co
    : BasicOp(std::move(_intersect), _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
 {
    #if HAVE_ASSERTS
-   const auto type = tree_helper::CGetType(GET_CONST_NODE(_sink->getValue()));
+   const auto type = getGIMPLE_Type(_sink->getValue());
    THROW_ASSERT(type->get_kind() == integer_type_K || type->get_kind() == boolean_type_K, "Binary operation sink should be of integer type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
    #endif
 }
@@ -4119,7 +4126,7 @@ RangeRef BinaryOp::eval()
       #ifdef DEBUG_BASICOP_EVAL
       PRINT_MSG(getSink()->getValue()->ToString() << std::endl << *op1 << "," << *op2);
       #endif
-      const auto type = tree_helper::CGetType(GET_CONST_NODE(getSink()->getValue()));
+      const auto type = getGIMPLE_Type(getSink()->getValue());
       bool is_unsigned = false;
       if(const auto* int_type = GetPointer<const integer_type>(type))
       {
@@ -5643,7 +5650,7 @@ using VCMap = std::map<VarNode*, VarNode*>;
 
 class ConstraintGraph
 {
-   protected:
+ protected:
    // The variables of the source program and the nodes which represent them.
    VarNodes vars;
    // The operations of the source program and the nodes which represent them.
@@ -5711,9 +5718,11 @@ class ConstraintGraph
    virtual void preUpdate(const UseMap& compUseMap, std::set<tree_nodeConstRef, tree_reindexCompare>& entryPoints) = 0;
    virtual void posUpdate(const UseMap& compUseMap, std::set<tree_nodeConstRef, tree_reindexCompare>& activeVars, const std::set<VarNode*>* component) = 0;
 
-   private:
+ private:
+   #ifndef NDEBUG
    int debug_level;
-   
+   #endif
+
    // A map from variables to the operations that define them
    DefMap defMap;
    // A map from variables to the operations where these variables are used.
@@ -6036,8 +6045,7 @@ class ConstraintGraph
 
          const auto terminator = GET_CONST_NODE(stmt_list.back());
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "BB" + STR(BBI) + " has terminator type " + terminator->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BB" + STR(BBI) + " has terminator type " + terminator->get_kind_text() + " " + terminator->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          if(const auto* br = GetPointer<const gimple_cond>(terminator))
          {
@@ -6157,7 +6165,7 @@ class ConstraintGraph
       VarNode* sink = addVarNode(assign->op0);
       // Create the source.
       VarNode* source = nullptr;
-      const auto sourceType = tree_helper::CGetType(GET_CONST_NODE(un_op->op));
+      const auto sourceType = getGIMPLE_Type(un_op->op);
 
       if(un_op->get_kind() == view_convert_expr_K)
       {
@@ -7026,8 +7034,7 @@ class ConstraintGraph
          // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function parameter inside the function body
          if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K && GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
          {
-            auto argIt = std::find_if(args.begin(), args.end(), 
-               [&](const tree_nodeRef& arg){ return GET_INDEX_NODE(arg) == GET_INDEX_NODE(SSA->var); });
+            auto argIt = std::find_if(args.begin(), args.end(), [&](const tree_nodeRef& arg){ return GET_INDEX_CONST_NODE(arg) == GET_INDEX_CONST_NODE(SSA->var); });
             THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
             size_t arg_pos = static_cast<size_t>(argIt - args.begin());
             THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
@@ -7085,8 +7092,15 @@ class ConstraintGraph
       return false;
    }
 
-   public:
-   ConstraintGraph(int _debug_level) : debug_level(_debug_level) {}
+ public:
+ 
+   ConstraintGraph(int 
+   #ifndef NDEBUG
+   _debug_level) : debug_level(_debug_level)
+   #else
+   )
+   #endif
+   {}
 
    virtual ~ConstraintGraph() = default;
 
@@ -7140,10 +7154,10 @@ class ConstraintGraph
       const auto FB = AppM->CGetFunctionBehavior(function_id);
       const auto* FD = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
       const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
+      #ifndef NDEBUG
       const std::string fn_name = tree_helper::print_function_name(TM, FD) + "(" + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")");
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         "Analysing function " + fn_name + " with " + STR(SL->list_of_bloc.size()) + " blocks");
+      #endif
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing function " + fn_name + " with " + STR(SL->list_of_bloc.size()) + " blocks");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
       buildValueMaps(SL->list_of_bloc, TM);
@@ -7155,6 +7169,7 @@ class ConstraintGraph
          {
             for(const auto& stmt : phi_list)
             {
+               parametersBinding(stmt, FD);
                buildOperations(stmt, FB, TM);
             }
          }
@@ -7170,8 +7185,7 @@ class ConstraintGraph
                {
                   if(!storeFunctionCall(stmt, TM))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-                        "Skipping " + GET_NODE(stmt)->get_kind_text() + " " + GET_NODE(stmt)->ToString());
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Skipping " + GET_NODE(stmt)->get_kind_text() + " " + GET_NODE(stmt)->ToString());
                   }
                   continue;
                }
@@ -7473,12 +7487,18 @@ class CropDFS : public ConstraintGraph
    CropDFS(int _debug_level) : ConstraintGraph(_debug_level) {}
 };
 
-static void MatchParametersAndReturnValues(unsigned int function_id, const tree_managerConstRef TM, ConstraintGraph* CG, int debug_level)
+static void MatchParametersAndReturnValues(unsigned int function_id, const tree_managerConstRef TM, ConstraintGraph* CG, int 
+   #ifndef NDEBUG
+   debug_level
+   #endif
+   )
 {
    const auto fd = TM->get_tree_node_const(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
    const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
+   #ifndef NDEBUG
    const std::string fn_name = tree_helper::print_function_name(TM, FD) + "(" + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")");
+   #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal on function " + fn_name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
@@ -7620,7 +7640,8 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
             // Inserts the sources of the operation in the use map list.
             CG->getUseMap()->find(var->getValue())->second.insert(phiOp);
          }
-
+      
+      #ifndef NDEBUG
          if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
          {
             std::string phiString = "Return variable " + GET_CONST_NODE(phiOp->getSink()->getValue())->ToString() + " = PHI<";
@@ -7631,6 +7652,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
             phiString[phiString.size() - 2] = '>';
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, phiString);
          }
+      #endif
       }
 
       // Real parameters are cleaned before moving to the next use (for safety's
@@ -7641,6 +7663,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   #ifndef NDEBUG
    if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
    {
       for(const auto m : matchers)
@@ -7654,13 +7677,14 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, phiString);
       }
    }
+   #endif
 }
 
 // ========================================================================== //
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
-   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false), constant_flop_restart(false)
+   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -7693,10 +7717,6 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
                {
                   relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));   // TODO: could it be more specific?
                }
-               //    if(constant_flop_restart)
-               //    {
-               //       relationships.insert(std::make_pair(CONSTANT_FLOP_WRAPPER, ALL_FUNCTIONS));   // TODO: could it be more specific?
-               //    }
                break;
             }
             case DesignFlowStep_Status::UNCHANGED:
