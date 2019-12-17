@@ -53,6 +53,7 @@
 
 REF_FORWARD_DECL(Range);
 CONSTREF_FORWARD_DECL(Range);
+REF_FORWARD_DECL(ConstraintGraph);
 
 struct tree_reindexCompare 
 {
@@ -193,6 +194,7 @@ class RealRange : public Range
 
 class RangeAnalysis : public ApplicationFrontendFlowStep
 {
+   ConstraintGraphRef CG;
    /// True if dead code elimination step must be restarted
    bool dead_code_restart;
 
@@ -206,7 +208,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    Range::bw_t getFunction_BW(unsigned int F);
    Range::bw_t getApplication_BW();
 
-   bool finalize(const void* CG);
+   bool finalize();
 
  protected:
 

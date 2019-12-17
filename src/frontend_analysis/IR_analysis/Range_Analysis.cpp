@@ -5780,8 +5780,7 @@ class ConstraintGraph
          const struct integer_cst* constant = nullptr;
          tree_nodeConstRef variable = nullptr;
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "Op0 is " + Op0->get_kind_text() + " and Op1 is " + Op1->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 is " + Op0->get_kind_text() + " and Op1 is " + Op1->get_kind_text());
 
          // If both operands are constants, nothing to do here
          if(Op0->get_kind() == integer_cst_K && Op1->get_kind() == integer_cst_K)
@@ -5919,11 +5918,10 @@ class ConstraintGraph
    void buildValueMultiIfMap(const gimple_multi_way_if* mwi, const blocRef /*mwifBB*/, const tree_managerRef /*TM*/)
    {
       const auto& cond_list = mwi->list_of_cond;
-
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Multi-way if with " + STR(cond_list.size()) + " conditions");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
-      tree_nodeRef switch_ssa = nullptr;
+      tree_nodeConstRef switch_ssa = nullptr;
       unsigned int DefaultBBI = 0;
       size_t i = 0;
       std::vector<std::pair<tree_nodeRef, kind>> CaseTags(mwi->list_of_cond.size());
@@ -5935,8 +5933,13 @@ class ConstraintGraph
             THROW_ASSERT(GET_CONST_NODE(cond)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(cond)->get_kind_text() + " " + GET_CONST_NODE(cond)->ToString() + ")");
             const auto case_compare = branchOpRecurse(cond);
             const auto* cmp_op = GetPointer<const binary_expr>(case_compare);
-            THROW_ASSERT(cmp_op, "Case statement should contain a binary_expr (" + case_compare->get_kind_text() + " " + case_compare->ToString() + ")");
-            THROW_ASSERT(GET_CONST_NODE(cmp_op->op0)->get_kind() == ssa_name_K, "First operand of eq_expr should be the switch variable");
+            if(cmp_op == nullptr)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Multi-way conditions different from binary_expr not handled, skipping all... (" + case_compare->get_kind_text() + " " + case_compare->ToString() + ")");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               return;
+            }
+            THROW_ASSERT(GET_CONST_NODE(cmp_op->op0)->get_kind() == ssa_name_K, "First operand should be the switch variable");
             if(switch_ssa == nullptr)
             {
                switch_ssa = cmp_op->op0;
@@ -5944,6 +5947,12 @@ class ConstraintGraph
             else
             {
                THROW_ASSERT(switch_ssa->index == cmp_op->op0->index, "Switch variable should be unique");
+            }
+            if(GetPointer<const integer_cst>(cmp_op->op1) == nullptr)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Multi-way comparison with variables not handled, skipping all...");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               return;
             }
             case_tag = cmp_op->op1;
             cmp_kind = cmp_op->get_kind();
@@ -5958,56 +5967,40 @@ class ConstraintGraph
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       if(!isIntegerType(switch_ssa))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Variable is non-integer type, skipping...");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Non-integer variable type not handled, skipping all...");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          return;
       }
       auto bw = getGIMPLE_BW(switch_ssa);
       std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>> BBsuccs;
 
-      // Handle 'default', if there is any
-      if(static_cast<bool>(DefaultBBI))
-      {
-         RangeRef antidefaultRange(new Range(Empty, bw));
-         for(const auto& [case_tag, cmp_kind] : CaseTags)
-         {
-            if(case_tag)
-            {
-               if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(case_tag)))
-               {
-                  APInt cval = tree_helper::get_integer_cst_value(ic);
-                  antidefaultRange = antidefaultRange->unionWith(RangeRef(new Range(Regular, bw, cval, cval)));
-               }
-               else
-               {
-                  THROW_UNREACHABLE("Multi way if support only constant value comparisons");
-               }
-            }
-         }
-
-         APInt sigMin = antidefaultRange->getLower();
-         APInt sigMax = antidefaultRange->getUpper();
-         RangeRef Values(new Range(Anti, bw, sigMin, sigMax));
-         // Create the interval using the intersection in the case.
-         std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(Values);
-         BBsuccs.push_back(std::make_pair(BI, DefaultBBI));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "default: " + BI->ToString());
-      }
-
       i = 0;
+      RangeRef antidefaultRange(new Range(Empty, bw));
       for(const auto& [cond, BBI] : cond_list)
       {
          const auto& [case_tag, cmp_kind] = CaseTags.at(i++);
-         if(cond != nullptr)
+         if(cond == nullptr)
          {
-            const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(case_tag));
-            APInt cval = tree_helper::get_integer_cst_value(ic);
-            RangeRef Values(new Range(Regular, bw, cval, cval));
-            // Create the interval using the intersection in the case.
-            std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(Values);
-            BBsuccs.push_back(std::make_pair(BI, BBI));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "case " + STR(cval) + ": " + BI->ToString());
+            continue;
          }
+         const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(case_tag));
+         APInt cval = tree_helper::get_integer_cst_value(ic);
+         RangeRef Values = Range::makeSatisfyingCmpRegion(cmp_kind, RangeRef(new Range(Regular, bw, cval, cval)));
+         // Create the interval using the intersection in the case.
+         std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(Values);
+         BBsuccs.push_back(std::make_pair(BI, BBI));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "case " + tree_node::GetString(cmp_kind) + " " + STR(cval) + ": " + BI->ToString());
+
+         antidefaultRange = antidefaultRange->unionWith(Values);
+      }
+
+      // Handle 'default', if there is any
+      if(static_cast<bool>(DefaultBBI))
+      {
+         // Create the interval using the intersection in the case.
+         std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(antidefaultRange->getAnti());
+         BBsuccs.push_back(std::make_pair(BI, DefaultBBI));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "default: " + BI->ToString());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
@@ -7078,8 +7071,7 @@ class ConstraintGraph
          
          const auto* FD = GetPointer<const function_decl>(GET_CONST_NODE(fun_node));
          THROW_ASSERT(FD, "Function call should reference a function_decl node");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing function call to " + tree_helper::print_function_name(TM, FD) + 
-            "( " + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")"));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing function call to " + tree_helper::print_function_name(TM, FD) + "( " + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")"));
 
          auto it = callMap.find(FD->index);
          if(it == callMap.end())
@@ -7487,7 +7479,7 @@ class CropDFS : public ConstraintGraph
    CropDFS(int _debug_level) : ConstraintGraph(_debug_level) {}
 };
 
-static void MatchParametersAndReturnValues(unsigned int function_id, const tree_managerConstRef TM, ConstraintGraph* CG, int 
+static void MatchParametersAndReturnValues(unsigned int function_id, const tree_managerConstRef TM, const ConstraintGraphRef CG, int 
    #ifndef NDEBUG
    debug_level
    #endif
@@ -7496,7 +7488,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
    const auto fd = TM->get_tree_node_const(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
    const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
-   #ifndef NDEBUG
+   #if !defined(NDEBUG) or defined(HAVE_ASSERTS)
    const std::string fn_name = tree_helper::print_function_name(TM, FD) + "(" + STR(FD->list_of_args.size()) + " argument" + (FD->list_of_args.size() > 1 ? "s)" : ")");
    #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal on function " + fn_name);
@@ -7524,13 +7516,11 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
    // value matching is done
    const auto ret_type = tree_helper::GetFunctionReturnType(fd);
    bool noReturn = ret_type->get_kind() == void_type_K;
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function has " + (noReturn ? "no return type" : ("return type " + ret_type->get_kind_text())));
 
    // Creates the data structure which receives the return values of the
    // function, if there is any
    std::set<tree_nodeConstRef, tree_reindexCompare> returnValues;
-
    if(!noReturn)
    {
       for(const auto& [BBI, BB] : SL->list_of_bloc)
@@ -7549,12 +7539,9 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const tree_
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function should return, but no return statement was found");
       noReturn = true;
    }
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-      std::string("Function ") + (noReturn ? "has no" : "has explicit") + " return statement" + (returnValues.size() > 1 ? "s" : ""));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Function ") + (noReturn ? "has no" : "has explicit") + " return statement" + (returnValues.size() > 1 ? "s" : ""));
 
    std::vector<PhiOp*> matchers(parameters.size(), nullptr);
-
    for(size_t i = 0, e = parameters.size(); i < e; ++i)
    {
       VarNode* sink = CG->addVarNode(parameters[i].first);
@@ -7749,19 +7736,7 @@ bool RangeAnalysis::HasToBeExecuted() const
 
 DesignFlowStep_Status RangeAnalysis::Exec()
 {
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
-
-   const auto TM = AppM->get_tree_manager();
-   /// Build Constraint graph on every function
-   ConstraintGraph* CG = new Cousot(debug_level);
-
-   MAX_BIT_INT = getApplication_BW();
-   // Updates the Min and Max values.
-   Min = getSignedMinValue(MAX_BIT_INT);
-   Max = getSignedMaxValue(MAX_BIT_INT);
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Maximum bitwidth is " + STR(MAX_BIT_INT) + " bits");
-
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Analyse only reached functions
    auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
    for(const auto f : functions)
@@ -7770,6 +7745,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    }
    // Top functions are not called by any other functions, so they do not have any call statement to analyse
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal analysis...");
+   const auto TM = AppM->get_tree_manager();
    for(const auto top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
    {
       #ifndef NDEBUG
@@ -7789,18 +7765,21 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    CG->buildVarNodes();
 
    CG->findIntervals(parameters);
-      
-   bool newState = finalize(CG);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-   delete CG;
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step completed");
-   return newState ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   return finalize() ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
 void RangeAnalysis::Initialize()
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Initializing Range Analysis now");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
+   MAX_BIT_INT = getApplication_BW();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Maximum bitwidth is " + STR(MAX_BIT_INT) + " bits");
+   // Updates the Min and Max values.
+   Min = getSignedMinValue(MAX_BIT_INT);
+   Max = getSignedMaxValue(MAX_BIT_INT);
+   dead_code_restart = false;
+   CG.reset(new Cousot(debug_level));
 }
 
 bw_t RangeAnalysis::getFunction_BW(unsigned int F)
@@ -7855,14 +7834,12 @@ bw_t RangeAnalysis::getApplication_BW()
    return max ? max : 1;
 }
 
-bool RangeAnalysis::finalize(const void* CGp)
+bool RangeAnalysis::finalize()
 {
-   const auto* CG = reinterpret_cast<const ConstraintGraph*>(CGp);
    const auto& vars = CG->getVars();
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
    bool modified = false;
-   dead_code_restart = false;
    auto updateSSALimits = [&](tree_nodeRef ssa_node)
    {
       auto* ssa = GetPointer<ssa_name>(GET_NODE(ssa_node));
@@ -7975,13 +7952,13 @@ bool RangeAnalysis::finalize(const void* CGp)
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "Added range " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
          ssa->range = range;
          updateSSALimits(ssaRef);
          modified = true;
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   CG.reset();
    return modified;
 }
