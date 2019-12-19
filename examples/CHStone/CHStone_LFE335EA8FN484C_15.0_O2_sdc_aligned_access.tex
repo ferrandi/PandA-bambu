@@ -1,22 +1,23 @@
-%Generated at 2019-12-04 00:18:43.964938 with bambu Version: PandA 0.9.6-dev - Revision 6fc3902db41eedc23a442bcbb9c84c1ef9a17059-PR-10 with arguments --compiler=I386_GCC49 --device-name=TO_BE_OVERWRITTEN --evaluation -fwhole-program -fno-delete-null-pointer-checks --no-iob --clock-period=15 --device=LFE335EA8FN484C --speculative-sdc-scheduling --aligned-access
+%Generated at 2019-12-18 19:09:14.201148 with bambu  Version: PandA 0.9.6 - Revision 8b8fdb09e0086ccfdd65c7f6e191b09c65862ba7-PR-10 with arguments --compiler=I386_GCC49 --device-name=TO_BE_OVERWRITTEN --evaluation -fwhole-program -fno-delete-null-pointer-checks --no-iob --clock-period=15 --device=LFE335EA8FN484C --speculative-sdc-scheduling --aligned-access
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|c|}
 \hline
 Benchmark Name          & Tot. Latency           & Num Cycles & SLICEs    & Registers & DSPs    & BRAMs   & Clock Frequency & Clock Slack & HLS Time(s) \\
 \hline
-adpcm:main\_0           & $ 2.495 \cdot 10^{2} $ & $ 18150  $ & $ 6970  $ & $ 6375  $ & $ 23  $ & $ 12  $ & $ 72.75       $ & $ 1.26    $ & $ 22.12   $ \\
-aes:main\_0             & $ 3.521 \cdot 10^{1} $ & $ 2657   $ & $ 2667  $ & $ 2043  $ & $ 0   $ & $ 35  $ & $ 75.45       $ & $ 1.75    $ & $ 14.10   $ \\
-bf:main\_0              & $ 1.543 \cdot 10^{3} $ & $ 113093 $ & $ 7588  $ & $ 2336  $ & $ 0   $ & $ 11  $ & $ 73.29       $ & $ 1.36    $ & $ 9.50    $ \\
-dfdiv:main\_0           & $ 2.420 \cdot 10^{1} $ & $ 1793   $ & $ 1906  $ & $ 1671  $ & $ 36  $ & $ 2   $ & $ 74.09       $ & $ 1.50    $ & $ 15.83   $ \\
-dfdiv\_hls\_div:main\_0 & $ 1.569 \cdot 10^{1} $ & $ 905    $ & $ 3065  $ & $ 2826  $ & $ 24  $ & $ 2   $ & $ 57.68       $ & $ -2.34   $ & $ 16.73   $ \\
-dfmul:main\_0           & $ 1.307 \cdot 10^{0} $ & $ 105    $ & $ 1186  $ & $ 854   $ & $ 24  $ & $ 2   $ & $ 80.31       $ & $ 2.55    $ & $ 8.76    $ \\
-gsm:main\_0             & $ 3.147 \cdot 10^{1} $ & $ 2333   $ & $ 3574  $ & $ 3197  $ & $ 35  $ & $ 5   $ & $ 74.15       $ & $ 1.51    $ & $ 14.06   $ \\
-jpeg:main\_0            & $ 7.976 \cdot 10^{3} $ & $ 525740 $ & $ 14589 $ & $ 5730  $ & $ 10  $ & $ 46  $ & $ 65.92       $ & $ -0.17   $ & $ 45.37   $ \\
-mpeg2:main\_0           & $ 3.341 \cdot 10^{1} $ & $ 2175   $ & $ 1821  $ & $ 1159  $ & $ 0   $ & $ 3   $ & $ 65.10       $ & $ -0.36   $ & $ 2.95    $ \\
-sha\_driver:main\_0     & $ 1.594 \cdot 10^{3} $ & $ 113318 $ & $ 7872  $ & $ 1852  $ & $ 0   $ & $ 4   $ & $ 71.11       $ & $ 0.94    $ & $ 4.97    $ \\
+adpcm:main\_0           & $ 2.328 \cdot 10^{2} $ & $ 17950  $ & $ 6681  $ & $ 6216  $ & $ 22  $ & $ 12  $ & $ 77.12       $ & $ 2.03    $ & $ 22.52   $ \\
+aes:main\_0             & $ 3.463 \cdot 10^{1} $ & $ 2655   $ & $ 2705  $ & $ 2039  $ & $ 0   $ & $ 35  $ & $ 76.66       $ & $ 1.96    $ & $ 13.50   $ \\
+bf:main\_0              & $ 1.539 \cdot 10^{3} $ & $ 106722 $ & $ 7907  $ & $ 2312  $ & $ 0   $ & $ 11  $ & $ 69.37       $ & $ 0.58    $ & $ 9.08    $ \\
+dfadd:main\_0           & $ 3.675 \cdot 10^{0} $ & $ 257    $ & $ 1486  $ & $ 901   $ & $ 0   $ & $ 4   $ & $ 69.93       $ & $ 0.70    $ & $ 27.98   $ \\
+dfdiv:main\_0           & $ 2.496 \cdot 10^{1} $ & $ 1785   $ & $ 2021  $ & $ 1664  $ & $ 36  $ & $ 2   $ & $ 71.52       $ & $ 1.02    $ & $ 16.70   $ \\
+dfdiv\_hls\_div:main\_0 & $ 1.541 \cdot 10^{1} $ & $ 873    $ & $ 3138  $ & $ 2751  $ & $ 24  $ & $ 2   $ & $ 56.65       $ & $ -2.65   $ & $ 17.29   $ \\
+dfmul:main\_0           & $ 1.073 \cdot 10^{0} $ & $ 85     $ & $ 1233  $ & $ 842   $ & $ 24  $ & $ 2   $ & $ 79.22       $ & $ 2.38    $ & $ 9.19    $ \\
+gsm:main\_0             & $ 3.069 \cdot 10^{1} $ & $ 2304   $ & $ 3551  $ & $ 3121  $ & $ 31  $ & $ 5   $ & $ 75.08       $ & $ 1.68    $ & $ 14.37   $ \\
+jpeg:main\_0            & $ 9.016 \cdot 10^{3} $ & $ 525740 $ & $ 14643 $ & $ 5758  $ & $ 10  $ & $ 46  $ & $ 58.31       $ & $ -2.15   $ & $ 45.15   $ \\
+mpeg2:main\_0           & $ 3.113 \cdot 10^{1} $ & $ 2174   $ & $ 1737  $ & $ 1126  $ & $ 0   $ & $ 3   $ & $ 69.85       $ & $ 0.68    $ & $ 2.91    $ \\
+sha\_driver:main\_0     & $ 1.599 \cdot 10^{3} $ & $ 113318 $ & $ 7939  $ & $ 1851  $ & $ 0   $ & $ 4   $ & $ 70.88       $ & $ 0.89    $ & $ 5.47    $ \\
 \hline
-Average                 & $                    $ & $        $ & $       $ & $       $ & $     $ & $     $ & $ 70.98       $ & $ 0.80    $ & $         $ \\
+Average                 & $                    $ & $        $ & $       $ & $       $ & $     $ & $     $ & $ 70.42       $ & $ 0.65    $ & $         $ \\
 \hline
-Overall                 & $ 1.150 \cdot 10^{4} $ & $ 780269 $ & $ 51238 $ & $ 28043 $ & $ 152 $ & $ 122 $ & $             $ & $         $ & $ 154.39  $ \\
+Overall                 & $ 1.253 \cdot 10^{4} $ & $ 773863 $ & $ 53041 $ & $ 28581 $ & $ 147 $ & $ 126 $ & $             $ & $         $ & $ 184.16  $ \\
 \hline
 \end{tabular}
 %Benchmarks:
