@@ -436,10 +436,10 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    /// Number of operation to be scheduled
    size_t operations_number = operations.size();
 
-   long int cpu_time;
+//   long int cpu_time;
    /// compute asap and alap
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing asap and alap...");
-   START_TIME(cpu_time);
+//   START_TIME(cpu_time);
    ASLAPRef aslap;
    if(parametric_list_based_metric == ParametricListBased_Metric::STATIC_MOBILITY or parametric_list_based_metric == ParametricListBased_Metric::DYNAMIC_MOBILITY)
    {
@@ -456,9 +456,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          aslap->compute_ALAP(ASLAP::ALAP_with_partial_scheduling, HLS->Rsch, nullptr, est_upper_bound);
       }
    }
-   STOP_TIME(cpu_time);
-   if(output_level >= OUTPUT_LEVEL_MINIMUM)
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time to perform ASAP+ALAP scheduling: " + print_cpu_time(cpu_time) + " seconds");
+//   STOP_TIME(cpu_time);
+//   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+//      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Time to perform ASAP+ALAP scheduling: " + print_cpu_time(cpu_time) + " seconds");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing free input vertices...");
    /// compute the set of vertices without input edges.
