@@ -356,7 +356,8 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
          if(found != std::string::npos && found + fun_name.size() == port_name.size())
          {
             GetPointer<port_o>(curr_port)->set_is_memory(false);
-            fun_call_sites_rel[fun_name].push_back(curr_gate);
+            if(std::find(fun_call_sites_rel[fun_name].begin(), fun_call_sites_rel[fun_name].end(), curr_gate) == fun_call_sites_rel[fun_name].end())
+               fun_call_sites_rel[fun_name].push_back(curr_gate);
          }
       }
    }
@@ -406,15 +407,20 @@ void fu_binding::manage_killing_memory_proxies(std::map<unsigned int, structural
          SM->add_connection(storage_port_proxy_out1_sign, proxied_port_proxy_out1);
 
          structural_objectRef port_proxy_in1 = proxied_unit->find_member("proxy_in1_" + STR(var), port_o_K, proxied_unit);
-         to_be_merged[port_in1].push_back(port_proxy_in1);
+         if(std::find(to_be_merged[port_in1].begin(), to_be_merged[port_in1].end(), port_proxy_in1) == to_be_merged[port_in1].end())
+            to_be_merged[port_in1].push_back(port_proxy_in1);
          structural_objectRef port_proxy_in2 = proxied_unit->find_member("proxy_in2_" + STR(var), port_o_K, proxied_unit);
-         to_be_merged[port_in2].push_back(port_proxy_in2);
+         if(std::find(to_be_merged[port_in2].begin(), to_be_merged[port_in2].end(), port_proxy_in2) == to_be_merged[port_in2].end())
+            to_be_merged[port_in2].push_back(port_proxy_in2);
          structural_objectRef port_proxy_in3 = proxied_unit->find_member("proxy_in3_" + STR(var), port_o_K, proxied_unit);
-         to_be_merged[port_in3].push_back(port_proxy_in3);
+         if(std::find(to_be_merged[port_in3].begin(), to_be_merged[port_in3].end(), port_proxy_in3) == to_be_merged[port_in3].end())
+            to_be_merged[port_in3].push_back(port_proxy_in3);
          structural_objectRef port_proxy_sel_LOAD = proxied_unit->find_member("proxy_sel_LOAD_" + STR(var), port_o_K, proxied_unit);
-         to_be_merged[port_sel_LOAD].push_back(port_proxy_sel_LOAD);
+         if(std::find(to_be_merged[port_sel_LOAD].begin(), to_be_merged[port_sel_LOAD].end(), port_proxy_sel_LOAD) == to_be_merged[port_sel_LOAD].end())
+            to_be_merged[port_sel_LOAD].push_back(port_proxy_sel_LOAD);
          structural_objectRef port_proxy_sel_STORE = proxied_unit->find_member("proxy_sel_STORE_" + STR(var), port_o_K, proxied_unit);
-         to_be_merged[port_sel_STORE].push_back(port_proxy_sel_STORE);
+         if(std::find(to_be_merged[port_sel_STORE].begin(), to_be_merged[port_sel_STORE].end(), port_proxy_sel_STORE) == to_be_merged[port_sel_STORE].end())
+            to_be_merged[port_sel_STORE].push_back(port_proxy_sel_STORE);
       }
       join_merge_split(SM, HLS, to_be_merged, circuit, _unique_id);
    }
@@ -446,7 +452,7 @@ void fu_binding::manage_killing_function_proxies(std::map<unsigned int, structur
             {
                structural_objectRef proxied_unit = *proxied_unit_it;
                structural_objectRef port_proxy_in_i = proxied_unit->find_member(port_name + "_" + fun, port_o_K, proxied_unit);
-               if(port_proxy_in_i)
+               if(port_proxy_in_i && std::find(to_be_merged[curr_port].begin(), to_be_merged[curr_port].end(), port_proxy_in_i) == to_be_merged[curr_port].end())
                   to_be_merged[curr_port].push_back(port_proxy_in_i);
             }
          }
@@ -923,7 +929,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             kill_proxy_function_units(wrapped_units, curr_gate, fun_call_sites_rel, reverse_function_units);
 
             bool added_memory_element = manage_module_ports(HLSMgr, HLS, SM, curr_gate, num);
-            if(added_memory_element)
+            if(added_memory_element && std::find(memory_modules.begin(), memory_modules.end(), curr_gate) == memory_modules.end())
                memory_modules.push_back(curr_gate);
 
             /// propagate memory parameters if contained into the module to be instantiated
@@ -958,7 +964,8 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
          structural_objectRef FU = SM->add_module_from_technology_library(FUName + "_i0", FUName, WORK_LIBRARY, circuit, HLS->HLS_T->get_technology_manager());
 
-         memory_modules.push_back(FU);
+         if(std::find(memory_modules.begin(), memory_modules.end(), FU) == memory_modules.end())
+            memory_modules.push_back(FU);
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering additional top: " + FUName + "@" + STR(Itr));
          if(HLSMgr->Rfuns->has_proxied_shared_functions(Itr))
@@ -1344,7 +1351,8 @@ void fu_binding::manage_memory_ports_parallel_chained(const HLS_managerRef, cons
                   cir_port = SM->add_port(port_name, port_o::OUT, circuit, port_i->get_typeRef());
                port_o::fix_port_properties(port_i, cir_port);
             }
-            primary_outs[cir_port].push_back(port_i);
+            if(std::find(primary_outs[cir_port].begin(), primary_outs[cir_port].end(), port_i) == primary_outs[cir_port].end())
+               primary_outs[cir_port].push_back(port_i);
          }
       }
    }

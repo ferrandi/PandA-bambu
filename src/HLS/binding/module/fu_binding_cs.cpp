@@ -318,6 +318,7 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
             THROW_ASSERT(!sche_port || GetPointer<port_o>(sche_port), "should be a port");
+            if(std::find(primary_outs[sche_port].begin(), primary_outs[sche_port].end(), port_i) == primary_outs[sche_port].end())
             primary_outs[sche_port].push_back(port_i);
          }
       }
@@ -397,8 +398,9 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
             }
             if(port_i->get_kind() == port_vector_o_K) // connecting a port vector
             {
+               if(std::find(primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].begin(), primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end(), GetPointer<port_o>(port_i)->get_port(0)) == primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end())
                primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].push_back(GetPointer<port_o>(port_i)->get_port(0)); // merge first cell of vector
-               if(GetPointer<port_o>(port_i)->get_ports_size() > 1)                                                        // More than 1 channel
+               if(GetPointer<port_o>(port_i)->get_ports_size() > 1)                                                     // More than 1 channel
                {
                   for(unsigned int num_chan = 1; num_chan < parameters->getOption<unsigned int>(OPT_channels_number); num_chan++)
                   {
@@ -406,7 +408,7 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
                   }
                }
             }
-            else
+            else if(std::find(primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].begin(), primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end(), port_i) == primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end())
                primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].push_back(port_i); // merge normal port
          }
       }
