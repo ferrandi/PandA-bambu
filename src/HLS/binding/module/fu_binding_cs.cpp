@@ -398,7 +398,7 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
             if(port_i->get_kind() == port_vector_o_K) // connecting a port vector
             {
                primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].push_back(GetPointer<port_o>(port_i)->get_port(0)); // merge first cell of vector
-               if(GetPointer<port_o>(port_i)->get_ports_size() > 1)                                                     // More than 1 channel
+               if(GetPointer<port_o>(port_i)->get_ports_size() > 1)                                                        // More than 1 channel
                {
                   for(unsigned int num_chan = 1; num_chan < parameters->getOption<unsigned int>(OPT_channels_number); num_chan++)
                   {

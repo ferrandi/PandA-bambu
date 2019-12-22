@@ -164,7 +164,7 @@ void fu_binding::bind(const vertex& v, unsigned int unit, unsigned int index)
    auto key = std::make_pair(unit, index);
    if(operations.find(key) == operations.end())
    {
-      operations.insert(std::pair<std::pair<unsigned int,unsigned int>, OpVertexSet>(key, OpVertexSet(op_graph)));
+      operations.insert(std::pair<std::pair<unsigned int, unsigned int>, OpVertexSet>(key, OpVertexSet(op_graph)));
    }
    operations.at(key).insert(v);
    if(index != INFINITE_UINT)
@@ -294,7 +294,7 @@ void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& m
       killing_vars.insert(it_mu->second);
       reverse_memory_units[it_mu->second] = it_mu->first;
    }
-   for(auto kv :killing_vars)
+   for(auto kv : killing_vars)
    {
       structural_objectRef port_proxy_in1 = curr_gate->find_member("proxy_in1_" + STR(kv), port_o_K, curr_gate);
       if(port_proxy_in1)
@@ -488,7 +488,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
    const structural_managerRef SM = HLS->datapath;
 
    /// unique id identifier
-   unsigned int unique_id=0;
+   unsigned int unique_id = 0;
 
    /// initialize resource sharing to false
    has_resource_sharing_p = !HLS->Rreg->is_all_regs_without_enable(); // it assumes that HLS->Rreg->add_to_SM is called first and then HLS->Rfu->add_to_SM
@@ -854,8 +854,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
             const technology_nodeRef fu_lib_unit = allocation_information->get_fu(i);
             const OpVertexSet& mapped_operations = get_operations(i, num);
             THROW_ASSERT(fu_lib_unit, "functional unit not available: check the library given. Component: " + allocation_information->get_fu_name(i).first);
-            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name, allocation_information->is_direct_proxy_memory_unit(i) or allocation_information->is_indirect_access_memory_unit(i) ? OpVertexSet(op_graph) : mapped_operations,
-                                 clock_port, reset_port);
+            curr_gate = add_gate(HLSMgr, HLS, fu_lib_unit, name, allocation_information->is_direct_proxy_memory_unit(i) or allocation_information->is_indirect_access_memory_unit(i) ? OpVertexSet(op_graph) : mapped_operations, clock_port, reset_port);
             has_resource_sharing_p = has_resource_sharing_p || (mapped_operations.size() > 1);
             std::string current_op;
             if(mapped_operations.size())
@@ -1294,7 +1293,6 @@ void fu_binding::join_merge_split(const structural_managerRef SM, const hlsRef H
       }
    }
 }
-
 
 bool jms_sorter::operator()(const structural_objectRef& a, const structural_objectRef& b) const
 {
