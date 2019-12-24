@@ -2901,8 +2901,13 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
 
                llvm::CmpInst* cond = llvm::CmpInst::Create(llvm::CmpInst::OtherOps::ICmp, llvm::CmpInst::Predicate::ICMP_EQ, curr_idx, type_idx_ci, cmp_name, split_before);
 
+#if __clang_major__ > 7
+               llvm::Instruction* then_term;
+               llvm::Instruction* else_term;
+#else
                llvm::TerminatorInst* then_term;
                llvm::TerminatorInst* else_term;
+#endif
                llvm::SplitBlockAndInsertIfThenElse(cond, split_before, &then_term, &else_term);
                then_term->getParent()->setName("csroa.if.then");
                else_term->getParent()->setName("csroa.if.else");

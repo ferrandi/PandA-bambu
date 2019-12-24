@@ -53,6 +53,7 @@
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG7_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG8_COMPILER.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -155,12 +156,15 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG7_COMPILER
    CT_I386_CLANG7 = 4096,
 #endif
+#if HAVE_I386_CLANG8_COMPILER
+   CT_I386_CLANG8 = 8192,
+#endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 8192,
+   CT_ARM_GCC = 16384,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 16384,
-   CT_SPARC_ELF_GCC = 32768
+   CT_SPARC_GCC = 32768,
+   CT_SPARC_ELF_GCC = 65536
 #endif
 };
 

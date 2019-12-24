@@ -35,11 +35,6 @@
  * @brief .
  *
  */
-
-#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
-
 #include "test_vector_parser.hpp"
 
 /// behavior include
