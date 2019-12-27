@@ -334,6 +334,20 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
                      std::cerr << "fname=" << fname << " pdName_string=" << pdName_string << "\n";
                      HLSMgr->design_interface_arraysize[fname2][pdName_string2] = HLSMgr->design_interface_arraysize.find(fname)->second.find(pdName_string)->second;
                   }
+                  if(HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
+                     HLSMgr->design_interface_attribute2.find(fname)->second.find(pdName_string) != HLSMgr->design_interface_attribute2.find(fname)->second.end())
+                  {
+                     std::string fname2;
+                     tree_helper::get_mangled_fname(fd2, fname2);
+                     HLSMgr->design_interface_attribute2[fname2][pdName_string2] = HLSMgr->design_interface_attribute2.find(fname)->second.find(pdName_string)->second;
+                  }
+                  if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() &&
+                     HLSMgr->design_interface_attribute3.find(fname)->second.find(pdName_string) != HLSMgr->design_interface_attribute3.find(fname)->second.end())
+                  {
+                     std::string fname2;
+                     tree_helper::get_mangled_fname(fd2, fname2);
+                     HLSMgr->design_interface_attribute3[fname2][pdName_string2] = HLSMgr->design_interface_attribute3.find(fname)->second.find(pdName_string)->second;
+                  }
                   const auto TM = AppM->get_tree_manager();
                   auto argSSANode = TM->GetTreeReindex(par2ssa.find(arg_id)->second);
                   auto argSSA2 = GetPointer<ssa_name>(GET_NODE(argSSANode));
@@ -399,7 +413,7 @@ void interface_infer::create_Read_function(tree_nodeRef refStmt, const std::stri
    {
       boolean_type = tree_man->create_boolean_type();
       bit_size_type = tree_man->create_bit_size_type();
-      argsT.push_back(bit_size_type);
+      argsT.push_back(boolean_type);
       argsT.push_back(bit_size_type);
       argsT.push_back(readType);
    }
@@ -578,7 +592,7 @@ void interface_infer::create_resource_Read_simple(const std::vector<std::string>
       GetPointer<port_o>(addrPort)->set_is_var_args(true); /// required to activate the module generation
       if(interfaceType == "valid" || interfaceType == "handshake" || interfaceType == "fifo")
       {
-         auto inPort_o_vld = CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, n_resources, interface_top, bool_type);
+         CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, n_resources, interface_top, bool_type);
       }
       if(isMultipleResource)
          CM->add_port_vector("out1", port_o::OUT, n_resources, interface_top, rwtype);
@@ -807,10 +821,10 @@ void interface_infer::create_resource_array(const std::vector<std::string>& oper
       CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
       CM->add_port_vector(START_PORT_NAME, port_o::IN, NResources, interface_top, bool_type);
 
-      auto selPort = CM->add_port_vector("in1", port_o::IN, NResources, interface_top, size1);
-      auto sizePort = CM->add_port_vector("in2", port_o::IN, NResources, interface_top, size1);
-      auto dataPort = CM->add_port_vector("in3", port_o::IN, NResources, interface_top, size1);
-      auto addrPort = CM->add_port_vector("in4", port_o::IN, NResources, interface_top, word_bool_type);
+      auto selPort = CM->add_port_vector("in1", port_o::IN, NResources, interface_top, size1);           // when 0 is a read otherwise is a write
+      auto sizePort = CM->add_port_vector("in2", port_o::IN, NResources, interface_top, size1);          // bit-width size of the written or read data
+      auto dataPort = CM->add_port_vector("in3", port_o::IN, NResources, interface_top, size1);          // value written when the first operand is 1, 0 otherwise
+      auto addrPort = CM->add_port_vector("in4", port_o::IN, NResources, interface_top, word_bool_type); // address
       GetPointer<port_o>(dataPort)->set_port_alignment(nbitAddres);
 
       GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
@@ -919,6 +933,293 @@ void interface_infer::create_resource_array(const std::vector<std::string>& oper
    }
 }
 
+void interface_infer::create_resource_m_axi(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& portNameSpecializer, const std::string& interfaceType,
+                                            unsigned int inputBitWidth, unsigned n_resources, m_axi_type mat)
+{
+   const std::string ResourceName = ENCODE_FDNAME(portNameSpecializer, "_ReadWrite_", interfaceType);
+   auto HLSMgr = GetPointer<HLS_manager>(AppM);
+   auto HLS_T = HLSMgr->get_HLS_target();
+   auto TechMan = HLS_T->get_technology_manager();
+   if(!TechMan->is_library_manager(INTERFACE_LIBRARY) || !TechMan->get_library_manager(INTERFACE_LIBRARY)->is_fu(ResourceName))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Creating interface resource: " + INTERFACE_LIBRARY + ":" + ResourceName);
+      structural_managerRef CM = structural_managerRef(new structural_manager(parameters));
+      structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(ResourceName));
+      CM->set_top_info(ResourceName, module_type);
+      auto interface_top = CM->get_circ();
+      /// add description and license
+      GetPointer<module>(interface_top)->set_description("Interface module for function: " + ResourceName);
+      GetPointer<module>(interface_top)->set_copyright(GENERATED_COPYRIGHT);
+      GetPointer<module>(interface_top)->set_authors("Component automatically generated by bambu");
+      GetPointer<module>(interface_top)->set_license(GENERATED_LICENSE);
+      GetPointer<module>(interface_top)->set_multi_unit_multiplicity(n_resources);
+
+      unsigned int address_bitsize = HLSMgr->get_address_bitsize();
+      structural_type_descriptorRef address_interface_type = structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
+      structural_type_descriptorRef Intype = structural_type_descriptorRef(new structural_type_descriptor("bool", inputBitWidth));
+      structural_type_descriptorRef size1 = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
+      structural_type_descriptorRef rwsize = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
+      structural_type_descriptorRef idType = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
+      structural_type_descriptorRef lenType = structural_type_descriptorRef(new structural_type_descriptor("bool", 8));
+      structural_type_descriptorRef sizeType = structural_type_descriptorRef(new structural_type_descriptor("bool", 3));
+      structural_type_descriptorRef burstType = structural_type_descriptorRef(new structural_type_descriptor("bool", 2));
+      structural_type_descriptorRef lockType = structural_type_descriptorRef(new structural_type_descriptor("bool", 2));
+      structural_type_descriptorRef cacheType = structural_type_descriptorRef(new structural_type_descriptor("bool", 4));
+      structural_type_descriptorRef protType = structural_type_descriptorRef(new structural_type_descriptor("bool", 3));
+      structural_type_descriptorRef qosType = structural_type_descriptorRef(new structural_type_descriptor("bool", 4));
+      structural_type_descriptorRef regionType = structural_type_descriptorRef(new structural_type_descriptor("bool", 4));
+      structural_type_descriptorRef userType = structural_type_descriptorRef(new structural_type_descriptor("bool", 1));
+      structural_type_descriptorRef strbType = structural_type_descriptorRef(new structural_type_descriptor("bool", inputBitWidth / 8));
+      structural_type_descriptorRef respType = structural_type_descriptorRef(new structural_type_descriptor("bool", 2));
+
+      structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
+      CM->add_port(CLOCK_PORT_NAME, port_o::IN, interface_top, bool_type);
+      CM->add_port(RESET_PORT_NAME, port_o::IN, interface_top, bool_type);
+      CM->add_port_vector(START_PORT_NAME, port_o::IN, n_resources, interface_top, bool_type);
+
+      auto selPort = CM->add_port_vector("in1", port_o::IN, n_resources, interface_top, size1);                   // when 0 is a read otherwise is a write
+      auto sizePort = CM->add_port_vector("in2", port_o::IN, n_resources, interface_top, size1);                  // bit-width size of the written or read data
+      auto dataPort = CM->add_port_vector("in3", port_o::IN, n_resources, interface_top, size1);                  // value written when the first operand is 1, 0 otherwise
+      auto addrPort = CM->add_port_vector("in4", port_o::IN, n_resources, interface_top, address_interface_type); // address
+
+      GetPointer<port_o>(addrPort)->set_is_addr_bus(true);
+      GetPointer<port_o>(addrPort)->set_is_var_args(true); /// required to activate the module generation
+
+      CM->add_port_vector(DONE_PORT_NAME, port_o::OUT, n_resources, interface_top, bool_type);
+      CM->add_port_vector("out1", port_o::OUT, n_resources, interface_top, rwsize);
+
+      auto Port_awvalid = CM->add_port("_m_axi_" + portNameSpecializer + "_AWVALID", port_o::OUT, interface_top, bool_type);
+      GetPointer<port_o>(Port_awvalid)->set_port_interface(port_o::port_interface::M_AXI_AWVALID);
+
+      auto Port_awready = CM->add_port("_m_axi_" + portNameSpecializer + "_AWREADY", port_o::IN, interface_top, bool_type);
+      GetPointer<port_o>(Port_awready)->set_port_interface(port_o::port_interface::M_AXI_AWREADY);
+
+      auto Port_awaddr = CM->add_port("_m_axi_" + portNameSpecializer + "_AWADDR", port_o::OUT, interface_top, address_interface_type);
+      GetPointer<port_o>(Port_awaddr)->set_port_interface(port_o::port_interface::M_AXI_AWADDR);
+
+      auto Port_awid = CM->add_port("_m_axi_" + portNameSpecializer + "_AWID", port_o::OUT, interface_top, idType);
+      GetPointer<port_o>(Port_awid)->set_port_interface(port_o::port_interface::M_AXI_AWID);
+
+      auto Port_awlen = CM->add_port("_m_axi_" + portNameSpecializer + "_AWLEN", port_o::OUT, interface_top, lenType);
+      GetPointer<port_o>(Port_awlen)->set_port_interface(port_o::port_interface::M_AXI_AWLEN);
+
+      auto Port_awsize = CM->add_port("_m_axi_" + portNameSpecializer + "_AWSIZE", port_o::OUT, interface_top, sizeType);
+      GetPointer<port_o>(Port_awsize)->set_port_interface(port_o::port_interface::M_AXI_AWSIZE);
+
+      auto Port_awburst = CM->add_port("_m_axi_" + portNameSpecializer + "_AWBURST", port_o::OUT, interface_top, burstType);
+      GetPointer<port_o>(Port_awburst)->set_port_interface(port_o::port_interface::M_AXI_AWBURST);
+
+      auto Port_awlock = CM->add_port("_m_axi_" + portNameSpecializer + "_AWLOCK", port_o::OUT, interface_top, lockType);
+      GetPointer<port_o>(Port_awlock)->set_port_interface(port_o::port_interface::M_AXI_AWLOCK);
+
+      auto Port_awcache = CM->add_port("_m_axi_" + portNameSpecializer + "_AWCACHE", port_o::OUT, interface_top, cacheType);
+      GetPointer<port_o>(Port_awcache)->set_port_interface(port_o::port_interface::M_AXI_AWCACHE);
+
+      auto Port_awprot = CM->add_port("_m_axi_" + portNameSpecializer + "_AWPROT", port_o::OUT, interface_top, protType);
+      GetPointer<port_o>(Port_awprot)->set_port_interface(port_o::port_interface::M_AXI_AWPROT);
+
+      auto Port_awqos = CM->add_port("_m_axi_" + portNameSpecializer + "_AWQOS", port_o::OUT, interface_top, qosType);
+      GetPointer<port_o>(Port_awqos)->set_port_interface(port_o::port_interface::M_AXI_AWQOS);
+
+      auto Port_awregion = CM->add_port("_m_axi_" + portNameSpecializer + "_AWREGION", port_o::OUT, interface_top, regionType);
+      GetPointer<port_o>(Port_awregion)->set_port_interface(port_o::port_interface::M_AXI_AWREGION);
+
+      auto Port_awuser = CM->add_port("_m_axi_" + portNameSpecializer + "_AWUSER", port_o::OUT, interface_top, userType);
+      GetPointer<port_o>(Port_awuser)->set_port_interface(port_o::port_interface::M_AXI_AWUSER);
+
+      auto Port_wvalid = CM->add_port("_m_axi_" + portNameSpecializer + "_WVALID", port_o::OUT, interface_top, bool_type);
+      GetPointer<port_o>(Port_wvalid)->set_port_interface(port_o::port_interface::M_AXI_WVALID);
+
+      auto Port_wready = CM->add_port("_m_axi_" + portNameSpecializer + "_WREADY", port_o::IN, interface_top, bool_type);
+      GetPointer<port_o>(Port_wready)->set_port_interface(port_o::port_interface::M_AXI_WREADY);
+
+      auto Port_wdata = CM->add_port("_m_axi_" + portNameSpecializer + "_WDATA", port_o::OUT, interface_top, Intype);
+      GetPointer<port_o>(Port_wdata)->set_port_interface(port_o::port_interface::M_AXI_WDATA);
+
+      auto Port_wstrb = CM->add_port("_m_axi_" + portNameSpecializer + "_WSTRB", port_o::OUT, interface_top, strbType);
+      GetPointer<port_o>(Port_wstrb)->set_port_interface(port_o::port_interface::M_AXI_WSTRB);
+
+      auto Port_wlast = CM->add_port("_m_axi_" + portNameSpecializer + "_WLAST", port_o::OUT, interface_top, bool_type);
+      GetPointer<port_o>(Port_wlast)->set_port_interface(port_o::port_interface::M_AXI_WLAST);
+
+      auto Port_wid = CM->add_port("_m_axi_" + portNameSpecializer + "_WID", port_o::OUT, interface_top, idType);
+      GetPointer<port_o>(Port_wid)->set_port_interface(port_o::port_interface::M_AXI_WID);
+
+      auto Port_wuser = CM->add_port("_m_axi_" + portNameSpecializer + "_WUSER", port_o::OUT, interface_top, userType);
+      GetPointer<port_o>(Port_wuser)->set_port_interface(port_o::port_interface::M_AXI_WUSER);
+
+      auto Port_arvalid = CM->add_port("_m_axi_" + portNameSpecializer + "_ARVALID", port_o::OUT, interface_top, bool_type);
+      GetPointer<port_o>(Port_arvalid)->set_port_interface(port_o::port_interface::M_AXI_ARVALID);
+
+      auto Port_arready = CM->add_port("_m_axi_" + portNameSpecializer + "_ARREADY", port_o::IN, interface_top, bool_type);
+      GetPointer<port_o>(Port_arready)->set_port_interface(port_o::port_interface::M_AXI_ARREADY);
+
+      auto Port_araddr = CM->add_port("_m_axi_" + portNameSpecializer + "_ARADDR", port_o::OUT, interface_top, address_interface_type);
+      GetPointer<port_o>(Port_araddr)->set_port_interface(port_o::port_interface::M_AXI_ARADDR);
+
+      auto Port_arid = CM->add_port("_m_axi_" + portNameSpecializer + "_ARID", port_o::OUT, interface_top, idType);
+      GetPointer<port_o>(Port_arid)->set_port_interface(port_o::port_interface::M_AXI_ARID);
+
+      auto Port_arlen = CM->add_port("_m_axi_" + portNameSpecializer + "_ARLEN", port_o::OUT, interface_top, lenType);
+      GetPointer<port_o>(Port_arlen)->set_port_interface(port_o::port_interface::M_AXI_ARLEN);
+
+      auto Port_arsize = CM->add_port("_m_axi_" + portNameSpecializer + "_ARSIZE", port_o::OUT, interface_top, sizeType);
+      GetPointer<port_o>(Port_arsize)->set_port_interface(port_o::port_interface::M_AXI_ARSIZE);
+
+      auto Port_arburst = CM->add_port("_m_axi_" + portNameSpecializer + "_ARBURST", port_o::OUT, interface_top, burstType);
+      GetPointer<port_o>(Port_arburst)->set_port_interface(port_o::port_interface::M_AXI_ARBURST);
+
+      auto Port_arlock = CM->add_port("_m_axi_" + portNameSpecializer + "_ARLOCK", port_o::OUT, interface_top, lockType);
+      GetPointer<port_o>(Port_arlock)->set_port_interface(port_o::port_interface::M_AXI_ARLOCK);
+
+      auto Port_arcache = CM->add_port("_m_axi_" + portNameSpecializer + "_ARCACHE", port_o::OUT, interface_top, cacheType);
+      GetPointer<port_o>(Port_arcache)->set_port_interface(port_o::port_interface::M_AXI_ARCACHE);
+
+      auto Port_arprot = CM->add_port("_m_axi_" + portNameSpecializer + "_ARPROT", port_o::OUT, interface_top, protType);
+      GetPointer<port_o>(Port_arprot)->set_port_interface(port_o::port_interface::M_AXI_ARPROT);
+
+      auto Port_arqos = CM->add_port("_m_axi_" + portNameSpecializer + "_ARQOS", port_o::OUT, interface_top, qosType);
+      GetPointer<port_o>(Port_arqos)->set_port_interface(port_o::port_interface::M_AXI_ARQOS);
+
+      auto Port_arregion = CM->add_port("_m_axi_" + portNameSpecializer + "_ARREGION", port_o::OUT, interface_top, regionType);
+      GetPointer<port_o>(Port_awlock)->set_port_interface(port_o::port_interface::M_AXI_ARREGION);
+
+      auto Port_aruser = CM->add_port("_m_axi_" + portNameSpecializer + "_ARUSER", port_o::OUT, interface_top, userType);
+      GetPointer<port_o>(Port_aruser)->set_port_interface(port_o::port_interface::M_AXI_ARUSER);
+
+      auto Port_rvalid = CM->add_port("_m_axi_" + portNameSpecializer + "_RVALID", port_o::IN, interface_top, bool_type);
+      GetPointer<port_o>(Port_rvalid)->set_port_interface(port_o::port_interface::M_AXI_RVALID);
+
+      auto Port_rready = CM->add_port("_m_axi_" + portNameSpecializer + "_RREADY", port_o::OUT, interface_top, bool_type);
+      GetPointer<port_o>(Port_rready)->set_port_interface(port_o::port_interface::M_AXI_RREADY);
+
+      auto Port_rdata = CM->add_port("_m_axi_" + portNameSpecializer + "_RDATA", port_o::IN, interface_top, Intype);
+      GetPointer<port_o>(Port_rdata)->set_port_interface(port_o::port_interface::M_AXI_RDATA);
+
+      auto Port_rlast = CM->add_port("_m_axi_" + portNameSpecializer + "_RLAST", port_o::IN, interface_top, bool_type);
+      GetPointer<port_o>(Port_rlast)->set_port_interface(port_o::port_interface::M_AXI_RLAST);
+
+      auto Port_rid = CM->add_port("_m_axi_" + portNameSpecializer + "_RID", port_o::IN, interface_top, idType);
+      GetPointer<port_o>(Port_rid)->set_port_interface(port_o::port_interface::M_AXI_RID);
+
+      auto Port_ruser = CM->add_port("_m_axi_" + portNameSpecializer + "_RUSER", port_o::IN, interface_top, userType);
+      GetPointer<port_o>(Port_ruser)->set_port_interface(port_o::port_interface::M_AXI_RUSER);
+
+      auto Port_rresp = CM->add_port("_m_axi_" + portNameSpecializer + "_RRESP", port_o::IN, interface_top, respType);
+      GetPointer<port_o>(Port_rresp)->set_port_interface(port_o::port_interface::M_AXI_RRESP);
+
+      auto Port_bvalid = CM->add_port("_m_axi_" + portNameSpecializer + "_BVALID", port_o::IN, interface_top, bool_type);
+      GetPointer<port_o>(Port_bvalid)->set_port_interface(port_o::port_interface::M_AXI_BVALID);
+
+      auto Port_bready = CM->add_port("_m_axi_" + portNameSpecializer + "_BREADY", port_o::OUT, interface_top, bool_type);
+      GetPointer<port_o>(Port_bready)->set_port_interface(port_o::port_interface::M_AXI_BREADY);
+
+      auto Port_bresp = CM->add_port("_m_axi_" + portNameSpecializer + "_BRESP", port_o::IN, interface_top, respType);
+      GetPointer<port_o>(Port_bresp)->set_port_interface(port_o::port_interface::M_AXI_BRESP);
+
+      auto Port_bid = CM->add_port("_m_axi_" + portNameSpecializer + "_BID", port_o::IN, interface_top, idType);
+      GetPointer<port_o>(Port_bid)->set_port_interface(port_o::port_interface::M_AXI_BID);
+
+      auto Port_buser = CM->add_port("_m_axi_" + portNameSpecializer + "_BUSER", port_o::OUT, interface_top, userType);
+      GetPointer<port_o>(Port_buser)->set_port_interface(port_o::port_interface::M_AXI_BUSER);
+
+      if(mat == m_axi_type::axi_slave)
+      {
+         auto Port_LSawvalid = CM->add_port("_s_axi_AXILiteS_AWVALID", port_o::IN, interface_top, bool_type);
+         GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWVALID);
+         auto Port_LSawready = CM->add_port("_s_axi_AXILiteS_AWREADY", port_o::OUT, interface_top, bool_type);
+         GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWREADY);
+         auto Port_LSawaddr = CM->add_port("_s_axi_AXILiteS_AWADDR", port_o::IN, interface_top, address_interface_type);
+         GetPointer<port_o>(Port_LSawvalid)->set_port_interface(port_o::port_interface::S_AXIL_AWADDR);
+         auto Port_LSwvalid = CM->add_port("_s_axi_AXILiteS_WVALID", port_o::IN, interface_top, bool_type);
+         auto Port_LSwready = CM->add_port("_s_axi_AXILiteS_WREADY", port_o::OUT, interface_top, bool_type);
+         auto Port_LSwdata = CM->add_port("_s_axi_AXILiteS_WDATA", port_o::IN, interface_top, Intype);
+         auto Port_LSwstrb = CM->add_port("_s_axi_AXILiteS_WSTRB", port_o::IN, interface_top, strbType);
+         auto Port_LSarvalid = CM->add_port("_s_axi_AXILiteS_ARVALID", port_o::IN, interface_top, bool_type);
+         auto Port_LSarready = CM->add_port("_s_axi_AXILiteS_ARREADY", port_o::OUT, interface_top, bool_type);
+         auto Port_LSaraddr = CM->add_port("_s_axi_AXILiteS_ARADDR", port_o::IN, interface_top, address_interface_type);
+         auto Port_LSrvalid = CM->add_port("_s_axi_AXILiteS_RVALID", port_o::OUT, interface_top, bool_type);
+         auto Port_LSrready = CM->add_port("_s_axi_AXILiteS_RREADY", port_o::IN, interface_top, bool_type);
+         auto Port_LSrdata = CM->add_port("_s_axi_AXILiteS_RDATA", port_o::OUT, interface_top, Intype);
+         auto Port_LSrresp = CM->add_port("_s_axi_AXILiteS_RRESP", port_o::OUT, interface_top, respType);
+         auto Port_LSbvalid = CM->add_port("_s_axi_AXILiteS_BVALID", port_o::OUT, interface_top, bool_type);
+         auto Port_LSbready = CM->add_port("_s_axi_AXILiteS_BREADY", port_o::IN, interface_top, bool_type);
+         auto Port_LSbresp = CM->add_port("_s_axi_AXILiteS_BRESP", port_o::OUT, interface_top, respType);
+      }
+
+      auto inPort_m_axi = CM->add_port("_" + argName_string, port_o::IN, interface_top, address_interface_type);
+      if(mat == m_axi_type::none || mat == m_axi_type::axi_slave)
+         GetPointer<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_OFF);
+      else
+         GetPointer<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_DIRECT);
+
+      CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 out1");
+      CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "ReadWrite_" + interfaceType + ".cpp");
+      TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
+      for(auto fdName : operationsR)
+         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+      for(auto fdName : operationsW)
+         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+      auto* fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      const target_deviceRef device = HLS_T->get_target_device();
+      fu->area_m = area_model::create_model(device->get_type(), parameters);
+      fu->area_m->set_area_value(0);
+
+      for(auto fdName : operationsR)
+      {
+         auto* op = GetPointer<operation>(fu->get_operation(fdName));
+         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->bounded = false;
+         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+         op->time_m->set_synthesis_dependent(true);
+      }
+      for(auto fdName : operationsW)
+      {
+         auto* op = GetPointer<operation>(fu->get_operation(fdName));
+         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->bounded = false;
+         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+         op->time_m->set_synthesis_dependent(true);
+      }
+      /// add constraint on resource
+      HLSMgr->design_interface_constraints[function_id][INTERFACE_LIBRARY][ResourceName] = n_resources;
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Interface resource created: ");
+   }
+   else
+   {
+      for(auto fdName : operationsR)
+         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+      for(auto fdName : operationsW)
+         TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
+      auto* fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
+      const target_deviceRef device = HLS_T->get_target_device();
+
+      for(auto fdName : operationsR)
+      {
+         auto* op = GetPointer<operation>(fu->get_operation(fdName));
+         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->bounded = false;
+         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+         op->time_m->set_synthesis_dependent(true);
+      }
+      for(auto fdName : operationsW)
+      {
+         auto* op = GetPointer<operation>(fu->get_operation(fdName));
+         op->time_m = time_model::create_model(device->get_type(), parameters);
+         op->bounded = false;
+         op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
+         op->time_m->set_synthesis_dependent(true);
+      }
+      unsigned int address_bitsize = HLSMgr->get_address_bitsize();
+      structural_type_descriptorRef address_interface_type = structural_type_descriptorRef(new structural_type_descriptor("bool", address_bitsize));
+      auto interface_top = fu->CM->get_circ();
+      auto inPort_m_axi = fu->CM->add_port("_" + argName_string, port_o::IN, interface_top, address_interface_type);
+      if(mat == m_axi_type::none || mat == m_axi_type::axi_slave)
+         GetPointer<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_OFF);
+      else
+         GetPointer<port_o>(inPort_m_axi)->set_port_interface(port_o::port_interface::PI_M_AXI_DIRECT);
+   }
+}
 void interface_infer::ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int inputBitWidth, bool is_acType, bool is_signed, bool is_fixed)
 {
    n_resources = 1;
@@ -988,6 +1289,36 @@ void interface_infer::create_resource(const std::vector<std::string>& operations
       if(arraySize == 0)
          THROW_ERROR("array size equal to zero");
       create_resource_array(operationsR, operationsW, argName_string, interfaceType, inputBitWidth, arraySize, n_resources, alignment);
+   }
+   else if(interfaceType == "m_axi")
+   {
+      m_axi_type mat = m_axi_type::none;
+      auto HLSMgr = GetPointer<HLS_manager>(AppM);
+      auto portNameSpecializer = argName_string;
+
+      if(HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() && HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute2.find(fname)->second.end())
+      {
+         auto matString = HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string)->second;
+         if(matString == "none")
+            mat = m_axi_type::none;
+         else if(matString == "direct")
+         {
+            mat = m_axi_type::direct;
+            portNameSpecializer = "gmem";
+         }
+         else if(matString == "axi_slave")
+         {
+            mat = m_axi_type::axi_slave;
+            portNameSpecializer = "gmem";
+         }
+         else
+            THROW_ERROR("non-supported m_axi attribute or malformed pragma");
+      }
+      if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() && HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute3.find(fname)->second.end())
+      {
+         portNameSpecializer = HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string)->second;
+      }
+      create_resource_m_axi(operationsR, operationsW, argName_string, portNameSpecializer, interfaceType, inputBitWidth, n_resources, mat);
    }
    else
       THROW_ERROR("interface not supported: " + interfaceType);
@@ -1086,6 +1417,10 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               std::string argName;
                               std::string interfaceType;
                               std::string interfaceSize;
+                              std::string interfaceAttribute2;
+                              bool interfaceAttribute2_p = false;
+                              std::string interfaceAttribute3;
+                              bool interfaceAttribute3_p = false;
                               std::string interfaceTypename;
                               std::string interfaceTypenameInclude;
                               for(auto attrArg : EnodeArg->get_attributes())
@@ -1098,6 +1433,16 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                     interfaceType = value;
                                  if(key == "size")
                                     interfaceSize = value;
+                                 if(key == "attribute2")
+                                 {
+                                    interfaceAttribute2 = value;
+                                    interfaceAttribute2_p = true;
+                                 }
+                                 if(key == "attribute3")
+                                 {
+                                    interfaceAttribute3 = value;
+                                    interfaceAttribute3_p = true;
+                                 }
                                  if(key == "interface_typename")
                                  {
                                     interfaceTypename = value;
@@ -1114,6 +1459,11 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               HLSMgr->design_interface[fname][argName] = interfaceType;
                               if(interfaceType == "array")
                                  HLSMgr->design_interface_arraysize[fname][argName] = interfaceSize;
+                              if(interfaceType == "m_axi" && interfaceAttribute2_p)
+                                 HLSMgr->design_interface_attribute2[fname][argName] = interfaceAttribute2;
+                              if(interfaceType == "m_axi" && interfaceAttribute3_p)
+                                 HLSMgr->design_interface_attribute3[fname][argName] = interfaceAttribute3;
+
                               HLSMgr->design_interface_typename[fname][argName] = interfaceTypename;
                               HLSMgr->design_interface_typename_signature[fname].push_back(interfaceTypename);
                               if((interfaceTypename.find("ap_int<") != std::string::npos || interfaceTypename.find("ap_uint<") != std::string::npos) && interfaceTypenameInclude.find("ac_int.h") != std::string::npos)
@@ -1204,7 +1554,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      bool unkwown_pattern = false;
                      std::list<tree_nodeRef> writeStmt;
                      std::list<tree_nodeRef> readStmt;
-                     bool commonRWSignature = interfaceType == "array";
+                     bool commonRWSignature = interfaceType == "array" || interfaceType == "m_axi";
 
                      classifyArg(sl, argSSANode, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
 
