@@ -15,7 +15,7 @@ mod, params = relay.frontend.from_onnx(model=onnx_model, shape=shape_dict)
 
 
 # Compilation
-opt_level = 3
+opt_level = 0
 target = 'llvm'
 with relay.build_config(opt_level=opt_level):
     graph, lib, params = relay.build_module.build(
@@ -23,8 +23,13 @@ with relay.build_config(opt_level=opt_level):
 
 
 #printing some LLVM code
-out_file = open("i5_resnet152v1.ll", "w")
-out_file.write(lib.get_source())
-out_file.close()
-
+out_lib = open("i5_resnet152v1.ll", "w")
+out_lib.write(lib.get_source())
+out_lib.close()
+out_graph = open("i5_resnet152v1.json", "w")
+out_params = open("i5_resnet152v1.params", "w")
+out_graph.write(graph)
+out_graph.close()
+print(params, file=out_params)
+out_params.close()
 
