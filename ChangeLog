@@ -1,4 +1,5 @@
 =========== PANDA 0.9.6 ===========
+Wed 1 January 2020, PandA release 0.9.6
 Seventh public release of PandA framework.
 
 New features introduced:
@@ -24,7 +25,6 @@ New features introduced:
 - Added support to GCC compiler version 8.
 - Added support to mingw-w64. A Windows-7 64bit binary distribution is now available. This minimal msys2 binary distribution includes bambu, GCC8 with plugin and multilib enabled and a customized version of clang7.
 - Added support to Mac OSX exploiting Mac Ports project (https://www.macports.org/)
-- Added FPT tutorial material.
 - Improved the vagrant based virtual machine generation scripts. Such scripts now create an Ubuntu 16.04 32bit VirtualBox image and an Ubuntu 18.04 64bit VirtualBox image.
 - Added Vagrant scripts for Ubuntu precise, trusty,xenial and bionic, Fedora 29, CentOs7, MacOSX MacPorts.
 - Improved timing constraints and timing reports.
@@ -52,20 +52,20 @@ New features introduced:
 - Integrated Mockturtle library from EPFL (https://github.com/lsils/mockturtle) to simplify LUT-based expressions.
 - Integrated Abseil C++ libraries (https://abseil.io/)
 - Added examples of parallel_queries from ICCAD15 and ICCAD16 papers.
+- Added FPT tutorial material.
 - Added PNNL19 tutorial material.
 - Added PACT19 tutorial material.
 - Improved makefile parallelization.
-- Improved bambu determinism: two runs with the same spec produce the same HDL output.
+- Improved bambu determinism: two runs with the same specs produce the same HDL output.
+- Fixed COND_EXPR_RESTRUCTURING step
+- Fixed omp tests
+- Fixed libm tests
+- Fixed make check and on cpp examples
+- Fixed c++ struct initialization
+- Fixed floating point division
+- Fixed make dist command under github repository
 
-This release includes also a set of fixes:
-    on COND_EXPR_RESTRUCTURING step
-    on omp tests
-    on libm tests
-    on make check and on cpp examples
-    on c++ struct initialization
-    on floating point division
-    on make dist command under github repository
-
+Main contributions to this release come from Fabrizio Ferrandi, Marco Lattuada, Pietro Fezzardi, Serena Curzel, Iris Cusini, Marco Siracusa, Marco Speziali and Davide Toschi.
 
 =========== PANDA 0.9.5 ===========
 Mon 14 Aug 2017, PandA release 0.9.5
