@@ -45,15 +45,31 @@
 #define ESSA_HPP
 
 #include "function_frontend_flow_step.hpp"
+#include "basic_block.hpp"
+#include "custom_map.hpp"
+
+REF_FORWARD_DECL(Operand);
+REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
+class ValueInfo;
+class DFSInfo;
 
 class eSSA : public FunctionFrontendFlowStep
 {
-private:
+ public:
+   using ValueInfoLookup = CustomMap<tree_nodeConstRef, unsigned int>;
 
-    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+ private:
 
-public:
-     /**
+   BBGraphRef DT;
+
+   const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, 
+      const CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly);
+
+ public:
+   /**
     * Constructor.
     * @param _Param is the set of the parameters
     * @param _AppM is the application manager
@@ -77,8 +93,6 @@ public:
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
    void Initialize() override;
-
-
 };
 
 #endif // !ESSA_HPP
