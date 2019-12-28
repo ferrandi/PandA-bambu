@@ -198,16 +198,6 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    /// True if dead code elimination step must be restarted
    bool dead_code_restart;
 
-   /** Gets the maximum bit width of the operands in the instructions of the
-    * function. This function is necessary because the class APInt only
-    * supports binary operations on operands that have the same number of
-    * bits; thus, all the APInts that we allocate to process the function will
-    * have the maximum bit size. The complexity of this function is linear on
-    * the number of operands used in the function.
-    */
-   Range::bw_t getFunction_BW(unsigned int F);
-   Range::bw_t getApplication_BW();
-
    bool finalize();
 
  protected:
