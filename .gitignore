@@ -75,6 +75,7 @@ QTCreator-PandA-GitHub.creator.user
 lconfig.h.in
 
 build/
+build_release/
 .devcontainer/
 .vscode/
 obj/
@@ -82,3 +83,4 @@ obj/
 *orig
 
 panda_dist/
+panda_release/
