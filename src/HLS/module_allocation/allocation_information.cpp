@@ -2997,7 +2997,6 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
    }
    else
    {
-      /// cond_expr additional delay
       const auto second_operation_tn = TreeM->CGetTreeNode(second_operation);
       tree_nodeRef cond_def;
 

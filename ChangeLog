@@ -55,6 +55,7 @@ New features introduced:
 - Added PNNL19 tutorial material.
 - Added PACT19 tutorial material.
 - Improved makefile parallelization.
+- Improved bambu determinism: two runs with the same spec produce the same HDL output.
 
 This release includes also a set of fixes:
     on COND_EXPR_RESTRUCTURING step

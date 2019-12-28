@@ -1,21 +1,23 @@
-import mxnet as mx
 import tvm
 import tvm.relay as relay
 import numpy as np
+import onnx
 
-# Download AlexNet model from Gluon Model Zoo
-from mxnet.gluon.model_zoo.vision import get_model
-block = get_model('alexnet', pretrained=True)
-
+onnx_model = onnx.load('i1_alexnet.onnx')
 in_shape = (1,3,224,224)
-shape_dict = {'data': in_shape}
-mod, params = relay.frontend.from_mxnet(block, shape_dict)
+shape_dict = {'data_0': in_shape}
+mod, params = relay.frontend.from_onnx(onnx_model, shape_dict)
 
 target = 'llvm'
-with relay.build_config(opt_level=3):
+with relay.build_config(opt_level=0):
     graph, lib, params = relay.build(mod, target, params=params)
 
-out_file = open("i1_alexnet.ll", "w")
-out_file.write(lib.get_source())
-out_file.close()
-
+out_lib = open("i1_alexnet.ll", "w")
+out_lib.write(lib.get_source())
+out_lib.close()
+out_graph = open("i1_alexnet.json", "w")
+out_params = open("i1_alexnet.params", "w")
+out_graph.write(graph)
+out_graph.close()
+print(params, file=out_params)
+out_params.close()
