@@ -43,6 +43,8 @@
 
 #include "Range_Analysis.hpp"
 
+#include "config_HAVE_ASSERTS.hpp"
+
 ///. include
 #include "Parameter.hpp"
 
@@ -733,14 +735,15 @@ namespace
       }
       else if(const auto* rc = GetPointer<const real_cst>(tn))
       {
+         auto val = strtof64x(rc->valr.data(), nullptr);
          if(bw == 32)
          {
-            auto [s, e, f] = float_view_convert(boost::lexical_cast<float>(rc->valr.substr(0, rc->valr.size() - 1)));
+            auto [s, e, f] = float_view_convert(static_cast<float>(val));
             return RangeRef(new RealRange(Range(Regular, 1, s, s), Range(Regular, 8, e, e), Range(Regular, 23, f, f)));
          }
          if(bw == 64)
          {
-            auto [s, e, f] = double_view_convert(boost::lexical_cast<double>(rc->valr.substr(0, rc->valr.size() - 1)));
+            auto [s, e, f] = double_view_convert(static_cast<double>(val));
             return RangeRef(new RealRange(Range(Regular, 1, s, s), Range(Regular, 11, e, e), Range(Regular, 52, f, f)));
          }
          THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
@@ -4476,7 +4479,7 @@ RangeRef TernaryOp::eval() const
             // Check if branch variable is correlated with op1 or op2
             if(GetPointer<const gimple_phi>(BranchVar) != nullptr)
             {
-               // TODO: find a way to propagate range from all phi edges when phi->res is one of the two result of the con_expr 
+               // TODO: find a way to propagate range from all phi edges when phi->res is one of the two result of the cond_expr 
             }
             else if(const auto* BranchExpr = GetPointer<const binary_expr>(BranchVar))
             {
@@ -5662,12 +5665,12 @@ class ValueBranchMap
 /// but implemented specifically for switch instructions
 class ValueSwitchMap
 {
-   private:
+ private:
    const tree_nodeConstRef V;
    std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>> BBsuccs;
 
-   public:
-   ValueSwitchMap(const tree_nodeConstRef _V, std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>>& _BBsuccs) : V(_V), BBsuccs(_BBsuccs)
+ public:
+   ValueSwitchMap(const tree_nodeConstRef _V, const std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>>& _BBsuccs) : V(_V), BBsuccs(_BBsuccs)
    {
    }
    ~ValueSwitchMap() = default;
@@ -5824,11 +5827,12 @@ class ConstraintGraph
    // It is cleared at the beginning of every SCC resolution
    std::vector<APInt> constantvector;
 
-   void buildValueBranchMap(const gimple_cond* br, const blocRef branchBB, unsigned int function_id)
+   bool buildValueBranchMap(const gimple_cond* br, const blocRef branchBB, unsigned int function_id)
    {
       if(GetPointer<const cst_node>(GET_CONST_NODE(br->op0)) != nullptr)
       {
-         // TODO: abort and call dead code elimination to evaluate constant condition
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Branch variable is a cst_node, dead code elimination necessary!");
+         return true;
       }
       THROW_ASSERT(GET_CONST_NODE(br->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch (" + GET_CONST_NODE(br->op0)->get_kind_text() + " " + GET_CONST_NODE(br->op0)->ToString() + ")");
       const auto Cond = branchOpRecurse(br->op0);
@@ -5840,13 +5844,13 @@ class ConstraintGraph
          if(!isCompare(bin_op))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a compare codition, skipping...");
-            return;
+            return false;
          }
 
          if(!isIntegerType(bin_op->op0) || !isIntegerType(bin_op->op1))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Non-integer operands, skipping...");
-            return;
+            return false;
          }
 
          // Create VarNodes for comparison operands explicitly
@@ -5866,10 +5870,10 @@ class ConstraintGraph
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 is " + Op0->get_kind_text() + " and Op1 is " + Op1->get_kind_text());
 
          // If both operands are constants, nothing to do here
-         if(Op0->get_kind() == integer_cst_K && Op1->get_kind() == integer_cst_K)
+         if(GetPointer<const cst_node>(Op0) != nullptr && GetPointer<const cst_node>(Op1) != nullptr)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Both operands are constants, skipping...");
-            return;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Both operands are constants, dead code elimination necessary!");
+            return true;
          }
 
          // Then there are two cases: variable being compared to a constant,
@@ -5993,144 +5997,204 @@ class ConstraintGraph
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not a compare codition, skipping...");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      return false;
    }
 
-   void buildValueMultiIfMap(const gimple_multi_way_if* mwi, const blocRef /*mwifBB*/, const tree_managerRef /*TM*/)
+   bool buildValueMultiIfMap(const gimple_multi_way_if* mwi, const blocRef /*mwifBB*/, unsigned int function_id)
    {
-      const auto& cond_list = mwi->list_of_cond;
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Multi-way if with " + STR(cond_list.size()) + " conditions");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Multi-way if with " + STR(mwi->list_of_cond.size()) + " conditions");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
-      tree_nodeConstRef switch_ssa = nullptr;
+      // Find else branch BBI if any
       unsigned int DefaultBBI = 0;
-      size_t i = 0;
-      std::vector<std::pair<tree_nodeRef, kind>> CaseTags(mwi->list_of_cond.size());
       for(const auto& [cond, BBI] : mwi->list_of_cond)
       {
-         auto& [case_tag, cmp_kind] = CaseTags.at(i++);
-         if(cond)
+         if(!cond)
          {
-            THROW_ASSERT(GET_CONST_NODE(cond)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(cond)->get_kind_text() + " " + GET_CONST_NODE(cond)->ToString() + ")");
-            const auto case_compare = branchOpRecurse(cond);
-            const auto* cmp_op = GetPointer<const binary_expr>(case_compare);
-            if(cmp_op == nullptr)
+            DefaultBBI = BBI;
+            break;
+         }
+      }
+
+      // Analyse each if branch condition
+      CustomMap<tree_nodeConstRef, std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>>> switchSSAMap;
+      for(const auto& [cond, BBI] : mwi->list_of_cond)
+      {
+         if(!cond)
+         {
+            // Default branch is handled at the end
+            continue;
+         }
+
+         if(GetPointer<const cst_node>(GET_CONST_NODE(cond)) != nullptr)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable is a cst_node, dead code elimination necessary!");
+            // TODO: abort and call dead code elimination to evaluate constant condition
+            //    return true;
+            continue;
+         }
+         THROW_ASSERT(GET_CONST_NODE(cond)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(cond)->get_kind_text() + " " + GET_CONST_NODE(cond)->ToString() + ")");
+         const auto case_compare = branchOpRecurse(cond);
+         if(const auto* cmp_op = GetPointer<const binary_expr>(case_compare))
+         {
+            if(!isCompare(cmp_op))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Multi-way conditions different from binary_expr not handled, skipping all... (" + case_compare->get_kind_text() + " " + case_compare->ToString() + ")");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-               return;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not a compare codition, skipping...");
+               continue;
             }
-            THROW_ASSERT(GET_CONST_NODE(cmp_op->op0)->get_kind() == ssa_name_K, "First operand should be the switch variable");
-            if(switch_ssa == nullptr)
+
+            if(!isIntegerType(cmp_op->op0) || !isIntegerType(cmp_op->op1))
             {
-               switch_ssa = cmp_op->op0;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Non-integer operands, skipping...");
+               continue;
+            }
+
+            // Create VarNodes for comparison operands explicitly
+            addVarNode(cmp_op->op0, function_id);
+            addVarNode(cmp_op->op1, function_id);
+
+            // We have a Variable-Constant comparison.
+            const auto Op0 = GET_CONST_NODE(cmp_op->op0);
+            const auto Op1 = GET_CONST_NODE(cmp_op->op1);
+            const struct integer_cst* constant = nullptr;
+            tree_nodeConstRef variable = nullptr;
+
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 is " + Op0->get_kind_text() + " and Op1 is " + Op1->get_kind_text());
+
+            // If both operands are constants, nothing to do here
+            if(GetPointer<const cst_node>(Op0) != nullptr && GetPointer<const cst_node>(Op1) != nullptr)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Both operands are constants, dead code elimination necessary!");
+               // TODO: abort and call dead code elimination to evaluate constant condition
+               //    return true;
+               continue;
+            }
+
+            // Then there are two cases: variable being compared to a constant,
+            // or variable being compared to another variable
+
+            // Op0 is constant, Op1 is variable
+            if((constant = GetPointer<const integer_cst>(Op0)) != nullptr)
+            {
+               variable = cmp_op->op1;
+               // Op0 is variable, Op1 is constant
+            }
+            else if((constant = GetPointer<const integer_cst>(Op1)) != nullptr)
+            {
+               variable = cmp_op->op0;
+            }
+            // Both are variables
+            // which means constant == 0 and variable == 0
+
+            if(constant != nullptr)
+            {
+               kind pred = cmp_op->get_kind();
+               kind swappred = op_swap(pred);
+               auto bw = getGIMPLE_BW(variable);
+               RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
+
+               const auto tmpT = (variable == cmp_op->op0) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
+
+               RangeRef TValues = tmpT->isFullSet() ? RangeRef(new Range(Regular, bw)) : tmpT;
+
+               // Create the interval using the intersection in the branch.
+               std::shared_ptr<BasicInterval> BT = std::make_shared<BasicInterval>(TValues);
+               switchSSAMap[variable].push_back(std::make_pair(BT, BBI));
+
+               // Do the same for the operand of variable (if variable is a cast
+               // instruction)
+               if(const auto* Var = GetPointer<const ssa_name>(GET_CONST_NODE(variable)))
+               {
+                  const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
+                  if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+                  {
+                     const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+
+                     std::shared_ptr<BasicInterval> _BT = std::make_shared<BasicInterval>(TValues);
+                     switchSSAMap[cast_inst->op].push_back(std::make_pair(_BT, BBI));
+                  }
+               }
             }
             else
             {
-               THROW_ASSERT(switch_ssa->index == cmp_op->op0->index, "Switch variable should be unique");
+               kind pred = cmp_op->get_kind();
+               kind invPred = op_inv(pred);
+
+               auto bw0 = getGIMPLE_BW(cmp_op->op0);
+               #if HAVE_ASSERTS
+               auto bw1 = getGIMPLE_BW(cmp_op->op1);
+               THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
+               #endif
+
+               RangeRef CR(new Range(Unknown, bw0));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
+
+               // Symbolic intervals for op0
+               std::shared_ptr<BasicInterval> STOp0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
+               switchSSAMap[cmp_op->op0].push_back(std::make_pair(STOp0, BBI));
+
+               // Symbolic intervals for operand of op0 (if op0 is a cast instruction)
+               if(const auto* Var = GetPointer<const ssa_name>(Op0))
+               {
+                  const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
+                  if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression");
+                     const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+
+                     std::shared_ptr<BasicInterval> STOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
+                     switchSSAMap[cast_inst->op].push_back(std::make_pair(STOp0_0, BBI));
+                  }
+               }
+
+               // Symbolic intervals for op1
+               std::shared_ptr<BasicInterval> STOp1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op0, invPred));
+               switchSSAMap[cmp_op->op1].push_back(std::make_pair(STOp1, BBI));
+
+               // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
+               if(const auto* Var = GetPointer<const ssa_name>(Op1))
+               {
+                  const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
+                  if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression");
+                     const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+
+                     std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op0, pred));
+                     switchSSAMap[cast_inst->op].push_back(std::make_pair(STOp1_1, BBI));
+                  }
+               }
             }
-            if(GetPointer<const integer_cst>(cmp_op->op1) == nullptr)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Multi-way comparison with variables not handled, skipping all...");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-               return;
-            }
-            case_tag = cmp_op->op1;
-            cmp_kind = cmp_op->get_kind();
          }
          else
          {
-            DefaultBBI = BBI;
-            case_tag = nullptr;
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Multi-way condition different from binary_expr not handled, skipping... (" + case_compare->get_kind_text() + " " + case_compare->ToString() + ")");
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Switch variable is " + GET_CONST_NODE(switch_ssa)->ToString());
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      if(!isIntegerType(switch_ssa))
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Non-integer variable type not handled, skipping all...");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-         return;
-      }
-      auto bw = getGIMPLE_BW(switch_ssa);
-      std::vector<std::pair<std::shared_ptr<BasicInterval>, unsigned int>> BBsuccs;
 
-      i = 0;
-      RangeRef antidefaultRange(new Range(Empty, bw));
-      for(const auto& [cond, BBI] : cond_list)
-      {
-         const auto& [case_tag, cmp_kind] = CaseTags.at(i++);
-         if(cond == nullptr)
-         {
-            continue;
-         }
-         const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(case_tag));
-         APInt cval = tree_helper::get_integer_cst_value(ic);
-         RangeRef Values = Range::makeSatisfyingCmpRegion(cmp_kind, RangeRef(new Range(Regular, bw, cval, cval)));
-         // Create the interval using the intersection in the case.
-         std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(Values);
-         BBsuccs.push_back(std::make_pair(BI, BBI));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "case " + tree_node::GetString(cmp_kind) + " " + STR(cval) + ": " + BI->ToString());
-
-         antidefaultRange = antidefaultRange->unionWith(Values);
-      }
-
-      // Handle 'default', if there is any
+      // Handle else branch, if there is any
       if(static_cast<bool>(DefaultBBI))
       {
-         // Create the interval using the intersection in the case.
-         std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(antidefaultRange->getAnti());
-         BBsuccs.push_back(std::make_pair(BI, DefaultBBI));
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "default: " + BI->ToString());
+         for(auto& [var, VSM] : switchSSAMap)
+         {
+            RangeRef elseRange(new Range(Empty, VSM.front().first->getRange()->getBitWidth()));
+            for(const auto& [BI, BBI] : VSM)
+            {
+               elseRange = elseRange->unionWith(BI->getRange());
+            }
+            elseRange = elseRange->getAnti();
+            VSM.push_back(std::make_pair(std::make_shared<BasicInterval>(elseRange), DefaultBBI));
+         }
+      }
+
+      for(const auto& [var, VSM] : switchSSAMap)
+      {
+         valuesSwitchMap.insert(std::make_pair(var, ValueSwitchMap(var, VSM)));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-
-      ValueSwitchMap VSM(switch_ssa, BBsuccs);
-      valuesSwitchMap.insert(std::make_pair(switch_ssa, VSM));
-
-      // Treat when condition of switch is a cast of the real condition (same thing
-      // as in buildValueBranchMap)
-      if(const auto* Var = GetPointer<const ssa_name>(GET_CONST_NODE(switch_ssa)))
-      {
-         const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-         if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Switch variable comes from a cast expression");
-            const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
-            
-            ValueSwitchMap VSM_0(cast_inst->op, BBsuccs);
-            valuesSwitchMap.insert(std::make_pair(cast_inst->op, VSM_0));
-         }
-      }
-
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   }
-
-   void buildValueMaps(const std::map<unsigned int, blocRef>& BBs, unsigned int function_id, const tree_managerRef TM)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch conditions analysis...");
-      for(const auto& [BBI, BB] : BBs)
-      {
-         const auto& stmt_list = BB->CGetStmtList();
-         if(stmt_list.empty())
-         {
-            continue;
-         }
-
-         const auto terminator = GET_CONST_NODE(stmt_list.back());
-
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BB" + STR(BBI) + " has terminator type " + terminator->get_kind_text() + " " + terminator->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-         if(const auto* br = GetPointer<const gimple_cond>(terminator))
-         {
-            buildValueBranchMap(br, BB, function_id);
-         }
-         else if(const auto* mwi = GetPointer<const gimple_multi_way_if>(terminator))
-         {
-            buildValueMultiIfMap(mwi, BB, TM);
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch conditions analysis completed");
+      return false;
    }
 
    void addSigmaOp(const tree_nodeConstRef I, unsigned int function_id)
@@ -6540,11 +6604,9 @@ class ConstraintGraph
    */
    }
 
-   void addStoreOp(const tree_nodeConstRef I, unsigned int /*function_id*/, const tree_managerConstRef /*TM*/)
+   void addStoreOp(const tree_nodeConstRef /*I*/, unsigned int /*function_id*/, const tree_managerConstRef /*TM*/)
    {
-      const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(I));
-      THROW_ASSERT(ga, "");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing store instruction " + ga->ToString());
+      // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing store instruction " + GetPointer<const gimple_assign>(GET_CONST_NODE(I))->ToString());
       /*
       VarNode* sink = addVarNode(ga->op0);
       auto bw = getGIMPLE_BW(ga->op1);
@@ -7219,7 +7281,7 @@ class ConstraintGraph
    }
 
    /// Iterates through all instructions in the function and builds the graph.
-   void buildGraph(unsigned int function_id)
+   bool buildGraph(unsigned int function_id)
    {
       const auto TM = AppM->get_tree_manager();
       const auto FB = AppM->CGetFunctionBehavior(function_id);
@@ -7231,7 +7293,41 @@ class ConstraintGraph
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing function " + fn_name + " with " + STR(SL->list_of_bloc.size()) + " blocks");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
-      buildValueMaps(SL->list_of_bloc, function_id, TM);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variables analysis...");
+      for(const auto& [BBI, BB] : SL->list_of_bloc)
+      {
+         const auto& stmt_list = BB->CGetStmtList();
+         if(stmt_list.empty())
+         {
+            continue;
+         }
+
+         const auto terminator = GET_CONST_NODE(stmt_list.back());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BB" + STR(BBI) + " has terminator type " + terminator->get_kind_text() + " " + terminator->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         if(const auto* br = GetPointer<const gimple_cond>(terminator))
+         {
+            buildValueBranchMap(br, BB, function_id);
+            //    if(buildValueBranchMap(br, BB, function_id))
+            //    {
+            //       // Dead code elimination necessary
+            //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            //       return true;
+            //    }
+         }
+         else if(const auto* mwi = GetPointer<const gimple_multi_way_if>(terminator))
+         {
+            buildValueMultiIfMap(mwi, BB, function_id);
+            //    if(buildValueMultiIfMap(mwi, BB, function_id))
+            //    {
+            //       // Dead code elimination necessary
+            //       return true;
+            //    }
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variables analysis completed");
 
       for(const auto& [BBI, BB] : SL->list_of_bloc)
       {
@@ -7266,6 +7362,7 @@ class ConstraintGraph
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Graph built for function " + fn_name);
+      return false;
    }
 
    void buildVarNodes()
@@ -7407,14 +7504,11 @@ class ConstraintGraph
          // is created here.
          auto bw = getGIMPLE_BW(v);
          THROW_ASSERT(static_cast<bool>(bw), "Invalid bitwidth");
-         const auto* ci = GetPointer<const integer_cst>(GET_CONST_NODE(v));
-         // TODO: add real_type and real_cst check
-         if(ci == nullptr)
+         if(GetPointer<const cst_node>(GET_CONST_NODE(v)))
          {
-            return RangeConstRef(new Range(Unknown, bw));
+            return getGIMPLE_range(v);
          }
-         APInt tmp = ci->value;
-         return RangeConstRef(new Range(Regular, bw, tmp, tmp));
+         return RangeConstRef(new Range(Unknown, bw));
       }
       return vit->second->getRange();
    }
@@ -7566,7 +7660,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    const auto TM = AppM->get_tree_manager();
    const auto fd = TM->get_tree_node_const(function_id);
    const auto* FD = GetPointer<const function_decl>(fd);
-   #if !defined(NDEBUG) or defined(HAVE_ASSERTS)
+   #if !defined(NDEBUG) or HAVE_ASSERTS
    std::string fn_name = tree_helper::print_type(TM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper())));
    #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal on function " + fn_name);
@@ -7781,6 +7875,7 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       {
          relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
@@ -7791,6 +7886,7 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       {
          switch(GetStatus())
          {
+            case DesignFlowStep_Status::ABORTED:
             case DesignFlowStep_Status::SUCCESS:
             {
                if(dead_code_restart)
@@ -7806,7 +7902,6 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
             case DesignFlowStep_Status::SKIPPED:
             case DesignFlowStep_Status::UNEXECUTED:
             case DesignFlowStep_Status::UNNECESSARY:
-            case DesignFlowStep_Status::ABORTED:
             case DesignFlowStep_Status::EMPTY:
             case DesignFlowStep_Status::NONEXISTENT:
             default:
@@ -7831,21 +7926,41 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Analyse only reached functions
+   const auto TM = AppM->get_tree_manager();
    auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   //    std::vector<unsigned int> dead_code_reboot;
    for(const auto f : functions)
    {
       CG->buildGraph(f);
+      //    bool dead_code_necessary = CG->buildGraph(f);
+      //    if(dead_code_necessary)
+      //    {
+      //       dead_code_reboot.push_back(f);
+      //    }
    }
+   //    if(!dead_code_reboot.empty())
+   //    {
+   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Following functions have unpropagated constants:");
+   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   //       for(const auto f_id : dead_code_reboot)
+   //       {
+   //          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, f_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()))));
+   //          AppM->GetFunctionBehavior(f_id)->UpdateBBVersion();
+   //       }
+   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   //       dead_code_restart = true;
+   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unpropagated constants detected, aborting...");
+   //       return DesignFlowStep_Status::ABORTED;
+   //    }
    // Top functions are not called by any other functions, so they do not have any call statement to analyse
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal analysis...");
-   const auto TM = AppM->get_tree_manager();
    for(const auto top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          tree_helper::print_type(TM, top_fn, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(top_fn)->CGetBehavioralHelper()))) + " is top function");
       functions.erase(top_fn);
    }
-   // The two operations are split because the CallMap is built for all functions in buildGrap
+   // The two operations are split because the CallMap is built for all functions in buildGraph
    // then it is used from MatchParametersAndReturnValues
    for(const auto f : functions)
    {
@@ -7932,18 +8047,18 @@ bool RangeAnalysis::finalize()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->This variable have a constant value, it will be removed and replaced with " + GET_CONST_NODE(cst)->ToString());
          ssa->bit_values = num_to_bits(cst_value, ssa->range->getBitWidth());
          updatedFunctions.insert(function_id);
-         // const auto ssaUses = ssa->CGetUseStmts();
-         // for(const auto& [use, count] : ssaUses)
-         // {
-         //    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage before: " + use->ToString());
-         //    TM->ReplaceTreeNode(use, ssa_node, cst);
-         //    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage after: " + use->ToString());
-         // }
-         // if(ssa->CGetUseStmts().empty())
-         // {
-         //    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restarted dead code");
-         //    dead_code_restart = true;
-         // }
+         //    const auto ssaUses = ssa->CGetUseStmts();
+         //    for(const auto& [use, count] : ssaUses)
+         //    {
+         //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage before: " + use->ToString());
+         //       TM->ReplaceTreeNode(use, ssa_node, cst);
+         //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage after: " + use->ToString());
+         //    }
+         //    if(ssa->CGetUseStmts().empty())
+         //    {
+         //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restarted dead code");
+         //       dead_code_restart = true;
+         //    }
          #ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), cst);
          #endif
@@ -8004,7 +8119,9 @@ bool RangeAnalysis::finalize()
 
    for(const auto fun_id : updatedFunctions)
    {
-      AppM->GetFunctionBehavior(fun_id)->UpdateBBVersion();
+      const auto FB = AppM->GetFunctionBehavior(fun_id);
+      FB->UpdateBBVersion();
+      FB->UpdateBitValueVersion();
    }
 
    return modified;
