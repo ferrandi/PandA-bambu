@@ -1530,6 +1530,17 @@ RangeRef Range::urem(RangeConstRef other) const
    {
       return RangeRef(new Range(Regular, bw));
    }
+   if(other->isConstant())
+   {
+      if(other->getLower() == 0)
+      {
+         return RangeRef(new Range(Empty, bw));
+      }
+      else if(other->getUnsignedMin() == 1)
+      {
+         return RangeRef(new Range(Regular, bw, 0, 0));
+      }
+   }
 
    const APInt& a = this->getUnsignedMin();
    const APInt& b = this->getUnsignedMax();
@@ -1584,9 +1595,16 @@ RangeRef Range::srem(RangeConstRef other) const
    {
       return RangeRef(new Range(Regular, bw));
    }
-   if(other == RangeRef(new Range(Regular, other->bw, 0, 0)))
+   if(other->isConstant())
    {
-      return RangeRef(new Range(Empty, bw));
+      if(other->getSignedMin() == 0)
+      {
+         return RangeRef(new Range(Empty, bw));
+      }
+      else if(other->getSignedMin() == 1 || other->getSignedMin() == -1)
+      {
+         return RangeRef(new Range(Regular, bw, 0, 0));
+      }
    }
 
    const APInt& a = this->getLower();
@@ -1614,7 +1632,7 @@ RangeRef Range::srem(RangeConstRef other) const
    candidates[3] = Max;
    if((a != Min) && (c != Min))
    {
-      candidates[0] = a & c; // lower lower
+      candidates[0] = a % c; // lower lower
    }
    if((a != Min) && (d != Max))
    {

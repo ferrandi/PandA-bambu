@@ -136,9 +136,18 @@ BOOST_AUTO_TEST_CASE( range_division )
     RangeRef bNegative(new Range(Regular, 8, -6, -3));
     RangeRef bMix(new Range(Regular, 8, -3, 6));
 
-    // TODO: check division
+    RangeRef invariant(new Range(Regular, 8, 1, 1));
 
-    // TODO: check unsigned division
+    auto sdivPaI = aPositive->sdiv(invariant);
+    BOOST_REQUIRE(aPositive->operator==(*sdivPaI));
+
+    auto sdivPaNb = aPositive->sdiv(bNegative);
+    BOOST_REQUIRE_EQUAL(-3, sdivPaNb->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0, sdivPaNb->getSignedMax());
+
+    auto udivPaNb = aPositive->udiv(bNegative);
+    BOOST_REQUIRE_EQUAL(0, udivPaNb->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0, udivPaNb->getSignedMin());
 }
 
 BOOST_AUTO_TEST_CASE( range_reminder )
@@ -150,9 +159,19 @@ BOOST_AUTO_TEST_CASE( range_reminder )
     RangeRef bNegative(new Range(Regular, 8, -6, -3));
     RangeRef bMix(new Range(Regular, 8, -3, 6));
 
-    // TODO: check reminder
+    RangeRef invariant(new Range(Regular, 8, 1, 1));
 
-    // TODO: check unsigned reminder
+    auto sremPaI = aPositive->srem(invariant);
+    BOOST_REQUIRE_EQUAL(0, sremPaI->getSignedMax());
+    BOOST_REQUIRE_EQUAL(0, sremPaI->getSignedMin());
+
+    auto sremPaPb = aPositive->srem(bPositive);
+    BOOST_REQUIRE_EQUAL(0, sremPaPb->getSignedMin());
+    BOOST_REQUIRE_EQUAL(5, sremPaPb->getSignedMax());
+
+    auto sremPaNb = aPositive->srem(bNegative);
+    BOOST_REQUIRE_EQUAL(0, sremPaNb->getSignedMin());
+    BOOST_REQUIRE_EQUAL(5, sremPaNb->getSignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_and )
