@@ -31,10 +31,9 @@ Vagrant.configure(2) do |config|
      cd ..
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
-     git checkout prepare-release
      make -f Makefile.init
      mkdir build
-     cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --disable-release --enable-experimental --enable-flopoco && make -j2 && make install
+     cd build && ../configure --prefix=/home/ubuntu/panda --enable-verilator --enable-glpk --disable-release --enable-experimental --enable-flopoco  --enable-opt --with-opt-level=2 && make -j2 && make install
      cd ../.. && chown -R ubuntu:ubuntu PandA-bambu
      mv PandA-bambu /home/ubuntu/
      cd /home/ubuntu/panda/share/panda/examples/arf && chmod +x bambu.sh && ./bambu.sh && rm -rf arf_hls arf_testbench && echo "Bambu is correctly working!!"

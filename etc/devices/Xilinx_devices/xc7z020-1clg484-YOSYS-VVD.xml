@@ -16,67 +16,6 @@
   </device>
   <technology>
     <library>
-    <name>STD</name>
-    <cell>
-      <name>TRUE_DUAL_PORT_BYTE_ENABLING_RAM</name>
-      <circuit>
-        <component_o id="TRUE_DUAL_PORT_BYTE_ENABLING_RAM">
-          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
-          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
-          <license>PANDA_LGPLv3</license>
-          <specialized>NanoXplore</specialized>
-          <structural_type_descriptor id_type="TRUE_DUAL_PORT_BYTE_ENABLING_RAM"/>
-          <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
-          <parameter name="BRAM_BITSIZE">32</parameter>
-          <parameter name="n_byte_on_databus">4</parameter>
-          <parameter name="n_mem_elements">4</parameter>
-          <parameter name="HIGH_LATENCY">0</parameter>
-          <port_o id="clock" dir="IN" is_clock="1">
-            <structural_type_descriptor type="BOOL" size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="bram_write0" dir="IN">
-            <structural_type_descriptor type="BOOL"/>
-          </port_o>
-          <port_o id="bram_write1" dir="IN">
-            <structural_type_descriptor type="BOOL"/>
-          </port_o>
-          <port_o id="memory_addr_a" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="memory_addr_b" dir="IN" >
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-          </port_o>
-          <port_o id="din_value_aggregated" dir="IN" >
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="be" dir="IN">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="dout_a" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
-          </port_o>
-          <port_o id="dout_b" dir="OUT">
-            <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
-            <connected_objects/>
-          </port_o>
-          <NP_functionality LIBRARY="TRUE_DUAL_PORT_BYTE_ENABLING_RAM dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_mem_elements HIGH_LATENCY" IP_COMPONENT="TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE" VERILOG_PROVIDED="
-TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_b), .BITSIZE_din_value_aggregated(BITSIZE_din_value_aggregated), .BITSIZE_be(BITSIZE_be), .BITSIZE_dout_a(BITSIZE_dout_a), .BITSIZE_dout_b(BITSIZE_dout_b), .MEMORY_INIT_file(MEMORY_INIT_file), .BRAM_BITSIZE(BRAM_BITSIZE), .n_byte_on_databus(n_byte_on_databus), .n_mem_elements(n_mem_elements), .HIGH_LATENCY(HIGH_LATENCY)) TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE_instance (.clock(clock), .bram_write0(bram_write0), .bram_write1(bram_write1), .memory_addr_a(memory_addr_a), .memory_addr_b(memory_addr_b), .din_value_aggregated(din_value_aggregated), .be(be), .dout_a(dout_a), .dout_b(dout_b));
-"
-VHDL_PROVIDED=
-"begin
-  TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE_instance : TRUE_DUAL_PORT_BYTE_ENABLING_RAM_NBE generic map (BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_memory_addr_b=&gt;BITSIZE_memory_addr_b, BITSIZE_din_value_aggregated=&gt;BITSIZE_din_value_aggregated, BITSIZE_be=&gt;BITSIZE_be, BITSIZE_dout_a=&gt;BITSIZE_dout_a, BITSIZE_dout_b=&gt;BITSIZE_dout_b, MEMORY_INIT_file=&gt;MEMORY_INIT_file, BRAM_BITSIZE=&gt;BRAM_BITSIZE, n_byte_on_databus=&gt;n_byte_on_databus, n_mem_elements=&gt;n_mem_elements, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write0=&gt;bram_write0, bram_write1=&gt;bram_write1, memory_addr_a=&gt;memory_addr_a, memory_addr_b=&gt;memory_addr_b, din_value_aggregated=&gt;din_value_aggregated, be=&gt;be, dout_a=&gt;dout_a, dout_b=&gt;dout_b);
-"
-/>
-        </component_o>
-      </circuit>
-    </cell>
-    </library>
-    <library>
       <name>STD_FU</name>
       <cell>
         <name>ARRAY_1D_STD_BRAM</name>
@@ -9250,13 +9189,12 @@ VHDL_PROVIDED=
       </cell>
       <cell>
         <name>lut_expr_FU</name>
-        <attribute name="area" value_type="float64">1</attribute>
-        <attribute name="REGISTERS" value_type="float64">12</attribute>
-        <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
-        <attribute name="SLICE" value_type="float64">6</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
-        <characterization_timestamp>2017-01-26T12:45:26</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="1.2890000000000001"/>
+        <attribute name="area" value_type="float64">30</attribute>
+        <attribute name="REGISTERS" value_type="float64">38</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">30</attribute>
+        <attribute name="SLICE" value_type="float64">22</attribute>
+        <characterization_timestamp>2019-12-11T13:12:38</characterization_timestamp>
+        <operation operation_name="lut_expr" execution_time="3.524"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>

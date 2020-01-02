@@ -1632,8 +1632,7 @@ void mux_connection_binding::create_connections()
       generic_objRef sel_port = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::WRENABLE, reg_obj, r);
       GetPointer<register_obj>(reg_obj)->set_wr_enable(sel_port);
    }
-   CustomOrderedSet<unsigned int> setFu = HLS->Rfu->get_allocation_list();
-   for(unsigned int i : setFu)
+   for(unsigned int i : HLS->Rfu->get_allocation_list())
    {
       // number of instance functional unit i
       unsigned int num = HLS->Rfu->get_number(i);

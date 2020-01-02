@@ -716,7 +716,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param operation_name is the operation name
     * @return a correction time
     */
-   double get_correction_time(unsigned int fu, const std::string& operation_name) const;
+   double get_correction_time(unsigned int fu, const std::string& operation_name, unsigned int n_ins) const;
 
    /**
     * estimate the delay of a mux that can be uses to mux the input of the given functional unit

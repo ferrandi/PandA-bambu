@@ -533,7 +533,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
       proxy_op->supported_types = current_op->supported_types;
       proxy_op->pipe_parameters = current_op->pipe_parameters;
    }
-   /// add a fictious operation to allow bus merging
+   /// add a fictitious operation to allow bus merging
    TM->add_operation(PROXY_LIBRARY, wrapped_fu_name, wrapped_fu_name);
    auto* wrapper_fictious_op = GetPointer<operation>(wrapper_fu->get_operation(wrapped_fu_name));
    wrapper_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
@@ -734,7 +734,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
     *   (proxied function)
     *
     * The called layer connects the signals from the proxy to the real
-    * instantiation of the called function, wherever it wa allocated.
+    * instance of the called function, wherever it was allocated.
     * It is not handled here.
     * Here we're building the component that implements the proxy layer and we
     * have to add the ports for communication with the caller layer and the
@@ -869,7 +869,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
       proxy_op->supported_types = current_op->supported_types;
       proxy_op->pipe_parameters = current_op->pipe_parameters;
    }
-   /// add a fictious operation to allow bus merging
+   /// add a fictitious operation to allow bus merging
    TM->add_operation(PROXY_LIBRARY, proxied_fu_name, proxied_fu_name);
    auto* proxy_fictious_op = GetPointer<operation>(proxy_fu->get_operation(proxied_fu_name));
    proxy_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
@@ -2283,7 +2283,7 @@ void allocation::IntegrateTechnologyLibraries()
       auto* fu_br = GetPointer<functional_unit>(current_fu);
       technology_nodeRef op_store_node = fu_br->get_operation("STORE");
       auto* op_store = GetPointer<operation>(op_store_node);
-      double store_delay = allocation_information->time_m_execution_time(op_store) - allocation_information->get_correction_time(current_size, "STORE") + allocation_information->get_setup_hold_time();
+      double store_delay = allocation_information->time_m_execution_time(op_store) - allocation_information->get_correction_time(current_size, "STORE", 0) + allocation_information->get_setup_hold_time();
       if(store_delay > clock_period)
          THROW_ERROR("clock constraint too tight: BRAMs for this device cannot run so fast... (" + current_fu->get_name() + ":" + STR(store_delay) + ">" + STR(clock_period) + ")");
    }

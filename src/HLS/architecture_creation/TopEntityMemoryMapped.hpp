@@ -98,7 +98,7 @@ class TopEntityMemoryMapped : public top_entity
    void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
 
    std::list<std::string> ParametersName;
-   CustomOrderedSet<structural_objectRef> AddedComponents;
+   std::list<structural_objectRef> AddedComponents;
    bool needMemoryMappedRegisters{false};
 
    /// true when the module is a root function

@@ -247,6 +247,11 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
       {
          const structural_objectRef obj = fu_curr->CM->get_circ();
          NP_functionalityRef NPF = GetPointer<module>(obj)->get_NP_functionality();
+         size_t max_lut_size = static_cast<size_t>(-1);
+         if(device->has_parameter("max_lut_size"))
+         {
+            max_lut_size = device->get_parameter<size_t>("max_lut_size");
+         }
 #if HAVE_FLOPOCO
          std::string vendor;
          if(device->has_parameter("vendor"))
@@ -419,7 +424,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                      technology_nodeRef tn = TM->get_fu(fu_name, LM);
                      if(!tn)
                      {
-                        // Analizing a template, specializations of that template won't be found in the library.
+                        // Analyzing a template, specializations of that template won't be found in the library.
                         technology_nodeRef fun_unit;
                         if(GetPointer<functional_unit_template>(f_unit))
                            fun_unit = GetPointer<functional_unit_template>(f_unit)->FU;
@@ -433,7 +438,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                      else
                         fu = GetPointer<functional_unit>(tn);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing cell " + fu->get_name());
-                     AnalyzeCell(fu, prec, portsize_parameters.find(prec)->second, portsize_index, pipe_parameters.find(prec)->second, stage_index, constPort, is_commutative);
+                     AnalyzeCell(fu, prec, portsize_parameters.find(prec)->second, portsize_index, pipe_parameters.find(prec)->second, stage_index, constPort, is_commutative, max_lut_size);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed cell " + fu->get_name());
                   }
                }

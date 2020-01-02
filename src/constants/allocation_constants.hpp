@@ -35,6 +35,7 @@
  * @brief constants used by HLS constants
  *
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
 /// The default value for coefficient of PIPELINE STAGE 0
@@ -49,14 +50,17 @@
 /// The default value used in computation of fanout delay
 #define NUM_CST_allocation_default_max_fanout_size 200
 
-/// The default number of inputs of a lut
+/// The default number of inputs of a LUT
 #define NUM_CST_allocation_default_max_lut_size 6
 
 /// The default value used in computation of controller delay
-#define NUM_CST_allocation_default_states_number_normalization 30
+#define NUM_CST_allocation_default_states_number_normalization 45
 
-/// The default value for the ratio between the output delay of a DSP and the setup delay
+/// The default value used in computation of controller delay when basic block are considered
+#define NUM_CST_allocation_default_states_number_normalization_BB 30
+
+/// The default value for the connection ratio between the output delay of a carry and the setup delay
 #define NUM_CST_allocation_default_output_carry_connection_ratio 0.6
 
-/// The default value for the ratio between the output delay of a DSP and the setup delay
+/// The default value for the connection ratio between the output delay of a DSP and the setup delay
 #define NUM_CST_allocation_default_output_DSP_connection_ratio 0.6

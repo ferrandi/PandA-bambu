@@ -5538,11 +5538,11 @@
       </cell>
       <cell>
         <name>lut_expr_FU</name>
-        <attribute name="area" value_type="float64">70</attribute>
-        <attribute name="REGISTERS" value_type="float64">42</attribute>
-        <attribute name="SLICE_LUTS" value_type="float64">30</attribute>
-        <characterization_timestamp>2019-10-10T22:41:59</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="5.0519999999999996"/>
+        <attribute name="area" value_type="float64">7</attribute>
+        <attribute name="REGISTERS" value_type="float64">6</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
+        <characterization_timestamp>2019-12-11T12:53:11</characterization_timestamp>
+        <operation operation_name="lut_expr" execution_time="1.8"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>

@@ -130,6 +130,8 @@
       <cmd name="place_design"/>
       <cmd name="dump_statistics"/>
       <cmd name="route_design"/>
+      <cmd name="report_utilization -file $outputDir/post_route_util.rpt"/>
+      <cmd name="report_timing_summary -file $outputDir/post_route_timing_summary.rpt"/>
       <cmd name="dump_statistics"/>
       <cmd name="close_design"/>
       <cmd name="close_project"/>

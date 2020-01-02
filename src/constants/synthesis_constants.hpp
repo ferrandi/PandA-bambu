@@ -38,4 +38,4 @@
  *
  */
 /// The file containing the timing violation report
-#define STR_CST_synthesis_timing_violation_report "HLS_output/Synthesis/timing_violation_report"
+#define STR_CST_synthesis_timing_violation_report "timing_violation_report"
