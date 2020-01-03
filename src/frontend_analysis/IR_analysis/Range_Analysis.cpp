@@ -88,6 +88,7 @@
 #define DEBUG_BASICOP_EVAL
 #define DEBUG_CGRAPH
 #define DEBUG_RA
+#define LOG_TRANSACTIONS
 #define SCC_DEBUG
 #endif
 
@@ -2780,12 +2781,12 @@ RangeRef Range::BestRange(RangeConstRef UR, RangeConstRef SR, bw_t _bw) const
 
 bool Range::operator==(const Range& other) const
 {
-   return bw == other.bw && Range::isSameType(RangeConstRef(other.clone())) && Range::isSameRange(RangeConstRef(other.clone()));
+   return bw == other.bw && type == other.type && l == other.l && u == other.u;
 }
 
 bool Range::operator!=(const Range& other) const
 {
-   return bw != other.bw || !Range::isSameType(RangeConstRef(other.clone())) || !Range::isSameRange(RangeConstRef(other.clone()));
+   return bw != other.bw || type != other.type || l != other.l || u != other.u;
 }
 
 void Range::print(std::ostream& OS) const
@@ -4480,11 +4481,11 @@ RangeRef TernaryOp::eval() const
       if(this->getOpcode() == cond_expr_K)
       {
          // Source1 is the selector
-         if(*op1 == *RangeRef(new Range(Regular, op1->getBitWidth(), 1, 1)))
+         if(*op1 == Range(Regular, op1->getBitWidth(), 1, 1))
          {
             result = op2;
          }
-         else if(*op1 == *RangeRef(new Range(Regular, op1->getBitWidth(), 0, 0)))
+         else if(*op1 == Range(Regular, op1->getBitWidth(), 0, 0))
          {
             result = op3;
          }
@@ -5081,7 +5082,7 @@ void Nuutila::visit(const tree_nodeConstRef V, std::stack<tree_nodeConstRef>& st
    }
 
    // The second phase of the algorithm assigns components to stacked nodes
-   if(root[V] == V)
+   if(GET_INDEX_CONST_NODE(root[V]) == GET_INDEX_CONST_NODE(V))
    {
       // Neither the worklist nor the map of components is part of Nuutila's
       // original algorithm. We are using these data structures to get a
@@ -5189,11 +5190,11 @@ bool Nuutila::checkTopologicalSort(const UseMap* useMap) const
 // ========================================================================== //
 class Meet
 {
-   private:
+ private:
    static APInt getFirstGreaterFromVector(const std::vector<APInt>& constantvector, const APInt& val);
    static APInt getFirstLessFromVector(const std::vector<APInt>& constantvector, const APInt& val);
 
-   public:
+ public:
    static bool widen(BasicOp* op, const std::vector<APInt>* constantvector);
    static bool narrow(BasicOp* op, const std::vector<APInt>* constantvector);
    static bool crop(BasicOp* op, const std::vector<APInt>* constantvector);
@@ -5234,22 +5235,22 @@ APInt Meet::getFirstLessFromVector(const std::vector<APInt>& constantvector, con
 
 bool Meet::fixed(BasicOp* op)
 {
-   auto oldInterval = op->getSink()->getRange();
-   auto newInterval = op->eval();
+   const auto oldInterval = op->getSink()->getRange();
+   const auto newInterval = op->eval();
 
    op->getSink()->setRange(newInterval);
    #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
       auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("FIXED::%" << instID << ": " << *oldInterval << " -> " << *newInterval);
+      PRINT_MSG("FIXED::@" << instID << ": " << *oldInterval << " -> " << *newInterval);
    }
    else
    {
       PRINT_MSG("FIXED::%artificial phi : " << *oldInterval << " -> " << *newInterval);
    }
    #endif
-   return oldInterval != newInterval;
+   return *oldInterval != *newInterval;
 }
 
 /// This is the meet operator of the growth analysis. The growth analysis
@@ -5261,8 +5262,8 @@ bool Meet::fixed(BasicOp* op)
 bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
 {
    THROW_ASSERT(constantvector, "Invalid pointer to constant vector");
-   auto oldRange = op->getSink()->getRange();
-   auto newRange = op->eval();
+   const auto oldRange = op->getSink()->getRange();
+   const auto newRange = op->eval();
 
    auto intervalWiden = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
    {
@@ -5327,17 +5328,17 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
             }
          }
       }
-      THROW_UNREACHABLE("Meet::widen unreachable state");
-      return RangeRef(nullptr);
+      //    THROW_UNREACHABLE("Meet::widen unreachable state");
+      return RangeRef(oldInterval->clone());
    };
 
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = RefcountCast<RealRange>(oldRange);
-      auto newRR = RefcountCast<RealRange>(newRange);
-      RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
-      RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
+      const auto oldRR = RefcountCast<const RealRange>(oldRange);
+      const auto newRR = RefcountCast<const RealRange>(newRange);
+      RangeConstRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
+      RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
       {
          newIntervals[i] = intervalWiden(oldIntervals[i], newIntervals[i]);
@@ -5349,13 +5350,13 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
       op->getSink()->setRange(intervalWiden(oldRange, newRange));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
 
    #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
       auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("WIDEN::%" << instID << ": " << *oldRange << " -> " << *newRange << " -> " << *sinkRange);
+      PRINT_MSG("WIDEN::@" << instID << ": " << *oldRange << " -> " << *newRange << " -> " << *sinkRange);
    }
    else
    {
@@ -5363,13 +5364,13 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
    }
    #endif
 
-   return oldRange != sinkRange;
+   return *oldRange != *sinkRange;
 }
 
 bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
 {
-   auto oldRange = op->getSink()->getRange();
-   auto newRange = op->eval();
+   const auto oldRange = op->getSink()->getRange();
+   const auto newRange = op->eval();
 
    auto intervalGrowth = [](RangeConstRef oldInterval, RangeConstRef newInterval)
    {
@@ -5400,17 +5401,17 @@ bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
             return RangeRef(new Range(Regular, bw, oldLower, Max));
          }
       }
-      THROW_UNREACHABLE("Meet::growth unreachable state");
-      return RangeRef(nullptr);
+      //    THROW_UNREACHABLE("Meet::growth unreachable state");
+      return RangeRef(oldInterval->clone());
    }; 
 
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = RefcountCast<RealRange>(oldRange);
-      auto newRR = RefcountCast<RealRange>(newRange);
-      RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
-      RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
+      const auto oldRR = RefcountCast<const RealRange>(oldRange);
+      const auto newRR = RefcountCast<const RealRange>(newRange);
+      RangeConstRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
+      RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
       {
          newIntervals[i] = intervalGrowth(oldIntervals[i], newIntervals[i]);
@@ -5422,19 +5423,19 @@ bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
       op->getSink()->setRange(intervalGrowth(oldRange, newRange));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
    #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
       auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("GROWTH::%" << instID << ": " << *oldRange << " -> " << *sinkRange);
+      PRINT_MSG("GROWTH::@" << instID << ": " << *oldRange << " -> " << *sinkRange);
    }
    else
    {
       PRINT_MSG("GROWTH::%artificial phi : " << *oldRange << " -> " << *sinkRange);
    }
    #endif
-   return oldRange != sinkRange;
+   return *oldRange != *sinkRange;
 }
 
 /// This is the meet operator of the cropping analysis. Whereas the growth
@@ -5443,13 +5444,13 @@ bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
 /// to ranges that respect the intersections.
 bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
 {
-   auto oldRange = op->getSink()->getRange();
-   auto newRange = op->eval();
+   const auto oldRange = op->getSink()->getRange();
+   const auto newRange = op->eval();
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
    {
       auto bw = oldInterval->getBitWidth();
-      RangeRef sinkInterval(newInterval->clone());
+      RangeRef sinkInterval(oldInterval->clone());
       if(oldInterval->isAnti() || newInterval->isAnti() || oldInterval->isEmpty() || newInterval->isEmpty())
       {
          if(oldInterval->isAnti() && newInterval->isAnti() && *newInterval != *oldInterval)
@@ -5500,7 +5501,7 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
          }
          else
          {
-            const APInt& smin = std::min(oLower, nLower);
+            const APInt smin = std::min(oLower, nLower);
             if(oLower != smin)
             {
                sinkInterval = RangeRef(new Range(Regular, bw, smin, oUpper));
@@ -5514,7 +5515,7 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
             }
             else
             {
-               const APInt& smax = std::max(oUpper, nUpper);
+               const APInt smax = std::max(oUpper, nUpper);
                if(oUpper != smax)
                {
                   sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), smax));
@@ -5528,10 +5529,10 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = RefcountCast<RealRange>(oldRange);
-      auto newRR = RefcountCast<RealRange>(newRange);
-      RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
-      RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
+      const auto oldRR = RefcountCast<const RealRange>(oldRange);
+      const auto newRR = RefcountCast<const RealRange>(newRange);
+      RangeConstRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
+      RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
       {
          newIntervals[i] = intervalNarrow(oldIntervals[i], newIntervals[i]);
@@ -5543,25 +5544,25 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
       op->getSink()->setRange(intervalNarrow(oldRange, newRange));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
    #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
       auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("NARROW::%" << instID << ": " << *oldRange << " -> " << *sinkRange);
+      PRINT_MSG("NARROW::@" << instID << ": " << *oldRange << " -> " << *sinkRange);
    }
    else
    {
       PRINT_MSG("NARROW::%artificial phi : " << *oldRange << " -> " << *sinkRange);
    }
    #endif
-   return oldRange != sinkRange;
+   return *oldRange != *sinkRange;
 }
 
 bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
 {
-   auto oldRange = op->getSink()->getRange();
-   auto newRange = op->eval();
+   const auto oldRange = op->getSink()->getRange();
+   const auto newRange = op->eval();
    char _abstractState = op->getSink()->getAbstractState();
 
    auto intervalCrop = [](RangeConstRef oldInterval, RangeConstRef newInterval, char abstractState)
@@ -5589,10 +5590,10 @@ bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      auto oldRR = RefcountCast<RealRange>(oldRange);
-      auto newRR = RefcountCast<RealRange>(newRange);
-      RangeRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
-      RangeRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
+      const auto oldRR = RefcountCast<const RealRange>(oldRange);
+      const auto newRR = RefcountCast<const RealRange>(newRange);
+      RangeConstRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
+      RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
       {
          newIntervals[i] = intervalCrop(oldIntervals[i], newIntervals[i], _abstractState);
@@ -5604,19 +5605,19 @@ bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
       op->getSink()->setRange(intervalCrop(oldRange, newRange, _abstractState));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
    #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
       auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("CROP::%" << instID << ": " << *oldRange << " -> " << *sinkRange);
+      PRINT_MSG("CROP::@" << instID << ": " << *oldRange << " -> " << *sinkRange);
    }
    else
    {
       PRINT_MSG("CROP::%artificial phi : " << *oldRange << " -> " << *sinkRange);
    }
    #endif
-   return oldRange != sinkRange;
+   return *oldRange != *sinkRange;
 }
 
 /// This class is used to store the intersections that we get in the branches.
@@ -5855,7 +5856,7 @@ class ConstraintGraph
       THROW_ASSERT(GET_CONST_NODE(br->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch (" + GET_CONST_NODE(br->op0)->get_kind_text() + " " + GET_CONST_NODE(br->op0)->ToString() + ")");
       const auto Cond = branchOpRecurse(br->op0);
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition is " + Cond->get_kind_text());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition is " + Cond->get_kind_text() + " " + Cond->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       if(const auto* bin_op = GetPointer<const binary_expr>(Cond))
       {
@@ -5918,7 +5919,7 @@ class ConstraintGraph
             RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
 
-            auto tmpT = (variable == bin_op->op0) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
+            auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
 
             RangeRef TValues = tmpT->isFullSet() ? RangeRef( new Range(Regular, bw)) : tmpT;
@@ -5939,6 +5940,16 @@ class ConstraintGraph
                if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
                {
                   const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                  #ifndef NDEBUG
+                  if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0))
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression " + cast_inst->ToString());
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
+                  }
+                  #endif
 
                   std::shared_ptr<BasicInterval> _BT = std::make_shared<BasicInterval>(TValues);
                   std::shared_ptr<BasicInterval> _BF = std::make_shared<BasicInterval>(FValues);
@@ -5975,8 +5986,8 @@ class ConstraintGraph
                const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
                if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression");
                   const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression " + cast_inst->ToString());
 
                   std::shared_ptr<BasicInterval> STOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
                   std::shared_ptr<BasicInterval> SFOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, bin_op->op1, invPred));
@@ -5998,8 +6009,8 @@ class ConstraintGraph
                const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
                if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression");
                   const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
                   std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, bin_op->op0, pred));
                   std::shared_ptr<BasicInterval> SFOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, bin_op->op0, invPred));
@@ -6112,7 +6123,7 @@ class ConstraintGraph
                RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
 
-               const auto tmpT = (variable == cmp_op->op0) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
+               const auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
 
                RangeRef TValues = tmpT->isFullSet() ? RangeRef(new Range(Regular, bw)) : tmpT;
@@ -6129,6 +6140,16 @@ class ConstraintGraph
                   if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
                   {
                      const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                     #ifndef NDEBUG
+                     if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0))
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression " + cast_inst->ToString());
+                     }
+                     else
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
+                     }
+                     #endif
 
                      std::shared_ptr<BasicInterval> _BT = std::make_shared<BasicInterval>(TValues);
                      switchSSAMap[cast_inst->op].push_back(std::make_pair(_BT, BBI));
@@ -6159,8 +6180,8 @@ class ConstraintGraph
                   const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
                   if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression");
                      const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression" + cast_inst->ToString());
 
                      std::shared_ptr<BasicInterval> STOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
                      switchSSAMap[cast_inst->op].push_back(std::make_pair(STOp0_0, BBI));
@@ -6177,8 +6198,8 @@ class ConstraintGraph
                   const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
                   if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression");
                      const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
                      std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op0, pred));
                      switchSSAMap[cast_inst->op].push_back(std::make_pair(STOp1_1, BBI));
@@ -6225,7 +6246,7 @@ class ConstraintGraph
 
       // Create the sink.
       VarNode* sink = addVarNode(phi->res, function_id);
-      std::shared_ptr<BasicInterval> BItv;
+      std::shared_ptr<BasicInterval> BItv = nullptr;
       SigmaOp* sigmaOp = nullptr;
 
       //const BasicBlock* thisbb = Sigma->getParent();
@@ -6244,12 +6265,9 @@ class ConstraintGraph
             {
                BItv = VBM.getItvT();
             }
-            else
+            else if(BBI == VBM.getBBIFalse())
             {
-               if(BBI == VBM.getBBIFalse())
-               {
-                  BItv = VBM.getItvF();
-               }
+               BItv = VBM.getItvF();
             }
          }
          else
@@ -6266,8 +6284,7 @@ class ConstraintGraph
             // Find out which case are we dealing with
             for(size_t idx = 0, e = VSM.getNumOfCases(); idx < e; ++idx)
             {
-               const unsigned int bbi = VSM.getBBI(idx);
-               if(bbi == BBI)
+               if(VSM.getBBI(idx) == BBI)
                {
                   BItv = VSM.getItv(idx);
                   break;
@@ -6986,7 +7003,7 @@ class ConstraintGraph
             RangeRef rintersect = op->getIntersect()->getRange();
             if(rintersect->isAnti())
             {
-               auto anti = RangeRef(new Range(*rintersect->getAnti()));
+               auto anti = rintersect->getAnti();
                const APInt lb = anti->getLower();
                const APInt ub = anti->getUpper();
                if((lb != Min) && (lb != Max))
@@ -7099,7 +7116,7 @@ class ConstraintGraph
          const auto V = varNode->getValue();
          if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(V)))
          if(const auto* phi_def = GetPointer<const gimple_phi>(GET_CONST_NODE(ssa->CGetDefStmt())))
-         if(phi_def->CGetDefEdgesList().size() == 1U)
+         if(phi_def->CGetDefEdgesList().size() == 1)
          {
             auto dit = this->defMap.find(V);
             if(dit != this->defMap.end())
