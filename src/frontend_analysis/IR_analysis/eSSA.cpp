@@ -376,7 +376,7 @@ void addInfoFor(OperandRef Op, PredicateBase* PB, CustomSet<OperandRef>& OpsToRe
    OperandInfo.Infos.push_back(PB);
 }
 
-bool isCompare(struct binary_expr* condition)
+bool isCompare(const struct binary_expr* condition)
 {
    auto c_type = condition->get_kind();
    return c_type == eq_expr_K || c_type == ne_expr_K || c_type == ltgt_expr_K || c_type == uneq_expr_K
@@ -438,7 +438,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
          {
             continue;
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NODE(Op)->ToString() + " eligible for renaming in BB" + STR(Succ->number));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NODE(Op)->ToString() + " eligible for renaming in BB" + STR(Succ->number));
 
          PredicateBase* PB = new PredicateWithEdge(gimple_cond_K, Op, BranchBB->number, Succ->number);
          addInfoFor(OperandRef(new Operand(Op, cond_stmt)), PB, OpsToRename, ValueInfoNums, ValueInfos);
@@ -449,7 +449,8 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
       }
    };
 
-   if(auto* bin = GetPointer<binary_expr>(CondOp))
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   if(const auto* bin = GetPointer<const binary_expr>(CondOp))
    {
       if(isCompare(bin))
       {
@@ -477,14 +478,15 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
    }
    else
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Unhandled condition type, skipping...");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unhandled condition type, skipping... (" + GET_CONST_NODE(CondOp)->get_kind_text() + " " + GET_CONST_NODE(CondOp)->ToString() + ")");
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 }
 
 // Process a block terminating switch, and place relevant operations to be
 // renamed into OpsToRename.
 void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRename, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, 
-   CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, const std::map<unsigned int, blocRef> BBs, const tree_managerRef TM, int
+   CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, const std::map<unsigned int, blocRef> BBs, int
 #ifndef NDEBUG
    debug_level
 #endif
@@ -493,76 +495,63 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
    const auto* MWII = GetPointer<const gimple_multi_way_if>(GET_CONST_NODE(mwii));
    THROW_ASSERT(MWII, "Multi way if instruction should be gimple_multi_way_if");
    const auto BranchBBI = MWII->bb_index;
-
-   //    llvm::Value* Op = SI->getCondition();
-   //    if((!llvm::isa<llvm::Instruction>(Op) && !llvm::isa<llvm::Argument>(Op)) || Op->hasOneUse())
-   //    {
-   //       return;
-   //    }
-
-   // Remember how many outgoing edges there are to every successor.
-   unsigned int switch_ssa_idx = 0;
-   size_t i = 0;
-   std::vector<tree_nodeRef> CaseStmts(MWII->list_of_cond.size());
-   CustomMap<unsigned int, unsigned int> SwitchEdges;
-   for(const auto& [cond, BBI] : MWII->list_of_cond)
+   auto InsertHelper = [&](tree_nodeRef ssa_var, tree_nodeRef use_stmt, unsigned int TargetBBI)
    {
-      auto& case_stmt = CaseStmts[i++];
-      ++SwitchEdges[BBI];
-      if(cond)
+      THROW_ASSERT(static_cast<bool>(BBs.count(TargetBBI)), "Target BB should be in BB list");
+      const auto& TargetBB = BBs.at(TargetBBI);
+      
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_CONST_NODE(ssa_var)->ToString() + " eligible for renaming in BB" + STR(TargetBBI));
+      auto* PS = new PredicateWithEdge(gimple_multi_way_if_K, ssa_var, BranchBBI, TargetBB->number);
+      addInfoFor(OperandRef(new Operand(ssa_var, use_stmt)), PS, OpsToRename, ValueInfoNums, ValueInfos);
+      if(TargetBB->list_of_pred.size() > 1)
       {
-         const auto* case_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(cond));
-         THROW_ASSERT(case_ssa, "Case conditional variable should be an ssa_name");
-         const auto* ssa_def = GetPointer<const gimple_assign>(GET_CONST_NODE(case_ssa->CGetDefStmt()));
-         THROW_ASSERT(ssa_def, "Case statement should be a gimple_assign");
-         CustomUnorderedSet<unsigned int> vars;
-         tree_helper::get_used_variables(true, ssa_def->op1, vars);
-         THROW_ASSERT(!vars.empty(), "Case statement should have some used variables");
-         for(const auto& vidx : vars)
+         EdgeUsesOnly.insert(std::make_pair(BranchBBI, TargetBB->number));
+      }
+   };
+
+   for(const auto& [case_var, BBI] : MWII->list_of_cond)
+   {
+      if(case_var == nullptr)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition: else branch");
+         continue;
+      }
+
+      const auto* case_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(case_var));
+      THROW_ASSERT(case_ssa, "Case conditional variable should be an ssa_name");
+      const auto case_stmt = case_ssa->CGetDefStmt();
+      const auto* Case_stmt = GetPointer<const gimple_assign>(GET_CONST_NODE(case_stmt));
+      THROW_ASSERT(Case_stmt, "Case statement should be a gimple_assign");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition: " + GET_CONST_NODE(Case_stmt->op1)->get_kind_text() + " " + GET_CONST_NODE(Case_stmt->op1)->ToString());
+      if(const auto* case_cmp = GetPointer<const binary_expr>(GET_CONST_NODE(Case_stmt->op1)))
+      {
+         if(isCompare(case_cmp))
          {
-            if(tree_helper::is_ssa_name(TM, vidx))
+            const auto lhs = GET_CONST_NODE(case_cmp->op0);
+            const auto rhs = GET_CONST_NODE(case_cmp->op1);
+            if(lhs != rhs)
             {
-               if(switch_ssa_idx != 0 && switch_ssa_idx != vidx)
+               InsertHelper(case_var, case_stmt, BBI);
+
+               if(!GetPointer<const cst_node>(lhs) && GetPointer<const ssa_name>(lhs)->CGetUseStmts().size() > 1)
                {
-                  THROW_UNREACHABLE("There should be only one switch variable " + TM->CGetTreeNode(switch_ssa_idx)->ToString() + " " + TM->CGetTreeNode(vidx)->ToString());
+                  InsertHelper(case_cmp->op0, case_stmt, BBI);
                }
-               else
+
+               if(!GetPointer<const cst_node>(rhs) && GetPointer<const ssa_name>(rhs)->CGetUseStmts().size() > 1)
                {
-                  switch_ssa_idx = vidx;
-                  case_stmt = case_ssa->CGetDefStmt();
+                  InsertHelper(case_cmp->op1, case_stmt, BBI);
                }
             }
          }
-      }
-   }
-   THROW_ASSERT(static_cast<bool>(switch_ssa_idx), "Condition variable not found");
-   const auto switch_ssa = TM->CGetTreeReindex(switch_ssa_idx);
-   const auto* SwitchSSA = GetPointer<const ssa_name>(GET_CONST_NODE(switch_ssa));
-   THROW_ASSERT(SwitchSSA, "Switch variable should be an ssa_name (" + GET_CONST_NODE(switch_ssa)->get_kind_text() + " " + GET_CONST_NODE(switch_ssa)->ToString() + ")");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Multi-way if variable is " + SwitchSSA->ToString());
-   if(SwitchSSA->CGetUseStmts().size() == MWII->list_of_cond.size())
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + SwitchSSA->ToString() + " used only by multi-way if, skipping...");
-      return;
-   }
-
-   // Now propagate info for each case value
-   i = 0;
-   for(const auto& [cond, BBI] : MWII->list_of_cond)
-   {
-      const auto& case_stmt = CaseStmts.at(i++);
-      if(case_stmt && SwitchEdges.at(BBI) == 1)
-      {
-         THROW_ASSERT(static_cast<bool>(BBs.count(BBI)), "Target BB should be in BB list");
-         const auto& TargetBB = BBs.at(BBI);
-         
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + SwitchSSA->ToString() + " eligible for renaming in BB" + STR(BBI));
-         auto* PS = new PredicateWithEdge(gimple_multi_way_if_K, switch_ssa, BranchBBI, TargetBB->number);
-         addInfoFor(OperandRef(new Operand(switch_ssa, case_stmt)), PS, OpsToRename, ValueInfoNums, ValueInfos);
-         if(TargetBB->list_of_pred.size() > 1)
+         else if(case_cmp->get_kind() == bit_and_expr_K || case_cmp->get_kind() == bit_ior_expr_K)
          {
-            EdgeUsesOnly.insert(std::make_pair(BranchBBI, TargetBB->number));
+            InsertHelper(case_var, case_stmt, BBI);
          }
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Unhandled condition type, skipping...");
       }
    }
 }
@@ -1142,14 +1131,16 @@ DesignFlowStep_Status eSSA::InternalExec()
 
       const auto terminator = stmt_list.back();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Block terminates with " + GET_NODE(terminator)->get_kind_text());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       if(GET_NODE(terminator)->get_kind() == gimple_cond_K)
       {
          processBranch(terminator, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly, sl->list_of_bloc, debug_level);
       }
       else if(GET_NODE(terminator)->get_kind() == gimple_multi_way_if_K)
       {
-         processMultiWayIf(terminator, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly, sl->list_of_bloc, TM, debug_level);
+         processMultiWayIf(terminator, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly, sl->list_of_bloc, debug_level);
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    };
 
    // This map stores DFS numeration for each DT node
