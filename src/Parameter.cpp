@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -413,7 +413,7 @@ void Parameter::PrintFullHeader(std::ostream& os) const
    os << "                         Politecnico di Milano - DEIB" << std::endl;
    os << "                          System Architectures Group" << std::endl;
    os << "********************************************************************************" << std::endl;
-   os << "                Copyright (C) 2004-2019 Politecnico di Milano" << std::endl;
+   os << "                Copyright (C) 2004-2020 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
       os << std::string(40 - (version.size() / 2), ' ') << version << std::endl;
