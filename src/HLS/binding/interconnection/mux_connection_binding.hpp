@@ -93,6 +93,8 @@ class mux_connection_binding : public conn_binding_creator
 
    bool is_PC;
 
+   std::map<std::pair<unsigned int, const HLS_manager::io_binding_type>, generic_objRef> connCache;
+
    /**
     * Performs specialization of interconnections using mux architecture.
     */
@@ -147,6 +149,8 @@ class mux_connection_binding : public conn_binding_creator
                        std::vector<HLS_manager::io_binding_type>& var_read, unsigned int size_form_par);
 
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data, const tree_managerRef TreeM);
+
+   bool isZeroObj(unsigned int tree_index, const tree_managerRef TreeM);
 
  public:
    /**
