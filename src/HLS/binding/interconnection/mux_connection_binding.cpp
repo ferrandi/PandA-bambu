@@ -1582,11 +1582,11 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned int size_
    if(tree_helper::is_int(TreeM, tree_var) && (tree_helper::is_unsigned(TreeM, form_par_type) or tree_helper::is_bool(TreeM, form_par_type)))
    {
       auto varObj = var_read[num];
-      if(isZeroObj(std::get<0>(varObj),TreeM))
+      if(isZeroObj(std::get<0>(varObj), TreeM))
          varObj = HLS_manager::io_binding_type(0, 0);
       generic_objRef conv_port;
       unsigned int in_bitsize = size_form_par;
-      auto key = std::make_pair(in_bitsize,varObj);
+      auto key = std::make_pair(in_bitsize, varObj);
       if(connCache.find(key) == connCache.end())
       {
          conv_port = generic_objRef(new iu_conv_conn_obj("iu_conv_conn_obj_" + STR(id++)));
@@ -1603,11 +1603,11 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned int size_
    else if((tree_helper::is_unsigned(TreeM, tree_var) or tree_helper::is_bool(TreeM, tree_var)) && tree_helper::is_int(TreeM, form_par_type))
    {
       auto varObj = var_read[num];
-      if(isZeroObj(std::get<0>(varObj),TreeM))
+      if(isZeroObj(std::get<0>(varObj), TreeM))
          varObj = HLS_manager::io_binding_type(0, 0);
       generic_objRef conv_port;
       unsigned int in_bitsize = size_form_par;
-      auto key = std::make_pair(in_bitsize,varObj);
+      auto key = std::make_pair(in_bitsize, varObj);
       if(connCache.find(key) == connCache.end())
       {
          conv_port = generic_objRef(new ui_conv_conn_obj("ui_conv_conn_obj_" + STR(id++)));
@@ -1784,9 +1784,9 @@ void mux_connection_binding::create_connections()
                         var_bitsize = static_cast<unsigned int>(IR_var_bitsize);
                      generic_objRef conv_port;
                      auto varObj = var_read[0];
-                     if(isZeroObj(std::get<0>(varObj),TreeM))
+                     if(isZeroObj(std::get<0>(varObj), TreeM))
                         varObj = HLS_manager::io_binding_type(0, 0);
-                     auto key = std::make_pair(var_bitsize,varObj);
+                     auto key = std::make_pair(var_bitsize, varObj);
                      if(tree_helper::is_int(TreeM, size_var))
                      {
                         if(connCache.find(key) == connCache.end())
@@ -2441,10 +2441,10 @@ void mux_connection_binding::create_connections()
                         else
                         {
                            auto varObj = HLS_manager::io_binding_type(tree_temp, 0);
-                           if(isZeroObj(tree_temp,TreeM))
+                           if(isZeroObj(tree_temp, TreeM))
                               varObj = HLS_manager::io_binding_type(0, 0);
                            generic_objRef conv_port;
-                           auto key = std::make_pair(in_bitsize,varObj);
+                           auto key = std::make_pair(in_bitsize, varObj);
                            if(connCache.find(key) == connCache.end())
                            {
                               conv_port = generic_objRef(new i_assign_conn_obj("i_assign_conn_obj_" + STR(id++)));
@@ -3220,9 +3220,9 @@ void mux_connection_binding::connect_array_index(unsigned int tree_index, generi
    if(tree_helper::is_int(TreeM, tree_index))
    {
       auto varObj = HLS_manager::io_binding_type(tree_index, 0);
-      if(isZeroObj(tree_index,TreeM))
+      if(isZeroObj(tree_index, TreeM))
          varObj = HLS_manager::io_binding_type(0, 0);
-      auto key = std::make_pair(bus_addr_bitsize,varObj);
+      auto key = std::make_pair(bus_addr_bitsize, varObj);
       generic_objRef conv_port;
       if(connCache.find(key) == connCache.end())
       {

@@ -307,7 +307,6 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
 
 void AlteraBackendFlow::InitDesignParameters()
 {
-
    const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    std::string device_family = device->get_parameter<std::string>("family");
