@@ -285,7 +285,7 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(get_flow_name() != "Characterization")
+      if(get_flow_name() != "Characterization" && boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]))
       {
          sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
          sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
@@ -307,19 +307,6 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
 
 void AlteraBackendFlow::InitDesignParameters()
 {
-   if(Param->isOption(OPT_top_design_name))
-      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
-   else
-      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
-   if(Param->isOption(OPT_clock_name))
-      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
-   else
-      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
-
-   bool connect_iob = false;
-   if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
-      connect_iob = true;
-   actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
 
    const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
@@ -343,13 +330,6 @@ void AlteraBackendFlow::InitDesignParameters()
          sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + "\n";
    }
    actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
-   if(Param->isOption(OPT_backend_script_extensions))
-   {
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
-      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
-   }
-   else
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
 
    create_sdc(actual_parameters);
 

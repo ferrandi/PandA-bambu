@@ -48,7 +48,6 @@ REF_FORWARD_DECL(target_device);
 
 #define PARAM_ucf_file "ucf_file"
 #define PARAM_power_optimization "power_optimization"
-#define PARAM_connect_iob "connect_iob"
 #define PARAM_nxpython_sources_macro_list "nxpython_sources_macro_list"
 #define PARAM_nxpython_report "nxpython_report"
 #define PARAM_nxpython_timing_report "nxpython_timing_report"

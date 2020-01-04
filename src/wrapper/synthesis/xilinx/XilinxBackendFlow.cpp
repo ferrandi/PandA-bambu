@@ -766,10 +766,6 @@ void XilinxBackendFlow::ExecuteSynthesis()
 void XilinxBackendFlow::InitDesignParameters()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->XilinxBackendFlow - Init Design Parameters");
-   if(Param->isOption(OPT_top_design_name))
-      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
-   else
-      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
 
    std::string ise_style;
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
@@ -778,34 +774,17 @@ void XilinxBackendFlow::InitDesignParameters()
       ise_style = std::string(INTSTYLE_SILENT);
    actual_parameters->parameter_values[PARAM_ise_style] = ise_style;
 
-   if(Param->isOption(OPT_clock_name))
-      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
-   else
-      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
-
    /// determine if power optimization has to be performed
    bool xpwr_enabled = false;
    if(Param->isOption("power_optimization") && Param->getOption<bool>("power_optimization"))
       xpwr_enabled = true;
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
-   bool connect_iob = false;
-   if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
-      connect_iob = true;
-   actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
    const target_deviceRef device = target->get_target_device();
    std::string device_name = device->get_parameter<std::string>("model");
    std::string package = device->get_parameter<std::string>("package");
    std::string speed_grade = device->get_parameter<std::string>("speed_grade");
    std::string device_string = device_name + package + speed_grade;
    actual_parameters->parameter_values[PARAM_target_device] = device_string;
-
-   if(Param->isOption(OPT_backend_script_extensions))
-   {
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
-      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
-   }
-   else
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
 
    bool is_vivado = false;
    if(device->get_parameter<std::string>("family").find("-VVD") != std::string::npos)

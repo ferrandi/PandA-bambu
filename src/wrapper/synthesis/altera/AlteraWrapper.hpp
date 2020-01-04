@@ -52,7 +52,6 @@ REF_FORWARD_DECL(target_device);
 
 #define PARAM_quartus_report "quartus_report"
 #define PARAM_sources_macro_list "sources_macro_list"
-#define PARAM_connect_iob "connect_iob"
 
 class AlteraWrapper : public SynthesisTool
 {

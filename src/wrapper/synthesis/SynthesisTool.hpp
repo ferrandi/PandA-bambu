@@ -78,6 +78,7 @@ class xml_element;
 #define PARAM_has_script_extensions "has_script_extensions"
 #define PARAM_has_VHDL_library "has_VHDL_library"
 #define PARAM_VHDL_library "VHDL_library"
+#define PARAM_connect_iob "connect_iob"
 
 /// used by Intel/Altera Characterization
 #define PARAM_fu "fu"
