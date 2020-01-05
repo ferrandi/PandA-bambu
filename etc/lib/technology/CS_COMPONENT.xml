@@ -10,7 +10,7 @@
           <parameter name="DEPTH">8</parameter>
           <structural_type_descriptor id_type="fifio"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -90,7 +90,7 @@ end"/>
           <parameter name="DEPTH">8</parameter>
           <structural_type_descriptor id_type="fifio_free"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -169,7 +169,7 @@ end"/>
           <parameter name="n_elements">1</parameter>
           <structural_type_descriptor id_type="register_file"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2017-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2017-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -230,7 +230,7 @@ endgenerate
         <component_o id="register_SE_r">
           <structural_type_descriptor id_type="register_SE_r"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -272,7 +272,7 @@ end"/>
         <parameter name="BITSIZE_addr">1</parameter>
           <structural_type_descriptor id_type="simple_dual_port_ram_single_clock"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -312,7 +312,7 @@ assign out=q;"/>
           <structural_type_descriptor id_type="fifo"/>
           <parameter name="ADDR_WIDTH">1</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -407,7 +407,7 @@ simple_dual_port_ram_single_clock #(.BITSIZE_data(BITSIZE_data_in), .BITSIZE_rea
         <component_o id="Counter">  BITSIZE_value
           <structural_type_descriptor id_type="Counter"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -456,7 +456,7 @@ end"/>
         <component_o id="CallDispatcher">
           <structural_type_descriptor id_type="CallDispatcher"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -550,7 +550,7 @@ assign available_data = ~fifo_empty;
           <parameter name="KERN_NUM">0</parameter>
           <parameter name="ADDR_ACC">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -882,7 +882,7 @@ assign done_request_next= fifo_rd_en_free || (done_scheduler &amp; fifo_empty_fr
           <structural_type_descriptor id_type="mem_scheduler"/>
           <parameter name="NUM_TASKS">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -956,7 +956,7 @@ assign data_out_mem_par = local_mem[addr_mem_par];"/>
           <structural_type_descriptor id_type="mem_ctrl_kernel"/>
           <parameter name="TAG_MEM_REQ">0</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1041,7 +1041,7 @@ assign Mout_tag_ram = ((sel_LOAD || sel_STORE) &amp;&amp; start_port) ? TAG_MEM_
           <parameter name="ADDR_ACC">2</parameter>
           <parameter name="NUM_BANK">4</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1505,7 +1505,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
           <parameter name="ADDR_ACC">2</parameter>
           <parameter name="NUM_BANK">4</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -1959,7 +1959,7 @@ bus_merger #(.BITSIZE_in1(MEMORY_REQUEST_TOTAL_SIZE*NUM_BANK), .PORTSIZE_in1(NUM
           <parameter name="ADDR_TASKS">3</parameter>
           <parameter name="ADDR_ACC">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -2105,7 +2105,7 @@ endgenerate"/>
       <component_o id="mux_pw_2">
         <structural_type_descriptor id_type="mux_pw_2"/>
         <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-        <copyright>Copyright (C) 2004-2017 Politecnico di Milano</copyright>
+        <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
         <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
         <license>PANDA_LGPLv3</license>
         <port_o id="data" dir="IN" is_clock="1">
@@ -2320,7 +2320,7 @@ endgenerate"/>
     <component_o id="__controller_parallel">
       <structural_type_descriptor id_type="__controller_parallel"/>
       <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-      <copyright>Copyright (C) 2018 Politecnico di Milano</copyright>
+      <copyright>Copyright (C) 2018-2020 Politecnico di Milano</copyright>
       <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
       <license>PANDA_LGPLv3</license>
       <port_o id="clock" dir="IN" is_clock="1">

@@ -28,7 +28,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -150,7 +150,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -272,7 +272,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -393,7 +393,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_N1">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -516,7 +516,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_N1_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -639,7 +639,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_N1_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -762,7 +762,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_NN">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -884,7 +884,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_NN_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -1007,7 +1007,7 @@
       <circuit>
         <component_o id="ARRAY_1D_STD_BRAM_NN_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -1132,7 +1132,7 @@
       <circuit>
         <component_o id="STD_BRAM">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -1201,7 +1201,7 @@
       <circuit>
         <component_o id="STD_BRAM_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -1270,7 +1270,7 @@
       <circuit>
         <component_o id="STD_BRAM_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -1338,7 +1338,7 @@
       <circuit>
         <component_o id="STD_BRAMN">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -1407,7 +1407,7 @@
       <circuit>
         <component_o id="STD_BRAMN_3">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>
@@ -1476,7 +1476,7 @@
       <circuit>
         <component_o id="STD_BRAMN_4">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>ALTERA-STRATIXV</specialized>

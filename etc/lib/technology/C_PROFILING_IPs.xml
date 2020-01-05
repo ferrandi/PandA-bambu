@@ -8,7 +8,7 @@
       <circuit>
         <component_o id="__builtin_bambu_time_start">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2014-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_bambu_time_start"/>
@@ -33,7 +33,7 @@
       <circuit>
         <component_o id="__builtin_bambu_time_stop">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2014-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_bambu_time_stop"/>

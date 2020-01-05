@@ -45,7 +45,7 @@
 `endif
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>, Christian Pilato <christian.pilato@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -57,7 +57,7 @@ module mangled_constant_value(out1);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -80,7 +80,7 @@ module mangled_UUconvert_expr_FU(in1, out1);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -103,7 +103,7 @@ module mangled_UIdata_converter_FU(in1, out1);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -126,7 +126,7 @@ module IUdata_converter_FU(in1, out1);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -141,7 +141,7 @@ module plus_expr_FU(in1, in2, out1);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -157,7 +157,7 @@ module ternary_plus_expr_FU(in1, in2, in3, out1);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -172,7 +172,7 @@ module ui_plus_expr_FU(in1, in2, out1);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2004-2017 Politecnico di Milano
+// Copyright (C) 2004-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps

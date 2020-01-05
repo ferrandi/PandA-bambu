@@ -8,7 +8,7 @@
       <circuit>
         <component_o id="leds_ctrl">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="leds_ctrl"/>
@@ -37,7 +37,7 @@
       <circuit>
         <component_o id="sw_ctrl">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="sw_ctrl"/>
@@ -66,7 +66,7 @@
       <circuit>
         <component_o id="btn_ctrl">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="btn_ctrl"/>
@@ -95,7 +95,7 @@
       <circuit>
         <component_o id="sevensegments_ctrl">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="sevensegments_ctrl"/>
