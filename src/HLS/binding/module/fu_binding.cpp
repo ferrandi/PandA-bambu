@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -341,7 +341,8 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
             if(found != std::string::npos && found + fun_name.size() == port_name.size())
             {
                GetPointer<port_o>(curr_port)->set_is_memory(false);
-               fun_call_sites_rel[fun_name].push_back(curr_gate);
+               if(std::find(fun_call_sites_rel[fun_name].begin(), fun_call_sites_rel[fun_name].end(), curr_gate) == fun_call_sites_rel[fun_name].end())
+                  fun_call_sites_rel[fun_name].push_back(curr_gate);
             }
          }
       }

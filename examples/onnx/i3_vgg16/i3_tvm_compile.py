@@ -1,6 +1,5 @@
 import numpy as np
 import onnx
-import onnxruntime
 
 from tvm import relay
 import tvm
@@ -15,7 +14,7 @@ mod, params = relay.frontend.from_onnx(model=onnx_model, shape=shape_dict)
 
 
 # Compilation
-opt_level = 3
+opt_level = 0
 target = 'llvm'
 with relay.build_config(opt_level=opt_level):
     graph, lib, params = relay.build_module.build(
@@ -23,8 +22,13 @@ with relay.build_config(opt_level=opt_level):
 
 
 #printing some LLVM code
-out_file = open("i3_vgg16.ll", "w")
-out_file.write(lib.get_source())
-out_file.close()
-
+out_lib = open("i3_vgg16.ll", "w")
+out_lib.write(lib.get_source())
+out_lib.close()
+out_graph = open("i3_vgg16.json", "w")
+out_params = open("i3_vgg16.params", "w")
+out_graph.write(graph)
+out_graph.close()
+print(params, file=out_params)
+out_params.close()
 

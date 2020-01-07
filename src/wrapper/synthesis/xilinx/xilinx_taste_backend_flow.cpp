@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2019 Politecnico di Milano
+ *              Copyright (C) 2015-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,6 +64,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "xst_wrapper.hpp"
 
+#include "structural_objects.hpp"
+
 XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef& _parameters, const std::string& _flow_name, const target_managerRef& _manager) : XilinxBackendFlow(_parameters, _flow_name, _manager)
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
@@ -93,6 +95,32 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    const technology_managerRef TM = target->get_technology_manager();
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(false);
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(true);
+   if(Param->isOption(OPT_clock_name))
+      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   else
+      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   bool connect_iob = false;
+   if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
+      connect_iob = true;
+   actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
+   if(Param->isOption(OPT_top_design_name))
+      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
+   else
+      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
+   if(Param->isOption(OPT_backend_script_extensions))
+   {
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
+      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
+   }
+   else
+      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
+   if(Param->isOption(OPT_VHDL_library))
+   {
+      actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(true);
+      actual_parameters->parameter_values[PARAM_VHDL_library] = Param->getOption<std::string>(OPT_VHDL_library);
+   }
+   else
+      actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(false);
 
    InitDesignParameters();
 

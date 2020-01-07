@@ -1,5 +1,5 @@
 /* Soft-FP definitions for bambu.
-   Copyright (C) 2014-2019 Politecnico di Milano
+   Copyright (C) 2014-2020 Politecnico di Milano
 
 This file is free software; you can redistribute it and/or modify it
 under the terms of the GNU General Public License as published by the

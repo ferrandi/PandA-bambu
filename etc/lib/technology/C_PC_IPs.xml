@@ -11,7 +11,7 @@
       <circuit>
         <component_o id="MEMORY_CTRL_PIN">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_CTRL_P1N"/>
