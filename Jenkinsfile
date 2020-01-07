@@ -58,7 +58,7 @@ pipeline {
         }
         stage('VHDL') {
           steps {
-           sh 'mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="-wH" --name="_VHDL" --restart '
+           sh 'mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="-wH" --name="_VHDL" --restart '
            sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -c="-wH" --name="_VHDL" --returnfail --restart '
           }
         }
