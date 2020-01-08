@@ -55,6 +55,7 @@
 
 static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMap;
 static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMapArraySize;
+static std::map<std::string, std::vector<clang::SourceLocation>> HLS_pipeline_PragmaMap;
 
 namespace clang
 {
@@ -74,6 +75,7 @@ namespace clang
 
       std::map<std::string, std::vector<std::string>> HLS_interfaceMap;
       std::map<std::string, std::map<std::string, std::string>> HLS_interfaceArraySizeMap;
+      std::set<std::string> HLS_pipelineSet;
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
       {
@@ -156,6 +158,37 @@ namespace clang
                }
                stream << "  </function>\n";
             }
+         }
+         stream << "</module>\n";
+      }
+
+      void writeXML_pipelineFile(const std::string& filename, const std::string& TopFunctionName) const
+      {
+         std::error_code EC;
+#if __clang_major__ >= 7
+         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+#else
+         llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+#endif
+         stream << "<?xml version=\"1.0\"?>\n";
+         stream << "<module>\n";
+         for(auto function : Fun2Params)
+         {
+            std::string function_name = function.first;
+            if(!TopFunctionName.empty() && Fun2Demangled.find(function_name)->second != TopFunctionName && function_name != TopFunctionName)
+            {
+               continue;
+            }
+            std::string is_pipelined;
+            if(HLS_pipelineSet.find(function_name) != HLS_pipelineSet.end())
+            {
+               is_pipelined = "yes";
+            }
+            else
+            {
+               is_pipelined = "no";
+            }
+            stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined << "\"/>\n";
          }
          stream << "</module>\n";
       }
@@ -404,6 +437,22 @@ namespace clang
                   }
                }
             }
+
+            if(HLS_pipeline_PragmaMap.find(filename) != HLS_pipeline_PragmaMap.end())
+            {
+               SourceLocation prev;
+               if(prevLoc.find(filename) != prevLoc.end())
+               {
+                  prev = prevLoc.find(filename)->second;
+               }
+               for(auto& loc : HLS_pipeline_PragmaMap.find(filename)->second)
+               {
+                  if((prev.isInvalid() || prev < loc) && (loc < locEnd))
+                  {
+                     HLS_pipelineSet.insert(funName);
+                  }
+               }
+            }
          }
       }
 
@@ -449,7 +498,9 @@ namespace clang
       {
          auto baseFilename = create_file_basename_string(outdir_name, InFile);
          std::string interface_XML_filename = baseFilename + ".interface.xml";
+         std::string pipeline_XML_filename = baseFilename + ".pipeline.xml";
          writeXML_interfaceFile(interface_XML_filename, topfname);
+         writeXML_pipelineFile(pipeline_XML_filename, topfname);
       }
    };
 
@@ -507,7 +558,6 @@ namespace clang
          if(index >= 2)
          {
             auto& SM = PP.getSourceManager();
-            std::map<std::string, std::string> interface_PragmaMap;
             auto filename = SM.getPresumedLoc(loc, false).getFilename();
             if(ArraySize != "" && ArraySize != "0" && interface != "array")
             {
@@ -530,6 +580,32 @@ namespace clang
       }
    };
 
+   class HLS_pipeline_PragmaHandler : public PragmaHandler
+   {
+    public:
+      HLS_pipeline_PragmaHandler() : PragmaHandler("HLS_pipeline")
+      {
+      }
+
+      void HandlePragma(Preprocessor& PP, PragmaIntroducerKind /*Introducer*/, Token& PragmaTok) override
+      {
+         Token Tok{};
+         auto loc = PragmaTok.getLocation();
+         auto& SM = PP.getSourceManager();
+         auto filename = SM.getPresumedLoc(loc, false).getFilename();
+         std::string par;
+         PP.Lex(Tok);
+         par = PP.getSpelling(Tok);
+         if(Tok.isNot(tok::eod))
+         {
+            DiagnosticsEngine& D = PP.getDiagnostics();
+            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
+            D.Report(PragmaTok.getLocation(), ID);
+         }
+         HLS_pipeline_PragmaMap[filename].push_back(loc);
+      }
+   };
+
    class CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) : public PluginASTAction
    {
       std::string topfname;
@@ -545,6 +621,7 @@ namespace clang
          }
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
+         PP.AddPragmaHandler(new HLS_pipeline_PragmaHandler());
          return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
       }
 

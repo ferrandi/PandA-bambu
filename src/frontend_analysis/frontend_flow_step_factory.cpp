@@ -214,6 +214,7 @@
 #if HAVE_BAMBU_BUILT
 #include "parm_decl_taken_address_fix.hpp"
 #include "phi_opt.hpp"
+#include "pipeline_infer.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "pointed_data_computation.hpp"
@@ -599,6 +600,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case POINTED_DATA_EVALUATION:
 #endif
       case PARM2SSA:
+#if HAVE_BAMBU_BUILT
+      case(PIPELINE_INFER):
+#endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):
 #endif
@@ -700,6 +704,12 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       {
          return DesignFlowStepRef(new parm2ssa(AppM, design_flow_manager.lock(), parameters));
       }
+#if HAVE_BAMBU_BUILT
+      case PIPELINE_INFER:
+      {
+         return DesignFlowStepRef(new pipelineInfer(AppM, design_flow_manager.lock(), parameters));
+      }
+#endif
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):
       {
@@ -1556,6 +1566,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):
+#endif
+#if HAVE_BAMBU_BUILT
+      case(PIPELINE_INFER):
 #endif
 #if HAVE_PRAGMA_BUILT
       case(PRAGMA_ANALYSIS):

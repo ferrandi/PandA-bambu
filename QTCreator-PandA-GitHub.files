@@ -2208,6 +2208,8 @@ src/frontend_analysis/IR_analysis/parm_decl_taken_address_fix.cpp
 src/frontend_analysis/IR_analysis/parm_decl_taken_address_fix.hpp
 src/frontend_analysis/IR_analysis/phi_opt.cpp
 src/frontend_analysis/IR_analysis/phi_opt.hpp
+src/frontend_analysis/IR_analysis/pipeline_infer.cpp
+src/frontend_analysis/IR_analysis/pipeline_infer.hpp
 src/frontend_analysis/IR_analysis/pragma_analysis.cpp
 src/frontend_analysis/IR_analysis/pragma_analysis.hpp
 src/frontend_analysis/IR_analysis/rebuild_initializations.cpp

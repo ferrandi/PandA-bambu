@@ -386,6 +386,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ParmDeclTakenAddress";
       case PHI_OPT:
          return "PhiOpt";
+      case PIPELINE_INFER:
+         return "PipelineInfer";
 #endif
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_COMPUTATION):

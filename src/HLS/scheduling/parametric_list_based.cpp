@@ -1437,7 +1437,7 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
 bool parametric_list_based::BB_update_resources_use(unsigned int& used_resources, const unsigned int fu_type) const
 {
    if(used_resources == HLS->allocation_information->get_number_fu(fu_type))
-       return false;
+      return false;
    else
    {
       used_resources++;
