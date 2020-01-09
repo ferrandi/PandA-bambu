@@ -413,6 +413,7 @@ class FunctionBehavior
 
    /// when true pipelining has been requested for this function
    bool pipelining_enabled;
+   // sistema le chiamate a funzione nel codice e rimuovi quelle esistenti
 
  public:
    /**

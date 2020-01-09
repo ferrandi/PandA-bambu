@@ -713,6 +713,7 @@ function_decl::function_decl(unsigned int i)
       reverse_restrict_flag(false),
       writing_memory(false),
       reading_memory(false),
+      pipeline_enabled(false),
 #if HAVE_FROM_PRAGMA_BUILT
       omp_for_wrapper(0),
       omp_body_loop(false),
@@ -774,6 +775,11 @@ bool function_decl::is_private()
 bool function_decl::is_protected()
 {
    return attr::is_protected();
+}
+
+bool function_decl::is_pipelined()
+{
+   return pipeline_enabled;
 }
 
 void function_type::visit(tree_node_visitor* const v) const

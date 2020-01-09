@@ -677,6 +677,10 @@ void raw_writer::operator()(const function_decl* obj, unsigned int& mask)
    {
       WRITE_TOKEN(os, TOK_READING_MEMORY);
    }
+   if(obj->pipeline_enabled)
+   {
+      WRITE_TOKEN(os, TOK_PIPELINE_ENABLED);
+   }
 #if HAVE_FROM_PRAGMA_BUILT
    if(obj->omp_atomic)
    {

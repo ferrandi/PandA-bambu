@@ -69,6 +69,8 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
    try
    {
       extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn);
+      //auto TM = tree_parseY(Param, f);
+      // fai qui il mio lavoro che diventa sottoprocedura per scrivere in un campo di tree node
       return tree_parseY(Param, f);
    }
    catch(const char* msg)

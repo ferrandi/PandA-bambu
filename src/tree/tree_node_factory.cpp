@@ -997,6 +997,7 @@ void tree_node_factory::operator()(const function_decl* obj, unsigned int& mask)
    THROW_ASSERT(obj == curr_tree_node_ptr, "wrong factory setup");
    tree_node_mask::operator()(obj, mask);
    SET_VALUE_OPT(TOK_OPERATOR, operator_flag, function_decl, bool);
+   SET_VALUE_OPT(TOK_PIPELINE_ENABLED, pipeline_enabled, function_decl, bool);
    // std::vector<std::string>::const_iterator vend = obj->list_of_op_names.end();
    // for (std::vector<std::string>::const_iterator i = obj->list_of_op_names.begin(); i != vend; i++)
    //   WRITE_UFIELD_STRING(os, *i);

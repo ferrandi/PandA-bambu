@@ -69,7 +69,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CREATE_TREE_MANAGER, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         //soft float cg ext
+         // mem cg ext
+         //complete flow graph
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -90,6 +93,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status pipelineInfer::Exec()
 {
+   THROW_ERROR("Must deactivate this step!!");
    if(GetPointer<HLS_manager>(AppM))
    {
       auto HLSMgr = GetPointer<HLS_manager>(AppM);
@@ -153,3 +157,5 @@ DesignFlowStep_Status pipelineInfer::Exec()
    THROW_ERROR("AppM is not an HLS_manager");
    return DesignFlowStep_Status::ABORTED;
 }
+
+//has to be exec form
