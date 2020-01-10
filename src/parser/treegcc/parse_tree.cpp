@@ -61,6 +61,14 @@
 /// Utility include
 #include "refcount.hpp"
 
+// XML includes used for writing and reading the configuration file
+#include "polixml.hpp"
+#include "xml_dom_parser.hpp"
+
+#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+
+#include "tree_manager.hpp"
+
 // exit_code is stored in zebu.cpp
 extern int exit_code;
 
@@ -69,9 +77,59 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
    try
    {
       extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn);
-      //auto TM = tree_parseY(Param, f);
-      // fai qui il mio lavoro che diventa sottoprocedura per scrivere in un campo di tree node
-      return tree_parseY(Param, f);
+      auto TM = tree_parseY(Param, f);
+
+      for(auto source_file : AppM->input_files)
+      {
+         const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+         std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+         auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".pipeline.xml";
+         if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+            XMLDomParser parser(XMLfilename);
+            parser.Exec();
+            if(parser)
+            {
+               const xml_element* node = parser.get_document()->get_root_node();
+               for(const auto& iter : node->get_children())
+               {
+                  const auto* Enode = GetPointer<const xml_element>(iter);
+                  if(!Enode)
+                     continue;
+                  if(Enode->get_name() == "function")
+                  {
+                     std::string fname;
+                     std::string is_pipelined = "null";
+                     for(auto attr : Enode->get_attributes())
+                     {
+                        std::string key = attr->get_name();
+                        std::string value = attr->get_value();
+                        if(key == "id")
+                           fname = value;
+                        if(key == "is_pipelined")
+                           is_pipelined = value;
+                     }
+                     if(fname == "")
+                        THROW_ERROR("malformed pipeline infer file");
+                     if(is_pipelined.compare("yes") && is_pipelined.compare("no"))
+                        THROW_ERROR("malformed pipeline infer file");
+                     for(const auto& iterArg : Enode->get_children())
+                     {
+                        const auto* EnodeArg = GetPointer<const xml_element>(iterArg);
+                        if(EnodeArg)
+                           THROW_ERROR("malformed pipeline infer file");
+                     }
+                     auto findex = TM->function_index(fname);
+                     std::cout << "The function " << fname << " has parameter is_pipelined=\"" << is_pipelined << "\"\n";
+                     std::cout << "Tree retrieved index for the function is " << std::to_string(findex) << "\n\n";
+                  }
+               }
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+         }
+      }
+      return TM;
    }
    catch(const char* msg)
    {

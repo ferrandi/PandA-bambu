@@ -66,6 +66,8 @@
 #include "loops.hpp"                            // for ProfilingInformatio...
 #include "op_graph.hpp"                         // for OpGraph, OpGraphCon...
 #include "operations_graph_constructor.hpp"     // for OpGraphRef, operati...
+#include "tree_manager.hpp"                     // for pipeline_enabled
+#include "tree_node.hpp"                        // for pipeline_enabled
 #include <boost/graph/adjacency_list.hpp>       // for adjacency_list
 #include <boost/graph/filtered_graph.hpp>       // for filtered_graph<>::v...
 #include <boost/iterator/filter_iterator.hpp>   // for filter_iterator
@@ -171,7 +173,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_globals(false),
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
-      pipelining_enabled(_parameters->isOption(OPT_pipelining) && _parameters->getOption<bool>(OPT_pipelining)),
+      pipeline_enabled(),
       bb_reachability(),
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),
@@ -187,6 +189,11 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       memory_info(),
       packed_vars(false)
 {
+    if(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K)
+    {
+        function_decl* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
+        pipeline_enabled = _parameters->isOption(OPT_pipelining) && decl_node->is_pipelined();
+    }
 }
 
 FunctionBehavior::~FunctionBehavior()

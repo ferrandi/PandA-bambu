@@ -326,9 +326,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case(IPA_POINT_TO_ANALYSIS):
 #endif
       case PARM2SSA:
-#if HAVE_BAMBU_BUILT
-      case PIPELINE_INFER:
-#endif
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif

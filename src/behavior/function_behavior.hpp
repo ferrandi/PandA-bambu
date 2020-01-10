@@ -411,9 +411,8 @@ class FunctionBehavior
    /// set of global variables
    CustomOrderedSet<unsigned int> state_variables;
 
-   /// when true pipelining has been requested for this function
-   bool pipelining_enabled;
-   // sistema le chiamate a funzione nel codice e rimuovi quelle esistenti
+   /// true when pipelining is enabled for the function
+   bool pipeline_enabled;
 
  public:
    /**
@@ -848,12 +847,7 @@ class FunctionBehavior
    }
    bool is_pipelining_enabled() const
    {
-      return pipelining_enabled;
-   }
-
-   void set_pipelining_enabled(bool f)
-   {
-      pipelining_enabled = f;
+      return pipeline_enabled;
    }
 
    /**
