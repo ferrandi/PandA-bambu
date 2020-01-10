@@ -482,7 +482,7 @@ const char* treeVocabularyTokenTypes::tokenNames[] = {
     "reverse_restrict",
     "writing_memory",
     "reading_memory",
-    "pipeline_enabled"
+    "pipeline_enabled",
     "omp_atomic",
     "omp_body_loop",
     "omp_critical_session",
