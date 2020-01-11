@@ -831,7 +831,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --registered-inputs=value\n"
       << "        Specify if inputs are registered or not:\n"
       << "             auto  - inputs are registered only for proxy functions (default)\n"
-      << "             top   - inputs are registered only for top and proxy functions\n"
+      << "             top   - inputs and return are registered only for top and proxy functions\n"
       << "             yes   - all inputs are registered\n"
       << "             no    - none of the inputs is registered\n\n"
       << "    --fsm-encoding=value\n"
