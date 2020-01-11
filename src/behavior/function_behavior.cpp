@@ -189,6 +189,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       memory_info(),
       packed_vars(false)
 {
+    pipeline_enabled = false;
     if(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K)
     {
         function_decl* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));

@@ -69,6 +69,8 @@
 
 #include "tree_manager.hpp"
 
+//#include <iostream>
+
 // exit_code is stored in zebu.cpp
 extern int exit_code;
 
@@ -79,14 +81,20 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
       extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn);
       auto TM = tree_parseY(Param, f);
 
-      for(auto source_file : AppM->input_files)
+      std::string source_name = f;
+      std::string trailer = ".gimplePSSA";
+      if(!source_name.compare(source_name.length() - trailer.length(), trailer.length(), trailer))
       {
-         const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-         std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
-         auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".pipeline.xml";
+         source_name.erase(source_name.length()-trailer.length(), trailer.length());
+         source_name.append(".pipeline.xml");
+         std::cout << "read from " << source_name << "\n";
+
+         //const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+         //std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+         auto XMLfilename = source_name; //output_temporary_directory + "/" + leaf_name + ".pipeline.xml";
          if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
             XMLDomParser parser(XMLfilename);
             parser.Exec();
             if(parser)
@@ -126,7 +134,12 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                   }
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+         }
+         else
+         {
+            std::string error_string = "The file " << XMLfilename << " does not exhist";
+            THROW_ERROR(error_string);
          }
       }
       return TM;
