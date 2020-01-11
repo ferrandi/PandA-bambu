@@ -71,7 +71,7 @@ pipeline {
         }
       }
       steps {
-        sh 'mkdir -p $WORKSPACE/examples/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --perfpublisherdir="$WORKSPACE/examples/pp-reports" --restart '
+        sh 'mkdir -p $WORKSPACE/examples/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j60 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --perfpublisherdir="$WORKSPACE/examples/pp-reports" --restart '
       }
     }
     stage('Publish Junits results') {
