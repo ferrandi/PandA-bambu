@@ -1,22 +1,22 @@
-%Generated at 2020-01-09 12:43:48.272300 with bambu  Version: PandA 0.9.6 - Revision 704c4109dca9b01d32f0423f5fe25bd5cc5baa81-PR-11 with arguments --no-iob --soft-float --hls-div --device=TO_BE_OVERWRITTEN --evaluation --clock-period=10 --speculative-sdc-scheduling --device=xc7z020-1clg484-VVD
+%Generated at 2020-01-11 12:04:30.887279 with bambu Version: PandA 0.9.6-dev - Revision aadbaa3f2509ffe03f69ae509b29f10f8c819bd8-panda-0.9.6.1-candidate with arguments --no-iob --soft-float --hls-div --registered-inputs=top --panda-parameter=profile-top=1 --speculative-sdc-scheduling --device=TO_BE_OVERWRITTEN --evaluation --clock-period=10 --device=xc7z020-1clg484-VVD
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
 \hline
 Benchmark Name                                   & Tot. Latency            & Num Cycles & LUTs     & Slices   & Registers & DSPs   & BRAMs & Clock Frequency & Clock Slack & HLS Time(s) \\
 \hline
-addition64:double\_prec\_addition\_0             & $ 4.023 \cdot 10^{-2} $ & $ 4      $ & $ 1195 $ & $ 356  $ & $ 408   $ & $ 0  $ & $ 0 $ & $ 99.43       $ & $ -0.06   $ & $ 13.27   $ \\
-addition:single\_prec\_addition\_0               & $ 3.075 \cdot 10^{-2} $ & $ 3      $ & $ 439  $ & $ 137  $ & $ 125   $ & $ 0  $ & $ 0 $ & $ 97.57       $ & $ -0.25   $ & $ 5.85    $ \\
-division64G:double\_prec\_division\_0            & $ 1.825 \cdot 10^{-1} $ & $ 17     $ & $ 1941 $ & $ 774  $ & $ 1399  $ & $ 51 $ & $ 0 $ & $ 93.15       $ & $ -0.73   $ & $ 5.39    $ \\
-division64SRT4:double\_prec\_division\_0         & $ 2.655 \cdot 10^{-1} $ & $ 32     $ & $ 823  $ & $ 256  $ & $ 629   $ & $ 0  $ & $ 0 $ & $ 120.51      $ & $ 1.70    $ & $ 8.25    $ \\
-divisionG:single\_prec\_division\_0              & $ 1.119 \cdot 10^{-1} $ & $ 13     $ & $ 477  $ & $ 153  $ & $ 266   $ & $ 14 $ & $ 0 $ & $ 116.20      $ & $ 1.39    $ & $ 3.12    $ \\
-divisionSRT4:single\_prec\_division\_0           & $ 1.396 \cdot 10^{-1} $ & $ 17     $ & $ 366  $ & $ 114  $ & $ 312   $ & $ 0  $ & $ 0 $ & $ 121.79      $ & $ 1.79    $ & $ 5.72    $ \\
-multiplication64:double\_prec\_multiplication\_0 & $ 4.000 \cdot 10^{-2} $ & $ 4      $ & $ 545  $ & $ 213  $ & $ 394   $ & $ 10 $ & $ 0 $ & $ 100.00      $ & $ 0.00    $ & $ 2.32    $ \\
-multiplication:single\_prec\_multiplication\_0   & $ 4.240 \cdot 10^{-3} $ & $ 2      $ & $ 116  $ & $ 36   $ & $ 39    $ & $ 2  $ & $ 0 $ & $ 471.70      $ & $ 7.88    $ & $ 1.93    $ \\
-subtraction64:double\_prec\_subtraction\_0       & $ 4.089 \cdot 10^{-2} $ & $ 4      $ & $ 1191 $ & $ 382  $ & $ 408   $ & $ 0  $ & $ 0 $ & $ 97.82       $ & $ -0.22   $ & $ 13.90   $ \\
-subtraction:single\_prec\_subtraction\_0         & $ 3.021 \cdot 10^{-2} $ & $ 3      $ & $ 439  $ & $ 137  $ & $ 125   $ & $ 0  $ & $ 0 $ & $ 99.31       $ & $ -0.07   $ & $ 6.03    $ \\
+addition64:double\_prec\_addition\_0             & $ 6.088 \cdot 10^{-2} $ & $ 6      $ & $ 1180 $ & $ 350  $ & $ 602   $ & $ 0  $ & $ 0 $ & $ 98.56       $ & $ -0.15   $ & $ 16.10   $ \\
+addition:single\_prec\_addition\_0               & $ 4.934 \cdot 10^{-2} $ & $ 5      $ & $ 440  $ & $ 143  $ & $ 222   $ & $ 0  $ & $ 0 $ & $ 101.35      $ & $ 0.13    $ & $ 6.78    $ \\
+division64G:double\_prec\_division\_0            & $ 1.796 \cdot 10^{-1} $ & $ 18     $ & $ 1995 $ & $ 747  $ & $ 1529  $ & $ 51 $ & $ 0 $ & $ 100.20      $ & $ 0.02    $ & $ 6.82    $ \\
+division64SRT4:double\_prec\_division\_0         & $ 2.743 \cdot 10^{-1} $ & $ 33     $ & $ 826  $ & $ 254  $ & $ 758   $ & $ 0  $ & $ 0 $ & $ 120.29      $ & $ 1.69    $ & $ 8.72    $ \\
+divisionG:single\_prec\_division\_0              & $ 1.148 \cdot 10^{-1} $ & $ 14     $ & $ 499  $ & $ 169  $ & $ 331   $ & $ 14 $ & $ 0 $ & $ 121.91      $ & $ 1.80    $ & $ 3.70    $ \\
+divisionSRT4:single\_prec\_division\_0           & $ 1.545 \cdot 10^{-1} $ & $ 18     $ & $ 370  $ & $ 121  $ & $ 377   $ & $ 0  $ & $ 0 $ & $ 116.48      $ & $ 1.41    $ & $ 6.32    $ \\
+multiplication64:double\_prec\_multiplication\_0 & $ 6.262 \cdot 10^{-2} $ & $ 6      $ & $ 576  $ & $ 218  $ & $ 572   $ & $ 10 $ & $ 0 $ & $ 95.82       $ & $ -0.44   $ & $ 2.66    $ \\
+multiplication:single\_prec\_multiplication\_0   & $ 2.897 \cdot 10^{-2} $ & $ 4      $ & $ 107  $ & $ 46   $ & $ 137   $ & $ 2  $ & $ 0 $ & $ 138.08      $ & $ 2.76    $ & $ 2.12    $ \\
+subtraction64:double\_prec\_subtraction\_0       & $ 6.204 \cdot 10^{-2} $ & $ 6      $ & $ 1175 $ & $ 360  $ & $ 602   $ & $ 0  $ & $ 0 $ & $ 96.71       $ & $ -0.34   $ & $ 16.84   $ \\
+subtraction:single\_prec\_subtraction\_0         & $ 4.904 \cdot 10^{-2} $ & $ 5      $ & $ 443  $ & $ 145  $ & $ 222   $ & $ 0  $ & $ 0 $ & $ 101.95      $ & $ 0.19    $ & $ 7.05    $ \\
 \hline
-Average                                          & $                     $ & $        $ & $      $ & $      $ & $       $ & $    $ & $   $ & $ 141.75      $ & $ 1.14    $ & $         $ \\
+Average                                          & $                     $ & $        $ & $      $ & $      $ & $       $ & $    $ & $   $ & $ 109.14      $ & $ 0.71    $ & $         $ \\
 \hline
-Overall                                          & $ 8.858 \cdot 10^{-1} $ & $ 99     $ & $ 7532 $ & $ 2558 $ & $ 4105  $ & $ 77 $ & $ 0 $ & $             $ & $         $ & $ 65.78   $ \\
+Overall                                          & $ 1.036 \cdot 10^{0}  $ & $ 115    $ & $ 7611 $ & $ 2553 $ & $ 5352  $ & $ 77 $ & $ 0 $ & $             $ & $         $ & $ 77.11   $ \\
 \hline
 \end{tabular}
 %Benchmarks:
