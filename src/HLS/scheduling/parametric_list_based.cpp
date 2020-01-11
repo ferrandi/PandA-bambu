@@ -85,6 +85,7 @@
 #include "xml_document.hpp"
 
 #include "behavioral_helper.hpp"
+#include "call_graph_manager.hpp"  // for CallGraphManager, CallGrap...
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #if !HAVE_UNORDERED
@@ -349,7 +350,7 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
                       ((!is_pipelined && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
    if(cannotBeChained0)
       return;
-   chainingRetCond = (unbounded || cstep_has_RET_conflict /*|| current_starting_time > (current_cycle_starting_time)*/) && (GET_TYPE(flow_graph, current_vertex) & TYPE_RET);
+   chainingRetCond = (unbounded || (cstep_has_RET_conflict && current_starting_time > (current_cycle_starting_time))) && (GET_TYPE(flow_graph, current_vertex) & TYPE_RET);
    if(chainingRetCond)
       return;
    if(cannotBeChained1)
@@ -383,6 +384,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    THROW_ASSERT(operations.size(), "At least one vertex is expected");
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
+   const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
+   const unsigned int return_type_index = FB->CGetBehavioralHelper()->GetFunctionReturnType(funId);
+   auto registering_output_p = top_function_ids.find(funId) != top_function_ids.end() && return_type_index && parameters->getOption<std::string>(OPT_registered_inputs) == "top";
 
    /// The scheduling
    const ScheduleRef schedule = HLS->Rsch;
@@ -529,8 +533,8 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
 #endif
    unsigned int cstep_vuses_ARRAYs = 0;
    unsigned int cstep_vuses_others = 0;
-   bool cstep_has_RET_conflict = false;
-   bool seen_cstep_has_RET_conflict = false;
+   bool cstep_has_RET_conflict = registering_output_p;
+   bool seen_cstep_has_RET_conflict = registering_output_p;
 
    OpVertexSet::const_iterator rv, rv_end = ready_vertices.end();
 
@@ -585,6 +589,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       bool unbounded = false;
       bool unbounded_RW = false;
       bool store_unbounded_check = false;
+      unsigned int n_scheduled_ops = 0;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + std::to_string(schedule->num_scheduled()));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + std::to_string(already_sch));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      operations_number " + std::to_string(operations_number));
@@ -747,6 +752,16 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                      postponed_resources.emplace(fu_type, OpVertexSet(flow_graph));
                   postponed_resources.at(fu_type).insert(current_vertex);
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) + " postponed ");
+                  continue;
+               }
+
+               if((GET_TYPE(flow_graph, current_vertex) & TYPE_RET) && ((schedule->num_scheduled() - already_sch) == operations_number - 1) && n_scheduled_ops != 0 && registering_output_p)
+               {
+                  if(black_list.find(fu_type) == black_list.end())
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  black_list.at(fu_type).insert(current_vertex);
+
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) + " postponed to the next cycle to register the output");
                   continue;
                }
                if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded || unbounded_RW || is_live || store_unbounded_check))
@@ -1011,6 +1026,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                }
 
                /// scheduling is now possible
+               ++n_scheduled_ops;
                /// update resource usage
                used_resources[fu_type]++;
 
@@ -1198,7 +1214,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       /// clear the vises
       cstep_vuses_ARRAYs = cstep_vuses_ARRAYs > 0 ? cstep_vuses_ARRAYs - 1 : 0;
       cstep_vuses_others = cstep_vuses_others > 0 ? cstep_vuses_others - 1 : 0;
-      cstep_has_RET_conflict = false;
+      cstep_has_RET_conflict = registering_output_p;
       /// move to the next cycle
       ++current_cycle;
    }

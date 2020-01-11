@@ -285,7 +285,7 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(get_flow_name() != "Characterization" && boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]))
+      if(get_flow_name() != "Characterization" && (boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)))
       {
          sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
          sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
