@@ -1,10 +1,8 @@
 src/fdiv.c --top-fname=single_prec_division --benchmark-name=divisionSRT4 --generate-tb="a=106,b=57" --evaluation
-src/fdiv.c --top-fname=single_prec_division --benchmark-name=divisionG --generate-tb="a=106,b=57" --evaluation --hls-fpdiv=G
 src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=multiplication --generate-tb="a=106,b=57" --evaluation
 src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=subtraction --generate-tb="a=106,b=57" --evaluation
 src/fsum.c --top-fname=single_prec_addition --benchmark-name=addition --generate-tb="a=106,b=57" --evaluation
 src/f64div.c --top-fname=double_prec_division --benchmark-name=division64SRT4 --generate-tb="a=61,b=3" --evaluation
-src/f64div.c --top-fname=double_prec_division --benchmark-name=division64G --generate-tb="a=61,b=3" --evaluation --hls-fpdiv=G
 src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=multiplication64 --generate-tb="a=0,b=0" --evaluation
 src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=subtraction64 --generate-tb="a=0,b=0" --evaluation
 src/f64sum.c --top-fname=double_prec_addition --benchmark-name=addition64 --generate-tb="a=0,b=0" --evaluation
