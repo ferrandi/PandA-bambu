@@ -1843,6 +1843,15 @@ void tree_node_index_factory::operator()(const function_decl* obj, unsigned int&
    SET_VALUE(static_flag, function_decl);
    SET_VALUE(hwcall_flag, function_decl);
    SET_VALUE(reverse_restrict_flag, function_decl);
+   SET_VALUE(writing_memory, function_decl);
+   SET_VALUE(reading_memory, function_decl);
+   SET_VALUE(pipeline_enabled, function_decl);
+#if HAVE_FROM_PRAGMA_BUILT
+   SET_VALUE(omp_atomic, function_decl);
+   SET_VALUE(omp_body_loop, function_decl);
+   SET_VALUE(omp_critical, function_decl);
+   SET_VALUE(omp_for_wrapper, function_decl);
+#endif
    SET_NODE_ID(body, function_decl);
    SET_NODE_ID(inline_body, function_decl);
 }

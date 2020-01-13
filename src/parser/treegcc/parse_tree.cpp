@@ -85,11 +85,9 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
       {
          source_name.erase(source_name.length() - trailer.length(), trailer.length());
          source_name.append(".pipeline.xml");
-         std::cout << "read from " << source_name << "\n";
          auto XMLfilename = source_name;
          if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
          {
-            // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
             XMLDomParser parser(XMLfilename);
             parser.Exec();
             if(parser)
@@ -127,11 +125,9 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                      auto my_node = GetPointer<function_decl>(TM->get_tree_node_const(findex));
                      THROW_ASSERT(my_node->get_kind() == function_decl_K, "Not a function_decl");
                      my_node->set_pipelining(!is_pipelined.compare("yes"));
-                     std::cout << "The function " << my_node->name->ToString() << " has parameter is_pipelined=" << my_node->is_pipelined() << "\n";
                   }
                }
             }
-            // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
          }
       }
       return TM;

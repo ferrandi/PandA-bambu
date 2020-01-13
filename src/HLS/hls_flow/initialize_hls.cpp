@@ -132,8 +132,9 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
 #endif
    {
       HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
-      if(parameters->isOption(OPT_pipelining) && parameters->getOption<bool>(OPT_pipelining) && HLSMgr->get_tree_manager()->GetTreeNode(funId)->get_kind() == function_decl_K)
+      if(parameters->isOption(OPT_pipelining) && parameters->getOption<bool>(OPT_pipelining))
       {
+         THROW_ASSERT(HLSMgr->get_tree_manager()->GetTreeNode(funId)->get_kind() == function_decl_K, "Called initialize_hls on a node which is not a funcion_decl");
          auto current_node = GetPointer<function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funId));
          if(current_node->is_pipelined())
             HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));

@@ -192,15 +192,9 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
    pipeline_enabled = false;
    if(_parameters->isOption(OPT_pipelining) && _parameters->getOption<bool>(OPT_pipelining))
    {
-      if(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K)
-      {
-         function_decl* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
-         pipeline_enabled = decl_node->is_pipelined();
-         std::cout << "    pipeline_enabled set to " << pipeline_enabled << "\n";
-         std::cout << "    since " << decl_node->name->ToString() << " has is_pipelined()=" << decl_node->is_pipelined() << "\n";
-         if(pipeline_enabled)
-            std::cout << "Enabled pipelining for the function " << decl_node->name->ToString() << "\n";
-      }
+      THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K, "Called function_behavior on a node which is not a funcion_decl");
+      function_decl* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
+      pipeline_enabled = decl_node->is_pipelined();
    }
 }
 

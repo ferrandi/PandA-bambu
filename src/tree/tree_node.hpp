@@ -2802,6 +2802,7 @@ struct function_decl : public decl_node, public attr
 
    /// True if function corresponds to an omp atomic
    bool omp_atomic;
+
 #endif
 
    /// Is the result of THUNK_FIXED_OFFSET(t) for this tree node
