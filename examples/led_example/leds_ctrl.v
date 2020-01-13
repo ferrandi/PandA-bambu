@@ -1,5 +1,5 @@
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2019 Politecnico di Milano
+// Copyright (C) 2016-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps

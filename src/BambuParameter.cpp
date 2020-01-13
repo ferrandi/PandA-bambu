@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -831,7 +831,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --registered-inputs=value\n"
       << "        Specify if inputs are registered or not:\n"
       << "             auto  - inputs are registered only for proxy functions (default)\n"
-      << "             top   - inputs are registered only for top and proxy functions\n"
+      << "             top   - inputs and return are registered only for top and proxy functions\n"
       << "             yes   - all inputs are registered\n"
       << "             no    - none of the inputs is registered\n\n"
       << "    --fsm-encoding=value\n"
@@ -892,8 +892,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                                    --param max-inline-insns-auto=25\n"
       << "                                    -fno-tree-loop-ivcanon\n"
       << "                                    --distram-threshold=256\n"
-      << "             BAMBU-TASTE          - this setup concatenate the input files and"
-      << "                                    passes these options to the compiler:"
+      << "             BAMBU-TASTE          - this setup concatenate the input files and\n"
+      << "                                    passes these options to the compiler:\n"
       << "                                    -O2  -D'printf(fmt, ...)='\n"
       << "                                    --channels-type=MEM_ACC_NN\n"
       << "                                    --memory-allocation-policy=ALL_BRAM\n"

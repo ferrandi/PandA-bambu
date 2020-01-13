@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -614,7 +614,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                if(curr_block == def_block)
                {
                   // Group the uses of ssa variables on the basis of the basic block they belong to
-                  CustomUnorderedMap<unsigned int, std::vector<tree_nodeRef>> copy_bloc_to_stmt;
+                  OrderedMapStd<unsigned int, std::vector<tree_nodeRef>> copy_bloc_to_stmt;
                   for(auto const use : sn->CGetUseStmts())
                   {
                      THROW_ASSERT(stmt_to_bloc.find(use.first->index) != stmt_to_bloc.end(), STR(use.first->index) + " is not in stmt_to_bloc");
@@ -624,8 +624,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                   }
 
                   // Copy the definition statement into each block the ssa variable is used in
-                  CustomUnorderedMap<unsigned int, std::vector<tree_nodeRef>>::iterator copy_block_it;
-                  for(copy_block_it = copy_bloc_to_stmt.begin(); copy_block_it != copy_bloc_to_stmt.end(); ++copy_block_it)
+                  for(auto copy_block_it = copy_bloc_to_stmt.begin(); copy_block_it != copy_bloc_to_stmt.end(); ++copy_block_it)
                   {
                      const blocRef copy_block = list_of_bloc.find(copy_block_it->first)->second;
                      std::vector<tree_nodeRef> copy_block_use_stmts = copy_block_it->second;
@@ -661,8 +660,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                         }
 
                         // Replace the occurrences of the considered ssa variable with the newly created ssa variable
-                        std::vector<tree_nodeRef>::iterator copy_block_uses_it;
-                        for(copy_block_uses_it = copy_block_use_stmts.begin(); copy_block_uses_it != copy_block_use_stmts.end(); ++copy_block_uses_it)
+                        for(auto copy_block_uses_it = copy_block_use_stmts.begin(); copy_block_uses_it != copy_block_use_stmts.end(); ++copy_block_uses_it)
                         {
                            RecursiveReplaceTreeNode(*copy_block_uses_it, tn, tree_reindexRef_sn, *copy_block_uses_it, false);
                            new_sn->AddUseStmt(*copy_block_uses_it);
@@ -1888,8 +1886,8 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    CustomUnorderedMapUnstable<std::string, unsigned int> static_implementation_functions;
 
    /// set of nodes that will be added to the current tree manager (this)
-   CustomUnorderedSet<unsigned int> not_yet_remapped;
-   CustomUnorderedSet<unsigned int> to_be_visited;
+   OrderedSetStd<unsigned int> not_yet_remapped;
+   OrderedSetStd<unsigned int> to_be_visited;
    tree_node_index_factory TNIF(remap, tree_managerRef(this, null_deleter()));
 
    /// FIXME: during one of the analysis of the tree nodes of source_tree_manager, new nodes can be inserted;

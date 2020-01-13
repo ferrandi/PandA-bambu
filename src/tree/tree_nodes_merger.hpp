@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,7 +63,7 @@ REF_FORWARD_DECL(bloc);
 struct tree_node_reached : public tree_node_mask
 {
    /// default constructor
-   tree_node_reached(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap, CustomUnorderedSet<unsigned int>& _not_yet_remapped, const tree_managerRef _TM) : remap(_remap), TM(_TM), not_yet_remapped(_not_yet_remapped)
+   tree_node_reached(CustomUnorderedMapUnstable<unsigned int, unsigned int>& _remap, OrderedSetStd<unsigned int>& _not_yet_remapped, const tree_managerRef _TM) : remap(_remap), TM(_TM), not_yet_remapped(_not_yet_remapped)
    {
    }
    /// tree_node visitors
@@ -76,7 +76,7 @@ struct tree_node_reached : public tree_node_mask
    /// tree manager
    const tree_managerRef TM;
    /// tree_node not yet added to the Tree Manager
-   CustomUnorderedSet<unsigned int>& not_yet_remapped;
+   OrderedSetStd<unsigned int>& not_yet_remapped;
 };
 
 struct tree_node_index_factory : public tree_node_mask

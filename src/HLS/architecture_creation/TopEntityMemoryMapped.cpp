@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2019 Politecnico di Milano
+ *            Copyright (C) 2004-2020 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -175,7 +175,7 @@ DesignFlowStep_Status TopEntityMemoryMapped::InternalExec()
 
    HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm_interface, wrappedObj, 0);
 
-   AddedComponents.insert(wrappedObj);
+   AddedComponents.push_back(wrappedObj);
    if(needMemoryMappedRegisters)
    {
       insertStatusRegister(SM_mm_interface, wrappedObj);
@@ -259,7 +259,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
 
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, memoryMappedRegister, 0);
 
-      AddedComponents.insert(memoryMappedRegister);
+      AddedComponents.push_back(memoryMappedRegister);
       structural_objectRef parameterPort = wrappedObj->find_member(signalName, port_o_K, wrappedObj);
       // out1
       structural_objectRef port_out1 = memoryMappedRegister->find_member("out1", port_o_K, memoryMappedRegister);
@@ -306,7 +306,7 @@ void TopEntityMemoryMapped::insertMemoryMappedRegister(structural_managerRef SM_
    setBusSizes(returnRegister, HLSMgr);
    connectClockAndReset(SM_mm, interfaceObj, returnRegister);
 
-   AddedComponents.insert(returnRegister);
+   AddedComponents.push_back(returnRegister);
 
    structural_objectRef innerReturnPort = wrappedObj->find_member(RETURN_PORT_NAME, port_o_K, wrappedObj);
 
@@ -364,7 +364,7 @@ void TopEntityMemoryMapped::insertStartDoneLogic(structural_managerRef SM_mm, st
       setBusSizes(notifyCaller, HLSMgr);
       connectClockAndReset(SM_mm, interfaceObj, notifyCaller);
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, notifyCaller, 0);
-      AddedComponents.insert(notifyCaller);
+      AddedComponents.push_back(notifyCaller);
 
       structural_objectRef NotifiedSignal = interfaceObj->find_member("Notified", signal_o_K, interfaceObj);
       SM_mm->add_connection(notifyCaller->find_member("notified", port_o_K, notifyCaller), NotifiedSignal);
@@ -391,7 +391,7 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
 
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, statusRegister, 0);
-      AddedComponents.insert(statusRegister);
+      AddedComponents.push_back(statusRegister);
 
       structural_objectRef controlPort = statusRegister->find_member("control", port_o_K, statusRegister);
       structural_objectRef ControlSignal = SM_mm->add_sign("ControlSignal", interfaceObj, controlPort->get_typeRef());
@@ -427,7 +427,7 @@ void TopEntityMemoryMapped::insertStatusRegister(structural_managerRef SM_mm, st
       connectClockAndReset(SM_mm, interfaceObj, statusRegister);
 
       HLS->Rfu->manage_module_ports(HLSMgr, HLS, SM_mm, statusRegister, 0);
-      AddedComponents.insert(statusRegister);
+      AddedComponents.push_back(statusRegister);
 
       structural_objectRef donePort = wrappedObj->find_member(DONE_PORT_NAME, port_o_K, wrappedObj);
       structural_objectRef donePortSignal = SM_mm->add_sign("DonePortSignal", interfaceObj, donePort->get_typeRef());

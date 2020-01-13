@@ -1,4 +1,5 @@
 =========== PANDA 0.9.6 ===========
+Sat 11 January 2020, PandA release 0.9.6
 Seventh public release of PandA framework.
 
 New features introduced:
@@ -7,11 +8,12 @@ New features introduced:
 - Added support for Hardware Discrepancy Analysis.  Reference paper: Pietro Fezzardi, Marco Lattuada, Fabrizio Ferrandi, Using Efficient Path Profiling to Optimize Memory Consumption of On-Chip Debugging for High-Level Synthesis. ACM Trans. Embedded Comput. Syst. 16(5): 149:1-149:19 (2017).
 - Added support for OpenMP for. Reference papers:  M. Minutoli, V. G. Castellana, A. Tumeo, M. Lattuada, and F. Ferrandi, “Efficient Synthesis of Graph Methods: A Dynamically Scheduled Architecture,” in Proceedings of the 35th International Conference on Computer-Aided Design, New York, NY, USA, 2016, p. 128:1–128:8.  V. G. Castellana, M. Minutoli, A. Morari, A. Tumeo, M. Lattuada, and F. Ferrandi, “High level synthesis of RDF queries for graph analytics,” in Proceedings of the IEEE/ACM International Conference on Computer-Aided Design, 2015, pp. 323-330. 
 - Customized Dynamic HLS flow updated. Reference paper: M. Lattuada and F. Ferrandi, "A Design Flow Engine for the Support of Customized Dynamic High Level Synthesis Flows", ACM Trans. Reconfigurable Technol. Syst. 12, 4, Article 19 (October 2019), 26 pages.
-- Added an initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
+- Added initial support to C++/fortran high-level synthesis. Now, Ubuntu distributions require the installation of g++-multilib package.
 - Added support to CLANG/LLVM compiler version 4, 5, 6 and 7. On multiple files, LTO is exploited.
+- Added support to high-level synthesis of spec in LLVM format (i.e., file with .ll extension).
 - Added to CLANG/LLVM based analysis an interprocedural value range analysis based on the following paper: Fernando Magno Quintao Pereira, Raphael Ernani Rodrigues, and Victor Hugo Sperle Campos. "A fast and low-overhead technique to secure programs against integer overflows", In Proceedings of the 2013 IEEE/ACM International Symposium on Code Generation and Optimization (CGO) (CGO '13). Washington, DC, USA, 1-11.
     The implementation started from code available at this link:https://code.google.com/archive/p/range-analysis/.
-    The original code went through a deep revision and it has been changed to be compatible to a recent version of LLVM. Some extensions have been also added:
+    The original code went through a deep revision and it has been changed to be compatible with a recent version of LLVM. Some extensions have been also added:
     - Added anti range support.
     - Redesigned many Range operations to take into account wrapping and to improve the reductions performed.
     - Integrated the LLVM lazy value range analysis.
@@ -24,47 +26,47 @@ New features introduced:
 - Added support to GCC compiler version 8.
 - Added support to mingw-w64. A Windows-7 64bit binary distribution is now available. This minimal msys2 binary distribution includes bambu, GCC8 with plugin and multilib enabled and a customized version of clang7.
 - Added support to Mac OSX exploiting Mac Ports project (https://www.macports.org/)
-- Added FPT tutorial material.
 - Improved the vagrant based virtual machine generation scripts. Such scripts now create an Ubuntu 16.04 32bit VirtualBox image and an Ubuntu 18.04 64bit VirtualBox image.
 - Added Vagrant scripts for Ubuntu precise, trusty,xenial and bionic, Fedora 29, CentOs7, MacOSX MacPorts.
 - Improved timing constraints and timing reports.
 - Added --registered-inputs=top option.
-- Improved the support for discrepancy when Verilator is used as simulator, and a better check of basic floating point operations.
+- Improved the support for discrepancy when Verilator is used as simulator and a better check of basic floating-point operations.
 - Added an example using C++14 constexpr declaration and a simple GCD example written in C++.
 - The building system is now based on a single configure.ac.
 - Regressions are now exploiting a Jenkins based infrastructure.
 - Some performance, style, and c++ improvements have been done following the suggestions coming from cppcheck, clang static analyzer, and Codacy.
-- A single precision floating point faithfully rounded powf function has been added. It follows the method published in:
+- A single-precision floating-point faithfully rounded powf function has been added. It follows the method published in:
   Florent De Dinechin, Pedro Echeverria, Marisa Lopez-Vallejo, Bogdan Pasca. Floating-Point Exponentiation Units for Reconfigurable Computing. ACM Transactions on Reconfigurable Technology and Systems (TRETS), ACM, 2013, 6 (1), pp.4:1–4:15.
   The powf function currently does not supports subnormals.
 - Ported some parts of the code to C++11 standard by applying clang-tidy modernize-deprecated-headers, modernize-pass-by-value, modernize-use-auto,
   modernize-use-bool-literals, modernize-use-equals-default, modernize-use-equals-delete, modernize-loop-convert and modernize-use-override.
-- Added a SRT4 implementation. Added --hls-fpdiv to select which floating point division will be used. Current options: SRT4 for Sweeney, Robertson, Tocher floating point division with radix 4 and G for Goldschmidt floating point division.
-- Added support to ac_types and ac_math library from Mentor Graphics. With respect to the original library, the bambu/PandA library does support both LLVM/Clang and GCC compiler and it requires c++14 standard for the compilation. An initial support to ap_* objects used by VIVADO HLS has been added as well.
+- Added a SRT4 implementation. Added --hls-fpdiv to select which floating-point division will be used. Current options: SRT4 for Sweeney, Robertson, Tocher floating-point division with radix 4 and G for Goldschmidt floating point division.
+- Added support to ac_types and ac_math library from Mentor Graphics. Concerning the original library, the bambu/PandA library does support both LLVM/Clang and GCC compiler and it requires c++14 standard for the compilation. Initial support to ap_* objects used by VIVADO HLS has been added as well.
 - Added support to top design interfaces: none (ap_none), acknowledge (ap_ack), valid (ap_vld), ovalid (ap_ovld), handshake (ap_hs), fifo (ap_fifo) and array (ap_memory). These interfaces are activated by pragmas added to the source code and when the option --generate-interface=INFER is passed to bambu. Examples of pragma use can be found in panda_regressions/hls/bambu_specific_test4.
 - Added some examples taken from https://github.com/Xilinx/HLx_Examples
 - Added option --clock-name, --reset-name, --start-name and --done-name to specify the top component controlling signal names.
 - Renamed top component and removed the suffix _minimal_interface. Now, the top component has the same name of the top function.
 - Improved and fixed the synthesis of empty functions.
 - Added option --VHDL-library=libraryname to specify the library in which the synthesized function has to be compiled.
-- Extented the VHDL support to other bambu library components.
+- Extended the VHDL support to other bambu library components.
 - If it is supported, the compiler used to compile the PandA framework uses the c++17 standard (-std=c++17), otherwise, it uses c++11 standard.
 - Integrated Mockturtle library from EPFL (https://github.com/lsils/mockturtle) to simplify LUT-based expressions.
 - Integrated Abseil C++ libraries (https://abseil.io/)
 - Added examples of parallel_queries from ICCAD15 and ICCAD16 papers.
+- Added FPT tutorial material.
 - Added PNNL19 tutorial material.
 - Added PACT19 tutorial material.
 - Improved makefile parallelization.
+- Improved bambu determinism: two runs with the same specs produce the same HDL output.
+- Fixed COND_EXPR_RESTRUCTURING step
+- Fixed omp tests
+- Fixed libm tests
+- Fixed make check and on cpp examples
+- Fixed c++ struct initialization
+- Fixed floating point division
+- Fixed make dist command under Github repository
 
-This release includes also a set of fixes:
-    on COND_EXPR_RESTRUCTURING step
-    on omp tests
-    on libm tests
-    on make check and on cpp examples
-    on c++ struct initialization
-    on floating point division
-    on make dist command under github repository
-
+Main contributions to this release come from Fabrizio Ferrandi, Marco Lattuada, Pietro Fezzardi, Nicola Saporetti, Serena Curzel, Iris Cusini, Marco Siracusa, Marco Speziali and Davide Toschi.
 
 =========== PANDA 0.9.5 ===========
 Mon 14 Aug 2017, PandA release 0.9.5

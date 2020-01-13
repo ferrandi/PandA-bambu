@@ -13,7 +13,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2016 Politecnico di Milano
+ *              Copyright (c) 2016-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,7 @@ class fu_binding_cs : public fu_binding
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
+   void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief manage_extern_global_port based on function attach the input of memory modules
@@ -106,7 +106,7 @@ class fu_binding_cs : public fu_binding
     * @param HLS
     * @param _unique_id
     */
-   void connect_scheduler_Datapath(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
+   void connect_scheduler_Datapath(const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief for each port decide its vector size
@@ -130,7 +130,7 @@ class fu_binding_cs : public fu_binding
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_port_kernel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
+   void manage_memory_port_kernel(const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief manage_memory_port_hierarchical connect correctly memory port when in hierarchical function
@@ -140,7 +140,7 @@ class fu_binding_cs : public fu_binding
     * @param HLS
     * @param _unique_id
     */
-   void manage_memory_port_hierarchical(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
+   void manage_memory_port_hierarchical(const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id);
 
    /**
     * @brief connect_selector in function not kernel connect selector with all the module that have the right port

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -2997,7 +2997,6 @@ double AllocationInformation::GetConnectionTime(const unsigned int first_operati
    }
    else
    {
-      /// cond_expr additional delay
       const auto second_operation_tn = TreeM->CGetTreeNode(second_operation);
       tree_nodeRef cond_def;
 

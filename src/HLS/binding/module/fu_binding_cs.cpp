@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2004-2016 Politecnico di Milano
+ *              Copyright (c) 2016-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -243,8 +243,7 @@ void fu_binding_cs::set_atomic_memory_parameter(const hlsRef HLS)
    }
 }
 
-void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS,
-                                                         unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
@@ -256,12 +255,12 @@ void fu_binding_cs::manage_memory_ports_parallel_chained(const HLS_managerRef HL
       manage_memory_port_hierarchical(SM, memory_modules, circuit, HLS, _unique_id);
    }
    else
-      fu_binding::manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, unique_id);
+      fu_binding::manage_memory_ports_parallel_chained(HLSMgr, SM, memory_modules, circuit, HLS, _unique_id);
 }
 
-void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
-   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> primary_outs;
+   std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter> primary_outs;
    structural_objectRef cir_port;
    structural_objectRef sche_port;
    structural_objectRef scheduler = circuit->find_member("scheduler_kernel", component_o_K, circuit);
@@ -319,7 +318,8 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
             std::string port_name = GetPointer<port_o>(port_i)->get_id();
             sche_port = scheduler->find_member(port_name, port_i->get_kind(), scheduler);
             THROW_ASSERT(!sche_port || GetPointer<port_o>(sche_port), "should be a port");
-            primary_outs[sche_port].insert(port_i);
+            if(std::find(primary_outs[sche_port].begin(), primary_outs[sche_port].end(), port_i) == primary_outs[sche_port].end())
+               primary_outs[sche_port].push_back(port_i);
          }
       }
    }
@@ -347,9 +347,9 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected memory_port of scheduler");
 }
 
-void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
+void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& _unique_id)
 {
-   std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>> primary_outs;
+   std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter> primary_outs;
    structural_objectRef cir_port;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Start merging, splitting for hierarchical");
    for(const auto memory_module : memory_modules)
@@ -398,8 +398,10 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
             }
             if(port_i->get_kind() == port_vector_o_K) // connecting a port vector
             {
-               primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].insert(GetPointer<port_o>(port_i)->get_port(0)); // merge first cell of vector
-               if(GetPointer<port_o>(port_i)->get_ports_size() > 1)                                                     // More than 1 channel
+               if(std::find(primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].begin(), primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end(), GetPointer<port_o>(port_i)->get_port(0)) ==
+                  primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end())
+                  primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].push_back(GetPointer<port_o>(port_i)->get_port(0)); // merge first cell of vector
+               if(GetPointer<port_o>(port_i)->get_ports_size() > 1)                                                           // More than 1 channel
                {
                   for(unsigned int num_chan = 1; num_chan < parameters->getOption<unsigned int>(OPT_channels_number); num_chan++)
                   {
@@ -407,8 +409,8 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
                   }
                }
             }
-            else
-               primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].insert(port_i); // merge normal port
+            else if(std::find(primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].begin(), primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end(), port_i) == primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].end())
+               primary_outs[GetPointer<port_o>(cir_port)->get_port(0)].push_back(port_i); // merge normal port
          }
       }
    }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,8 +47,10 @@
 
 #include "custom_map.hpp"
 #include <iosfwd>
+#include <list>
 
 #include "graph.hpp"
+#include "op_graph.hpp"
 
 #include "refcount.hpp"
 #include "utility.hpp"
@@ -75,6 +77,11 @@ CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
 //@}
 
+struct jms_sorter
+{
+   bool operator()(const structural_objectRef& a, const structural_objectRef& b) const;
+};
+
 /**
  * Class managing the functional-unit binding.
  * It stores the functional-unit binding, that is, the mapping of operations in the behavioral description onto the set of
@@ -90,7 +97,7 @@ class fu_binding
    std::map<std::pair<unsigned int, unsigned int>, generic_objRef> unique_table;
 
    /// reverse map that associated each functional unit with the set of operations that are executed
-   std::map<std::pair<unsigned int, unsigned int>, CustomOrderedSet<vertex>> operations;
+   std::map<std::pair<unsigned int, unsigned int>, OpVertexSet> operations;
 
    /// operation binding
    std::map<unsigned int, generic_objRef> op_binding;
@@ -103,9 +110,6 @@ class fu_binding
 
    /// The operation graph
    const OpGraphConstRef op_graph;
-
-   /// unique id identifier
-   unsigned int unique_id;
 
    /// port assignment: ports are swapped predicate
    CustomOrderedSet<vertex> ports_are_swapped;
@@ -142,7 +146,7 @@ class fu_binding
    /**
     * Add an instance of the current port
     */
-   structural_objectRef add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu, const std::string& name, const CustomOrderedSet<vertex>& operations, structural_objectRef clock_port, structural_objectRef reset_port);
+   structural_objectRef add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu, const std::string& name, const OpVertexSet& operations, structural_objectRef clock_port, structural_objectRef reset_port);
 
    /**
     * check the module parametrization
@@ -155,11 +159,9 @@ class fu_binding
     * @param curr_gate is the current gate
     * @param var_call_sites_rel put into relation proxied variables and modules referring to such variables
     */
-   void kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units, structural_objectRef curr_gate, std::map<unsigned int, CustomOrderedSet<structural_objectRef>>& var_call_sites_rel,
-                                std::map<unsigned int, unsigned int>& reverse_memory_units);
+   void kill_proxy_memory_units(std::map<unsigned int, unsigned int>& memory_units, structural_objectRef curr_gate, std::map<unsigned int, std::list<structural_objectRef>>& var_call_sites_rel, std::map<unsigned int, unsigned int>& reverse_memory_units);
 
-   void kill_proxy_function_units(std::map<unsigned int, std::string>& wrapped_units, structural_objectRef curr_gate, std::map<std::string, CustomOrderedSet<structural_objectRef>>& fun_call_sites_rel,
-                                  std::map<std::string, unsigned int>& reverse_wrapped_units);
+   void kill_proxy_function_units(std::map<unsigned int, std::string>& wrapped_units, structural_objectRef curr_gate, std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel, std::map<std::string, unsigned int>& reverse_wrapped_units);
 
    /**
     * connect proxies with storage components
@@ -168,20 +170,12 @@ class fu_binding
     * @param var_call_sites_rel is the relation between var and call sites having a proxy as module parameter
     * @param SM is the structural manager
     */
-   void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj, std::map<unsigned int, unsigned int>& reverse_memory_units, std::map<unsigned int, CustomOrderedSet<structural_objectRef>>& var_call_sites_rel,
+   void manage_killing_memory_proxies(std::map<unsigned int, structural_objectRef>& mem_obj, std::map<unsigned int, unsigned int>& reverse_memory_units, std::map<unsigned int, std::list<structural_objectRef>>& var_call_sites_rel,
                                       const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
 
-   void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj, std::map<std::string, unsigned int>& reverse_function_units, std::map<std::string, CustomOrderedSet<structural_objectRef>>& fun_call_sites_rel,
+   void manage_killing_function_proxies(std::map<unsigned int, structural_objectRef>& fun_obj, std::map<std::string, unsigned int>& reverse_function_units, std::map<std::string, std::list<structural_objectRef>>& fun_call_sites_rel,
                                         const structural_managerRef SM, const hlsRef HLS, unsigned int& _unique_id);
 
-   /**
-    * @brief call_version_of_jms used to allow at the derived class to call the right joinMergeSplit
-    * @param SM
-    * @param HLS
-    * @param primary_outs
-    * @param circuit
-    * @param _unique_id
-    */
  public:
    /// The value used to identified unknown functional unit
    static const unsigned int UNKNOWN;
@@ -265,8 +259,8 @@ class fu_binding
 
    /**
     * Redefinition of the [] operator. It is necessary because segfaults happen when the vertex is not into the map
-    * and so the object has not been created yet. This operator can be used only to read informations since it returns
-    * a constant object. It's necessary because a direct manipulation of object can create data inconsistence with
+    * and so the object has not been created yet. This operator can be used only to read information since it returns
+    * a constant object. It's necessary because a direct manipulation of the object can create non-consistent data
     * objects.
     * @param v is the vertex you want to get the object
     * @return the constant object related to vertex
@@ -289,7 +283,7 @@ class fu_binding
     * Returns the set of allocated unit
     * @return the set of allocated unit
     */
-   CustomOrderedSet<unsigned int> get_allocation_list() const;
+   std::list<unsigned int> get_allocation_list() const;
 
    /**
     * return true in case the vertex has been previously assigned
@@ -315,18 +309,18 @@ class fu_binding
    /**
     * Manage the connections between memory ports
     */
-   static void manage_memory_ports_chained(const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit);
-   virtual void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const CustomOrderedSet<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& unique_id);
+   static void manage_memory_ports_chained(const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit);
+   virtual void manage_memory_ports_parallel_chained(const HLS_managerRef HLSMgr, const structural_managerRef SM, const std::list<structural_objectRef>& memory_modules, const structural_objectRef circuit, const hlsRef HLS, unsigned int& unique_id);
 
    /**
     * Return the operations that are executed by the given functional unit
     */
-   CustomOrderedSet<vertex> get_operations(unsigned int unit, unsigned int index) const;
+   OpVertexSet get_operations(unsigned int unit, unsigned int index) const;
 
    /**
-    * Specialise the functional unit based on variables associated with the corresponding operations
+    * Specialize the functional unit based on variables associated with the corresponding operations
     */
-   void specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu, const CustomOrderedSet<vertex>& operations, unsigned int ar);
+   void specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int fu, const OpVertexSet& operations, unsigned int ar);
 
    /**
     * Specialize a memory unit
@@ -337,7 +331,7 @@ class fu_binding
 
    virtual bool manage_module_ports(const HLS_managerRef HLSMgr, const hlsRef HLS, const structural_managerRef SM, const structural_objectRef curr_gate, unsigned int num);
 
-   virtual void join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, CustomOrderedSet<structural_objectRef>>& primary_outs, const structural_objectRef circuit, unsigned int& unique_id);
+   virtual void join_merge_split(const structural_managerRef SM, const hlsRef HLS, std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter>& primary_outs, const structural_objectRef circuit, unsigned int& unique_id);
 
    /**
     * specify if vertex v have or not its ports swapped

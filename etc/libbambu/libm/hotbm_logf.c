@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2019 Politecnico di Milano (Italy).
+/* Copyright (C) 2016-2020 Politecnico di Milano (Italy).
    This file is part of the HLS-FP Library.
 
    The HLS-FP Library is free software; you can redistribute it and/or

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -233,7 +233,8 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+      if(boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1))
+         sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
    }
    else
       sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
@@ -246,15 +247,6 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
 
 void LatticeBackendFlow::InitDesignParameters()
 {
-   if(Param->isOption(OPT_top_design_name))
-      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
-   else
-      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
-   if(Param->isOption(OPT_clock_name))
-      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
-   else
-      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
-
    const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    std::string device_family = device->get_parameter<std::string>("family");
@@ -289,14 +281,6 @@ void LatticeBackendFlow::InitDesignParameters()
    sources_macro_list += "prj_src add -format VERILOG " + std::string(LATTICE_PMI_DEF) + "\n";
 #endif
    actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
-
-   if(Param->isOption(OPT_backend_script_extensions))
-   {
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
-      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
-   }
-   else
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
 
    create_sdc(actual_parameters);
 

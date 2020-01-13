@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2019 Politecnico di Milano
+ *            Copyright (C) 2004-2020 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -98,7 +98,7 @@ class TopEntityMemoryMapped : public top_entity
    void forwardPorts(structural_managerRef SM, structural_objectRef wrappedObj);
 
    std::list<std::string> ParametersName;
-   CustomOrderedSet<structural_objectRef> AddedComponents;
+   std::list<structural_objectRef> AddedComponents;
    bool needMemoryMappedRegisters{false};
 
    /// true when the module is a root function
