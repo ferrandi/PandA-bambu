@@ -782,6 +782,11 @@ bool function_decl::is_pipelined()
    return pipeline_enabled;
 }
 
+void function_decl::set_pipelining(bool v)
+{
+   pipeline_enabled = v;
+}
+
 void function_type::visit(tree_node_visitor* const v) const
 {
    unsigned int mask = ALL_VISIT;

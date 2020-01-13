@@ -65,6 +65,7 @@
 /// tree include
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
+#include "tree_node.hpp"
 
 InitializeHLS::InitializeHLS(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : HLSFunctionStep(_parameters, _HLS_mgr, _function_id, _design_flow_manager, HLSFlowStep_Type::INITIALIZE_HLS)
@@ -131,6 +132,12 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
 #endif
    {
       HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
+      if(parameters->isOption(OPT_pipelining) && parameters->getOption<bool>(OPT_pipelining) && HLSMgr->get_tree_manager()->GetTreeNode(funId)->get_kind() == function_decl_K)
+      {
+         auto current_node = GetPointer<function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funId));
+         if(current_node->is_pipelined())
+            HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
+      }
       HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
       HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
       HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));

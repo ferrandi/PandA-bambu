@@ -2906,6 +2906,8 @@ struct function_decl : public decl_node, public attr
    /// returns true if is a declaration of a pipelined function
    bool is_pipelined();
 
+   void set_pipelining(bool v);
+
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(function_decl)
 

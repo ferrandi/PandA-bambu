@@ -1919,7 +1919,6 @@ int BambuParameter::Exec()
          case 'p':
          {
             setOption(OPT_pipelining, true);
-            setOption(OPT_controller_architecture, HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR);
             break;
          }
          case OPT_SERIALIZE_MEMORY_ACCESSES:

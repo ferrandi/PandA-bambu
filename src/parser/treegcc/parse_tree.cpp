@@ -65,11 +65,10 @@
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 
-#include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
 #include "tree_manager.hpp"
-
-//#include <iostream>
+#include "tree_node.hpp"
 
 // exit_code is stored in zebu.cpp
 extern int exit_code;
@@ -80,21 +79,17 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
    {
       extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn);
       auto TM = tree_parseY(Param, f);
-
       std::string source_name = f;
       std::string trailer = ".gimplePSSA";
-      if(!source_name.compare(source_name.length() - trailer.length(), trailer.length(), trailer))
+      if(Param->isOption(OPT_pipelining) && Param->getOption<bool>(OPT_pipelining) && !source_name.compare(source_name.length() - trailer.length(), trailer.length(), trailer))
       {
-         source_name.erase(source_name.length()-trailer.length(), trailer.length());
+         source_name.erase(source_name.length() - trailer.length(), trailer.length());
          source_name.append(".pipeline.xml");
          std::cout << "read from " << source_name << "\n";
-
-         //const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
-         //std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
-         auto XMLfilename = source_name; //output_temporary_directory + "/" + leaf_name + ".pipeline.xml";
+         auto XMLfilename = source_name;
          if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
          {
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+            // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
             XMLDomParser parser(XMLfilename);
             parser.Exec();
             if(parser)
@@ -129,17 +124,14 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                            THROW_ERROR("malformed pipeline infer file");
                      }
                      auto findex = TM->function_index(fname);
-                     std::cout << "The function " << fname << " has parameter is_pipelined=\"" << is_pipelined << "\"\n";
-                     std::cout << "Tree retrieved index for the function is " << std::to_string(findex) << "\n\n";
+                     auto my_node = GetPointer<function_decl>(TM->get_tree_node_const(findex));
+                     THROW_ASSERT(my_node->get_kind() == function_decl_K, "Not a function_decl");
+                     my_node->set_pipelining(!is_pipelined.compare("yes"));
+                     std::cout << "The function " << my_node->name->ToString() << " has parameter is_pipelined=" << my_node->is_pipelined() << "\n";
                   }
                }
             }
-            //INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
-         }
-         else
-         {
-            std::string error_string = "The file " << XMLfilename << " does not exhist";
-            THROW_ERROR(error_string);
+            // INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
          }
       }
       return TM;
