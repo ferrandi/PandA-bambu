@@ -324,10 +324,9 @@ void tree_node_finder::operator()(const function_decl* obj, unsigned int& mask)
    //   WRITE_UFIELD_STRING(os, *i);
    find_res = find_res && CHECK_VALUE_OPT(TOK_OPERATOR, obj->operator_flag) && CHECK_TREE_NODE_OPT(TOK_TMPL_PARMS, obj->tmpl_parms) && CHECK_TREE_NODE_OPT(TOK_TMPL_ARGS, obj->tmpl_args) &&
 
-              CHECK_VALUE_OPT(TOK_FIXD, obj->fixd) && CHECK_VALUE_OPT(TOK_VIRT, obj->virt) && CHECK_TREE_NODE_OPT(TOK_FN, obj->fn) && CHECK_VALUE_OPT(TOK_UNDEFINED, obj->undefined_flag) &&
-              CHECK_VALUE_OPT(TOK_BUILTIN, obj->builtin_flag) && CHECK_VALUE_OPT(TOK_STATIC, obj->static_flag) && CHECK_VALUE_OPT(TOK_HWCALL, obj->hwcall_flag) &&
-              CHECK_VALUE_OPT(TOK_REVERSE_RESTRICT, obj->reverse_restrict_flag) && CHECK_VALUE_OPT(TOK_WRITING_MEMORY, obj->writing_memory) && CHECK_VALUE_OPT(TOK_READING_MEMORY, obj->reading_memory) &&
-              CHECK_VALUE_OPT(TOK_PIPELINE_ENABLED, obj->pipeline_enabled) &&
+              CHECK_VALUE_OPT(TOK_FIXD, obj->fixd) && CHECK_VALUE_OPT(TOK_VIRT, obj->virt) && CHECK_TREE_NODE_OPT(TOK_FN, obj->fn) && CHECK_VALUE_OPT(TOK_UNDEFINED, obj->undefined_flag) && CHECK_VALUE_OPT(TOK_BUILTIN, obj->builtin_flag) &&
+              CHECK_VALUE_OPT(TOK_STATIC, obj->static_flag) && CHECK_VALUE_OPT(TOK_HWCALL, obj->hwcall_flag) && CHECK_VALUE_OPT(TOK_REVERSE_RESTRICT, obj->reverse_restrict_flag) && CHECK_VALUE_OPT(TOK_WRITING_MEMORY, obj->writing_memory) &&
+              CHECK_VALUE_OPT(TOK_READING_MEMORY, obj->reading_memory) && CHECK_VALUE_OPT(TOK_PIPELINE_ENABLED, obj->pipeline_enabled) &&
 #if HAVE_FROM_PRAGMA_BUILT
               CHECK_VALUE_OPT(TOK_OMP_ATOMIC, obj->omp_atomic) && CHECK_VALUE_OPT(TOK_OMP_BODY_LOOP, obj->omp_body_loop) && CHECK_VALUE_OPT(TOK_OMP_CRITICAL_SESSION, obj->omp_critical) && CHECK_VALUE_OPT(TOK_OMP_FOR_WRAPPER, obj->omp_for_wrapper) &&
 #endif
