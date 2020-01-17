@@ -33,7 +33,6 @@ EXTRA_DIST += \
 %D%/xc7z020-1clg484-VVD_05.0_OSF_sdc_flopoco.sh\
 %D%/xc7z020-1clg484-VVD_05.0_OSF_sdc.sh\
 %D%/xc7z020-1clg484-VVD_06.6_OSF_sdc_no_proxy.sh\
-%D%/xc7z020-1clg484-VVD_10.0_OSF_registered.sh\
 %D%/xc7z020-1clg484-VVD_10.0_OSF_sdc_flopoco.sh\
 %D%/xc7z020-1clg484-VVD_10.0_OSF_sdc.sh\
 %D%/xc7z020-1clg484-VVD_10.0_OSF.sh\

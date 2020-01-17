@@ -9,7 +9,7 @@
         <component_o id="SIMPLEJOIN_FU">
           <structural_type_descriptor id_type="SIMPLEJOIN_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2019 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -80,7 +80,7 @@ end
         <component_o id="FC_FU">
           <structural_type_descriptor id_type="FC_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -141,7 +141,7 @@ assign sop = done &amp; (state | aop);
         <component_o id="SWITCH_CASE_FU">
           <structural_type_descriptor id_type="SWITCH_CASE_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="sop" dir="IN">
@@ -178,7 +178,7 @@ assign f = sop &amp; (~temp); //False: wrong case"/>
         <component_o id="COND_FU">
           <structural_type_descriptor id_type="COND_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="sop" dir="IN">
@@ -210,7 +210,7 @@ assign f = sop &amp; (~cond); //False"/>
         <component_o id="PT_FU">
           <structural_type_descriptor id_type="PT_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="ENABLE" dir="IN">
@@ -251,7 +251,7 @@ assign ops = Priorities(rops, ENABLE);
         <component_o id="PT_FU_MEM">
           <structural_type_descriptor id_type="PT_FU_MEM"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="ENABLE" dir="IN">
@@ -291,7 +291,7 @@ assign ops = Priorities(rops, ENABLE);
         <component_o id="PT_RR_FU">
           <structural_type_descriptor id_type="PT_RR_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -358,7 +358,7 @@ PT_FU_MEM #(.BITSIZE_ops(BITSIZE_ops), .PORTSIZE_ops(PORTSIZE_ops), .BITSIZE_rop
         <component_o id="JOIN_FU">
           <structural_type_descriptor id_type="JOIN_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -441,7 +441,7 @@ end
           <parameter name="BITSIZE">8</parameter>
           <parameter name="INITIATION_TIME">1</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -510,7 +510,7 @@ end
         <component_o id="CE_BYPASS">
           <structural_type_descriptor id_type="CE_BYPASS"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana &lt;vcastellana@elet.polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -560,7 +560,7 @@ assign rop = sop | rop_reg;"/>
         <component_o id="CE_VIRTUAL_FU">
           <structural_type_descriptor id_type="CE_VIRTUAL_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana &lt;vcastellana@elet.polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="sop" dir="IN">
@@ -582,7 +582,7 @@ assign rop = sop | rop_reg;"/>
         <component_o id="CE_FU" >
           <structural_type_descriptor id_type="CE_FU"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2012-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2012-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -627,7 +627,7 @@ assign rop=rop_out;
           <structural_type_descriptor id_type="MUX"/>
           <parameter name="NUM_ch">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="selector" dir="IN">
@@ -664,7 +664,7 @@ assign rop=rop_out;
           <structural_type_descriptor id_type="ALLOW_MEM_ACCESS_FU"/>
           <parameter name="NUM_ch">2</parameter>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="clock" dir="IN" is_clock="1">
@@ -738,7 +738,7 @@ assign memory_enabled = ~state;"/>
         <component_o id="EXPAND">
           <structural_type_descriptor id_type="EXPAND"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="selector" dir="IN">
@@ -771,7 +771,7 @@ assign memory_enabled = ~state;"/>
       <circuit>
         <component_o id="MEMORY_ENABLED_AND">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2020 Politecnico di Milano</copyright>
           <authors>Marco Lattuada &lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="MEMORY_ENABLED_AND"/>
@@ -799,7 +799,7 @@ memory_enabled &lt;= std_logic_vector(resize(unsigned(in1), PORTSIZE_memory_enab
         <component_o id="MC_INDEX">
           <structural_type_descriptor id_type="MC_INDEX"/>
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2017 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2015-2020 Politecnico di Milano</copyright>
           <authors>Vito Giovanni Castellana</authors>
           <license>PANDA_LGPLv3</license>
           <port_o id="in1" dir="IN">

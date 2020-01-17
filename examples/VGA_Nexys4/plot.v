@@ -1,5 +1,5 @@
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2019 Politecnico di Milano
+// Copyright (C) 2016-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -30,7 +30,7 @@ module vga_address_translator(x, y, mem_address);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2019 Politecnico di Milano
+// Copyright (C) 2016-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 module generic_vga_controller(reset, clk_in, pixel_colour, memory_address, VGA_R, VGA_G, VGA_B, VGA_HS, VGA_VS, VGA_BLANK, VGA_SYNC, VGA_CLK);
@@ -168,7 +168,7 @@ parameter horizontal_sync_pulse_width =96, //horizontal sync pulse width in pixe
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2019 Politecnico di Milano
+// Copyright (C) 2015-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 module frequency_divider_byX(reset, clk_in, clk_div_by_X);
@@ -332,7 +332,7 @@ endmodule
 
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2019 Politecnico di Milano
+// Copyright (C) 2015-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
@@ -367,7 +367,7 @@ module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2016-2019 Politecnico di Milano
+// Copyright (C) 2016-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps

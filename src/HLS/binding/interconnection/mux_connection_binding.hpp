@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -93,6 +93,17 @@ class mux_connection_binding : public conn_binding_creator
 
    bool is_PC;
 
+   /// cache connection type
+   enum cacheType
+   {
+      i_assign = 0,
+      iu_conv,
+      ui_conv,
+      vb_assign
+   };
+   /// connection cache
+   std::map<std::tuple<unsigned int, cacheType, const HLS_manager::io_binding_type>, generic_objRef> connCache;
+
    /**
     * Performs specialization of interconnections using mux architecture.
     */
@@ -147,6 +158,9 @@ class mux_connection_binding : public conn_binding_creator
                        std::vector<HLS_manager::io_binding_type>& var_read, unsigned int size_form_par);
 
    unsigned int address_precision(unsigned int precision, const vertex& op, const OpGraphConstRef data, const tree_managerRef TreeM);
+
+   bool isZeroObj(unsigned int tree_index, const tree_managerRef TreeM);
+   bool isConstantObj(unsigned int tree_index, const tree_managerRef TreeM);
 
  public:
    /**

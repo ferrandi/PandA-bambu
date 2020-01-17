@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -276,47 +276,18 @@ void NanoXploreBackendFlow::ExecuteSynthesis()
 void NanoXploreBackendFlow::InitDesignParameters()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->NanoXploreBackendFlow - Init Design Parameters");
-   if(Param->isOption(OPT_top_design_name))
-      actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
-   else
-      actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
-
-   if(Param->isOption(OPT_clock_name))
-      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
-   else
-      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
 
    /// determine if power optimization has to be performed
    bool xpwr_enabled = false;
    if(Param->isOption("power_optimization") && Param->getOption<bool>("power_optimization"))
       xpwr_enabled = true;
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
-   bool connect_iob = false;
-   if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
-      connect_iob = true;
-   actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
    const target_deviceRef device = target->get_target_device();
    std::string device_name = device->get_parameter<std::string>("model");
    std::string package = device->get_parameter<std::string>("package");
    std::string speed_grade = device->get_parameter<std::string>("speed_grade");
    std::string device_string = device_name + package + speed_grade;
    actual_parameters->parameter_values[PARAM_target_device] = device_string;
-
-   if(Param->isOption(OPT_backend_script_extensions))
-   {
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
-      actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
-   }
-   else
-      actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
-
-   if(Param->isOption(OPT_VHDL_library))
-   {
-      actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(true);
-      actual_parameters->parameter_values[PARAM_VHDL_library] = Param->getOption<std::string>(OPT_VHDL_library);
-   }
-   else
-      actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(false);
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
    std::vector<std::string> file_list = convert_string_to_vector<std::string>(HDL_files, ";");

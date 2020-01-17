@@ -1,5 +1,5 @@
 =========== PANDA 0.9.6 ===========
-Wed 1 January 2020, PandA release 0.9.6
+Sat 11 January 2020, PandA release 0.9.6
 Seventh public release of PandA framework.
 
 New features introduced:
@@ -66,7 +66,7 @@ New features introduced:
 - Fixed floating point division
 - Fixed make dist command under Github repository
 
-Main contributions to this release come from Fabrizio Ferrandi, Marco Lattuada, Pietro Fezzardi, Serena Curzel, Iris Cusini, Marco Siracusa, Marco Speziali and Davide Toschi.
+Main contributions to this release come from Fabrizio Ferrandi, Marco Lattuada, Pietro Fezzardi, Nicola Saporetti, Serena Curzel, Iris Cusini, Marco Siracusa, Marco Speziali and Davide Toschi.
 
 =========== PANDA 0.9.5 ===========
 Mon 14 Aug 2017, PandA release 0.9.5

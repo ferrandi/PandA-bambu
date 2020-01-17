@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,7 +47,6 @@
 REF_FORWARD_DECL(target_device);
 
 #define PARAM_sources_macro_list "sources_macro_list"
-#define PARAM_connect_iob "connect_iob"
 
 class NanoXploreWrapper : public SynthesisTool
 {

@@ -31,7 +31,7 @@
 
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2019 Politecnico di Milano
+// Copyright (C) 2015-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 module frequency_divider_byX(reset, clk_in, clk_div_by_X);
@@ -84,7 +84,7 @@ parameter DIVIDE_BY=2;
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2015-2019 Politecnico di Milano
+// Copyright (C) 2015-2020 Politecnico di Milano
 // Author(s): Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
@@ -118,7 +118,7 @@ module VideoMemory(clk_w,clk_r,we_w,addr_w,addr_r,data_w,data_r);
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2013-2019 Politecnico di Milano
+// Copyright (C) 2013-2020 Politecnico di Milano
 // Author(s): Edoardo Giacomello <edoardo.giacomello@mail.polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -158,7 +158,7 @@ endmodule
 
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2013-2019 Politecnico di Milano
+// Copyright (C) 2013-2020 Politecnico di Milano
 // Author(s): Edoardo Giacomello <edoardo.giacomello@mail.polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
@@ -342,7 +342,7 @@ parameter BITS_PER_COLOUR_CHANNEL = 1, MONOCHROME = `MONOCHROME_FALSE, RESOLUTIO
 endmodule
 
 // This component is part of the BAMBU/PANDA IP LIBRARY
-// Copyright (C) 2013-2019 Politecnico di Milano
+// Copyright (C) 2013-2020 Politecnico di Milano
 // Author(s): Edoardo Giacomello <edoardo.giacomello@mail.polimi.it>, Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
 // License: PANDA_LGPLv3
 `timescale 1ns / 1ps
