@@ -8007,7 +8007,16 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    CG->findIntervals(parameters);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   return finalize() ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   if(finalize())
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable ranges updated");
+      return DesignFlowStep_Status::SUCCESS;
+   }
+   else
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable ranges reached fixed point");
+      return DesignFlowStep_Status::UNCHANGED;
+   }
 }
 
 void RangeAnalysis::Initialize()

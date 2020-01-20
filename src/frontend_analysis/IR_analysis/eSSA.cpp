@@ -601,6 +601,14 @@ struct ValueDFS
    // Neither PInfo nor EdgeOnly participate in the ordering
    PredicateBase* PInfo = nullptr;
    bool EdgeOnly = false;
+
+   std::string ToString()
+   {
+      return "Predicate info: " + (PInfo ? PInfo->OriginalOp->ToString() : "null") + 
+         " Def: " + (Def ? Def->ToString() : "null") + 
+         " Use: " + (U ? U->getUser()->ToString() : "null") + 
+         " EdgeOnly: " + (EdgeOnly ? "true" : "false");
+   }
 };
 
 // This compares ValueDFS structures, creating OrderedBasicBlocks where
@@ -765,17 +773,20 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
       const auto* I = GetPointer<const gimple_node>(GET_CONST_NODE(U));
       THROW_ASSERT(I, "Use statement should be a gimple_node");
       ValueDFS VD;
-      // Put the phi node uses in the incoming block.
+      
       unsigned int IBlock;
-      if(const auto* PN = GetPointer<const gimple_phi>(GET_CONST_NODE(U)))
+      // Put the phi node uses in the incoming block
+      if(GetPointer<const gimple_phi>(GET_CONST_NODE(U)) != nullptr)
       {
-         auto phiDefEdge = std::find_if(PN->CGetDefEdgesList().begin(), PN->CGetDefEdgesList().end(), 
-            [&](const gimple_phi::DefEdge& de) { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(Op); });
-         THROW_ASSERT(phiDefEdge != PN->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
-         IBlock = phiDefEdge->second;
-         // Make phi node users appear last in the incoming block
-         // they are from.
-         VD.LocalNum = LN_Last;
+         // Phi uses may not be renamed
+         continue;
+         //    auto phiDefEdge = std::find_if(PN->CGetDefEdgesList().begin(), PN->CGetDefEdgesList().end(), 
+         //       [&](const gimple_phi::DefEdge& de) { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(Op); });
+         //    THROW_ASSERT(phiDefEdge != PN->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
+         //    IBlock = phiDefEdge->second;
+         //    // Make phi node users appear last in the incoming block
+         //    // they are from.
+         //    VD.LocalNum = LN_Last;
       }
       else
       {
@@ -845,6 +856,10 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          ToBB->AddPhi(PIC);
          PredicateMap.insert({PIC, ValInfo});
          Result.Def = PIC;
+      }
+      else
+      {
+         THROW_UNREACHABLE("Invalid PredicateInfo type");
       }
    }
    return RenameStack.back().Def;
@@ -948,6 +963,8 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
       // top of stack, which will represent the reaching def.
       for(auto& VD : OrderedUses)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing " + VD.ToString());
+         
          // We currently do not materialize copy over copy, but we should decide if
          // we want to.
          bool PossibleCopy = VD.PInfo != nullptr;
@@ -987,6 +1004,8 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          }
 
          ValueDFS& Result = RenameStack.back();
+         THROW_ASSERT(VD.U, "A use sohuld be in scope for current renaming operation");
+         THROW_ASSERT(GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser())), "Phi uses may not be renamed");
 
          // If the possible copy dominates something, materialize our stack up to
          // this point. This ensures every comparison that affects our operation
@@ -997,16 +1016,21 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-            "---Found replacement " + GET_NODE(Result.Def)->ToString() + " for " + GET_NODE(VD.U->getOperand())->ToString() + " in " + GET_NODE(VD.U->getUser())->ToString());
+            "---Found replacement " + GET_CONST_NODE(Result.Def)->ToString() + " for " + GET_CONST_NODE(VD.U->getOperand())->ToString() + " in " + GET_CONST_NODE(VD.U->getUser())->ToString());
          const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(Result.Def));
          #if HAVE_ASSERTS
-         if(const auto* phiUser = GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser())))
+         if(!valueComesBefore(OI, Result.Def, VD.U->getUser()))
          {
-            THROW_ASSERT(phiUser->bb_index != phi->bb_index, "Renaming phi use in the same basic block is useless");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT");
+            const auto defVertex = DT->CGetBBGraphInfo()->bb_index_map.at(GetPointer<const gimple_node>(GET_CONST_NODE(Result.Def))->bb_index);
+            const auto defBB = DT->CGetBBNodeInfo(defVertex)->block;
+            const auto defBB_succ = defBB->list_of_succ;
+            if(std::find(defBB_succ.begin(), defBB_succ.end(), defBB->number) == defBB_succ.end())
+            {
+               THROW_UNREACHABLE("PredicateInfo def should have dominated this use at least in the CFG");
+            }
          }
          #endif
-         // Assert not valid in case of CFG loops
-         //    THROW_ASSERT(valueComesBefore(OI, Result.Def, VD.U->getUser()), "PredicateInfo def should have dominated this use");
          VD.U->set(phi->res, TM);
          modified = true;
       }
