@@ -22,7 +22,7 @@
       <circuit>
         <component_o id="TRUE_DUAL_PORT_BYTE_ENABLING_RAM">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <specialized>NanoXplore</specialized>

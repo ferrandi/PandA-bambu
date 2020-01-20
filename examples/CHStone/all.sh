@@ -6,6 +6,11 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
+$dir_script/EP2C70F896C6-R_15.0_O2_sdc_aligned_access.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
 $dir_script/5CSEMA5F31C6_10.0_O2_sdc_aligned_access.sh $@
 return_value=$?
 if test $return_value != 0; then
@@ -57,6 +62,11 @@ if test $return_value != 0; then
    exit $return_value
 fi
 $dir_script/EP2C70F896C6-R_10.0_O3_sdc.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
+$dir_script/EP2C70F896C6-R_15.0_O3_sdc.sh $@
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

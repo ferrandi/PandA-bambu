@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,6 +78,7 @@ class xml_element;
 #define PARAM_has_script_extensions "has_script_extensions"
 #define PARAM_has_VHDL_library "has_VHDL_library"
 #define PARAM_VHDL_library "VHDL_library"
+#define PARAM_connect_iob "connect_iob"
 
 /// used by Intel/Altera Characterization
 #define PARAM_fu "fu"

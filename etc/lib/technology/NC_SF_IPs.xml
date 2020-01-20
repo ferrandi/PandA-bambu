@@ -8,7 +8,7 @@
       <circuit>
         <component_o id="sf_FFdata_converter_FU_32_64">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2014-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="sf_FFdata_converter_FU_32_64"/>
@@ -30,7 +30,7 @@
       <circuit>
         <component_o id="sf_FFdata_converter_FU_64_32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2014-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="sf_FFdata_converter_FU_64_32"/>

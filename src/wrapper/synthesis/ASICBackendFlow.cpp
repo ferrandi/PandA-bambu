@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -101,10 +101,6 @@ void ASICBackendFlow::create_sdc(const DesignParametersRef dp)
 
 void ASICBackendFlow::InitDesignParameters()
 {
-   if(Param->isOption(OPT_clock_name))
-      actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
-   else
-      actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
    create_sdc(actual_parameters);
 
    for(auto& step : steps)
