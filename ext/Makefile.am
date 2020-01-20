@@ -40,6 +40,7 @@ mockturtle/include/mockturtle/algorithms/resubstitution.hpp\
 mockturtle/include/mockturtle/algorithms/satlut_mapping.hpp\
 mockturtle/include/mockturtle/algorithms/shannon_decomposition.hpp\
 mockturtle/include/mockturtle/algorithms/simulation.hpp\
+mockturtle/include/mockturtle/algorithms/xag_optimization.hpp\
 mockturtle/include/mockturtle/algorithms/xmg_algebraic_rewriting.hpp\
 mockturtle/include/mockturtle/generators/arithmetic.hpp\
 mockturtle/include/mockturtle/generators/control.hpp\
@@ -137,6 +138,7 @@ mockturtle/lib/kitty/kitty/decomposition.hpp\
 mockturtle/lib/kitty/kitty/detail/constants.hpp\
 mockturtle/lib/kitty/kitty/detail/linear_constants.hpp\
 mockturtle/lib/kitty/kitty/detail/mscfix.hpp\
+mockturtle/lib/kitty/kitty/detail/shift.hpp\
 mockturtle/lib/kitty/kitty/detail/utils.hpp\
 mockturtle/lib/kitty/kitty/dynamic_truth_table.hpp\
 mockturtle/lib/kitty/kitty/enumeration.hpp\
@@ -215,6 +217,7 @@ mockturtle/docs/algorithms/extract_linear.rst\
 mockturtle/docs/algorithms/linear_resynthesis.rst\
 mockturtle/include/mockturtle/algorithms/extract_linear.hpp\
 mockturtle/include/mockturtle/algorithms/linear_resynthesis.hpp\
+mockturtle/include/mockturtle/generators/legacy.hpp\
 mockturtle/include/mockturtle/generators/majority_n.hpp\
 mockturtle/include/mockturtle/properties/mccost.hpp\
 mockturtle/test/algorithms/extract_linear.cpp\

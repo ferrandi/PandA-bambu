@@ -107,7 +107,7 @@ bool node_build_cut_level_one_int( Ntk const& ntk, std::vector<typename Ntk::nod
   auto pos = 0;
   for ( const auto& l : leaves )
   {
-    uint32_t cost_curr = node_get_leaf_cost_one( ntk, l, fanin_limit );
+    uint32_t const cost_curr = node_get_leaf_cost_one( ntk, l, fanin_limit );
     if ( best_cost > cost_curr ||
          ( best_cost == cost_curr && best_fanin && ntk.level( l ) > ntk.level( *best_fanin ) ) )
     {

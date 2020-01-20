@@ -55,6 +55,8 @@ Resynthesis functions
 
 .. doxygenclass:: mockturtle::exact_resynthesis
 
+.. doxygenclass:: mockturtle::exact_aig_resynthesis
+
 .. doxygenclass:: mockturtle::dsd_resynthesis
 
 .. doxygenclass:: mockturtle::shannon_resynthesis
