@@ -28,7 +28,7 @@ EXTRA_DIST = \
              absl/meta/type_traits_test.cc absl/meta/BUILD.bazel absl/meta/CMakeLists.txt \
              absl/numeric/int128_stream_test.cc absl/numeric/int128_test.cc \
              absl/random/bernoulli_distribution_test.cc absl/random/beta_distribution_test.cc absl/random/bit_gen_ref_test.cc absl/random/distributions_test.cc absl/random/generators_test.cc absl/random/log_uniform_int_distribution_test.cc \
-             absl/random/mock_distributions_test.cc absl/random/mocking_bit_gen_test.cc \
+             absl/random/mocking_bit_gen.cc absl/random/mock_distributions_test.cc absl/random/mocking_bit_gen_test.cc \
              absl/random/discrete_distribution_test.cc absl/random/poisson_distribution_test.cc absl/random/exponential_distribution_test.cc absl/random/gaussian_distribution_test.cc absl/random/uniform_int_distribution_test.cc \
              absl/random/uniform_real_distribution_test.cc absl/random/zipf_distribution_test.cc absl/random/examples_test.cc absl/random/seed_sequences_test.cc absl/random/internal/chi_square.cc \
              absl/random/internal/distribution_test_util.cc absl/random/internal/chi_square.h absl/random/internal/distribution_test_util.h absl/random/internal/traits_test.cc absl/random/internal/generate_real_test.cc \
@@ -125,7 +125,7 @@ libabseil_la_SOURCES = \
                        absl/flags/flag.cc absl/flags/internal/usage.cc absl/flags/usage.cc absl/flags/parse.cc \
                        absl/hash/internal/hash.cc absl/hash/internal/city.cc \
                        absl/numeric/int128.cc  \
-                       absl/random/discrete_distribution.cc absl/random/gaussian_distribution.cc absl/random/mocking_bit_gen.cc absl/random/seed_gen_exception.cc absl/random/seed_sequences.cc absl/random/internal/seed_material.cc absl/random/internal/pool_urbg.cc\
+                       absl/random/discrete_distribution.cc absl/random/gaussian_distribution.cc absl/random/seed_gen_exception.cc absl/random/seed_sequences.cc absl/random/internal/seed_material.cc absl/random/internal/pool_urbg.cc\
                        absl/random/internal/randen.cc absl/random/internal/randen_slow.cc absl/random/internal/randen_detect.cc \
                        absl/strings/ascii.cc absl/strings/charconv.cc absl/strings/escaping.cc absl/strings/internal/charconv_bigint.cc absl/strings/internal/charconv_bigint.h absl/strings/internal/charconv_parse.cc\
                        absl/strings/internal/escaping.cc absl/strings/internal/memutil.cc absl/strings/match.cc absl/strings/numbers.cc absl/strings/str_cat.cc absl/strings/str_replace.cc absl/strings/str_split.cc absl/strings/string_view.cc \
