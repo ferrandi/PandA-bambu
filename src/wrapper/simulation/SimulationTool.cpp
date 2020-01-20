@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -191,11 +191,6 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
                THROW_ERROR("String not valid: " + line);
             }
             auto sim_cycles = boost::lexical_cast<unsigned long long int>(filevalues[1]);
-            /// Remove one cycle if primary input are registered
-            if(Param->getOption<std::string>(OPT_registered_inputs) == "top")
-            {
-               sim_cycles -= 1;
-            }
             if(filevalues.size() == 3)
             {
                if(filevalues[2] == "ns")

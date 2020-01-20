@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2020 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -53,7 +53,6 @@ REF_FORWARD_DECL(target_device);
 #define PARAM_ucf_file "ucf_file"
 #define PARAM_xcf_file "xcf_file"
 #define PARAM_power_optimization "power_optimization"
-#define PARAM_connect_iob "connect_iob"
 #define PARAM_vivado_sources_macro_list "vivado_sources_macro_list"
 #define PARAM_yosys_vivado_sources_macro_list "yosys_vivado_sources_macro_list"
 #define PARAM_vivado_report "vivado_report"

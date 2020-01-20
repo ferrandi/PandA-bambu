@@ -9,7 +9,7 @@
       <circuit>
         <component_o id="plot">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2013-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2013-2020 Politecnico di Milano</copyright>  
           <authors>Edoardo Giacomello &lt;edoardo.giacomello@mail.polimi.it&gt;, Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="plot"/>
@@ -89,7 +89,7 @@
       <circuit>
         <component_o id="leds_ctrl">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2015-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2015-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="leds_ctrl"/>

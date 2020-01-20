@@ -1,32 +1,28 @@
-%Generated at 2019-12-19 18:20:42.867279 with bambu  Version: PandA 0.9.6 - Revision 8b8fdb09e0086ccfdd65c7f6e191b09c65862ba7-PR-10 with arguments --no-iob --soft-float --hls-div --device=TO_BE_OVERWRITTEN --evaluation --clock-period=2.5 --speculative-sdc-scheduling --device=xc7vx690t-3ffg1930-VVD --flopoco
+%Generated at 2020-01-16 03:01:10.723078 with bambu  Version: PandA 0.9.6 - Revision 5dea469b31d6c7052279200a9bd3f69b10448cb6-PR-11 with arguments --no-iob --soft-float --hls-div --registered-inputs=top --panda-parameter=profile-top=1 --speculative-sdc-scheduling --device=TO_BE_OVERWRITTEN --evaluation --clock-period=2.5 --device=xc7vx690t-3ffg1930-VVD --flopoco
 \begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
 \hline
-Benchmark Name                                   & Tot. Latency            & Num Cycles & LUTs      & Slices   & Registers & DSPs   & BRAMs & Clock Frequency & Clock Slack & HLS Time(s) \\
+Benchmark Name                                   & Tot. Latency            & Num Cycles & LUTs     & Slices   & Registers & DSPs   & BRAMs & Clock Frequency & Clock Slack & HLS Time(s) \\
 \hline
-addition64:double\_prec\_addition\_0             & $ 7.363 \cdot 10^{-2} $ & $ 24     $ & $ 1223  $ & $ 516  $ & $ 1881  $ & $ 0  $ & $ 0 $ & $ 325.95      $ & $ -0.57   $ & $ 0.45    $ \\
-addition:single\_prec\_addition\_0               & $ 4.525 \cdot 10^{-2} $ & $ 16     $ & $ 582   $ & $ 218  $ & $ 626   $ & $ 0  $ & $ 0 $ & $ 353.61      $ & $ -0.33   $ & $ 0.49    $ \\
-division64G:double\_prec\_division\_0            & $ 1.355 \cdot 10^{-1} $ & $ 31     $ & $ 3511  $ & $ 1274 $ & $ 4806  $ & $ 0  $ & $ 0 $ & $ 228.78      $ & $ -1.87   $ & $ 0.47    $ \\
-division64SRT4:double\_prec\_division\_0         & $ 1.355 \cdot 10^{-1} $ & $ 31     $ & $ 3511  $ & $ 1274 $ & $ 4806  $ & $ 0  $ & $ 0 $ & $ 228.78      $ & $ -1.87   $ & $ 0.49    $ \\
-divisionG:single\_prec\_division\_0              & $ 6.264 \cdot 10^{-2} $ & $ 16     $ & $ 879   $ & $ 347  $ & $ 1117  $ & $ 0  $ & $ 0 $ & $ 255.43      $ & $ -1.41   $ & $ 0.51    $ \\
-divisionSRT4:single\_prec\_division\_0           & $ 6.264 \cdot 10^{-2} $ & $ 16     $ & $ 879   $ & $ 347  $ & $ 1117  $ & $ 0  $ & $ 0 $ & $ 255.43      $ & $ -1.41   $ & $ 0.55    $ \\
-multiplication64:double\_prec\_multiplication\_0 & $ 3.801 \cdot 10^{-2} $ & $ 13     $ & $ 732   $ & $ 368  $ & $ 1234  $ & $ 12 $ & $ 0 $ & $ 342.00      $ & $ -0.42   $ & $ 0.50    $ \\
-multiplication:single\_prec\_multiplication\_0   & $ 1.543 \cdot 10^{-2} $ & $ 7      $ & $ 195   $ & $ 90   $ & $ 247   $ & $ 2  $ & $ 0 $ & $ 453.72      $ & $ 0.30    $ & $ 0.50    $ \\
-subtraction64:double\_prec\_subtraction\_0       & $ 7.058 \cdot 10^{-2} $ & $ 24     $ & $ 1222  $ & $ 520  $ & $ 1881  $ & $ 0  $ & $ 0 $ & $ 340.02      $ & $ -0.44   $ & $ 0.46    $ \\
-subtraction:single\_prec\_subtraction\_0         & $ 4.645 \cdot 10^{-2} $ & $ 16     $ & $ 584   $ & $ 210  $ & $ 624   $ & $ 0  $ & $ 0 $ & $ 344.47      $ & $ -0.40   $ & $ 0.47    $ \\
+addition64:double\_prec\_addition\_0             & $ 6.263 \cdot 10^{-2} $ & $ 26     $ & $ 1251 $ & $ 498  $ & $ 2075  $ & $ 0  $ & $ 0 $ & $ 415.11      $ & $ 0.09    $ & $ 0.48    $ \\
+addition:single\_prec\_addition\_0               & $ 3.965 \cdot 10^{-2} $ & $ 18     $ & $ 585  $ & $ 202  $ & $ 721   $ & $ 0  $ & $ 0 $ & $ 453.93      $ & $ 0.30    $ & $ 0.44    $ \\
+division64SRT4:double\_prec\_division\_0         & $ 1.175 \cdot 10^{-1} $ & $ 33     $ & $ 3468 $ & $ 1639 $ & $ 4994  $ & $ 0  $ & $ 0 $ & $ 280.82      $ & $ -1.06   $ & $ 0.44    $ \\
+divisionSRT4:single\_prec\_division\_0           & $ 4.306 \cdot 10^{-2} $ & $ 18     $ & $ 886  $ & $ 320  $ & $ 1211  $ & $ 0  $ & $ 0 $ & $ 418.06      $ & $ 0.11    $ & $ 0.47    $ \\
+multiplication64:double\_prec\_multiplication\_0 & $ 4.388 \cdot 10^{-2} $ & $ 14     $ & $ 777  $ & $ 403  $ & $ 1363  $ & $ 12 $ & $ 0 $ & $ 319.08      $ & $ -0.63   $ & $ 0.47    $ \\
+multiplication:single\_prec\_multiplication\_0   & $ 2.040 \cdot 10^{-2} $ & $ 8      $ & $ 226  $ & $ 101  $ & $ 298   $ & $ 2  $ & $ 0 $ & $ 392.16      $ & $ -0.05   $ & $ 0.49    $ \\
+subtraction64:double\_prec\_subtraction\_0       & $ 6.014 \cdot 10^{-2} $ & $ 26     $ & $ 1265 $ & $ 510  $ & $ 2075  $ & $ 0  $ & $ 0 $ & $ 432.34      $ & $ 0.19    $ & $ 0.48    $ \\
+subtraction:single\_prec\_subtraction\_0         & $ 4.122 \cdot 10^{-2} $ & $ 18     $ & $ 588  $ & $ 204  $ & $ 721   $ & $ 0  $ & $ 0 $ & $ 436.68      $ & $ 0.21    $ & $ 0.46    $ \\
 \hline
-Average                                          & $                     $ & $        $ & $       $ & $      $ & $       $ & $    $ & $   $ & $ 312.82      $ & $ -0.84   $ & $         $ \\
+Average                                          & $                     $ & $        $ & $      $ & $      $ & $       $ & $    $ & $   $ & $ 393.52      $ & $ -0.11   $ & $         $ \\
 \hline
-Overall                                          & $ 6.856 \cdot 10^{-1} $ & $ 194    $ & $ 13318 $ & $ 5164 $ & $ 18339 $ & $ 14 $ & $ 0 $ & $             $ & $         $ & $ 4.89    $ \\
+Overall                                          & $ 4.285 \cdot 10^{-1} $ & $ 161    $ & $ 9046 $ & $ 3877 $ & $ 13458 $ & $ 14 $ & $ 0 $ & $             $ & $         $ & $ 3.73    $ \\
 \hline
 \end{tabular}
 %Benchmarks:
 %src/fdiv.c --top-fname=single_prec_division --benchmark-name=divisionSRT4 --generate-tb=a=106\\\,b=57 --evaluation
-%src/fdiv.c --top-fname=single_prec_division --benchmark-name=divisionG --generate-tb=a=106\\\,b=57 --evaluation --hls-fpdiv=G
 %src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=multiplication --generate-tb=a=106\\\,b=57 --evaluation
 %src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=subtraction --generate-tb=a=106\\\,b=57 --evaluation
 %src/fsum.c --top-fname=single_prec_addition --benchmark-name=addition --generate-tb=a=106\\\,b=57 --evaluation
 %src/f64div.c --top-fname=double_prec_division --benchmark-name=division64SRT4 --generate-tb=a=61\\\,b=3 --evaluation
-%src/f64div.c --top-fname=double_prec_division --benchmark-name=division64G --generate-tb=a=61\\\,b=3 --evaluation --hls-fpdiv=G
 %src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=multiplication64 --generate-tb=a=0\\\,b=0 --evaluation
 %src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=subtraction64 --generate-tb=a=0\\\,b=0 --evaluation
 %src/f64sum.c --top-fname=double_prec_addition --benchmark-name=addition64 --generate-tb=a=0\\\,b=0 --evaluation

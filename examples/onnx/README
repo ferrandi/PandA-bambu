@@ -1,7 +1,11 @@
 Folders beginning with '0' and 'e' refer to the "unit tests" and "examples" described in the LeFlow paper, respectively. They all contain a python script to build the ONNX graph, the generated graph, a python script to compile it with TVM, and the final LLVM IR.
 
-Folders beginning with 'i' refer to some Deep Neural Networks model proposed as benchmark in the Imperial College review of CNN-to-FPGA toolflows. For two of them (vgg16 and resnet152v1) it was possible to download a pre-trained ONNX model and compile it with TVM*. ONNX models for the other two models, and for the ones not present here, were not directly compatible with TVM. It was possible to obtain an LLVM IR of alexnet from a MXNet model, and one of googlenet from a Tensorflow model.
+Folders beginning with 'i' refer to some Deep Neural Networks model proposed as benchmark in the Imperial College review of CNN-to-FPGA toolflows.
 
 Order and numeration of the folders are coherent with how the models are presented in the two papers.
 
-*they are both too big to be uploaded on Github!
+Update 19.12.19:
+New model 00_lenet is a small network, it does not belong to the Imperial College benchmark but it is more manageable and can serve as a good starting point. Some folders now contain also the JSON graph description and the textual version of numerical parameters.
+
+Update 22.12.19:
+With opt_level=0 most ONNX models can be compiled. GoogleNet is an exception: the ONNX model can't be compiled directly, the LLVM IR was obtained from a pytorch model translated to ONNX.

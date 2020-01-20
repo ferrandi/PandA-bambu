@@ -1,5 +1,5 @@
 #!/bin/bash
-ARGS="-c=--clock-period=10 -c=--speculative-sdc-scheduling -c=--device=xc7vx690t-3ffg1930-VVD"
+ARGS="-c=--clock-period=10 -c=--device=xc7vx690t-3ffg1930-VVD"
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 NAME=$(basename $0 .sh)

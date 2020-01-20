@@ -8,7 +8,7 @@
       <circuit>
         <component_o id="FFdata_converter_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="FFdata_converter_FU"/>
@@ -38,7 +38,7 @@
       <circuit>
         <component_o id="fp_assert_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_assert_expr_FU"/>
@@ -58,7 +58,7 @@
       <circuit>
         <component_o id="fp_cond_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_cond_expr_FU"/>
@@ -84,7 +84,7 @@
       <circuit>
         <component_o id="fp_ge_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_ge_expr_FU"/>
@@ -119,7 +119,7 @@
       <circuit>
         <component_o id="fp_lt_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_lt_expr_FU"/>
@@ -154,7 +154,7 @@
       <circuit>
         <component_o id="fp_negate_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_negate_expr_FU"/>
@@ -176,7 +176,7 @@
       <circuit>
         <component_o id="fp_eq_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_eq_expr_FU"/>
@@ -202,7 +202,7 @@
       <circuit>
         <component_o id="fp_le_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_le_expr_FU"/>
@@ -237,7 +237,7 @@
       <circuit>
         <component_o id="fp_gt_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_gt_expr_FU"/>
@@ -272,7 +272,7 @@
       <circuit>
         <component_o id="fp_ne_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_ne_expr_FU"/>
@@ -299,7 +299,7 @@
       <circuit>
         <component_o id="fp_plus_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_plus_expr_FU"/>
@@ -334,7 +334,7 @@
       <circuit>
         <component_o id="fp_minus_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Christian Pilato &lt;christian.pilato@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_minus_expr_FU"/>
@@ -369,7 +369,7 @@
       <circuit>
         <component_o id="fp_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_mult_expr_FU"/>
@@ -405,7 +405,7 @@
       <circuit>
         <component_o id="fp_rdiv_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_rdiv_expr_FU"/>
@@ -440,7 +440,7 @@
       <circuit>
         <component_o id="fp_float_expr_32_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_32_32_FU"/>
@@ -471,7 +471,7 @@
       <circuit>
         <component_o id="fp_float_expr_32_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_32_64_FU"/>
@@ -502,7 +502,7 @@
       <circuit>
         <component_o id="fp_float_expr_64_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_64_32_FU"/>
@@ -533,7 +533,7 @@
       <circuit>
         <component_o id="fp_float_expr_64_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_float_expr_64_64_FU"/>
@@ -564,7 +564,7 @@
       <circuit>
         <component_o id="ui_fp_float_expr_32_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_32_32_FU"/>
@@ -595,7 +595,7 @@
       <circuit>
         <component_o id="ui_fp_float_expr_32_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_32_64_FU"/>
@@ -626,7 +626,7 @@
       <circuit>
         <component_o id="ui_fp_float_expr_64_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_64_32_FU"/>
@@ -657,7 +657,7 @@
       <circuit>
         <component_o id="ui_fp_float_expr_64_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ui_fp_float_expr_64_64_FU"/>
@@ -688,7 +688,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_32_FU"/>
@@ -719,7 +719,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_u32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_u32_FU"/>
@@ -750,7 +750,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_64_FU"/>
@@ -781,7 +781,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_32_u64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_32_u64_FU"/>
@@ -812,7 +812,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_32_FU"/>
@@ -843,7 +843,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_u32_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_u32_FU"/>
@@ -874,7 +874,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_64_FU"/>
@@ -905,7 +905,7 @@
       <circuit>
         <component_o id="fp_fix_trunc_expr_64_u64_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="fp_fix_trunc_expr_64_u64_FU"/>
@@ -937,7 +937,7 @@
       <circuit>
         <component_o id="__builtin_signbit">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_signbit"/>
@@ -983,7 +983,7 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="__builtin_fabs">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_fabs"/>
@@ -1023,7 +1023,7 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="__builtin_fabsf">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_fabsf"/>
@@ -1061,7 +1061,7 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="__builtin_cond_expr32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2014-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="__builtin_cond_expr32"/>
@@ -1091,7 +1091,7 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="unordered_expr_FU32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2014-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="unordered_expr_FU32"/>
@@ -1129,7 +1129,7 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="unordered_expr_FU64">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2014-2019 Politecnico di Milano</copyright>  
+          <copyright>Copyright (C) 2014-2020 Politecnico di Milano</copyright>  
           <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="unordered_expr_FU64"/>
@@ -1166,7 +1166,7 @@ VHDL_PROVIDED=
       <circuit>
         <component_o id="ordered_expr_FU32">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
           <authors>Marco Lattuada&lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ordered_expr_FU32"/>
@@ -1196,7 +1196,7 @@ unordered_expr_FU32 #(.BITSIZE_in1(BITSIZE_in1), .BITSIZE_in2(BITSIZE_in2) ,.BIT
       <circuit>
         <component_o id="ordered_expr_FU64">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-          <copyright>Copyright (C) 2016-2019 Politecnico di Milano</copyright>
+          <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
           <authors>Marco Lattuada&lt;marco.lattuada@polimi.it&gt;</authors>
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="ordered_expr_FU64"/>

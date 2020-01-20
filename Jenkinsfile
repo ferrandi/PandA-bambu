@@ -58,7 +58,7 @@ pipeline {
         }
         stage('VHDL') {
           steps {
-           sh 'mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="-wH" --name="_VHDL" --restart '
+           sh 'mkdir -p $WORKSPACE/vhdl_tests/ && mkdir -p $WORKSPACE/vhdl_tests/test-reports mkdir -p $WORKSPACE/panda_regressions/vhdl_tests && cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider -c="-wH" --name="_VHDL" --restart '
            sh 'cd $WORKSPACE/panda_regressions/vhdl_tests && nice -n 16 $WORKSPACE/panda_regressions/panda_regression_hls.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/vhdl_tests/test-reports" -c="-wH" --name="_VHDL" --returnfail --restart '
           }
         }
@@ -71,7 +71,7 @@ pipeline {
         }
       }
       steps {
-        sh 'mkdir -p $WORKSPACE/examples/test-reports && mkdir -p $WORKSPACE/examples/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j20 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --junitdir="$WORKSPACE/examples/test-reports" --perfpublisherdir="$WORKSPACE/examples/pp-reports" --restart '
+        sh 'mkdir -p $WORKSPACE/examples/pp-reports && cd $WORKSPACE/examples && nice -n 17 ./example.sh -j60 --bambu $WORKSPACE/panda-bin/bin/bambu --spider $WORKSPACE/panda-bin/bin/spider --perfpublisherdir="$WORKSPACE/examples/pp-reports" --restart '
       }
     }
     stage('Publish Junits results') {
@@ -81,7 +81,7 @@ pipeline {
         }
       }
       steps {
-        junit allowEmptyResults: true, testResults: 'vhdl_tests/test-reports/*.xml,sdc_tests/test-reports/*.xml,list/test-reports/*.xml,examples/test-reports/*.xml'
+        junit allowEmptyResults: true, testResults: '**/test-reports/*.xml'
       }
     }
     stage('Publish Perf results') {
