@@ -51,6 +51,7 @@
 #include "absl/utility/utility.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 
 // Stores information about a sampled hashtable.  All mutations to this *must*
@@ -186,16 +187,14 @@ extern ABSL_PER_THREAD_TLS_KEYWORD int64_t global_next_sample;
 // Returns an RAII sampling handle that manages registration and unregistation
 // with the global sampler.
 inline HashtablezInfoHandle Sample() {
-#if ABSL_PER_THREAD_TLS == 0
-  static auto* mu = new absl::Mutex;
-  static int64_t global_next_sample = 0;
-  absl::MutexLock l(mu);
-#endif  // !ABSL_HAVE_THREAD_LOCAL
-
+#if ABSL_PER_THREAD_TLS == 1
   if (ABSL_PREDICT_TRUE(--global_next_sample > 0)) {
     return HashtablezInfoHandle(nullptr);
   }
   return HashtablezInfoHandle(SampleSlow(&global_next_sample));
+#else
+  return HashtablezInfoHandle(nullptr);
+#endif  // !ABSL_PER_THREAD_TLS
 }
 
 // Holds samples and their associated stack traces with a soft limit of
@@ -283,6 +282,7 @@ void SetHashtablezMaxSamples(int32_t max);
 extern "C" bool AbslContainerInternalSampleEverything();
 
 }  // namespace container_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_CONTAINER_INTERNAL_HASHTABLEZ_SAMPLER_H_

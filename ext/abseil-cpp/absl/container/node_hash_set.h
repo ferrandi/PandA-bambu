@@ -44,6 +44,7 @@
 #include "absl/memory/memory.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 template <typename T>
 struct NodeHashSetPolicy;
@@ -434,6 +435,14 @@ class node_hash_set
   void resize(typename Base::size_type hint) { this->rehash(hint); }
 };
 
+// erase_if(node_hash_set<>, Pred)
+//
+// Erases all elements that satisfy the predicate `pred` from the container `c`.
+template <typename T, typename H, typename E, typename A, typename Predicate>
+void erase_if(node_hash_set<T, H, E, A>& c, Predicate pred) {
+  container_internal::EraseIf(pred, &c);
+}
+
 namespace container_internal {
 
 template <class T>
@@ -483,6 +492,7 @@ struct IsUnorderedContainer<absl::node_hash_set<Key, Hash, KeyEqual, Allocator>>
     : std::true_type {};
 
 }  // namespace container_algorithm_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_CONTAINER_NODE_HASH_SET_H_

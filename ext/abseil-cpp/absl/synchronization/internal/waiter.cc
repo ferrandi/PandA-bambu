@@ -49,6 +49,7 @@
 #include "absl/synchronization/internal/kernel_timeout.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace synchronization_internal {
 
 static void MaybeBecomeIdle() {
@@ -136,7 +137,7 @@ bool Waiter::Wait(KernelTimeout t) {
   bool first_pass = true;
   while (true) {
     int32_t x = futex_.load(std::memory_order_relaxed);
-    if (x != 0) {
+    while (x != 0) {
       if (!futex_.compare_exchange_weak(x, x - 1,
                                         std::memory_order_acquire,
                                         std::memory_order_relaxed)) {
@@ -313,7 +314,7 @@ bool Waiter::Wait(KernelTimeout t) {
   bool first_pass = true;
   while (true) {
     int x = wakeups_.load(std::memory_order_relaxed);
-    if (x != 0) {
+    while (x != 0) {
       if (!wakeups_.compare_exchange_weak(x, x - 1,
                                           std::memory_order_acquire,
                                           std::memory_order_relaxed)) {
@@ -342,8 +343,11 @@ bool Waiter::Wait(KernelTimeout t) {
 }
 
 void Waiter::Post() {
-  wakeups_.fetch_add(1, std::memory_order_release);  // Post a wakeup.
-  Poke();
+  // Post a wakeup.
+  if (wakeups_.fetch_add(1, std::memory_order_release) == 0) {
+    // We incremented from 0, need to wake a potential waiter.
+    Poke();
+  }
 }
 
 void Waiter::Poke() {
@@ -478,4 +482,5 @@ void Waiter::InternalCondVarPoke() {
 #endif
 
 }  // namespace synchronization_internal
+ABSL_NAMESPACE_END
 }  // namespace absl

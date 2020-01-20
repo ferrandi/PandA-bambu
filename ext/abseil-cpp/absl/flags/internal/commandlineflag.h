@@ -16,13 +16,20 @@
 #ifndef ABSL_FLAGS_INTERNAL_COMMANDLINEFLAG_H_
 #define ABSL_FLAGS_INTERNAL_COMMANDLINEFLAG_H_
 
-#include <memory>
+#include <stddef.h>
+#include <stdint.h>
 
+#include <memory>
+#include <string>
+
+#include "absl/base/config.h"
 #include "absl/base/macros.h"
 #include "absl/flags/marshalling.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace flags_internal {
 
 // Type-specific operations, eg., parsing, copying, etc. are provided
@@ -59,16 +66,6 @@ enum ValueSource {
   // Flag is being set by value specified in the code.
   kProgrammaticChange,
 };
-
-// Signature for the help generation function used as an argument for the
-// absl::Flag constructor.
-using HelpGenFunc = std::string (*)();
-
-// Signature for the function generating the initial flag value based (usually
-// based on default value supplied in flag's definition)
-using InitialValGenFunc = void* (*)();
-
-extern const char kStrippedFlagHelp[];
 
 // The per-type function
 template <typename T>
@@ -149,34 +146,6 @@ inline size_t Sizeof(FlagOpFn op) {
       op(flags_internal::kSizeof, nullptr, nullptr)));
 }
 
-// Holds either a pointer to help text or a function which produces it.  This is
-// needed for supporting both static initialization of Flags while supporting
-// the legacy registration framework.  We can't use absl::variant<const char*,
-// const char*(*)()> since anybody passing 0 or nullptr in to a CommandLineFlag
-// would find an ambiguity.
-class HelpText {
- public:
-  static constexpr HelpText FromFunctionPointer(const HelpGenFunc fn) {
-    return HelpText(fn, nullptr);
-  }
-  static constexpr HelpText FromStaticCString(const char* msg) {
-    return HelpText(nullptr, msg);
-  }
-
-  std::string GetHelpText() const;
-
-  HelpText() = delete;
-  HelpText(const HelpText&) = default;
-  HelpText(HelpText&&) = default;
-
- private:
-  explicit constexpr HelpText(const HelpGenFunc fn, const char* msg)
-      : help_function_(fn), help_message_(msg) {}
-
-  HelpGenFunc help_function_;
-  const char* help_message_;
-};
-
 // Handle to FlagState objects. Specific flag state objects will restore state
 // of a flag produced this flag state from method CommandLineFlag::SaveState().
 class FlagStateInterface {
@@ -190,22 +159,16 @@ class FlagStateInterface {
 // Holds all information for a flag.
 class CommandLineFlag {
  public:
-  constexpr CommandLineFlag(const char* name, HelpText help_text,
-                            const char* filename)
-      : name_(name), help_(help_text), filename_(filename) {}
+  constexpr CommandLineFlag() = default;
 
   // Virtual destructor
-  virtual void Destroy() const = 0;
+  virtual void Destroy() = 0;
 
   // Not copyable/assignable.
   CommandLineFlag(const CommandLineFlag&) = delete;
   CommandLineFlag& operator=(const CommandLineFlag&) = delete;
 
   // Non-polymorphic access methods.
-  absl::string_view Name() const { return name_; }
-  std::string Help() const { return help_.GetHelpText(); }
-  absl::string_view Typename() const;
-  std::string Filename() const;
 
   // Return true iff flag has type T.
   template <typename T>
@@ -227,8 +190,7 @@ class CommandLineFlag {
     //
     //  1. `U.value` has correct size and alignment for a value of type `T`
     //  2. The `U.value` constructor is not invoked since U's constructor does
-    //  not
-    //     do it explicitly.
+    //     not do it explicitly.
     //  3. The `U.value` destructor is invoked since U's destructor does it
     //     explicitly. This makes `U` a kind of RAII wrapper around non default
     //     constructible value of T, which is destructed when we leave the
@@ -250,7 +212,16 @@ class CommandLineFlag {
 
   // Polymorphic access methods
 
-  // Returns true iff this object corresponds to retired flag
+  // Returns name of this flag.
+  virtual absl::string_view Name() const = 0;
+  // Returns name of the file where this flag is defined.
+  virtual std::string Filename() const = 0;
+  // Returns name of the flag's value type for some built-in types or empty
+  // std::string.
+  virtual absl::string_view Typename() const = 0;
+  // Returns help message associated with this flag.
+  virtual std::string Help() const = 0;
+  // Returns true iff this object corresponds to retired flag.
   virtual bool IsRetired() const { return false; }
   // Returns true iff this is a handle to an Abseil Flag.
   virtual bool IsAbseilFlag() const { return true; }
@@ -285,13 +256,8 @@ class CommandLineFlag {
   // flag's value type.
   virtual void CheckDefaultValueParsingRoundtrip() const = 0;
 
-  // Constant configuration for a particular flag.
  protected:
   ~CommandLineFlag() = default;
-
-  const char* const name_;      // Flags name passed to ABSL_FLAG as second arg.
-  const HelpText help_;         // The function generating help message.
-  const char* const filename_;  // The file name where ABSL_FLAG resides.
 
  private:
   // Copy-construct a new value of the flag's type in a memory referenced by
@@ -299,24 +265,25 @@ class CommandLineFlag {
   virtual void Read(void* dst) const = 0;
 };
 
-// This macro is the "source of truth" for the list of supported flag types we
-// expect to perform lock free operations on. Specifically it generates code,
-// a one argument macro operating on a type, supplied as a macro argument, for
-// each type in the list.
-#define ABSL_FLAGS_INTERNAL_FOR_EACH_LOCK_FREE(A) \
-  A(bool)                                         \
-  A(short)                                        \
-  A(unsigned short)                               \
-  A(int)                                          \
-  A(unsigned int)                                 \
-  A(long)                                         \
-  A(unsigned long)                                \
-  A(long long)                                    \
-  A(unsigned long long)                           \
-  A(double)                                       \
-  A(float)
+// This macro is the "source of truth" for the list of supported flag built-in
+// types.
+#define ABSL_FLAGS_INTERNAL_BUILTIN_TYPES(A) \
+  A(bool)                                    \
+  A(short)                                   \
+  A(unsigned short)                          \
+  A(int)                                     \
+  A(unsigned int)                            \
+  A(long)                                    \
+  A(unsigned long)                           \
+  A(long long)                               \
+  A(unsigned long long)                      \
+  A(double)                                  \
+  A(float)                                   \
+  A(std::string)                             \
+  A(std::vector<std::string>)
 
 }  // namespace flags_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_FLAGS_INTERNAL_COMMANDLINEFLAG_H_

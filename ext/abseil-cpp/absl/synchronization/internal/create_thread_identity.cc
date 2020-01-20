@@ -27,6 +27,7 @@
 #include "absl/synchronization/internal/per_thread_sem.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace synchronization_internal {
 
 // ThreadIdentity storage is persistent, we maintain a free-list of previously
@@ -86,7 +87,6 @@ static void ResetThreadIdentity(base_internal::ThreadIdentity* identity) {
   pts->wake = false;
   pts->cond_waiter = false;
   pts->all_locks = nullptr;
-  identity->waiter_state = {};
   identity->blocked_count_ptr = nullptr;
   identity->ticker.store(0, std::memory_order_relaxed);
   identity->wait_start.store(0, std::memory_order_relaxed);
@@ -134,6 +134,7 @@ base_internal::ThreadIdentity* CreateThreadIdentity() {
 }
 
 }  // namespace synchronization_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_LOW_LEVEL_ALLOC_MISSING
