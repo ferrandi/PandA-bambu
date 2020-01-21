@@ -1005,7 +1005,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
 
          ValueDFS& Result = RenameStack.back();
          THROW_ASSERT(VD.U, "A use sohuld be in scope for current renaming operation");
-         THROW_ASSERT(GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser())), "Phi uses may not be renamed");
+         THROW_ASSERT(GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser())) == nullptr, "Phi uses may not be renamed");
 
          // If the possible copy dominates something, materialize our stack up to
          // this point. This ensures every comparison that affects our operation
