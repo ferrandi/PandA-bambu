@@ -111,7 +111,7 @@ public:
    *
    * \param name Optional name for the input
    */
-  signal create_pi( std::string const& name = {} );
+  signal create_pi( std::string const& name = std::string() );
 
   /*! \brief Creates a primary output in the network.
    *
@@ -123,7 +123,7 @@ public:
    * \param s Signal that drives the created primary output
    * \param name Optional name for the output
    */
-  void create_po( signal const& s, std::string const& name = {} );
+  void create_po( signal const& s, std::string const& name = std::string() );
 
   /*! \brief Creates a register output in the network.
    *
@@ -141,7 +141,7 @@ public:
    *
    * \param name Optional name for the register output
    */
-  signal create_ro( std::string const& name = {} );
+  signal create_ro( std::string const& name = std::string() );
 
   /*! \brief Creates a register input in the network.
    *
@@ -163,7 +163,7 @@ public:
    * \param s Signal that drives the created primary output
    * \param name Optional name for the output
    */
-  void create_ri( signal const& s, std::string const& name = {} );
+  void create_ri( signal const& s, std::string const& name = std::string() );
 
   /*! \brief Checks whether the network is combinational.
    *

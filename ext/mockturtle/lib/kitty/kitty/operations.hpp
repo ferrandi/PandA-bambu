@@ -41,6 +41,7 @@
 #include "algorithm.hpp"
 #include "dynamic_truth_table.hpp"
 #include "static_truth_table.hpp"
+#include "detail/shift.hpp"
 
 namespace kitty
 {
@@ -911,7 +912,7 @@ inline void shift_left_inplace( static_truth_table<NumVars, true>& tt, uint64_t 
 
 /*! \brief Left-shift truth table
 
-  Out-of-place variant of `shift_left`.
+  Out-of-place variant of `shift_left_inplace`.
 
   \param tt Truth table
   \param shift Number of bits to shift
@@ -987,7 +988,7 @@ inline void shift_right_inplace( static_truth_table<NumVars, true>& tt, uint64_t
 
 /*! \brief Right-shift truth table
 
-  Out-of-place variant of `shift_right`.
+  Out-of-place variant of `shift_right_inplace`.
 
   \param tt Truth table
   \param shift Number of bits to shift
@@ -1013,7 +1014,7 @@ inline TT shift_right( const TT& tt, uint64_t shift )
   \return The composed truth table with vars.size() variables
 */
 template<class TTf, class TTv>
-auto compose_truth_table( const TTf& f, const std::vector<TTv>& vars )
+inline auto compose_truth_table( const TTf& f, const std::vector<TTv>& vars )
 {
   assert( vars.size() == static_cast<std::size_t>( f.num_vars() ) );
   auto composed = vars[0].construct();
@@ -1036,6 +1037,44 @@ auto compose_truth_table( const TTf& f, const std::vector<TTv>& vars )
   }
 
   return composed;
+}
+
+/*! \brief Shifts a small truth table with respect to a mask
+
+  This function only works for truth tables with up to 6 inputs.  The function
+  rearranges the variables according to a mask.  For example, assume the 3-input
+  truth table \f$ x_0 \land x_1 \f$, which is not defined on \f$ x_2 \f$.
+  Applying this funtion with a mask `0b101` yields the function
+  \f$ x_0 \land x_2 \f$, and the mask `0b110` yields the function
+  \f$ x_1 \land x_2 \f$.  The bits in the mask provide the new positions.  It
+  is important that the positions in the mask do not exceed the truth table
+  size, since all operations are performed in-place and cannot change the
+  number of variables of the truth table.
+
+  \param tt Truth table
+  \param mask Shift mask
+*/
+template<class TT>
+inline void shift_with_mask_inplace( TT& f, uint8_t mask )
+{
+  assert( f.num_vars() <= 6 );
+
+  *f.begin() = detail::compute_shift( *f.begin(), mask | ( 1 << f.num_vars() ) );
+}
+
+/*! \brief Shifts a small truth table with respect to a mask
+
+  Out-of-place variant of `shift_with_mask_inplace`.
+
+  \param tt Truth table
+  \param mask Shift mask
+*/
+template<class TT>
+inline TT shift_with_mask( const TT& f, uint8_t mask )
+{
+  auto copy = f;
+  shift_with_mask_inplace( copy, mask );
+  return copy;
 }
 
 } // namespace kitty

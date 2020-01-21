@@ -67,6 +67,26 @@ public:
     (void)name;
   }
 
+  /*! \brief Callback method for parsed input of DFF (before output is available).
+   *
+   * \param input Name of the input
+   */
+  virtual void on_dff_input( const std::string& input ) const
+  {
+    (void)input;
+  }
+
+  /*! \brief Callback method for parsed DFF (when input and output are available).
+   *
+   * \param input Name of the input
+   * \param output Name of the output
+   */
+  virtual void on_dff( const std::string& input, const std::string& output ) const
+  {
+    (void)input;
+    (void)output;
+  }
+
   /*! \brief Callback method for parsed gate.
    *
    * \param inputs A list of inputs
@@ -121,7 +141,16 @@ public:
 
   virtual void on_gate( const std::vector<std::string>& inputs, const std::string& output, const std::string& type ) const override
   {
-    _os << fmt::format( "{0} = {1}({2})", output, type, detail::join( inputs, "," ) ) << std::endl;
+    assert( type.size() >= 2u );
+    if ( type[0] == '0' && type[1] == 'x' )
+      _os << fmt::format( "{0} = LUT {1}({2})", output, type, detail::join( inputs, "," ) ) << std::endl;
+    else
+      _os << fmt::format( "{0} = {1}({2})", output, type, detail::join( inputs, "," ) ) << std::endl;
+  }
+
+  virtual void on_dff( const std::string& input, const std::string& output ) const override
+  {
+    _os << fmt::format( "{0} = DFF({1})", output, input ) << std::endl;
   }
 
   virtual void on_assign( const std::string& input, const std::string& output ) const override
@@ -134,9 +163,8 @@ public:
 
 namespace bench_regex
 {
-static std::regex input( R"(INPUT\((.*)\))" );
-static std::regex output( R"(OUTPUT\((.*)\))" );
 static std::regex gate( R"((.*)\s+=\s+(.*)\((.*)\))" );
+static std::regex dff( R"((.*)\s+=\s+DFF\((.+)\))" );
 static std::regex lut( R"((.*)\s+=\s+LUT\s+(.*)\((.*)\))" );
 static std::regex gate_asgn( R"((.*)\s+=\s+(.*))" );
 } // namespace bench_regex
@@ -161,6 +189,10 @@ inline return_code read_bench( std::istream& in, const bench_reader& reader, dia
       {
         reader.on_assign( inputs.front(), output );
       }
+      else if ( type == "DFF" )
+      {
+        reader.on_dff( inputs.front(), output );
+      }
       else
       {
         reader.on_gate( inputs, output, type );
@@ -178,18 +210,23 @@ inline return_code read_bench( std::istream& in, const bench_reader& reader, dia
       return true;
 
     /* INPUT(<string>) */
-    if ( std::regex_search( line, m, bench_regex::input ) )
+    if ( line.substr( 0u, 6u ) == "INPUT(" )
     {
-      const auto s = detail::trim_copy( m[1] );
+      auto const pos = line.find_first_of( ")", 7u );
+      assert( pos != std::string::npos );
+      auto const s = line.substr( 6u, pos - 6u );
       on_action.declare_known( s );
       reader.on_input( s );
       return true;
     }
 
     /* OUTPUT(<string>) */
-    if ( std::regex_search( line, m, bench_regex::output ) )
+    if ( line.substr( 0u, 7u ) == "OUTPUT(" )
     {
-      reader.on_output( detail::trim_copy( m[1] ) );
+      auto const pos = line.find_first_of( ")", 8u );
+      auto const s = line.substr( 7u, pos - 7u );
+      assert( pos != std::string::npos );
+      reader.on_output( detail::trim_copy( s ) );
       return true;
     }
 
@@ -201,6 +238,17 @@ inline return_code read_bench( std::istream& in, const bench_reader& reader, dia
       const auto args = detail::trim_copy( m[3] );
       const auto inputs = detail::split( args, "," );
       on_action.call_deferred( inputs, output, inputs, output, type );
+      return true;
+    }
+
+    /* (<string> = DFF(<string>)) */
+    if ( std::regex_search( line, m, bench_regex::dff ) )
+    {
+      const auto output = detail::trim_copy( m[1] );
+      const auto arg = detail::trim_copy( m[2] );
+      reader.on_dff_input( output );
+      on_action.declare_known( output );
+      on_action.call_deferred( { arg }, output, { arg }, output, "DFF" );
       return true;
     }
 

@@ -153,35 +153,40 @@ TEST_CASE( "create and use register in an MIG", "[mig]" )
   CHECK( mig.num_registers() == 0 );
   CHECK( mig.num_pis() == 4 );
   CHECK( mig.num_pos() == 0 );
+  CHECK( mig.is_combinational() );
 
-  const auto f1 = mig.create_maj(x1, x2, x3);
+  const auto f1 = mig.create_maj( x1, x2, x3 );
   mig.create_po( f1 );
   mig.create_po( !f1 );
 
-  const auto f2 = mig.create_maj(f1, x4, c0);
-  mig.create_ri(f2);
+  const auto f2 = mig.create_maj( f1, x4, c0 );
+  mig.create_ri( f2 );
 
   const auto ro = mig.create_ro();
   mig.create_po( ro );
 
   CHECK( mig.num_pos() == 3 );
   CHECK( mig.num_registers() == 1 );
+  CHECK( !mig.is_combinational() );
 
-  mig.foreach_po( [&]( auto s, auto i ){
+  mig.foreach_po( [&]( auto s, auto i ) {
     switch ( i )
     {
-        case 0:
-          CHECK ( s == f1);
-            break;
-        case 1:
-          CHECK ( s == !f1);
-            break;
-        case 2:
-          //check if the output (connected to the register) data is the same as the node data being registered.
-          CHECK ( f2.data == mig.po_at(i).data);
-            break;
+    case 0:
+      CHECK( s == f1 );
+      break;
+    case 1:
+      CHECK( s == !f1 );
+      break;
+    case 2:
+      // Check if the output (connected to the register) data is the same as the node data being registered.
+      CHECK( f2.data == mig.po_at( i ).data );
+      break;
+    default:
+      CHECK( false );
+      break;
     }
-  });
+  } );
 }
 
 TEST_CASE( "create unary operations in an MIG", "[mig]" )

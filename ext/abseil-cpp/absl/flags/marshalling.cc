@@ -15,18 +15,28 @@
 
 #include "absl/flags/marshalling.h"
 
-#include <limits>
-#include <type_traits>
+#include <stddef.h>
 
+#include <cmath>
+#include <limits>
+#include <string>
+#include <type_traits>
+#include <vector>
+
+#include "absl/base/config.h"
+#include "absl/base/log_severity.h"
 #include "absl/base/macros.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace flags_internal {
 
 // --------------------------------------------------------------------
@@ -226,4 +236,5 @@ std::string AbslUnparseFlag(absl::LogSeverity v) {
   return absl::UnparseFlag(static_cast<int>(v));
 }
 
+ABSL_NAMESPACE_END
 }  // namespace absl

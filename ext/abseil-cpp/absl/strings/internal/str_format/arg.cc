@@ -14,6 +14,7 @@
 #include "absl/strings/internal/str_format/float_conversion.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace str_format_internal {
 namespace {
 
@@ -32,12 +33,18 @@ void ReducePadding(size_t n, size_t *capacity) {
 template <typename T>
 struct MakeUnsigned : std::make_unsigned<T> {};
 template <>
+struct MakeUnsigned<absl::int128> {
+  using type = absl::uint128;
+};
+template <>
 struct MakeUnsigned<absl::uint128> {
   using type = absl::uint128;
 };
 
 template <typename T>
 struct IsSigned : std::is_signed<T> {};
+template <>
+struct IsSigned<absl::int128> : std::true_type {};
 template <>
 struct IsSigned<absl::uint128> : std::false_type {};
 
@@ -275,7 +282,7 @@ ConvertResult<Conv::s | Conv::p> FormatConvertImpl(const char *v,
   } else if (conv.precision() < 0) {
     len = std::strlen(v);
   } else {
-    // If precision is set, we look for the null terminator on the valid range.
+    // If precision is set, we look for the NUL-terminator on the valid range.
     len = std::find(v, v + conv.precision(), '\0') - v;
   }
   return {ConvertStringArg(string_view(v, len), conv, sink)};
@@ -363,6 +370,11 @@ IntegralConvertResult FormatConvertImpl(unsigned long long v,  // NOLINT
                                         FormatSinkImpl *sink) {
   return {ConvertIntArg(v, conv, sink)};
 }
+IntegralConvertResult FormatConvertImpl(absl::int128 v,
+                                        const ConversionSpec conv,
+                                        FormatSinkImpl *sink) {
+  return {ConvertIntArg(v, conv, sink)};
+}
 IntegralConvertResult FormatConvertImpl(absl::uint128 v,
                                         const ConversionSpec conv,
                                         FormatSinkImpl *sink) {
@@ -372,6 +384,8 @@ IntegralConvertResult FormatConvertImpl(absl::uint128 v,
 ABSL_INTERNAL_FORMAT_DISPATCH_OVERLOADS_EXPAND_();
 
 
+
 }  // namespace str_format_internal
 
+ABSL_NAMESPACE_END
 }  // namespace absl
