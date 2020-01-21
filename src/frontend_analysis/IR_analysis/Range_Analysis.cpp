@@ -1751,7 +1751,7 @@ RangeRef Range::shr(RangeConstRef other, bool sign) const
       auto other_max = other->getUnsignedMax().convert_to<unsigned>();
       auto [min, max] = std::minmax({this_max >> other_min, this_max >> other_max, this_min >> other_min, this_min >> other_max});
 
-      RangeRef AshrU(new Range(Regular, bw, std::move(min), std::move(max)));
+      RangeRef AshrU(new Range(Regular, bw, min, max));
       if(AshrU->isFullSet())
       {
          AshrU.reset(new Range(Regular, bw));
@@ -3586,7 +3586,7 @@ class BasicOp
 
 /// We can not want people creating objects of this class,
 /// but we want to inherit of it.
-BasicOp::BasicOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : intersect(std::move(_intersect)), sink(_sink), inst(_inst)
+BasicOp::BasicOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : intersect(_intersect), sink(_sink), inst(_inst)
 {
 }
 
@@ -3668,7 +3668,7 @@ class PhiOp : public BasicOp
 };
 
 // The ctor.
-PhiOp::PhiOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : BasicOp(std::move(_intersect), _sink, _inst)
+PhiOp::PhiOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : BasicOp(_intersect, _sink, _inst)
 {
 }
 
@@ -3796,7 +3796,7 @@ class UnaryOp : public BasicOp
 };
 
 UnaryOp::UnaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, tree_nodeConstRef _inst, VarNode* _source, kind _opcode) 
-   : BasicOp(std::move(_intersect), _sink, _inst), source(_source), opcode(_opcode)
+   : BasicOp(_intersect, _sink, _inst), source(_source), opcode(_opcode)
 {
 }
 
@@ -4079,7 +4079,7 @@ class SigmaOp : public UnaryOp
 };
 
 SigmaOp::SigmaOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source, VarNode* _SymbolicSource, kind _opcode)
-      : UnaryOp(std::move(_intersect), _sink, _inst, _source, _opcode), SymbolicSource(_SymbolicSource), unresolved(false)
+      : UnaryOp(_intersect, _sink, _inst, _source, _opcode), SymbolicSource(_SymbolicSource), unresolved(false)
 {
 }
 
@@ -4212,7 +4212,7 @@ class BinaryOp : public BasicOp
 
 // The ctor.
 BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source1, VarNode* _source2, kind _opcode) 
-   : BasicOp(std::move(_intersect), _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
+   : BasicOp(_intersect, _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
 {
    THROW_ASSERT(isIntegerType(_sink->getValue()), "Binary operation sink should be of integer type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
 }
@@ -4450,7 +4450,7 @@ class TernaryOp : public BasicOp
 
 // The ctor.
 TernaryOp::TernaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source1, VarNode* _source2, VarNode* _source3, kind _opcode)
-      : BasicOp(std::move(_intersect), _sink, _inst), source1(_source1), source2(_source2), source3(_source3), opcode(_opcode)
+      : BasicOp(_intersect, _sink, _inst), source1(_source1), source2(_source2), source3(_source3), opcode(_opcode)
 {
    #if HAVE_ASSERTS
    const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(_inst));
@@ -4721,7 +4721,7 @@ class LoadOp : public BasicOp
    void print(std::ostream& OS) const override;
 };
 
-LoadOp::LoadOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : BasicOp(std::move(_intersect), _sink, _inst)
+LoadOp::LoadOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst) : BasicOp(_intersect, _sink, _inst)
 {
 }
 
@@ -4736,7 +4736,7 @@ RangeRef LoadOp::eval() const
    #endif
    if(getNumSources() == 0)
    {
-      THROW_ASSERT(bw == getIntersect()->getRange()->getBitWidth(), "");
+      THROW_ASSERT(bw == getIntersect()->getRange()->getBitWidth(), "Sink (" + getSink()->getValue()->ToString() + ") has bitwidth " + STR(bw) + " while intersect has bitwidth " + STR(getIntersect()->getRange()->getBitWidth()));
       return getIntersect()->getRange();
    }
 
@@ -6536,72 +6536,79 @@ class ConstraintGraph
       VarNode* sink = addVarNode(ga->op0, function_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
-      RangeRef intersection(new Range(Regular, bw, Min, Max));
-      const auto Op1 = GET_CONST_NODE(ga->op1);
+      RangeRef intersection(new Range(Empty, bw));
       CustomOrderedSet<unsigned int> res_set;
-      if(tree_helper::is_fully_resolved(TM, Op1->index, res_set))
+      bool pointToConstants = tree_helper::is_fully_resolved(TM, GET_INDEX_CONST_NODE(ga->op1), res_set);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pointer is fully resolved");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      for(auto indexIt = res_set.begin(); indexIt != res_set.end() && pointToConstants; ++indexIt)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pointer is fully resolved");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-         bool pointToConstants = true;
-         RangeRef res(new Range(Empty, bw));
-         for(const auto& index : res_set)
+         const auto TN = TM->CGetTreeNode(*indexIt);
+         if(const auto* vd = GetPointer<const var_decl>(TN))
          {
-            const auto TN = TM->CGetTreeNode(index);
-            if(const auto* vd = GetPointer<const var_decl>(TN))
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Points to " + TN->ToString() + 
+               " (readonly = " + STR(vd->readonly_flag) + 
+               ", defs = " + STR(vd->defs.size()) + 
+               ", full-size = " + STR(GetPointer<const integer_cst>(GET_CONST_NODE(vd->size))->value) + ")");
+            if(!vd->readonly_flag)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Points to " + TN->ToString() + 
-                  " (readonly = " + STR(vd->readonly_flag) + 
-                  ", defs = " + STR(vd->defs.size()) + ")");
-               if(!vd->readonly_flag)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed variable is not constant " + TN->ToString());
-                  pointToConstants = false;
-                  break;
-               }
-               if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
-               {
-                  for(const auto& [idx, valu] : constr->list_of_idx_valu)
-                  {
-                     if(!tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(idx)) || !isIntegerType(idx))
-                     {
-                        pointToConstants = false;
-                        break;
-                     }
-                     else
-                     {
-                        res = res->unionWith(getGIMPLE_range(idx));
-                     }
-                  }
-               }
-               else
-               {
-                  THROW_UNREACHABLE("Unhandled initializer " + GET_CONST_NODE(vd->init)->get_kind_text() + " " + GET_CONST_NODE(vd->init)->ToString());
-                  pointToConstants = false;
-                  break;
-               }
-            }
-            else
-            {
-               THROW_UNREACHABLE("Unknown tree node " + TN->get_kind_text() + " " + TN->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed variable is not constant " + TN->ToString());
                pointToConstants = false;
                break;
             }
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-
-         if(pointToConstants)
-         {
-            intersection = res;
+            if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initializer has " + STR(constr->list_of_idx_valu.size()) + " values:");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+               for(const auto& [idx, valu] : constr->list_of_idx_valu)
+               {
+                  if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(valu)) && isIntegerType(valu))
+                  {
+                     #ifndef NDEBUG
+                     const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(valu));
+                     if(ic && bw == 8)
+                     {
+                        auto asciiChar = tree_helper::get_integer_cst_value(ic);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(valu)->ToString() + " '" + static_cast<char>(asciiChar) + "'");
+                     }
+                     else
+                     {
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(valu)->ToString());
+                     }
+                     #endif
+                     intersection = intersection->unionWith(getGIMPLE_range(valu));
+                  }
+                  else
+                  {
+                     pointToConstants = false;
+                     break;
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            }
+            else
+            {
+               THROW_UNREACHABLE("Unhandled initializer " + GET_CONST_NODE(vd->init)->get_kind_text() + " " + GET_CONST_NODE(vd->init)->ToString());
+               pointToConstants = false;
+            }
          }
          else
          {
-            intersection = getGIMPLE_range(I);
+            THROW_UNREACHABLE("Unknown tree node " + TN->get_kind_text() + " " + TN->ToString());
+            pointToConstants = false;
          }
       }
-      else
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+
+      if(!pointToConstants)
       {
          intersection = getGIMPLE_range(I);
+      }
+      THROW_ASSERT(intersection->getBitWidth() <= bw, "Pointed variables range should have bitwidth contained in sink bitwidth");
+      if(intersection->getBitWidth() < bw)
+      {
+         intersection = intersection->zextOrTrunc(bw);
       }
       std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(intersection);
       LoadOp* loadOp = new LoadOp(BI, sink, I);
@@ -8027,9 +8034,6 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 void RangeAnalysis::Initialize()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Minimum delta value :  " + STR(MinDelta));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Maximum signed value:  " + STR(Max));
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Minimum signed value: " + STR(Min));
    dead_code_restart = false;
    CG.reset(new Cousot(AppM, debug_level));
 }
