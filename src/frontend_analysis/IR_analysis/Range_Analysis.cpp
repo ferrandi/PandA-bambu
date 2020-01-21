@@ -6496,6 +6496,11 @@ class ConstraintGraph
    {
       const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(I));
       THROW_ASSERT(phi, "");
+      if(phi->virtual_flag)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---This is a virtual phi, skipping...");
+         return;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing phi operation " + phi->ToString());
 
       // Create the sink.
