@@ -118,6 +118,7 @@
 #include "absl/utility/utility.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 
 template <size_t Width>
@@ -638,8 +639,8 @@ class raw_hash_set {
     }
 
     friend bool operator==(const iterator& a, const iterator& b) {
-      /* To be enabled: a.assert_is_valid(); */
-      /* To be enabled: b.assert_is_valid(); */
+      a.assert_is_valid();
+      b.assert_is_valid();
       return a.ctrl_ == b.ctrl_;
     }
     friend bool operator!=(const iterator& a, const iterator& b) {
@@ -1800,6 +1801,17 @@ class raw_hash_set {
       settings_{0, hasher{}, key_equal{}, allocator_type{}};
 };
 
+// Erases all elements that satisfy the predicate `pred` from the container `c`.
+template <typename P, typename H, typename E, typename A, typename Predicate>
+void EraseIf(Predicate pred, raw_hash_set<P, H, E, A>* c) {
+  for (auto it = c->begin(), last = c->end(); it != last;) {
+    auto copy_it = it++;
+    if (pred(*copy_it)) {
+      c->erase(copy_it);
+    }
+  }
+}
+
 namespace hashtable_debug_internal {
 template <typename Set>
 struct HashtableDebugAccess<Set, absl::void_t<typename Set::raw_hash_set>> {
@@ -1861,6 +1873,7 @@ struct HashtableDebugAccess<Set, absl::void_t<typename Set::raw_hash_set>> {
 
 }  // namespace hashtable_debug_internal
 }  // namespace container_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_CONTAINER_INTERNAL_RAW_HASH_SET_H_

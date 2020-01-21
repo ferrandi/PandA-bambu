@@ -20,13 +20,16 @@
 #include <map>
 #include <string>
 
+#include "absl/base/config.h"
 #include "absl/base/macros.h"
 #include "absl/flags/internal/commandlineflag.h"
+#include "absl/strings/string_view.h"
 
 // --------------------------------------------------------------------
 // Global flags registry API.
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace flags_internal {
 
 CommandLineFlag* FindCommandLineFlag(absl::string_view name);
@@ -115,6 +118,7 @@ class FlagSaver {
 };
 
 }  // namespace flags_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_FLAGS_INTERNAL_REGISTRY_H_

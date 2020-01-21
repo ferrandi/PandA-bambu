@@ -20,6 +20,8 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/base/config.h"
+
 #ifdef _MSC_FULL_VER
 #define ABSL_HAVE_WORKING_ATOMIC_POINTER 0
 #define ABSL_HAVE_WORKING_CONSTEXPR_STATIC_INIT 0
@@ -29,6 +31,7 @@
 #endif
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace base_internal {
 
 template <typename T>
@@ -63,7 +66,7 @@ class AtomicHook<ReturnType (*)(Args...)> {
   explicit constexpr AtomicHook(FnPtr default_fn)
       : hook_(default_fn), default_fn_(default_fn) {}
 #else
-  // On MSVC, this function sometimes executes after dynamic initiazliation =(.
+  // On MSVC, this function sometimes executes after dynamic initialization =(.
   // If a non-zero `hook_` has been installed by a dynamic initializer, we want
   // to preserve it.  If not, `hook_` will be zero initialized and we have no
   // need to set it to `kUninitialized`.
@@ -170,6 +173,7 @@ class AtomicHook<ReturnType (*)(Args...)> {
 #undef ABSL_HAVE_WORKING_CONSTEXPR_STATIC_INIT
 
 }  // namespace base_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_BASE_INTERNAL_ATOMIC_HOOK_H_

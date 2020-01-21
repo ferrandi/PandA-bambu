@@ -84,7 +84,7 @@ public:
   {
     for ( auto const& o : outputs )
     {
-      _ntk.create_po( signals[o], o );
+      _ntk.create_po( signals.at( o ), o );
     }
   }
 
@@ -100,27 +100,77 @@ public:
 
   void on_assign( const std::string& input, const std::string& output ) const override
   {
-    signals[output] = signals[input];
+    signals[output] = signals.at( input );
   }
 
   void on_gate( const std::vector<std::string>& inputs, const std::string& output, const std::string& type ) const override
   {
     if ( type.size() > 2 && std::string_view( type ).substr( 0, 2 ) == "0x" && inputs.size() <= 6u )
     {
+      /* modern-style gate definition */
       kitty::dynamic_truth_table tt( static_cast<int>( inputs.size() ) );
       kitty::create_from_hex_string( tt, type.substr( 2 ) );
 
       std::vector<signal<Ntk>> input_signals;
       for ( const auto& i : inputs )
-      {
         input_signals.push_back( signals[i] );
-      }
 
       signals[output] = _ntk.create_node( input_signals, tt );
     }
     else
     {
-      assert( false );
+      /* old-style gate definition */
+      std::vector<signal<Ntk>> input_signals;
+      for ( const auto& i : inputs )
+        input_signals.push_back( signals[i] );
+
+      kitty::dynamic_truth_table tt( static_cast<int>( inputs.size() ) );
+
+      std::vector<kitty::dynamic_truth_table> vs( inputs.size(), tt );
+      for ( auto i = 0u; i < inputs.size(); ++i )
+        kitty::create_nth_var( vs[i], i );
+
+      if ( type == "NOT" )
+      {
+        assert( inputs.size() == 1u );
+        tt = ~vs.at( 0u );
+      }
+      else if ( type == "BUFF" )
+      {
+        assert( inputs.size() == 1u );
+        tt = vs.at( 0u );
+      }
+      else if ( type == "AND" )
+      {
+        tt = vs.at( 0u );
+        for ( auto i = 1u; i < inputs.size(); ++i )
+          tt &= vs.at( i );
+      }
+      else if ( type == "NAND" )
+      {
+        tt = vs.at( 0u );
+        for ( auto i = 1u; i < inputs.size(); ++i )
+          tt &= vs.at( i );
+        tt = ~tt;
+      }
+      else if ( type == "OR" )
+      {
+        tt = vs.at( 0u );
+        for ( auto i = 1u; i < inputs.size(); ++i )
+          tt |= vs.at( i );
+      }
+      else if ( type == "NOR" )
+      {
+        tt = vs.at( 0u );
+        for ( auto i = 1u; i < inputs.size(); ++i )
+          tt |= vs.at( i );
+        tt = ~tt;
+      }
+      else
+      {
+        assert( false && "unsupported gate type" );
+      }
+      signals[output] = _ntk.create_node( input_signals, tt );
     }
   }
 

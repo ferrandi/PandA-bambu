@@ -133,6 +133,59 @@ TEST_CASE( "create and use primary outputs in an AIG", "[aig]" )
   } );
 }
 
+TEST_CASE( "create and use register in an AIG", "[aig]" )
+{
+  aig_network aig;
+
+  CHECK( has_foreach_po_v<aig_network> );
+  CHECK( has_create_po_v<aig_network> );
+  CHECK( has_create_pi_v<aig_network> );
+  CHECK( has_create_ro_v<aig_network> );
+  CHECK( has_create_ri_v<aig_network> );
+  CHECK( has_create_and_v<aig_network> );
+
+  const auto x1 = aig.create_pi();
+  const auto x2 = aig.create_pi();
+  const auto x3 = aig.create_pi();
+
+  CHECK( aig.size() == 4 );
+  CHECK( aig.num_registers() == 0 );
+  CHECK( aig.num_pis() == 3 );
+  CHECK( aig.num_pos() == 0 );
+
+  const auto f1 = aig.create_and( x1, x2 );
+  aig.create_po( f1 );
+  aig.create_po( !f1 );
+
+  const auto f2 = aig.create_and( f1, x3 );
+  aig.create_ri( f2 );
+
+  const auto ro = aig.create_ro();
+  aig.create_po( ro );
+
+  CHECK( aig.num_pos() == 3 );
+  CHECK( aig.num_registers() == 1 );
+
+  aig.foreach_po( [&]( auto s, auto i ) {
+    switch ( i )
+    {
+    case 0:
+      CHECK( s == f1 );
+      break;
+    case 1:
+      CHECK( s == !f1 );
+      break;
+    case 2:
+      // Check if the output (connected to the register) data is the same as the node data being registered.
+      CHECK( f2.data == aig.po_at( i ).data );
+      break;
+    default:
+      CHECK( false );
+      break;
+    }
+  } );
+}
+
 TEST_CASE( "create unary operations in an AIG", "[aig]" )
 {
   aig_network aig;
@@ -518,7 +571,7 @@ TEST_CASE( "substitude nodes with propagation in AIGs (test case 1)", "[aig]" )
   CHECK( aig._storage->nodes[f5.index].children[0u].index == f3.index );
   CHECK( aig._storage->nodes[f5.index].children[1u].index == f4.index );
 
-  CHECK( aig.fanout_size( aig.get_node( f1 )) == 1u );
+  CHECK( aig.fanout_size( aig.get_node( f1 ) ) == 1u );
   CHECK( aig.fanout_size( aig.get_node( f3 ) ) == 1u );
   CHECK( !aig.is_dead( aig.get_node( f1 ) ) );
 
@@ -534,8 +587,8 @@ TEST_CASE( "substitude nodes with propagation in AIGs (test case 1)", "[aig]" )
   CHECK( aig._storage->nodes[f5.index].children[0u].index == f3.index );
   CHECK( aig._storage->nodes[f5.index].children[1u].index == f4.index );
 
-  CHECK( aig.fanout_size( aig.get_node( f1 )) == 0u );
-  CHECK( aig.fanout_size( aig.get_node( f3 )) == 2u );
+  CHECK( aig.fanout_size( aig.get_node( f1 ) ) == 0u );
+  CHECK( aig.fanout_size( aig.get_node( f3 ) ) == 2u );
   CHECK( aig.is_dead( aig.get_node( f1 ) ) );
 
   aig = cleanup_dangling( aig );
@@ -566,7 +619,7 @@ TEST_CASE( "substitude nodes with propagation in AIGs (test case 2)", "[aig]" )
   CHECK( aig._storage->nodes[f3.index].children[1u].index == f2.index );
   CHECK( aig._storage->outputs[0].index == f3.index );
 
-  CHECK( aig.fanout_size( aig.get_node( f1 )) == 1u );
+  CHECK( aig.fanout_size( aig.get_node( f1 ) ) == 1u );
   CHECK( aig.fanout_size( aig.get_node( f2 ) ) == 1u );
   CHECK( aig.fanout_size( aig.get_node( f3 ) ) == 1u );
 
@@ -583,9 +636,9 @@ TEST_CASE( "substitude nodes with propagation in AIGs (test case 2)", "[aig]" )
   CHECK( aig._storage->nodes[f3.index].children[1u].index == f2.index );
   CHECK( aig._storage->outputs[0].index == f2.index );
 
-  CHECK( aig.fanout_size( aig.get_node( f1 )) == 0u );
-  CHECK( aig.fanout_size( aig.get_node( f2 )) == 1u );
-  CHECK( aig.fanout_size( aig.get_node( f3 )) == 0u );
+  CHECK( aig.fanout_size( aig.get_node( f1 ) ) == 0u );
+  CHECK( aig.fanout_size( aig.get_node( f2 ) ) == 1u );
+  CHECK( aig.fanout_size( aig.get_node( f3 ) ) == 0u );
 
   aig = cleanup_dangling( aig );
 

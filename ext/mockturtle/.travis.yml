@@ -55,6 +55,7 @@ matrix:
     osx_image: xcode10.2
     compiler: gcc
     before_install:
+      - brew unlink python@2
       - brew upgrade gcc
     env: COMPILER=/usr/local/opt/gcc/bin/g++-9
   - os: osx

@@ -35,6 +35,7 @@
 #include "absl/strings/string_view.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 
 struct RawHashSetTestOnlyAccess {
@@ -1841,6 +1842,7 @@ TEST(TableDeathTest, EraseOfEndAsserts) {
   EXPECT_DEATH_IF_SUPPORTED(t.erase(t.end()), kDeathMsg);
 }
 
+#if ABSL_PER_THREAD_TLS == 1
 TEST(RawHashSamplerTest, Sample) {
   // Enable the feature even if the prod default is off.
   SetHashtablezEnabled(true);
@@ -1861,6 +1863,7 @@ TEST(RawHashSamplerTest, Sample) {
   EXPECT_NEAR((end_size - start_size) / static_cast<double>(tables.size()),
               0.01, 0.005);
 }
+#endif
 
 TEST(RawHashSamplerTest, DoNotSampleCustomAllocators) {
   // Enable the feature even if the prod default is off.
@@ -1911,4 +1914,5 @@ TEST(Sanitizer, PoisoningOnErase) {
 
 }  // namespace
 }  // namespace container_internal
+ABSL_NAMESPACE_END
 }  // namespace absl

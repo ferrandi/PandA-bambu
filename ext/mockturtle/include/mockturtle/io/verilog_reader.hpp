@@ -28,18 +28,25 @@
   \brief Lorina reader for VERILOG files
 
   \author Heinz Riener
+  \author Mathias Soeken
 */
 
 #pragma once
 
+#include <algorithm>
+#include <cctype>
 #include <iostream>
 #include <map>
+#include <regex>
 #include <string>
 #include <vector>
 
+#include <fmt/format.h>
 #include <lorina/verilog.hpp>
 
 #include "../traits.hpp"
+#include "../generators/arithmetic.hpp"
+#include "../generators/modular_arithmetic.hpp"
 
 namespace mockturtle
 {
@@ -101,7 +108,21 @@ public:
     (void)size;
     for ( const auto& name : names )
     {
-      signals[name] = _ntk.create_pi( name );
+      if ( size.empty() )
+      {
+        signals[name] = _ntk.create_pi( name );
+      }
+      else
+      {
+        std::vector<signal<Ntk>> word;
+        for ( auto i = 0u; i < parse_size( size ); ++i )
+        {
+          const auto sname = fmt::format( "{}[{}]", name, i );
+          word.push_back( _ntk.create_pi( sname ) );
+          signals[sname] = word.back();
+        }
+        registers[name] = word;
+      }
     }
   }
 
@@ -110,7 +131,18 @@ public:
     (void)size;
     for ( const auto& name : names )
     {
-      outputs.emplace_back( name );
+      if ( size.empty() )
+      {
+        outputs.emplace_back( name );
+      }
+      else
+      {
+        // TODO store bundles
+        for ( auto i = 0u; i < parse_size( size ); ++i )
+        {
+          outputs.emplace_back( fmt::format( "{}[{}]", name, i ) );
+        }
+      }
     }
   }
 
@@ -197,11 +229,148 @@ public:
     signals[lhs] = _ntk.create_maj( op1.second ? _ntk.create_not( a ) : a, op2.second ? _ntk.create_not( b ) : b, op3.second ? _ntk.create_not( c ) : c );
   }
 
+  void on_module_instantiation( std::string const& module_name, std::vector<std::string> const& params, std::string const& inst_name,
+                                std::vector<std::pair<std::string, std::string>> const& args ) const override
+  {
+    (void)params;
+    (void)inst_name;
+
+    /* check routines */
+    const auto num_args_equals = [&]( uint32_t expected_count ) {
+      if ( args.size() != expected_count )
+      {
+        std::cerr << fmt::format( "[e] {} module expects {} arguments\n", module_name, expected_count );
+        return false;
+      }
+      return true;
+    };
+
+    const auto num_params_equals = [&]( uint32_t expected_count ) {
+      if ( params.size() != expected_count )
+      {
+        std::cerr << fmt::format( "[e] {} module expects {} parameters\n", module_name, expected_count );
+        return false;
+      }
+      return true;
+    };
+
+    const auto register_exists = [&]( std::string const& name ) {
+      if ( registers.find( name ) == registers.end() )
+      {
+        std::cerr << fmt::format( "[e] register {} does not exist\n", name );
+        return false;
+      }
+      return true;
+    };
+
+    const auto register_has_size = [&]( std::string const& name, uint32_t size ) {
+      if ( !register_exists( name ) || registers[name].size() != size )
+      {
+        std::cerr << fmt::format( "[e] register {} must have size {}\n", name, size );
+        return false;
+      }
+      return true;
+    };
+
+    const auto add_register = [&]( std::string const& name, std::vector<signal<Ntk>> const& fs ) {
+      for ( auto i = 0u; i < fs.size(); ++i )
+      {
+        signals[fmt::format( "{}[{}]", name, i) ] = fs[i];
+      }
+      registers[name] = fs;
+    };
+
+    if ( module_name == "ripple_carry_adder" )
+    {
+      if ( !num_args_equals( 3u ) ) return;
+      if ( !num_params_equals( 1u ) ) return;
+      const auto bitwidth = parse_small_value( params[0u] );
+      if ( !register_has_size( args[0].second, bitwidth ) ) return;
+      if ( !register_has_size( args[1].second, bitwidth ) ) return;
+
+      auto a_copy = registers[args[0].second];
+      const auto& b = registers[args[1].second];
+      auto carry = _ntk.get_constant( false );
+      carry_ripple_adder_inplace( _ntk, a_copy, b, carry );
+      a_copy.push_back( carry );
+      add_register( args[2].second, a_copy );
+    }
+    else if ( module_name == "montgomery_multiplier" )
+    {
+      if ( !num_args_equals( 3u ) ) return;
+      if ( !num_params_equals( 3u ) ) return;
+      const auto bitwidth = parse_small_value( params[0u] );
+      if ( !register_has_size( args[0].second, bitwidth ) ) return;
+      if ( !register_has_size( args[1].second, bitwidth ) ) return;
+
+      auto N = parse_value( params[1u] );
+      auto NN = parse_value( params[2u] );
+
+      N.resize( bitwidth );
+      NN.resize( bitwidth );
+
+      add_register( args[2].second, montgomery_multiplication( _ntk, registers[args[0].second], registers[args[1].second], N, NN ) );
+    }
+    else
+    {
+      std::cout << fmt::format( "[e] unknown module name {}\n", module_name );
+    }
+  }
+
+private:
+  std::vector<bool> parse_value( const std::string& value ) const
+  {
+    std::smatch match;
+
+    if ( std::all_of( value.begin(), value.end(), isdigit ) )
+    {
+      std::vector<bool> res( 64u );
+      bool_vector_from_dec( res, static_cast<uint64_t>( std::stoul( value ) ) );
+      return res;
+    }
+    else if ( std::regex_match( value, match, hex_string ) )
+    {
+      std::vector<bool> res( static_cast<uint64_t>( std::stoul( match.str( 1 ) ) ) );
+      bool_vector_from_hex( res, match.str( 2 ) );
+      return res;
+    }
+    else
+    {
+      fmt::print( "[e] cannot parse number '{}'\n", value );
+    }
+    assert( false );
+    return {};
+  }
+
+  uint64_t parse_small_value( const std::string& value ) const
+  {
+    return bool_vector_to_long( parse_value( value ) );
+  }
+
+  uint32_t parse_size( const std::string& size ) const
+  {
+    if ( size.empty() )
+    {
+      return 1u;
+    }
+
+    if ( auto const l = size.size(); l > 2 && size[l - 2] == ':' && size[l - 1] == '0' )
+    {
+      return parse_small_value( size.substr( 0u, l - 2 ) ) + 1u;
+    }
+
+    assert( false );
+    return 0u;
+  }
+
 private:
   Ntk& _ntk;
 
   mutable std::map<std::string, signal<Ntk>> signals;
+  mutable std::map<std::string, std::vector<signal<Ntk>>> registers;
   mutable std::vector<std::string> outputs;
+
+  std::regex hex_string{"(\\d+)'h([0-9a-fA-F]+)"};
 };
 
 } /* namespace mockturtle */

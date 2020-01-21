@@ -25,9 +25,10 @@
 #include "absl/strings/internal/str_format/output.h"
 #include "absl/strings/string_view.h"
 
-class Cord;
-
 namespace absl {
+ABSL_NAMESPACE_BEGIN
+
+class Cord;
 
 namespace str_format_internal {
 
@@ -406,6 +407,7 @@ inline size_t Excess(size_t used, size_t capacity) {
 
 }  // namespace str_format_internal
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_STRINGS_INTERNAL_STR_FORMAT_EXTENSION_H_

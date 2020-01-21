@@ -67,6 +67,67 @@
 #include "absl/base/policy_checks.h"
 
 // -----------------------------------------------------------------------------
+// Abseil namespace annotations
+// -----------------------------------------------------------------------------
+
+// ABSL_NAMESPACE_BEGIN/ABSL_NAMESPACE_END
+//
+// An annotation placed at the beginning/end of each `namespace absl` scope.
+// This is used to inject an inline namespace.
+//
+// The proper way to write Abseil code in the `absl` namespace is:
+//
+// namespace absl {
+// ABSL_NAMESPACE_BEGIN
+//
+// void Foo();  // absl::Foo().
+//
+// ABSL_NAMESPACE_END
+// }  // namespace absl
+//
+// Users of Abseil should not use these macros, because users of Abseil should
+// not write `namespace absl {` in their own code for any reason.  (Abseil does
+// not support forward declarations of its own types, nor does it support
+// user-provided specialization of Abseil templates.  Code that violates these
+// rules may be broken without warning.)
+#if !defined(ABSL_OPTION_USE_INLINE_NAMESPACE) || \
+    !defined(ABSL_OPTION_INLINE_NAMESPACE_NAME)
+#error options.h is misconfigured.
+#endif
+
+// Check that ABSL_OPTION_INLINE_NAMESPACE_NAME is neither "head" nor ""
+#if defined(__cplusplus) && ABSL_OPTION_USE_INLINE_NAMESPACE == 1
+
+#define ABSL_INTERNAL_DO_TOKEN_STR(x) #x
+#define ABSL_INTERNAL_TOKEN_STR(x) ABSL_INTERNAL_DO_TOKEN_STR(x)
+#define ABSL_INTERNAL_INLINE_NAMESPACE_STR \
+  ABSL_INTERNAL_TOKEN_STR(ABSL_OPTION_INLINE_NAMESPACE_NAME)
+
+static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != '\0',
+              "options.h misconfigured: ABSL_OPTION_INLINE_NAMESPACE_NAME must "
+              "not be empty.");
+static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
+                  ABSL_INTERNAL_INLINE_NAMESPACE_STR[1] != 'e' ||
+                  ABSL_INTERNAL_INLINE_NAMESPACE_STR[2] != 'a' ||
+                  ABSL_INTERNAL_INLINE_NAMESPACE_STR[3] != 'd' ||
+                  ABSL_INTERNAL_INLINE_NAMESPACE_STR[4] != '\0',
+              "options.h misconfigured: ABSL_OPTION_INLINE_NAMESPACE_NAME must "
+              "be changed to a new, unique identifier name.");
+
+#endif
+
+#if ABSL_OPTION_USE_INLINE_NAMESPACE == 0
+#define ABSL_NAMESPACE_BEGIN
+#define ABSL_NAMESPACE_END
+#elif ABSL_OPTION_USE_INLINE_NAMESPACE == 1
+#define ABSL_NAMESPACE_BEGIN \
+  inline namespace ABSL_OPTION_INLINE_NAMESPACE_NAME {
+#define ABSL_NAMESPACE_END }
+#else
+#error options.h is misconfigured.
+#endif
+
+// -----------------------------------------------------------------------------
 // Compiler Feature Checks
 // -----------------------------------------------------------------------------
 
@@ -83,6 +144,12 @@
 #define ABSL_HAVE_BUILTIN(x) __has_builtin(x)
 #else
 #define ABSL_HAVE_BUILTIN(x) 0
+#endif
+
+#if defined(__is_identifier)
+#define ABSL_INTERNAL_HAS_KEYWORD(x) !(__is_identifier(x))
+#else
+#define ABSL_INTERNAL_HAS_KEYWORD(x) 0
 #endif
 
 // ABSL_HAVE_TLS is defined to 1 when __thread should be supported.
@@ -131,6 +198,17 @@
     (defined(_MSC_VER) && !defined(__NVCC__))
 #define ABSL_HAVE_STD_IS_TRIVIALLY_CONSTRUCTIBLE 1
 #define ABSL_HAVE_STD_IS_TRIVIALLY_ASSIGNABLE 1
+#endif
+
+// ABSL_HAVE_SOURCE_LOCATION_CURRENT
+//
+// Indicates whether `absl::SourceLocation::current()` will return useful
+// information in some contexts.
+#ifndef ABSL_HAVE_SOURCE_LOCATION_CURRENT
+#if ABSL_INTERNAL_HAS_KEYWORD(__builtin_LINE) && \
+    ABSL_INTERNAL_HAS_KEYWORD(__builtin_FILE)
+#define ABSL_HAVE_SOURCE_LOCATION_CURRENT 1
+#endif
 #endif
 
 // ABSL_HAVE_THREAD_LOCAL
@@ -538,5 +616,7 @@
 #if defined(_MSC_VER) && _MSC_VER >= 1700 && defined(_DEBUG)
 #define ABSL_INTERNAL_MSVC_2017_DBG_MODE
 #endif
+
+#undef ABSL_INTERNAL_HAS_KEYWORD
 
 #endif  // ABSL_BASE_CONFIG_H_

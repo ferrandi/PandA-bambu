@@ -26,6 +26,7 @@
 #include "absl/meta/type_traits.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 
 // A common base class for btree_set, btree_map, btree_multiset, and
@@ -296,9 +297,10 @@ class btree_set_container : public btree_container<Tree> {
   insert_return_type insert(node_type &&node) {
     if (!node) return {this->end(), false, node_type()};
     std::pair<iterator, bool> res =
-        insert(std::move(params_type::element(CommonAccess::GetSlot(node))));
+        this->tree_.insert_unique(params_type::key(CommonAccess::GetSlot(node)),
+                                  CommonAccess::GetSlot(node));
     if (res.second) {
-      CommonAccess::Reset(&node);
+      CommonAccess::Destroy(&node);
       return {res.first, true, node_type()};
     } else {
       return {res.first, false, std::move(node)};
@@ -308,8 +310,8 @@ class btree_set_container : public btree_container<Tree> {
     if (!node) return this->end();
     std::pair<iterator, bool> res = this->tree_.insert_hint_unique(
         iterator(hint), params_type::key(CommonAccess::GetSlot(node)),
-        std::move(params_type::element(CommonAccess::GetSlot(node))));
-    if (res.second) CommonAccess::Reset(&node);
+        CommonAccess::GetSlot(node));
+    if (res.second) CommonAccess::Destroy(&node);
     return res.first;
   }
 
@@ -323,7 +325,7 @@ class btree_set_container : public btree_container<Tree> {
   // Node extraction routines.
   template <typename K = key_type>
   node_type extract(const key_arg<K> &key) {
-    auto it = find(key);
+    auto it = this->find(key);
     return it == this->end() ? node_type() : extract(it);
   }
   using super_type::extract;
@@ -523,24 +525,21 @@ class btree_multiset_container : public btree_container<Tree> {
     return this->tree_.insert_hint_multi(
         iterator(position), init_type(std::forward<Args>(args)...));
   }
-
- private:
-  template <typename... Args>
-  iterator insert_node_helper(node_type &&node, Args &&... args) {
+  iterator insert(node_type &&node) {
     if (!node) return this->end();
     iterator res =
-        insert(std::forward<Args>(args)...,
-               std::move(params_type::element(CommonAccess::GetSlot(node))));
-    CommonAccess::Reset(&node);
+        this->tree_.insert_multi(params_type::key(CommonAccess::GetSlot(node)),
+                                 CommonAccess::GetSlot(node));
+    CommonAccess::Destroy(&node);
     return res;
   }
-
- public:
-  iterator insert(node_type &&node) {
-    return insert_node_helper(std::move(node));
-  }
   iterator insert(const_iterator hint, node_type &&node) {
-    return insert_node_helper(std::move(node), hint);
+    if (!node) return this->end();
+    iterator res = this->tree_.insert_hint_multi(
+        iterator(hint),
+        std::move(params_type::element(CommonAccess::GetSlot(node))));
+    CommonAccess::Destroy(&node);
+    return res;
   }
 
   // Deletion routines.
@@ -553,7 +552,7 @@ class btree_multiset_container : public btree_container<Tree> {
   // Node extraction routines.
   template <typename K = key_type>
   node_type extract(const key_arg<K> &key) {
-    auto it = find(key);
+    auto it = this->find(key);
     return it == this->end() ? node_type() : extract(it);
   }
   using super_type::extract;
@@ -604,6 +603,7 @@ class btree_multimap_container : public btree_multiset_container<Tree> {
 };
 
 }  // namespace container_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_CONTAINER_INTERNAL_BTREE_CONTAINER_H_

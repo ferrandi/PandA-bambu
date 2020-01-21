@@ -89,6 +89,7 @@ struct timeval;
 #include "absl/time/internal/cctz/include/cctz/time_zone.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 class Duration;  // Defined below
 class Time;      // Defined below
@@ -1412,8 +1413,7 @@ constexpr Duration FromInt64(int64_t v, std::ratio<3600>) {
 // IsValidRep64<T>(0) is true if the expression `int64_t{std::declval<T>()}` is
 // valid. That is, if a T can be assigned to an int64_t without narrowing.
 template <typename T>
-constexpr auto IsValidRep64(int)
-    -> decltype(int64_t{std::declval<T>()}, bool()) {
+constexpr auto IsValidRep64(int) -> decltype(int64_t{std::declval<T>()} == 0) {
   return true;
 }
 template <typename T>
@@ -1575,6 +1575,7 @@ constexpr Time FromTimeT(time_t t) {
   return time_internal::FromUnixDuration(Seconds(t));
 }
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_TIME_TIME_H_

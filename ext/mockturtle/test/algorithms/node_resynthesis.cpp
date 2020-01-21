@@ -320,7 +320,7 @@ TEST_CASE( "Node resynthesis with direct synthesis", "[node_resynthesis]" )
 
       CHECK( klut.num_pis() == v );
       CHECK( klut.num_pos() == 1 );
-      CHECK( klut.num_gates() == 1 );
+      CHECK( klut.num_gates() == ( pis.size() > 0u ? 1u : 0u ) );
 
       const auto aig = node_resynthesis<aig_network>( klut, aig_resyn );
       CHECK( simulate<kitty::dynamic_truth_table>( aig, {v} )[0] == tt );

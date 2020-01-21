@@ -5,6 +5,8 @@
 
 #include <mockturtle/io/verilog_reader.hpp>
 #include <mockturtle/networks/mig.hpp>
+#include <mockturtle/networks/xag.hpp>
+#include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 
 #include <kitty/kitty.hpp>
@@ -55,4 +57,48 @@ TEST_CASE( "read a VERILOG file into MIG network", "[verilog_reader]" )
       break;
     }
     } );
+}
+
+TEST_CASE( "read a VERILOG file with instances", "[verilog_reader]" )
+{
+  mig_network mig;
+
+  std::string file{
+    "module top( a, b, c );\n"
+    "  input [7:0] a, b ;\n"
+    "  output [8:0] c;\n"
+    "  ripple_carry_adder #(8) add1(.x1(a), .x2(b), .y(c));\n"
+    "endmodule\n"};
+
+  std::istringstream in( file );
+  const auto result = lorina::read_verilog( in, verilog_reader( mig ) );
+  mig = cleanup_dangling( mig );
+
+  /* structural checks */
+  CHECK( result == lorina::return_code::success );
+  CHECK( mig.num_pis() == 16 );
+  CHECK( mig.num_pos() == 9 );
+  CHECK( mig.num_gates() == 32 );
+}
+
+TEST_CASE( "read a VERILOG file to create large Montgomery multiplier", "[verilog_reader]" )
+{
+  xag_network xag;
+
+  std::string file{
+    "module top( a, b, c );\n"
+    "  input [383:0] a, b;\n"
+    "  output [383:0] c;\n"
+    "  montgomery_multiplier #(384, 384'hfffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffeffffffff0000000000000000ffffffff, 384'h14000000140000000c00000002fffffffcfffffffafffffffbfffffffe00000000000000010000000100000001) mult(.x1(a), .x2(b), .y(c));\n"
+    "endmodule\n"};
+
+  std::istringstream in( file );
+  const auto result = lorina::read_verilog( in, verilog_reader( xag ) );
+  xag = cleanup_dangling( xag );
+
+  /* structural checks */
+  CHECK( result == lorina::return_code::success );
+  CHECK( xag.num_pis() == 768u );
+  CHECK( xag.num_pos() == 384u );
+  CHECK( xag.num_gates() == 909459u );
 }
