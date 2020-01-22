@@ -393,9 +393,23 @@ tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
    }
    else if(const auto* ssa = GetPointer<const ssa_name>(Op))
    {
-      const auto ga = ssa->CGetDefStmt();
-      const auto* def = GetPointer<const gimple_assign>(GET_CONST_NODE(ga));
-      return branchOpRecurse(def->op1, ga);
+      const auto DefStmt = ssa->CGetDefStmt();
+      if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(DefStmt)))
+      {
+         return branchOpRecurse(ga->op1, DefStmt);
+      }
+      else if(const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(DefStmt)))
+      {
+         const auto& defEdges = gp->CGetDefEdgesList();
+         THROW_ASSERT(not defEdges.empty(), "Branch variable definition from nowhere");
+         return defEdges.size() > 1 ? nullptr : branchOpRecurse(defEdges.front().first, DefStmt);
+      }
+      else if(GetPointer<const gimple_nop>(GET_CONST_NODE(DefStmt)) != nullptr)
+      {
+         // Branch variable is a function parameter
+         return nullptr;
+      }
+      THROW_UNREACHABLE("Branch var definition statement not handled (" + GET_CONST_NODE(DefStmt)->get_kind_text() + " " + GET_CONST_NODE(DefStmt)->ToString() + ")");
    }
    return stmt;
 }
@@ -409,15 +423,23 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
 {
    const auto* BI = GetPointer<const gimple_cond>(GET_CONST_NODE(bi));
    THROW_ASSERT(BI, "Branch instruction should be gimple_cond");
+   THROW_ASSERT(BBs.count(BI->bb_index), "Branch BB should be a valid BB");
    const auto BranchBB = BBs.at(BI->bb_index);
+   THROW_ASSERT(BBs.count(BranchBB->true_edge), "True BB should be a valid BB");
+   THROW_ASSERT(BBs.count(BranchBB->false_edge), "False BB should be a valid BB");
    const auto TrueBB = BBs.at(BranchBB->true_edge);
    const auto FalseBB = BBs.at(BranchBB->false_edge);
    const std::vector<blocRef> SuccsToProcess = {TrueBB, FalseBB};
 
-   THROW_ASSERT(GET_NODE(BI->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch");
+   THROW_ASSERT(GET_CONST_NODE(BI->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch");
    const auto cond_stmt = branchOpRecurse(BI->op0);
+   if(cond_stmt == nullptr)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Could not retrieve condition from branch variable, skipping... (" + GET_CONST_NODE(BI->op0)->ToString() + ")");
+      return;
+   }
    const auto* CondStmt = GetPointer<const gimple_assign>(GET_CONST_NODE(cond_stmt));
-   THROW_ASSERT(CondStmt, "Condition variable should be defined in gimple_assign");
+   THROW_ASSERT(CondStmt, "Condition variable should be defined by gimple_assign");
    const auto cond_ssa = CondStmt->op0;
    const auto CondOp = GET_CONST_NODE(CondStmt->op1);
 
@@ -1156,11 +1178,11 @@ DesignFlowStep_Status eSSA::InternalExec()
       const auto terminator = stmt_list.back();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Block terminates with " + GET_NODE(terminator)->get_kind_text());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      if(GET_NODE(terminator)->get_kind() == gimple_cond_K)
+      if(GET_CONST_NODE(terminator)->get_kind() == gimple_cond_K)
       {
          processBranch(terminator, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly, sl->list_of_bloc, debug_level);
       }
-      else if(GET_NODE(terminator)->get_kind() == gimple_multi_way_if_K)
+      else if(GET_CONST_NODE(terminator)->get_kind() == gimple_multi_way_if_K)
       {
          processMultiWayIf(terminator, OpsToRename, ValueInfoNums, ValueInfos, EdgeUsesOnly, sl->list_of_bloc, debug_level);
       }

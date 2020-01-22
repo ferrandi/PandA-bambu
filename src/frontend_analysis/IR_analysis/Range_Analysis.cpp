@@ -400,13 +400,22 @@ namespace
       else if(const auto* ssa = GetPointer<const ssa_name>(op))
       {
          const auto DefStmt = GET_CONST_NODE(ssa->CGetDefStmt());
-         if(DefStmt->get_kind() == gimple_phi_K)
+         if(const auto* gp = GetPointer<const gimple_phi>(DefStmt))
          {
+            const auto& defEdges = gp->CGetDefEdgesList();
+            THROW_ASSERT(not defEdges.empty(), "Branch variable definition from nowhere");
+            return defEdges.size() > 1 ? DefStmt : branchOpRecurse(defEdges.front().first);
+         }
+         else if(const auto* ga = GetPointer<const gimple_assign>(DefStmt))
+         {
+            return branchOpRecurse(ga->op1);
+         }
+         else if(GetPointer<const gimple_nop>(DefStmt) != nullptr)
+         {
+            // Branch variable is a function parameter
             return DefStmt;
          }
-         const auto* def = GetPointer<const gimple_assign>(DefStmt);
-         THROW_ASSERT(def, "branch var definition should be a gimple_assign (" + DefStmt->get_kind_text() + " + " + DefStmt->ToString() + ")");
-         return branchOpRecurse(def->op1);
+         THROW_UNREACHABLE("Branch var definition statement not handled (" + DefStmt->get_kind_text() + " " + DefStmt->ToString() + ")");
       }
       else if(op->get_kind() == tree_reindex_K)
       {
