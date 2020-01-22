@@ -77,6 +77,8 @@
 #include "ext_tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "bit_lattice.hpp"
+
 #include <boost/filesystem/operations.hpp> // for create_directories
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
@@ -272,16 +274,26 @@ namespace
       return {s, e, f};
    }
 
-   std::string num_to_bits(const APInt& num, bw_t bw)
+   std::string range_to_bits(const long long min, const long long max, bw_t bw)
    {
-      std::stringstream ss;
-      APInt mask = APInt(1) << (bw - 1);
+      long long mix = min | max;
+      long long mask = 1LL << std::min(std::numeric_limits<long long>::digits, static_cast<int>(bw - 1));
+      std::stringstream bits;
+      while (bw)
+      {
+         if(mix & mask)
+         {
+            break;
+         }
+         bits << '0';
+         mask >>= 1;
+         --bw;
+      }
       for(;bw > 0; --bw)
       {
-         ss << (num & mask ? '1' : '0');
-         mask >>= 1;
+         bits << 'U';
       }
-      return ss.str();
+      return bits.str();
    }
 
    kind op_inv(kind op)
@@ -784,18 +796,23 @@ namespace
       {
          if(!ssa->bit_values.empty())
          {
-            for(bw_t bi = 0; bi < bw; ++bi)
+            const auto bitValues = string_to_bitstring(ssa->bit_values);
+            for(auto i = 0U; i < bitValues.size(); ++i)
             {
-               char bitv = ssa->bit_values.at(bi);
-               if(bitv == '0')
+               switch(bitValues.at(bitValues.size() - i - 1))
                {
-                  boost::multiprecision::bit_unset(min, bi);
-                  boost::multiprecision::bit_unset(max, bi);
-               }
-               else if(bitv == '1')
-               {
-                  boost::multiprecision::bit_set(min, bi);
-                  boost::multiprecision::bit_set(max, bi);
+                  case bit_lattice::ZERO:
+                     boost::multiprecision::bit_unset(min, i);
+                     boost::multiprecision::bit_unset(max, i);
+                     break;
+                  case bit_lattice::ONE:
+                     boost::multiprecision::bit_set(min, i);
+                     boost::multiprecision::bit_set(max, i);
+                     break;
+                  case bit_lattice::U:
+                  case bit_lattice::X:
+                  default:
+                     break;
                }
             }
          }
@@ -8057,10 +8074,11 @@ bool RangeAnalysis::finalize()
    auto updateSSALimits = [&](tree_nodeRef ssa_node, unsigned int function_id)
    {
       auto* ssa = GetPointer<ssa_name>(GET_NODE(ssa_node));
+      bool isSigned = isSignedType(ssa->type);
       if(ssa->range->isConstant())
       {
          tree_nodeRef cst;
-         APInt cst_value;
+         long long cst_value;
          if(ssa->range->isReal())
          {
             const auto rRange = RefcountCast<const RealRange>(ssa->range);
@@ -8103,11 +8121,11 @@ bool RangeAnalysis::finalize()
          }
          else
          {
-            cst_value = isSignedType(ssa->type) ? ssa->range->getSignedMax() : ssa->range->getUnsignedMax();
-            cst = tree_man->CreateIntegerCst(ssa->type, cst_value.convert_to<long long>(), TM->new_tree_node_id());
+            cst_value = isSigned ? ssa->range->getSignedMax().convert_to<long long>() : ssa->range->getUnsignedMax().convert_to<long long>();
+            cst = tree_man->CreateIntegerCst(ssa->type, cst_value, TM->new_tree_node_id());
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->This variable have a constant value, it will be removed and replaced with " + GET_CONST_NODE(cst)->ToString());
-         ssa->bit_values = num_to_bits(cst_value, ssa->range->getBitWidth());
+         ssa->bit_values = bitstring_to_string(create_bitstring_from_constant(cst_value, getGIMPLE_BW(ssa_node), isSigned));
          updatedFunctions.insert(function_id);
          //    const auto ssaUses = ssa->CGetUseStmts();
          //    for(const auto& [use, count] : ssaUses)
@@ -8129,16 +8147,23 @@ bool RangeAnalysis::finalize()
       else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty())
       {
          auto type_id = GET_INDEX_CONST_NODE(ssa->type);
-         if(isSignedType(ssa->type))
+         long long min, max;
+         if(isSigned)
          {
-            ssa->min = TM->CreateUniqueIntegerCst(ssa->range->getSignedMin().convert_to<long long>(), type_id);
-            ssa->max = TM->CreateUniqueIntegerCst(ssa->range->getSignedMax().convert_to<long long>(), type_id);
+            min = ssa->range->getSignedMin().convert_to<long long>();
+            max = ssa->range->getSignedMax().convert_to<long long>();
          }
          else
          {
-            ssa->min = TM->CreateUniqueIntegerCst(ssa->range->getUnsignedMin().convert_to<long long>(), type_id);
-            ssa->max = TM->CreateUniqueIntegerCst(ssa->range->getUnsignedMax().convert_to<long long>(), type_id);
+            min = ssa->range->getUnsignedMin().convert_to<long long>();
+            max = ssa->range->getUnsignedMax().convert_to<long long>();
          }
+         if(ssa->bit_values.empty())
+         {
+            ssa->bit_values = range_to_bits(min, max, getGIMPLE_BW(ssa_node));
+         }
+         ssa->min = TM->CreateUniqueIntegerCst(min, type_id);
+         ssa->max = TM->CreateUniqueIntegerCst(max, type_id);
          #ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), nullptr);
          #endif
