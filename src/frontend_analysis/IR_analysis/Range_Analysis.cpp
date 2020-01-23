@@ -84,6 +84,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #define RA_JUMPSET
+#define EARLY_DEAD_CODE_RESTART
 
 #ifndef NDEBUG
 #define DEBUG_RANGE_OP
@@ -6132,10 +6133,10 @@ class ConstraintGraph
             if((constant = GetPointer<const integer_cst>(Op0)) != nullptr)
             {
                variable = cmp_op->op1;
-               // Op0 is variable, Op1 is constant
-            }
+            }  
             else if((constant = GetPointer<const integer_cst>(Op1)) != nullptr)
             {
+               // Op0 is variable, Op1 is constant
                variable = cmp_op->op0;
             }
             // Both are variables
@@ -7380,23 +7381,29 @@ class ConstraintGraph
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          if(const auto* br = GetPointer<const gimple_cond>(terminator))
          {
+            #ifdef EARLY_DEAD_CODE_RESTART
+            if(buildValueBranchMap(br, BB, function_id))
+            {
+               // Dead code elimination necessary
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               return true;
+            }
+            #else
             buildValueBranchMap(br, BB, function_id);
-            //    if(buildValueBranchMap(br, BB, function_id))
-            //    {
-            //       // Dead code elimination necessary
-            //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            //       return true;
-            //    }
+            #endif
          }
          else if(const auto* mwi = GetPointer<const gimple_multi_way_if>(terminator))
          {
+            #ifdef EARLY_DEAD_CODE_RESTART
+            if(buildValueMultiIfMap(mwi, BB, function_id))
+            {
+               // Dead code elimination necessary
+               return true;
+            }
+            #else
             buildValueMultiIfMap(mwi, BB, function_id);
-            //    if(buildValueMultiIfMap(mwi, BB, function_id))
-            //    {
-            //       // Dead code elimination necessary
-            //       return true;
-            //    }
+            #endif
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
@@ -7946,40 +7953,22 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
       {
-         switch(GetStatus())
-         {
-            case DesignFlowStep_Status::ABORTED:
-            case DesignFlowStep_Status::SUCCESS:
-            {
-               if(dead_code_restart)
-               {
-                  relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));   // TODO: could it be more specific?
-               }
-               break;
-            }
-            case DesignFlowStep_Status::UNCHANGED:
-            {
-               break;
-            }
-            case DesignFlowStep_Status::SKIPPED:
-            case DesignFlowStep_Status::UNEXECUTED:
-            case DesignFlowStep_Status::UNNECESSARY:
-            case DesignFlowStep_Status::EMPTY:
-            case DesignFlowStep_Status::NONEXISTENT:
-            default:
-               THROW_UNREACHABLE("Unexpected design flow step status for Range Analysis");
-         }
+         //    if(dead_code_restart)
+         //    {
+         //       relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));   // TODO: could it be more specific?
+         //    }
          break;
       }
       default:
@@ -8001,30 +7990,40 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    // Analyse only reached functions
    const auto TM = AppM->get_tree_manager();
    auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
-   //    std::vector<unsigned int> dead_code_reboot;
+
+   #ifdef EARLY_DEAD_CODE_RESTART
+   std::vector<unsigned int> dead_code_reboot;
+   for(const auto f : functions)
+   {
+      bool dead_code_necessary = CG->buildGraph(f);
+      if(dead_code_necessary)
+      {
+         dead_code_reboot.push_back(f);
+      }
+   }
+   if(!dead_code_reboot.empty())
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Following functions have unpropagated constants:");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      for(const auto f_id : dead_code_reboot)
+      {
+         const auto FB = AppM->GetFunctionBehavior(f_id);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, f_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(FB->CGetBehavioralHelper()))));
+         FB->UpdateBBVersion();
+         FB->UpdateBitValueVersion();
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      dead_code_restart = true;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unpropagated constants detected, aborting...");
+      return DesignFlowStep_Status::ABORTED;
+   }
+   #else
    for(const auto f : functions)
    {
       CG->buildGraph(f);
-      //    bool dead_code_necessary = CG->buildGraph(f);
-      //    if(dead_code_necessary)
-      //    {
-      //       dead_code_reboot.push_back(f);
-      //    }
    }
-   //    if(!dead_code_reboot.empty())
-   //    {
-   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Following functions have unpropagated constants:");
-   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   //       for(const auto f_id : dead_code_reboot)
-   //       {
-   //          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, f_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(f_id)->CGetBehavioralHelper()))));
-   //          AppM->GetFunctionBehavior(f_id)->UpdateBBVersion();
-   //       }
-   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   //       dead_code_restart = true;
-   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unpropagated constants detected, aborting...");
-   //       return DesignFlowStep_Status::ABORTED;
-   //    }
+   #endif
+
    // Top functions are not called by any other functions, so they do not have any call statement to analyse
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal analysis...");
    for(const auto top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
@@ -8078,7 +8077,6 @@ bool RangeAnalysis::finalize()
       if(ssa->range->isConstant())
       {
          tree_nodeRef cst;
-         long long cst_value;
          if(ssa->range->isReal())
          {
             const auto rRange = RefcountCast<const RealRange>(ssa->range);
@@ -8094,11 +8092,6 @@ bool RangeAnalysis::finalize()
                #endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
                cst = tree_man->CreateRealCst(ssa->type, static_cast<long double>(vc.flt), TM->new_tree_node_id());
-               #if __BYTE_ORDER == __BIG_ENDIAN
-               cst_value = vc.bits.sign << 31 | vc.bits.exp << 23 | vc.bits.frac;
-               #else
-               cst_value = vc.bits.coded;
-               #endif
             }
             else
             {
@@ -8112,37 +8105,28 @@ bool RangeAnalysis::finalize()
                #endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
                cst = tree_man->CreateRealCst(ssa->type, static_cast<long double>(vc.dub), TM->new_tree_node_id());
-               #if __BYTE_ORDER == __BIG_ENDIAN
-               cst_value = vc.bits.sign << 63 | vc.bits.exp << 52 | vc.bits.frac;
-               #else
-               cst_value = vc.bits.coded;
-               #endif
             }
          }
          else
          {
-            cst_value = isSigned ? ssa->range->getSignedMax().convert_to<long long>() : ssa->range->getUnsignedMax().convert_to<long long>();
+            const auto cst_value = (isSigned ? ssa->range->getSignedMax() : ssa->range->getUnsignedMax()).convert_to<long long>();
             cst = tree_man->CreateIntegerCst(ssa->type, cst_value, TM->new_tree_node_id());
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->This variable have a constant value, it will be removed and replaced with " + GET_CONST_NODE(cst)->ToString());
-         ssa->bit_values = bitstring_to_string(create_bitstring_from_constant(cst_value, getGIMPLE_BW(ssa_node), isSigned));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing variable with " + GET_CONST_NODE(cst)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         const auto useStmts = ssa->CGetUseStmts();
+         for(const auto& use : useStmts)
+         {
+            TM->ReplaceTreeNode(use.first, ssa_node, cst);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(use.first)->ToString());
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          updatedFunctions.insert(function_id);
-         //    const auto ssaUses = ssa->CGetUseStmts();
-         //    for(const auto& [use, count] : ssaUses)
-         //    {
-         //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage before: " + use->ToString());
-         //       TM->ReplaceTreeNode(use, ssa_node, cst);
-         //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "replace usage after: " + use->ToString());
-         //    }
-         //    if(ssa->CGetUseStmts().empty())
-         //    {
-         //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Restarted dead code");
-         //       dead_code_restart = true;
-         //    }
+
          #ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), cst);
          #endif
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty())
       {
@@ -8164,6 +8148,7 @@ bool RangeAnalysis::finalize()
          }
          ssa->min = TM->CreateUniqueIntegerCst(min, type_id);
          ssa->max = TM->CreateUniqueIntegerCst(max, type_id);
+
          #ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), nullptr);
          #endif
