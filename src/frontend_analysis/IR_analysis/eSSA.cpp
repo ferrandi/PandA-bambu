@@ -431,7 +431,12 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
    const auto FalseBB = BBs.at(BranchBB->false_edge);
    const std::vector<blocRef> SuccsToProcess = {TrueBB, FalseBB};
 
-   THROW_ASSERT(GET_CONST_NODE(BI->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch");
+   if(GetPointer<const cst_node>(GET_CONST_NODE(BI->op0)) != nullptr)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Branch variable is a cst_node, skipping...");
+      return;
+   }
+   THROW_ASSERT(GET_CONST_NODE(BI->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch (" + GET_CONST_NODE(BI->op0)->ToString() + ")");
    const auto cond_stmt = branchOpRecurse(BI->op0);
    if(cond_stmt == nullptr)
    {
@@ -500,7 +505,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
    }
    else
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unhandled condition type, skipping... (" + GET_CONST_NODE(CondOp)->get_kind_text() + " " + GET_CONST_NODE(CondOp)->ToString() + ")");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unhandled condition type, skipping... (" + CondOp->get_kind_text() + " " + CondOp->ToString() + ")");
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 }
@@ -538,9 +543,14 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition: else branch");
          continue;
       }
+      if(GetPointer<const cst_node>(GET_CONST_NODE(case_var)) != nullptr)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable is a cst_node, skipping...");
+         continue;
+      }
 
       const auto* case_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(case_var));
-      THROW_ASSERT(case_ssa, "Case conditional variable should be an ssa_name");
+      THROW_ASSERT(case_ssa, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(case_var)->ToString() + ")");
       const auto case_stmt = case_ssa->CGetDefStmt();
       const auto* Case_stmt = GetPointer<const gimple_assign>(GET_CONST_NODE(case_stmt));
       THROW_ASSERT(Case_stmt, "Case statement should be a gimple_assign");
@@ -1082,6 +1092,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
