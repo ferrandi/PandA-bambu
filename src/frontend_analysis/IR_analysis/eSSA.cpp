@@ -866,7 +866,14 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
    // and of conditions.
    for(auto RenameIter = RenameStack.end() - Start; RenameIter != RenameStack.end(); ++RenameIter)
    {
-      auto Op = RenameIter == RenameStack.begin() ? OrigOp : (RenameIter - 1)->Def;
+      auto Op = OrigOp;
+      if(RenameIter != RenameStack.begin()) 
+      {
+         THROW_ASSERT((RenameIter - 1)->Def, "A valid definition shold be on the stack at this point");
+         const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE((RenameIter - 1)->Def));
+         THROW_ASSERT(gp, "Previous definition on stack should be a gimple_phi (" + GET_CONST_NODE((RenameIter-1)->Def)->ToString() + ")");
+         Op = gp->res;
+      }
       ValueDFS& Result = *RenameIter;
       auto* ValInfo = Result.PInfo;
       // For edge predicates, we can just place the operand in the block before
@@ -1053,7 +1060,6 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          #if HAVE_ASSERTS
          if(!valueComesBefore(OI, Result.Def, VD.U->getUser()))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT");
             const auto defVertex = DT->CGetBBGraphInfo()->bb_index_map.at(GetPointer<const gimple_node>(GET_CONST_NODE(Result.Def))->bb_index);
             const auto defBB = DT->CGetBBNodeInfo(defVertex)->block;
             const auto defBB_succ = defBB->list_of_succ;
@@ -1061,6 +1067,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
             {
                THROW_UNREACHABLE("PredicateInfo def should have dominated this use at least in the CFG");
             }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT, but in CFG only");
          }
          #endif
          VD.U->set(phi->res, TM);
