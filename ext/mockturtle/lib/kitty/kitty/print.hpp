@@ -61,6 +61,10 @@ inline std::string to_binary( uint16_t value, uint32_t num_vars )
       *it = '1';
     }
     value >>= 1;
+    if ( it == res.begin() )
+    {
+      break;
+    }
     --it;
   }
   return res;

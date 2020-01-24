@@ -92,7 +92,7 @@ struct xag_npn_resynthesis_stats
 
    .. note::
 
-      The implementation of this algorithm was heavily inspired buy the rewrite
+      The implementation of this algorithm was heavily inspired by the rewrite
       command in AIG.  It uses the same underlying database of subcircuits.
    \endverbatim
  */

@@ -95,9 +95,10 @@ enum class bi_decomposition
   \param tt Input function \f$f\f$
   \param var_index Variable \f$a\f$
   \param func If not ``null`` and decomposition exists, its value is assigned the remainder \f$h\f$
+  \param allow_xor Set to false to disable XOR decomposition
 */
 template<class TT>
-top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* func = nullptr )
+top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* func = nullptr, bool allow_xor = true )
 {
   auto var = tt.construct();
   kitty::create_nth_var( var, var_index );
@@ -135,17 +136,20 @@ top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* fun
     return top_decomposition::le_;
   }
 
-  /* try XOR */
-  const auto co0 = cofactor0( tt, var_index );
-  const auto co1 = cofactor1( tt, var_index );
-
-  if ( equal( co0, ~co1 ) )
+  if ( allow_xor )
   {
-    if ( func )
+    /* try XOR */
+    const auto co0 = cofactor0( tt, var_index );
+    const auto co1 = cofactor1( tt, var_index );
+
+    if ( equal( co0, ~co1 ) )
     {
-      *func = co0;
+      if ( func )
+      {
+        *func = co0;
+      }
+      return top_decomposition::xor_;
     }
-    return top_decomposition::xor_;
   }
 
   return top_decomposition::none;
@@ -174,9 +178,10 @@ top_decomposition is_top_decomposable( const TT& tt, uint32_t var_index, TT* fun
   \param var_index1 Variable \f$a\f$
   \param var_index2 Variable \f$b\f$
   \param func If not ``null`` and decomposition exists, its value is assigned the remainder \f$h\f$
+  \param allow_xor Set to false to disable XOR decomposition
 */
 template<class TT>
-bottom_decomposition is_bottom_decomposable( const TT& tt, uint32_t var_index1, uint32_t var_index2, TT* func = nullptr )
+bottom_decomposition is_bottom_decomposable( const TT& tt, uint32_t var_index1, uint32_t var_index2, TT* func = nullptr, bool allow_xor = true )
 {
   const auto tt0 = cofactor0( tt, var_index1 );
   const auto tt1 = cofactor1( tt, var_index1 );
@@ -238,7 +243,7 @@ bottom_decomposition is_bottom_decomposable( const TT& tt, uint32_t var_index1, 
     }
     return bottom_decomposition::and_;
   }
-  else // XOR
+  else if ( allow_xor ) // XOR
   {
     if ( func )
     {

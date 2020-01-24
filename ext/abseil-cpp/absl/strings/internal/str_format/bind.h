@@ -13,6 +13,7 @@
 #include "absl/types/span.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 class UntypedFormatSpec;
 
@@ -73,7 +74,7 @@ class FormatSpecTemplate
   using Base = typename MakeDependent<UntypedFormatSpec, Args...>::type;
 
  public:
-#if ABSL_INTERNAL_ENABLE_FORMAT_CHECKER
+#ifdef ABSL_INTERNAL_ENABLE_FORMAT_CHECKER
 
   // Honeypot overload for when the std::string is not constexpr.
   // We use the 'unavailable' attribute to give a better compiler error than
@@ -202,6 +203,7 @@ class StreamedWrapper {
 };
 
 }  // namespace str_format_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_STRINGS_INTERNAL_STR_FORMAT_BIND_H_

@@ -42,24 +42,6 @@
 #include <kitty/static_truth_table.hpp>
 #include <kitty/constructors.hpp>
 
-namespace kitty
-{
-
-/*! \brief Implies */
-inline bool implies( const dynamic_truth_table& first, const dynamic_truth_table& second )
-{
-  return is_const0( ~(( ~first ) | second ) );
-}
-
-/*! \brief Implies */
-template<int NumVars>
-inline bool implies( const static_truth_table<NumVars>& first, const static_truth_table<NumVars>& second )
-{
-  return is_const0( ~(( ~first ) | second ) );
-}
-
-} /* namespace kitty */
-
 namespace mockturtle
 {
 
@@ -75,12 +57,6 @@ struct resubstitution_params
 
   /*! \brief Maximum number of divisors to consider. */
   uint32_t max_divisors{150};
-
-  /*! \brief Maximum number of pair-wise divisors to consider. */
-  // uint32_t max_divisors2{500};
-
-  /*! \brief Maximum number of nodes per reconvergence-driven window. */
-  // uint32_t max_nodes{100};
 
   /*! \brief Maximum number of nodes added by resubstitution. */
   uint32_t max_inserts{2};
@@ -395,8 +371,10 @@ public:
 
   std::optional<signal> operator()( node const& root, uint32_t required, uint32_t max_inserts, uint32_t num_mffc, uint32_t& last_gain ) const
   {
+    /* The default resubstitution functor does not insert any gates
+       and consequently does not use the argument `max_inserts`. Other
+       functors, however, make use of this argument. */
     (void)max_inserts;
-    (void)num_mffc;
 
     /* consider constants */
     auto g = call_with_stopwatch( st.time_resubC, [&]() {
@@ -502,9 +480,9 @@ public:
     /* start the managers */
     cut_manager<Ntk> mgr( ps.max_pis );
 
-    const auto size = ntk.size();
     progress_bar pbar{ntk.size(), "resub |{0}| node = {1:>4}   cand = {2:>4}   est. gain = {3:>5}", ps.progress};
 
+    auto const size = ntk.num_gates();
     ntk.foreach_gate( [&]( auto const& n, auto i ){
         if ( i >= size )
           return false; /* terminate */
@@ -525,7 +503,7 @@ public:
 
         /* evaluate this cut */
         auto const g = call_with_stopwatch( st.time_eval, [&]() {
-            return evaluate( n, leaves, ps.max_inserts );
+            return evaluate( n, leaves );
           });
         if ( !g )
         {
@@ -609,9 +587,8 @@ private:
     sim.normalize( divs );
   }
 
-  std::optional<signal> evaluate( node const& root, std::vector<node> const &leaves, uint32_t max_inserts )
+  std::optional<signal> evaluate( node const& root, std::vector<node> const &leaves )
   {
-    (void)max_inserts;
     uint32_t const required = std::numeric_limits<uint32_t>::max();
 
     last_gain = 0;
@@ -624,7 +601,7 @@ private:
         return num_mffc;
       });
 
-    /* collect the divisor nodes */
+    /* collect the divisor nodes in the cut */
     bool div_comp_success = call_with_stopwatch( st.time_divs, [&]() {
         return collect_divisors( root, leaves, required );
       });
@@ -638,7 +615,7 @@ private:
     st.num_total_divisors += num_divs;
     st.num_total_leaves += leaves.size();
 
-    /* simulate the nodes */
+    /* simulate the collected divisors */
     call_with_stopwatch( st.time_simulation, [&]() { simulate( leaves ); });
 
     ResubFn resub_fn( ntk, sim, divs, num_divs, resub_st );
