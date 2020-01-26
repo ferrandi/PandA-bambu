@@ -24,10 +24,12 @@
 #include "llvm/IR/PatternMatch.h"
 #ifdef _WIN32
 #include "llvm/Analysis/OrderedInstructions.h"
-#elif __clang_major__ != 4
+#elif __clang_major__ == 4
+#include "my_OrderedInstructions.hpp"
+#elif __clang_major__ > 4 && __clang_major__ < 8
 #include "llvm/Transforms/Utils/OrderedInstructions.h"
 #else
-#include "my_OrderedInstructions.hpp"
+#include "llvm/Analysis/OrderedInstructions.h"
 #endif
 
 #include "llvm/IR/IRBuilder.h"
