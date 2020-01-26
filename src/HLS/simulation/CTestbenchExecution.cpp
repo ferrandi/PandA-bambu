@@ -191,7 +191,7 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #if HAVE_I386_CLANG9_COMPILER
                      if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG9)
 #endif
-                     compiler_flags += " -fexcess-precision=standard ";
+                        compiler_flags += " -fexcess-precision=standard ";
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
       compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";

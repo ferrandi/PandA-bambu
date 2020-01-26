@@ -466,7 +466,8 @@ namespace clang
 #else
                         PragmaIntroducerKind
 #endif
-                        /*Introducer*/, Token& PragmaTok) override
+                        /*Introducer*/,
+                        Token& PragmaTok) override
       {
          Token Tok{};
          unsigned int index = 0;

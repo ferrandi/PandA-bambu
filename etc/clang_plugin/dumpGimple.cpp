@@ -2267,7 +2267,7 @@ namespace llvm
             {
                auto allocType = av->alloc_inst->getAllocatedType();
                auto typeSize = allocType->isSized() ? DL->getTypeAllocSizeInBits(allocType) : 8ULL;
-               algn = typeSize/8ULL;
+               algn = typeSize / 8ULL;
             }
          }
          return std::max(8u, 8 * algn);
@@ -3157,11 +3157,11 @@ namespace llvm
                   active_size = i;
             }
             llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-//            if(!range.isFullSet() && !isSigned)
-//            {
-//               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
-//                  isSigned = true;
-//            }
+            //            if(!range.isFullSet() && !isSigned)
+            //            {
+            //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
+            //                  isSigned = true;
+            //            }
 
             if(obj_size != active_size)
             {
@@ -3199,7 +3199,6 @@ namespace llvm
             }
             else
             {
-
                if(!range.isFullSet())
                {
                   //               llvm::errs() << "Range:\n";
@@ -3295,11 +3294,11 @@ namespace llvm
                   active_size = i;
             }
             llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
-//            if(!range.isFullSet() && !isSigned)
-//            {
-//               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
-//                  isSigned = true;
-//            }
+            //            if(!range.isFullSet() && !isSigned)
+            //            {
+            //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
+            //                  isSigned = true;
+            //            }
             if(obj_size != active_size)
             {
                uint64_t val;
@@ -6409,7 +6408,7 @@ namespace llvm
          RA->printRanges(M, llvm::errs());
          delete RA;
       }
-      //M.print(llvm::errs(), nullptr);
+      // M.print(llvm::errs(), nullptr);
       return res;
    }
 } // namespace llvm
