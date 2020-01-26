@@ -1134,9 +1134,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   const auto fu_decl_node = GET_NODE(ae->op);
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
                   auto fdCalled = GetPointer<function_decl>(fu_decl_node);
-                  if(fdCalled->writing_memory || !fdCalled->body)
+                  if(fdCalled->writing_memory || !fdCalled->body || fdCalled->undefined_flag)
                      fd->writing_memory = true;
-                  if(fdCalled->reading_memory || !fdCalled->body)
+                  if(fdCalled->reading_memory || !fdCalled->body || fdCalled->undefined_flag)
                      fd->reading_memory = true;
                }
                else
@@ -1164,9 +1164,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             }
             if(fdCalled)
             {
-               if(fdCalled->writing_memory || !fdCalled->body)
+               if(fdCalled->writing_memory || !fdCalled->body || fdCalled->undefined_flag)
                   fd->writing_memory = true;
-               if(fdCalled->reading_memory || !fdCalled->body)
+               if(fdCalled->reading_memory || !fdCalled->body || fdCalled->undefined_flag)
                   fd->reading_memory = true;
             }
             else
