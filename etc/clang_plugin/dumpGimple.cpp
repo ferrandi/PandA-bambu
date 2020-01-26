@@ -3156,6 +3156,13 @@ namespace llvm
                if(i < active_size)
                   active_size = i;
             }
+            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+//            if(!range.isFullSet() && !isSigned)
+//            {
+//               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
+//                  isSigned = true;
+//            }
+
             if(obj_size != active_size)
             {
                uint64_t val;
@@ -3165,7 +3172,6 @@ namespace llvm
                }
                else
                   val = 0;
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
                if(!range.isFullSet())
                {
                   if(isSigned)
@@ -3193,7 +3199,7 @@ namespace llvm
             }
             else
             {
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+
                if(!range.isFullSet())
                {
                   //               llvm::errs() << "Range:\n";
@@ -3221,7 +3227,7 @@ namespace llvm
                   inst->print(llvm::errs());
                   llvm::errs() << "\n";
 #endif
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMin() : range.getUnsignedMin())));
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMin().sextOrTrunc(64) : range.getUnsignedMin().zextOrTrunc(64))));
                }
                else
                   return nullptr;
@@ -3288,6 +3294,12 @@ namespace llvm
                if(i < active_size)
                   active_size = i;
             }
+            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+//            if(!range.isFullSet() && !isSigned)
+//            {
+//               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
+//                  isSigned = true;
+//            }
             if(obj_size != active_size)
             {
                uint64_t val;
@@ -3298,7 +3310,6 @@ namespace llvm
                }
                else
                   val = (1ULL << (active_size)) - 1;
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
                if(!range.isFullSet())
                {
                   if(isSigned)
@@ -3334,11 +3345,10 @@ namespace llvm
             }
             else
             {
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
                if(!range.isFullSet())
                {
                   auto isSigned = CheckSignedTag(TREE_TYPE(t));
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMax() : range.getUnsignedMax())));
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMax().sextOrTrunc(64) : range.getUnsignedMax().zextOrTrunc(64))));
                }
                else
                {
@@ -5904,8 +5914,12 @@ namespace llvm
 
    void DumpGimpleRaw::computeValueRange(llvm::Module& M)
    {
+#if __clang_major__ >= 8
+      RA = nullptr;
+#else
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
       RA->runOnModule(M, modulePass, PtoSets_AA);
+#endif
    }
 
    void DumpGimpleRaw::ValueRangeOptimizer(llvm::Module& M)
