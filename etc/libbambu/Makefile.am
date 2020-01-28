@@ -111,3 +111,17 @@ libbambu_clang7_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG7
 libbambu_clang7_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG7 -C
 endif
 
+if BUILD_I386_CLANG8
+pkglib_LIBRARIES += libbambu_clang8.a
+libbambu_clang8_a_SOURCES = $(common_libbambu_src)
+libbambu_clang8_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG8
+libbambu_clang8_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG8 -C
+endif
+
+if BUILD_I386_CLANG9
+pkglib_LIBRARIES += libbambu_clang9.a
+libbambu_clang9_a_SOURCES = $(common_libbambu_src)
+libbambu_clang9_a_CFLAGS =$(common_cflags_clang) --compiler=I386_CLANG9
+libbambu_clang9_a_AR =$(top_builddir)/src/tree-panda-gcc $(common_treegccflags_clang) --compiler=I386_CLANG9 -C
+endif
+

@@ -84,3 +84,15 @@ libpthread_clang7_a_SOURCES = pthread.c
 libpthread_clang7_a_CFLAGS = --compiler=I386_CLANG7 $(common_treegccflags_clang)
 endif
 
+if BUILD_I386_CLANG8
+pkglib_LIBRARIES += libpthread_clang8.a
+libpthread_clang8_a_SOURCES = pthread.c
+libpthread_clang8_a_CFLAGS = --compiler=I386_CLANG8 $(common_treegccflags_clang)
+endif
+
+if BUILD_I386_CLANG9
+pkglib_LIBRARIES += libpthread_clang9.a
+libpthread_clang9_a_SOURCES = pthread.c
+libpthread_clang9_a_CFLAGS = --compiler=I386_CLANG9 $(common_treegccflags_clang)
+endif
+
