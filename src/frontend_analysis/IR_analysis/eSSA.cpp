@@ -351,7 +351,7 @@ const ValueInfo& getValueInfo(tree_nodeConstRef Operand, eSSA::ValueInfoLookup& 
    THROW_ASSERT(OIN != ValueInfoNums.end(), "Operand was not really in the Value Info Numbers");
    auto OINI = OIN->second;
    THROW_ASSERT(OINI < ValueInfos.size(), "Value Info Number greater than size of Value Info Table");
-   return ValueInfos[OINI];
+   return ValueInfos.at(OINI);
 }
 
 ValueInfo& getOrCreateValueInfo(tree_nodeConstRef Operand, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos)
@@ -364,9 +364,9 @@ ValueInfo& getOrCreateValueInfo(tree_nodeConstRef Operand, eSSA::ValueInfoLookup
       // This will use the new size and give us a 0 based number of the info
       auto InsertResult = ValueInfoNums.insert({Operand, ValueInfos.size() - 1});
       THROW_ASSERT(InsertResult.second, "Value info number already existed?");
-      return ValueInfos[InsertResult.first->second];
+      return ValueInfos.at(InsertResult.first->second);
    }
-   return ValueInfos[OIN->second];
+   return ValueInfos.at(OIN->second);
 }
 
 void addInfoFor(OperandRef Op, PredicateBase* PB, CustomSet<OperandRef>& OpsToRename, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos)
@@ -1123,21 +1123,24 @@ DesignFlowStep_Status eSSA::InternalExec()
 
    /// store the GCC BB graph ala boost::graph
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
+   BBGraph GCC_bb_graph(GCC_bb_graphs_collection, CFG_SELECTOR);
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;
    /// add vertices
    for(auto block : sl->list_of_bloc)
    {
-      inverse_vertex_map[block.first] = GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second)));
+      inverse_vertex_map.try_emplace(block.first, GCC_bb_graphs_collection->AddVertex(BBNodeInfoRef(new BBNodeInfo(block.second))));
    }
+   
    /// add edges
    for(auto curr_bb_pair : sl->list_of_bloc)
    {
       unsigned int curr_bb = curr_bb_pair.first;
       for(const auto& lop : sl->list_of_bloc.at(curr_bb)->list_of_pred)
       {
-         THROW_ASSERT(inverse_vertex_map.contains(lop), "BB" + STR(lop) + " (successor of BB" + STR(curr_bb) + ") does not exist");
+         THROW_ASSERT(static_cast<bool>(inverse_vertex_map.count(lop)), "BB" + STR(lop) + " (successor of BB" + STR(curr_bb) + ") does not exist");
          GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(lop), inverse_vertex_map.at(curr_bb), CFG_SELECTOR);
       }
+
       for(const auto& los : sl->list_of_bloc.at(curr_bb)->list_of_succ)
       {
          if(los == bloc::EXIT_BLOCK_ID)
@@ -1145,21 +1148,23 @@ DesignFlowStep_Status eSSA::InternalExec()
             GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bb), inverse_vertex_map.at(los), CFG_SELECTOR);
          }
       }
+      
       if(sl->list_of_bloc.at(curr_bb)->list_of_succ.empty())
       {
          GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(curr_bb), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
       }
    }
+   
    /// add a connection between entry and exit thus avoiding problems with non terminating code
    GCC_bb_graphs_collection->AddEdge(inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), CFG_SELECTOR);
 
-   dominance<BBGraph> bb_dominators(BBGraph(GCC_bb_graphs_collection, CFG_SELECTOR), inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters);
+   dominance<BBGraph> bb_dominators(GCC_bb_graph, inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID), inverse_vertex_map.at(bloc::EXIT_BLOCK_ID), parameters);
    bb_dominators.calculate_dominance_info(dominance<BBGraph>::CDI_DOMINATORS);
 
    DT.reset(new BBGraph(GCC_bb_graphs_collection, D_SELECTOR));
    for(auto it : bb_dominators.get_dominator_map())
    {
-      if(it.first != inverse_vertex_map[bloc::ENTRY_BLOCK_ID])
+      if(it.first != inverse_vertex_map.at(bloc::ENTRY_BLOCK_ID))
       {
          GCC_bb_graphs_collection->AddEdge(it.second, it.first, D_SELECTOR);
       }
