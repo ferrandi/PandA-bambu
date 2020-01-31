@@ -84,7 +84,8 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #define RA_JUMPSET
-#define EARLY_DEAD_CODE_RESTART
+#define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
+#define INTEGER_PTR                 // Pointers are considered as integers
 
 #ifndef NDEBUG
 #define DEBUG_RANGE_OP
@@ -196,22 +197,6 @@ namespace
       }
       return new_val;
    }
-
-   //    APInt lshr(const APInt& a, bw_t p)
-   //    {
-   //       APInt mask = (APInt(1) << (128 - p)) - 1;
-   //       return (a >> p) & mask;
-   //    }
-   //    
-   //    UAPInt lshr(const UAPInt& a, bw_t p)
-   //    {
-   //       if(p > 128)
-   //       {
-   //          return 0;
-   //       }
-   //       UAPInt mask = (UAPInt(1) << (128 - p)) - 1;
-   //       return (a >> p) & mask;
-   //    }
 
    bw_t countLeadingZeros(const APInt& a, bw_t bw)
    {
@@ -410,6 +395,10 @@ namespace
       {
          return branchOpRecurse(nop->op);
       }
+      else if(const auto* ce = GetPointer<const convert_expr>(op))
+      {
+         return branchOpRecurse(ce->op);
+      }
       else if(const auto* ssa = GetPointer<const ssa_name>(op))
       {
          const auto DefStmt = GET_CONST_NODE(ssa->CGetDefStmt());
@@ -478,6 +467,62 @@ namespace
       //}
    }
 
+   bool isIntegerType(const tree_nodeConstRef tn) 
+   {
+      switch(tn->get_kind())
+      {
+         case boolean_type_K:
+         case enumeral_type_K:
+         case integer_type_K:
+         #ifdef INTEGER_PTR
+         case pointer_type_K:
+         #endif
+            return true;
+         case array_type_K:
+         case CharType_K:
+         case nullptr_type_K:
+         case type_pack_expansion_K:
+         case complex_type_K:
+         case function_type_K:
+         case lang_type_K:
+         case method_type_K:
+         case offset_type_K:
+         #ifndef INTEGER_PTR
+         case pointer_type_K:
+         #endif
+         case qual_union_type_K:
+         case real_type_K:
+         case record_type_K:
+         case reference_type_K:
+         case set_type_K:
+         case template_type_parm_K:
+         case typename_type_K:
+         case type_argument_pack_K:
+         case union_type_K:
+         case vector_type_K:
+         case void_type_K:
+            return false;
+         case tree_reindex_K:
+            return isIntegerType(GET_CONST_NODE(tn));
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case ssa_name_K:
+            return isIntegerType(tree_helper::CGetType(tn));
+         case aggr_init_expr_K:case case_label_expr_K:case lut_expr_K:case target_expr_K:case target_mem_ref_K:case target_mem_ref461_K:case binfo_K:case block_K:case constructor_K:case error_mark_K:case identifier_node_K:case statement_list_K:case tree_list_K:case tree_vec_K:case call_expr_K:
+         case last_tree_K:case none_K:case placeholder_expr_K:
+         case CASE_UNARY_EXPRESSION:
+         case CASE_BINARY_EXPRESSION:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_GIMPLE_NODES:
+         default:
+            THROW_UNREACHABLE("Unhandled node type (" + tn->get_kind_text() + " " + tn->ToString() + ")");
+      }
+      return false;
+   }
+
    bool isValidInstruction(const tree_nodeConstRef stmt, const FunctionBehaviorConstRef FB, const tree_managerConstRef TM)
    {
       tree_nodeConstRef Type = nullptr;
@@ -503,7 +548,9 @@ namespace
                /// unary_expr cases
                case view_convert_expr_K:
                case nop_expr_K:
+               case convert_expr_K:
                case abs_expr_K:
+                  break;
 
                /// binary_expr cases
                case plus_expr_K:
@@ -526,15 +573,28 @@ namespace
                case ge_expr_K:
                case lt_expr_K:
                case le_expr_K:
+               #ifdef INTEGER_PTR
                case pointer_plus_expr_K:
+               #endif
+               {
+                  const auto bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
+                  if(!isIntegerType(bin_op->op0) || !isIntegerType(bin_op->op1))
+                  {
+                     return false;
+                  }
+                  break;
+               }
 
                /// ternary_expr case
                case cond_expr_K:
                   break;
 
                // Unary case
-               case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+               case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
                // Binary case
+               #ifndef INTEGER_PTR
+               case pointer_plus_expr_K:
+               #endif
                case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
                // Ternary case
                case component_ref_K:case bit_field_ref_K:case bit_ior_concat_expr_K:case vtable_ref_K:case with_cleanup_expr_K:case obj_type_ref_K:case save_expr_K:case vec_cond_expr_K:case vec_perm_expr_K:case dot_prod_expr_K:case ternary_plus_expr_K:case ternary_pm_expr_K:case ternary_mp_expr_K:case ternary_mm_expr_K:
@@ -589,63 +649,7 @@ namespace
          default:
             return false;
       }
-
-      if(Type->get_kind() == integer_type_K || Type->get_kind() == pointer_type_K || Type->get_kind() == enumeral_type_K || Type->get_kind() == boolean_type_K)
-      {
-         return true;
-      }
-      return false;
-   }
-
-   bool isIntegerType(const tree_nodeConstRef tn) 
-   {
-      switch(tn->get_kind())
-      {
-         case boolean_type_K:
-         case enumeral_type_K:
-         case integer_type_K:
-         case pointer_type_K:
-            return true;
-         case array_type_K:
-         case CharType_K:
-         case nullptr_type_K:
-         case type_pack_expansion_K:
-         case complex_type_K:
-         case function_type_K:
-         case lang_type_K:
-         case method_type_K:
-         case offset_type_K:
-         case qual_union_type_K:
-         case real_type_K:
-         case record_type_K:
-         case reference_type_K:
-         case set_type_K:
-         case template_type_parm_K:
-         case typename_type_K:
-         case union_type_K:
-         case vector_type_K:
-         case void_type_K:
-         case type_argument_pack_K:
-            return false;
-         case tree_reindex_K:
-            return isIntegerType(GET_CONST_NODE(tn));
-         case CASE_CST_NODES:
-         case CASE_DECL_NODES:
-         case ssa_name_K:
-            return isIntegerType(tree_helper::CGetType(tn));
-         case aggr_init_expr_K:case case_label_expr_K:case lut_expr_K:case target_expr_K:case target_mem_ref_K:case target_mem_ref461_K:case binfo_K:case block_K:case constructor_K:case error_mark_K:case identifier_node_K:case statement_list_K:case tree_list_K:case tree_vec_K:case call_expr_K:
-         case last_tree_K:case none_K:case placeholder_expr_K:
-         case CASE_UNARY_EXPRESSION:
-         case CASE_BINARY_EXPRESSION:
-         case CASE_TERNARY_EXPRESSION:
-         case CASE_QUATERNARY_EXPRESSION:
-         case CASE_PRAGMA_NODES:
-         case CASE_CPP_NODES:
-         case CASE_GIMPLE_NODES:
-         default:
-            THROW_UNREACHABLE("Unhandled node type (" + tn->get_kind_text() + " " + tn->ToString() + ")");
-      }
-      return false;
+      return isIntegerType(Type);
    }
 
    bool isSignedType(const tree_nodeConstRef tn)
@@ -657,7 +661,6 @@ namespace
          case integer_type_K:
             return !GetPointer<const integer_type>(tn)->unsigned_flag;
          case boolean_type_K:
-         case pointer_type_K:
          case array_type_K:
          case CharType_K:
          case nullptr_type_K:
@@ -667,6 +670,7 @@ namespace
          case lang_type_K:
          case method_type_K:
          case offset_type_K:
+         case pointer_type_K:
          case qual_union_type_K:
          case real_type_K:
          case record_type_K:
@@ -783,11 +787,13 @@ namespace
          }
          THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
       }
+      #ifdef INTEGER_PTR
       else if(GetPointer<const pointer_type>(type) != nullptr)
       {
          min = getMinValue(bw);
          max = getMaxValue(bw);
       }
+      #endif
       else 
       {
          THROW_UNREACHABLE("Unable to define range for type " + type->get_kind_text() + " of " + tn->ToString());
@@ -1685,7 +1691,7 @@ RangeRef Range::srem(RangeConstRef other) const
 }
 
 // Logic has been borrowed from ConstantRange
-RangeRef Range::shl(RangeConstRef other) const
+RangeRef Range::shl(RangeConstRef other, bool sign) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown() || isMaxRange())
@@ -1704,15 +1710,12 @@ RangeRef Range::shl(RangeConstRef other) const
    PRINT_MSG("Shl-a: " << *this << std::endl << "Shl-b: " << *other);
    #endif
 
-   const APInt& a = this->getLower();
-   const APInt& b = this->getUpper();
+   auto a = this->getLower();
+   auto b = this->getUpper();
+
    const auto c = UAPInt(other->getUnsignedMin());
    const auto d = UAPInt(other->getUnsignedMax());
 
-   if(c >= bw)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
    if(d >= bw)
    {
       return RangeRef(new Range(Regular, bw));
@@ -1723,36 +1726,35 @@ RangeRef Range::shl(RangeConstRef other) const
    }
    if((a == b) && (c == d)) // constant case
    {
-      auto minmax = truncExt(a << c.convert_to<unsigned>(), bw, true);
+      auto minmax = truncExt(a << c.convert_to<unsigned>(), bw, sign);
       return RangeRef(new Range(Regular, bw, minmax, minmax));
    }
    if(a < 0 && b < 0)
    {
-      UAPInt clOnes(countLeadingOnes(a, bw) - (MAX_BIT_INT - bw));
+      UAPInt clOnes(countLeadingOnes(a, bw));
       if(d > clOnes)
       { // overflow
          return RangeRef(new Range(Regular, bw));
       }
-      return RangeRef(new Range(Regular, bw, truncExt(a << d.convert_to<unsigned>(), bw, true), truncExt(b << c.convert_to<unsigned>(), bw, true)));
+      return RangeRef(new Range(Regular, bw, truncExt(a << d.convert_to<unsigned>(), bw, sign), truncExt(b << c.convert_to<unsigned>(), bw, sign)));
    }
    if(a < 0 && b >= 0)
    {
-      UAPInt clOnes(countLeadingOnes(a, bw) - (MAX_BIT_INT - bw));
-      UAPInt clZeros(countLeadingZeros(b, bw) - (MAX_BIT_INT - bw));
+      UAPInt clOnes(countLeadingOnes(a, bw));
+      UAPInt clZeros(countLeadingZeros(b, bw));
       if(d > clOnes || d > clZeros)
       { // overflow
          return RangeRef(new Range(Regular, bw));
       }
-      return RangeRef(new Range(Regular, bw, truncExt(a << d.convert_to<unsigned>(), bw, true), truncExt(b << d.convert_to<unsigned>(), bw, true)));
+      return RangeRef(new Range(Regular, bw, truncExt(a << d.convert_to<unsigned>(), bw, sign), truncExt(b << d.convert_to<unsigned>(), bw, sign)));
    }
 
-   UAPInt clZeros(countLeadingZeros(b, bw) - (MAX_BIT_INT - bw));
+   UAPInt clZeros(countLeadingZeros(b, bw));
    if(d > clZeros)
    { // overflow
       return RangeRef(new Range(Regular, bw));
    }
-
-   return RangeRef(new Range(Regular, bw, truncExt(a << c.convert_to<unsigned>(), bw, true), truncExt(b << d.convert_to<unsigned>(), bw, true)));
+   return RangeRef(new Range(Regular, bw, truncExt(a << c.convert_to<unsigned>(), bw, sign), truncExt(b << d.convert_to<unsigned>(), bw, sign)));
 }
 
 RangeRef Range::shr(RangeConstRef other, bool sign) const
@@ -1779,10 +1781,6 @@ RangeRef Range::shr(RangeConstRef other, bool sign) const
       auto [min, max] = std::minmax({this_max >> other_min, this_max >> other_max, this_min >> other_min, this_min >> other_max});
 
       RangeRef AshrU(new Range(Regular, bw, min, max));
-      if(AshrU->isFullSet())
-      {
-         AshrU.reset(new Range(Regular, bw));
-      }
       #ifdef DEBUG_RANGE_OP
       PRINT_MSG("Ashr-res: " << *AshrU << std::endl);
       #endif
@@ -1807,10 +1805,6 @@ RangeRef Range::shr(RangeConstRef other, bool sign) const
       auto other_max = other->getUnsignedMax().convert_to<unsigned>();
 
       RangeRef lshrU(new Range(Regular, bw, this_min >> other_max, this_max >> other_min));
-      if(lshrU->isFullSet())
-      {
-         lshrU.reset(new Range(Regular, bw));
-      }
       #ifdef DEBUG_RANGE_OP
       PRINT_MSG("Lshr-res: " << *lshrU << std::endl);
       #endif
@@ -1818,152 +1812,213 @@ RangeRef Range::shr(RangeConstRef other, bool sign) const
    }
 }
 
+
 /*
- * 	This and operation is coded following Hacker's Delight algorithm.
- * 	According to the author, it provides tight results.
+ * 	This and operations are coded following Hacker's Delight algorithm.
+ * 	According to the author, they provide tight results.
  */
-RangeRef Range::And(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("And-a: " << *this << std::endl << "And-b: " << *other);
-   #endif
-   if(isEmpty() || isUnknown())
-   {
-      return RangeRef(this->clone());
-   }
-   if(other->isEmpty() || other->isUnknown())
-   {
-      return RangeRef(other->clone());
-   }
-   APInt a = this->isAnti() ? Min : this->getLower();
-   APInt b = this->isAnti() ? Max : this->getUpper();
-   APInt c = other->isAnti() ? Min : other->getLower();
-   APInt d = other->isAnti() ? Max : other->getUpper();
-
-   // negate everybody
-   APInt negA = ~a;
-   APInt negB = ~b;
-   APInt negC = ~c;
-   APInt negD = ~d;
-
-   RangeRef inv1(new Range(Regular, bw, negB, negA));
-   RangeRef inv2(new Range(Regular, bw, negD, negC));
-   auto invres = inv1->Or(inv2);
-
-   // negate the result of the 'or'
-   auto [min, max] = std::minmax(truncExt(~invres->l, bw, false), truncExt(~invres->u, bw, false));
-   RangeRef res(new Range(invres->type, bw, min, max));
-   #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("And-res: " << *res << std::endl);
-   #endif
-   return res;
-}
-
 namespace
 {
-   APInt minOR(APInt a, const APInt& b, APInt c, const APInt& d)
+   APInt minOR(APInt a, APInt b, APInt c, APInt d)
    {
-      APInt ub(b), ud(d), temp;
+      APInt temp;
       APInt m = APInt(1) << (MAX_BIT_INT - 1);
       while(m != 0)
       {
          if((~a & c & m) != 0)
          {
             temp = (a | m) & -m;
-            if(temp <= ub)
-            {
-               a = temp;
-               break;
-            }
+            if(temp <= b) { a = temp; break; }
          }
          else if((a & ~c & m) != 0)
          {
             temp = (c | m) & -m;
-            if(temp <= ud)
-            {
-               c = temp;
-               break;
-            }
+            if(temp <= d) { c = temp; break; }
          }
          m = m >> 1;
       }
       return a | c;
    }
 
-   APInt maxOR(const APInt& a, APInt b, const APInt& c, APInt d)
+   APInt maxOR(APInt a, APInt b, APInt c, APInt d)
    {
-      APInt ua(a), uc(c), temp;
+      APInt temp;
       APInt m = APInt(1) << (MAX_BIT_INT - 1);
       while(m != 0)
       {
          if((b & d & m) != 0)
          {
             temp = (b - m) | (m - 1);
-            if(temp >= ua)
-            {
-               b = temp;
-               break;
-            }
+            if(temp >= a) { b = temp; break; }
             temp = (d - m) | (m - 1);
-            if(temp >= uc)
-            {
-               d = temp;
-               break;
-            }
+            if(temp >= c) { d = temp; break; }
          }
          m = m >> 1;
       }
       return b | d;
    }
 
-   APInt minXOR(APInt a, const APInt& b, APInt c, const APInt& d)
+   std::pair<APInt,APInt> OR(APInt a, APInt b, APInt c, APInt d)
    {
-      APInt ub(b), ud(d), temp;
+      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
+
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("switchval " + STR(abcd));
+      #endif
+
+      APInt res_l = Min, res_u = Max;
+      switch(abcd)
+      {
+         case 0:
+         case 3:
+         case 12:
+         case 15:
+            res_l = minOR(a, b, c, d);
+            res_u = maxOR(a, b, c, d);
+            break;
+         case 1:
+            res_l = a;
+            res_u = -1;
+            break;
+         case 4:
+            res_l = c;
+            res_u = -1;
+            break;
+         case 5:
+            res_l = std::min(a,c);
+            res_u = maxOR(0, b, 0, d);
+            break;
+         case 7:
+            res_l = minOR(a, -1, c, d);
+            res_u = maxOR(0, b, c, d);
+            break;
+         case 13:
+            res_l = minOR(a, b, c, -1);
+            res_u = maxOR(a, b, 0, d);
+            break;
+         default:
+            THROW_UNREACHABLE("OR unreachable state " + STR(abcd));
+      }
+      return std::make_pair(res_l,res_u);
+   }
+
+   APInt minAND(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
       APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if((~a & ~c & m) != 0)
+         {
+            temp = (a | m) & -m;
+            if(temp <= b) { a = temp; break; }
+            temp = (c | m) & -m;
+            if(temp <= d) { c = temp; break; }
+         }
+         m = m >> 1;
+      }
+      return a & c;
+   }
+
+   APInt maxAND(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
+      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if((b & ~d & m) != 0)
+         {
+            temp = (b & ~m) | (m - 1);
+            if(temp >= a) { b = temp; break; }
+         }
+         else if((~b & d & m) != 0)
+         {
+            temp = (d & ~m) | (m - 1);
+            if(temp >= c) { d = temp; break; }
+         }
+         m = m >> 1;
+      }
+      return b & d;
+   }
+
+   std::pair<APInt,APInt> AND(APInt a, APInt b, APInt c, APInt d)
+   {
+      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
+
+      #ifdef DEBUG_RANGE_OP
+      PRINT_MSG("switchval " + STR(abcd));
+      #endif
+
+      APInt res_l = Min, res_u = Max;
+      switch(abcd)
+      {
+         case 0:
+         case 3:
+         case 12:
+         case 15:
+            res_l = minAND(a, b, c, d);
+            res_u = maxAND(a, b, c, d);
+            break;
+         case 1:
+            res_l = minAND(a, b, c, -1);
+            res_u = maxAND(a, b, 0, d);
+            break;
+         case 4:
+            res_l = minAND(a, -1, c, d);
+            res_u = maxAND(0, b, c, d);
+            break;
+         case 5:
+            res_l = minAND(a, -1, c, -1);
+            res_u = std::max(b, d);
+            break;
+         case 7:
+            res_l = 0;
+            res_u = d;
+            break;
+         case 13:
+            res_l = 0;
+            res_u = b;
+            break;
+         default:
+            THROW_UNREACHABLE("AND unreachable state " + STR(abcd));
+      }
+      return std::make_pair(res_l,res_u);
+   }
+
+   UAPInt uminXOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
+   {
+      UAPInt temp;
+      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
       while(m != 0)
       {
          if((~a & c & m) != 0)
          {
-            temp = (a | m) & -m;
-            if(temp <= ub)
-            {
-               a = temp;
-            }
+            temp = (a | m) & (~m+1);
+            if(temp <= b) { a = temp; }
          }
          else if((a & ~c & m) != 0)
          {
-            temp = (c | m) & -m;
-            if(temp <= ud)
-            {
-               c = temp;
-            }
+            temp = (c | m) & (~m+1);
+            if(temp <= d) { c = temp; }
          }
          m = m >> 1;
       }
       return a ^ c;
    }
 
-   APInt maxXOR(const APInt& a, APInt b, const APInt& c, APInt d)
+   UAPInt umaxXOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
    {
-      APInt ua(a), uc(c), temp;
-      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      UAPInt temp;
+      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
       while(m != 0)
       {
          if((b & d & m) != 0)
          {
             temp = (b - m) | (m - 1);
-            if(temp >= ua)
-            {
-               b = temp;
-            }
-            else
-            {
+            if(temp >= a) { b = temp; }
+            else {
                temp = (d - m) | (m - 1);
-               if(temp >= uc)
-               {
-                  d = temp;
-               }
+               if(temp >= c) { d = temp; }
             }
          }
          m = m >> 1;
@@ -1971,11 +2026,13 @@ namespace
       return b ^ d;
    }
 
+   std::pair<UAPInt,UAPInt> uXOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
+   {
+      return std::make_pair(uminXOR(a,b,c,d), umaxXOR(a,b,c,d));
+   }
+
 } // namespace
 
-/**
- * Or operation coded following Hacker's Delight algorithm.
- */
 RangeRef Range::Or(RangeConstRef other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
@@ -1995,77 +2052,43 @@ RangeRef Range::Or(RangeConstRef other) const
       return RangeRef(new Range(Regular, bw));
    }
 
-   const APInt a = truncExt(this->getLower(), bw, false);
-   const APInt b = truncExt(this->getUpper(), bw, false);
-   const APInt c = truncExt(other->getLower(), bw, false);
-   const APInt d = truncExt(other->getUpper(), bw, false);
-
-   //      if (a == Min || b == Max || c == Min || d == Max)
-   //         return Range(Regular,bw);
-
-   uint8_t switchval = 0;
-   switchval = static_cast<uint8_t>(switchval + (a >= 0 ? 1 : 0));
-   switchval = static_cast<uint8_t>(switchval << 1);
-   switchval = static_cast<uint8_t>(switchval + (b >= 0 ? 1 : 0));
-   switchval = static_cast<uint8_t>(switchval << 1);
-   switchval = static_cast<uint8_t>(switchval + (c >= 0 ? 1 : 0));
-   switchval = static_cast<uint8_t>(switchval << 1);
-   switchval = static_cast<uint8_t>(switchval + (d >= 0 ? 1 : 0));
-
-   APInt res_l = Min, res_u = Max;
-
-   #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("switchval " << static_cast<uint8_t>(switchval) << std::endl);
-   #endif
-
-   switch(switchval)
-   {
-      case 0:
-         res_l = minOR(a, b, c, d);
-         res_u = maxOR(a, b, c, d);
-         break;
-      case 1:
-         res_l = a;
-         res_u = -1;
-         break;
-      case 3:
-         res_l = minOR(a, b, c, d);
-         res_u = maxOR(a, b, c, d);
-         break;
-      case 4:
-         res_l = c;
-         res_u = -1;
-         break;
-      case 5:
-         res_l = (a < c ? a : c);
-         res_u = maxOR(0, b, 0, d);
-         break;
-      case 7:
-         res_l = minOR(a, -1, c, d);
-         res_u = maxOR(0, b, c, d);
-         break;
-      case 12:
-         res_l = minOR(a, b, c, d);
-         res_u = maxOR(a, b, c, d);
-         break;
-      case 13:
-         res_l = minOR(a, b, c, -1);
-         res_u = maxOR(a, b, 0, d);
-         break;
-      case 15:
-         res_l = minOR(a, b, c, d);
-         res_u = maxOR(a, b, c, d);
-         break;
-      default:
-         THROW_UNREACHABLE("Range::Or unreachable state");
-   }
-   if((res_l == Min) || (res_u == Max))
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
+   const APInt a = this->isAnti() ? Min : this->getLower();
+   const APInt b = this->isAnti() ? Max : this->getUpper();
+   const APInt c = other->isAnti() ? Min : other->getLower();
+   const APInt d = other->isAnti() ? Max : other->getUpper();
+   const auto [res_l, res_u] = OR(a,b,c,d);
+   
    RangeRef res(new Range(Regular, bw, res_l, res_u));
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("Or-res: " << *res << std::endl);
+   #endif
+   return res;
+}
+
+RangeRef Range::And(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("And-a: " << *this << std::endl << "And-b: " << *other);
+   #endif
+   if(isEmpty() || isUnknown())
+   {
+      return RangeRef(this->clone());
+   }
+   if(other->isEmpty() || other->isUnknown())
+   {
+      return RangeRef(other->clone());
+   }
+
+   const APInt a = this->isAnti() ? Min : this->getLower();
+   const APInt b = this->isAnti() ? Max : this->getUpper();
+   const APInt c = other->isAnti() ? Min : other->getLower();
+   const APInt d = other->isAnti() ? Max : other->getUpper();
+   const auto [res_l, res_u] = AND(a,b,c,d);
+   
+   RangeRef res(new Range(Regular, bw, res_l, res_u));
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("And-res: " << *res << std::endl);
    #endif
    return res;
 }
@@ -2088,29 +2111,33 @@ RangeRef Range::Xor(RangeConstRef other) const
    {
       return RangeRef(new Range(Regular, bw));
    }
-   const APInt a = this->getLower();
-   const APInt b = this->getUpper();
-   const APInt c = other->getLower();
-   const APInt d = other->getUpper();
-   if((a >= 0) && (b >= 0) && (c >= 0) && (d >= 0))
+
+   const APInt a = this->isAnti() ? Min : this->getLower();
+   const APInt b = this->isAnti() ? Max : this->getUpper();
+   const APInt c = other->isAnti() ? Min : other->getLower();
+   const APInt d = other->isAnti() ? Max : other->getUpper();
+   RangeRef res;
+   if(a >= 0 && b >= 0 && c >= 0 && d >= 0)
    {
-      APInt res_l = minXOR(a, b, c, d);
-      APInt res_u = maxXOR(a, b, c, d);
-      RangeRef res(new Range(Regular, bw, truncExt(res_l, bw, false), truncExt(res_u, bw, false)));
-      #ifdef DEBUG_RANGE_OP
-      PRINT_MSG("Xor-res: " << *res << std::endl);
-      #endif
-      return res;
+      const auto [res_l,res_u] = uXOR(UAPInt(a),UAPInt(b),UAPInt(c),UAPInt(d));
+      res.reset(new Range(Regular, bw, res_l, res_u));
    }
-   else if((c == -1) && (d == -1) && (a >= 0) && (b >= 0))
+   else if(a == -1 && b == -1 && c >= 0 && d >= 0)
    {
-      auto res = other->sub(RangeRef(this->clone()));
-      #ifdef DEBUG_RANGE_OP
-      PRINT_MSG("Xor-res: " << *res << std::endl);
-      #endif
-      return res;
+      res = this->sub(other);
    }
-   return RangeRef(new Range(Regular, bw));
+   else if(c == -1 && d == -1 && a >= 0 && b >= 0)
+   {
+      res = other->sub(RangeRef(this->clone()));
+   }
+   else
+   {
+      res.reset(new Range(Regular, bw));
+   }
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("Xor-res: " << *res << std::endl);
+   #endif
+   return res;
 }
 
 RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
@@ -2974,8 +3001,8 @@ RealRange::RealRange(RangeConstRef vc) : Range(Real, vc->getBitWidth()), sign(vc
 
 RangeRef RealRange::getRange() const
 {
-   auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 31, 31)));
-   auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)));
+   auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 31, 31)), false);
+   auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)), false);
    return fractional->zextOrTrunc(32)->Or(e)->Or(s);
 }
 
@@ -3518,7 +3545,7 @@ void SymbInterval::print(std::ostream& OS) const
       case CASE_CPP_NODES:
       case CASE_MISCELLANEOUS:
       default:
-         OS << "Unknown Instruction.\n";
+         OS << "Unknown Instruction.";
    }
 }
 
@@ -3856,6 +3883,7 @@ RangeRef UnaryOp::eval() const
             }
          }
          break;
+         case convert_expr_K:
          case nop_expr_K:
          {
             if(bw < getSource()->getBitWidth())
@@ -3886,7 +3914,7 @@ RangeRef UnaryOp::eval() const
             }
             break;
          
-         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
          case CASE_BINARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -3975,7 +4003,7 @@ void UnaryOp::print(std::ostream& OS) const
    auto bw = getSink()->getBitWidth();
    bool oprndSigned = isSignedType(source->getValue());
 
-   if(opcode == nop_expr_K)
+   if(opcode == nop_expr_K || opcode == convert_expr_K)
    {
       if(bw < getSource()->getBitWidth())
       {
@@ -4262,11 +4290,13 @@ RangeRef BinaryOp::eval() const
       #ifdef DEBUG_BASICOP_EVAL
       PRINT_MSG(getSink()->getValue()->ToString() << std::endl << *op1 << "," << *op2);
       #endif
-      bool is_unsigned = !isSignedType(getSink()->getValue());
+      bool isSigned = isSignedType(getSink()->getValue());
 
       switch(this->getOpcode())
       {
+         #ifdef INTEGER_PTR
          case pointer_plus_expr_K:
+         #endif
          case plus_expr_K:
             result = op1->add(op2);
             break;
@@ -4277,16 +4307,16 @@ RangeRef BinaryOp::eval() const
             result = op1->mul(op2);
             break;
          case trunc_div_expr_K:
-            result = is_unsigned ? op1->udiv(op2) : op1->sdiv(op2);
+            result = isSigned ? op1->sdiv(op2) : op1->udiv(op2);
             break;
          case trunc_mod_expr_K:
-            result = is_unsigned ? op1->urem(op2) : op1->srem(op2);
+            result = isSigned ? op1->srem(op2) : op1->urem(op2);
             break;
          case lshift_expr_K:
-            result = op1->shl(op2);
+            result = op1->shl(op2, isSigned);
             break;
          case rshift_expr_K:
-            result = op1->shr(op2, !is_unsigned);
+            result = op1->shr(op2, isSigned);
             break;
          case bit_and_expr_K:
             result = op1->And(op2);
@@ -4328,6 +4358,9 @@ RangeRef BinaryOp::eval() const
             result = op1->Sle(op2, bw);
             break;
          
+         #ifndef INTEGER_PTR
+         case pointer_plus_expr_K:
+         #endif
          case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
@@ -5964,9 +5997,9 @@ class ConstraintGraph
             if(const auto* Var = GetPointer<const ssa_name>(GET_CONST_NODE(variable)))
             {
                const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-               if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+               if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K || GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
                {
-                  const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                  const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                   #ifndef NDEBUG
                   if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0))
                   {
@@ -6011,9 +6044,9 @@ class ConstraintGraph
             if(const auto* Var = GetPointer<const ssa_name>(Op0))
             {
                const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-               if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+               if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K || GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
                {
-                  const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                  const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression " + cast_inst->ToString());
 
                   std::shared_ptr<BasicInterval> STOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
@@ -6034,9 +6067,9 @@ class ConstraintGraph
             if(const auto* Var = GetPointer<const ssa_name>(Op1))
             {
                const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-               if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+               if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K || GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
                {
-                  const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                  const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
                   std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, bin_op->op0, pred));
@@ -6164,9 +6197,9 @@ class ConstraintGraph
                if(const auto* Var = GetPointer<const ssa_name>(GET_CONST_NODE(variable)))
                {
                   const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-                  if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+                  if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K || GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
                   {
-                     const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                     const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      #ifndef NDEBUG
                      if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0))
                      {
@@ -6205,9 +6238,9 @@ class ConstraintGraph
                if(const auto* Var = GetPointer<const ssa_name>(Op0))
                {
                   const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-                  if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+                  if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K || GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
                   {
-                     const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                     const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression" + cast_inst->ToString());
 
                      std::shared_ptr<BasicInterval> STOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
@@ -6223,9 +6256,9 @@ class ConstraintGraph
                if(const auto* Var = GetPointer<const ssa_name>(Op1))
                {
                   const auto* VDef = GetPointer<const gimple_assign>(GET_CONST_NODE(Var->CGetDefStmt()));
-                  if(VDef && GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K)
+                  if(VDef && (GET_CONST_NODE(VDef->op1)->get_kind() == nop_expr_K || GET_CONST_NODE(VDef->op1)->get_kind() == convert_expr_K))
                   {
-                     const auto* cast_inst = GetPointer<const nop_expr>(GET_CONST_NODE(VDef->op1));
+                     const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
                      std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, cmp_op->op0, pred));
@@ -6363,12 +6396,11 @@ class ConstraintGraph
       // Create the sink.
       VarNode* sink = addVarNode(assign->op0, function_id);
       // Create the source.
-      VarNode* source = nullptr;
+      VarNode* source = addVarNode(un_op->op, function_id);
       const auto sourceType = getGIMPLE_Type(un_op->op);
 
       if(un_op->get_kind() == view_convert_expr_K)
       {
-         source = addVarNode(un_op->op, function_id);
          if(sourceType->get_kind() == real_type_K)
          {
             vcMap.insert({sink, source});
@@ -6376,7 +6408,6 @@ class ConstraintGraph
       }
       else if(un_op->get_kind() == nop_expr_K)
       {
-         source = addVarNode(un_op->op, function_id);
          // TODO: check byte order is little endian
          auto vc = vcMap.find(source);
          if(vc != vcMap.end())
@@ -6387,14 +6418,7 @@ class ConstraintGraph
             }
          }
       }
-      else if(un_op->get_kind() == abs_expr_K || un_op->get_kind() == fix_trunc_expr_K)
-      {
-         source = addVarNode(un_op->op, function_id);
-      }
-      else
-      {
-         return;
-      }
+
       std::shared_ptr<BasicInterval> BI = std::make_shared<BasicInterval>(getGIMPLE_range(I));
       UnaryOp* UOp = new UnaryOp(BI, sink, I, source, un_op->get_kind());
 
@@ -7416,8 +7440,11 @@ class ConstraintGraph
          {
             for(const auto& stmt : phi_list)
             {
-               buildOperations(stmt, function_id, FB, TM);
                parametersBinding(stmt, FD);
+               if(isValidInstruction(stmt, FB, TM))
+               {
+                  buildOperations(stmt, function_id, FB, TM);
+               }
             }
          }
 
@@ -7760,6 +7787,10 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    THROW_ASSERT(parmBind.size() == parameters.size(), "Parameters count mismatch");
    for(size_t i = 0; i < parameters.size(); ++i)
    {
+      if(!isIntegerType(getGIMPLE_Type(parmBind[i])))
+      {
+         continue;
+      }
       parameters[i].first = parmBind[i];
    }
 
@@ -7954,13 +7985,13 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
+         //    relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));              // Disabled because of renaming issues in some cases
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -8128,7 +8159,7 @@ bool RangeAnalysis::finalize()
          AppM->RegisterTransformation(GetName(), cst);
          #endif
       }
-      else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty())
+      else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty() && !ssa->range->isFullSet())
       {
          auto type_id = GET_INDEX_CONST_NODE(ssa->type);
          long long min, max;

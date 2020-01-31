@@ -127,7 +127,7 @@ class Range
    RangeRef sdiv(RangeConstRef other) const;
    RangeRef urem(RangeConstRef other) const;
    RangeRef srem(RangeConstRef other) const;
-   RangeRef shl(RangeConstRef other) const;
+   RangeRef shl(RangeConstRef other, bool sign) const;
    RangeRef shr(RangeConstRef other, bool sign) const;
    RangeRef And(RangeConstRef other) const;
    RangeRef Or(RangeConstRef other) const;

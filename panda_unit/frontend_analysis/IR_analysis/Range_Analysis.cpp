@@ -179,17 +179,30 @@ BOOST_AUTO_TEST_CASE( range_and )
     RangeRef aPositive(new Range(Regular, 8, 0b00001010, 0b00010100));
     RangeRef aNegative(new Range(Regular, 8, 0b11000001, 0b11110000));
     RangeRef aMix(new Range(Regular, 8, 0b10101000, 0b00001101));
-    RangeRef aConstant(new Range(Regular, 8, 0b00000000, 0b00000000));
+    RangeRef zero(new Range(Regular, 8, 0b00000000, 0b00000000));
     RangeRef bPositive(new Range(Regular, 8, 0b00000111, 0b00011011));
     RangeRef bNegative(new Range(Regular, 8, 0b10000000, 0b10000000));
     RangeRef bMix(new Range(Regular, 8, 0b10000000, 0b00000000));
-    RangeRef bConstant(new Range(Regular, 8, 0b11111111, 0b11111111));
+    RangeRef one(new Range(Regular, 8, 0b00000001, 0b00000001));
+    RangeRef allOnes(new Range(Regular, 8, 0b11111111, 0b11111111));
 
     auto andPaPb = aPositive->And(bPositive);
     auto andPbPa = bPositive->And(aPositive);
     BOOST_REQUIRE(andPaPb->operator==(*andPbPa));
     BOOST_REQUIRE_EQUAL(0b00000000, andPaPb->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0b00010100, andPaPb->getUnsignedMax());
+    
+    auto andPaZero = aPositive->And(zero);
+    BOOST_REQUIRE_EQUAL(0, andPaZero->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0, andPaZero->getUnsignedMin());
+    
+    auto andPaOne = aPositive->And(one);
+    BOOST_REQUIRE_EQUAL(1, andPaOne->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0, andPaOne->getUnsignedMin());
+    
+    auto andPaAllOnes = aPositive->And(allOnes);
+    BOOST_REQUIRE_EQUAL(aPositive->getUnsignedMax(), andPaAllOnes->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(aPositive->getUnsignedMin(), andPaAllOnes->getUnsignedMin());
 }
 
 BOOST_AUTO_TEST_CASE( range_or )
@@ -197,17 +210,25 @@ BOOST_AUTO_TEST_CASE( range_or )
     RangeRef aPositive(new Range(Regular, 8, 0b00001010, 0b00010100));
     RangeRef aNegative(new Range(Regular, 8, 0b11000001, 0b11110000));
     RangeRef aMix(new Range(Regular, 8, 0b10101000, 0b00001101));
-    RangeRef aConstant(new Range(Regular, 8, 0b00000000, 0b00000000));
+    RangeRef zero(new Range(Regular, 8, 0b00000000, 0b00000000));
     RangeRef bPositive(new Range(Regular, 8, 0b00000111, 0b00011011));
     RangeRef bNegative(new Range(Regular, 8, 0b10000000, 0b10000000));
     RangeRef bMix(new Range(Regular, 8, 0b10000000, 0b00000000));
-    RangeRef bConstant(new Range(Regular, 8, 0b11111111, 0b11111111));
+    RangeRef allOnes(new Range(Regular, 8, 0b11111111, 0b11111111));
 
     auto orPaPb = aPositive->Or(bPositive);
     auto orPbPa = bPositive->Or(aPositive);
     BOOST_REQUIRE(orPaPb->operator==(*orPbPa));
     BOOST_REQUIRE_EQUAL(0b00001010, orPaPb->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0b00011111, orPaPb->getUnsignedMax());
+
+    auto orPaZero = aPositive->Or(zero);
+    BOOST_REQUIRE_EQUAL(aPositive->getUnsignedMin(), orPaZero->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(aPositive->getUnsignedMax(), orPaZero->getUnsignedMax());
+
+    auto orPaAllOnes = aPositive->Or(allOnes);
+    BOOST_REQUIRE_EQUAL(255, orPaAllOnes->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(255, orPaAllOnes->getUnsignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_xor )

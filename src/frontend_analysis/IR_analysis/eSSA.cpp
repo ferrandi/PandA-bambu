@@ -391,6 +391,10 @@ tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
    {
       return branchOpRecurse(nop->op, stmt);
    }
+   else if(const auto* ce = GetPointer<const convert_expr>(op))
+   {
+      return branchOpRecurse(ce->op, stmt);
+   }
    else if(const auto* ssa = GetPointer<const ssa_name>(Op))
    {
       const auto DefStmt = ssa->CGetDefStmt();
