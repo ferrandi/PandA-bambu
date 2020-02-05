@@ -32,7 +32,7 @@
  */
 /**
  * @file Range_Analysis.hpp
- * @brief 
+ * @brief
  *
  * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
  * $Revision$
@@ -55,7 +55,7 @@ REF_FORWARD_DECL(Range);
 CONSTREF_FORWARD_DECL(Range);
 REF_FORWARD_DECL(ConstraintGraph);
 
-struct tree_reindexCompare 
+struct tree_reindexCompare
 {
    bool operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const;
 };
@@ -72,7 +72,7 @@ enum RangeType
 class Range
 {
  public:
-   using APInt = boost::multiprecision::int128_t;
+   using APInt = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<127, 127, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void>>;
    using bw_t = unsigned;
 
  private:
@@ -129,7 +129,7 @@ class Range
    RangeRef sdiv(RangeConstRef other) const;
    RangeRef urem(RangeConstRef other) const;
    RangeRef srem(RangeConstRef other) const;
-   RangeRef shl(RangeConstRef other, bool sign) const;
+   RangeRef shl(RangeConstRef other) const;
    RangeRef shr(RangeConstRef other, bool sign) const;
    RangeRef Not() const;
    RangeRef And(RangeConstRef other) const;
@@ -162,38 +162,38 @@ std::ostream& operator<<(std::ostream& OS, const Range& R);
 class RealRange : public Range
 {
  private:
-  RangeRef sign;
-  RangeRef exponent;
-  RangeRef fractional;
+   RangeRef sign;
+   RangeRef exponent;
+   RangeRef fractional;
 
  public:
-  RealRange(const Range& s, const Range& e, const Range& f);
-  RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f);
-  RealRange(RangeConstRef vc);
-  ~RealRange() = default;
-  RealRange(const RealRange& other) = default;
-  RealRange(RealRange&&) = default;
-  RealRange& operator=(const RealRange& other) = default;
-  RealRange& operator=(RealRange&&) = default;
-  RangeRef getRange() const;
+   RealRange(const Range& s, const Range& e, const Range& f);
+   RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f);
+   RealRange(RangeConstRef vc);
+   ~RealRange() = default;
+   RealRange(const RealRange& other) = default;
+   RealRange(RealRange&&) = default;
+   RealRange& operator=(const RealRange& other) = default;
+   RealRange& operator=(RealRange&&) = default;
+   RangeRef getRange() const;
 
-  RangeRef getSign() const;
-  RangeRef getExponent() const;
-  RangeRef getFractional() const;
+   RangeRef getSign() const;
+   RangeRef getExponent() const;
+   RangeRef getFractional() const;
    RangeRef getAnti() const override;
-  void setSign(RangeConstRef s);
-  void setExponent(RangeConstRef e);
-  void setFractional(RangeConstRef f);
-  bool isSameRange(RangeConstRef other) const override;
-  bool isFullSet() const override;
-  bool isConstant() const override;
-  Range* clone() const override;
-  void print(std::ostream& OS) const override;
+   void setSign(RangeConstRef s);
+   void setExponent(RangeConstRef e);
+   void setFractional(RangeConstRef f);
+   bool isSameRange(RangeConstRef other) const override;
+   bool isFullSet() const override;
+   bool isConstant() const override;
+   Range* clone() const override;
+   void print(std::ostream& OS) const override;
 
    RangeRef Eq(RangeConstRef other, bw_t bw) const override;
    RangeRef Ne(RangeConstRef other, bw_t bw) const override;
-  RangeRef intersectWith(RangeConstRef other) const override;
-  RangeRef unionWith(RangeConstRef other) const override;
+   RangeRef intersectWith(RangeConstRef other) const override;
+   RangeRef unionWith(RangeConstRef other) const override;
 };
 
 class RangeAnalysis : public ApplicationFrontendFlowStep

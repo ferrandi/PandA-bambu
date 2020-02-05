@@ -41,26 +41,26 @@ BOOST_AUTO_TEST_CASE( range_addition )
 
     auto addPaPb = aPositive->add(bPositive);
     auto addPbPa = bPositive->add(aPositive);
-    BOOST_REQUIRE(addPaPb->operator==(*addPbPa));
+    BOOST_REQUIRE(addPaPb->isSameRange(addPbPa));
     BOOST_REQUIRE_EQUAL(addPaPb->getBitWidth(), aPositive->getBitWidth());
     BOOST_REQUIRE_EQUAL(15, addPaPb->getSignedMax());
     BOOST_REQUIRE_EQUAL(8, addPaPb->getSignedMin());
 
     auto addNaNb = aNegative->add(bNegative);
     auto addNbNa = bNegative->add(aNegative);
-    BOOST_REQUIRE(addNaNb->operator==(*addNbNa));
+    BOOST_REQUIRE(addNaNb->isSameRange(addNbNa));
     BOOST_REQUIRE_EQUAL(-15, addNaNb->getSignedMin());
     BOOST_REQUIRE_EQUAL(-8, addNaNb->getSignedMax());
 
     auto addMaMb = aMix->add(bMix);
     auto addMbMa = bMix->add(aMix);
-    BOOST_REQUIRE(addMaMb->operator==(*addMbMa));
+    BOOST_REQUIRE(addMaMb->isSameRange(addMbMa));
     BOOST_REQUIRE_EQUAL(15, addMaMb->getSignedMax());
     BOOST_REQUIRE_EQUAL(-8, addMaMb->getSignedMin());
 
     auto addPaNb = aPositive->add(bNegative);
     auto addNbPa = bNegative->add(aPositive);
-    BOOST_REQUIRE(addPaNb->operator==(*addNbPa));
+    BOOST_REQUIRE(addPaNb->isSameRange(addNbPa));
     BOOST_REQUIRE_EQUAL(-1, addPaNb->getSignedMin());
     BOOST_REQUIRE_EQUAL(6, addPaNb->getSignedMax());
 }
@@ -103,26 +103,26 @@ BOOST_AUTO_TEST_CASE( range_multiplication )
 
     auto mulPaPb = aPositive->mul(bPositive);
     auto mulPbPa = bPositive->mul(aPositive);
-    BOOST_REQUIRE(mulPaPb->operator==(*mulPbPa));
+    BOOST_REQUIRE(mulPaPb->isSameRange(mulPbPa));
     BOOST_REQUIRE_EQUAL(mulPaPb->getBitWidth(), aPositive->getBitWidth());
     BOOST_REQUIRE_EQUAL(54, mulPaPb->getSignedMax());
     BOOST_REQUIRE_EQUAL(15, mulPaPb->getSignedMin());
 
     auto mulNaNb = aNegative->mul(bNegative);
     auto mulNbNa = bNegative->mul(aNegative);
-    BOOST_REQUIRE(mulNaNb->operator==(*mulNbNa));
+    BOOST_REQUIRE(mulNaNb->isSameRange(mulNbNa));
     BOOST_REQUIRE_EQUAL(15, mulNaNb->getSignedMin());
     BOOST_REQUIRE_EQUAL(54, mulNaNb->getSignedMax());
 
     auto mulMaMb = aMix->mul(bMix);
     auto mulMbMa = bMix->mul(aMix);
-    BOOST_REQUIRE(mulMaMb->operator==(*mulMbMa));
+    BOOST_REQUIRE(mulMaMb->isSameRange(mulMbMa));
     BOOST_REQUIRE_EQUAL(-30, mulMaMb->getSignedMin());
     BOOST_REQUIRE_EQUAL(54, mulMaMb->getSignedMax());
 
     auto mulPaNb = aPositive->mul(bNegative);
     auto mulNbPa = bNegative->mul(aPositive);
-    BOOST_REQUIRE(mulPaNb->operator==(*mulNbPa));
+    BOOST_REQUIRE(mulPaNb->isSameRange(mulNbPa));
     BOOST_REQUIRE_EQUAL(-54, mulPaNb->getSignedMin());
     BOOST_REQUIRE_EQUAL(-15, mulPaNb->getSignedMax());
 }
@@ -139,7 +139,7 @@ BOOST_AUTO_TEST_CASE( range_division )
     RangeRef invariant(new Range(Regular, 8, 1, 1));
 
     auto sdivPaI = aPositive->sdiv(invariant);
-    BOOST_REQUIRE(aPositive->operator==(*sdivPaI));
+    BOOST_REQUIRE(aPositive->isSameRange(sdivPaI));
 
     auto sdivPaNb = aPositive->sdiv(bNegative);
     BOOST_REQUIRE_EQUAL(-3, sdivPaNb->getSignedMin());
@@ -174,6 +174,33 @@ BOOST_AUTO_TEST_CASE( range_reminder )
     BOOST_REQUIRE_EQUAL(5, sremPaNb->getSignedMax());
 }
 
+BOOST_AUTO_TEST_CASE( range_shl )
+{
+    RangeRef aPositive(new Range(Regular, 8, 0b00000011, 0b00000101));
+    RangeRef aNegative(new Range(Regular, 8, 0b11000001, 0b11110000));
+    RangeRef aMix(new Range(Regular, 8, 0b10101000, 0b00001101));
+    RangeRef zero(new Range(Regular, 8, 0, 0));
+    RangeRef bPositive(new Range(Regular, 8, 0b00000111, 0b00011011));
+    RangeRef bNegative(new Range(Regular, 8, 0b10000000, 0b10000000));
+    RangeRef bMix(new Range(Regular, 8, 0b10000000, 0));
+    RangeRef one(new Range(Regular, 8, 1, 1));
+    RangeRef zeroOne(new Range(Regular, 8, 0, 1));
+    RangeRef allOnes(new Range(Regular, 8, 0b11111111, 0b11111111));
+    RangeRef seven(new Range(Regular, 8, 7, 7));
+
+    auto shlAllOnes = allOnes->shl(aPositive);
+    BOOST_REQUIRE_EQUAL(0b11111000, shlAllOnes->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0b11100000, shlAllOnes->getUnsignedMin());
+
+    auto shlZeroOneSeven = zeroOne->shl(seven);
+    BOOST_REQUIRE_EQUAL(0b10000000, shlZeroOneSeven->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0, shlZeroOneSeven->getUnsignedMin());
+
+    auto shlOneSeven = one->shl(seven);
+    BOOST_REQUIRE(shlOneSeven->isConstant());
+    BOOST_REQUIRE_EQUAL(0b10000000, shlOneSeven->getUnsignedMin());
+}
+
 BOOST_AUTO_TEST_CASE( range_and )
 {
     RangeRef aPositive(new Range(Regular, 8, 0b00001010, 0b00010100));
@@ -188,7 +215,7 @@ BOOST_AUTO_TEST_CASE( range_and )
 
     auto andPaPb = aPositive->And(bPositive);
     auto andPbPa = bPositive->And(aPositive);
-    BOOST_REQUIRE(andPaPb->operator==(*andPbPa));
+    BOOST_REQUIRE(andPaPb->isSameRange(andPbPa));
     BOOST_REQUIRE_EQUAL(0b00000000, andPaPb->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0b00010100, andPaPb->getUnsignedMax());
     
@@ -203,6 +230,22 @@ BOOST_AUTO_TEST_CASE( range_and )
     auto andPaAllOnes = aPositive->And(allOnes);
     BOOST_REQUIRE_EQUAL(aPositive->getUnsignedMax(), andPaAllOnes->getUnsignedMax());
     BOOST_REQUIRE_EQUAL(aPositive->getUnsignedMin(), andPaAllOnes->getUnsignedMin());
+
+    RangeRef bOne(new Range(Regular, 1, 1, 1));
+    RangeRef bZero(new Range(Regular, 1, 0, 0));
+    RangeRef bOneZero(new Range(Regular, 1));
+
+    auto orOneZero = bOne->And(bZero);
+    BOOST_REQUIRE(orOneZero->isConstant());
+    BOOST_REQUIRE_EQUAL(0, orOneZero->getUnsignedMax());
+
+    auto orOneOneZero = bOne->And(bOneZero);
+    BOOST_REQUIRE_EQUAL(0, orOneOneZero->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(1, orOneOneZero->getUnsignedMax());
+
+    auto orZeroOneZero = bOneZero->And(bZero);
+    BOOST_REQUIRE(orZeroOneZero->isConstant());
+    BOOST_REQUIRE_EQUAL(0, orZeroOneZero->getUnsignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_or )
@@ -218,7 +261,7 @@ BOOST_AUTO_TEST_CASE( range_or )
 
     auto orPaPb = aPositive->Or(bPositive);
     auto orPbPa = bPositive->Or(aPositive);
-    BOOST_REQUIRE(orPaPb->operator==(*orPbPa));
+    BOOST_REQUIRE(orPaPb->isSameRange(orPbPa));
     BOOST_REQUIRE_EQUAL(0b00001010, orPaPb->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0b00011111, orPaPb->getUnsignedMax());
 
@@ -229,6 +272,28 @@ BOOST_AUTO_TEST_CASE( range_or )
     auto orPaAllOnes = aPositive->Or(allOnes);
     BOOST_REQUIRE_EQUAL(255, orPaAllOnes->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(255, orPaAllOnes->getUnsignedMax());
+
+    RangeRef bOne(new Range(Regular, 1, 1, 1));
+    RangeRef bZero(new Range(Regular, 1, 0, 0));
+    RangeRef bOneZero(new Range(Regular, 1));
+
+    auto orOneZero = bOne->Or(bZero);
+    auto orZeroOne = bZero->Or(bOne);
+    BOOST_REQUIRE(orOneZero->isSameRange(orZeroOne));
+    BOOST_REQUIRE(orOneZero->isConstant());
+    BOOST_REQUIRE_EQUAL(1, orOneZero->getUnsignedMax());
+
+    auto orOneOneZero = bOne->Or(bOneZero);
+    auto orOneZeroOne = bOneZero->Or(bOne);
+    BOOST_REQUIRE(orOneOneZero->isSameRange(orOneZeroOne));
+    BOOST_REQUIRE(orOneOneZero->isConstant());
+    BOOST_REQUIRE_EQUAL(1, orOneOneZero->getUnsignedMax());
+
+    auto orZeroOneZero = bOneZero->Or(bZero);
+    auto orOneZeroZero = bZero->Or(bOneZero);
+    BOOST_REQUIRE(orZeroOneZero->isSameRange(orOneZeroZero));
+    BOOST_REQUIRE_EQUAL(0, orZeroOneZero->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(1, orZeroOneZero->getUnsignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_xor )
@@ -244,7 +309,143 @@ BOOST_AUTO_TEST_CASE( range_xor )
 
     auto xorPaPb = aPositive->Xor(bPositive);
     auto xorPbPa = bPositive->Xor(aPositive);
-    BOOST_REQUIRE(xorPaPb->operator==(*xorPbPa));
+    BOOST_REQUIRE(xorPaPb->isSameRange(xorPbPa));
     BOOST_REQUIRE_EQUAL(0b00000000, xorPaPb->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0b00011111, xorPaPb->getUnsignedMax());
+}
+
+BOOST_AUTO_TEST_CASE( range_not )
+{
+    RangeRef pos(new Range(Regular, 8, 0b00001010, 0b00010100));
+    RangeRef neg(new Range(Regular, 8, 0b11000001, 0b11110000));
+    RangeRef mix(new Range(Regular, 8, 0b10101000, 0b00001101));
+    RangeRef anti(new Range(Anti, 8, ((int8_t)0b10101000), 0b00001101));
+
+    auto notPos = pos->Not();
+    BOOST_REQUIRE_EQUAL(0b11101011, notPos->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(0b11110101, notPos->getUnsignedMax());
+
+    auto notNeg = neg->Not();
+    BOOST_REQUIRE_EQUAL(0b00001111, notNeg->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0b00111110, notNeg->getSignedMax());
+
+    auto notMix = mix->Not();
+    BOOST_REQUIRE_EQUAL(((int8_t)0b11110010), notMix->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0b01010111, notMix->getSignedMax());
+
+    auto notAnti = anti->Not();
+    BOOST_REQUIRE_EQUAL(0b11110001, notAnti->getUnsignedMax());
+}
+
+BOOST_AUTO_TEST_CASE( range_lt )
+{
+    RangeRef one(new Range(Regular, 1, 1, 1));
+    RangeRef zero(new Range(Regular, 1, 0, 0));
+    RangeRef zeroOne(new Range(Regular, 1));
+
+    auto ltOneZero = one->Slt(zero, 1);
+    BOOST_REQUIRE(ltOneZero->isConstant());
+    BOOST_REQUIRE(one->isSameRange(ltOneZero));
+
+    auto ltZeroOneOne = zeroOne->Slt(one, 1);
+    BOOST_REQUIRE(ltZeroOneOne->isConstant());
+    BOOST_REQUIRE(zero->isSameRange(ltZeroOneOne));
+    
+    auto ultOneZero = one->Ult(zero, 1);
+    BOOST_REQUIRE(ultOneZero->isConstant());
+    BOOST_REQUIRE(zero->isSameRange(ultOneZero));
+
+    auto ultZeroOneOne = zeroOne->Ult(one, 1);
+    BOOST_REQUIRE(zeroOne->isSameRange(ultZeroOneOne));
+}
+
+BOOST_AUTO_TEST_CASE( range_le )
+{
+    RangeRef one(new Range(Regular, 1, 1, 1));
+    RangeRef zero(new Range(Regular, 1, 0, 0));
+    RangeRef zeroOne(new Range(Regular, 1));
+
+    auto leOneZero = one->Sle(zero, 1);
+    BOOST_REQUIRE(leOneZero->isConstant());
+    BOOST_REQUIRE(one->isSameRange(leOneZero));
+
+    auto leZeroOneOne = zeroOne->Sle(one, 1);
+    BOOST_REQUIRE(zeroOne->isSameRange(leZeroOneOne));
+    
+    auto uleOneZero = one->Ule(zero, 1);
+    BOOST_REQUIRE(uleOneZero->isConstant());
+    BOOST_REQUIRE(zero->isSameRange(uleOneZero));
+
+    auto uleZeroOneOne = zeroOne->Ule(one, 1);
+    BOOST_REQUIRE(uleZeroOneOne->isConstant());
+    BOOST_REQUIRE(one->isSameRange(uleZeroOneOne));
+}
+
+BOOST_AUTO_TEST_CASE( range_gt )
+{
+    RangeRef one(new Range(Regular, 1, 1, 1));
+    RangeRef zero(new Range(Regular, 1, 0, 0));
+    RangeRef zeroOne(new Range(Regular, 1));
+
+    // When 1bit integer is signed 1 is actually -1
+    auto gtOneZero = one->Sgt(zero, 1);
+    BOOST_REQUIRE(gtOneZero->isConstant());
+    BOOST_REQUIRE(zero->isSameRange(gtOneZero));
+
+    auto gtZeroOneOne = zeroOne->Sgt(one, 1);
+    BOOST_REQUIRE(zeroOne->isSameRange(gtZeroOneOne));
+    
+    auto ugtOneZero = one->Ugt(zero, 1);
+    BOOST_REQUIRE(ugtOneZero->isConstant());
+    BOOST_REQUIRE(one->isSameRange(ugtOneZero));
+
+    auto ugtZeroOneOne = zeroOne->Ugt(one, 1);
+    BOOST_REQUIRE(ugtZeroOneOne->isConstant());
+    BOOST_REQUIRE(zero->isSameRange(ugtZeroOneOne));
+}
+
+BOOST_AUTO_TEST_CASE( range_ge )
+{
+    RangeRef one(new Range(Regular, 1, 1, 1));
+    RangeRef zero(new Range(Regular, 1, 0, 0));
+    RangeRef zeroOne(new Range(Regular, 1));
+
+    auto geOneZero = one->Sge(zero, 1);
+    BOOST_REQUIRE(geOneZero->isConstant());
+    BOOST_REQUIRE(zero->isSameRange(geOneZero));
+
+    auto geZeroOneOne = zeroOne->Sge(one, 1);
+    BOOST_REQUIRE(geZeroOneOne->isConstant());
+    BOOST_REQUIRE(one->isSameRange(geZeroOneOne));
+    
+    auto ugeOneZero = one->Uge(zero, 1);
+    BOOST_REQUIRE(ugeOneZero->isConstant());
+    BOOST_REQUIRE(one->isSameRange(ugeOneZero));
+
+    auto ugeZeroOneOne = zeroOne->Uge(one, 1);
+    BOOST_REQUIRE(zeroOne->isSameRange(ugeZeroOneOne));
+}
+
+BOOST_AUTO_TEST_CASE( real_range )
+{
+    RangeRef stdFullRange(new Range(Regular, 32));
+    RangeRef stdFullRange64(new Range(Regular, 64));
+
+    RealRange float64(stdFullRange64);
+    BOOST_REQUIRE(float64.getSign()->isFullSet());
+    BOOST_REQUIRE(float64.getExponent()->isFullSet());
+    BOOST_REQUIRE(float64.getFractional()->isFullSet());
+    
+    RealRange float32(stdFullRange);
+    BOOST_REQUIRE(float32.getSign()->isFullSet());
+    BOOST_REQUIRE(float32.getExponent()->isFullSet());
+    BOOST_REQUIRE(float32.getFractional()->isFullSet());
+
+    auto view_convert32 = float32.getRange();
+    BOOST_REQUIRE_EQUAL(32, view_convert32->getBitWidth());
+    BOOST_REQUIRE(view_convert32->isFullSet());
+
+    auto view_convert64 = float64.getRange();
+    BOOST_REQUIRE_EQUAL(64, view_convert64->getBitWidth());
+    BOOST_REQUIRE(view_convert64->isFullSet());
 }
