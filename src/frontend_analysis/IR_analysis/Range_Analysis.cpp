@@ -1206,7 +1206,7 @@ bool Range::isSameType(RangeConstRef other) const
 
 bool Range::isSameRange(RangeConstRef other) const
 {
-   return (l == other->l) && (u == other->u);
+   return this->bw == other->bw && isSameType(other) && (l == other->l) && (u == other->u);
 }
 
 bool Range::isSingleElement()
@@ -2164,7 +2164,7 @@ RangeRef Range::Not() const
 
 RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
    {
       return RangeRef(this->clone());
@@ -2181,7 +2181,7 @@ RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
       }
    }
    bool areTheyEqual = !this->intersectWith(other)->isEmpty();
-   bool areTheyDifferent = !((l == u) && *this == *other);
+   bool areTheyDifferent = !((l == u) && this->isSameRange(other));
 
    if(areTheyEqual && areTheyDifferent)
    {
@@ -2202,7 +2202,7 @@ RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
 
 RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
 {
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
    {
       return RangeRef(this->clone());
@@ -2219,7 +2219,7 @@ RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
       }
    }
    bool areTheyEqual = !this->intersectWith(other)->isEmpty();
-   bool areTheyDifferent = !((l == u) && *this == *other);
+   bool areTheyDifferent = !((l == u) && this->isSameRange(other));
    if(areTheyEqual && areTheyDifferent)
    {
       return RangeRef(new Range(Regular, _bw, 0, 1));
@@ -2855,16 +2855,6 @@ RangeRef Range::BestRange(RangeConstRef UR, RangeConstRef SR, bw_t _bw) const
    return SR->truncate(_bw);
 }
 
-bool Range::operator==(const Range& other) const
-{
-   return bw == other.bw && type == other.type && l == other.l && u == other.u;
-}
-
-bool Range::operator!=(const Range& other) const
-{
-   return bw != other.bw || type != other.type || l != other.l || u != other.u;
-}
-
 void Range::print(std::ostream& OS) const
 {
    if(this->isUnknown())
@@ -2932,7 +2922,6 @@ std::ostream& operator<<(std::ostream& OS, const Range& R)
 
 RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
 {
-   THROW_ASSERT(!Other->isReal(), "Real range is a storage class only");
    auto bw = Other->bw;
    if(Other->isUnknown())
    {
@@ -2946,6 +2935,10 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
    {
       THROW_UNREACHABLE("Invalid request " + tree_node::GetString(pred) + " " + Other->ToString());
       return RangeRef(new Range(Empty, bw));
+   }
+   if(Other->isReal() && pred != eq_expr_K && pred != ne_expr_K)
+   {
+      THROW_UNREACHABLE("Real range is a storage class only");
    }
 
    switch (pred)
@@ -3043,6 +3036,11 @@ RangeRef RealRange::getFractional() const
    return fractional;
 }
 
+RangeRef RealRange::getAnti() const
+{
+   return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), fractional->getAnti()));
+}
+
 void RealRange::setSign(RangeConstRef s)
 {
    sign.reset(s->clone());
@@ -3063,7 +3061,7 @@ bool RealRange::isSameRange(RangeConstRef other) const
    if(other->isReal())
    {
       auto rOther = RefcountCast<const RealRange>(other);
-      return sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && fractional->isSameRange(rOther->fractional);
+      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && fractional->isSameRange(rOther->fractional);
    }
    return false;
 }
@@ -3092,6 +3090,24 @@ void RealRange::print(std::ostream& OS) const
 Range* RealRange::clone() const
 {
    return new RealRange(sign, exponent, fractional);
+}
+
+RangeRef RealRange::Eq(RangeConstRef other, bw_t _bw) const
+{
+   if(const auto rOther = RefcountCast<const RealRange>(other))
+   {
+      return sign->Eq(rOther->sign, _bw)->intersectWith(exponent->Eq(rOther->exponent, _bw))->intersectWith(fractional->Eq(rOther->fractional, _bw));
+   }
+   return RangeRef(new Range(Regular, _bw, 0, 0));
+}
+
+RangeRef RealRange::Ne(RangeConstRef other, bw_t _bw) const
+{
+   if(const auto rOther = RefcountCast<const RealRange>(other))
+   {
+      return sign->Ne(rOther->sign, _bw)->unionWith(exponent->Ne(rOther->exponent, _bw))->unionWith(fractional->Ne(rOther->fractional, _bw));
+   }
+   return RangeRef(new Range(Regular, _bw, 1, 1));
 }
 
 RangeRef RealRange::intersectWith(RangeConstRef other) const
@@ -4271,6 +4287,8 @@ class BinaryOp : public BasicOp
       return BO->getValueId() == OperationId::BinaryOpId;
    }
 
+   static RangeRef evaluate(kind opcode, bw_t bw, RangeRef op1, RangeRef op2, bool isSigned);
+
    /// Return the opcode of the operation.
    kind getOpcode() const
    {
@@ -4299,27 +4317,10 @@ BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, co
    THROW_ASSERT(isValidType(_sink->getValue()), "Binary operation sink should be of valid type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
 }
 
-/// Computes the interval of the sink based on the interval of the sources,
-/// the operation and the interval associated to the operation.
-/// Basically, this function performs the operation indicated in its opcode
-/// taking as its operands the source1 and the source2.
-RangeRef BinaryOp::eval() const
-{
-   auto op1 = this->getSource1()->getRange();
-   auto op2 = this->getSource2()->getRange();
-   // Instruction bitwidth
-   auto bw = getSink()->getBitWidth();
-   RangeRef result(new Range(Unknown, bw));
-
-   // only evaluate if all operands are Regular
-   if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()))
+RangeRef BinaryOp::evaluate(kind opcode, bw_t bw, RangeRef op1, RangeRef op2, bool isSigned)
    {
-      #ifdef DEBUG_BASICOP_EVAL
-      PRINT_MSG(getSink()->getValue()->ToString() << std::endl << *op1 << "," << *op2);
-      #endif
-      bool isSigned = isSignedType(getSink()->getValue());
-
-      switch(this->getOpcode())
+   RangeRef result;
+   switch(opcode)
       {
          #ifdef INTEGER_PTR
          case pointer_plus_expr_K:
@@ -4401,9 +4402,34 @@ RangeRef BinaryOp::eval() const
          case CASE_CPP_NODES:
          case CASE_MISCELLANEOUS:
          default:
-            THROW_UNREACHABLE("Unhandled binary operation (" + tree_node::GetString(this->getOpcode()) + ")");
+         THROW_UNREACHABLE("Unhandled binary operation (" + tree_node::GetString(opcode) + ")");
             break;
       }
+   return result;
+}
+
+/// Computes the interval of the sink based on the interval of the sources,
+/// the operation and the interval associated to the operation.
+/// Basically, this function performs the operation indicated in its opcode
+/// taking as its operands the source1 and the source2.
+RangeRef BinaryOp::eval() const
+{
+   auto op1 = this->getSource1()->getRange();
+   auto op2 = this->getSource2()->getRange();
+   // Instruction bitwidth
+   auto bw = getSink()->getBitWidth();
+   RangeRef result(new Range(Unknown, bw));
+
+   // only evaluate if all operands are Regular
+   if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()))
+   {
+      #ifdef DEBUG_BASICOP_EVAL
+      PRINT_MSG(getSink()->getValue()->ToString() << std::endl << *op1 << "," << *op2);
+      #endif
+      bool isSigned = isSignedType(getSink()->getValue());
+
+      result = evaluate(this->getOpcode(), bw, op1, op2, isSigned);
+
       if(result->getBitWidth() != bw)
       {
          result = result->zextOrTrunc(bw);
@@ -4467,6 +4493,58 @@ void BinaryOp::print(std::ostream& OS) const
    OS << " " << quot << this << quot << " -> " << quot;
    printVarName(VS, OS);
    OS << quot << "\n";
+}
+
+unsigned int evaluateBranch(const tree_nodeRef br_op, const blocRef branchBB
+#ifndef NDEBUG
+   , int debug_level
+#endif
+   )
+{
+   // Evaluate condition variable if possible
+   if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(br_op)))
+   {
+      const auto branchValue = tree_helper::get_integer_cst_value(ic);
+      if(branchValue)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable value is " + STR(branchValue) + ", false edge BB" + STR(branchBB->false_edge) + " to be removed");
+         return branchBB->false_edge;
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable value is " + STR(branchValue) + ", true edge BB" + STR(branchBB->true_edge) + " to be removed");
+         return branchBB->true_edge;
+      }
+   }
+   else if(const auto* bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(br_op)))
+   {
+      const auto* l = GetPointer<const integer_cst>(GET_CONST_NODE(bin_op->op0));
+      const auto* r = GetPointer<const integer_cst>(GET_CONST_NODE(bin_op->op1));
+      if(l != nullptr && r != nullptr)
+      {
+         const auto lc = tree_helper::get_integer_cst_value(l);
+         const auto rc = tree_helper::get_integer_cst_value(r);
+         RangeRef lhs(new Range(Regular, MAX_BIT_INT, lc, lc));
+         RangeRef rhs(new Range(Regular, MAX_BIT_INT, rc, rc));
+         RangeRef branchValue = BinaryOp::evaluate(bin_op->get_kind(), 1, lhs, rhs, isSignedType(bin_op->op0));
+         THROW_ASSERT(branchValue->isConstant(), "Constant binary operation should resolve to either true or false");
+         if(branchValue->getUnsignedMax())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition " + STR(lc) + " " + bin_op->get_kind_text() + " " + STR(rc) + " == " + STR(branchValue) + ", false edge BB" + STR(branchBB->false_edge) + " to be removed");
+            return branchBB->false_edge;
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition " + STR(lc) + " " + bin_op->get_kind_text() + " " + STR(rc) + " == " + STR(branchValue) + ", false edge BB" + STR(branchBB->false_edge) + " to be removed");
+            return branchBB->true_edge;
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition has non-integer cst_node operands, skipping...");
+      return bloc::EXIT_BLOCK_ID;
+   }
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable is a non-integer cst_node, skipping...");
+   return bloc::EXIT_BLOCK_ID;
 }
 
 // ========================================================================== //
@@ -4568,11 +4646,11 @@ RangeRef TernaryOp::eval() const
       if(this->getOpcode() == cond_expr_K)
       {
          // Source1 is the selector
-         if(*op1 == Range(Regular, op1->getBitWidth(), 1, 1))
+         if(op1->isSameRange(RangeRef(new Range(Regular, op1->getBitWidth(), 1, 1))))
          {
             result = op2;
          }
-         else if(*op1 == Range(Regular, op1->getBitWidth(), 0, 0))
+         else if(op1->isSameRange(RangeRef(new Range(Regular, op1->getBitWidth(), 0, 0))))
          {
             result = op3;
          }
@@ -5337,7 +5415,7 @@ bool Meet::fixed(BasicOp* op)
       PRINT_MSG("FIXED::%artificial phi : " << *oldInterval << " -> " << *newInterval);
    }
    #endif
-   return *oldInterval != *newInterval;
+   return !oldInterval->isSameRange(newInterval);
 }
 
 /// This is the meet operator of the growth analysis. The growth analysis
@@ -5357,7 +5435,7 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
       auto bw = oldInterval->getBitWidth();
       if(oldInterval->isUnknown() || oldInterval->isEmpty() || oldInterval->isAnti() || newInterval->isEmpty() || newInterval->isAnti())
       {
-         if(oldInterval->isAnti() && newInterval->isAnti() && *newInterval != *oldInterval)
+         if(oldInterval->isAnti() && newInterval->isAnti() && !newInterval->isSameRange(oldInterval))
          {
             auto oldAnti = oldInterval->getAnti();
             auto newAnti = newInterval->getAnti();
@@ -5451,7 +5529,7 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
    }
    #endif
 
-   return *oldRange != *sinkRange;
+   return !oldRange->isSameRange(sinkRange);
 }
 
 bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
@@ -5522,7 +5600,7 @@ bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
       PRINT_MSG("GROWTH::%artificial phi : " << *oldRange << " -> " << *sinkRange);
    }
    #endif
-   return *oldRange != *sinkRange;
+   return !oldRange->isSameRange(sinkRange);
 }
 
 /// This is the meet operator of the cropping analysis. Whereas the growth
@@ -5540,7 +5618,7 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
       RangeRef sinkInterval(oldInterval->clone());
       if(oldInterval->isAnti() || newInterval->isAnti() || oldInterval->isEmpty() || newInterval->isEmpty())
       {
-         if(oldInterval->isAnti() && newInterval->isAnti() && *newInterval != *oldInterval)
+         if(oldInterval->isAnti() && newInterval->isAnti() && !newInterval->isSameRange(oldInterval))
          {
             auto oldAnti = oldInterval->getAnti();
             auto newAnti = newInterval->getAnti();
@@ -5643,7 +5721,7 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
       PRINT_MSG("NARROW::%artificial phi : " << *oldRange << " -> " << *sinkRange);
    }
    #endif
-   return *oldRange != *sinkRange;
+   return !oldRange->isSameRange(sinkRange);
 }
 
 bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
@@ -5704,7 +5782,7 @@ bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
       PRINT_MSG("CROP::%artificial phi : " << *oldRange << " -> " << *sinkRange);
    }
    #endif
-   return *oldRange != *sinkRange;
+   return !oldRange->isSameRange(sinkRange);
 }
 
 /// This class is used to store the intersections that we get in the branches.
@@ -5933,12 +6011,23 @@ class ConstraintGraph
    // It is cleared at the beginning of every SCC resolution
    std::vector<APInt> constantvector;
 
-   bool buildValueBranchMap(const gimple_cond* br, const blocRef branchBB, unsigned int function_id)
+   /**
+    * @brief Analyse branch instruction and buil value branch map
+    * 
+    * @param br Branch instruction
+    * @param branchBB Branch basic block
+    * @param function_id Function id
+    * @return unsigned int Return dead basic block to be removed when necessary and possible (bloc::ENTRY_BLOCK_ID indicates no dead block found, bloc::EXIT_BLOCK_ID indicates constant codition was found but could not be evaluated) 
+    */
+   unsigned int buildValueBranchMap(const gimple_cond* br, const blocRef branchBB, unsigned int function_id)
    {
       if(GetPointer<const cst_node>(GET_CONST_NODE(br->op0)) != nullptr)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Branch variable is a cst_node, dead code elimination necessary!");
-         return true;
+         return evaluateBranch(br->op0, branchBB
+            #ifndef NDEBUG
+            , debug_level
+            #endif
+            );
       }
       THROW_ASSERT(GET_CONST_NODE(br->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch (" + GET_CONST_NODE(br->op0)->get_kind_text() + " " + GET_CONST_NODE(br->op0)->ToString() + ")");
       const auto Cond = branchOpRecurse(br->op0);
@@ -5950,13 +6039,13 @@ class ConstraintGraph
          if(!isCompare(bin_op))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a compare codition, skipping...");
-            return false;
+            return bloc::ENTRY_BLOCK_ID;
          }
 
          if(!isValidType(bin_op->op0) || !isValidType(bin_op->op1))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Non-integer operands, skipping...");
-            return false;
+            return bloc::ENTRY_BLOCK_ID;
          }
 
          // Create VarNodes for comparison operands explicitly
@@ -5970,7 +6059,7 @@ class ConstraintGraph
          // We have a Variable-Constant comparison.
          const auto Op0 = GET_CONST_NODE(bin_op->op0);
          const auto Op1 = GET_CONST_NODE(bin_op->op1);
-         const struct integer_cst* constant = nullptr;
+         tree_nodeConstRef constant = nullptr;
          tree_nodeConstRef variable = nullptr;
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 is " + Op0->get_kind_text() + " and Op1 is " + Op1->get_kind_text());
@@ -5978,21 +6067,27 @@ class ConstraintGraph
          // If both operands are constants, nothing to do here
          if(GetPointer<const cst_node>(Op0) != nullptr && GetPointer<const cst_node>(Op1) != nullptr)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Both operands are constants, dead code elimination necessary!");
-            return true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            return evaluateBranch(br->op0, branchBB
+               #ifndef NDEBUG
+               , debug_level
+               #endif
+               );
          }
 
          // Then there are two cases: variable being compared to a constant,
          // or variable being compared to another variable
 
          // Op0 is constant, Op1 is variable
-         if((constant = GetPointer<const integer_cst>(Op0)) != nullptr)
+         if(GetPointer<const cst_node>(Op0) != nullptr)
          {
+            constant = Op0;
             variable = bin_op->op1;
             // Op0 is variable, Op1 is constant
          }
-         else if((constant = GetPointer<const integer_cst>(Op1)) != nullptr)
+         else if(GetPointer<const cst_node>(Op1) != nullptr)
          {
+            constant = Op1;
             variable = bin_op->op0;
          }
          // Both are variables
@@ -6003,8 +6098,8 @@ class ConstraintGraph
             kind pred = bin_op->get_kind();
             kind swappred = op_swap(pred);
             auto bw = getGIMPLE_BW(variable);
-            RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
+            RangeRef CR = getGIMPLE_range(constant);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(bw) + " and constant value is " + constant->ToString());
 
             auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
@@ -6113,7 +6208,7 @@ class ConstraintGraph
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Not a compare codition, skipping...");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-      return false;
+      return bloc::ENTRY_BLOCK_ID;
    }
 
    bool buildValueMultiIfMap(const gimple_multi_way_if* mwi, const blocRef /*mwifBB*/, unsigned int function_id)
@@ -7365,6 +7460,7 @@ class ConstraintGraph
    /// Adds a VarNode in the graph.
    VarNode* addVarNode(const tree_nodeConstRef V, unsigned int function_id)
    {
+      THROW_ASSERT(V, "Can't insert nullptr as variable");
       auto vit = vars.find(V);
       if(vit != vars.end())
       {
@@ -7508,9 +7604,9 @@ class ConstraintGraph
       }
    }
 
-   void findIntervals(const ParameterConstRef 
+   void findIntervals(
    #ifndef NDEBUG
-      parameters
+      const ParameterConstRef parameters, const std::string& step_name
    #endif
       )
    {
@@ -7619,7 +7715,7 @@ class ConstraintGraph
          }
          propagateToNextSCC(component);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed final constraint graph to " + printToFile("CG.dot", parameters));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed final constraint graph to " + printToFile("CG" + step_name + ".dot", parameters));
    }
 
    RangeConstRef getRange(const tree_nodeConstRef v)
@@ -7814,11 +7910,22 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    THROW_ASSERT(parmBind.size() == parameters.size(), "Parameters count mismatch");
    for(size_t i = 0; i < parameters.size(); ++i)
    {
-      if(!isIntegerType(getGIMPLE_Type(parmBind[i])))
+      if(const auto& p = parmBind.at(i))
       {
+         const auto pType = getGIMPLE_Type(p);
+         if(!isValidType(pType))
+      {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " is of non-valid type (" + pType->get_kind_text() + ")");
          continue;
       }
-      parameters[i].first = parmBind[i];
+         parameters[i].first = p;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " defined as " + GET_CONST_NODE(p)->ToString());
+      }
+      else
+      {
+         parameters[i].first = nullptr;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " missing from function body");
+      }
    }
 
    // Check if the function returns a supported value type. If not, no return
@@ -7839,6 +7946,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
             
          if(stmt_list.size())
          if(const auto* gr = GetPointer<const gimple_return>(GET_CONST_NODE(stmt_list.back())))
+         if(gr->op != nullptr)   // Compiler defined return statements may be without argument
          {
             returnValues.insert(gr->op);
          }
@@ -8099,7 +8207,11 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal analysis completed");
    CG->buildVarNodes();
 
-   CG->findIntervals(parameters);
+   #ifndef NDEBUG
+   CG->findIntervals(parameters, GetName() + "(" + STR(iteration++) + ")");
+   #else
+   CG->findIntervals();
+   #endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    if(finalize())
@@ -8175,8 +8287,17 @@ bool RangeAnalysis::finalize()
          const auto useStmts = ssa->CGetUseStmts();
          for(const auto& use : useStmts)
          {
+            #ifndef NDEBUG
+            auto dbg_conversion = GET_CONST_NODE(use.first)->ToString() + " -> ";
+            #endif
+            if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(use.first)))
+            if(static_cast<bool>(tree_helper::ComputeSsaUses(ga->op0).count(ssa_node)))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + "Left hand side variable can't be replaced by a constant");
+               continue;
+            }
             TM->ReplaceTreeNode(use.first, ssa_node, cst);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(use.first)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + GET_CONST_NODE(use.first)->ToString());
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -8186,7 +8307,15 @@ bool RangeAnalysis::finalize()
          AppM->RegisterTransformation(GetName(), cst);
          #endif
       }
-      else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty() && !ssa->range->isFullSet())
+      else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty())
+      {
+         if(ssa->range->isFullSet())
+         {
+            ssa->min = nullptr;
+            ssa->max = nullptr;
+            ssa->bit_values = bitstring_to_string(create_u_bitstring(getGIMPLE_BW(ssa_node)));
+         }
+         else
       {
          auto type_id = GET_INDEX_CONST_NODE(ssa->type);
          long long min, max;
@@ -8206,6 +8335,7 @@ bool RangeAnalysis::finalize()
          }
          ssa->min = TM->CreateUniqueIntegerCst(min, type_id);
          ssa->max = TM->CreateUniqueIntegerCst(max, type_id);
+         }
 
          #ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), nullptr);
@@ -8227,13 +8357,17 @@ bool RangeAnalysis::finalize()
       auto range = node->getRange();
       if(ssa->range)
       {
-         if(*ssa->range != *range)
+         if(!ssa->range->isSameRange(range))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-               "Modified range from " + ssa->range->ToString() + " to " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
+               "Modified range " + ssa->range->ToString() + " to " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
             ssa->range = range;
             updateSSALimits(ssaRef, node->getFunctionId());
             modified = true;
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Fixed range " + ssa->range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
          }
       }
       else

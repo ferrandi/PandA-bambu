@@ -57,7 +57,7 @@ REF_FORWARD_DECL(ConstraintGraph);
 
 struct tree_reindexCompare 
 {
-  bool operator()(const tree_nodeConstRef &lhs, const tree_nodeConstRef &rhs) const;
+   bool operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const;
 };
 
 enum RangeType
@@ -96,13 +96,13 @@ class Range
    Range& operator=(const Range& other) = default;
    Range& operator=(Range&&) = default;
    bw_t getBitWidth() const;
-   const APInt &getLower() const;
-   const APInt &getUpper() const;
+   const APInt& getLower() const;
+   const APInt& getUpper() const;
    APInt getSignedMax() const;
    APInt getSignedMin() const;
    APInt getUnsignedMax() const;
    APInt getUnsignedMin() const;
-   RangeRef getAnti() const;
+   virtual RangeRef getAnti() const;
 
    bool isUnknown() const;
    void setUnknown();
@@ -110,6 +110,8 @@ class Range
    bool isAnti() const;
    bool isEmpty() const;
    bool isReal() const;
+   bool operator==(const Range& other) const = delete;
+   bool operator!=(const Range& other) const = delete;
    bool isSameType(RangeConstRef other) const;
    virtual bool isSameRange(RangeConstRef other) const;
    bool isSingleElement();
@@ -133,8 +135,8 @@ class Range
    RangeRef And(RangeConstRef other) const;
    RangeRef Or(RangeConstRef other) const;
    RangeRef Xor(RangeConstRef other) const;
-   RangeRef Eq(RangeConstRef other, bw_t bw) const;
-   RangeRef Ne(RangeConstRef other, bw_t bw) const;
+   virtual RangeRef Eq(RangeConstRef other, bw_t bw) const;
+   virtual RangeRef Ne(RangeConstRef other, bw_t bw) const;
    RangeRef Ugt(RangeConstRef other, bw_t bw) const;
    RangeRef Uge(RangeConstRef other, bw_t bw) const;
    RangeRef Ult(RangeConstRef other, bw_t bw) const;
@@ -147,8 +149,6 @@ class Range
    RangeRef truncate(bw_t bitwidth) const;
    RangeRef sextOrTrunc(bw_t bitwidth) const;
    RangeRef zextOrTrunc(bw_t bitwidth) const;
-   bool operator==(const Range& other) const;
-   bool operator!=(const Range& other) const;
    virtual RangeRef intersectWith(RangeConstRef other) const;
    virtual RangeRef unionWith(RangeConstRef other) const;
    RangeRef BestRange(RangeConstRef UR, RangeConstRef SR, bw_t bw) const;
@@ -180,6 +180,7 @@ class RealRange : public Range
   RangeRef getSign() const;
   RangeRef getExponent() const;
   RangeRef getFractional() const;
+   RangeRef getAnti() const override;
   void setSign(RangeConstRef s);
   void setExponent(RangeConstRef e);
   void setFractional(RangeConstRef f);
@@ -189,6 +190,8 @@ class RealRange : public Range
   Range* clone() const override;
   void print(std::ostream& OS) const override;
 
+   RangeRef Eq(RangeConstRef other, bw_t bw) const override;
+   RangeRef Ne(RangeConstRef other, bw_t bw) const override;
   RangeRef intersectWith(RangeConstRef other) const override;
   RangeRef unionWith(RangeConstRef other) const override;
 };
@@ -199,10 +202,13 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    /// True if dead code elimination step must be restarted
    bool dead_code_restart;
 
+#ifndef NDEBUG
+   unsigned iteration = 0;
+#endif
+
    bool finalize();
 
  protected:
-
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
@@ -236,7 +242,6 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
-
 };
 
 #endif // !RANGE_ANALYSIS_HPP
