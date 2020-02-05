@@ -104,12 +104,12 @@ class Range
    APInt getUnsignedMin() const;
    virtual RangeRef getAnti() const;
 
-   bool isUnknown() const;
-   void setUnknown();
+   virtual bool isUnknown() const;
+   virtual void setUnknown();
    bool isRegular() const;
    bool isAnti() const;
    bool isEmpty() const;
-   bool isReal() const;
+   virtual bool isReal() const;
    bool operator==(const Range& other) const = delete;
    bool operator!=(const Range& other) const = delete;
    bool isSameType(RangeConstRef other) const;
@@ -186,7 +186,10 @@ class RealRange : public Range
    void setFractional(RangeConstRef f);
    bool isSameRange(RangeConstRef other) const override;
    bool isFullSet() const override;
+   bool isUnknown() const override;
+   void setUnknown() override;
    bool isConstant() const override;
+   bool isReal() const override;
    Range* clone() const override;
    void print(std::ostream& OS) const override;
 
