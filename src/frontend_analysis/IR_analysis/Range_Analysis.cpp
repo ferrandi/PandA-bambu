@@ -467,7 +467,7 @@ namespace
       //}
    }
 
-   bool isIntegerType(const tree_nodeConstRef tn) 
+   bool isValidType(const tree_nodeConstRef tn) 
    {
       switch(tn->get_kind())
       {
@@ -477,6 +477,7 @@ namespace
          #ifdef INTEGER_PTR
          case pointer_type_K:
          #endif
+         case real_type_K:
             return true;
          case array_type_K:
          case CharType_K:
@@ -491,7 +492,6 @@ namespace
          case pointer_type_K:
          #endif
          case qual_union_type_K:
-         case real_type_K:
          case record_type_K:
          case reference_type_K:
          case set_type_K:
@@ -503,11 +503,11 @@ namespace
          case void_type_K:
             return false;
          case tree_reindex_K:
-            return isIntegerType(GET_CONST_NODE(tn));
+            return isValidType(GET_CONST_NODE(tn));
          case CASE_CST_NODES:
          case CASE_DECL_NODES:
          case ssa_name_K:
-            return isIntegerType(tree_helper::CGetType(tn));
+            return isValidType(tree_helper::CGetType(tn));
          case aggr_init_expr_K:case case_label_expr_K:case lut_expr_K:case target_expr_K:case target_mem_ref_K:case target_mem_ref461_K:case binfo_K:case block_K:case constructor_K:case error_mark_K:case identifier_node_K:case statement_list_K:case tree_list_K:case tree_vec_K:case call_expr_K:
          case last_tree_K:case none_K:case placeholder_expr_K:
          case CASE_UNARY_EXPRESSION:
@@ -546,10 +546,11 @@ namespace
             switch(GET_CONST_NODE(ga->op1)->get_kind())
             {
                /// unary_expr cases
-               case view_convert_expr_K:
                case nop_expr_K:
-               case convert_expr_K:
                case abs_expr_K:
+               case bit_not_expr_K:
+               case convert_expr_K:
+               case view_convert_expr_K:
                   break;
 
                /// binary_expr cases
@@ -578,7 +579,7 @@ namespace
                #endif
                {
                   const auto bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
-                  if(!isIntegerType(bin_op->op0) || !isIntegerType(bin_op->op1))
+                  if(!isValidType(bin_op->op0) || !isValidType(bin_op->op1))
                   {
                      return false;
                   }
@@ -590,7 +591,7 @@ namespace
                   break;
 
                // Unary case
-               case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+               case addr_expr_K:case paren_expr_K:case arrow_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
                // Binary case
                #ifndef INTEGER_PTR
                case pointer_plus_expr_K:
@@ -649,7 +650,7 @@ namespace
          default:
             return false;
       }
-      return isIntegerType(Type);
+      return isValidType(Type);
    }
 
    bool isSignedType(const tree_nodeConstRef tn)
@@ -2136,6 +2137,27 @@ RangeRef Range::Xor(RangeConstRef other) const
    }
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("Xor-res: " << *res << std::endl);
+   #endif
+   return res;
+}
+
+RangeRef Range::Not() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("this-not: " << *this);
+   #endif
+   if(isEmpty() || isUnknown())
+   {
+      return RangeRef(this->clone());
+   }
+   
+   const auto min = convert(~UAPInt(this->u));
+   const auto max = convert(~UAPInt(this->l));
+   RangeRef res(new Range(this->type, bw, min, max));
+
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("Not-res: " << *res);
    #endif
    return res;
 }
@@ -3883,6 +3905,11 @@ RangeRef UnaryOp::eval() const
             }
          }
          break;
+         case bit_not_expr_K:
+         {
+            result = oprnd->Not();
+         }
+         break;
          case convert_expr_K:
          case nop_expr_K:
          {
@@ -3914,7 +3941,7 @@ RangeRef UnaryOp::eval() const
             }
             break;
          
-         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
          case CASE_BINARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -4269,7 +4296,7 @@ class BinaryOp : public BasicOp
 BinaryOp::BinaryOp(std::shared_ptr<BasicInterval> _intersect, VarNode* _sink, const tree_nodeConstRef _inst, VarNode* _source1, VarNode* _source2, kind _opcode) 
    : BasicOp(_intersect, _sink, _inst), source1(_source1), source2(_source2), opcode(_opcode)
 {
-   THROW_ASSERT(isIntegerType(_sink->getValue()), "Binary operation sink should be of integer type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
+   THROW_ASSERT(isValidType(_sink->getValue()), "Binary operation sink should be of valid type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
 }
 
 /// Computes the interval of the sink based on the interval of the sources,
@@ -5926,7 +5953,7 @@ class ConstraintGraph
             return false;
          }
 
-         if(!isIntegerType(bin_op->op0) || !isIntegerType(bin_op->op1))
+         if(!isValidType(bin_op->op0) || !isValidType(bin_op->op1))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Non-integer operands, skipping...");
             return false;
@@ -6132,7 +6159,7 @@ class ConstraintGraph
                continue;
             }
 
-            if(!isIntegerType(cmp_op->op0) || !isIntegerType(cmp_op->op1))
+            if(!isValidType(cmp_op->op0) || !isValidType(cmp_op->op1))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Non-integer operands, skipping...");
                continue;
@@ -6601,7 +6628,7 @@ class ConstraintGraph
                " (readonly = " + STR(vd->readonly_flag) + 
                ", defs = " + STR(vd->defs.size()) + 
                ", full-size = " + STR(GetPointer<const integer_cst>(GET_CONST_NODE(vd->size))->value) + ")");
-            if(!vd->readonly_flag)
+            if(!vd->readonly_flag || vd->init == nullptr)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed variable is not constant " + TN->ToString());
                pointToConstants = false;
@@ -6613,7 +6640,7 @@ class ConstraintGraph
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
                for(const auto& [idx, valu] : constr->list_of_idx_valu)
                {
-                  if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(valu)) && isIntegerType(valu))
+                  if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(valu)) && isValidType(valu))
                   {
                      #ifndef NDEBUG
                      const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(valu));
@@ -6729,7 +6756,7 @@ class ConstraintGraph
                   for(const auto& [idx, valu] : constr->list_of_idx_valu)
                   {
                      StoreOp* storeOp;
-                     if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(idx)) && isIntegerType(idx))
+                     if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(idx)) && isValidType(idx))
                      {
                         storeOp = new StoreOp(sink, I, getGIMPLE_range(idx));
                      }
