@@ -64,6 +64,9 @@
 #include "loop.hpp"
 #include "loops.hpp"
 
+#include "state_transition_graph_manager.hpp"
+#include "state_transition_graph.hpp"
+
 liveness::liveness(const HLS_managerRef _HLSMgr, const ParameterConstRef _Param) : TreeM(_HLSMgr->get_tree_manager()), Param(_Param), null_vertex_string("NULL_VERTEX"), HLSMgr(_HLSMgr)
 
 {
@@ -217,9 +220,69 @@ const std::string& liveness::get_name(vertex v) const
 bool liveness::are_in_conflict(vertex op1, vertex op2) const
 {
    // if(!HLS)
+   const CustomOrderedSet<vertex>& op1_run = get_state_where_run(op1);
+   const CustomOrderedSet<vertex>& op2_run = get_state_where_run(op2);
+
+   auto FB = HLSMgr->GetFunctionBehavior(HLS->functionId);
+   if(FB->is_pipelining_enabled())
    {
-      const CustomOrderedSet<vertex>& op1_run = get_state_where_run(op1);
-      const CustomOrderedSet<vertex>& op2_run = get_state_where_run(op2);
+      const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
+      unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);
+      unsigned int bb_index2 = GET_BB_INDEX(dfg, op2);
+      const CustomUnorderedMap<unsigned int, vertex> & bb_index_map = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
+      vertex bb_1 = bb_index_map.find(bb_index1)->second;
+      vertex bb_2 = bb_index_map.find(bb_index2)->second;
+
+      auto loops = HLSMgr->GetFunctionBehavior(HLS->functionId)->GetLoops()->GetList();
+      for(auto loop : loops)
+      {
+         int initiation_time = 1; // to be read from parser
+         THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
+         auto bbs = loop->get_blocks();
+         if(bbs.find(bb_1) != bbs.end() && bbs.find(bb_2) != bbs.end())
+         {
+            auto stg = HLS->STG->GetAstg();
+            for(auto s1 : op1_run)
+            {
+               std::queue<vertex> to_analyze;
+               std::queue<vertex> next_frontier;
+               to_analyze.push(s1);
+               vertex src;
+               int distance = 1;
+               graph::out_edge_iterator out_edge, out_edge_end;
+               while(to_analyze.size() > 0)
+               {
+                  src = to_analyze.front();
+                  to_analyze.pop();
+                  for(boost::tie(out_edge, out_edge_end) = boost::out_edges(src, *stg); out_edge != out_edge_end; ++out_edge)
+                  {
+                     vertex tgt = boost::target(*out_edge, *stg);
+                     if(op1_run.find(tgt) != op1_run.end())
+                     {
+                        continue;
+                     }
+
+                     if(op2_run.find(tgt) != op2_run.end())
+                     {
+                        if(distance % initiation_time == 0)
+                           return false;
+                        continue;
+                     }
+
+                     next_frontier.push(tgt);
+                  }
+                  if(to_analyze.size() == 0)
+                  {
+                     to_analyze = next_frontier;
+                     distance++;
+                  }
+               }
+            }
+         }
+      }
+   }
+
+   {
       const CustomOrderedSet<vertex>::const_iterator op1_run_it_end = op1_run.end();
       for(auto op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
          if(op2_run.find(*op1_run_it) != op2_run.end())
