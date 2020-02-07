@@ -88,7 +88,7 @@
 #define INTEGER_PTR                 // Pointers are considered as integers
 
 #ifndef NDEBUG
-#define DEBUG_RANGE_OP
+//    #define DEBUG_RANGE_OP
 #define DEBUG_CGRAPH
 #define LOG_TRANSACTIONS
 #define SCC_DEBUG
@@ -556,7 +556,15 @@ namespace
                case bit_not_expr_K:
                case convert_expr_K:
                case view_convert_expr_K:
+               {
+                  const auto* ue = GetPointer<const unary_expr>(GET_CONST_NODE(ga->op1));
+                  if(GetPointer<const expr_node>(GET_CONST_NODE(ue->op)))
+                  {
+                     // Nested operations not supported
+                     return false;
+                  }
                   break;
+               }
 
                /// binary_expr cases
                case plus_expr_K:
@@ -3747,8 +3755,7 @@ RangeRef PhiOp::eval() const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "->" + varNode->getRange()->ToString() + " " + varNode->ToString());
       result = result->unionWith(varNode->getRange());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "= " + result->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--= " + result->ToString());
    
    bool test = this->getIntersect()->getRange()->isMaxRange();
    if(!test)
@@ -3861,15 +3868,14 @@ UnaryOp::~UnaryOp() = default;
 /// the operation and the interval associated to the operation.
 RangeRef UnaryOp::eval() const
 {
-   auto bw = getSink()->getBitWidth();
-   RangeRef oprnd = source->getRange();
-   bool oprndSigned = isSignedType(source->getValue());
-   RangeRef result(new Range(Unknown, bw, Min, Max));
-   const auto resultType = getGIMPLE_Type(getSink()->getValue())->get_kind();
-   
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          GET_CONST_NODE(getSink()->getValue())->ToString() + " = " + tree_node::GetString(this->getOpcode()) + "( " + GET_CONST_NODE(getSource()->getValue())->ToString() + " )");
 
+   auto bw = getSink()->getBitWidth();
+   RangeRef oprnd = source->getRange();
+   bool oprndSigned = isSignedType(source->getValue());
+   const auto resultType = getGIMPLE_Type(getSink()->getValue())->get_kind();
+   RangeRef result(new Range(Unknown, bw));
    if(oprnd->isRegular() || oprnd->isAnti())
    {
       switch(this->getOpcode())
@@ -4829,10 +4835,9 @@ RangeRef LoadOp::eval() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, getSink()->ToString() + " = LOAD");
 
-   auto bw = getSink()->getBitWidth();
    if(getNumSources() == 0)
    {
-      THROW_ASSERT(bw == getIntersect()->getRange()->getBitWidth(), "Sink (" + GET_CONST_NODE(getSink()->getValue())->ToString() + ") has bitwidth " + STR(bw) + " while intersect has bitwidth " + STR(getIntersect()->getRange()->getBitWidth()));
+      THROW_ASSERT(getSink()->getBitWidth() == getIntersect()->getRange()->getBitWidth(), "Sink (" + GET_CONST_NODE(getSink()->getValue())->ToString() + ") has bitwidth " + STR(getSink()->getBitWidth()) + " while intersect has bitwidth " + STR(getIntersect()->getRange()->getBitWidth()));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "= " + getIntersect()->getRange()->ToString());
       return getIntersect()->getRange();
    }
@@ -4845,8 +4850,7 @@ RangeRef LoadOp::eval() const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "->" + varNode->getRange()->ToString() + " " + varNode->ToString());
       result = result->unionWith(varNode->getRange());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "= " + result->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--= " + result->ToString());
 
    bool test = this->getIntersect()->getRange()->isMaxRange();
    if(!test)
@@ -4960,8 +4964,7 @@ void LoadOp::print(std::ostream& OS) const
 //          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "->" + varNode->getRange()->ToString() + " " + varNode->ToString());
 //          result = result->unionWith(varNode->getRange());
 //       }
-//       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-//       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "= " + result->ToString());
+//       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--= " + result->ToString());
 //       return result;
 //    }
 //    
@@ -6459,7 +6462,7 @@ class ConstraintGraph
       VarNode* sink = addVarNode(assign->op0, function_id);
       // Create the source.
       VarNode* source = addVarNode(un_op->op, function_id);
-      const auto sourceType = getGIMPLE_Type(un_op->op);
+      const auto sourceType = getGIMPLE_Type(source->getValue());
 
       if(un_op->get_kind() == view_convert_expr_K)
       {
@@ -7279,16 +7282,16 @@ class ConstraintGraph
       if(sit != symbMap.end())
       {
          #ifdef DEBUG_CGRAPH
-         PRINT_MSG("fix intesects:" << std::endl << varNode);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Fix intersects: " + varNode->ToString());
          #endif
          for(BasicOp* op : sit->second)
          {
             #ifdef DEBUG_CGRAPH
-            PRINT_MSG("op intersects:" << std::endl << op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op intersects: " + op->ToString());
             #endif
             op->fixIntersects(varNode);
             #ifdef DEBUG_CGRAPH
-            PRINT_MSG("sink:" << op);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Sink: " + op->ToString());
             #endif
          }
       }
