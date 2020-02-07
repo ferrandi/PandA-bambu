@@ -758,7 +758,17 @@ namespace
       if(const auto* ic = GetPointer<const integer_cst>(tn))
       {
          min = max = tree_helper::get_integer_cst_value(ic);
-         sign = min < 0;
+         return RangeRef(new Range(Regular, bw, min, max));
+      }
+      else if(const auto* sc = GetPointer<const string_cst>(tn))
+      {
+         bw = 8;
+         RangeRef r(new Range(Empty, bw));
+         for(const auto& c : sc->strg)
+         {
+            r = r->unionWith(RangeRef(new Range(Regular, bw, c, c)));
+         }
+         return r;
       }
       else if(const auto* it = GetPointer<const integer_type>(type))
       {
@@ -6702,6 +6712,20 @@ class ConstraintGraph
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+            }
+            #ifndef NDEBUG
+            else if(const auto* cst_val = GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
+            #else
+            else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)) != nullptr)
+            #endif
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initializer value is " + cst_val->ToString());
+               intersection = getGIMPLE_range(vd->init);
+               THROW_ASSERT(intersection->getBitWidth() == bw, "Initializer bitwidth should be the same as the initialized variable's one (" + intersection->ToString() + ")");
+            }
+            else if(GetPointer<const addr_expr>(GET_CONST_NODE(vd->init)) != nullptr)
+            {
+               pointToConstants = false;  // TODO: put all in the else branch and remove throw_unreachable
             }
             else
             {
