@@ -108,7 +108,7 @@ void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string
    {
       script << " " << file;
    }
-   script << " -g2001-noconfig";
+   script << " -g2012";
    script << " -gstrict-ca-eval";
    script << " -v >& " << log_file;
    script << std::endl << std::endl;
