@@ -7928,6 +7928,14 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal on function " + fn_name);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
+   if(!static_cast<bool>(CG->getCallMap()->count(function_id)))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "No call statements for this function, skipping...");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      return;
+   }
+   const auto& functionCalls = CG->getCallMap()->at(function_id);
+
    // Data structure which contains the matches between formal and real
    // parameters
    // First: formal parameter
@@ -8015,9 +8023,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
       returnVars.push_back(from);
    }
 
-   const auto* callMap = CG->getCallMap();
-   THROW_ASSERT(static_cast<bool>(callMap->count(function_id)), "Function " + fn_name + " should have some call statement");
-   for(const auto& call : callMap->at(function_id))
+   for(const auto& call : functionCalls)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing call " + GET_CONST_NODE(call)->ToString());
       const std::vector<tree_nodeRef>* args = nullptr;
