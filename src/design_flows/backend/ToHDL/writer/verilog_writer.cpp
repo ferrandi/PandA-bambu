@@ -1135,7 +1135,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
 }
 
 void verilog_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port,
-                                                       const std::string& clock_port, std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end)
+                                                       const std::string& clock_port, std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys)
 {
    typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
    const char soc[3] = {STD_OPENING_CHAR, '\n', '\0'};
@@ -1177,6 +1177,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
    indented_output_stream->Append(")\nbegin");
 #endif
    indented_output_stream->Append(soc);
+
+   /// default next_state when multi-process FSMs are considered
+   if(!single_proc && output_index == mod->get_out_port_size())
+      indented_output_stream->Append("_next_state = " + reset_state + ";\n");
 
    /// compute the default output
    std::string default_output;
@@ -1298,8 +1302,96 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          }
       }
 
+
       if(!skip_state_transition)
       {
+         /// check unique-case condition
+         bool unique_case_condition = true;
+         std::string guard_casez_port;
+         unsigned n_bits_guard_casez_port = 0;
+         if(!unique_transition)
+         {
+            for(unsigned int i = 0; i < state_transitions.size(); i++)
+            {
+               tokenizer transition_tokens(state_transitions[i], sep);
+               tokenizer::const_iterator itt = transition_tokens.begin();
+
+               tokenizer::const_iterator current_input_it;
+               std::string input_string = *itt;
+               if(mod->get_in_port_size() - numInputIgnored)
+               {
+                  boost::char_separator<char> comma_sep(",", nullptr);
+                  tokenizer current_input_tokens(input_string, comma_sep);
+                  current_input_it = current_input_tokens.begin();
+                  ++itt;
+               }
+               std::string next_state = *itt;
+               ++itt;
+               std::string transition_outputs = *itt;
+               ++itt;
+               THROW_ASSERT(itt == transition_tokens.end(), "Bad transition format");
+               if((i + 1) < state_transitions.size())
+               {
+                  bool first_test = true;
+                  for(unsigned int ind = 0; ind < mod->get_in_port_size() && unique_case_condition; ind++)
+                  {
+                     port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(ind)->get_id());
+                     unsigned int port_size = mod->get_in_port(ind)->get_typeRef()->size;
+                     unsigned int vec_size = mod->get_in_port(ind)->get_typeRef()->vector_size;
+                     if(port_name != reset_port && port_name != clock_port && port_name != start_port && port_name != STR(SELECTOR_REGISTER_FILE))
+                     {
+                        std::string in_or_conditions = *current_input_it;
+                        boost::char_separator<char> pipe_sep("|", nullptr);
+                        tokenizer in_or_conditions_tokens(in_or_conditions, pipe_sep);
+
+                        if((*in_or_conditions_tokens.begin()) != "-")
+                        {
+                           if(guard_casez_port.empty())
+                              guard_casez_port = port_name;
+                           else if(guard_casez_port != port_name)
+                              unique_case_condition = false;
+                           if(!first_test)
+                              unique_case_condition = false;
+                           else
+                              first_test = false;
+                           bool first_test_or = true;
+                           for(tokenizer::const_iterator in_or_conditions_tokens_it = in_or_conditions_tokens.begin(); in_or_conditions_tokens_it != in_or_conditions_tokens.end() && unique_case_condition; ++in_or_conditions_tokens_it)
+                           {
+                              THROW_ASSERT((*in_or_conditions_tokens_it) != "-", "wrong conditions structure");
+                              if(!first_test_or)
+                              {
+                                 unique_case_condition = false;
+                              }
+                              else
+                                 first_test_or = false;
+
+                              if((*in_or_conditions_tokens_it)[0] != '&')
+                              {
+                                  unique_case_condition = false;
+                              }
+                              else
+                              {
+                                 if(n_bits_guard_casez_port==0)
+                                    n_bits_guard_casez_port = vec_size == 0 ? port_size : vec_size;
+                              }
+                           }
+                        }
+                        ++current_input_it;
+                     }
+                  }
+
+               }
+            }
+         }
+
+         if(!unique_transition)
+         {
+            if(unique_case_condition)
+            {
+               indented_output_stream->Append("casez (" + guard_casez_port + ")");
+               indented_output_stream->Append(soc);
+            }
+         }
          for(unsigned int i = 0; i < state_transitions.size(); i++)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing transition " + state_transitions[i]);
@@ -1325,15 +1417,24 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             {
                if(i == 0)
                {
-                  indented_output_stream->Append("if (");
+                  if(unique_case_condition)
+                     indented_output_stream->Append(STR(n_bits_guard_casez_port)+"'b");
+                  else
+                     indented_output_stream->Append("if (");
                }
                else if((i + 1) == state_transitions.size())
                {
-                  indented_output_stream->Append("else");
+                  if(unique_case_condition)
+                     indented_output_stream->Append("default");
+                  else
+                     indented_output_stream->Append("else");
                }
                else
                {
-                  indented_output_stream->Append("else if (");
+                  if(unique_case_condition)
+                     indented_output_stream->Append(STR(n_bits_guard_casez_port)+"'b");
+                  else
+                     indented_output_stream->Append("else if (");
                }
                if((i + 1) < state_transitions.size())
                {
@@ -1374,7 +1475,14 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                               {
                                  unsigned n_bits = vec_size == 0 ? port_size : vec_size;
                                  auto pos = boost::lexical_cast<unsigned int>((*in_or_conditions_tokens_it).substr(1));
-                                 res_or_conditions += (n_bits > 1 ? std::string("[") + STR(pos) + "]" : "") + " == 1'b1";
+                                 if(unique_case_condition)
+                                 {
+                                    res_or_conditions = "";
+                                    for(unsigned int guard_ind = 0; guard_ind < n_bits; ++guard_ind)
+                                       res_or_conditions = (guard_ind == pos ? "1" : (guard_ind < pos ? "0" : (is_yosys ? "0" : "?"))) + res_or_conditions;
+                                 }
+                                 else
+                                    res_or_conditions += (n_bits > 1 ? std::string("[") + STR(pos) + "]" : "") + " == 1'b1";
                               }
                               else
                               {
@@ -1392,7 +1500,10 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         ++current_input_it;
                      }
                   }
-                  indented_output_stream->Append(")");
+                  if(unique_case_condition)
+                     indented_output_stream->Append(" :");
+                  else
+                     indented_output_stream->Append(")");
                }
                indented_output_stream->Append(soc);
                indented_output_stream->Append("begin");
@@ -1423,6 +1534,14 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                indented_output_stream->Append(scc1);
                indented_output_stream->Append("end");
                indented_output_stream->Append(scc);
+            }
+         }
+         if(!unique_transition)
+         {
+            if(unique_case_condition)
+            {
+               indented_output_stream->Append(scc1);
+               indented_output_stream->Append("endcase\n");
             }
          }
       }
