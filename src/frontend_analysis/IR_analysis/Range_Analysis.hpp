@@ -197,6 +197,8 @@ class RealRange : public Range
    RangeRef Ne(RangeConstRef other, bw_t bw) const override;
    RangeRef intersectWith(RangeConstRef other) const override;
    RangeRef unionWith(RangeConstRef other) const override;
+   RangeRef toFloat64() const;
+   RangeRef toFloat32() const;
 };
 
 class RangeAnalysis : public ApplicationFrontendFlowStep

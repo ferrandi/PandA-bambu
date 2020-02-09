@@ -3092,6 +3092,67 @@ RangeRef RealRange::unionWith(RangeConstRef other) const
    return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), fractional->unionWith(rrOther->fractional)));
 }
 
+RangeRef RealRange::toFloat64() const
+{
+   if(getBitWidth() == 64)
+   {
+      return RangeRef(this->clone());
+   }
+
+   RangeRef exponent64;
+   // Denormalized case
+   if(exponent->isConstant() && exponent->getUnsignedMin() == 0)
+   {
+      exponent64.reset(new Range(Regular, 11, 0, 0));
+   }
+   else if(exponent->isFullSet())
+   {
+      exponent64.reset(new Range(Regular, 11));
+   }
+   else
+   {
+      exponent64.reset(new Range(Regular, 11, truncExt(exponent->getUnsignedMin() - 127 + 1023, 11, true), truncExt(exponent->getUnsignedMax() - 127 + 1023, 11, true)));
+   }
+
+   return RangeRef(new RealRange(sign, 
+      exponent64, 
+      fractional->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
+}
+
+RangeRef RealRange::toFloat32() const
+{
+   if(getBitWidth() == 32)
+   {
+      return RangeRef(this->clone());
+   }
+
+   RangeRef exponent32;
+   RangeRef fractional32 = fractional->shr(RangeRef(new Range(Regular, 52, 29, 29)), false)->zextOrTrunc(23);
+   const auto min = exponent->getUnsignedMin() - 1023 + 127;
+   const auto max = exponent->getUnsignedMax() - 1023 + 127;
+   if(min < 0 && max > getMaxValue(8))
+   {
+      exponent32.reset(new Range(Regular, 8));
+   }
+   else if(exponent->isConstant() && min < 0)
+   {
+      exponent32.reset(new Range(Regular, 8, 0, 0));
+   }
+   else if(exponent->isConstant() && max >= getMaxValue(8))
+   {
+      exponent32.reset(new Range(Regular, 8, -1, -1));
+      fractional32.reset(new Range(Regular, 23, 0, 0));
+   }
+   else
+   {
+      exponent32.reset(new Range(Regular, 8, truncExt(std::max(min, APInt(0)), 8, true), truncExt(std::min(max, APInt(255)), 8, true)));
+   }
+
+   return RangeRef(new RealRange(sign, 
+      exponent32,
+      fractional32));
+}
+
 
 // ========================================================================== //
 // VarNode
@@ -3762,7 +3823,7 @@ RangeRef PhiOp::eval() const
    // Iterate over the sources of the phiop
    for(const VarNode* varNode : sources)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "->" + varNode->getRange()->ToString() + " " + varNode->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "->" + varNode->ToString());
       result = result->unionWith(varNode->getRange());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--= " + result->ToString());
@@ -3979,8 +4040,12 @@ RangeRef UnaryOp::eval() const
       case view_convert_expr_K:
          result = rr->getRange()->zextOrTrunc(bw);
          break;
+      case nop_expr_K:
+         THROW_ASSERT(bw == 32 || bw == 64, "Unhandled floating point bitwidth (" + STR(bw) + ")");
+         result = bw == 32 ? rr->toFloat32() : rr->toFloat64();
+         break;
       
-      case addr_expr_K:case abs_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case nop_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+      case addr_expr_K:case abs_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
       case assert_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case eq_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case ge_expr_K:case gt_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case le_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ne_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:

@@ -319,7 +319,7 @@ BOOST_AUTO_TEST_CASE( range_not )
     RangeRef pos(new Range(Regular, 8, 0b00001010, 0b00010100));
     RangeRef neg(new Range(Regular, 8, 0b11000001, 0b11110000));
     RangeRef mix(new Range(Regular, 8, 0b10101000, 0b00001101));
-    RangeRef anti(new Range(Anti, 8, ((int8_t)0b10101000), 0b00001101));
+    RangeRef anti(new Range(Anti, 8, static_cast<int8_t>(0b10101000), 0b00001101));
 
     auto notPos = pos->Not();
     BOOST_REQUIRE_EQUAL(0b11101011, notPos->getUnsignedMin());
@@ -330,7 +330,7 @@ BOOST_AUTO_TEST_CASE( range_not )
     BOOST_REQUIRE_EQUAL(0b00111110, notNeg->getSignedMax());
 
     auto notMix = mix->Not();
-    BOOST_REQUIRE_EQUAL(((int8_t)0b11110010), notMix->getSignedMin());
+    BOOST_REQUIRE_EQUAL(static_cast<int8_t>(0b11110010), notMix->getSignedMin());
     BOOST_REQUIRE_EQUAL(0b01010111, notMix->getSignedMax());
 
     auto notAnti = anti->Not();
@@ -430,6 +430,9 @@ BOOST_AUTO_TEST_CASE( real_range )
 {
     RangeRef stdFullRange(new Range(Regular, 32));
     RangeRef stdFullRange64(new Range(Regular, 64));
+    RealRange constFloat64(Range(Regular, 1, 0, 0), Range(Regular, 11, 0b10000000001, 0b10000000001), Range(Regular, 52, 0b1110000000000000000000000000000000000000000000000000, 0b1110000000000000000000000000000000000000000000000000));
+    RealRange constDouble(Range(Regular, 1, 0, 0), Range(Regular, 11, 0b10100000001, 0b10100000001), Range(Regular, 52, 0b1110000000000000000000000000000000000000000000000000, 0b1110000000000000000000000000000000000000000000000000));
+    RealRange constFloat32(Range(Regular, 1, 0, 0), Range(Regular, 8, 0b10000001, 0b10000001), Range(Regular, 23, 0b11100000000000000000000, 0b11100000000000000000000));
 
     RealRange float64(stdFullRange64);
     BOOST_REQUIRE(float64.getSign()->isFullSet());
@@ -448,4 +451,25 @@ BOOST_AUTO_TEST_CASE( real_range )
     auto view_convert64 = float64.getRange();
     BOOST_REQUIRE_EQUAL(64, view_convert64->getBitWidth());
     BOOST_REQUIRE(view_convert64->isFullSet());
+
+    auto cast32to64 = RefcountCast<const RealRange>(float32.toFloat64());
+    BOOST_REQUIRE_EQUAL(64, cast32to64->getBitWidth());
+    BOOST_REQUIRE(!cast32to64->isFullSet());
+    BOOST_REQUIRE(cast32to64->getExponent()->isFullSet());
+    BOOST_REQUIRE(cast32to64->getSign()->isFullSet());
+
+    auto cast64to32 = float64.toFloat32();
+    BOOST_REQUIRE_EQUAL(32, cast64to32->getBitWidth());
+    BOOST_REQUIRE(cast64to32->isFullSet());
+
+    auto const64To32 = constFloat64.toFloat32();
+    auto const32To64 = constFloat32.toFloat64();
+    BOOST_REQUIRE(constFloat32.isSameRange(const64To32));
+    BOOST_REQUIRE(constFloat64.isSameRange(const32To64));
+
+    auto constDoubleToFloat = RefcountCast<const RealRange>(constDouble.toFloat32());
+    BOOST_REQUIRE(constDoubleToFloat->isConstant());
+    BOOST_REQUIRE_EQUAL(0, constDoubleToFloat->getSign()->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(0b11111111, constDoubleToFloat->getExponent()->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0, constDoubleToFloat->getFractional()->getUnsignedMin());
 }
