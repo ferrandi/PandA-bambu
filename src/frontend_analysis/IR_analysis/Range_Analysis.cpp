@@ -86,6 +86,8 @@
 #define RA_JUMPSET
 //    #define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
 #define INTEGER_PTR                 // Pointers are considered as integers
+#define BITVALUE_UPDATE             // Read/write bitvalue information during the analysis
+//    #define READ_ONLY                         // Do not update IR after the analysis
 
 #ifndef NDEBUG
 //    #define DEBUG_RANGE_OP
@@ -265,6 +267,7 @@ namespace
       return {s, e, f};
    }
 
+   #ifdef BITVALUE_UPDATE
    std::string range_to_bits(const long long min, const long long max, bw_t bw)
    {
       long long mix = min | max;
@@ -286,6 +289,7 @@ namespace
       }
       return bits.str();
    }
+   #endif
 
    kind op_inv(kind op)
    {
@@ -752,7 +756,9 @@ namespace
 
       const auto type = getGIMPLE_Type(tn);
       bw_t bw = static_cast<bw_t>(tree_helper::Size(type));
+      #ifdef BITVALUE_UPDATE
       bool sign = false;
+      #endif
       THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
       APInt min, max;
       if(const auto* ic = GetPointer<const integer_cst>(tn))
@@ -772,13 +778,17 @@ namespace
       }
       else if(const auto* it = GetPointer<const integer_type>(type))
       {
+         #ifdef BITVALUE_UPDATE
          sign = !it->unsigned_flag;
+         #endif
          min = it->unsigned_flag ? getMinValue(bw) : getSignedMinValue(bw);
          max = it->unsigned_flag ? getMaxValue(bw) : getSignedMaxValue(bw);
       }
       else if(const auto* et = GetPointer<const enumeral_type>(type))
       {
+         #ifdef BITVALUE_UPDATE
          sign = !et->unsigned_flag;
+         #endif
          min = et->unsigned_flag ? getMinValue(bw) : getSignedMinValue(bw);
          max = et->unsigned_flag ? getMaxValue(bw) : getSignedMaxValue(bw);
       }
@@ -827,6 +837,7 @@ namespace
          THROW_UNREACHABLE("Unable to define range for type " + type->get_kind_text() + " of " + tn->ToString());
       }
 
+      #ifdef BITVALUE_UPDATE
       if(const auto* ssa = GetPointer<const ssa_name>(tn))
       {
          if(!ssa->bit_values.empty())
@@ -854,6 +865,7 @@ namespace
             max = truncExt(max, bw, sign);
          }
       }
+      #endif
       return RangeRef(new Range(Regular, bw, min, max));
    }
 }
@@ -3224,6 +3236,12 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
+   bool updateIR(tree_managerRef TM, tree_manipulationRef tree_man
+   #ifndef NDEBUG
+   , int debug_level
+   #endif
+   );
+
    /// Pretty print.
    void print(std::ostream& OS) const;
    std::string ToString() const;
@@ -3286,6 +3304,182 @@ void VarNode::init(bool outside)
          }
       }
    }
+}
+
+bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
+   #ifndef NDEBUG
+   , int debug_level
+   #endif
+   )
+{
+   const auto ssa_node = TM->GetTreeReindex(GET_INDEX_CONST_NODE(V));
+   auto* SSA = GetPointer<ssa_name>(GET_NODE(ssa_node));
+   if(SSA == nullptr)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Constant node " + GET_CONST_NODE(V)->ToString());
+      return false;
+   }
+   if(interval->isUnknown())
+   {
+      return false;
+   }
+
+   if(SSA->range != nullptr)
+   {
+      if(SSA->range->isSameRange(interval))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Fixed range " + SSA->range->ToString() + " for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+         return false;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
+         "Modified range " + SSA->range->ToString() + " to " + interval->ToString() + " for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+   }
+   else
+   {
+      if(interval->isFullSet() || interval->isAnti() || interval->isEmpty())
+      {
+         return false;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + " for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+   }
+
+   const bool isSigned = isSignedType(SSA->type);
+   auto getConstNode = [&] (RangeRef range) {
+      long long cst_val;
+      tree_nodeRef cst;
+      if(range->isReal())
+      {
+         const auto rRange = RefcountCast<const RealRange>(range);
+         if(rRange->getBitWidth() == 32)
+         {
+            union vcFloat vc;
+            #if __BYTE_ORDER == __BIG_ENDIAN
+            vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint8_t>();
+            vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint32_t>();
+            #else
+            vc.bits.coded = ((rRange->getSign()->getUnsignedMax() << 31) + (rRange->getExponent()->getUnsignedMax() << 23) + rRange->getFractional()->getUnsignedMax()).convert_to<int32_t>();
+            #endif
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
+            cst_val = vc.bits.coded;
+            cst = tree_man->CreateRealCst(SSA->type, static_cast<long double>(vc.flt), TM->new_tree_node_id());
+         }
+         else
+         {
+            union vcDouble vc;
+            #if __BYTE_ORDER == __BIG_ENDIAN
+            vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint16_t>();
+            vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint64_t>();
+            #else
+            vc.bits.coded = ((rRange->getSign()->getUnsignedMax() << 63) + (rRange->getExponent()->getUnsignedMax() << 52) + rRange->getFractional()->getUnsignedMax()).convert_to<int64_t>();
+            #endif
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
+            cst_val = vc.bits.coded;
+            cst = tree_man->CreateRealCst(SSA->type, static_cast<long double>(vc.dub), TM->new_tree_node_id());
+         }
+      }
+      else
+      {
+         const auto cst_value = (isSigned ? range->getSignedMax() : range->getUnsignedMax()).convert_to<long long>();
+         cst_val = cst_value;
+         cst = tree_man->CreateIntegerCst(SSA->type, cst_value, TM->new_tree_node_id());
+      }
+      return std::make_pair(cst_val, cst);
+   };
+
+   auto resetRange = [] (ssa_name* ssa, bw_t
+      #ifdef BITVALUE_UPDATE
+      bw
+      #endif
+      )
+   {
+      ssa->max.reset();
+      ssa->min.reset();
+      ssa->range.reset();
+      #ifdef BITVALUE_UPDATE
+      ssa->bit_values = bitstring_to_string(create_u_bitstring(bw));
+      #endif
+   };
+
+   if(interval->isConstant())
+   {
+      const auto [cst_val, cst_node] = getConstNode(interval);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing variable with " + GET_CONST_NODE(cst_node)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      const auto useStmts = SSA->CGetUseStmts();
+      for(const auto& use : useStmts)
+      {
+         #ifndef NDEBUG
+         auto dbg_conversion = GET_CONST_NODE(use.first)->ToString() + " -> ";
+         #endif
+         tree_nodeRef lhs = nullptr;
+         if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(use.first)))
+         {
+            lhs = ga->op0;
+         }
+         else if(const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(use.first)))
+         {
+            lhs = gp->res;
+         }
+         if(lhs != nullptr && static_cast<bool>(tree_helper::ComputeSsaUses(lhs).count(ssa_node)))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + "Left hand side variable can't be replaced by a constant");
+            continue;
+         }
+         TM->ReplaceTreeNode(use.first, ssa_node, cst_node);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + GET_CONST_NODE(use.first)->ToString());
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      #ifdef BITVALUE_UPDATE
+      SSA->bit_values = bitstring_to_string(create_bitstring_from_constant(cst_val, interval->getBitWidth(), isSigned));
+      #endif
+   }
+   else if(interval->isReal())
+   {
+      // Nothing to set for real variables
+   }
+   else if(interval->isAnti() || interval->isEmpty())
+   {
+      THROW_ASSERT(SSA->range, "");
+      if(SSA->range->isRegular())
+      {
+         const auto bw = getGIMPLE_BW(ssa_node);
+         resetRange(SSA, bw);
+      }
+   }
+   else if(interval->isFullSet())
+   {
+      const auto bw = getGIMPLE_BW(ssa_node);
+      resetRange(SSA, bw);
+   }
+   else
+   {
+      const auto type_id = GET_INDEX_CONST_NODE(SSA->type);
+      long long min, max;
+      if(isSigned)
+      {
+         min = interval->getSignedMin().convert_to<long long>();
+         max = interval->getSignedMax().convert_to<long long>();
+      }
+      else
+      {
+         min = interval->getUnsignedMin().convert_to<long long>();
+         max = interval->getUnsignedMax().convert_to<long long>();
+      }
+      #ifdef BITVALUE_UPDATE
+      if(SSA->bit_values.empty())
+      {
+         SSA->bit_values = range_to_bits(min, max, interval->getBitWidth());
+      }
+      #endif
+      SSA->min = TM->CreateUniqueIntegerCst(min, type_id);
+      SSA->max = TM->CreateUniqueIntegerCst(max, type_id);
+   }
+
+   SSA->range = interval;
+   return true;
 }
 
 /// Pretty print.
@@ -4636,8 +4830,8 @@ TernaryOp::TernaryOp(refcount<BasicInterval> _intersect, VarNode* _sink, const t
    THROW_ASSERT(ga, "TernaryOp associated statement should be a gimple_assign " + GET_CONST_NODE(_inst)->ToString());
    const auto* I = GetPointer<const ternary_expr>(GET_CONST_NODE(ga->op1));
    THROW_ASSERT(I, "TernaryOp operator should be a ternary_expr");
-   THROW_ASSERT(_sink->getBitWidth() == _source2->getBitWidth(), "Operator bitwidth mismatch");
-   THROW_ASSERT(_sink->getBitWidth() == _source3->getBitWidth(), "Operator bitwidth mismatch");
+   THROW_ASSERT(_sink->getBitWidth() >= _source2->getBitWidth(), "Operator bitwidth overflow (sink= " + STR(_sink->getBitWidth()) + ", op2= " + STR(_source2->getBitWidth()) + ")");
+   THROW_ASSERT(_sink->getBitWidth() >= _source3->getBitWidth(), "Operator bitwidth overflow (sink= " + STR(_sink->getBitWidth()) + ", op3= " + STR(_source3->getBitWidth()) + ")");
    #endif
 }
 
@@ -8276,151 +8470,34 @@ void RangeAnalysis::Initialize()
 
 bool RangeAnalysis::finalize()
 {
+   #ifndef READ_ONLY
    const auto& vars = CG->getVars();
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
-   bool modified = false;
    CustomSet<unsigned int> updatedFunctions;
-   auto updateSSALimits = [&](tree_nodeRef ssa_node, unsigned int function_id)
-   {
-      auto* ssa = GetPointer<ssa_name>(GET_NODE(ssa_node));
-      bool isSigned = isSignedType(ssa->type);
-      if(ssa->range->isConstant())
-      {
-         tree_nodeRef cst;
-         if(ssa->range->isReal())
-         {
-            const auto rRange = RefcountCast<const RealRange>(ssa->range);
-            if(rRange->getBitWidth() == 32)
-            {
-               union vcFloat vc;
-               #if __BYTE_ORDER == __BIG_ENDIAN
-               vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
-               vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint8_t>();
-               vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint32_t>();
-               #else
-               vc.bits.coded = ((rRange->getSign()->getUnsignedMax()<<31) + (rRange->getExponent()->getUnsignedMax()<<23) + rRange->getFractional()->getUnsignedMax()).convert_to<int32_t>();
+
+   #ifndef NDEBUG
+   unsigned long long updated = 0;
                #endif
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
-               cst = tree_man->CreateRealCst(ssa->type, static_cast<long double>(vc.flt), TM->new_tree_node_id());
-            }
-            else
-            {
-               union vcDouble vc;
-               #if __BYTE_ORDER == __BIG_ENDIAN
-               vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
-               vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint16_t>();
-               vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint64_t>();
-               #else
-               vc.bits.coded = ((rRange->getSign()->getUnsignedMax()<<63) + (rRange->getExponent()->getUnsignedMax()<<52) + rRange->getFractional()->getUnsignedMax()).convert_to<int64_t>();
-               #endif
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
-               cst = tree_man->CreateRealCst(ssa->type, static_cast<long double>(vc.dub), TM->new_tree_node_id());
-            }
-         }
-         else
-         {
-            const auto cst_value = (isSigned ? ssa->range->getSignedMax() : ssa->range->getUnsignedMax()).convert_to<long long>();
-            cst = tree_man->CreateIntegerCst(ssa->type, cst_value, TM->new_tree_node_id());
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing variable with " + GET_CONST_NODE(cst)->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-         const auto useStmts = ssa->CGetUseStmts();
-         for(const auto& use : useStmts)
+   for(const auto& [var, node] : vars)
          {
+      if(node->updateIR(TM, tree_man
             #ifndef NDEBUG
-            auto dbg_conversion = GET_CONST_NODE(use.first)->ToString() + " -> ";
+         , debug_level
             #endif
-            if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(use.first)))
-            if(static_cast<bool>(tree_helper::ComputeSsaUses(ga->op0).count(ssa_node)))
+         ))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + "Left hand side variable can't be replaced by a constant");
-               continue;
-            }
-            TM->ReplaceTreeNode(use.first, ssa_node, cst);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + GET_CONST_NODE(use.first)->ToString());
-         }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-         updatedFunctions.insert(function_id);
-
+         updatedFunctions.insert(node->getFunctionId());
          #ifndef NDEBUG
-         AppM->RegisterTransformation(GetName(), cst);
-         #endif
-      }
-      else if(!ssa->range->isReal() && !ssa->range->isUnknown() && !ssa->range->isEmpty())
-      {
-         if(ssa->range->isFullSet())
-         {
-            ssa->min = nullptr;
-            ssa->max = nullptr;
-            ssa->bit_values = bitstring_to_string(create_u_bitstring(getGIMPLE_BW(ssa_node)));
-         }
-         else
-         {
-            auto type_id = GET_INDEX_CONST_NODE(ssa->type);
-            long long min, max;
-            if(isSigned)
-            {
-               min = ssa->range->getSignedMin().convert_to<long long>();
-               max = ssa->range->getSignedMax().convert_to<long long>();
-            }
-            else
-            {
-               min = ssa->range->getUnsignedMin().convert_to<long long>();
-               max = ssa->range->getUnsignedMax().convert_to<long long>();
-            }
-            if(ssa->bit_values.empty())
-            {
-               ssa->bit_values = range_to_bits(min, max, getGIMPLE_BW(ssa_node));
-            }
-            ssa->min = TM->CreateUniqueIntegerCst(min, type_id);
-            ssa->max = TM->CreateUniqueIntegerCst(max, type_id);
-         }
-
-         #ifndef NDEBUG
+         ++updated;
          AppM->RegisterTransformation(GetName(), nullptr);
          #endif
       }
-   };
-
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range results for " + STR(vars.size()) + " variables");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for(const auto& [var, node] : vars)
-   {
-      if(GetPointer<const cst_node>(GET_CONST_NODE(var)) != nullptr)
-      {
-         continue;
-      }
-      const auto ssaRef = TM->GetTreeReindex(GET_INDEX_CONST_NODE(var));
-      auto* ssa = GetPointer<ssa_name>(GET_NODE(ssaRef));
-      THROW_ASSERT(ssa, "Variable should be an ssa_name (" + GET_CONST_NODE(var)->get_kind_text() + " " + GET_CONST_NODE(var)->ToString() + ")");
-      auto range = node->getRange();
-      if(ssa->range)
-      {
-         if(!ssa->range->isSameRange(range))
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-               "Modified range " + ssa->range->ToString() + " to " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
-            ssa->range = range;
-            updateSSALimits(ssaRef, node->getFunctionId());
-            modified = true;
-         }
-         else
-         {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Fixed range " + ssa->range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
-         }
-      }
-      else
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + range->ToString() + " for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text());
-         ssa->range = range;
-         updateSSALimits(ssaRef, node->getFunctionId());
-         modified = true;
-      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range results for " + STR(vars.size()) + " variables applied");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds updated for " + STR(updated) + "/" + STR(vars.size()) + " variables");
    CG.reset();
 
    for(const auto fun_id : updatedFunctions)
@@ -8429,6 +8506,9 @@ bool RangeAnalysis::finalize()
       FB->UpdateBBVersion();
       FB->UpdateBitValueVersion();
    }
-
-   return modified;
+   return !updatedFunctions.empty();
+   #else
+   CG.reset();
+   return false;
+   #endif
 }
