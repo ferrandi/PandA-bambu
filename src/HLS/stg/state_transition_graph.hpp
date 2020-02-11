@@ -134,6 +134,9 @@ struct StateInfo : public NodeInfo
    /// set of moved operations ending in this state
    std::list<vertex> moved_ending_op;
 
+   /// ID of the loop this state belongs to
+   unsigned int loopId;
+
    /**
     * Implementation of print method for this kind of node. It simply prints the list of operations contained into this
     * state
@@ -144,7 +147,7 @@ struct StateInfo : public NodeInfo
    /**
     * Constructor
     */
-   StateInfo() : funId(0), is_dummy(false), is_duplicated(false), sourceBb(0), isOriginalState(false), clonedState(NULL_VERTEX), all_paths(false)
+   StateInfo() : funId(0), is_dummy(false), is_duplicated(false), sourceBb(0), isOriginalState(false), clonedState(NULL_VERTEX), all_paths(false), loopId(0)
    {
    }
 };

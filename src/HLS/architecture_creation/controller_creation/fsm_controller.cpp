@@ -194,8 +194,20 @@ void fsm_controller::create_state_machine(std::string& parse)
    std::map<vertex, std::vector<bool>> state_Xregs;
    std::map<unsigned int, unsigned int> wren_list;
    std::map<unsigned int, unsigned int> register_selectors;
+
+   std::map<unsigned int, std::list<vertex>> loop_map;
    for(const auto& v : working_list)
    {
+      auto info = astg->CGetStateInfo(v);
+      if(info->loopId != 0)
+      {
+         if(loop_map[info->loopId].size() == 0)
+         {
+            // create the proper dummy state which will interface the loop controller
+         }
+         loop_map[info->loopId].push_front(v);
+         continue;
+      }
       state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
       present_state[v] = std::vector<long long int>(out_num, 0);
@@ -347,6 +359,7 @@ void fsm_controller::create_state_machine(std::string& parse)
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    for(const auto& v : working_list)
    {
+      // for every loop controller set the proper transition depending on the done port
       if(HLS->STG->get_entry_state() == v or HLS->STG->get_exit_state() == v)
          continue;
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);

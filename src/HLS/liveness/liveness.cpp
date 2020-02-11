@@ -239,7 +239,30 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          int initiation_time = 1; // to be read from parser
          THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
          auto bbs = loop->get_blocks();
-         if(bbs.find(bb_1) != bbs.end() && bbs.find(bb_2) != bbs.end())
+         bool cond1 = false;
+         bool cond2 = false;
+         if(bbs.find(bb_1) != bbs.end())
+         {
+            cond1 = true;
+            for(auto s1 : op1_run)
+            {
+               auto info = HLS->STG->GetAstg()->GetStateInfo(s1);
+               THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
+               info->loopId = loop->GetId();
+            }
+         }
+         if(bbs.find(bb_2) != bbs.end())
+         {
+            cond2 = true;
+            for(auto s2 : op2_run)
+            {
+               auto info = HLS->STG->GetAstg()->GetStateInfo(s2);
+               THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
+               info->loopId = loop->GetId();
+            }
+         }
+
+         if(cond1 && cond2)
          {
             auto stg = HLS->STG->GetAstg();
             for(auto s1 : op1_run)
