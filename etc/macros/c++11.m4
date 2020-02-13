@@ -81,6 +81,7 @@ AC_DEFUN([AC_COMPILE_STDCXX_17], [
   CXXFLAGS="$CXXFLAGS -std=gnu++17"
   AC_TRY_COMPILE([
   #include <tuple>
+  #include <optional>
   #include <unordered_map>
   #include <unordered_set>
   template <typename T>
