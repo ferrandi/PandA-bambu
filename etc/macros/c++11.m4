@@ -5,6 +5,7 @@ AC_DEFUN([AC_COMPILE_STDCXX_17], [
   [AC_LANG_SAVE
   AC_LANG_CPLUSPLUS
   AC_TRY_COMPILE([
+  #include <optional>
   #include <tuple>
   #include <unordered_map>
   #include <unordered_set>
@@ -41,6 +42,7 @@ AC_DEFUN([AC_COMPILE_STDCXX_17], [
   ac_save_CXXFLAGS="$CXXFLAGS"
   CXXFLAGS="$CXXFLAGS -std=c++17"
   AC_TRY_COMPILE([
+  #include <optional>
   #include <tuple>
   #include <unordered_map>
   #include <unordered_set>
