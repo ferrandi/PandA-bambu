@@ -3015,8 +3015,8 @@ wire [BITSIZE_memory_addr_a-1:0] memory_addr_a_temp;
 wire [BITSIZE_memory_addr_b-1:0] memory_addr_b_temp;
 
 
-reg [BRAM_BITSIZE-1:0] din_a_temp;
-reg [BRAM_BITSIZE-1:0] din_b_temp;
+wire [BRAM_BITSIZE-1:0] din_a_temp;
+wire [BRAM_BITSIZE-1:0] din_b_temp;
 reg [BITSIZE_dout_a-1:0] dout_a 1INIT_ZERO_VALUE;
 reg [BITSIZE_dout_a-1:0] dout_a_registered 1INIT_ZERO_VALUE;
 reg [BITSIZE_dout_b-1:0] dout_b 1INIT_ZERO_VALUE;
@@ -3069,15 +3069,7 @@ generate
 genvar i0_a;
   for (i0_a=0; i0_a&lt;n_byte_on_databus; i0_a=i0_a+1)
   begin  : din_a_computation1
-    always @(we_a_temp[i0_a] or din_value_aggregated_temp[(i0_a+1)*8-1:i0_a*8] or memory_addr_a_temp
-//synthesis translate_off
-    or memory
-//synthesis translate_on
-    )
-      if (we_a_temp[i0_a])
-        din_a_temp[(i0_a+1)*8-1:i0_a*8] = din_value_aggregated_temp[(i0_a+1)*8-1:i0_a*8];
-      else
-        din_a_temp[(i0_a+1)*8-1:i0_a*8] = memory[memory_addr_a_temp][(i0_a+1)*8-1:i0_a*8];
+    assign din_a_temp[(i0_a+1)*8-1:i0_a*8] = we_a_temp[i0_a] ? din_value_aggregated_temp[(i0_a+1)*8-1:i0_a*8] : memory[memory_addr_a_temp][(i0_a+1)*8-1:i0_a*8];
   end
 endgenerate
 
@@ -3085,15 +3077,7 @@ generate
 genvar i0_b;
   for (i0_b=0; i0_b&lt;n_byte_on_databus &amp;&amp; n_bytes &gt; BRAM_BITSIZE/8; i0_b=i0_b+1)
   begin  : din_b_computation1
-    always @(we_b_temp[i0_b] or din_value_aggregated_temp[(i0_b+n_byte_on_databus+1)*8-1:(i0_b+n_byte_on_databus)*8] or memory_addr_b_temp
-//synthesis translate_off
-    or memory
-//synthesis translate_on
-    )
-      if (we_b_temp[i0_b])
-        din_b_temp[(i0_b+1)*8-1:i0_b*8] = din_value_aggregated_temp[(i0_b+n_byte_on_databus+1)*8-1:(i0_b+n_byte_on_databus)*8];
-      else
-        din_b_temp[(i0_b+1)*8-1:i0_b*8] = memory[memory_addr_b_temp][(i0_b+1)*8-1:i0_b*8];
+    assign din_b_temp[(i0_b+1)*8-1:i0_b*8] = we_b_temp[i0_b] ? din_value_aggregated_temp[(i0_b+n_byte_on_databus+1)*8-1:(i0_b+n_byte_on_databus)*8] : memory[memory_addr_b_temp][(i0_b+1)*8-1:i0_b*8];
   end
 endgenerate
 
@@ -3205,8 +3189,8 @@ wire [(PORTSIZE_memory_addr_a*BITSIZE_memory_addr_a)+(-1):0] memory_addr_a_temp;
 wire [PORTSIZE_bram_write-1:0] bram_write_temp;
 wire [(PORTSIZE_din_value_aggregated_swapped*BITSIZE_din_value_aggregated_swapped)+(-1):0] din_value_aggregated_swapped_temp;
 
-reg [BRAM_BITSIZE-1:0] din_a_0_temp;
-reg [BRAM_BITSIZE-1:0] din_a_1_temp;
+wire [BRAM_BITSIZE-1:0] din_a_0_temp;
+wire [BRAM_BITSIZE-1:0] din_a_1_temp;
 reg [BRAM_BITSIZE-1:0] dout_a_0 1INIT_ZERO_VALUE;
 reg [BRAM_BITSIZE-1:0] dout_a_1 1INIT_ZERO_VALUE;
 reg [BRAM_BITSIZE-1:0] dout_a_0_registered 1INIT_ZERO_VALUE;
@@ -3257,11 +3241,7 @@ generate
 genvar i0_0;
   for (i0_0=0; i0_0&lt;n_byte_on_databus/2; i0_0=i0_0+1)
   begin  : din_0_computation1
-    always @(we_a_temp or din_value_aggregated_swapped_temp or memory[memory_addr_a_0])
-      if (we_a_temp[i0_0])
-        din_a_0_temp[(i0_0+1)*8-1:i0_0*8] = din_value_aggregated_swapped_temp[(i0_0+1)*8+memory_offset-1:i0_0*8+memory_offset];
-      else
-        din_a_0_temp[(i0_0+1)*8-1:i0_0*8] = memory[memory_addr_a_0][(i0_0+1)*8-1:i0_0*8];
+    assign din_a_0_temp[(i0_0+1)*8-1:i0_0*8] = we_a_temp[i0_0] ? din_value_aggregated_swapped_temp[(i0_0+1)*8+memory_offset-1:i0_0*8+memory_offset] : memory[memory_addr_a_0][(i0_0+1)*8-1:i0_0*8];
   end
 endgenerate
 
@@ -3269,11 +3249,7 @@ generate
 genvar i0_1;
   for (i0_1=0; i0_1&lt;n_byte_on_databus/2; i0_1=i0_1+1)
   begin  : din_1_computation1
-    always @(we_a_temp or din_value_aggregated_swapped_temp or memory[memory_addr_a_1])
-      if (we_a_temp[i0_1+n_byte_on_databus/2])
-        din_a_1_temp[(i0_1+1)*8-1:i0_1*8] = din_value_aggregated_swapped_temp[2*BRAM_BITSIZE+(i0_1+1)*8+memory_offset-1:2*BRAM_BITSIZE+i0_1*8+memory_offset];
-      else
-        din_a_1_temp[(i0_1+1)*8-1:i0_1*8] = memory[memory_addr_a_1][(i0_1+1)*8-1:i0_1*8];
+    assign din_a_1_temp[(i0_1+1)*8-1:i0_1*8] = we_a_temp[i0_1+n_byte_on_databus/2] ? din_value_aggregated_swapped_temp[2*BRAM_BITSIZE+(i0_1+1)*8+memory_offset-1:2*BRAM_BITSIZE+i0_1*8+memory_offset] : memory[memory_addr_a_1][(i0_1+1)*8-1:i0_1*8];
   end
 endgenerate
   

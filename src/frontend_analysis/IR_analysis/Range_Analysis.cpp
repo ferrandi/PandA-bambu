@@ -6330,9 +6330,8 @@ class ConstraintGraph
          {
             kind pred = bin_op->get_kind();
             kind swappred = op_swap(pred);
-            auto bw = getGIMPLE_BW(variable);
             RangeRef CR = getGIMPLE_range(constant);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(bw) + " and constant value is " + constant->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(getGIMPLE_BW(variable)) + " and constant value is " + constant->ToString());
 
             auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
@@ -6379,9 +6378,11 @@ class ConstraintGraph
             kind pred = bin_op->get_kind();
             kind invPred = op_inv(pred);
 
-            auto bw0 = getGIMPLE_BW(bin_op->op0);
+            #if !defined(NDEBUG) or HAVE_ASSERTS
+            const auto bw0 = getGIMPLE_BW(bin_op->op0);
+            #endif
             #if HAVE_ASSERTS
-            auto bw1 = getGIMPLE_BW(bin_op->op1);
+            const auto bw1 = getGIMPLE_BW(bin_op->op1);
             THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
             #endif
 
@@ -6533,10 +6534,10 @@ class ConstraintGraph
 
             if(constant != nullptr)
             {
-               kind pred = cmp_op->get_kind();
-               kind swappred = op_swap(pred);
-               auto bw = getGIMPLE_BW(variable);
-               RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
+               const kind pred = cmp_op->get_kind();
+               const kind swappred = op_swap(pred);
+               const auto bw = getGIMPLE_BW(variable);
+               RangeConstRef CR(new Range(Regular, bw, constant->value, constant->value));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(bw) + " and constant value is " + STR(constant->value));
 
                const auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(cmp_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
@@ -6574,20 +6575,22 @@ class ConstraintGraph
             }
             else
             {
-               kind pred = cmp_op->get_kind();
-               kind invPred = op_inv(pred);
+               const kind pred = cmp_op->get_kind();
+               const kind invPred = op_inv(pred);
 
-               auto bw0 = getGIMPLE_BW(cmp_op->op0);
+               #if !defined(NDEBUG) or HAVE_ASSERTS
+               const auto bw0 = getGIMPLE_BW(cmp_op->op0);
+               #endif
                #if HAVE_ASSERTS
-               auto bw1 = getGIMPLE_BW(cmp_op->op1);
+               const auto bw1 = getGIMPLE_BW(cmp_op->op1);
                THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
                #endif
 
-               RangeRef CR = getUnknownFor(cmp_op->op0);
+               const auto CR = getUnknownFor(cmp_op->op0);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
 
                // Symbolic intervals for op0
-               auto STOp0 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
+               const auto STOp0 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
                switchSSAMap[cmp_op->op0].push_back(std::make_pair(STOp0, BBI));
 
                // Symbolic intervals for operand of op0 (if op0 is a cast instruction)
@@ -6599,13 +6602,13 @@ class ConstraintGraph
                      const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression" + cast_inst->ToString());
 
-                     auto STOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
+                     const auto STOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op1, pred));
                      switchSSAMap[cast_inst->op].push_back(std::make_pair(STOp0_0, BBI));
                   }
                }
 
                // Symbolic intervals for op1
-               auto STOp1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, invPred));
+               const auto STOp1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, invPred));
                switchSSAMap[cmp_op->op1].push_back(std::make_pair(STOp1, BBI));
 
                // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
@@ -6617,7 +6620,7 @@ class ConstraintGraph
                      const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
-                     auto STOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, pred));
+                     const auto STOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, pred));
                      switchSSAMap[cast_inst->op].push_back(std::make_pair(STOp1_1, BBI));
                   }
                }
@@ -7981,8 +7984,7 @@ class ConstraintGraph
          // I decided NOT to insert these uncovered
          // values to the node set after their range
          // is created here.
-         auto bw = getGIMPLE_BW(v);
-         THROW_ASSERT(static_cast<bool>(bw), "Invalid bitwidth");
+         THROW_ASSERT(static_cast<bool>(getGIMPLE_BW(v)), "Invalid bitwidth");
          if(GetPointer<const cst_node>(GET_CONST_NODE(v)))
          {
             return getGIMPLE_range(v);
@@ -8359,10 +8361,11 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
-   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false), requireESSA(false) // ESSA disabled because of renaming issues in some cases
+   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false)
 #ifndef NDEBUG
    , iteration(0), read_only(false)
 #endif
+   , requireESSA(false) // ESSA disabled because of renaming issues in some cases
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto ra_mode = parameters->getOption<const CustomSet<std::string>>(OPT_range_analysis_mode);
