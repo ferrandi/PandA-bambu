@@ -208,8 +208,10 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    bool dead_code_restart;
 
 #ifndef NDEBUG
-   unsigned iteration = 0;
+   unsigned iteration;
+   bool read_only;
 #endif
+   bool requireESSA;
 
    bool finalize();
 

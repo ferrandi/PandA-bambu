@@ -8336,9 +8336,23 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
-   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false)
+   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false), requireESSA(false) // ESSA disabled because of renaming issues in some cases
+#ifndef NDEBUG
+   , iteration(0), read_only(false)
+#endif
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   const auto ra_mode = parameters->getOption<const CustomSet<std::string>>(OPT_range_analysis_mode);
+   #ifndef NDEBUG
+   if(ra_mode.contains("ro"))
+   {
+      read_only = true;
+   }
+   #endif
+   if(ra_mode.contains("noESSA"))
+   {
+      requireESSA = false;
+   }
 }
 
 RangeAnalysis::~RangeAnalysis() = default;
@@ -8352,7 +8366,10 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
-         //    relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));              // Disabled because of renaming issues in some cases
+         if(requireESSA)
+         {
+            relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
+         }
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          break;
