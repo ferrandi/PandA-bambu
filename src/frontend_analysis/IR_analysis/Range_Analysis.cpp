@@ -1106,7 +1106,7 @@ bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
 {
    return sign ? std::max(32 - countLeadingOnes(a > 0 ? (-a-1) : a, 32) + 1, 32 - countLeadingOnes(b > 0 ? (-b-1) : b, 32) + 1) 
    	: std::max(32 - countLeadingZeros(a, 32), 32 - countLeadingZeros(b, 32));
-      }
+}
 
 RangeRef Range::getAnti() const
 {
@@ -1174,8 +1174,8 @@ APInt Range::getSignedMin() const
    {
       return l < minS ? minS : l;
    }
-         return minS;
-      }
+   return minS;
+}
 
 APInt Range::getUnsignedMax() const
 {
@@ -1452,12 +1452,12 @@ RangeRef Range::mul(RangeConstRef other) const
    if(SR->isFullSet())
    {
       return UR;
-}
+   }
    if(UR->isFullSet())
    {
       return SR;
    }
-
+   
    const auto uSpan = UR->isAnti() ? std::numeric_limits<APInt>::max() : (UR->getUpper() - UR->getLower());
    const auto sSpan = SR->isAnti() ? std::numeric_limits<APInt>::max() : (SR->getUpper() - SR->getLower());
    return boost::multiprecision::abs(uSpan) < boost::multiprecision::abs(sSpan) ? UR : SR;
@@ -2495,36 +2495,79 @@ RangeRef Range::abs() const
 RangeRef Range::truncate(bw_t bitwidth) const
 {
    THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   if(isEmpty() || isUnknown())
+   if(isEmpty())
+   {
+      return RangeRef(new Range(Empty, bitwidth));
+   }
+   if(isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bitwidth));
+   }
+   const auto a = this->getSignedMin();
+   const auto b = this->getSignedMax();
+   if(isFullSet() || isAnti() || boost::multiprecision::abs(b - a) > getMaxValue(bitwidth))
+   {
+      return RangeRef(new Range(Regular, bitwidth));
+   }
+   if(bitwidth == bw)
    {
       return RangeRef(this->clone());
    }
-
-   const auto maxupper = getSignedMaxValue(bitwidth);
-   const auto maxlower = getSignedMinValue(bitwidth);
-
-   // Check if source range is contained by max bit range
-   if(!this->isAnti() && l >= maxlower && u <= maxupper)
+   
+   const auto stmin = truncExt(a, bitwidth, true);
+   const auto stmax = truncExt(b, bitwidth, true);
+   
+   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)   // Zero crossing range
    {
-      return RangeRef(new Range(Regular, bitwidth, l, u));
+      if(stmax < 0)  // overflow
+      {
+         if(stmax >= stmin)
+         {
+            return RangeRef(new Range(Regular, bitwidth));
+         }
+         return RangeRef(new Range(Anti, bitwidth, stmax + 1, (stmin < 0 ? stmin : 0) - 1));
+      }
+      if(stmin > 0)  // underflow
+      {
+         if(stmax >= stmin)
+         {
+            return RangeRef(new Range(Regular, bitwidth));
+         }
+         return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+      }
    }
-
-   return RangeRef(new Range(Regular, bitwidth, maxlower, maxupper));
+   else if((signbit(a) != signbit(stmin)) ^ (signbit(b) != signbit(stmax)))   // Non zero crossing range
+   {
+      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+   }
+   
+   if(stmin > stmax)
+   {
+      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+   }
+   return RangeRef(new Range(Regular, bitwidth, stmin, stmax));
 }
 
 RangeRef Range::sextOrTrunc(bw_t bitwidth) const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   auto from_bw = bw;
-   if(isEmpty() || isUnknown())
+   if(bitwidth < bw)
    {
-      return RangeRef(this->clone());
+      return truncate(bitwidth);
+   }
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty())
+   {
+      return RangeRef(new Range(Empty, bitwidth));
+   }
+   if(isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bitwidth));
    }
 
-   auto this_min = from_bw == 1 ? getUnsignedMin() : getSignedMin();
-   auto this_max = from_bw == 1 ? getUnsignedMax() : getSignedMax();
+   const auto this_min = bw == 1 ? getUnsignedMin() : this->getSignedMin();
+   const auto this_max = bw == 1 ? getUnsignedMax() : this->getSignedMax();
    
-   auto [min, max] = std::minmax(truncExt(this_min, bitwidth, true), truncExt(this_max, bitwidth, true));
+   const auto [min, max] = std::minmax(truncExt(this_min, bitwidth, true), truncExt(this_max, bitwidth, true));
    RangeRef sextRes(new Range(Regular, bitwidth, min, max));
    if(sextRes->isFullSet())
    {
@@ -2535,22 +2578,29 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
 
 RangeRef Range::zextOrTrunc(bw_t bitwidth) const
 {
+   if(bitwidth < bw)
+   {
+      return truncate(bitwidth);
+   }
    THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   if(isEmpty() || isUnknown())
+   if(isEmpty())
    {
-      return RangeRef(this->clone());
+      return RangeRef(new Range(Empty, bitwidth));
+   }
+   if(isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bitwidth));
+   }
+   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
+   {
+      return RangeRef(new Range(Regular, bitwidth, 0, getMaxValue(bw)));
    }
 
-   auto this_min = getUnsignedMin();
-   auto this_max = getUnsignedMax();
-
-   auto [min, max] = std::minmax(truncExt(this_min, bitwidth, false), truncExt(this_max, bitwidth, false));
-   RangeRef zextRes(new Range(Regular, bitwidth, min, max));
-   if(zextRes->isFullSet())
+   if(this->getSignedMax() < 0)
    {
-      return RangeRef(new Range(Regular, bitwidth));
+      return RangeRef(new Range(Regular, bitwidth, truncExt(this->getSignedMax(), bw, false), truncExt(this->getSignedMin(), bw, false)));
    }
-   return zextRes;
+   return RangeRef(new Range(Regular, bitwidth, truncExt(this->getSignedMin(), bw, false), truncExt(this->getSignedMax(), bw, false)));
 }
 
 RangeRef Range::intersectWith(RangeConstRef other) const
@@ -3235,7 +3285,7 @@ VarNode::VarNode(const tree_nodeConstRef _V, unsigned int _function_id) : V(_V),
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
    interval = getUnknownFor(_V);
-   }
+}
 
 /// The dtor.
 VarNode::~VarNode() = default;
@@ -4125,7 +4175,7 @@ RangeRef UnaryOp::eval() const
             {
                result = oprnd->abs();
             }
-         break;
+            break;
          }
          case bit_not_expr_K:
          {
@@ -4183,46 +4233,46 @@ RangeRef UnaryOp::eval() const
       auto rr = RefcountCast<RealRange>(oprnd);
       switch (this->getOpcode())
       {
-      case bit_and_expr_K:
+         case bit_and_expr_K:
          {
-         result = rr->getFractional()->zextOrTrunc(bw);
-         break;
+            result = rr->getFractional()->zextOrTrunc(bw);
+            break;
          }
-      case rshift_expr_K:
+         case rshift_expr_K:
          {
-         result = rr->getExponent()->zextOrTrunc(bw);
-         break;
+            result = rr->getExponent()->zextOrTrunc(bw);
+            break;
          }
-      case lt_expr_K:
+         case lt_expr_K:
          {
-         result = rr->getSign()->zextOrTrunc(bw);
-         break;
+            result = rr->getSign()->zextOrTrunc(bw);
+            break;
          }
-      case view_convert_expr_K:
+         case view_convert_expr_K:
          {
-         result = rr->getRange()->zextOrTrunc(bw);
-         break;
+            result = rr->getRange()->zextOrTrunc(bw);
+            break;
          }
-      case nop_expr_K:
+         case nop_expr_K:
          {
-         THROW_ASSERT(bw == 32 || bw == 64, "Unhandled floating point bitwidth (" + STR(bw) + ")");
-         result = bw == 32 ? rr->toFloat32() : rr->toFloat64();
-         break;
+            THROW_ASSERT(bw == 32 || bw == 64, "Unhandled floating point bitwidth (" + STR(bw) + ")");
+            result = bw == 32 ? rr->toFloat32() : rr->toFloat64();
+            break;
          }
-      case addr_expr_K:case abs_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
-      case assert_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case eq_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case ge_expr_K:case gt_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case le_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ne_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
-      case CASE_TERNARY_EXPRESSION:
-      case CASE_QUATERNARY_EXPRESSION:
-      case CASE_TYPE_NODES:
-      case CASE_CST_NODES:
-      case CASE_DECL_NODES:
-      case CASE_FAKE_NODES:
-      case CASE_GIMPLE_NODES:
-      case CASE_PRAGMA_NODES:
-      case CASE_CPP_NODES:
-      case CASE_MISCELLANEOUS:
-      default:
-         THROW_UNREACHABLE("Unhandled unary operation for real case");
+         case addr_expr_K:case abs_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+         case assert_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case eq_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case ge_expr_K:case gt_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case le_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ne_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_TYPE_NODES:
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case CASE_FAKE_NODES:
+         case CASE_GIMPLE_NODES:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_MISCELLANEOUS:
+         default:
+            THROW_UNREACHABLE("Unhandled unary operation for real case");
       }
    }
    THROW_ASSERT(result, "Result should be set now");
@@ -6380,7 +6430,7 @@ class ConstraintGraph
 
                   auto STOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, pred));
                   auto SFOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, invPred));
-               
+
                   ValueBranchMap VBMOp1_1(cast_inst->op, TrueBBI, FalseBBI, STOp1_1, SFOp1_1);
                   valuesBranchMap.insert(std::make_pair(cast_inst->op, VBMOp1_1));
                }
@@ -8483,7 +8533,7 @@ bool RangeAnalysis::finalize()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(const auto& [var, node] : vars)
-         {
+   {
       if(node->updateIR(TM, tree_man
             #ifndef NDEBUG
          , debug_level

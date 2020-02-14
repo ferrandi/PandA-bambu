@@ -426,6 +426,104 @@ BOOST_AUTO_TEST_CASE( range_ge )
     BOOST_REQUIRE(zeroOne->isSameRange(ugeZeroOneOne));
 }
 
+BOOST_AUTO_TEST_CASE( range_truncate )
+{
+    RangeRef contained(new Range(Regular, 8, 0b11111001, 0b00001010));
+    RangeRef lowwrap(new Range(Regular, 8, 0b11101101, 0b00001010));
+    RangeRef upwrap(new Range(Regular, 8, 0b11111111, 0b00011000));
+    RangeRef fullwrap(new Range(Regular, 8, 0b11100111, 0b11101111));
+    RangeRef fullwrap2(new Range(Regular, 16, -3786, -3703));
+    RangeRef multiwrap(new Range(Regular, 16, 1250, 2277));
+
+    auto truncContained = contained->truncate(5);
+    BOOST_REQUIRE(truncContained->isRegular());
+    BOOST_REQUIRE_EQUAL(contained->getSignedMax(), truncContained->getSignedMax());
+    BOOST_REQUIRE_EQUAL(-7, contained->getSignedMin());
+
+    auto truncLowwrap = lowwrap->truncate(5);
+    BOOST_REQUIRE(truncLowwrap->isAnti());
+
+    auto truncUpwrap = upwrap->truncate(5);
+    BOOST_REQUIRE(truncUpwrap->isAnti());
+
+    auto truncFullwrap = fullwrap->truncate(5);
+    BOOST_REQUIRE(truncFullwrap->isRegular());
+    BOOST_REQUIRE_EQUAL(0b00000111, truncFullwrap->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0b00001111, truncFullwrap->getSignedMax()); 
+
+    auto truncFullwrap2 = fullwrap2->truncate(8);
+    BOOST_REQUIRE(truncFullwrap2->isAnti());
+
+    auto truncMultiwrap = multiwrap->truncate(8);
+    BOOST_REQUIRE(truncMultiwrap->isFullSet());
+}
+
+BOOST_AUTO_TEST_CASE( range_zext )
+{
+    RangeRef boolean(new Range(Regular, 1));
+    RangeRef signedR(new Range(Regular, 8, 0b11001100, 0b01110011));
+    RangeRef unsignedR(new Range(Regular, 8, 0b00011100, 0b01100101));
+    RangeRef empty(new Range(Empty, 2));
+    RangeRef unknown(new Range(Unknown, 2));
+
+    auto boolToChar = boolean->zextOrTrunc(8);
+    BOOST_REQUIRE_EQUAL(8, boolToChar->getBitWidth());
+    BOOST_REQUIRE_EQUAL(0, boolToChar->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(1, boolToChar->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(boolToChar->getUnsignedMin(), boolToChar->getSignedMin());
+    BOOST_REQUIRE_EQUAL(boolToChar->getUnsignedMax(), boolToChar->getSignedMax());
+
+    auto charSToShort = signedR->zextOrTrunc(16);
+    BOOST_REQUIRE_EQUAL(16, charSToShort->getBitWidth());
+    BOOST_REQUIRE_EQUAL(255, charSToShort->getSignedMax());
+    BOOST_REQUIRE_EQUAL(0, charSToShort->getSignedMin());
+
+    auto charUToShort = unsignedR->zextOrTrunc(16);
+    BOOST_REQUIRE_EQUAL(16, charUToShort->getBitWidth());
+    BOOST_REQUIRE_EQUAL(unsignedR->getUnsignedMax(), charUToShort->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(unsignedR->getUnsignedMin(), charUToShort->getUnsignedMin());
+
+    auto emptyZext = empty->zextOrTrunc(5);
+    BOOST_REQUIRE_EQUAL(5, emptyZext->getBitWidth());
+    BOOST_REQUIRE(emptyZext->isEmpty());
+
+    auto unknownZext = unknown->zextOrTrunc(5);
+    BOOST_REQUIRE_EQUAL(5, unknownZext->getBitWidth());
+    BOOST_REQUIRE(unknownZext->isUnknown());
+}
+
+BOOST_AUTO_TEST_CASE( range_sext )
+{
+    RangeRef boolean(new Range(Regular, 1));
+    RangeRef signedR(new Range(Regular, 8, 0b11001100, 0b01110011));
+    RangeRef unsignedR(new Range(Regular, 8, 0b00011100, 0b01100101));
+    RangeRef empty(new Range(Empty, 2));
+    RangeRef unknown(new Range(Unknown, 2));
+
+    auto boolToChar = boolean->sextOrTrunc(8);
+    BOOST_REQUIRE_EQUAL(8, boolToChar->getBitWidth());
+    BOOST_REQUIRE_EQUAL(0, boolToChar->getSignedMin());
+    BOOST_REQUIRE_EQUAL(1, boolToChar->getSignedMax());
+
+    auto charSToShort = signedR->sextOrTrunc(16);
+    BOOST_REQUIRE_EQUAL(16, charSToShort->getBitWidth());
+    BOOST_REQUIRE_EQUAL(signedR->getSignedMin(), charSToShort->getSignedMin());
+    BOOST_REQUIRE_EQUAL(signedR->getSignedMax(), charSToShort->getSignedMax());
+
+    auto charUToShort = unsignedR->sextOrTrunc(16);
+    BOOST_REQUIRE_EQUAL(16, charUToShort->getBitWidth());
+    BOOST_REQUIRE_EQUAL(unsignedR->getUnsignedMin(), charUToShort->getSignedMin());
+    BOOST_REQUIRE_EQUAL(unsignedR->getUnsignedMax(), charUToShort->getSignedMax());
+
+    auto emptySext = empty->sextOrTrunc(5);
+    BOOST_REQUIRE_EQUAL(5, emptySext->getBitWidth());
+    BOOST_REQUIRE(emptySext->isEmpty());
+
+    auto unknownSext = unknown->sextOrTrunc(5);
+    BOOST_REQUIRE_EQUAL(5, unknownSext->getBitWidth());
+    BOOST_REQUIRE(unknownSext->isUnknown());
+}
+
 BOOST_AUTO_TEST_CASE( real_range )
 {
     RangeRef stdFullRange(new Range(Regular, 32));
@@ -464,8 +562,8 @@ BOOST_AUTO_TEST_CASE( real_range )
 
     auto const64To32 = constFloat64.toFloat32();
     auto const32To64 = constFloat32.toFloat64();
-    BOOST_REQUIRE(constFloat32.isSameRange(const64To32));
     BOOST_REQUIRE(constFloat64.isSameRange(const32To64));
+    BOOST_REQUIRE(constFloat32.isSameRange(const64To32));
 
     auto constDoubleToFloat = RefcountCast<const RealRange>(constDouble.toFloat32());
     BOOST_REQUIRE(constDoubleToFloat->isConstant());
