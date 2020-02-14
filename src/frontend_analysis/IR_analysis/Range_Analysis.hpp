@@ -108,7 +108,7 @@ class Range
    virtual void setUnknown();
    bool isRegular() const;
    bool isAnti() const;
-   bool isEmpty() const;
+   virtual bool isEmpty() const;
    virtual bool isReal() const;
    bool operator==(const Range& other) const = delete;
    bool operator!=(const Range& other) const = delete;
@@ -116,12 +116,12 @@ class Range
    virtual bool isSameRange(RangeConstRef other) const;
    bool isSingleElement();
    virtual bool isFullSet() const;
-   bool isMaxRange() const;
    virtual bool isConstant() const;
    virtual Range* clone() const;
    virtual void print(std::ostream& OS) const;
    std::string ToString() const;
 
+   /* Arithmetic operations */
    RangeRef add(RangeConstRef other) const;
    RangeRef sub(RangeConstRef other) const;
    RangeRef mul(RangeConstRef other) const;
@@ -131,10 +131,15 @@ class Range
    RangeRef srem(RangeConstRef other) const;
    RangeRef shl(RangeConstRef other) const;
    RangeRef shr(RangeConstRef other, bool sign) const;
+   RangeRef abs() const;
+
+   /* Bitwise operations */
    RangeRef Not() const;
    RangeRef And(RangeConstRef other) const;
    RangeRef Or(RangeConstRef other) const;
    RangeRef Xor(RangeConstRef other) const;
+
+   /* Comparators */
    virtual RangeRef Eq(RangeConstRef other, bw_t bw) const;
    virtual RangeRef Ne(RangeConstRef other, bw_t bw) const;
    RangeRef Ugt(RangeConstRef other, bw_t bw) const;
@@ -145,13 +150,12 @@ class Range
    RangeRef Sge(RangeConstRef other, bw_t bw) const;
    RangeRef Slt(RangeConstRef other, bw_t bw) const;
    RangeRef Sle(RangeConstRef other, bw_t bw) const;
-   RangeRef abs() const;
-   RangeRef truncate(bw_t bitwidth) const;
+   
    RangeRef sextOrTrunc(bw_t bitwidth) const;
    RangeRef zextOrTrunc(bw_t bitwidth) const;
+   RangeRef truncate(bw_t bitwidth) const;
    virtual RangeRef intersectWith(RangeConstRef other) const;
    virtual RangeRef unionWith(RangeConstRef other) const;
-   RangeRef BestRange(RangeConstRef UR, RangeConstRef SR, bw_t bw) const;
 
    static RangeRef makeSatisfyingCmpRegion(kind pred, RangeConstRef Other);
    static bw_t neededBits(const APInt& a, const APInt& b, bool sign);
@@ -189,6 +193,7 @@ class RealRange : public Range
    bool isUnknown() const override;
    void setUnknown() override;
    bool isConstant() const override;
+   bool isEmpty() const override;
    bool isReal() const override;
    Range* clone() const override;
    void print(std::ostream& OS) const override;
