@@ -2906,10 +2906,10 @@ end process;
   
   always @(posedge in_clk)
   begin
-    state <= state_next;
-    if(in_reset)
+    state &lt;= state_next;
+    if(1RESET_VALUE)
     begin
-      state <= IDLE;
+      state &lt;= IDLE;
     end
   end
   
