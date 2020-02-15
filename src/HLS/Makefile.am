@@ -214,6 +214,7 @@ lib_registerbinding_la_CPPFLAGS = \
     -I$(top_srcdir)/src/HLS/binding/register/algorithms \
     -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
     -I$(top_srcdir)/src/HLS/liveness \
+    -I$(top_srcdir)/src/HLS/stg \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology/target_device \
     -I$(top_srcdir)/src/technology/target_device/FPGA \
