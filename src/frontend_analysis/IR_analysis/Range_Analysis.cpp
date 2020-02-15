@@ -290,6 +290,47 @@ namespace
    }
    #endif
 
+   kind op_unsigned(kind op)
+   {
+      switch (op)
+      {
+         case ge_expr_K:
+            return unge_expr_K;
+         case gt_expr_K:
+            return ungt_expr_K;
+         case le_expr_K:
+            return unle_expr_K;
+         case lt_expr_K:
+            return unlt_expr_K;
+         case eq_expr_K:
+            return uneq_expr_K;
+         case unge_expr_K:
+         case ungt_expr_K:
+         case unle_expr_K:
+         case unlt_expr_K:
+         case uneq_expr_K:
+         case ne_expr_K:
+            return op;
+
+         case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+         case CASE_UNARY_EXPRESSION:
+         case CASE_TERNARY_EXPRESSION:
+         case CASE_QUATERNARY_EXPRESSION:
+         case CASE_TYPE_NODES:
+         case CASE_CST_NODES:
+         case CASE_DECL_NODES:
+         case CASE_FAKE_NODES:
+         case CASE_GIMPLE_NODES:
+         case CASE_PRAGMA_NODES:
+         case CASE_CPP_NODES:
+         case CASE_MISCELLANEOUS:
+         default:
+            break;
+      }
+      THROW_UNREACHABLE("Unhandled predicate (" + STR(op) + ")");
+      return static_cast<kind>(-1);
+   }
+
    kind op_inv(kind op)
    {
       switch (op)
@@ -3601,7 +3642,7 @@ class BasicInterval
    /// Sets the range of this interval to another range.
    void setRange(RangeConstRef newRange)
    {
-      THROW_ASSERT(!(this->range->isReal() ^ newRange->isReal()), "New range must have same type of previous range");
+      THROW_ASSERT(this->range->isReal() == newRange->isReal(), "New range must have same type of previous range");
       this->range.reset(newRange->clone());
    }
 
@@ -4596,6 +4637,7 @@ RangeRef BinaryOp::evaluate(kind opcode, bw_t bw, RangeRef op1, RangeRef op2, bo
          return op1->Or(op2);
       case bit_xor_expr_K:
          return op1->Xor(op2);
+      case uneq_expr_K:
       case eq_expr_K:
          return op1->Eq(op2, bw);
       case ne_expr_K:
@@ -4609,18 +4651,18 @@ RangeRef BinaryOp::evaluate(kind opcode, bw_t bw, RangeRef op1, RangeRef op2, bo
       case unle_expr_K:
          return op1->Ule(op2, bw);
       case gt_expr_K:
-         return isSigned ? op1->Sgt(op2, bw) : op1->Ugt(op2, bw);
+         return op1->Sgt(op2, bw);
       case ge_expr_K:
-         return isSigned ? op1->Sge(op2, bw) : op1->Uge(op2, bw);
+         return op1->Sge(op2, bw);
       case lt_expr_K:
-         return isSigned ? op1->Slt(op2, bw) : op1->Ult(op2, bw);
+         return op1->Slt(op2, bw);
       case le_expr_K:
-         return isSigned ? op1->Sle(op2, bw) : op1->Ule(op2, bw);
+         return op1->Sle(op2, bw);
 
       #ifndef INTEGER_PTR
       case pointer_plus_expr_K:
       #endif
-      case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -6802,11 +6844,11 @@ class ConstraintGraph
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing binary operation " + bin_op->get_kind_text() + " " + assign->ToString());
       
       // Create the sink.
-      VarNode* sink = addVarNode(assign->op0, function_id);
+      auto* sink = addVarNode(assign->op0, function_id);
 
       // Create the sources.
-      VarNode* source1 = addVarNode(bin_op->op0, function_id);
-      VarNode* source2 = addVarNode(bin_op->op1, function_id);
+      auto* source1 = addVarNode(bin_op->op0, function_id);
+      auto* source2 = addVarNode(bin_op->op1, function_id);
 
       if(bin_op->get_kind() == lt_expr_K && GET_CONST_NODE(source2->getValue())->get_kind() == integer_cst_K && GetPointer<const integer_cst>(GET_CONST_NODE(source2->getValue()))->value == 0)
       {
@@ -6852,11 +6894,26 @@ class ConstraintGraph
          }
       }
 
+      auto op_kind = bin_op->get_kind();
+      if(isCompare(op_kind))
+      {
+         const auto op1Signed = isSignedType(source1->getValue());
+         #if HAVE_ASSERTS
+         const auto op2Signed = isSignedType(source2->getValue());
+         THROW_ASSERT(op1Signed == op2Signed, "Binary operands should be both signed/unsigned");
+         #endif
+         if(!op1Signed)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compare operation flagged as unsigned");
+            op_kind = op_unsigned(op_kind);
+         }
+      }
+
       // Create the operation using the intersect to constrain sink's interval.
       auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
-      BinaryOp* BOp = new BinaryOp(BI, sink, I, source1, source2, bin_op->get_kind());
+      BinaryOp* BOp = new BinaryOp(BI, sink, I, source1, source2, op_kind);
 
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added BinaryOp for " + bin_op->get_kind_text() + " with range " + BI->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added BinaryOp for " + tree_node::GetString(op_kind) + " with range " + BI->ToString());
       
       // Insert the operation in the graph.
       this->oprs.insert(BOp);
