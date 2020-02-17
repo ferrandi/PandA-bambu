@@ -79,6 +79,7 @@ class xml_element;
 #define PARAM_has_VHDL_library "has_VHDL_library"
 #define PARAM_VHDL_library "VHDL_library"
 #define PARAM_connect_iob "connect_iob"
+#define PARAM_power_optimization "power_optimization"
 
 /// used by Intel/Altera Characterization
 #define PARAM_fu "fu"
@@ -114,7 +115,8 @@ class SynthesisTool
       QUARTUS_POW,
       QUARTUS_STA,
       LATTICE_FLOW,
-      NXPYTHON_FLOW
+      NXPYTHON_FLOW,
+      BASH_FLOW
    } type_t;
 
  protected:

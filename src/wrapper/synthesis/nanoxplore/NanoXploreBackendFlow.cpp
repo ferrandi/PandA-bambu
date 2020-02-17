@@ -59,13 +59,9 @@
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define NANOXPLORE_FE "NANOXPLORE_FE"
 #define NANOXPLORE_LUTS "NANOXPLORE_LUTS"
