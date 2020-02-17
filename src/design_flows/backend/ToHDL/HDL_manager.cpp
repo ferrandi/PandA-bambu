@@ -1033,7 +1033,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
       boost::algorithm::to_lower(family);
    }
 
-   bool is_yosys = vendor == "xilinx" && family.find("yosys") != std::string::npos;
+   bool is_yosys = family.find("yosys") != std::string::npos;
 
    writer->write_state_declaration(cir, list_of_states, reset_port, reset_state, one_hot_encoding);
 

@@ -1,0 +1,53 @@
+<?xml version="1.0"?>
+<target>
+   <device>
+    <vendor value="Generic"/>
+    <family value="Generic-yosysOpenROAD"/>
+    <model value="nangate45"/>
+    <package value="none"/>
+    <speed_grade value="std"/>
+    <BRAM_bitsize_max value="128"/>
+    <BRAM_bitsize_min value="8"/>
+    <DSPs_rx_sizes value="16"/>
+    <DSPs_ry_sizes value="16"/>
+    <DSPs_x_sizes value="16"/>
+    <DSPs_y_sizes value="16"/>
+    <max_lut_size value="0"/>
+    <PLATFORM is_bash_var="1" value="nangate45"/>
+    <DIE_AREA is_bash_var="1" value="0 0 320.15 320.6"/>
+    <CORE_AREA is_bash_var="1" value="10.07 11.2 310.27 310.8"/>
+    <PROCESS is_bash_var="1" value="45"/>
+    <TIEHI_CELL_AND_PORT is_bash_var="1" value="LOGIC1_X1 Z"/>	
+    <TIELO_CELL_AND_PORT is_bash_var="1" value="LOGIC0_X1 Z"/>
+    <MIN_BUF_CELL_AND_PORTS is_bash_var="1" value="BUF_X1 A Z"/>
+    <MAX_FANOUT is_bash_var="1" value="100"/>
+    <BLACKBOX_V_FILE is_bash_var="1"  value="${PANDA_DATA_INSTALLDIR}/nangate45/NangateOpenCellLibrary.blackbox.v"/>
+    <LATCH_MAP_FILE is_bash_var="1"  value="${PANDA_DATA_INSTALLDIR}/nangate45/cells_latch.v"/>
+    <BLACKBOX_MAP_TCL is_bash_var="1"  value="${PANDA_DATA_INSTALLDIR}/nangate45/blackbox_map.tcl"/>
+    <PLACE_SITE is_bash_var="1" value="FreePDK45_38x28_10R_NP_162NW_34O"/>
+    <TRACKS_INFO_FILE is_bash_var="1"  value="${PANDA_DATA_INSTALLDIR}/nangate45/tracks.info"/>
+    <IP_GLOBAL_CFG is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/IP_global.cfg"/>
+    <TECH_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/lef/NangateOpenCellLibrary.tech.lef"/>
+    <SC_LEF is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/lef/NangateOpenCellLibrary.macro.mod.lef"/>
+    <LIB_FILES is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/lib/NangateOpenCellLibrary_typical.lib ${ADDITIONAL_LIBS}"/>
+    <GDS_FILES is_bash_var="1" value="$(ls ${PANDA_DATA_INSTALLDIR}/nangate45/gds/*.gds  ${ADDITIONAL_GDS_FILES})"/>
+    <CELL_PAD_IN_SITES is_bash_var="1" value="8"/>
+    <TAPCELL_TCL is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/tapcell.tcl"/>
+    <CTS_BUF_CELL is_bash_var="1" value="BUF_X4"/>
+    <CTS_TECH_DIR is_bash_var="1"  value="${PANDA_DATA_INSTALLDIR}/nangate45/tritonCTS"/>
+    <MAX_ROUTING_LAYER is_bash_var="1" value="10"/>
+    <IO_PIN_MARGIN is_bash_var="1" value="70"/>
+    <WIRE_RC_LAYER is_bash_var="1" value="metal3"/>
+    <RESIZER_BUF_CELL is_bash_var="1" value="BUF_X4"/>
+    <KLAYOUT_TECH_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/FreePDK45.lyt"/>
+    <DONT_USE_CELLS is_bash_var="1" value="FILLCELL_X1 AOI211_X1 OAI211_X1"/>
+    <PDN_CFG is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/pdn.cfg"/>
+    <POWERGRIDSTRATEGY is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/grid_strategy-M1-M4-M7.cfg"/>
+    <TEMPLATE_PGA_CFG is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/template_pga.cfg"/>
+    <PLACE_DENSITY is_bash_var="1" value="0.70"/>
+    <IO_PLACER_H is_bash_var="1" value="3"/>
+    <IO_PLACER_V is_bash_var="1" value="2"/>
+    <LAYERMAP is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/layermap.txt"/>
+    <CLKGATE_MAP_FILE is_bash_var="1" value="${PANDA_DATA_INSTALLDIR}/nangate45/cells_clkgate.v"/>
+   </device>
+</target>

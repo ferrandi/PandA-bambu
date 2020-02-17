@@ -154,6 +154,16 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
             {
                HLSMgr->evaluations["FUNCTIONAL_ELEMENTS"] = std::vector<double>(1, functional_elements);
             }
+            double logic_area = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_AREA) : 0;
+            if(logic_area != 0.0)
+            {
+               HLSMgr->evaluations["LOGIC_AREA"] = std::vector<double>(1, logic_area);
+            }
+            double power = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::POWER) : 0;
+            if(power != 0.0)
+            {
+               HLSMgr->evaluations["POWER"] = std::vector<double>(1, power);
+            }
             double alms = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::ALMS) : 0;
             if(alms != 0.0)
             {
