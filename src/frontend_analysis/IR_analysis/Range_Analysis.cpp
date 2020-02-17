@@ -90,8 +90,6 @@
 
 #ifndef NDEBUG
 //    #define DEBUG_RANGE_OP
-#define DEBUG_CGRAPH
-#define LOG_TRANSACTIONS
 #define SCC_DEBUG
 #endif
 
@@ -599,6 +597,7 @@ namespace
                case abs_expr_K:
                case bit_not_expr_K:
                case convert_expr_K:
+               case negate_expr_K:
                case view_convert_expr_K:
                {
                   const auto* ue = GetPointer<const unary_expr>(GET_CONST_NODE(ga->op1));
@@ -647,8 +646,17 @@ namespace
                case cond_expr_K:
                   break;
 
+               case ssa_name_K:
+               {
+                  if(!isValidType(GET_CONST_NODE(ga->op1)))
+                  {
+                     return false;
+                  }
+                  break;
+               }
+
                // Unary case
-               case addr_expr_K:case paren_expr_K:case arrow_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+               case addr_expr_K:case paren_expr_K:case arrow_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
                // Binary case
                #ifndef INTEGER_PTR
                case pointer_plus_expr_K:
@@ -664,7 +672,7 @@ namespace
                case CASE_GIMPLE_NODES:
                case CASE_PRAGMA_NODES:
                case CASE_CPP_NODES:
-               case CASE_MISCELLANEOUS:
+               case aggr_init_expr_K:case case_label_expr_K:case lut_expr_K:case target_expr_K:case target_mem_ref_K:case target_mem_ref461_K:case binfo_K:case block_K:case constructor_K:case error_mark_K:case identifier_node_K:case statement_list_K:case tree_list_K:case tree_vec_K:case call_expr_K:
                default:
                   return false;
             }
@@ -947,6 +955,25 @@ namespace
 // ========================================================================== //
 // Range
 // ========================================================================== //
+static bool enable_add = true;
+static bool enable_sub = true;
+static bool enable_mul = true;
+static bool enable_sdiv = true;
+static bool enable_udiv = true;
+static bool enable_srem = true;
+static bool enable_urem = true;
+static bool enable_shl = true;
+static bool enable_shr = true;
+static bool enable_abs = true;
+static bool enable_negate = true;
+static bool enable_not = true;
+static bool enable_and = true;
+static bool enable_or = true;
+static bool enable_xor = true;
+static bool enable_sext = true;
+static bool enable_zext = true;
+static bool enable_trunc = true;
+
 Range::Range(RangeType rType, bw_t rbw) : l(Min), u(Max), bw(rbw), type(rType)
 {
    THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
@@ -1145,8 +1172,8 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
 
 bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
 {
-   return sign ? std::max(32 - countLeadingOnes(a > 0 ? (-a-1) : a, 32) + 1, 32 - countLeadingOnes(b > 0 ? (-b-1) : b, 32) + 1) 
-   	: std::max(32 - countLeadingZeros(a, 32), 32 - countLeadingZeros(b, 32));
+   return sign ? std::max(MAX_BIT_INT - countLeadingOnes(a > 0 ? (-a-1) : a, MAX_BIT_INT) + 1, MAX_BIT_INT - countLeadingOnes(b > 0 ? (-b-1) : b, MAX_BIT_INT) + 1) 
+   	: std::max(MAX_BIT_INT - countLeadingZeros(a, MAX_BIT_INT), MAX_BIT_INT - countLeadingZeros(b, MAX_BIT_INT));
 }
 
 RangeRef Range::getAnti() const
@@ -1282,11 +1309,6 @@ bool Range::isSameRange(RangeConstRef other) const
    return this->bw == other->bw && isSameType(other) && (l == other->l) && (u == other->u);
 }
 
-bool Range::isSingleElement()
-{
-   return type == Regular && l == u;
-}
-
 bool Range::isFullSet() const
 {
    THROW_ASSERT(!isUnknown(), "");
@@ -1300,12 +1322,8 @@ bool Range::isFullSet() const
 
 bool Range::isConstant() const
 {
-   if(isAnti())
-   {
-      return false;
+   return isRegular() && l == u;
    }
-   return this->getLower() == this->getUpper();
-}
 
 /// Add and Mul are commutative. So, they are a little different
 /// than the other operations.
@@ -1321,7 +1339,7 @@ RangeRef Range::add(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other->isFullSet() || !enable_add)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1378,7 +1396,7 @@ RangeRef Range::sub(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet())
+   if(this->isFullSet() || other->isFullSet() || !enable_sub)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1456,7 +1474,7 @@ RangeRef Range::mul(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
+   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti() || !enable_mul)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1515,7 +1533,7 @@ RangeRef Range::udiv(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet())
+   if(this->isFullSet() || !enable_udiv)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1551,7 +1569,7 @@ RangeRef Range::sdiv(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || this->isAnti())
+   if(this->isFullSet() || this->isAnti() || !enable_sdiv)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1643,7 +1661,7 @@ RangeRef Range::urem(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isAnti() || other->isAnti())
+   if(this->isAnti() || other->isAnti() || !enable_urem)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1702,7 +1720,7 @@ RangeRef Range::srem(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || this->isAnti() || other->isAnti())
+   if(this->isFullSet() || this->isAnti() || other->isAnti() || !enable_srem)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1760,7 +1778,6 @@ RangeRef Range::srem(RangeConstRef other) const
    return res;
 }
 
-// Logic has been borrowed from ConstantRange
 RangeRef Range::shl(RangeConstRef other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
@@ -1772,9 +1789,14 @@ RangeRef Range::shl(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
+   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti() || !enable_shl)
    {
       return RangeRef(new Range(Regular, bw));
+   }
+   if(this->isConstant() && other->isConstant())
+   {
+      const auto c = truncExt(this->getLower() << other->getLower().convert_to<unsigned>(), bw, true);
+      return RangeRef(new Range(Regular, bw, c, c));
    }
 
    const auto a = this->getLower();
@@ -1782,43 +1804,35 @@ RangeRef Range::shl(RangeConstRef other) const
    const auto c = other->getUnsignedMin().convert_to<unsigned>();
    const auto d = other->getUnsignedMax().convert_to<unsigned>();
 
+   if(c >= bw)
+   {
+      return RangeRef(new Range(Regular, bw, 0, 0));
+   }
    if(d >= bw)
    {
       return RangeRef(new Range(Regular, bw));
    }
-   else if((a == Min) || (b == Max))
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   else if((a == b) && (c == d)) // constant case
-   {
-      const auto minmax = truncExt(a << c, bw, false);
-      return RangeRef(new Range(Regular, bw, minmax, minmax));
-   }
-   else if(a < 0 && b < 0)
+   if(a < 0 && b < 0)
    {
       if(d > countLeadingOnes(a, bw))
       {
-         // overflow
          return RangeRef(new Range(Regular, bw));
       }
-      return RangeRef(new Range(Regular, bw, truncExt(a << d, bw, false), truncExt(b << c, bw, false)));
+      return RangeRef(new Range(Regular, bw, a << d, b << c));
    }
-   else if(a < 0 && b >= 0)
+   if(a < 0 && b >= 0)
    {
-      if(d > countLeadingOnes(a, bw) || d > countLeadingZeros(b, bw))
+      if(d > std::min(countLeadingOnes(a, bw), countLeadingZeros(b, bw)))
       {
-         // overflow
          return RangeRef(new Range(Regular, bw));
       }
-      return RangeRef(new Range(Regular, bw, truncExt(a << d, bw, false), truncExt(b << d, bw, false)));
+      return RangeRef(new Range(Regular, bw, a << d, b << d));
    }
-   else if(d > countLeadingZeros(b, bw))
+   if(d > countLeadingZeros(b, bw))
    {
-      // overflow
       return RangeRef(new Range(Regular, bw));
    }
-   return RangeRef(new Range(Regular, bw, truncExt(a << c, bw, false), truncExt(b << d, bw, false)));
+   return RangeRef(new Range(Regular, bw, a << c, b << d));
 }
 
 RangeRef Range::shr(RangeConstRef other, bool sign) const
@@ -1832,15 +1846,18 @@ RangeRef Range::shr(RangeConstRef other, bool sign) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
+   if(this->isAnti() || other->isAnti() || !enable_shr)
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
 
-   auto c = other->getUnsignedMin().convert_to<unsigned>();
-   auto d = other->getUnsignedMax().convert_to<unsigned>();
+   const auto c = other->getUnsignedMin().convert_to<unsigned>();
+   const auto d = other->getUnsignedMax().convert_to<unsigned>();
    
    if(sign)
    {
-      auto a = getSignedMin();
-      auto b = getSignedMax();
-
+      const auto a = getSignedMin();
+      const auto b = getSignedMax();
       const auto min = a >= 0 ? a >> d : a >> c;
       const auto max = b >= 0 ? b >> c : b >> d;
 
@@ -1848,8 +1865,8 @@ RangeRef Range::shr(RangeConstRef other, bool sign) const
    }
    else
    {
-      UAPInt a(getUnsignedMin());
-      UAPInt b(getUnsignedMax());
+      const UAPInt a(getUnsignedMin());
+      const UAPInt b(getUnsignedMax());
 
       return RangeRef(new Range(Regular, bw, convert(a >> d), convert(b >> c)));
    }
@@ -2071,7 +2088,7 @@ RangeRef Range::Or(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isAnti() || other->isAnti())
+   if(!enable_or)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -2088,13 +2105,17 @@ RangeRef Range::Or(RangeConstRef other) const
 RangeRef Range::And(RangeConstRef other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(isEmpty() || isUnknown())
+   if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(this->clone());
+      return RangeRef(new Range(Empty, bw));
    }
-   if(other->isEmpty() || other->isUnknown())
+   if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(other->type, bw));
+      return RangeRef(new Range(Unknown, bw));
+   }
+   if(!enable_and)
+   {
+      return RangeRef(new Range(Regular, bw));
    }
 
    const APInt a = this->isAnti() ? Min : this->getLower();
@@ -2117,7 +2138,7 @@ RangeRef Range::Xor(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isAnti() || other->isAnti())
+   if(!enable_xor)
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -2149,6 +2170,10 @@ RangeRef Range::Not() const
    if(isEmpty() || isUnknown())
    {
       return RangeRef(new Range(this->type, bw));
+   }
+   if(!enable_not)
+   {
+      return RangeRef(new Range(Regular, bw));
    }
    
    const auto min = convert(~UAPInt(this->u));
@@ -2490,44 +2515,74 @@ RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
 
 RangeRef Range::abs() const
 {
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
    if(isEmpty() || isUnknown())
    {
       return RangeRef(this->clone());
+   }
+   if(!enable_abs)
+   {
+      return RangeRef(new Range(Regular, bw));
    }
    if(isAnti())
    {
       if(u < 0)
       {
-         return RangeRef(new Range(Anti, bw, -u, -l));
+         if(l == getSignedMinValue(bw))
+         {
+            return RangeRef(new Range(Regular, bw, 0, getSignedMaxValue(bw)));
+         }
+         return RangeRef(new Range(Anti, bw, getSignedMinValue(bw) + 1, -1));
       }
       if(l < 0)
       {
-         if(-l < u)
+         if(l == getSignedMinValue(bw))
          {
-            return RangeRef(new Range(Anti, bw, -l, u));
+            return RangeRef(new Range(Regular, bw, u + 1, getSignedMaxValue(bw)));
          }
-         else
-         {
-            return RangeRef(new Range(Regular, bw));
-         }
+         const auto min = std::min(-l, u);
+         return RangeRef(new Range(Anti, bw, getSignedMinValue(bw) + 1, min));
       }
-      return RangeRef(this->clone());
+      return RangeRef(new Range(Anti, bw, getSignedMinValue(bw) + 1, l == 0 ? 0 : -1));
    }
 
    const auto smin = getSignedMin();
    const auto smax = getSignedMax();
-
    if(smax < 0)
    {
+      if(smin == getSignedMinValue(bw))
+      {
+         return RangeRef(new Range(Anti, bw, smin + 1, -smax - 1));
+      }
       return RangeRef(new Range(Regular, bw, -smax, -smin));
    }
    if(smin < 0)
    {
-      auto [min, max] = std::minmax({smax, -smin});
-      return RangeRef(new Range(Regular, bw, min, max));
+      if(smin == getSignedMinValue(bw))
+      {
+         return RangeRef(new Range(Anti, bw, smin + 1, -1));
+      }
+      const auto max = std::max({smax, -smin});
+      return RangeRef(new Range(Regular, bw, 0, max));
    }
    return RangeRef(this->clone());
+}
+
+RangeRef Range::negate() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty() || isUnknown())
+   {
+      return RangeRef(this->clone());
+   }
+   if(!enable_negate)
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(isAnti())
+   {
+      return RangeRef(new Range(Anti, bw, -u, -l));
+   }
+   return RangeRef(new Range(Regular, bw, -u, -l));
 }
 
 // Truncate
@@ -2546,7 +2601,7 @@ RangeRef Range::truncate(bw_t bitwidth) const
    }
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
-   if(isFullSet() || isAnti() || boost::multiprecision::abs(b - a) > getMaxValue(bitwidth))
+   if(isFullSet() || isAnti() || boost::multiprecision::abs(b - a) > getMaxValue(bitwidth) || !enable_trunc)
    {
       return RangeRef(new Range(Regular, bitwidth));
    }
@@ -2591,7 +2646,7 @@ RangeRef Range::truncate(bw_t bitwidth) const
 
 RangeRef Range::sextOrTrunc(bw_t bitwidth) const
 {
-   if(bitwidth < bw)
+   if(bitwidth <= bw)
    {
       return truncate(bitwidth);
    }
@@ -2603,6 +2658,10 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
    if(isUnknown())
    {
       return RangeRef(new Range(Unknown, bitwidth));
+   }
+   if(!enable_sext)
+   {
+      return RangeRef(new Range(Regular, bw));
    }
 
    const auto this_min = bw == 1 ? getUnsignedMin() : this->getSignedMin();
@@ -2619,7 +2678,7 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
 
 RangeRef Range::zextOrTrunc(bw_t bitwidth) const
 {
-   if(bitwidth < bw)
+   if(bitwidth <= bw)
    {
       return truncate(bitwidth);
    }
@@ -2631,6 +2690,10 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
    if(isUnknown())
    {
       return RangeRef(new Range(Unknown, bitwidth));
+   }
+   if(!enable_zext)
+   {
+      return RangeRef(new Range(Regular, bw));
    }
    if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
    {
@@ -2944,14 +3007,14 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
    {
       return RangeRef(Other->clone());
    }
-   if(Other->isAnti() && pred != eq_expr_K && pred != ne_expr_K)
+   if(Other->isAnti() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
    {
       THROW_UNREACHABLE("Invalid request " + tree_node::GetString(pred) + " " + Other->ToString());
       return RangeRef(new Range(Empty, bw));
    }
-   if(Other->isReal() && pred != eq_expr_K && pred != ne_expr_K)
+   if(Other->isReal() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
    {
-      THROW_UNREACHABLE("Real range is a storage class only");
+      THROW_UNREACHABLE("Compare region for real range not handled (" + tree_node::GetString(pred) + ")");
    }
 
    switch (pred)
@@ -2972,12 +3035,13 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
          return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin()));
       case unlt_expr_K:
          return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin() - MinDelta));
+      case uneq_expr_K:
       case eq_expr_K:
          return RangeRef(Other->clone());
       case ne_expr_K:
          return Other->getAnti();
    
-      case uneq_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -3137,6 +3201,21 @@ void RealRange::print(std::ostream& OS) const
 Range* RealRange::clone() const
 {
    return new RealRange(sign, exponent, fractional);
+}
+
+RangeRef RealRange::abs() const
+{
+   return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, 0, 0)), exponent, fractional));
+}
+
+RangeRef RealRange::negate() const
+{
+   if(sign->isAnti() || sign->isConstant())
+   {
+      const auto s = sign->getUnsignedMin() ? 0 : 1;
+      return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, s, s)), exponent, fractional));
+   }
+   return RangeRef(this->clone());
 }
 
 RangeRef RealRange::Eq(RangeConstRef other, bw_t _bw) const
@@ -3388,6 +3467,7 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
       return false;
    }
 
+   const bool isSigned = isSignedType(SSA->type);
    if(SSA->range != nullptr)
    {
       if(SSA->range->isSameRange(interval))
@@ -3400,14 +3480,30 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
    }
    else
    {
-      if(interval->isFullSet() || interval->isAnti() || interval->isEmpty())
+      bw_t newBW = interval->getBitWidth();
+      if(!interval->isReal())
+      {
+         if(interval->isRegular())
+         {
+            newBW = isSigned ? Range::neededBits(interval->getSignedMin(), interval->getSignedMax(), true) : Range::neededBits(interval->getUnsignedMin(), interval->getUnsignedMax(), false);
+            const auto currentBW = getGIMPLE_BW(V);
+            if(newBW >= currentBW)
+            {
+               return false;
+            }
+         }
+         else if(interval->isAnti() || interval->isEmpty())
+         {
+            return false;
+         }
+      }
+      if(interval->isFullSet())
       {
          return false;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + " for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
    }
 
-   const bool isSigned = isSignedType(SSA->type);
    auto getConstNode = [&] (RangeRef range) {
       long long cst_val;
       tree_nodeRef cst;
@@ -3758,6 +3854,7 @@ RangeRef SymbInterval::fixIntersects(const VarNode* _bound, const VarNode* _sink
    const auto bw = getRange()->getBitWidth();
    switch(this->getOperation())
    {
+      case uneq_expr_K:
       case eq_expr_K: // equal
          return RangeRef(new Range(Regular, bw, l, u));
       case le_expr_K: // signed less or equal
@@ -3816,7 +3913,7 @@ RangeRef SymbInterval::fixIntersects(const VarNode* _bound, const VarNode* _sink
 
             return RangeRef(new Range(Regular, bw, l, upper));
          }
-      case ne_expr_K:case uneq_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case ne_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -3840,6 +3937,7 @@ void SymbInterval::print(std::ostream& OS) const
    auto bnd = getBound();
    switch(this->getOperation())
    {
+      case uneq_expr_K:
       case eq_expr_K: // equal
          OS << "[lb(";
          printVarName(bnd, OS);
@@ -3867,7 +3965,7 @@ void SymbInterval::print(std::ostream& OS) const
          printVarName(bnd, OS);
          OS << " - 1), +inf]";
          break;
-      case ne_expr_K:case uneq_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case ne_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -4203,7 +4301,6 @@ RangeRef UnaryOp::eval() const
    auto bw = getSink()->getBitWidth();
    RangeRef oprnd = source->getRange();
    const auto resultType = getGIMPLE_Type(getSink()->getValue());
-   const auto resultSigned = isSignedType(resultType);
    bool oprndSigned = isSignedType(source->getValue());
    RangeRef result = getUnknownFor(getSink()->getValue());
    if(oprnd->isRegular() || oprnd->isAnti())
@@ -4212,10 +4309,8 @@ RangeRef UnaryOp::eval() const
       {
          case abs_expr_K:
          {
-            if(oprndSigned)
-            {
+            THROW_ASSERT(oprndSigned, "Absolute value of unsigned operand should not happen");
                result = oprnd->abs();
-            }
             break;
          }
          case bit_not_expr_K:
@@ -4226,7 +4321,12 @@ RangeRef UnaryOp::eval() const
          case convert_expr_K:
          case nop_expr_K:
          {
-            result = resultSigned ? oprnd->sextOrTrunc(bw) : oprnd->zextOrTrunc(bw);
+            result = oprndSigned ? oprnd->sextOrTrunc(bw) : oprnd->zextOrTrunc(bw);
+            break;
+         }
+         case negate_expr_K:
+         {
+            result = oprnd->negate();
             break;
          }
          case view_convert_expr_K:
@@ -4241,7 +4341,7 @@ RangeRef UnaryOp::eval() const
             }
             break;
          }
-         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
          case CASE_BINARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -4300,7 +4400,17 @@ RangeRef UnaryOp::eval() const
             result = bw == 32 ? rr->toFloat32() : rr->toFloat64();
             break;
          }
-         case addr_expr_K:case abs_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case negate_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
+         case abs_expr_K:
+         {
+            result = oprnd->abs();
+            break;
+         }
+         case negate_expr_K:
+         {
+            result = oprnd->negate();
+            break;
+         }
+         case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
          case assert_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case eq_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case ge_expr_K:case gt_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case le_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ne_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -4699,7 +4809,7 @@ RangeRef BinaryOp::eval() const
    // only evaluate if all operands are Regular
    if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()))
    {
-      bool isSigned = isSignedType(getSink()->getValue());
+      bool isSigned = isSignedType(getSource1()->getValue());
 
       result = evaluate(this->getOpcode(), bw, op1, op2, isSigned);
 
@@ -4955,7 +5065,7 @@ RangeRef TernaryOp::eval() const
                      if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) || GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
                      {
                         RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
-                        kind pred = be->get_kind();
+                        kind pred = isSignedType(CondOp0) ? be->get_kind() : op_unsigned(be->get_kind());
                         kind swappred = op_swap(pred);
 
                         auto tmpT = (variable == CondOp0) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
@@ -5640,7 +5750,15 @@ class Meet
    static bool crop(BasicOp* op, const std::vector<APInt>* constantvector);
    static bool growth(BasicOp* op, const std::vector<APInt>* constantvector);
    static bool fixed(BasicOp* op);
+
+   #ifndef NDEBUG
+   static int debug_level;
+   #endif
 };
+
+#ifndef NDEBUG
+int Meet::debug_level = DEBUG_LEVEL_NONE;
+#endif
 
 /*
    * Get the first constant from vector greater than val
@@ -5679,17 +5797,14 @@ bool Meet::fixed(BasicOp* op)
    const auto newInterval = op->eval();
 
    op->getSink()->setRange(newInterval);
-   #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
-      auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("FIXED::@" << instID << ": " << *oldInterval << " -> " << *newInterval);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "FIXED::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldInterval->ToString() + " -> " + newInterval->ToString());
    }
    else
    {
-      PRINT_MSG("FIXED::%artificial phi : " << *oldInterval << " -> " << *newInterval);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "FIXED::%artificial phi : " + oldInterval->ToString() + " -> " + newInterval->ToString());
    }
-   #endif
    return !oldInterval->isSameRange(newInterval);
 }
 
@@ -5792,18 +5907,14 @@ bool Meet::widen(BasicOp* op, const std::vector<APInt>* constantvector)
    
    const auto sinkRange = op->getSink()->getRange();
 
-   #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
-      auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("WIDEN::@" << instID << ": " << *oldRange << " -> " << *newRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "WIDEN::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + newRange->ToString() + " -> " + sinkRange->ToString());
    }
    else
    {
-      PRINT_MSG("WIDEN::%artificial phi : " << *oldRange << " -> " << *newRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "WIDEN::%artificial phi : " + oldRange->ToString() + " -> " + newRange->ToString() + " -> " + sinkRange->ToString());
    }
-   #endif
-
    return !oldRange->isSameRange(sinkRange);
 }
 
@@ -5864,17 +5975,14 @@ bool Meet::growth(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
    }
    
    const auto sinkRange = op->getSink()->getRange();
-   #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
-      auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("GROWTH::@" << instID << ": " << *oldRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "GROWTH::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
    }
    else
    {
-      PRINT_MSG("GROWTH::%artificial phi : " << *oldRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "GROWTH::%artificial phi : " + oldRange->ToString() + " -> " + sinkRange->ToString());
    }
-   #endif
    return !oldRange->isSameRange(sinkRange);
 }
 
@@ -5985,17 +6093,14 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
    }
    
    const auto sinkRange = op->getSink()->getRange();
-   #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
-      auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("NARROW::@" << instID << ": " << *oldRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "NARROW::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
    }
    else
    {
-      PRINT_MSG("NARROW::%artificial phi : " << *oldRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "NARROW::%artificial phi : " + oldRange->ToString() + " -> " + sinkRange->ToString());
    }
-   #endif
    return !oldRange->isSameRange(sinkRange);
 }
 
@@ -6046,17 +6151,14 @@ bool Meet::crop(BasicOp* op, const std::vector<APInt>* /*constantvector*/)
    }
    
    const auto sinkRange = op->getSink()->getRange();
-   #ifdef LOG_TRANSACTIONS
    if(op->getInstruction())
    {
-      auto instID = GET_INDEX_CONST_NODE(op->getInstruction());
-      PRINT_MSG("CROP::@" << instID << ": " << *oldRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "CROP::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
    }
    else
    {
-      PRINT_MSG("CROP::%artificial phi : " << *oldRange << " -> " << *sinkRange);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "CROP::%artificial phi : " + oldRange->ToString() + " -> " + sinkRange->ToString());
    }
-   #endif
    return !oldRange->isSameRange(sinkRange);
 }
 
@@ -6202,18 +6304,15 @@ class ConstraintGraph
       {
          const auto V = *actv.begin();
          actv.erase(V);
-         #ifdef DEBUG_CGRAPH
-         PRINT_MSG("-> update: " << GET_CONST_NODE(V)->ToString());
-         #endif
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-> update: " + GET_CONST_NODE(V)->ToString());
 
          // The use list.
          const auto& L = compUseMap.at(V);
 
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          for(BasicOp* op : L)
          {
-            #ifdef DEBUG_CGRAPH
-            PRINT_MSG("  > " << op->getSink());
-            #endif
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "> " + op->getSink()->ToString());
             if(meet(op, &constantvector))
             {
                // I want to use it as a set, but I also want
@@ -6222,6 +6321,7 @@ class ConstraintGraph
                actv.insert(val);
             }
          }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
    }
    
@@ -6370,7 +6470,7 @@ class ConstraintGraph
 
          if(constant != nullptr)
          {
-            kind pred = bin_op->get_kind();
+            kind pred = isSignedType(variable) ? bin_op->get_kind() : op_unsigned(bin_op->get_kind());
             kind swappred = op_swap(pred);
             RangeRef CR = getGIMPLE_range(constant);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(getGIMPLE_BW(variable)) + " and constant value is " + constant->ToString());
@@ -6417,7 +6517,7 @@ class ConstraintGraph
          }
          else
          {
-            kind pred = bin_op->get_kind();
+            kind pred = isSignedType(bin_op->op0) ? bin_op->get_kind() : op_unsigned(bin_op->get_kind());
             kind invPred = op_inv(pred);
 
             #if !defined(NDEBUG) or HAVE_ASSERTS
@@ -6449,7 +6549,6 @@ class ConstraintGraph
 
                   auto STOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
                   auto SFOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, invPred));
-                  PRINT_MSG("2");
                
                   ValueBranchMap VBMOp0_0(cast_inst->op, TrueBBI, FalseBBI, STOp0_0, SFOp0_0);
                   valuesBranchMap.insert(std::make_pair(cast_inst->op, VBMOp0_0));
@@ -6576,7 +6675,7 @@ class ConstraintGraph
 
             if(constant != nullptr)
             {
-               const kind pred = cmp_op->get_kind();
+               const kind pred = isSignedType(variable) ? cmp_op->get_kind() : op_unsigned(cmp_op->get_kind());
                const kind swappred = op_swap(pred);
                const auto bw = getGIMPLE_BW(variable);
                RangeConstRef CR(new Range(Regular, bw, constant->value, constant->value));
@@ -6617,7 +6716,7 @@ class ConstraintGraph
             }
             else
             {
-               const kind pred = cmp_op->get_kind();
+               const kind pred = isSignedType(cmp_op->op0) ? cmp_op->get_kind() : op_unsigned(cmp_op->get_kind());
                const kind invPred = op_inv(pred);
 
                #if !defined(NDEBUG) or HAVE_ASSERTS
@@ -6897,12 +6996,8 @@ class ConstraintGraph
       auto op_kind = bin_op->get_kind();
       if(isCompare(op_kind))
       {
-         const auto op1Signed = isSignedType(source1->getValue());
-         #if HAVE_ASSERTS
-         const auto op2Signed = isSignedType(source2->getValue());
-         THROW_ASSERT(op1Signed == op2Signed, "Binary operands should be both signed/unsigned");
-         #endif
-         if(!op1Signed)
+         const auto opSigned = isSignedType(bin_op->op0);
+         if(!opSigned)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Compare operation flagged as unsigned");
             op_kind = op_unsigned(op_kind);
@@ -6956,6 +7051,30 @@ class ConstraintGraph
       this->useMap.at(source1->getValue()).insert(TOp);
       this->useMap.at(source2->getValue()).insert(TOp);
       this->useMap.at(source3->getValue()).insert(TOp);
+   }
+
+   void addSimpleAssign(const tree_nodeConstRef I, unsigned int function_id)
+   {
+      const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(I));
+      THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(assign->op1)), "");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing assign operation " + assign->ToString());
+
+      // Create the sink.
+      VarNode* sink = addVarNode(assign->op0, function_id);
+      // Create the source.
+      VarNode* source = addVarNode(assign->op1, function_id);
+      const auto sourceType = getGIMPLE_Type(source->getValue());
+
+      auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
+      UnaryOp* UOp = new UnaryOp(BI, sink, I, source, nop_expr_K);
+
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added assign operation with range " + BI->ToString());
+
+      this->oprs.insert(UOp);
+      // Insert this definition in defmap
+      this->defMap[sink->getValue()] = UOp;
+      // Inserts the sources of the operation in the use map list.
+      this->useMap.at(source->getValue()).insert(UOp);
    }
 
    /// Add a phi node (actual phi, does not include sigmas)
@@ -7274,6 +7393,10 @@ class ConstraintGraph
          {
             return addTernaryOp(I_node, function_id);
          }
+         else if(GetPointer<const ssa_name>(Op1) != nullptr)
+         {
+            return addSimpleAssign(I_node, function_id);
+         }
 
          THROW_UNREACHABLE("Unhandled assign operation (" + GET_CONST_NODE(assign->op0)->get_kind_text() + " <- " + Op1->get_kind_text() + ")");
       }
@@ -7381,7 +7504,7 @@ class ConstraintGraph
                if(isCompare(opcode))
                {
                   auto pred = opcode;
-                  if(pred == eq_expr_K || pred == ne_expr_K)
+                  if(pred == eq_expr_K || pred == ne_expr_K || pred == uneq_expr_K)
                   {
                      insertConstantIntoVector(cnstVal);
                      insertConstantIntoVector(cnstVal - 1);
@@ -7427,7 +7550,7 @@ class ConstraintGraph
                if(isCompare(opcode))
                {
                   auto pred = opcode;
-                  if(pred == eq_expr_K || pred == ne_expr_K)
+                  if(pred == eq_expr_K || pred == ne_expr_K || pred == uneq_expr_K)
                   {
                      insertConstantIntoVector(cnstVal);
                      insertConstantIntoVector(cnstVal - 1);
@@ -8414,31 +8537,80 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    #endif
 }
 
+#define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
+
 // ========================================================================== //
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
    : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false)
 #ifndef NDEBUG
-   , iteration(0), read_only(false)
+   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), read_only(false)
 #endif
    , requireESSA(false) // ESSA disabled because of renaming issues in some cases
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   const auto ra_mode = parameters->getOption<const CustomSet<std::string>>(OPT_range_analysis_mode);
+   const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
+   CustomSet<std::string> ra_mode;
+   for(const auto& opt : opts)
+   {
+      ra_mode.insert(opt);
+   }
    #ifndef NDEBUG
    if(ra_mode.contains("ro"))
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: read-only mode enabled");
       read_only = true;
+   }
+   if(ra_mode.contains("debug_op"))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: range operations debug");
+      BasicOp::debug_level = debug_level;
+   }
+   if(ra_mode.contains("debug_graph"))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: graph debug");
+      graph_debug = debug_level;
+      Meet::debug_level = debug_level;
    }
    #endif
    if(ra_mode.contains("noESSA"))
    {
       requireESSA = false;
    }
+   OPERATION_OPTION(ra_mode, add);
+   OPERATION_OPTION(ra_mode, sub);
+   OPERATION_OPTION(ra_mode, mul);
+   OPERATION_OPTION(ra_mode, sdiv);
+   OPERATION_OPTION(ra_mode, udiv);
+   OPERATION_OPTION(ra_mode, srem);
+   OPERATION_OPTION(ra_mode, urem);
+   OPERATION_OPTION(ra_mode, shl);
+   OPERATION_OPTION(ra_mode, shr);
+   OPERATION_OPTION(ra_mode, abs);
+   OPERATION_OPTION(ra_mode, negate);
+   OPERATION_OPTION(ra_mode, not);
+   OPERATION_OPTION(ra_mode, and);
+   OPERATION_OPTION(ra_mode, or);
+   OPERATION_OPTION(ra_mode, xor);
+   OPERATION_OPTION(ra_mode, sext);
+   OPERATION_OPTION(ra_mode, zext);
+   OPERATION_OPTION(ra_mode, trunc);
 }
 
 RangeAnalysis::~RangeAnalysis() = default;
+
+void RangeAnalysis::Initialize()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
+   dead_code_restart = false;
+   CG.reset(new Cousot(AppM, 
+   #ifndef NDEBUG
+      graph_debug));
+   #else
+      DEBUG_LEVEL_NONE));
+   #endif
+}
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> 
 RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
@@ -8558,15 +8730,6 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    }
 }
 
-void RangeAnalysis::Initialize()
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
-   #ifndef NDEBUG
-   BasicOp::debug_level = debug_level;
-   #endif
-   dead_code_restart = false;
-   CG.reset(new Cousot(AppM, debug_level));
-}
 
 bool RangeAnalysis::finalize()
 {

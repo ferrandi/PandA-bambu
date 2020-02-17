@@ -114,7 +114,6 @@ class Range
    bool operator!=(const Range& other) const = delete;
    bool isSameType(RangeConstRef other) const;
    virtual bool isSameRange(RangeConstRef other) const;
-   bool isSingleElement();
    virtual bool isFullSet() const;
    virtual bool isConstant() const;
    virtual Range* clone() const;
@@ -131,7 +130,8 @@ class Range
    RangeRef srem(RangeConstRef other) const;
    RangeRef shl(RangeConstRef other) const;
    RangeRef shr(RangeConstRef other, bool sign) const;
-   RangeRef abs() const;
+   virtual RangeRef abs() const;
+   virtual RangeRef negate() const;
 
    /* Bitwise operations */
    RangeRef Not() const;
@@ -198,8 +198,12 @@ class RealRange : public Range
    Range* clone() const override;
    void print(std::ostream& OS) const override;
 
+   RangeRef abs() const override;
+   RangeRef negate() const override;
+
    RangeRef Eq(RangeConstRef other, bw_t bw) const override;
    RangeRef Ne(RangeConstRef other, bw_t bw) const override;
+
    RangeRef intersectWith(RangeConstRef other) const override;
    RangeRef unionWith(RangeConstRef other) const override;
    RangeRef toFloat64() const;
@@ -213,6 +217,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    bool dead_code_restart;
 
 #ifndef NDEBUG
+   int graph_debug;
    unsigned iteration;
    bool read_only;
 #endif

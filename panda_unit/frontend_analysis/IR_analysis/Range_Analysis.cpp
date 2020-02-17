@@ -28,6 +28,29 @@ BOOST_AUTO_TEST_CASE( range )
     BOOST_REQUIRE_EQUAL(-128, r->getSignedMin());
     BOOST_REQUIRE_EQUAL(127, r->getSignedMax());
     BOOST_REQUIRE(r->isFullSet());
+
+    BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, 5, 120)));
+    BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+    BOOST_REQUIRE_EQUAL(5, r->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(120, r->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(5, r->getSignedMin());
+    BOOST_REQUIRE_EQUAL(120, r->getSignedMax());
+    BOOST_REQUIRE(!r->isFullSet());
+
+    const auto antiZero = Range(Anti, 1, 0, 0);
+    const auto antiOne = Range(Anti, 1, 1, 1);
+    BOOST_REQUIRE_EQUAL(1, antiZero.getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(0, antiOne.getUnsignedMin());
+}
+
+BOOST_AUTO_TEST_CASE( range_neededBits )
+{
+    BOOST_REQUIRE_EQUAL(15, Range::neededBits(INT16_MAX, 8, false));
+    BOOST_REQUIRE_EQUAL(16, Range::neededBits(INT16_MIN, 57, true));
+    BOOST_REQUIRE_EQUAL(16, Range::neededBits(UINT16_MAX, 8, false));
+    BOOST_REQUIRE_EQUAL(64, Range::neededBits(UINT64_MAX, 957, false));
+    BOOST_REQUIRE_EQUAL(6, Range::neededBits(-32, -5, true));
+    BOOST_REQUIRE_EQUAL(5, Range::neededBits(5, 31, false));
 }
 
 BOOST_AUTO_TEST_CASE( range_addition )
@@ -176,29 +199,153 @@ BOOST_AUTO_TEST_CASE( range_reminder )
 
 BOOST_AUTO_TEST_CASE( range_shl )
 {
-    RangeRef aPositive(new Range(Regular, 8, 0b00000011, 0b00000101));
-    RangeRef aNegative(new Range(Regular, 8, 0b11000001, 0b11110000));
-    RangeRef aMix(new Range(Regular, 8, 0b10101000, 0b00001101));
+    RangeRef pos(new Range(Regular, 8, 12, 57));
+    RangeRef mix(new Range(Regular, 8, -27, 43));
+    RangeRef neg(new Range(Regular, 8, -105, -39));
+    RangeRef allOne(new Range(Regular, 8, -1, -1));
+    RangeRef antiPos(new Range(Anti, 8, 5, 38));
+    RangeRef antiNeg(new Range(Anti, 8, -47, -15));
+    RangeRef antiMix(new Range(Anti, 8, -17, 0));
     RangeRef zero(new Range(Regular, 8, 0, 0));
-    RangeRef bPositive(new Range(Regular, 8, 0b00000111, 0b00011011));
-    RangeRef bNegative(new Range(Regular, 8, 0b10000000, 0b10000000));
-    RangeRef bMix(new Range(Regular, 8, 0b10000000, 0));
-    RangeRef one(new Range(Regular, 8, 1, 1));
     RangeRef zeroOne(new Range(Regular, 8, 0, 1));
-    RangeRef allOnes(new Range(Regular, 8, 0b11111111, 0b11111111));
-    RangeRef seven(new Range(Regular, 8, 7, 7));
+    RangeRef zeroSeven(new Range(Regular, 8, 0, 7));
+    RangeRef eight(new Range(Regular, 8, 8, 8));
+    RangeRef two(new Range(Regular, 8, 2, 2));
 
-    auto shlAllOnes = allOnes->shl(aPositive);
-    BOOST_REQUIRE_EQUAL(0b11111000, shlAllOnes->getUnsignedMax());
-    BOOST_REQUIRE_EQUAL(0b11100000, shlAllOnes->getUnsignedMin());
+    auto posShl = pos->shl(zeroOne);
+    BOOST_REQUIRE(posShl->isRegular());
+    BOOST_REQUIRE_EQUAL(12, posShl->getSignedMin());
+    BOOST_REQUIRE_EQUAL(114, posShl->getSignedMax());
+    posShl = pos->shl(eight);
+    BOOST_REQUIRE(posShl->isConstant());
+    BOOST_REQUIRE_EQUAL(0, posShl->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0, posShl->getSignedMax());
+    posShl = pos->shl(zero);
+    BOOST_REQUIRE(posShl->isSameRange(pos));
 
-    auto shlZeroOneSeven = zeroOne->shl(seven);
-    BOOST_REQUIRE_EQUAL(0b10000000, shlZeroOneSeven->getUnsignedMax());
-    BOOST_REQUIRE_EQUAL(0, shlZeroOneSeven->getUnsignedMin());
+    auto negShl = neg->shl(zeroSeven);
+    BOOST_REQUIRE(negShl->isFullSet());
+    negShl = neg->shl(eight);
+    BOOST_REQUIRE(negShl->isConstant());
+    BOOST_REQUIRE_EQUAL(0, negShl->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0, negShl->getSignedMax());
+    negShl = neg->shl(zero);
+    BOOST_REQUIRE(negShl->isSameRange(neg));
 
-    auto shlOneSeven = one->shl(seven);
-    BOOST_REQUIRE(shlOneSeven->isConstant());
-    BOOST_REQUIRE_EQUAL(0b10000000, shlOneSeven->getUnsignedMin());
+    auto mixShl = mix->shl(zeroOne);
+    BOOST_REQUIRE(mixShl->isRegular());
+    BOOST_REQUIRE_EQUAL(86, mixShl->getSignedMax());
+    BOOST_REQUIRE_EQUAL(-54, mixShl->getSignedMin());
+    mixShl = mix->shl(eight);
+    BOOST_REQUIRE(mixShl->isConstant());
+    BOOST_REQUIRE_EQUAL(0, mixShl->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0, mixShl->getSignedMax());
+    mixShl = mix->shl(zero);
+    BOOST_REQUIRE(mixShl->isSameRange(mix));
+
+    auto allOneShl = allOne->shl(zeroSeven);
+    BOOST_REQUIRE(allOneShl->isRegular());
+    BOOST_REQUIRE_EQUAL(-1, allOneShl->getSignedMax());
+    BOOST_REQUIRE_EQUAL(-128, allOneShl->getSignedMin());
+    allOneShl = allOne->shl(eight);
+    BOOST_REQUIRE(allOneShl->isConstant());
+    BOOST_REQUIRE_EQUAL(0, allOneShl->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0, allOneShl->getSignedMax());
+}
+
+BOOST_AUTO_TEST_CASE( range_abs )
+{
+    RangeRef positive(new Range(Regular, 8, 5, 12));
+    RangeRef safeMix(new Range(Regular, 8, -12, 5));
+    RangeRef unsafeMix(new Range(Regular, 8, -128, 31));
+    RangeRef safeNeg(new Range(Regular, 8, -15, -3));
+    RangeRef unsafeNeg(new Range(Regular, 8, -128, -57));
+    RangeRef antiNeg(new Range(Anti, 8, -57, -35));
+    RangeRef antiSafe(new Range(Anti, 8, -128, 0));
+
+    auto posAbs = positive->abs();
+    BOOST_REQUIRE(posAbs->isSameRange(positive));
+
+    auto safeMixAbs = safeMix->abs();
+    BOOST_REQUIRE(safeMixAbs->isRegular());
+    BOOST_REQUIRE_EQUAL(0, safeMixAbs->getSignedMin());
+    BOOST_REQUIRE_EQUAL(12, safeMixAbs->getSignedMax());
+
+    auto unsMixAbs = unsafeMix->abs();
+    BOOST_REQUIRE(unsMixAbs->isAnti());
+    BOOST_REQUIRE_EQUAL(-128, unsMixAbs->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0, unsMixAbs->getUnsignedMin());
+
+    auto negAbs = safeNeg->abs();
+    BOOST_REQUIRE(negAbs->isRegular());
+    BOOST_REQUIRE_EQUAL(3, negAbs->getSignedMin());
+    BOOST_REQUIRE_EQUAL(15, negAbs->getSignedMax());
+
+    auto unNegAbs = unsafeNeg->abs();
+    BOOST_REQUIRE(unNegAbs->isAnti());
+    BOOST_REQUIRE_EQUAL(-128, unNegAbs->getSignedMin());
+    BOOST_REQUIRE_EQUAL(57, unNegAbs->getUnsignedMin());
+
+    auto antiNegAbs = antiNeg->abs();
+    BOOST_REQUIRE(antiNegAbs->isAnti());
+    BOOST_REQUIRE_EQUAL(128, antiNegAbs->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0, antiNegAbs->getUnsignedMin());
+
+    auto antiSafeAbs = antiSafe->abs();
+    BOOST_REQUIRE(antiSafeAbs->isRegular());
+    BOOST_REQUIRE_EQUAL(1, antiSafeAbs->getSignedMin());
+    BOOST_REQUIRE_EQUAL(127, antiSafeAbs->getSignedMax());
+}
+
+BOOST_AUTO_TEST_CASE( range_negate )
+{
+    RangeRef pos(new Range(Regular, 8, 5, 50));
+    RangeRef neg(new Range(Regular, 8, -50, -5));
+    RangeRef mix(new Range(Regular, 8, -50, 37));
+    RangeRef unsafe(new Range(Regular, 8, -128, 5));
+    RangeRef antiPos(new Range(Anti, 8, 6, 10));
+    RangeRef antiNeg(new Range(Anti, 8, -50, -26));
+    RangeRef antiMix(new Range(Anti, 8, -30, 57));
+
+    auto posNeg = pos->negate();
+    BOOST_REQUIRE(posNeg->isRegular());
+    BOOST_REQUIRE_EQUAL(-5, posNeg->getSignedMax());
+    BOOST_REQUIRE_EQUAL(-50, posNeg->getSignedMin());
+
+    auto negNeg = neg->negate();
+    BOOST_REQUIRE(negNeg->isRegular());
+    BOOST_REQUIRE_EQUAL(5, negNeg->getSignedMin());
+    BOOST_REQUIRE_EQUAL(50, negNeg->getSignedMax());
+
+    auto mixNeg = mix->negate();
+    BOOST_REQUIRE(mixNeg->isRegular());
+    BOOST_REQUIRE_EQUAL(50, mixNeg->getSignedMax());
+    BOOST_REQUIRE_EQUAL(-37, mixNeg->getSignedMin());
+
+    auto unsNeg = unsafe->negate();
+    BOOST_REQUIRE(unsNeg->isAnti());
+    BOOST_REQUIRE_EQUAL(-128, unsNeg->getSignedMin());
+    auto unAnti = unsNeg->getAnti();
+    BOOST_REQUIRE_EQUAL(-6, unAnti->getSignedMax());
+    BOOST_REQUIRE_EQUAL(-127, unAnti->getSignedMin());
+
+    auto aPosNeg = antiPos->negate();
+    BOOST_REQUIRE(aPosNeg->isAnti());
+    auto apnAnti = aPosNeg->getAnti();
+    BOOST_REQUIRE_EQUAL(-6, apnAnti->getUpper());
+    BOOST_REQUIRE_EQUAL(-10, apnAnti->getLower());
+
+    auto aNegNeg = antiNeg->negate();
+    BOOST_REQUIRE(aNegNeg->isAnti());
+    auto annAnti = aNegNeg->getAnti();
+    BOOST_REQUIRE_EQUAL(50, annAnti->getUpper());
+    BOOST_REQUIRE_EQUAL(26, annAnti->getLower());
+
+    auto aMixNeg = antiMix->negate();
+    BOOST_REQUIRE(aMixNeg->isAnti());
+    auto amnAnti = aMixNeg->getAnti();
+    BOOST_REQUIRE_EQUAL(30, amnAnti->getUpper());
+    BOOST_REQUIRE_EQUAL(-57, amnAnti->getLower());
 }
 
 BOOST_AUTO_TEST_CASE( range_and )
