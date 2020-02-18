@@ -2187,11 +2187,11 @@ RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(!isAnti() && !other->isAnti())
    {
@@ -2225,11 +2225,11 @@ RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(!isAnti() && !other->isAnti())
    {
@@ -2262,11 +2262,11 @@ RangeRef Range::Ugt(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2294,11 +2294,11 @@ RangeRef Range::Uge(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2326,11 +2326,11 @@ RangeRef Range::Ult(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2358,11 +2358,11 @@ RangeRef Range::Ule(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2390,11 +2390,11 @@ RangeRef Range::Sgt(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2422,11 +2422,11 @@ RangeRef Range::Sge(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2454,11 +2454,11 @@ RangeRef Range::Slt(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2486,11 +2486,11 @@ RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || other->isEmpty())
    {
-      return RangeRef(new Range(Empty, bw));
+      return RangeRef(new Range(Empty, _bw));
    }
    if(this->isUnknown() || other->isUnknown())
    {
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(Unknown, _bw));
    }
    if(isAnti() || other->isAnti())
    {
@@ -2939,11 +2939,11 @@ void Range::print(std::ostream& OS) const
 {
    if(this->isUnknown())
    {
-      OS << "Unknown";
+      OS << "[Unknown," << STR(bw) << "]";
    }
    else if(this->isEmpty())
    {
-      OS << "Empty";
+      OS << "[Empty," << STR(bw) << "]";
    }
    else if(this->isAnti())
    {
@@ -3065,11 +3065,13 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
 // ========================================================================== //
 RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())), sign(s.clone()), exponent(e.clone()), fractional(f.clone())
 {
+   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s.ToString() + " " + e.ToString() + " " + f.ToString() + "]<" + STR(getBitWidth()) + ">");
    THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
 }
 
 RealRange::RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
 {
+   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() + " " + e->ToString() + " " + f->ToString() + "]<" + STR(getBitWidth()) + ">");
    THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
 }
 
@@ -3087,7 +3089,7 @@ RealRange::RealRange(RangeConstRef vc) : Range(Real, vc->getBitWidth()), sign(vc
    }
    else
    {
-      THROW_UNREACHABLE("Unhandled view convert bitwidth");
+      THROW_UNREACHABLE("Unhandled view convert bitwidth: could not transform " + vc->ToString() + " into real range");
    }
 }
 
@@ -3954,27 +3956,36 @@ void SymbInterval::print(std::ostream& OS) const
          printVarName(bnd, OS);
          OS << ")]";
          break;
+      case unle_expr_K:
       case le_expr_K: // sign less or equal
          OS << "[-inf, ub(";
          printVarName(bnd, OS);
          OS << ")]";
          break;
+      case unlt_expr_K:
       case lt_expr_K: // sign less than
          OS << "[-inf, ub(";
          printVarName(bnd, OS);
          OS << ") - 1]";
          break;
+      case unge_expr_K:
       case ge_expr_K: // sign greater or equal
          OS << "[lb(";
          printVarName(bnd, OS);
          OS << "), +inf]";
          break;
+      case ungt_expr_K:
       case gt_expr_K: // sign greater than
          OS << "[lb(";
          printVarName(bnd, OS);
          OS << " - 1), +inf]";
          break;
-      case ne_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case ne_expr_K:
+         OS << ")b(";
+         printVarName(bnd, OS);
+         OS << ")(";
+         break;
+      case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -4200,7 +4211,7 @@ RangeRef PhiOp::eval() const
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
          result = _intersect;
       }
@@ -4445,7 +4456,7 @@ RangeRef UnaryOp::eval() const
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
          result = _intersect;
       }
@@ -4612,10 +4623,12 @@ RangeRef SigmaOp::eval() const
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
          result = _intersect;
       }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = SIGMA< " + aux->ToString() + " >");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = SIGMA< " + getSource()->getRange()->ToString() + " >");
    return result;
 }
 
@@ -4843,7 +4856,7 @@ RangeRef BinaryOp::eval() const
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
          result = _intersect;
       }
@@ -5113,7 +5126,7 @@ RangeRef TernaryOp::eval() const
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
          result = _intersect;
       }
@@ -5310,7 +5323,7 @@ RangeRef LoadOp::eval() const
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
          result = _intersect;
       }
@@ -6313,15 +6326,15 @@ class ConstraintGraph
       {
          const auto V = *actv.begin();
          actv.erase(V);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-> update: " + GET_CONST_NODE(V)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-> update: " + GET_CONST_NODE(V)->ToString());
 
          // The use list.
          const auto& L = compUseMap.at(V);
 
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-->");
          for(BasicOp* op : L)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "> " + op->getSink()->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "> " + op->getSink()->ToString());
             if(meet(op, &constantvector))
             {
                // I want to use it as a set, but I also want
@@ -6330,7 +6343,7 @@ class ConstraintGraph
                actv.insert(val);
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
       }
    }
    
@@ -6369,6 +6382,7 @@ class ConstraintGraph
  private:
    #ifndef NDEBUG
    int debug_level;
+   int graph_debug;
    #endif
 
    const application_managerRef AppM;
@@ -6869,7 +6883,6 @@ class ConstraintGraph
          }
          else
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added SigmaOp with range " + BItv->ToString());
             VarNode* SymbSrc = nullptr;
             if(auto symb = RefcountCast<SymbInterval>(BItv))
             {
@@ -6877,6 +6890,7 @@ class ConstraintGraph
                SymbSrc = addVarNode(bound, function_id);
             }
             sigmaOp = new SigmaOp(BItv, sink, I, source, SymbSrc, phi->get_kind());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added SigmaOp with " + std::string(SymbSrc ? "symbolic " : "") + "range " + BItv->ToString());
             if(SymbSrc)
             {
                this->useMap.at(SymbSrc->getValue()).insert(sigmaOp);
@@ -7779,18 +7793,12 @@ class ConstraintGraph
       auto sit = symbMap.find(V);
       if(sit != symbMap.end())
       {
-         #ifdef DEBUG_CGRAPH
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Fix intersects: " + varNode->ToString());
-         #endif
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Fix intersects: " + varNode->ToString());
          for(BasicOp* op : sit->second)
          {
-            #ifdef DEBUG_CGRAPH
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op intersects: " + op->ToString());
-            #endif
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Op intersects: " + op->ToString());
             op->fixIntersects(varNode);
-            #ifdef DEBUG_CGRAPH
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Sink: " + op->ToString());
-            #endif
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Sink: " + op->ToString());
          }
       }
    }
@@ -7887,13 +7895,20 @@ class ConstraintGraph
 
  public:
  
-   ConstraintGraph(application_managerRef _AppM, int 
+   ConstraintGraph(application_managerRef _AppM 
+      , int
    #ifndef NDEBUG
-   _debug_level) : debug_level(_debug_level), 
-   #else
-   ) : 
+      _debug_level
    #endif
-   AppM(_AppM)
+      , int
+   #ifndef NDEBUG
+      _graph_debug
+   #endif
+      ) : 
+   #ifndef NDEBUG
+      debug_level(_debug_level), graph_debug(_graph_debug), 
+   #endif
+      AppM(_AppM)
    {}
 
    virtual ~ConstraintGraph() = default;
@@ -8060,16 +8075,16 @@ class ConstraintGraph
          const auto& component = *sccList.components.at(n);
 
          #ifndef NDEBUG
-         if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
+         if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Components:");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Components:");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-->");
             for(const auto* var : component)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, var->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, var->ToString());
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-----------");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-----------");
          }
          #endif
          if(component.size() == 1)
@@ -8100,7 +8115,7 @@ class ConstraintGraph
             buildConstantVector(component, compUseMap);
             #endif
             #ifndef NDEBUG
-            if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
+            if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
             {
                std::stringstream ss;
                for(auto cnst : constantvector)
@@ -8109,45 +8124,45 @@ class ConstraintGraph
                }
                if(!constantvector.empty())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ss.str());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, ss.str());
                }
             }
             #endif
             generateEntryPoints(component, entryPoints);
             // iterate a fixed number of time before widening
             update(static_cast<size_t>(component.size() * 16L), compUseMap, entryPoints);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed constraint graph to " + printToFile("cgfixed.dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("cgfixed.dot", parameters));
 
             generateEntryPoints(component, entryPoints);
             #ifndef NDEBUG
-            if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
+            if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "entryPoints:");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "entryPoints:");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-->");
                for(const auto& el : entryPoints)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(el)->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, GET_CONST_NODE(el)->ToString());
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
             }
             #endif
             // First iterate till fix point
             preUpdate(compUseMap, entryPoints);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "fixIntersects");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "fixIntersects");
             fixIntersects(component);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " --");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed constraint graph to " + printToFile("cgfixintersect.dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, " --");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("cgfixintersect.dot", parameters));
 
             for(VarNode* varNode : component)
             {
                if(varNode->getRange()->isUnknown())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "initialize unknown: " + varNode->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "initialize unknown: " + varNode->ToString());
                   //    THROW_UNREACHABLE("unexpected condition");
                   varNode->setRange(varNode->getMaxRange());
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed constraint graph to " + printToFile("cgint.dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("cgint.dot", parameters));
 
             // Second iterate till fix point
             std::set<tree_nodeConstRef, tree_reindexCompare> activeVars;
@@ -8156,7 +8171,7 @@ class ConstraintGraph
          }
          propagateToNextSCC(component);
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Printed final constraint graph to " + printToFile("CG" + step_name + ".dot", parameters));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed final constraint graph to " + printToFile("CG" + step_name + ".dot", parameters));
    }
 
    RangeConstRef getRange(const tree_nodeConstRef v)
@@ -8251,7 +8266,7 @@ class Cousot : public ConstraintGraph
    }
 
  public:
-   Cousot(application_managerRef _AppM, int _debug_level) : ConstraintGraph(_AppM, _debug_level) {}
+   Cousot(application_managerRef _AppM, int _debug_level, int _graph_debug) : ConstraintGraph(_AppM, _debug_level, _graph_debug) {}
 };
 
 // ========================================================================== //
@@ -8318,7 +8333,7 @@ class CropDFS : public ConstraintGraph
    }
 
  public:
-   CropDFS(application_managerRef _AppM, int _debug_level) : ConstraintGraph(_AppM, _debug_level) {}
+   CropDFS(application_managerRef _AppM, int _debug_level, int _graph_debug) : ConstraintGraph(_AppM, _debug_level, _graph_debug) {}
 };
 
 static void MatchParametersAndReturnValues(unsigned int function_id, const application_managerRef AppM, const ConstraintGraphRef CG, int 
@@ -8615,9 +8630,9 @@ void RangeAnalysis::Initialize()
    dead_code_restart = false;
    CG.reset(new Cousot(AppM, 
    #ifndef NDEBUG
-      graph_debug));
+      debug_level, graph_debug));
    #else
-      DEBUG_LEVEL_NONE));
+      DEBUG_LEVEL_NONE, DEBUG_LEVEL_NONE));
    #endif
 }
 
