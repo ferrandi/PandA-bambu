@@ -124,7 +124,7 @@ union vcFloat {
       uint32_t exp : 8;
       uint32_t frac : 23;
 #else
-      int32_t coded;
+      uint32_t coded;
 #endif
    } bits __attribute__((packed));
 };
@@ -138,7 +138,7 @@ union vcDouble {
       uint64_t exp : 11;
       uint64_t frac : 52;
 #else
-      int64_t coded;
+      uint64_t coded;
 #endif
    } bits __attribute__((packed));
 };
@@ -243,7 +243,7 @@ namespace
       #else
          uint32_t f = (_flo.bits.coded) & 0b00000000011111111111111111111111;
          uint8_t e = static_cast<uint8_t>(((_flo.bits.coded) << 1) >> 24);
-         bool s = (_flo.bits.coded) < 0;
+         bool s = (_flo.bits.coded) & 0x80000000;
       #endif
       return {s, e, f};
    }
@@ -259,7 +259,7 @@ namespace
       #else
          uint64_t f = (_d.bits.coded) & 0b0000000000001111111111111111111111111111111111111111111111111111;
          uint16_t e = static_cast<uint16_t>(((_d.bits.coded) << 1) >> 53);
-         bool s = (_d.bits.coded) < 0;
+         bool s = (_d.bits.coded) & 0x8000000000000000;
       #endif
       return {s, e, f};
    }
@@ -3481,7 +3481,15 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
    else
    {
       bw_t newBW = interval->getBitWidth();
-      if(!interval->isReal())
+      if(interval->isFullSet())
+      {
+         return false;
+      }
+      else if(interval->isConstant())
+      {
+         newBW = 0U;
+      }
+      else if(!interval->isReal())
       {
          if(interval->isRegular())
          {
@@ -3496,10 +3504,6 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
          {
             return false;
          }
-      }
-      if(interval->isFullSet())
-      {
-         return false;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
    }
@@ -3518,10 +3522,12 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
             vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint8_t>();
             vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint32_t>();
             #else
-            vc.bits.coded = ((rRange->getSign()->getUnsignedMax() << 31) + (rRange->getExponent()->getUnsignedMax() << 23) + rRange->getFractional()->getUnsignedMax()).convert_to<int32_t>();
+            vc.bits.coded = rRange->getSign()->getUnsignedMax().convert_to<uint32_t>() << 31;
+            vc.bits.coded += rRange->getExponent()->getUnsignedMax().convert_to<uint32_t>() << 23;
+            vc.bits.coded += rRange->getFractional()->getUnsignedMax().convert_to<uint32_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
-            cst_val = vc.bits.coded;
+            cst_val = static_cast<int64_t>(vc.bits.coded);
             cst = tree_man->CreateRealCst(SSA->type, static_cast<long double>(vc.flt), TM->new_tree_node_id());
          }
          else
@@ -3532,16 +3538,19 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
             vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint16_t>();
             vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint64_t>();
             #else
-            vc.bits.coded = ((rRange->getSign()->getUnsignedMax() << 63) + (rRange->getExponent()->getUnsignedMax() << 52) + rRange->getFractional()->getUnsignedMax()).convert_to<int64_t>();
+            vc.bits.coded = rRange->getSign()->getUnsignedMax().convert_to<uint64_t>() << 63;
+            vc.bits.coded += rRange->getExponent()->getUnsignedMax().convert_to<uint64_t>() << 52;
+            vc.bits.coded += rRange->getFractional()->getUnsignedMax().convert_to<uint64_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
-            cst_val = vc.bits.coded;
+            cst_val = static_cast<int64_t>(vc.bits.coded);
             cst = tree_man->CreateRealCst(SSA->type, static_cast<long double>(vc.dub), TM->new_tree_node_id());
          }
       }
       else
       {
-         const auto cst_value = (isSigned ? range->getSignedMax() : range->getUnsignedMax()).convert_to<long long>();
+         const auto cst_value = isSigned ? range->getSignedMax().convert_to<int64_t>() : static_cast<int64_t>(range->getUnsignedMax().convert_to<uint64_t>());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + (isSigned ? ("Signed int " + STR(cst_value)) : ("Unsigned int " + STR(static_cast<uint64_t>(cst_value)))));
          cst_val = cst_value;
          cst = tree_man->CreateIntegerCst(SSA->type, cst_value, TM->new_tree_node_id());
       }
