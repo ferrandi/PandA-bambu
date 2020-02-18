@@ -829,6 +829,23 @@ namespace
       return RangeRef(new Range(Empty, bw));
    }
 
+   RangeRef getFullRangeFor(const tree_nodeConstRef tn)
+   {
+      if(tn->get_kind() == tree_reindex_K)
+      {
+         return getFullRangeFor(GET_CONST_NODE(tn));
+      }
+
+      const auto type = getGIMPLE_Type(tn);
+      bw_t bw = static_cast<bw_t>(tree_helper::Size(type));
+
+      if(GetPointer<const real_type>(type) != nullptr)
+      {
+         return RangeRef(new RealRange(RangeRef(new Range(Regular, bw))));
+      }
+      return RangeRef(new Range(Regular, bw));
+   }
+
    RangeRef getGIMPLE_range(const tree_nodeConstRef tn)
    {
       if(tn->get_kind() == tree_reindex_K)
@@ -1318,6 +1335,15 @@ bool Range::isFullSet() const
    }
    return (getSignedMaxValue(bw) <= getUpper() && getSignedMinValue(bw) >= getLower())
       || (getMaxValue(bw) <= getUpper() && getMinValue(bw) >= getLower());
+}
+
+bool Range::isSingleElement() const
+{
+   if(isUnknown() || isEmpty())
+   {
+      return false;
+   }
+   return l == u;
 }
 
 bool Range::isConstant() const
@@ -3002,7 +3028,7 @@ std::ostream& operator<<(std::ostream& OS, const Range& R)
 
 RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
 {
-   auto bw = Other->bw;
+   const auto bw = Other->bw;
    if(Other->isUnknown() || Other->isEmpty())
    {
       return RangeRef(Other->clone());
@@ -3177,6 +3203,11 @@ void RealRange::setUnknown()
 bool RealRange::isFullSet() const
 {
    return sign->isFullSet() && exponent->isFullSet() && fractional->isFullSet();
+}
+
+bool RealRange::isSingleElement() const
+{
+   return sign->isSingleElement() && exponent->isSingleElement() && fractional->isSingleElement();
 }
 
 bool RealRange::isConstant() const
@@ -3924,7 +3955,15 @@ RangeRef SymbInterval::fixIntersects(const VarNode* _bound, const VarNode* _sink
 
             return RangeRef(new Range(Regular, bw, l, upper));
          }
-      case ne_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case ne_expr_K:
+      {
+         if(boundRange->isSingleElement())
+         {
+            return boundRange->getAnti();
+         }
+         break;
+      }
+      case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -3937,15 +3976,15 @@ RangeRef SymbInterval::fixIntersects(const VarNode* _bound, const VarNode* _sink
       case CASE_CPP_NODES:
       case CASE_MISCELLANEOUS:
       default:
-         return RangeRef(new Range(Regular, bw));
+         break;
    }
-   THROW_UNREACHABLE("unexpected condition");
+   return getFullRangeFor(_sink->getValue());
 }
 
 /// Pretty print.
 void SymbInterval::print(std::ostream& OS) const
 {
-   auto bnd = getBound();
+   const auto bnd = getBound();
    switch(this->getOperation())
    {
       case uneq_expr_K:
@@ -3957,12 +3996,20 @@ void SymbInterval::print(std::ostream& OS) const
          OS << ")]";
          break;
       case unle_expr_K:
+         OS << "[0, ub(";
+         printVarName(bnd, OS);
+         OS << ")]";
+         break;
       case le_expr_K: // sign less or equal
          OS << "[-inf, ub(";
          printVarName(bnd, OS);
          OS << ")]";
          break;
       case unlt_expr_K:
+         OS << "[0, ub(";
+         printVarName(bnd, OS);
+         OS << ") - 1]";
+         break;
       case lt_expr_K: // sign less than
          OS << "[-inf, ub(";
          printVarName(bnd, OS);
@@ -4112,7 +4159,7 @@ BasicOp::~BasicOp() = default;
 /// Replace symbolic intervals with hard-wired constants.
 void BasicOp::fixIntersects(VarNode* V)
 {
-   if(const auto* SI = GetPointer<const SymbInterval>(getIntersect()))
+   if(const auto SI = RefcountCast<const SymbInterval>(getIntersect()))
    {
       this->setIntersect(SI->fixIntersects(V, getSink()));
    }
@@ -6493,20 +6540,19 @@ class ConstraintGraph
 
          if(constant != nullptr)
          {
-            kind pred = isSignedType(variable) ? bin_op->get_kind() : op_unsigned(bin_op->get_kind());
-            kind swappred = op_swap(pred);
+            const kind pred = isSignedType(variable) ? bin_op->get_kind() : op_unsigned(bin_op->get_kind());
+            const kind swappred = op_swap(pred);
             RangeRef CR = getGIMPLE_range(constant);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable bitwidth is " + STR(getGIMPLE_BW(variable)) + " and constant value is " + constant->ToString());
 
-            auto tmpT = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + tmpT->ToString());
+            const auto TValues = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + TValues->ToString());
 
-            RangeRef TValues = tmpT->isFullSet() ? RangeRef(tmpT->clone()) : tmpT;
-            RangeRef FValues = tmpT->isFullSet() ? getEmptyFor(variable) : RangeRef(new Range(*TValues->getAnti()));
+            const auto FValues = TValues->isFullSet() ? getEmptyFor(variable) : TValues->getAnti();
 
             // Create the interval using the intersection in the branch.
-            auto BT = refcount<BasicInterval>(new BasicInterval(TValues));
-            auto BF = refcount<BasicInterval>(new BasicInterval(FValues));
+            const auto BT = refcount<BasicInterval>(new BasicInterval(TValues));
+            const auto BF = refcount<BasicInterval>(new BasicInterval(FValues));
 
             ValueBranchMap VBM(variable, TrueBBI, FalseBBI, BT, BF);
             valuesBranchMap.insert(std::make_pair(variable, VBM));
@@ -6530,8 +6576,8 @@ class ConstraintGraph
                   }
                   #endif
 
-                  auto _BT = refcount<BasicInterval>(new BasicInterval(TValues));
-                  auto _BF = refcount<BasicInterval>(new BasicInterval(FValues));
+                  const auto _BT = refcount<BasicInterval>(new BasicInterval(TValues));
+                  const auto _BF = refcount<BasicInterval>(new BasicInterval(FValues));
 
                   ValueBranchMap _VBM(cast_inst->op, TrueBBI, FalseBBI, _BT, _BF);
                   valuesBranchMap.insert(std::make_pair(cast_inst->op, _VBM));
@@ -6540,8 +6586,10 @@ class ConstraintGraph
          }
          else
          {
-            kind pred = isSignedType(bin_op->op0) ? bin_op->get_kind() : op_unsigned(bin_op->get_kind());
-            kind invPred = op_inv(pred);
+            const kind pred = isSignedType(bin_op->op0) ? bin_op->get_kind() : op_unsigned(bin_op->get_kind());
+            const kind invPred = op_inv(pred);
+            const kind swappred = op_swap(pred);
+            const kind invSwappred = op_inv(swappred);
 
             #if !defined(NDEBUG) or HAVE_ASSERTS
             const auto bw0 = getGIMPLE_BW(bin_op->op0);
@@ -6551,12 +6599,12 @@ class ConstraintGraph
             THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
             #endif
 
-            RangeRef CR = getUnknownFor(bin_op->op0);
+            const auto CR = getUnknownFor(bin_op->op0);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
 
             // Symbolic intervals for op0
-            auto STOp0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
-            auto SFOp0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, invPred));
+            const auto STOp0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
+            const auto SFOp0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, invPred));
 
             ValueBranchMap VBMOp0(bin_op->op0, TrueBBI, FalseBBI, STOp0, SFOp0);
             valuesBranchMap.insert(std::make_pair(bin_op->op0, VBMOp0));
@@ -6570,8 +6618,8 @@ class ConstraintGraph
                   const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression " + cast_inst->ToString());
 
-                  auto STOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
-                  auto SFOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, invPred));
+                  const auto STOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, pred));
+                  const auto SFOp0_0 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op1, invPred));
                
                   ValueBranchMap VBMOp0_0(cast_inst->op, TrueBBI, FalseBBI, STOp0_0, SFOp0_0);
                   valuesBranchMap.insert(std::make_pair(cast_inst->op, VBMOp0_0));
@@ -6579,8 +6627,8 @@ class ConstraintGraph
             }
 
             // Symbolic intervals for op1
-            auto STOp1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, invPred));
-            auto SFOp1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, pred));
+            const auto STOp1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, swappred));
+            const auto SFOp1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, invSwappred));
             ValueBranchMap VBMOp1(bin_op->op1, TrueBBI, FalseBBI, STOp1, SFOp1);
             valuesBranchMap.insert(std::make_pair(bin_op->op1, VBMOp1));
 
@@ -6593,8 +6641,8 @@ class ConstraintGraph
                   const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
-                  auto STOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, pred));
-                  auto SFOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, invPred));
+                  const auto STOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, swappred));
+                  const auto SFOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, bin_op->op0, invSwappred));
 
                   ValueBranchMap VBMOp1_1(cast_inst->op, TrueBBI, FalseBBI, STOp1_1, SFOp1_1);
                   valuesBranchMap.insert(std::make_pair(cast_inst->op, VBMOp1_1));
@@ -6740,7 +6788,7 @@ class ConstraintGraph
             else
             {
                const kind pred = isSignedType(cmp_op->op0) ? cmp_op->get_kind() : op_unsigned(cmp_op->get_kind());
-               const kind invPred = op_inv(pred);
+               const kind swappred = op_swap(pred);
 
                #if !defined(NDEBUG) or HAVE_ASSERTS
                const auto bw0 = getGIMPLE_BW(cmp_op->op0);
@@ -6772,7 +6820,7 @@ class ConstraintGraph
                }
 
                // Symbolic intervals for op1
-               const auto STOp1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, invPred));
+               const auto STOp1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, swappred));
                switchSSAMap[cmp_op->op1].push_back(std::make_pair(STOp1, BBI));
 
                // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
@@ -6784,7 +6832,7 @@ class ConstraintGraph
                      const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
-                     const auto STOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, pred));
+                     const auto STOp1_1 = refcount<BasicInterval>(new SymbInterval(CR, cmp_op->op0, swappred));
                      switchSSAMap[cast_inst->op].push_back(std::make_pair(STOp1_1, BBI));
                   }
                }
@@ -6797,6 +6845,9 @@ class ConstraintGraph
       }
 
       // Handle else branch, if there is any
+      // TODO: maybe it should be better to leave fullset as interval for default edge 
+      //       because usign getAnti implies internal values to be excluded while they 
+      //       could still be valid values
       if(static_cast<bool>(DefaultBBI))
       {
          for(auto& [var, VSM] : switchSSAMap)
@@ -6857,7 +6908,6 @@ class ConstraintGraph
          {
             // Switch case
             auto vsmit = this->valuesSwitchMap.find(operand);
-
             if(vsmit == this->valuesSwitchMap.end())
             {
                continue;
@@ -7703,7 +7753,7 @@ class ConstraintGraph
          auto* uop = dynamic_cast<UnaryOp*>(op);
          if((uop != nullptr) && SymbInterval::classof(uop->getIntersect().get()))
          {
-            const auto* symbi = GetPointer<const SymbInterval>(uop->getIntersect());
+            const auto symbi = RefcountCast<const SymbInterval>(uop->getIntersect());
             const auto V = symbi->getBound();
             auto p = symbMap.find(V);
             if(p != symbMap.end())

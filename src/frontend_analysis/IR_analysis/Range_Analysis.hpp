@@ -115,6 +115,7 @@ class Range
    bool isSameType(RangeConstRef other) const;
    virtual bool isSameRange(RangeConstRef other) const;
    virtual bool isFullSet() const;
+   virtual bool isSingleElement() const;
    virtual bool isConstant() const;
    virtual Range* clone() const;
    virtual void print(std::ostream& OS) const;
@@ -192,6 +193,7 @@ class RealRange : public Range
    bool isFullSet() const override;
    bool isUnknown() const override;
    void setUnknown() override;
+   bool isSingleElement() const override;
    bool isConstant() const override;
    bool isEmpty() const override;
    bool isReal() const override;
