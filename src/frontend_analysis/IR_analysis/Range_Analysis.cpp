@@ -1349,7 +1349,7 @@ bool Range::isSingleElement() const
 bool Range::isConstant() const
 {
    return isRegular() && l == u;
-   }
+}
 
 /// Add and Mul are commutative. So, they are a little different
 /// than the other operations.
@@ -2690,8 +2690,8 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
       return RangeRef(new Range(Regular, bw));
    }
 
-   const auto this_min = bw == 1 ? getUnsignedMin() : this->getSignedMin();
-   const auto this_max = bw == 1 ? getUnsignedMax() : this->getSignedMax();
+   const auto this_min = this->getSignedMin();
+   const auto this_max = this->getSignedMax();
    
    const auto [min, max] = std::minmax(truncExt(this_min, bitwidth, true), truncExt(this_max, bitwidth, true));
    RangeRef sextRes(new Range(Regular, bitwidth, min, max));
