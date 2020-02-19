@@ -89,6 +89,9 @@
 #define BITVALUE_UPDATE             // Read/write bitvalue information during the analysis
 
 #ifndef NDEBUG
+#define RA_DEBUG_NONE         0
+#define RA_DEBUG_READONLY    1
+#define RA_DEBUG_NOEXEC       2
 //    #define DEBUG_RANGE_OP
 #define SCC_DEBUG
 #endif
@@ -110,6 +113,10 @@
    case tree_list_K:             \
    case tree_vec_K:              \
    case call_expr_K
+
+#define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
+#define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
+#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getFullRangeFor(var)
 
 using APInt = Range::APInt;
 using UAPInt = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>;
@@ -1365,7 +1372,7 @@ RangeRef Range::add(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet() || !enable_add)
+   if(this->isFullSet() || other->isFullSet())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1422,7 +1429,7 @@ RangeRef Range::sub(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet() || !enable_sub)
+   if(this->isFullSet() || other->isFullSet())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1500,7 +1507,7 @@ RangeRef Range::mul(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti() || !enable_mul)
+   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1559,7 +1566,7 @@ RangeRef Range::udiv(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || !enable_udiv)
+   if(this->isFullSet())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1595,7 +1602,7 @@ RangeRef Range::sdiv(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || this->isAnti() || !enable_sdiv)
+   if(this->isFullSet() || this->isAnti())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1687,7 +1694,7 @@ RangeRef Range::urem(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isAnti() || other->isAnti() || !enable_urem)
+   if(this->isAnti() || other->isAnti())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1746,7 +1753,7 @@ RangeRef Range::srem(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || this->isAnti() || other->isAnti() || !enable_srem)
+   if(this->isFullSet() || this->isAnti() || other->isAnti())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1815,7 +1822,7 @@ RangeRef Range::shl(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti() || !enable_shl)
+   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -1872,7 +1879,7 @@ RangeRef Range::shr(RangeConstRef other, bool sign) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(this->isAnti() || other->isAnti() || !enable_shr)
+   if(this->isAnti() || other->isAnti())
    {
       return RangeRef(new Range(Regular, bw));
    }
@@ -2114,10 +2121,6 @@ RangeRef Range::Or(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(!enable_or)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
 
    const APInt a = this->isAnti() ? Min : this->getLower();
    const APInt b = this->isAnti() ? Max : this->getUpper();
@@ -2139,10 +2142,6 @@ RangeRef Range::And(RangeConstRef other) const
    {
       return RangeRef(new Range(Unknown, bw));
    }
-   if(!enable_and)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
 
    const APInt a = this->isAnti() ? Min : this->getLower();
    const APInt b = this->isAnti() ? Max : this->getUpper();
@@ -2163,10 +2162,6 @@ RangeRef Range::Xor(RangeConstRef other) const
    if(this->isUnknown() || other->isUnknown())
    {
       return RangeRef(new Range(Unknown, bw));
-   }
-   if(!enable_xor)
-   {
-      return RangeRef(new Range(Regular, bw));
    }
 
    const APInt a = this->isAnti() ? Min : this->getLower();
@@ -2196,10 +2191,6 @@ RangeRef Range::Not() const
    if(isEmpty() || isUnknown())
    {
       return RangeRef(new Range(this->type, bw));
-   }
-   if(!enable_not)
-   {
-      return RangeRef(new Range(Regular, bw));
    }
    
    const auto min = convert(~UAPInt(this->u));
@@ -2545,10 +2536,6 @@ RangeRef Range::abs() const
    {
       return RangeRef(this->clone());
    }
-   if(!enable_abs)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
    if(isAnti())
    {
       if(u < 0)
@@ -2600,10 +2587,6 @@ RangeRef Range::negate() const
    {
       return RangeRef(this->clone());
    }
-   if(!enable_negate)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
    if(isAnti())
    {
       return RangeRef(new Range(Anti, bw, -u, -l));
@@ -2627,7 +2610,7 @@ RangeRef Range::truncate(bw_t bitwidth) const
    }
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
-   if(isFullSet() || isAnti() || boost::multiprecision::abs(b - a) > getMaxValue(bitwidth) || !enable_trunc)
+   if(isFullSet() || isAnti() || boost::multiprecision::abs(b - a) > getMaxValue(bitwidth))
    {
       return RangeRef(new Range(Regular, bitwidth));
    }
@@ -2685,10 +2668,6 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
    {
       return RangeRef(new Range(Unknown, bitwidth));
    }
-   if(!enable_sext)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
 
    const auto this_min = this->getSignedMin();
    const auto this_max = this->getSignedMax();
@@ -2716,10 +2695,6 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
    if(isUnknown())
    {
       return RangeRef(new Range(Unknown, bitwidth));
-   }
-   if(!enable_zext)
-   {
-      return RangeRef(new Range(Regular, bw));
    }
    if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
    {
@@ -3626,6 +3601,7 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
          }
          if(lhs != nullptr && static_cast<bool>(tree_helper::ComputeSsaUses(lhs).count(ssa_node)))
          {
+            // TODO: maybe remove statement with constant variable on lhs
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + "Left hand side variable can't be replaced by a constant");
             continue;
          }
@@ -4377,7 +4353,7 @@ RangeRef UnaryOp::eval() const
          case abs_expr_K:
          {
             THROW_ASSERT(oprndSigned, "Absolute value of unsigned operand should not happen");
-               result = oprnd->abs();
+            result = RESULT_DISABLED_OPTION(abs, getSink()->getValue(), oprnd->abs());
             break;
          }
          case bit_not_expr_K:
@@ -4388,12 +4364,19 @@ RangeRef UnaryOp::eval() const
          case convert_expr_K:
          case nop_expr_K:
          {
-            result = oprndSigned ? oprnd->sextOrTrunc(bw) : oprnd->zextOrTrunc(bw);
+            if(oprndSigned)
+            {
+               result = RESULT_DISABLED_OPTION(sext, getSink()->getValue(), oprnd->sextOrTrunc(bw));
+            }
+            else
+            {
+               result = RESULT_DISABLED_OPTION(zext, getSink()->getValue(), oprnd->zextOrTrunc(bw));
+            }
             break;
          }
          case negate_expr_K:
          {
-            result = oprnd->negate();
+            result = RESULT_DISABLED_OPTION(negate, getSink()->getValue(), oprnd->negate());
             break;
          }
          case view_convert_expr_K:
@@ -4469,12 +4452,12 @@ RangeRef UnaryOp::eval() const
          }
          case abs_expr_K:
          {
-            result = oprnd->abs();
+            result = RESULT_DISABLED_OPTION(abs, getSink()->getValue(), oprnd->abs());
             break;
          }
          case negate_expr_K:
          {
-            result = oprnd->negate();
+            result = RESULT_DISABLED_OPTION(negate, getSink()->getValue(), oprnd->negate());
             break;
          }
          case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
@@ -4797,24 +4780,50 @@ RangeRef BinaryOp::evaluate(kind opcode, bw_t bw, RangeRef op1, RangeRef op2, bo
       case pointer_plus_expr_K:
       #endif
       case plus_expr_K:
+         RETURN_DISABLED_OPTION(add, bw);
          return op1->add(op2);
       case minus_expr_K:
+         RETURN_DISABLED_OPTION(sub, bw);
          return op1->sub(op2);
       case mult_expr_K:
+         RETURN_DISABLED_OPTION(mul, bw);
          return op1->mul(op2);
       case trunc_div_expr_K:
-         return isSigned ? op1->sdiv(op2) : op1->udiv(op2);
+         if(isSigned)
+         {
+            RETURN_DISABLED_OPTION(sdiv, bw);
+            return op1->sdiv(op2);
+         }
+         else
+         {
+            RETURN_DISABLED_OPTION(udiv, bw);
+            return op1->udiv(op2);
+         }
       case trunc_mod_expr_K:
-         return isSigned ? op1->srem(op2) : op1->urem(op2);
+         if(isSigned)
+         {
+            RETURN_DISABLED_OPTION(srem, bw);
+            return op1->srem(op2);
+         }
+         else
+         {
+            RETURN_DISABLED_OPTION(urem, bw);
+            return op1->urem(op2);
+         }
       case lshift_expr_K:
+         RETURN_DISABLED_OPTION(shl, bw);
          return op1->shl(op2);
       case rshift_expr_K:
+         RETURN_DISABLED_OPTION(shr, bw);
          return op1->shr(op2, isSigned);
       case bit_and_expr_K:
+         RETURN_DISABLED_OPTION(and, bw);
          return op1->And(op2);
       case bit_ior_expr_K:
+         RETURN_DISABLED_OPTION(or, bw);
          return op1->Or(op2);
       case bit_xor_expr_K:
+         RETURN_DISABLED_OPTION(xor, bw);
          return op1->Xor(op2);
       case uneq_expr_K:
       case eq_expr_K:
@@ -6312,13 +6321,13 @@ class ValueSwitchMap
    /// Get the corresponding basic block
    unsigned int getBBI(size_t idx) const
    {
-      THROW_ASSERT(idx >= BBsuccs.size(), "Index out of bound");
+      THROW_ASSERT(idx < BBsuccs.size(), "Index out of bound");
       return BBsuccs.at(idx).second;
    }
    /// Get the interval associated to the switch case idx
    refcount<BasicInterval> getItv(size_t idx) const
    {
-      THROW_ASSERT(idx >= BBsuccs.size(), "Index out of bound");
+      THROW_ASSERT(idx < BBsuccs.size(), "Index out of bound");
       return BBsuccs.at(idx).first;
    }
    // Get how many cases this switch has
@@ -6334,7 +6343,7 @@ class ValueSwitchMap
    /// Change the interval associated to the true side of the branch
    void setItv(size_t idx, refcount<BasicInterval> Itv)
    {
-      THROW_ASSERT(idx >= BBsuccs.size(), "Index out of bound");
+      THROW_ASSERT(idx < BBsuccs.size(), "Index out of bound");
       this->BBsuccs.at(idx).first = Itv;
    }
 };
@@ -8611,15 +8620,13 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    #endif
 }
 
-#define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
-
 // ========================================================================== //
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
    : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false)
 #ifndef NDEBUG
-   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), read_only(false)
+   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), debug_mode(RA_DEBUG_NONE)
 #endif
    , requireESSA(false) // ESSA disabled because of renaming issues in some cases
 {
@@ -8634,7 +8641,12 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    if(ra_mode.contains("ro"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: read-only mode enabled");
-      read_only = true;
+      debug_mode = RA_DEBUG_READONLY;
+   }
+   if(ra_mode.contains("skip"))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: skip mode enabled");
+      debug_mode = RA_DEBUG_NOEXEC;
    }
    if(ra_mode.contains("debug_op"))
    {
@@ -8730,6 +8742,14 @@ bool RangeAnalysis::HasToBeExecuted() const
 
 DesignFlowStep_Status RangeAnalysis::Exec()
 {
+   #ifndef NDEBUG
+   if(debug_mode == RA_DEBUG_NOEXEC)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
+      return DesignFlowStep_Status::UNCHANGED;
+   }
+   #endif
+
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Analyse only reached functions
    const auto TM = AppM->get_tree_manager();
@@ -8809,12 +8829,16 @@ bool RangeAnalysis::finalize()
 {
    const auto& vars = CG->getVars();
    #ifndef NDEBUG
-   if(read_only)
+   if(debug_mode >= RA_DEBUG_READONLY)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       for(const auto& [var, node] : vars)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range " + node->getRange()->ToString() + " for " + GET_CONST_NODE(var)->ToString());
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "IR update not applied in read-only mode");
       CG.reset();
       return false;
    }
@@ -8828,7 +8852,7 @@ bool RangeAnalysis::finalize()
    unsigned long long updated = 0;
                #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(const auto& [var, node] : vars)
    {
       if(node->updateIR(TM, tree_man

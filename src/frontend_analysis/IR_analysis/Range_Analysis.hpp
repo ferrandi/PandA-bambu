@@ -221,7 +221,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
 #ifndef NDEBUG
    int graph_debug;
    unsigned iteration;
-   bool read_only;
+   int debug_mode;
 #endif
    bool requireESSA;
 

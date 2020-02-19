@@ -649,8 +649,8 @@ BOOST_AUTO_TEST_CASE( range_sext )
 
     auto boolToChar = boolean->sextOrTrunc(8);
     BOOST_REQUIRE_EQUAL(8, boolToChar->getBitWidth());
-    BOOST_REQUIRE_EQUAL(0, boolToChar->getSignedMin());
-    BOOST_REQUIRE_EQUAL(1, boolToChar->getSignedMax());
+    BOOST_REQUIRE_EQUAL(-1, boolToChar->getSignedMin());
+    BOOST_REQUIRE_EQUAL(0, boolToChar->getSignedMax());
 
     auto charSToShort = signedR->sextOrTrunc(16);
     BOOST_REQUIRE_EQUAL(16, charSToShort->getBitWidth());
