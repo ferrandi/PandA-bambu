@@ -7,24 +7,40 @@
       <step id="bash_flow" config="bash_flowC"/>
    </flow>
    <bash config="bash_flowC">
-      <!--Create the design setup -->
+      <cmd name="export OBJECTS_DIR=OpenROAD_objects"/>
+      <cmd name="rm -rf ${OBJECTS_DIR}"/>
+      <cmd name="mkdir -p ${OBJECTS_DIR}"/>
+      <!-- Pre-process Lefs -->
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLef.py --inputLef ${TECH_LEF} ${SC_LEF} ${ADDITIONAL_LEFS} --outputLef ${OBJECTS_DIR}/merged.lef"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/padLefMacro.py -r ${CELL_PAD_IN_SITES} -l 0 -s ${PLACE_SITE} -i ${OBJECTS_DIR}/merged.lef  -o ${OBJECTS_DIR}/merged_padded.lef"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/modifyLefSpacing.py -i ${OBJECTS_DIR}/merged_padded.lef -o ${OBJECTS_DIR}/merged_padded_spacing.lef"/>
+      <!-- Pre-process libraries -->
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLib.pl ${PLATFORM}_merged  ${LIB_FILES} &gt; ${OBJECTS_DIR}/merged.lib.tmp"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${OBJECTS_DIR}/merged.lib.tmp -o ${OBJECTS_DIR}/merged.lib"/>
+       <!--Create the design setup -->
       <!-- YOSYS -->
       <cmd name="yosys &lt;&lt; EOT "/>
       <cmd name="read_verilog -defer -sv ${__generic_sources_macro_list__}"/>
       <cmd name="read_verilog ${BLACKBOX_V_FILE}"/>
-      <cmd name="hierarchy -top ${__top_id__}"/>
-      <cmd name="# the high-level stuff"/>
-      <cmd name="synth -flatten"/>
+      <cmd name="read_verilog ${CLKGATE_MAP_FILE}"/>
+      <cmd name="tcl ${BLACKBOX_MAP_TCL}"/>
+      <cmd name="synth -top ${__top_id__} -flatten"/>
       <cmd name="opt_clean -purge"/>
+      <cmd name="opt -full"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="stat"/>
       <cmd name="techmap -map ${LATCH_MAP_FILE}"/>
-      <cmd name="dfflibmap -liberty ${LIB_FILES}"/>
-      <cmd name="opt"/>
-      <cmd name="opt_expr"/>
+      <cmd name="dfflibmap -liberty ${OBJECTS_DIR}/merged.lib"/>
+      <cmd name="opt -full"/>
+      <cmd name="opt_clean -purge"/>
       <cmd name="abc -D ${__clk_period__}000 -liberty ${LIB_FILES} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
-      <cmd name="hilomap -hicell {*}${TIEHI_CELL_AND_PORT} -locell {*}${TIELO_CELL_AND_PORT}"/>
+      <!--
+      <cmd name="abc -D ${__clk_period__}000 -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
+      -->
+      <cmd name="hilomap -singleton -hicell ${TIEHI_CELL_AND_PORT} -locell ${TIELO_CELL_AND_PORT}"/>
       <cmd name="setundef -zero"/>
       <cmd name="splitnets"/>
-      <cmd name="insbuf -buf {*}${MIN_BUF_CELL_AND_PORTS}"/>
+      <cmd name="insbuf -buf ${MIN_BUF_CELL_AND_PORTS}"/>
       <cmd name="opt_clean -purge"/>
       <cmd name="stat -liberty ${LIB_FILES}"/>
       <cmd name="write_verilog -noattr -noexpr -nohex -nodec ${__top_id__}_mapped.v"/>
@@ -78,36 +94,22 @@
       <cmd name="  puts \$ofile_report &quot;&lt;/document&gt;&quot;"/>
       <cmd name="  close \$ofile_report"/>
       <cmd name="}; #END PROC"/>
-      <!--Let's start with the real job -->
       <cmd name="set outputDir ${__bash_outdir__}"/>
       <cmd name="file mkdir \$outputDir"/>
-      <cmd name="read_lef ${MERGED_LEF}"/>
-      <cmd name="read_liberty ${LIB_FILES}"/>
+      <cmd name="read_lef ${OBJECTS_DIR}/merged.lef"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
       <cmd name="read_verilog ${__top_id__}_mapped.v"/>
       <cmd name="link_design ${__top_id__}"/>
       <cmd name="read_sdc ${__sdc_file__}"/>
-      <cmd name="set wire_cap_ff_per_micron 0.00023"/>
-      <cmd name="set wire_res_kohm_per_micron 0.0016"/>
-      <cmd name="set resizer_buf_cell BUFX4"/>
-      <cmd name="initialize_floorplan -site CoreSite -utilization 40"/>
-      <cmd name="auto_place_pin metal1"/>
-      <cmd name="# Pre-sizing wireload timing"/>
       <cmd name="report_checks"/>
-      <cmd name="set_wire_rc -capacitance \$wire_cap_ff_per_micron -resistance \$wire_res_kohm_per_micron"/>
-      <cmd name="resize -resize -buffer_cell \$resizer_buf_cell"/>
-      <cmd name="# Pre-placement wireload timing"/>
-      <cmd name="report_checks"/>
-      <cmd name="global_placement -timing_driven"/>
-      <cmd name="legalize_placement"/>
-      <cmd name="report_checks > \$outputDir/post_route_timing_summary.rpt"/>
-      <cmd name="write_def ${__top_id__}_mapped.def"/>
       <cmd name="report_design_area"/>
-      <cmd name="report_slack clock"/>
       <cmd name="dump_statistics"/>
       <cmd name="exit"/>
       <cmd name="EOT"/>
-   </bash>
-   <bash config="bash_flow">
+   </bash>   <bash config="bash_flow">
       <cmd name="export NPROC=1"/>
       <cmd name="export RESULTS_DIR=OpenROAD_results"/>
       <cmd name="export OBJECTS_DIR=OpenROAD_objects"/>
@@ -171,7 +173,9 @@
       <!-- OPENROAD -->
       <cmd name="openroad &lt;&lt; EOT "/>
       <cmd name="read_lef ${OBJECTS_DIR}/merged.lef"/>
-      <cmd name="read_liberty ${LIB_FILES}"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
       <cmd name="read_verilog ${__top_id__}_mapped.v"/>
       <cmd name="link_design ${__top_id__}"/>
       <cmd name="read_sdc ${__sdc_file__}"/>
