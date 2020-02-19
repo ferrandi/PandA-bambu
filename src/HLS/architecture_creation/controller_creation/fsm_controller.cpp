@@ -161,6 +161,35 @@ static std::string input_vector_to_string(const std::vector<long long int>& to_b
    return output;
 }
 
+// struct edges_filter
+// {
+//   edges_filter() {}
+//   edges_filter(CustomUnorderedSet<vertex> map, StateTransitionGraphConstRef stg) : loopset(map), wholestg(stg) {}
+//   template<typename Edge>
+//   bool operator()(const Edge& e) const {
+//     for(vertex v : loopset)
+//     {
+//        OutEdgeIterator oe, oend;
+//        for(boost::tie(oe, oend) = boost::out_edges(v, *wholestg); oe != oend; oe++)
+//           if(*oe == e)
+//              return true;
+//     }
+//     return false;
+//   }
+//   CustomUnorderedSet<vertex> loopset;
+//   StateTransitionGraphConstRef wholestg;
+// };
+//
+// struct vertices_filter
+// {
+//    vertices_filter() {}
+//    vertices_filter(CustomUnorderedSet<vertex> map) : loopset(map) {}
+//    bool operator()(const vertex& v) const {
+//      return loopset.find(v) != loopset.end();
+//    }
+//    CustomUnorderedSet<vertex> loopset;
+// };
+
 void fsm_controller::create_state_machine(std::string& parse)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Create state machine");
@@ -195,56 +224,97 @@ void fsm_controller::create_state_machine(std::string& parse)
    std::map<unsigned int, unsigned int> wren_list;
    std::map<unsigned int, unsigned int> register_selectors;
 
-   std::map<unsigned int, std::list<vertex>> loop_map;
+   std::map<unsigned int, CustomUnorderedSet<vertex>> loop_map;
+   std::map<unsigned int, std::list<vertex>> loop_executing_ops;
+   std::map<unsigned int, std::list<vertex>> loop_starting_ops;
+   CustomUnorderedSet<unsigned int> analyzed_loops;
+
+   // group vertices per loopId
    for(const auto& v : working_list)
    {
       auto info = astg->CGetStateInfo(v);
       if(info->loopId != 0)
       {
-         if(loop_map[info->loopId].size() == 0)
-         {
-            // create the proper dummy state which will interface the loop controller
-         }
-         loop_map[info->loopId].push_front(v);
-         continue;
+         loop_map[info->loopId].insert(v);
       }
+   }
+
+   for(auto loop : loop_map)
+   {
+      vertex loop_first_state = first_state;
+      bool found_first = false;
+      InEdgeIterator le, lend;
+
+      for(vertex v : loop_map[get<0>(loop)])
+      {
+         for(boost::tie(le, lend) = boost::in_edges(v, *astg); le != lend; ++le)
+         {
+            if(stg->CGetStateInfo(boost::source(*le, *astg))->loopId != std::get<0>(loop))
+            {
+               THROW_ASSERT(not found_first, "A loop has multiple first states");
+               found_first = true;
+               loop_first_state = v;
+            }
+         }
+         for(auto op : stg->CGetStateInfo(v)->executing_operations)
+         {
+            loop_executing_ops[get<0>(loop)].push_front(op);
+         }
+      }
+      if(found_first)
+         loop_starting_ops[get<0>(loop)] = stg->CGetStateInfo(loop_first_state)->starting_operations;
+      else
+         THROW_ERROR("No first state was detected for a loop");
+   }
+
+   for(const auto& v : working_list)
+   {
       state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
       present_state[v] = std::vector<long long int>(out_num, 0);
-      if(selectors.find(conn_binding::IN) != selectors.end())
+
+      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end())
       {
-         for(const auto& s : selectors.at(conn_binding::IN))
+         analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
+         if(selectors.find(conn_binding::IN) != selectors.end())
          {
-#ifndef NDEBUG
-            std::map<vertex, CustomOrderedSet<vertex>> activations_check;
-#endif
-            const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
-            for(const auto& a : activations)
+            for(const auto& s : selectors.at(conn_binding::IN))
             {
 #ifndef NDEBUG
-               if(activations_check.find(std::get<0>(a)) != activations_check.end())
+               std::map<vertex, CustomOrderedSet<vertex>> activations_check;
+#endif
+               const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
+               for(const auto& a : activations)
                {
-                  THROW_ASSERT(!activations_check.find(std::get<0>(a))->second.empty(), "empty set not expected here");
-                  if(activations_check.at(std::get<0>(a)).find(std::get<1>(a)) == activations_check.at(std::get<0>(a)).end())
+#ifndef NDEBUG
+                  if(activations_check.find(std::get<0>(a)) != activations_check.end())
                   {
-                     if(std::get<1>(a) == NULL_VERTEX)
-                        THROW_ERROR("non compatible transitions added");
-                     else if(activations_check.at(std::get<0>(a)).find(NULL_VERTEX) != activations_check.at(std::get<0>(a)).end())
-                        THROW_ERROR("non compatible transitions added");
+                     THROW_ASSERT(!activations_check.find(std::get<0>(a))->second.empty(), "empty set not expected here");
+                     if(activations_check.at(std::get<0>(a)).find(std::get<1>(a)) == activations_check.at(std::get<0>(a)).end())
+                     {
+                        if(std::get<1>(a) == NULL_VERTEX)
+                           THROW_ERROR("non compatible transitions added");
+                        else if(activations_check.at(std::get<0>(a)).find(NULL_VERTEX) != activations_check.at(std::get<0>(a)).end())
+                           THROW_ERROR("non compatible transitions added");
+                        else
+                           activations_check[std::get<0>(a)].insert(std::get<1>(a));
+                     }
                      else
-                        activations_check[std::get<0>(a)].insert(std::get<1>(a));
+                     {
+                        THROW_ERROR("activation already added");
+                     }
                   }
                   else
-                  {
-                     THROW_ERROR("activation already added");
-                  }
-               }
-               else
-                  activations_check[std::get<0>(a)].insert(std::get<1>(a));
+                     activations_check[std::get<0>(a)].insert(std::get<1>(a));
 #endif
-               if(std::get<0>(a) == v)
-               {
-                  present_state[v][out_ports[s.second]] = 1;
+                  if(std::get<0>(a) == v && stg->CGetStateInfo(v)->loopId == 0)
+                  {
+                     present_state[v][out_ports[s.second]] = 1;
+                  }
+                  else if(loop_map[stg->CGetStateInfo(v)->loopId].find(std::get<0>(a)) != loop_map[stg->CGetStateInfo(v)->loopId].end())
+                  {
+                     present_state[v][out_ports[s.second]] = 1;
+                  }
                }
             }
          }
@@ -259,8 +329,7 @@ void fsm_controller::create_state_machine(std::string& parse)
 
       CustomOrderedSet<generic_objRef> active_fu;
       const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-
-      const auto& operations = astg->CGetStateInfo(v)->executing_operations;
+      const auto& operations = (stg->CGetStateInfo(v)->loopId == 0) ? astg->CGetStateInfo(v)->executing_operations : loop_executing_ops[stg->CGetStateInfo(v)->loopId];
       for(const auto& op : operations)
       {
          active_fu.insert(HLS->Rfu->get(op));
@@ -279,8 +348,17 @@ void fsm_controller::create_state_machine(std::string& parse)
          /// do some checks
          if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
             THROW_ERROR("Unbonded operations have to have both done_port and start_port ports!" + STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
+         bool is_starting_operation;
+         if(stg->CGetStateInfo(v)->loopId == 0)
+            is_starting_operation = std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end();
+         else
+         {
+            // TODO: need to create a new unbounded port dedicated to the loop
+            unsigned int id = stg->CGetStateInfo(v)->loopId;
+            is_starting_operation = std::find(loop_starting_ops[id].begin(), loop_starting_ops[id].end(), op) != loop_starting_ops[id].end();
+         }
          if(((GET_TYPE(data, op) & TYPE_EXTERNAL && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and !stg->CGetStateInfo(v)->is_dummy and
-            std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end())
+            is_starting_operation)
          {
             unsigned int unbounded_port = out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];
             unbounded_ports.insert(unbounded_port);
@@ -288,54 +366,57 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
       }
 
-      for(auto in0 : HLS->Rliv->get_live_in(v))
+      if(stg->CGetStateInfo(v)->loopId == 0)
       {
-         if(HLS->storage_value_information->is_a_storage_value(v, in0))
+         for(auto in0 : HLS->Rliv->get_live_in(v))
          {
-            unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, in0);
-            unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
-            state_Xregs[v][accessed_reg] = false;
-         }
-      }
-
-      if(selectors.find(conn_binding::IN) != selectors.end())
-      {
-         for(const auto& s : selectors.at(conn_binding::IN))
-         {
-            if(s.second->get_type() == generic_obj::COMMAND_PORT)
+            if(HLS->storage_value_information->is_a_storage_value(v, in0))
             {
-               auto current_port = GetPointer<commandport_obj>(s.second);
-               // compute X values for wr_enable signals
-               if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
+               unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(v, in0);
+               unsigned int accessed_reg = HLS->Rreg->get_register(storage_value_index);
+               state_Xregs[v][accessed_reg] = false;
+            }
+         }
+
+         if(selectors.find(conn_binding::IN) != selectors.end())
+         {
+            for(const auto& s : selectors.at(conn_binding::IN))
+            {
+               if(s.second->get_type() == generic_obj::COMMAND_PORT)
                {
-                  auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
-                  wren_list.insert(std::make_pair(reg_obj->get_register_index(), out_ports[s.second]));
-                  if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
+                  auto current_port = GetPointer<commandport_obj>(s.second);
+                  // compute X values for wr_enable signals
+                  if(current_port->get_command_type() == commandport_obj::command_type::WRENABLE)
                   {
-                     if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
+                     auto reg_obj = GetPointer<register_obj>(current_port->get_elem());
+                     wren_list.insert(std::make_pair(reg_obj->get_register_index(), out_ports[s.second]));
+                     if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
                      {
-                        present_state[v][out_ports[s.second]] = 2;
-                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
-                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
-                        PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                        if(state_Xregs[v][reg_obj->get_register_index()] && v != first_state)
+                        {
+                           present_state[v][out_ports[s.second]] = 2;
+                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "Set X value for wr_en on register reg_");
+                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, reg_obj->get_register_index());
+                           PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
+                        }
                      }
                   }
-               }
-               else if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
-               {
-                  auto selector_slave = current_port->get_elem();
-                  if(GetPointer<mux_obj>(selector_slave))
+                  else if(current_port->get_command_type() == commandport_obj::command_type::SELECTOR)
                   {
-                     auto mux_slave = GetPointer<mux_obj>(selector_slave)->get_final_target();
-                     if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
+                     auto selector_slave = current_port->get_elem();
+                     if(GetPointer<mux_obj>(selector_slave))
                      {
-                        unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
-                        register_selectors[out_ports[s.second]] = reg_index;
-                     }
-                     else if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT && active_fu.find(mux_slave) == active_fu.end())
-                     {
-                        if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
-                           present_state[v][out_ports[s.second]] = 2;
+                        auto mux_slave = GetPointer<mux_obj>(selector_slave)->get_final_target();
+                        if(mux_slave->get_type() == generic_obj::resource_type::REGISTER)
+                        {
+                           unsigned int reg_index = GetPointer<register_obj>(mux_slave)->get_register_index();
+                           register_selectors[out_ports[s.second]] = reg_index;
+                        }
+                        else if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT && active_fu.find(mux_slave) == active_fu.end())
+                        {
+                           if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
+                              present_state[v][out_ports[s.second]] = 2;
+                        }
                      }
                   }
                }
@@ -362,6 +443,8 @@ void fsm_controller::create_state_machine(std::string& parse)
       // for every loop controller set the proper transition depending on the done port
       if(HLS->STG->get_entry_state() == v or HLS->STG->get_exit_state() == v)
          continue;
+
+      // skip all but one state per loop
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
       parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], 0);
