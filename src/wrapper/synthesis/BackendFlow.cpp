@@ -65,9 +65,9 @@
 
 /// implemented flows
 #include "ASICBackendFlow.hpp"
+#include "BashBackendFlow.hpp"
 #include "LatticeBackendFlow.hpp"
 #include "NanoXploreBackendFlow.hpp"
-#include "BashBackendFlow.hpp"
 
 /// target devices
 #include "FPGA_device.hpp"
@@ -94,7 +94,6 @@
 #include "nxpython_flow_wrapper.hpp"
 // Generic
 #include "bash_flow_wrapper.hpp"
-
 
 // Under development
 #if HAVE_EXPERIMENTAL

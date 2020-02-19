@@ -54,17 +54,16 @@
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_objects.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #define BASHBACKEND_AREA "BASHBACKEND_AREA"
 #define BASHBACKEND_POWER "BASHBACKEND_POWER"
 #define BASHBACKEND_DESIGN_DELAY "BASHBACKEND_DESIGN_DELAY"
-
 
 BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::string& _flow_name, const target_managerRef _target) : BackendFlow(_Param, _flow_name, _target)
 {
@@ -181,7 +180,6 @@ void BashBackendFlow::xparse_utilization(const std::string& fn)
    THROW_ERROR("Error during report parsing: " + fn);
 }
 
-
 void BashBackendFlow::create_sdc(const DesignParametersRef dp)
 {
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".sdc";
@@ -259,11 +257,12 @@ void BashBackendFlow::CheckSynthesisResults()
 
 void BashBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
-   script << "export PANDA_DATA_INSTALLDIR=" << std::string(PANDA_DATA_INSTALLDIR "/panda/")<<"\n";
+   script << "export PANDA_DATA_INSTALLDIR=" << std::string(PANDA_DATA_INSTALLDIR "/panda/") << "\n";
 
    for(auto pair : target->get_target_device()->get_bash_vars())
    {
-      script  << ": ${" << pair.first << ":=" << pair.second << "}" << "\n";
-      script  << "export " << pair.first << "\n";
+      script << ": ${" << pair.first << ":=" << pair.second << "}"
+             << "\n";
+      script << "export " << pair.first << "\n";
    }
 }
