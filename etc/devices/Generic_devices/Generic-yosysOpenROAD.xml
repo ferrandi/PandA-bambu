@@ -12,8 +12,6 @@
       <cmd name="mkdir -p ${OBJECTS_DIR}"/>
       <!-- Pre-process Lefs -->
       <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLef.py --inputLef ${TECH_LEF} ${SC_LEF} ${ADDITIONAL_LEFS} --outputLef ${OBJECTS_DIR}/merged.lef"/>
-      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/padLefMacro.py -r ${CELL_PAD_IN_SITES} -l 0 -s ${PLACE_SITE} -i ${OBJECTS_DIR}/merged.lef  -o ${OBJECTS_DIR}/merged_padded.lef"/>
-      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/modifyLefSpacing.py -i ${OBJECTS_DIR}/merged_padded.lef -o ${OBJECTS_DIR}/merged_padded_spacing.lef"/>
       <!-- Pre-process libraries -->
       <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLib.pl ${PLATFORM}_merged  ${LIB_FILES} &gt; ${OBJECTS_DIR}/merged.lib.tmp"/>
       <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${OBJECTS_DIR}/merged.lib.tmp -o ${OBJECTS_DIR}/merged.lib"/>
@@ -109,8 +107,10 @@
       <cmd name="dump_statistics"/>
       <cmd name="exit"/>
       <cmd name="EOT"/>
-   </bash>   <bash config="bash_flow">
-      <cmd name="export NPROC=1"/>
+   </bash>
+   <bash config="bash_flow">
+      <cmd name=": ${NPROC:=1}"/>
+      <cmd name="export NPROC"/>
       <cmd name="export RESULTS_DIR=OpenROAD_results"/>
       <cmd name="export OBJECTS_DIR=OpenROAD_objects"/>
       <cmd name="rm -rf ${RESULTS_DIR}"/>
@@ -126,7 +126,7 @@
       <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLib.pl ${PLATFORM}_merged  ${LIB_FILES} &gt; ${OBJECTS_DIR}/merged.lib.tmp"/>
       <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${OBJECTS_DIR}/merged.lib.tmp -o ${OBJECTS_DIR}/merged.lib"/>
       <!-- Pre-process KLayout tech -->
-      <cmd name="sed 's,&lt;lef-files&gt;.*&lt;/lef-files&gt;,&lt;lef-files&gt;$(realpath ${OBJECTS_DIR}/merged.lef)&lt;/lef-files&gt;,g' ${KLAYOUT_TECH_FILE} &gt; ${OBJECTS_DIR}/klayout.lyt"/>
+      <cmd name="sed &quot;s,&lt;lef-files&gt;.*&lt;/lef-files&gt;,&lt;lef-files&gt;$(realpath ${OBJECTS_DIR}/merged.lef)&lt;/lef-files&gt;,g&quot; ${KLAYOUT_TECH_FILE} &gt; ${OBJECTS_DIR}/klayout.lyt"/>
       <!-- Generate param file for TritonRoute -->
       <cmd name="echo &quot;Generate param file for TritonRoute&quot;"/>
       <cmd name="echo &quot;lef:${TRITON_ROUTE_LEF}&quot; > ${OBJECTS_DIR}/TritonRoute.param"/>
@@ -172,6 +172,7 @@
       <cmd name="EOT"/>
       <!-- OPENROAD -->
       <cmd name="openroad &lt;&lt; EOT "/>
+      <cmd name="# STEP 1: Translate verilog to def"/>
       <cmd name="read_lef ${OBJECTS_DIR}/merged.lef"/>
       <cmd name="foreach libFile $::env(LIB_FILES) {"/>
       <cmd name="    read_liberty \$libFile"/>
@@ -206,12 +207,17 @@
       <cmd name="                       -tracks $::env(TRACKS_INFO_FILE) \\"/>
       <cmd name="                       -site $::env(PLACE_SITE)"/>
       <cmd name="}"/>
-
+      <cmd name="# STEP 2: IO Placement"/>
       <cmd name="if {![info exists ::env(FOOTPRINT)]} {"/>
       <cmd name="  io_placer -hor_layer $::env(IO_PLACER_H) \\"/>
       <cmd name="            -ver_layer $::env(IO_PLACER_V) \\"/>
       <cmd name="            -random"/>
       <cmd name="}"/>
+      <cmd name="write_def $::env(RESULTS_DIR)/2_2_floorplan_io.def"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <!-- OPENROAD -->
+      <cmd name="openroad &lt;&lt; EOT "/>
       <cmd name="proc find_macros {} {"/>
       <cmd name="  set macros &quot;&quot;"/>
       <cmd name="  set db [::ord::get_db]"/>
@@ -225,12 +231,49 @@
       <cmd name="  }"/>
       <cmd name="  return \$macros"/>
       <cmd name="}"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
+      <cmd name="# Read lef def and sdc"/>
+      <cmd name="read_lef $::env(OBJECTS_DIR)/merged_padded.lef"/>
+      <cmd name="read_def $::env(RESULTS_DIR)/2_2_floorplan_io.def"/>
+      <cmd name="read_sdc ${__sdc_file__}"/>
+      <cmd name=" STEP 3: Timing Driven Mixed Sized Placement"/>
       <cmd name="if {[find_macros] != &quot;&quot;} {"/>
       <cmd name="  set_wire_rc -layer $::env(WIRE_RC_LAYER)"/>
       <cmd name="  global_placement -timing_driven"/>
       <cmd name="} else {"/>
       <cmd name="  puts &quot;No macros found: Skipping global_placement&quot;"/>
       <cmd name="}"/>
+      <cmd name="write_def $::env(RESULTS_DIR)/2_3_floorplan_tdms.def"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/fixIoPins.py --inputDef ${RESULTS_DIR}/2_3_floorplan_tdms.def --outputDef ${RESULTS_DIR}/2_3_floorplan_tdms.def --margin ${IO_PIN_MARGIN}"/>
+      <!-- OPENROAD -->
+      <cmd name="openroad &lt;&lt; EOT "/>
+      <cmd name="proc find_macros {} {"/>
+      <cmd name="  set macros &quot;&quot;"/>
+      <cmd name="  set db [::ord::get_db]"/>
+      <cmd name="  set block [[\$db getChip] getBlock]"/>
+      <cmd name="  foreach inst [\$block getInsts] {"/>
+      <cmd name="    set inst_master [\$inst getMaster]"/>
+      <cmd name="    # BLOCK means MACRO cells"/>
+      <cmd name="    if { [string match [\$inst_master getType] &quot;BLOCK&quot;] } {"/>
+      <cmd name="      append macros &quot; &quot; \$inst"/>
+      <cmd name="    }"/>
+      <cmd name="  }"/>
+      <cmd name="  return \$macros"/>
+      <cmd name="}"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
+      <cmd name="# Read lef def and sdc"/>
+      <cmd name="read_lef $::env(OBJECTS_DIR)/merged_padded.lef"/>
+      <cmd name="read_def $::env(RESULTS_DIR)/2_3_floorplan_tdms.def"/>
+      <cmd name="read_sdc ${__sdc_file__}"/>
+      <cmd name="# STEP 4: Macro Placement"/>
       <cmd name="if {[find_macros] != &quot;&quot;} {"/>
       <cmd name="  macro_placement -global_config $::env(IP_GLOBAL_CFG)"/>
       <cmd name="} else {"/>
@@ -250,7 +293,7 @@
       <cmd name="# Perform resizing and buffering"/>
       <cmd name="set dont_use_cells &quot;&quot;"/>
       <cmd name="foreach cell $::env(DONT_USE_CELLS)} {"/>
-      <cmd name="  lappend \$dont_use_cells [get_full_name [get_lib_cells */\$cell]]"/>
+      <cmd name="  lappend dont_use_cells [get_full_name [get_lib_cells */\$cell]]"/>
       <cmd name="}"/>
       <cmd name="if {[info exists ::env(FOOTPRINT)]} {"/>
       <cmd name="  # Disable input and output buffering to the io cell pads"/>
@@ -291,17 +334,12 @@
       <cmd name="                     -wire_unit 20"/>
       <cmd name="legalize_placement"/>
       <cmd name="# STEP 1: Run global route"/>
-      <cmd name="if {$::env(PLATFORM) == &quot;gf14&quot;} {"/>
-      <cmd name="  fastroute -capacity_adjustment 0.15 \\"/>
-      <cmd name="    -output_file ${RESULTS_DIR}/route.guide \\"/>
-      <cmd name="    -min_routing_layer 2 \\"/>
-      <cmd name="    -max_routing_layer $::env(MAX_ROUTING_LAYER) \\"/>
-      <cmd name="    -unidirectional_routing true"/>
-      <cmd name="} else {"/>
-      <cmd name="  fastroute -capacity_adjustment 0.15 \\"/>
-      <cmd name="            -max_routing_layer $::env(MAX_ROUTING_LAYER) \\"/>
-      <cmd name="            -output_file ${RESULTS_DIR}/route.guide"/>
-      <cmd name="}"/>
+      <cmd name="fastroute -output_file ${RESULTS_DIR}/route.guide \\"/>
+      <cmd name="          -max_routing_layer $::env(MAX_ROUTING_LAYER) \\"/>
+      <cmd name="          -unidirectional_routing true \\"/>
+      <cmd name="          -capacity_adjustment 0.15 \\"/>
+      <cmd name="          -layers_adjustments {{2 0.7} {3 0.7}} \\"/>
+      <cmd name="          -pitches_in_tile 45"/>
       <cmd name="# STEP 2: Run detail route"/>
       <cmd name="write_def ${RESULTS_DIR}/4_cts.def"/>
       <cmd name="write_sdc $::env(RESULTS_DIR)/5_route.sdc"/>
@@ -381,11 +419,10 @@
       <cmd name="exit"/>
       <cmd name="EOT"/>
       <cmd name="klayout -zz -rd design_name=${__top_id__} \\"/>
-      <cmd name="	        -rd in_lef=$(realpath ${OBJECTS_DIR}/merged.lef) \\"/>
       <cmd name="	        -rd in_def=${RESULTS_DIR}/5_route.def \\"/>
       <cmd name="	        -rd in_gds=&quot;${GDS_FILES}&quot; \\"/>
       <cmd name="	        -rd out_gds=${RESULTS_DIR}/6_1_merged.gds \\"/>
-      <cmd name="	        -rd map_file=${LAYERMAP} \\"/>
+      <cmd name="	        -rd tech_file=${OBJECTS_DIR}/klayout.lyt \\"/>
       <cmd name="	        -rm ${PANDA_DATA_INSTALLDIR}/scripts/def2gds.py"/>
    </bash>
 </synthesis>

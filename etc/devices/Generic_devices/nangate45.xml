@@ -14,8 +14,8 @@
     <DSPs_y_sizes value="16"/>
     <max_lut_size value="0"/>
     <PLATFORM is_bash_var="1" value="nangate45"/>
-    <DIE_AREA is_bash_var="1" value="0 0 320.15 320.6"/>
-    <CORE_AREA is_bash_var="1" value="10.07 11.2 310.27 310.8"/>
+    <DIE_AREA is_bash_var="1" value="0 0 620.15 620.6"/>
+    <CORE_AREA is_bash_var="1" value="10.07 11.2 610.27 610.8"/>
     <PROCESS is_bash_var="1" value="45"/>
     <TIEHI_CELL_AND_PORT is_bash_var="1" value="LOGIC1_X1 Z"/>	
     <TIELO_CELL_AND_PORT is_bash_var="1" value="LOGIC0_X1 Z"/>
