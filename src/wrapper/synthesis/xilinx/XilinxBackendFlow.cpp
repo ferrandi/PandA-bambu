@@ -44,7 +44,6 @@
 /// Header include
 #include "XilinxBackendFlow.hpp"
 
-#include "config_HAVE_XILINX.hpp"
 #include "config_XILINX_SETTINGS.hpp"
 #include "config_XILINX_VIVADO_SETTINGS.hpp"
 
@@ -756,11 +755,7 @@ void XilinxBackendFlow::WriteFlowConfiguration(std::ostream& script)
 
 void XilinxBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_XILINX
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("Xilinx tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }
 
 void XilinxBackendFlow::InitDesignParameters()

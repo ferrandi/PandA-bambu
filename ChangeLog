@@ -3,6 +3,8 @@ Eighth public release of PandA framework.
 
 New features introduced:
 - Added support to CLANG/LLVM compiler version 8 and 9.
+- Added an initial support to ASIC flow based on Yosys+OpenROAD projects (see https://theopenroadproject.org/)
+- Simplified the simulation/synthesis backends integration. In case the simulator or synthesizer are in the path, the configuration can be as simple as ../configure --prefix=/opt/panda
 
 =========== PANDA 0.9.6 ===========
 Sat 11 January 2020, PandA release 0.9.6
