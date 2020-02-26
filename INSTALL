@@ -621,9 +621,10 @@ Here the list of commands required:
      $sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
      $git clone https://github.com/ferrandi/PandA-bambu.git
      $cd PandA-bambu
+     $export PATH=/opt/local/bin:/opt/local/sbin:$PATH
      $make -f Makefile.init
      $mkdir build
-     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
+     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --disable-Werror --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
 
 
 
