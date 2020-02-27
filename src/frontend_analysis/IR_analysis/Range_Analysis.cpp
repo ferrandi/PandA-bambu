@@ -4812,10 +4812,10 @@ RangeRef BinaryOp::evaluate(kind opcode, bw_t bw, RangeRef op1, RangeRef op2, bo
          }
       case lshift_expr_K:
          RETURN_DISABLED_OPTION(shl, bw);
-         return op1->shl(op2);
+         return isSigned ? op1->sextOrTrunc(bw)->shl(op2) : op1->zextOrTrunc(bw)->shl(op2);
       case rshift_expr_K:
          RETURN_DISABLED_OPTION(shr, bw);
-         return op1->shr(op2, isSigned);
+         return isSigned ? op1->shr(op2, true)->sextOrTrunc(bw) : op1->shr(op2, false)->zextOrTrunc(bw);
       case bit_and_expr_K:
          RETURN_DISABLED_OPTION(and, bw);
          return op1->And(op2);
