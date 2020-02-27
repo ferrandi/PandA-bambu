@@ -147,10 +147,14 @@ class Range
    RangeRef Uge(RangeConstRef other, bw_t bw) const;
    RangeRef Ult(RangeConstRef other, bw_t bw) const;
    RangeRef Ule(RangeConstRef other, bw_t bw) const;
+   RangeRef UMin(RangeConstRef other) const;
+   RangeRef UMax(RangeConstRef other) const;
    RangeRef Sgt(RangeConstRef other, bw_t bw) const;
    RangeRef Sge(RangeConstRef other, bw_t bw) const;
    RangeRef Slt(RangeConstRef other, bw_t bw) const;
    RangeRef Sle(RangeConstRef other, bw_t bw) const;
+   RangeRef SMin(RangeConstRef other) const;
+   RangeRef SMax(RangeConstRef other) const;
    
    RangeRef sextOrTrunc(bw_t bitwidth) const;
    RangeRef zextOrTrunc(bw_t bitwidth) const;

@@ -640,6 +640,8 @@ namespace
                #ifdef INTEGER_PTR
                case pointer_plus_expr_K:
                #endif
+               case min_expr_K:
+               case max_expr_K:
                {
                   const auto bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
                   if(!isValidType(bin_op->op0) || !isValidType(bin_op->op1))
@@ -668,7 +670,7 @@ namespace
                #ifndef INTEGER_PTR
                case pointer_plus_expr_K:
                #endif
-               case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+               case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case mem_ref_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
                // Ternary case
                case component_ref_K:case bit_field_ref_K:case bit_ior_concat_expr_K:case vtable_ref_K:case with_cleanup_expr_K:case obj_type_ref_K:case save_expr_K:case vec_cond_expr_K:case vec_perm_expr_K:case dot_prod_expr_K:case ternary_plus_expr_K:case ternary_pm_expr_K:case ternary_mp_expr_K:case ternary_mm_expr_K:
                case CASE_QUATERNARY_EXPRESSION:
@@ -997,6 +999,8 @@ static bool enable_xor = true;
 static bool enable_sext = true;
 static bool enable_zext = true;
 static bool enable_trunc = true;
+static bool enable_min = true;
+static bool enable_max = true;
 
 Range::Range(RangeType rType, bw_t rbw) : l(Min), u(Max), bw(rbw), type(rType)
 {
@@ -2528,6 +2532,110 @@ RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
    }
 
    return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::SMin(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   if(this->isEmpty() || other->isEmpty())
+   {
+      return RangeRef(new Range(Empty, bw));
+   }
+   if(this->isUnknown() || other->isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bw));
+   }
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMin = this->Slt(other, 1);
+   if(thisMin->isConstant())
+   {
+      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::min(this->getSignedMin(), other->getSignedMin());
+   const auto max = std::min(this->getSignedMax(), other->getSignedMax());
+   return RangeRef(new Range(Regular, bw, min, max));
+}
+
+RangeRef Range::SMax(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   if(this->isEmpty() || other->isEmpty())
+   {
+      return RangeRef(new Range(Empty, bw));
+   }
+   if(this->isUnknown() || other->isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bw));
+   }
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMax = this->Sgt(other, 1);
+   if(thisMax->isConstant())
+   {
+      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::max(this->getSignedMin(), other->getSignedMin());
+   const auto max = std::max(this->getSignedMax(), other->getSignedMax());
+   return RangeRef(new Range(Regular, bw, min, max));
+}
+
+RangeRef Range::UMin(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   if(this->isEmpty() || other->isEmpty())
+   {
+      return RangeRef(new Range(Empty, bw));
+   }
+   if(this->isUnknown() || other->isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bw));
+   }
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMin = this->Ult(other, 1);
+   if(thisMin->isConstant())
+   {
+      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::min(this->getUnsignedMin(), other->getUnsignedMin());
+   const auto max = std::min(this->getUnsignedMax(), other->getUnsignedMax());
+   return RangeRef(new Range(Regular, bw, min, max));
+}
+
+RangeRef Range::UMax(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   if(this->isEmpty() || other->isEmpty())
+   {
+      return RangeRef(new Range(Empty, bw));
+   }
+   if(this->isUnknown() || other->isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bw));
+   }
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMax = this->Ugt(other, 1);
+   if(thisMax->isConstant())
+   {
+      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::max(this->getUnsignedMin(), other->getUnsignedMin());
+   const auto max = std::max(this->getUnsignedMax(), other->getUnsignedMax());
+   return RangeRef(new Range(Regular, bw, min, max));
 }
 
 RangeRef Range::abs() const
@@ -4846,11 +4954,17 @@ RangeRef BinaryOp::evaluate(kind opcode, bw_t bw, RangeRef op1, RangeRef op2, bo
          return op1->Slt(op2, bw);
       case le_expr_K:
          return op1->Sle(op2, bw);
+      case min_expr_K:
+         RETURN_DISABLED_OPTION(min, bw);
+         return isSigned ? op1->SMin(op2) : op1->UMin(op2);
+      case max_expr_K:
+         RETURN_DISABLED_OPTION(max, bw);
+         return isSigned ? op1->SMax(op2) : op1->UMax(op2);
 
       #ifndef INTEGER_PTR
       case pointer_plus_expr_K:
       #endif
-      case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case assert_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case mem_ref_K:case modify_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -8682,6 +8796,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, sext);
    OPERATION_OPTION(ra_mode, zext);
    OPERATION_OPTION(ra_mode, trunc);
+   OPERATION_OPTION(ra_mode, min);
+   OPERATION_OPTION(ra_mode, max);
 }
 
 RangeAnalysis::~RangeAnalysis() = default;
