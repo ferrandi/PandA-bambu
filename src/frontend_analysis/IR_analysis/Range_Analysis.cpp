@@ -5702,20 +5702,20 @@ Nuutila::Nuutila(VarNodes* varNodes, UseMap* useMap, SymbMap* symbMap)
    this->index = 0;
 
    // Iterate over all varnodes of the constraint graph
-   for(const auto& [var, node] : *varNodes)
+   for(const auto& vNode : *varNodes)
    {
       // Initialize DFS control variable for each Value in the graph
-      dfs[var] = -1;
+      dfs[vNode.first] = -1;
    }
    addControlDependenceEdges(useMap, symbMap, varNodes);
    // Iterate again over all varnodes of the constraint graph
-   for(const auto& [var, node] : *varNodes)
+   for(const auto& vNode : *varNodes)
    {
       // If the Value has not been visited yet, call visit for him
-      if(dfs[var] < 0)
+      if(dfs[vNode.first] < 0)
       {
          std::stack<tree_nodeConstRef> pilha;
-         visit(var, pilha, useMap);
+         visit(vNode.first, pilha, useMap);
       }
    }
    delControlDependenceEdges(useMap);
@@ -5729,9 +5729,9 @@ Nuutila::Nuutila(VarNodes* varNodes, UseMap* useMap, SymbMap* symbMap)
 
 Nuutila::~Nuutila()
 {
-   for(const auto& [var, m] : components)
+   for(const auto& vM : components)
    {
-      delete m;
+      delete vM.second;
    }
 }
 
@@ -5761,10 +5761,10 @@ void Nuutila::addControlDependenceEdges(UseMap* useMap, const SymbMap* symbMap, 
    */
 void Nuutila::delControlDependenceEdges(UseMap* useMap)
 {
-   for(auto& [var, ops] : *useMap)
+   for(auto& varOps : *useMap)
    {
       std::deque<ControlDep*> cds;
-      for(auto sit : ops)
+      for(auto sit : varOps.second)
       {
          if(ControlDep* cd = dynamic_cast<ControlDep*>(sit))
          {
@@ -5792,7 +5792,7 @@ void Nuutila::delControlDependenceEdges(UseMap* useMap)
          pseudoEdgesString << '"';
          pseudoEdgesString << " [style=dashed]\n";
          // Remove pseudo edge from the map
-         ops.erase(cd);
+         varOps.second.erase(cd);
       }
    }
 }
@@ -6976,9 +6976,9 @@ class ConstraintGraph
          for(auto& [var, VSM] : switchSSAMap)
          {
             RangeRef elseRange = getEmptyFor(var);
-            for(const auto& [BI, BBI] : VSM)
+            for(const auto& intervalBBI : VSM)
             {
-               elseRange = elseRange->unionWith(BI->getRange());
+               elseRange = elseRange->unionWith(intervalBBI.first->getRange());
             }
             elseRange = elseRange->getAnti();
             VSM.push_back(std::make_pair(refcount<BasicInterval>(new BasicInterval(elseRange)), DefaultBBI));
@@ -7007,12 +7007,12 @@ class ConstraintGraph
       SigmaOp* sigmaOp = nullptr;
 
       //const BasicBlock* thisbb = Sigma->getParent();
-      for(const auto [operand, edge_index] : phi->CGetDefEdgesList())
+      for(const auto opEdge : phi->CGetDefEdgesList())
       {
-         VarNode* source = addVarNode(operand, function_id);
+         VarNode* source = addVarNode(opEdge.first, function_id);
 
          // Create the operation (two cases from: branch or switch)
-         auto vbmit = this->valuesBranchMap.find(operand);
+         auto vbmit = this->valuesBranchMap.find(opEdge.first);
 
          // Branch case
          if(vbmit != this->valuesBranchMap.end())
@@ -7030,7 +7030,7 @@ class ConstraintGraph
          else
          {
             // Switch case
-            auto vsmit = this->valuesSwitchMap.find(operand);
+            auto vsmit = this->valuesSwitchMap.find(opEdge.first);
             if(vsmit == this->valuesSwitchMap.end())
             {
                continue;
@@ -7299,9 +7299,9 @@ class ConstraintGraph
       this->defMap[sink->getValue()] = phiOp;
 
       // Create the sources.
-      for(const auto& [operand, BBI] : phi->CGetDefEdgesList())
+      for(const auto& operandBBI : phi->CGetDefEdgesList())
       {
-         VarNode* source = addVarNode(operand, function_id);
+         VarNode* source = addVarNode(operandBBI.first, function_id);
          phiOp->addSource(source);
          // Inserts the sources of the operation in the use map list.
          this->useMap.at(source->getValue()).insert(phiOp);
@@ -7343,23 +7343,24 @@ class ConstraintGraph
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initializer has " + STR(constr->list_of_idx_valu.size()) + " values:");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
                THROW_ASSERT(static_cast<bool>(constr->list_of_idx_valu.size()), "At least one initializer should be there");
-               for(const auto& [idx, valu] : constr->list_of_idx_valu)
+               for(const auto& idxValue : constr->list_of_idx_valu)
                {
-                  if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(valu)) && isValidType(valu))
+                  const auto& value = idxValue.second;
+                  if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(value)) && isValidType(value))
                   {
                      #ifndef NDEBUG
-                     const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(valu));
+                     const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(value));
                      if(ic && bw == 8)
                      {
                         auto asciiChar = tree_helper::get_integer_cst_value(ic);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(valu)->ToString() + " '" + static_cast<char>(asciiChar) + "'");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(value)->ToString() + " '" + static_cast<char>(asciiChar) + "'");
                      }
                      else
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(valu)->ToString());
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(value)->ToString());
                      }
                      #endif
-                     intersection = intersection->unionWith(getGIMPLE_range(valu));
+                     intersection = intersection->unionWith(getGIMPLE_range(value));
                   }
                   else
                   {
@@ -7803,9 +7804,9 @@ class ConstraintGraph
       }
 
       // Get constants used in intersections
-      for(const auto& [var, ops] : compusemap)
+      for(const auto& varOps : compusemap)
       {
-         for(BasicOp* op : ops)
+         for(BasicOp* op : varOps.second)
          {
             const SigmaOp* sigma = dynamic_cast<SigmaOp*>(op);
             // Symbolic intervals are discarded, as they don't have fixed values yet
@@ -8144,21 +8145,21 @@ class ConstraintGraph
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variables analysis...");
-      for(const auto& [BBI, BB] : SL->list_of_bloc)
+      for(const auto& idxBB : SL->list_of_bloc)
       {
-         const auto& stmt_list = BB->CGetStmtList();
+         const auto& stmt_list = idxBB.second->CGetStmtList();
          if(stmt_list.empty())
          {
             continue;
          }
 
          const auto terminator = GET_CONST_NODE(stmt_list.back());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BB" + STR(BBI) + " has terminator type " + terminator->get_kind_text() + " " + terminator->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BB" + STR(idxBB.first) + " has terminator type " + terminator->get_kind_text() + " " + terminator->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          if(const auto* br = GetPointer<const gimple_cond>(terminator))
          {
             #ifdef EARLY_DEAD_CODE_RESTART
-            if(buildValueBranchMap(br, BB, function_id))
+            if(buildValueBranchMap(br, idxBB.second, function_id))
             {
                // Dead code elimination necessary
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -8166,28 +8167,28 @@ class ConstraintGraph
                return true;
             }
             #else
-            buildValueBranchMap(br, BB, function_id);
+            buildValueBranchMap(br, idxBB.second, function_id);
             #endif
          }
          else if(const auto* mwi = GetPointer<const gimple_multi_way_if>(terminator))
          {
             #ifdef EARLY_DEAD_CODE_RESTART
-            if(buildValueMultiIfMap(mwi, BB, function_id))
+            if(buildValueMultiIfMap(mwi, idxBB.second, function_id))
             {
                // Dead code elimination necessary
                return true;
             }
             #else
-            buildValueMultiIfMap(mwi, BB, function_id);
+            buildValueMultiIfMap(mwi, idxBB.second, function_id);
             #endif
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variables analysis completed");
 
-      for(const auto& [BBI, BB] : SL->list_of_bloc)
+      for(const auto& idxBB : SL->list_of_bloc)
       {
-         const auto& phi_list = BB->CGetPhiList();
+         const auto& phi_list = idxBB.second->CGetPhiList();
          if(phi_list.size())
          {
             for(const auto& stmt : phi_list)
@@ -8200,7 +8201,7 @@ class ConstraintGraph
             }
          }
 
-         const auto& stmt_list = BB->CGetStmtList();
+         const auto& stmt_list = idxBB.second->CGetStmtList();
          if(stmt_list.size())
          {
             for(const auto& stmt : stmt_list)
@@ -8542,7 +8543,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    const auto& parmMap = CG->getParmMap();
    const auto funParm = parmMap.find(function_id);
    THROW_ASSERT(funParm != parmMap.end(), "Function parameters binding unavailable");
-   const auto& [foundAll, parmBind] = funParm->second;
+   const auto& parmBind = funParm->second.second;
    THROW_ASSERT(parmBind.size() == parameters.size(), "Parameters count mismatch");
    for(size_t i = 0; i < parameters.size(); ++i)
    {
@@ -8576,9 +8577,9 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    if(!noReturn)
    {
       const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
-      for(const auto& [BBI, BB] : SL->list_of_bloc)
+      for(const auto& idxBB : SL->list_of_bloc)
       {
-         const auto& stmt_list = BB->CGetStmtList();
+         const auto& stmt_list = idxBB.second->CGetStmtList();
             
          if(stmt_list.size())
          if(const auto* gr = GetPointer<const gimple_return>(GET_CONST_NODE(stmt_list.back())))
@@ -8969,15 +8970,15 @@ bool RangeAnalysis::finalize()
                #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for(const auto& [var, node] : vars)
+   for(const auto& varNode : vars)
    {
-      if(node->updateIR(TM, tree_man
+      if(varNode.second->updateIR(TM, tree_man
             #ifndef NDEBUG
          , debug_level
             #endif
          ))
             {
-         updatedFunctions.insert(node->getFunctionId());
+         updatedFunctions.insert(varNode.second->getFunctionId());
          #ifndef NDEBUG
          ++updated;
          AppM->RegisterTransformation(GetName(), nullptr);
