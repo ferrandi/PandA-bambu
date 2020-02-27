@@ -83,6 +83,11 @@
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+
+
 #define RA_JUMPSET
 //    #define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
 #define INTEGER_PTR                 // Pointers are considered as integers
@@ -8997,3 +9002,6 @@ bool RangeAnalysis::finalize()
    }
    return !updatedFunctions.empty();
 }
+
+#pragma GCC diagnostic pop
+

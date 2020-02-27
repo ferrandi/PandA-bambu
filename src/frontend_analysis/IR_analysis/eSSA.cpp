@@ -804,8 +804,9 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
 {
    const auto* op = GetPointer<const ssa_name>(GET_CONST_NODE(Op));
    THROW_ASSERT(op, "Op is not an ssa_name (" + GET_CONST_NODE(Op)->get_kind_text() + ")");
-   for(auto& [U, size] : op->CGetUseStmts())
+   for(auto& Usize : op->CGetUseStmts())
    {
+      auto &U = Usize.first;
       const auto* I = GetPointer<const gimple_node>(GET_CONST_NODE(U));
       THROW_ASSERT(I, "Use statement should be a gimple_node");
       ValueDFS VD;
