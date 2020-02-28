@@ -61,7 +61,7 @@
 
 static llvm::cl::opt<uint32_t> MaxNumScalarTypes("csroa-expanded-scalar-threshold", llvm::cl::Hidden, llvm::cl::init(64), llvm::cl::desc("Max amount of scalar types contained in a type for allowing disaggregation"));
 
-static llvm::cl::opt<uint32_t> MaxTypeByteSize("csroa-type-byte-size", llvm::cl::Hidden, llvm::cl::init(256), llvm::cl::desc("Max type size (in bytes) allowed for disaggregation"));
+static llvm::cl::opt<uint32_t> MaxTypeByteSize("csroa-type-byte-size", llvm::cl::Hidden, llvm::cl::init(64), llvm::cl::desc("Max type size (in bytes) allowed for disaggregation"));
 
 static llvm::cl::opt<uint32_t> CSROAInlineThreshold("csroa-inline-threshold", llvm::cl::Hidden, llvm::cl::init(200), llvm::cl::desc("number of maximum statements of the single called function after the inline is applied"));
 
@@ -70,6 +70,20 @@ static llvm::cl::opt<int32_t> CSROAMaxTransformations("csroa-max-transformations
 
 std::set<llvm::Value*> recorded_expanded_aggregates;
 #endif
+
+std::string get_val_string(llvm::Value *value) {
+    std::string str;
+    llvm::raw_string_ostream rso(str);
+    value->print(rso);
+    return rso.str();
+}
+
+std::string get_ty_string(llvm::Type *ty) {
+    std::string str;
+    llvm::raw_string_ostream rso(str);
+    ty->print(rso);
+    return rso.str();
+}
 
 class Utilities
 {
@@ -98,7 +112,7 @@ class Utilities
       llvm::errs() << "  " << call_inst << "  ";
       if(call_inst)
       {
-         llvm::CallSite(call_inst)->dump();
+         llvm::errs() << get_val_string(call_inst) << "\n";
       }
       else
       {
@@ -552,7 +566,7 @@ void compute_allocas_expandability_rec(llvm::Instruction* call_inst, llvm::Funct
                   std::string base_str;
                   llvm::raw_string_ostream base_rso(base_str);
                   alloca_inst->print(base_rso);
-                  llvm::errs() << "WAR: " << base_str << "  cannot expand because of its size (" << size_msg << ")\n";
+                  llvm::errs() << "WAR: " << alloca_inst->getName() << " (ty:" << get_ty_string(alloca_inst->getAllocatedType())<< ") cannot expand because of its size (" << size_msg << ")\n";
                }
             }
             else
@@ -627,7 +641,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
 
    std::map<std::pair<std::vector<llvm::Instruction*>, llvm::Use*>, bool> operands_expandability_map_by_globals;
    for(llvm::GlobalVariable& global_var : module->globals())
-   {
+   {   
       bool all_uses_in_worklist = true;
 
       for(llvm::Use& use : global_var.uses())
@@ -662,10 +676,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
             globals_expandability_map.insert(std::make_pair(&global_var, expandable_size and can_exp));
             if(!expandable_size)
             {
-               std::string base_str;
-               llvm::raw_string_ostream base_rso(base_str);
-               global_var.print(base_rso);
-               llvm::errs() << "WAR: " << base_str << "  cannot expand because of its size (" << size_msg << ")\n";
+               llvm::errs() << "WAR: " << global_var.getName() << " (ty: " << get_ty_string(global_var.getType()) << ")  cannot expand because of its size (" << size_msg << ")\n";
             }
             call_trace.pop_back();
          }
@@ -677,11 +688,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
       else
       {
          globals_expandability_map.insert(std::make_pair(&global_var, false));
-
-         std::string base_str;
-         llvm::raw_string_ostream base_rso(base_str);
-         global_var.print(base_rso);
-         llvm::errs() << "WAR: " << base_str << "  cannot expand because some uses out of worklist\n";
+         llvm::errs() << "WAR: " << global_var.getName() << "  cannot expand because some uses out of worklist\n";
       }
    }
 
@@ -805,16 +812,14 @@ std::vector<unsigned long long> get_op_dims(llvm::Use* op_use, llvm::Instruction
                      }
                      else
                      {
-                        llvm::errs() << "WAR: Dim out of range\n";
-                        gep_op_op->dump();
+                        llvm::errs() << "WAR: Dim out of range for " << get_val_string(gep_op_op) << "\n";
                         gep_op_op->getOperand(1);
                         /// exit(-1);
                      }
                   }
                   else
                   {
-                     llvm::errs() << "ERR: empty dims\n";
-                     gep_op_op->dump();
+                     llvm::errs() << "ERR: empty dims for " << get_val_string(gep_op_op) << "\n";
                      gep_op_op->getOperand(1);
                      exit(-1);
                   }
@@ -823,16 +828,13 @@ std::vector<unsigned long long> get_op_dims(llvm::Use* op_use, llvm::Instruction
                }
                else
                {
-                  llvm::errs() << "ERR: Argument dimension not found\n";
-                  arg_ptr_op->dump();
-                  op_use->getUser()->dump();
+                  llvm::errs() << "ERR: Argument dimension not found for " << get_val_string(arg_ptr_op) << " in " << get_val_string(op_use->getUser()) << "\n";
                   exit(-1);
                }
             }
             else
             {
-               llvm::errs() << "ERR: Ptr op can be argument only for this gepi\n";
-               gep_op_op->dump();
+               llvm::errs() << "ERR: Ptr op can be argument only for gepi " << get_val_string(gep_op_op) << "\n";
                gep_op_op->getOperand(1);
                exit(-1);
             }
@@ -891,8 +893,7 @@ std::vector<unsigned long long> get_op_dims(llvm::Use* op_use, llvm::Instruction
                }
                else
                {
-                  llvm::errs() << "WAR: Dim out of range\n";
-                  gep_op_op->dump();
+                  llvm::errs() << "WAR: Dim out of range for " << get_val_string(gep_op_op) << "\n";
                   gep_op_op->getOperand(1);
                   /// exit(-1);
                }
@@ -906,8 +907,7 @@ std::vector<unsigned long long> get_op_dims(llvm::Use* op_use, llvm::Instruction
          }
          else
          {
-            llvm::errs() << "ERR: Gep op with no indices\n";
-            gep_op_op->dump();
+            llvm::errs() << "ERR: Gep op with no indices " << get_val_string(gep_op_op) << "\n";
             exit(-1);
          }
       }
@@ -924,9 +924,7 @@ std::vector<unsigned long long> get_op_dims(llvm::Use* op_use, llvm::Instruction
          }
          else
          {
-            llvm::errs() << "ERR: Argument dimension not found\n";
-            arg_op->dump();
-            op_use->getUser()->dump();
+            llvm::errs() << "ERR: Argument dimension not found for " << get_val_string(arg_op) << " at " << get_val_string(op_use->getUser()) << "\n";
             exit(-1);
          }
       }
@@ -978,9 +976,7 @@ std::vector<unsigned long long> get_op_dims(llvm::Use* op_use, llvm::Instruction
       }
       else
       {
-         llvm::errs() << "ERR: unknown element\n";
-         op_use->get()->dump();
-         op_use->getUser()->dump();
+         llvm::errs() << "ERR: unknown element for " << get_val_string(op_use->get()) << " in " << get_val_string(op_use->getUser()) << "\n";
          exit(-1);
       }
    }
@@ -1226,10 +1222,8 @@ void perform_function_versioning(std::map<llvm::Instruction*, std::vector<llvm::
          const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& dim_key = dims_it.first;
          if(operands_expandability_map.count(dim_key) == 0)
          {
-            llvm::errs() << "  Use:  ";
-            dim_key.second->get()->dump();
-            llvm::errs() << "  User: " << dim_key.second->getUser();
-            dim_key.second->getUser()->dump();
+            llvm::errs() << "  Use:  " << get_val_string(dim_key.second->get()) << "\n";
+            llvm::errs() << "  User: " << get_val_string(dim_key.second->getUser()) << "\n";
             llvm::errs() << "  Call trace:  ";
             for(llvm::Instruction* c : dim_key.first)
             {
@@ -1244,10 +1238,8 @@ void perform_function_versioning(std::map<llvm::Instruction*, std::vector<llvm::
          const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& exp_key = exp_it.first;
          if(operands_dimensions_map.count(exp_key) == 0)
          {
-            llvm::errs() << "  Use:  ";
-            exp_key.second->get()->dump();
-            llvm::errs() << "  User: " << exp_key.second->getUser();
-            exp_key.second->getUser()->dump();
+            llvm::errs() << "  Use:  " << get_val_string(exp_key.second->get()) << "\n";
+            llvm::errs() << "  User: " << get_val_string(exp_key.second->getUser()) << "\n";
             llvm::errs() << "  Call trace:  ";
             for(llvm::Instruction* c : exp_key.first)
             {
@@ -1427,10 +1419,8 @@ bool check_function_versioning(const std::map<llvm::Instruction*, std::vector<ll
          const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& dim_key = dims_it.first;
          if(operands_expandability_map.count(dim_key) == 0)
          {
-            llvm::errs() << "  Use:  ";
-            dim_key.second->get()->dump();
-            llvm::errs() << "  User: " << dim_key.second->getUser();
-            dim_key.second->getUser()->dump();
+            llvm::errs() << "  Use:  " << get_val_string(dim_key.second->get()) << "\n";
+            llvm::errs() << "  User: " << get_val_string(dim_key.second->getUser()) << "\n";
             llvm::errs() << "  Call trace:  ";
             for(llvm::Instruction* c : dim_key.first)
             {
@@ -1445,10 +1435,8 @@ bool check_function_versioning(const std::map<llvm::Instruction*, std::vector<ll
          const std::pair<std::vector<llvm::Instruction*>, llvm::Use*>& exp_key = exp_it.first;
          if(operands_dimensions_map.count(exp_key) == 0)
          {
-            llvm::errs() << "  Use:  ";
-            exp_key.second->get()->dump();
-            llvm::errs() << "  User: " << exp_key.second->getUser();
-            exp_key.second->getUser()->dump();
+            llvm::errs() << "  Use:  " << get_val_string(exp_key.second->get()) << "\n";
+            llvm::errs() << "  User: " << get_val_string(exp_key.second->getUser()) << "\n";
             llvm::errs() << "  Call trace:  ";
             for(llvm::Instruction* c : exp_key.first)
             {
@@ -1548,8 +1536,7 @@ bool check_function_versioning(const std::map<llvm::Instruction*, std::vector<ll
                   {
                      const std::vector<std::pair<bool, std::vector<unsigned long long>>>& exp_dim_vec = callsite_map_it.second;
 
-                     llvm::errs() << "   Call: " << call_inst << "  ";
-                     call_inst->dump();
+                     llvm::errs() << "   Call: " << call_inst << "  " << get_val_string(call_inst) << "\n";
                      llvm::errs() << "      Call trace:  ";
                      for(llvm::Instruction* c : callsite_map_it.first)
                      {
@@ -2054,8 +2041,7 @@ void expand_signatures_and_call_sites(std::set<llvm::Function*>& function_workli
          {
             llvm::errs() << d << " ";
          }
-         llvm::errs() << ")    ";
-         arg.dump();
+         llvm::errs() << ")    " << get_val_string(&arg) << "\n";
       }
 
       for(auto user : called_function->users())
@@ -2190,9 +2176,7 @@ bool compute_base_and_idxs(llvm::Use* ptr_use, llvm::Value*& base_address, std::
          }
          else
          {
-            llvm::errs() << "ERR: User not an inst\n";
-            ptr_use->get()->dump();
-            ptr_use->getUser()->dump();
+            llvm::errs() << "ERR: User not an inst " << get_val_string(ptr_use->get()) << " " << get_val_string(ptr_use->getUser()) << "\n";
             exit(-1);
          }
       }
@@ -2321,8 +2305,7 @@ llvm::Value* get_element_at_idx(I* base_address, const std::map<I*, std::vector<
       else
       {
          llvm::errs() << "ERR: cannot find expansion for idx #" << llvm::dyn_cast<llvm::ConstantInt>(idx_value)->getSExtValue() << "\n";
-         llvm::errs() << "Base: ";
-         base_address->dump();
+         llvm::errs() << "Base: " << get_val_string(base_address) << "\n";
          llvm::errs() << "Idxs: ";
          for(auto idx : idx_chain)
          {
@@ -2456,8 +2439,7 @@ llvm::Value* get_expanded_value_from_expandable_base(const std::map<llvm::Argume
    }
    else
    {
-      llvm::errs() << "ERR: Neither alloca, argument, nor global as base address\n";
-      base_address->dump();
+      llvm::errs() << "ERR: Neither alloca, argument, nor global as base address " << get_val_string(base_address) << "\n";
       exit(-1);
    }
 }
@@ -2569,10 +2551,8 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
                      }
                   }
          */
-         llvm::errs() << "\nINFO: In function " << user_inst->getFunction()->getName() << " expanding ";
-         ptr_u->getUser()->dump();
-         llvm::errs() << "   Base address: ";
-         base_address->dump();
+         llvm::errs() << "\nINFO: In function " << user_inst->getFunction()->getName() << " expanding " << get_val_string(ptr_u->getUser()) << "\n";
+         llvm::errs() << "   Base address: " << get_val_string(base_address) << "\n";
          if(idx_chain.empty())
          {
             llvm::errs() << "   Empty idx chain\n";
@@ -2582,10 +2562,8 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
             llvm::errs() << "   Idx chain:\n";
             for(auto const& idx : idx_chain)
             {
-               llvm::errs() << "     Idx type: ";
-               idx.first->dump();
-               llvm::errs() << "     Val: ";
-               idx.second->dump();
+               llvm::errs() << "     Idx type: " << get_ty_string(idx.first) << "\n";
+               llvm::errs() << "     Val: " << get_val_string(idx.second) << "\n";
             }
          }
          if(inst_chain.empty())
@@ -2597,8 +2575,7 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
             llvm::errs() << "   Inst chain:\n";
             for(auto const& idx : inst_chain)
             {
-               llvm::errs() << "   ";
-               idx->dump();
+               llvm::errs() << "   " << get_val_string(idx) << "\n";
             }
          }
 
@@ -2625,16 +2602,14 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
          if(is_constant)
          {
             llvm::Value* exp_val = get_expanded_value_from_expandable_base(exp_args_map, exp_allocas_map, exp_globals_map, base_address, idx_chain);
-            llvm::errs() << "   expanded as ";
-            exp_val->dump();
+            llvm::errs() << "   expanded as " << get_val_string(exp_val) << "\n";
             ptr_u->set(exp_val);
          }
          else
          {
             if(should_be_constant)
             {
-               llvm::errs() << "ERR Constant access needed in op # " << ptr_u->getOperandNo() << "\n";
-               ptr_u->getUser()->dump();
+               llvm::errs() << "ERR Constant access needed in op # " << ptr_u->getOperandNo() << " in " << get_val_string(ptr_u->getUser()) << "\n";
                exit(-1);
             }
 
@@ -2656,8 +2631,7 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
             }
             else
             {
-               llvm::errs() << "ERR: Unknown base\n";
-               base_address->dump();
+               llvm::errs() << "ERR: Unknown base " << get_val_string(base_address);
                exit(-1);
             }
 
@@ -2974,8 +2948,7 @@ void process_single_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::se
                split_before = else_term;
             }
 
-            llvm::errs() << "   expanded as ";
-            wrapper_call->dump();
+            llvm::errs() << "   expanded as " << get_val_string(wrapper_call) << "\n";
 
             // TODO Fix it
             user_inst->replaceAllUsesWith(llvm::UndefValue::get(user_inst->getType()));
@@ -3050,10 +3023,8 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
 
       if(is_constant)
       {
-         llvm::errs() << "\nINFO: In function " << llvm::dyn_cast<llvm::Instruction>(ptr_u->getUser())->getFunction()->getName() << ", expanding operand #" << ptr_u->getOperandNo() << " of ";
-         ptr_u->getUser()->dump();
-         llvm::errs() << "   Base address: ";
-         base_address->dump();
+         llvm::errs() << "\nINFO: In function " << llvm::dyn_cast<llvm::Instruction>(ptr_u->getUser())->getFunction()->getName() << ", expanding operand #" << ptr_u->getOperandNo() << " of " << get_val_string(ptr_u->getUser()) << "\n";
+         llvm::errs() << "   Base address: " << get_val_string(base_address) << "\n";
          if(idx_chain.empty())
          {
             llvm::errs() << "   Empty idx chain\n";
@@ -3063,10 +3034,8 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
             llvm::errs() << "   Idx chain:\n";
             for(auto const& idx : idx_chain)
             {
-               llvm::errs() << "     Idx type: ";
-               idx.first->dump();
-               llvm::errs() << "     Val: ";
-               idx.second->dump();
+               llvm::errs() << "     Idx type: " << get_ty_string(idx.first) << "\n";
+               llvm::errs() << "     Val: " << get_val_string(idx.second) << "\n";
             }
          }
          if(inst_chain.empty())
@@ -3078,8 +3047,7 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
             llvm::errs() << "   Inst chain:\n";
             for(auto const& idx : inst_chain)
             {
-               llvm::errs() << "   ";
-               idx->dump();
+               llvm::errs() << "   " << get_val_string(idx) << "\n";
             }
          }
 
@@ -3216,8 +3184,7 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
                }
 
                call_inst->setOperand(exp_arg_u->getArgNo(), exp_val);
-               llvm::errs() << "   expanded as ";
-               exp_val->dump();
+               llvm::errs() << "   expanded as " << get_val_string(exp_val) << "\n";
 
                // arg_offset += accessed_size;
                exp_arg_u_idx++;
@@ -3226,9 +3193,7 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
       }
       else
       {
-         llvm::errs() << "ERR: Non constant access in function call operand\n";
-         ptr_u->get()->dump();
-         call_inst->dump();
+         llvm::errs() << "ERR: Non constant access in function call operand " << get_val_string(ptr_u->get()) << " in " << get_val_string(call_inst) << "\n";
          exit(-1);
       }
    }
@@ -3870,7 +3835,8 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
             {
                auto call_inst = llvm::dyn_cast<llvm::Instruction>(&inst);
                auto cf = llvm::CallSite(call_inst).getCalledFunction();
-               assert(cf);
+               if(cf==nullptr)
+                   continue;
                if(cf->isIntrinsic())
                   continue;
                unsigned nStmtsCallee = 0;
@@ -3894,7 +3860,7 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
                bool is_wrapper = strncmp(cf->getName().str().c_str(), std::string(wrapper_function_name).c_str(), std::string(wrapper_function_name).size()) == 0;
                if(is_wrapper || (is_relevant_call(call_inst) and (nusers < 5 && inlineCost < CSROAInlineThreshold)))
                {
-                  // llvm::errs()<<cf->getName().str() << " Inlined!\n";
+                  llvm::errs()<<cf->getName().str() << " Inlined!\n";
                   cf->removeFnAttr(llvm::Attribute::NoInline);
                   cf->removeFnAttr(llvm::Attribute::OptimizeNone);
                   llvm::InlineFunctionInfo IFI = llvm::InlineFunctionInfo();
