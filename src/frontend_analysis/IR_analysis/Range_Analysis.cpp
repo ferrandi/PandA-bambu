@@ -212,6 +212,21 @@ namespace
       return APInt(new_val);
    }
 
+   bw_t countTrailingZeros(const APInt& b, bw_t bw)
+   {
+      THROW_ASSERT(bw > 0 && bw <= MAX_BIT_INT, "Bitwidth should be between 1 and " + STR(MAX_BIT_INT));
+      UAPInt a(b);
+      int i = 0;
+      for(; i < static_cast<int>(bw); ++i)
+      {
+         if(bit_test(a, static_cast<unsigned>(i)))
+         {
+            break;
+         }
+      }
+      return static_cast<bw_t>(i);
+   }
+
    bw_t countLeadingZeros(const APInt& b, bw_t bw)
    {
       THROW_ASSERT(bw > 0 && bw <= MAX_BIT_INT, "Bitwidth should be between 1 and " + STR(MAX_BIT_INT));
@@ -6484,7 +6499,8 @@ using CallMap = CustomMap<unsigned int, std::list<tree_nodeConstRef>>;
 
 using ParmMap = CustomMap<unsigned int, std::pair<bool, std::vector<tree_nodeConstRef>>>;
 
-using VCMap = CustomMap<VarNode*, VarNode*>;
+// Map varnodes to their view_converted float ancestor if any; pair contains original float variable and view_convert mask
+using VCMap = CustomMap<VarNode*, std::pair<VarNode*, uint64_t>>;
 
 class ConstraintGraph
 {
@@ -7095,34 +7111,38 @@ class ConstraintGraph
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing unary operation " + un_op->get_kind_text() + " " + assign->ToString());
 
       // Create the sink.
-      VarNode* sink = addVarNode(assign->op0, function_id);
+      auto* sink = addVarNode(assign->op0, function_id);
       // Create the source.
-      VarNode* source = addVarNode(un_op->op, function_id);
+      auto* source = addVarNode(un_op->op, function_id);
       const auto sourceType = getGIMPLE_Type(source->getValue());
-
-      if(un_op->get_kind() == view_convert_expr_K)
-      {
-         if(sourceType->get_kind() == real_type_K)
-         {
-            vcMap.insert({sink, source});
-         }
-      }
-      else if(un_op->get_kind() == nop_expr_K)
-      {
-         // TODO: check byte order is little endian
-         auto vc = vcMap.find(source);
-         if(vc != vcMap.end())
-         {
-            if(sourceType->get_kind() == integer_type_K)
-            {
-               vcMap.insert({sink, vc->second});
-            }
-         }
-      }
-
       auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
-      UnaryOp* UOp = new UnaryOp(BI, sink, I, source, un_op->get_kind());
 
+      const auto fromVC = vcMap.find(source);
+      if(fromVC != vcMap.end()) 
+      {
+         const auto& [f, mask] = fromVC->second;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand " + GET_CONST_NODE(source->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
+         // Detect exponent trucantion after right shift for 32 bit floats
+         if(un_op->get_kind() == nop_expr_K && f->getBitWidth() == 32 && (mask & 4286578688U) && sink->getBitWidth() == 8)
+         {
+            vcMap.insert({sink, {f, 2139095040U}});
+            UnaryOp* UOp = new UnaryOp(BI, sink, I, f, rshift_expr_K);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for exponent view_convert");
+            this->oprs.insert(UOp);
+            this->defMap[sink->getValue()] = UOp;
+            this->useMap.at(source->getValue()).insert(UOp);
+            return;
+         }
+
+         vcMap.insert({sink, {f, mask}});
+      }
+      // Store active bitmask for variable initialized from float view_convert operation
+      if(un_op->get_kind() == view_convert_expr_K && sourceType->get_kind() == real_type_K)
+      {
+         vcMap.insert({sink, {source, static_cast<uint64_t>(-1)}});
+      }
+
+      UnaryOp* UOp = new UnaryOp(BI, sink, I, source, un_op->get_kind());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for " + un_op->get_kind_text() + " with range " + BI->ToString());
 
       this->oprs.insert(UOp);
@@ -7145,56 +7165,112 @@ class ConstraintGraph
       
       // Create the sink.
       auto* sink = addVarNode(assign->op0, function_id);
+      auto op_kind = bin_op->get_kind();
 
       // Create the sources.
       auto* source1 = addVarNode(bin_op->op0, function_id);
       auto* source2 = addVarNode(bin_op->op1, function_id);
+      
+      auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
 
-      if(bin_op->get_kind() == lt_expr_K && GET_CONST_NODE(source2->getValue())->get_kind() == integer_cst_K && GetPointer<const integer_cst>(GET_CONST_NODE(source2->getValue()))->value == 0)
+      if((op_kind == rshift_expr_K || op_kind == lshift_expr_K || op_kind == bit_and_expr_K) && GET_CONST_NODE(source2->getValue())->get_kind() == integer_cst_K)
       {
-         auto vc = vcMap.find(source1);
-         if(vc != vcMap.end())
+         const auto fromVC = vcMap.find(source1);
+         if(fromVC != vcMap.end())
          {
-            auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
-            UnaryOp* UOp = new UnaryOp(BI, sink, nullptr, vc->second, lt_expr_K);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for sign range assignment from " + vc->second->ToString());
-            this->oprs.insert(UOp);
-            this->defMap[sink->getValue()] = UOp;
-            this->useMap.at(vc->second->getValue()).insert(UOp);
-            vcMap.erase(vc);
-            return;
+            const auto& [f, mask] = fromVC->second;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand " + GET_CONST_NODE(source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
+            const auto cst_int = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(source2->getValue())));
+            std::remove_const<decltype(mask)>::type new_mask;
+
+            if(op_kind == rshift_expr_K)
+            {
+               new_mask = (mask >> cst_int) << cst_int;
+            }
+            else if(op_kind == lshift_expr_K)
+            {
+               new_mask = (mask << cst_int) >> cst_int;
+            }
+            else if(op_kind == bit_and_expr_K)
+            {
+               // Trailing zeros indicates a right shift has already been applied, so they are not relevant
+               const auto shift = countTrailingZeros(APInt(mask), std::numeric_limits<decltype(new_mask)>::digits);
+               new_mask = mask & static_cast<std::remove_const<decltype(mask)>::type>(cst_int << shift);
+            }
+            vcMap.insert({sink, {f, new_mask}});
+            
+            const auto addSignViewConvert = [&](VarNode* fpVar)
+            {
+               UnaryOp* UOp = new UnaryOp(BI, sink, nullptr, fpVar, lt_expr_K);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for sign view_convert");
+               this->oprs.insert(UOp);
+               this->defMap[sink->getValue()] = UOp;
+               this->useMap.at(fpVar->getValue()).insert(UOp);
+            };
+            const auto addExponentViewConvert = [&](VarNode* fpVar)
+            {
+               UnaryOp* UOp = new UnaryOp(BI, sink, nullptr, fpVar, rshift_expr_K);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for exponent view_convert");
+               this->oprs.insert(UOp);
+               this->defMap[sink->getValue()] = UOp;
+               this->useMap.at(fpVar->getValue()).insert(UOp);
+            };
+            const auto addFractionalViewConvert = [&](VarNode* fpVar)
+            {
+               UnaryOp* UOp = new UnaryOp(BI, sink, nullptr, fpVar, bit_and_expr_K);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for significand view_convert");
+               this->oprs.insert(UOp);
+               this->defMap[sink->getValue()] = UOp;
+               this->useMap.at(fpVar->getValue()).insert(UOp);
+            };
+
+            if(f->getBitWidth() == 32)
+            {
+               switch(new_mask)
+               {
+                  case 4294967296U:
+                     return addSignViewConvert(f);
+                  case 2139095040U:
+                     return addExponentViewConvert(f);
+                  case 8388607U:
+                     return addFractionalViewConvert(f);
+                  default:
+                     break;
+               }
+            }
+            else
+            {
+               switch(new_mask)
+               {
+                  case 9223372036854775808ULL:
+                     return addSignViewConvert(f);
+                  case 9218868437227405312ULL:
+                     return addExponentViewConvert(f);
+                  case 4503599627370495ULL:
+                     return addFractionalViewConvert(f);
+                  default:
+                     break;
+               }
+            }
          }
       }
-      else if(bin_op->get_kind() == bit_and_expr_K && GET_CONST_NODE(source2->getValue())->get_kind() == integer_cst_K && GetPointer<const integer_cst>(GET_CONST_NODE(source2->getValue()))->value == 8388607)
+      else if(op_kind == lt_expr_K && GET_CONST_NODE(source2->getValue())->get_kind() == integer_cst_K && tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(source2->getValue()))) == 0)
       {
-         auto vc = vcMap.find(source1);
-         if(vc != vcMap.end())
+         const auto fromVC = vcMap.find(source1);
+         if(fromVC != vcMap.end())
          {
-            auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
-            UnaryOp* UOp = new UnaryOp(BI, sink, nullptr, vc->second, bit_and_expr_K);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for fractional range assignment from " + vc->second->ToString());
+            auto& [f, mask] = fromVC->second;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand " + GET_CONST_NODE(source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
+            vcMap.insert({sink, {f, f->getBitWidth() == 32 ? 4294967296U : 9223372036854775808ULL}});
+            UnaryOp* UOp = new UnaryOp(BI, sink, nullptr, f, lt_expr_K);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for sign view_convert");
             this->oprs.insert(UOp);
             this->defMap[sink->getValue()] = UOp;
-            this->useMap.at(vc->second->getValue()).insert(UOp);
-            return;
-         }
-      }
-      else if(bin_op->get_kind() == rshift_expr_K && GET_CONST_NODE(source2->getValue())->get_kind() == integer_cst_K && GetPointer<const integer_cst>(GET_CONST_NODE(source2->getValue()))->value == 23)
-      {
-         auto vc = vcMap.find(source1);
-         if(vc != vcMap.end())
-         {
-            auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
-            UnaryOp* UOp = new UnaryOp(BI, sink, nullptr, vc->second, rshift_expr_K);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added UnaryOp for exponent range assignment from " + vc->second->ToString());
-            this->oprs.insert(UOp);
-            this->defMap[sink->getValue()] = UOp;
-            this->useMap.at(vc->second->getValue()).insert(UOp);
+            this->useMap.at(f->getValue()).insert(UOp);
             return;
          }
       }
 
-      auto op_kind = bin_op->get_kind();
       if(isCompare(op_kind))
       {
          const auto opSigned = isSignedType(bin_op->op0);
@@ -7206,9 +7282,7 @@ class ConstraintGraph
       }
 
       // Create the operation using the intersect to constrain sink's interval.
-      auto BI = refcount<BasicInterval>(new BasicInterval(getGIMPLE_range(I)));
       BinaryOp* BOp = new BinaryOp(BI, sink, I, source1, source2, op_kind);
-
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added BinaryOp for " + tree_node::GetString(op_kind) + " with range " + BI->ToString());
       
       // Insert the operation in the graph.
