@@ -99,22 +99,22 @@
         <name>ARRAY_1D_STD_BRAM_N1_SDS</name>
         <attribute name="area" value_type="float64">497243</attribute>
         <characterization_timestamp>2020-02-20T17:17:46</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="1.1000000000000001"/>
-        <operation operation_name="STORE" execution_time="1.1000000000000001"/>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.91000000000000001"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_3</name>
         <attribute name="area" value_type="float64">498401</attribute>
         <characterization_timestamp>2020-02-20T17:17:47</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.1000000000000001"/>
-        <operation operation_name="STORE" execution_time="1.1000000000000001"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000001"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_4</name>
         <attribute name="area" value_type="float64">494007</attribute>
         <characterization_timestamp>2020-02-20T17:17:36</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="8.7799999999999994"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="8.7799999999999994"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.7799999999999994"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.7799999999999994"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS</name>
@@ -134,8 +134,8 @@
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS_4</name>
         <attribute name="area" value_type="float64">495906</attribute>
         <characterization_timestamp>2020-02-20T17:17:36</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="9.0700000000000003"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="9.0700000000000003"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.9700000000000003"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.9700000000000003"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN</name>
@@ -162,22 +162,22 @@
         <name>ARRAY_1D_STD_BRAM_NN_SDS</name>
         <attribute name="area" value_type="float64">499925</attribute>
         <characterization_timestamp>2020-02-20T17:17:48</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="1.1000000000000001"/>
-        <operation operation_name="STORE" execution_time="1.1000000000000001"/>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.91000000000000001"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_3</name>
         <attribute name="area" value_type="float64">501082</attribute>
         <characterization_timestamp>2020-02-20T17:17:48</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.1000000000000001"/>
-        <operation operation_name="STORE" execution_time="1.1000000000000001"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000001"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_4</name>
         <attribute name="area" value_type="float64">496688</attribute>
         <characterization_timestamp>2020-02-20T17:17:36</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="8.7799999999999994"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="8.7799999999999994"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.7799999999999994"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.7799999999999994"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS</name>
@@ -190,36 +190,36 @@
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS_3</name>
         <attribute name="area" value_type="float64">509062</attribute>
         <characterization_timestamp>2020-02-20T17:17:58</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.01"/>
-        <operation operation_name="STORE" execution_time="1.01"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91"/>
+        <operation operation_name="STORE" execution_time="0.91"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS_4</name>
         <attribute name="area" value_type="float64">502623</attribute>
         <characterization_timestamp>2020-02-20T17:17:33</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="8.7400000000000002"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="8.7400000000000002"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.7400000000000002"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.7400000000000002"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS</name>
         <attribute name="area" value_type="float64">364500</attribute>
         <characterization_timestamp>2020-02-20T17:16:51</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="1.03"/>
-        <operation operation_name="STORE" execution_time="1.03"/>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.93"/>
+        <operation operation_name="STORE" execution_time="0.93"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_3</name>
         <attribute name="area" value_type="float64">365079</attribute>
         <characterization_timestamp>2020-02-20T17:16:50</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.03"/>
-        <operation operation_name="STORE" execution_time="1.03"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.93"/>
+        <operation operation_name="STORE" execution_time="0.93"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_4</name>
         <attribute name="area" value_type="float64">355054</attribute>
         <characterization_timestamp>2020-02-20T17:16:43</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="26.77"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="26.77"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_BUS</name>
@@ -232,15 +232,15 @@
         <name>ARRAY_1D_STD_BRAM_SDS_BUS_3</name>
         <attribute name="area" value_type="float64">372212</attribute>
         <characterization_timestamp>2020-02-20T17:16:56</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="1.01"/>
-        <operation operation_name="STORE" execution_time="1.01"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91"/>
+        <operation operation_name="STORE" execution_time="0.91"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_BUS_4</name>
         <attribute name="area" value_type="float64">359368</attribute>
         <characterization_timestamp>2020-02-20T17:16:44</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="26.77"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="26.77"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_DISTRAM_N1_SDS</name>

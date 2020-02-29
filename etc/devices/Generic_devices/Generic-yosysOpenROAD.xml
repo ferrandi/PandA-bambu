@@ -31,9 +31,9 @@
       <cmd name="dfflibmap -liberty ${OBJECTS_DIR}/merged.lib"/>
       <cmd name="opt -undriven -mux_undef -mux_bool"/>
       <cmd name="opt_clean -purge"/>
-      <cmd name="abc -D ${__clk_period__}000 -liberty ${LIB_FILES} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${LIB_FILES} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
       <!--
-      <cmd name="abc -D ${__clk_period__}000 -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
       -->
       <cmd name="hilomap -singleton -hicell ${TIEHI_CELL_AND_PORT} -locell ${TIELO_CELL_AND_PORT}"/>
       <cmd name="setundef -zero"/>
@@ -157,9 +157,9 @@
       <cmd name="dfflibmap -liberty ${OBJECTS_DIR}/merged.lib"/>
       <cmd name="opt -undriven -mux_undef -mux_bool"/>
       <cmd name="opt_clean -purge"/>
-      <cmd name="abc -D ${__clk_period__}000 -liberty ${LIB_FILES} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${LIB_FILES} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
       <!--
-      <cmd name="abc -D ${__clk_period__}000 -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
       -->
       <cmd name="hilomap -singleton -hicell ${TIEHI_CELL_AND_PORT} -locell ${TIELO_CELL_AND_PORT}"/>
       <cmd name="setundef -zero"/>

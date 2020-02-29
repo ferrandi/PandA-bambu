@@ -322,6 +322,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    {
       const technology_nodeRef tn = TM->get_fu(resource_name, library);
       actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
+      actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000*GetPointer<functional_unit>(tn)->get_clock_period());
       if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
          is_combinational = true;
    }
@@ -332,6 +333,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       {
          const technology_nodeRef tn = TM->get_fu(fu_name, library);
          actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
+         actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000*GetPointer<functional_unit>(tn)->get_clock_period());
          if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
             is_combinational = true;
          if(GetPointer<functional_unit>(tn)->fu_template_name.size())
@@ -348,6 +350,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    if(!time_constrained)
    {
       actual_parameters->parameter_values[PARAM_clk_period] = STR(PARAM_clk_period_default);
+      actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000*PARAM_clk_period_default);
    }
    actual_parameters->parameter_values[PARAM_clk_freq] = STR(1000 / boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
 
