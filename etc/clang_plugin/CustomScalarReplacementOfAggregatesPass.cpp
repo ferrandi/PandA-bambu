@@ -71,6 +71,9 @@ static llvm::cl::opt<int32_t> CSROAMaxTransformations("csroa-max-transformations
 std::set<llvm::Value*> recorded_expanded_aggregates;
 #endif
 
+// Add debugging checkpoints
+#define ADD_CHECKPOINT(ID) llvm::errs()<<"CHECKPOINT:"<<ID<<"\n";
+
 std::string get_val_string(llvm::Value *value) {
     std::string str;
     llvm::raw_string_ostream rso(str);
@@ -492,7 +495,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
                std::string use_str;
                llvm::raw_string_ostream use_rso(use_str);
                use.getUser()->print(use_rso);
-               llvm::errs() << "WAR: " << base_str << "  cannot expand because of " << use_str << "\n";
+               llvm::errs() << "WAR: " << base_ptr->getName() << "  cannot expand because of " << use_str << "\n";
                return false;
             }
          }
@@ -504,7 +507,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
             std::string use_str;
             llvm::raw_string_ostream use_rso(use_str);
             use.get()->print(use_rso);
-            llvm::errs() << "WAR: " << base_str << "  cannot expand because of " << use_str << "\n";
+            llvm::errs() << "WAR: " << base_ptr->getName() << "  cannot expand because of " << use_str << "\n";
             return false;
          }
       }
@@ -519,7 +522,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
       std::string use_str;
       llvm::raw_string_ostream use_rso(use_str);
       ptr_use.getUser()->print(use_rso);
-      llvm::errs() << "WAR: " << base_str << "  cannot expand because of " << use_str << "\n";
+      llvm::errs() << "WAR: " << base_ptr->getName() << "  cannot expand because of " << use_str << "\n";
       return false;
    }
 }
@@ -2034,7 +2037,7 @@ void expand_signatures_and_call_sites(std::set<llvm::Function*>& function_workli
       llvm::errs() << "INFO: Function " << called_function->getName() << " [";
       called_function->getFunctionType()->print(llvm::errs());
       llvm::errs() << "] expanded as " << expanded_function->getName() << " with arguments \n";
-      for(auto& arg : expanded_function->args())
+      for(llvm::Argument& arg : expanded_function->args())
       {
          llvm::errs() << "   Arg" << arg.getArgNo() << ":  E( " << arg_expandability_map.at(&arg) << " )  D( ";
          for(unsigned long long d : arg_dimensions_map.at(&arg))
@@ -2044,15 +2047,22 @@ void expand_signatures_and_call_sites(std::set<llvm::Function*>& function_workli
          llvm::errs() << ")    " << get_val_string(&arg) << "\n";
       }
 
-      for(auto user : called_function->users())
+      std::set<llvm::Instruction*> calls_to_remove;
+      for(llvm::Use &use : called_function->uses())
       {
-         if(llvm::isa<llvm::CallInst>(user) || llvm::isa<llvm::InvokeInst>(user))
+	 llvm::User *user = use.getUser();
+
+	 llvm::CallInst *user_call_inst = llvm::dyn_cast<llvm::CallInst>(user);
+	 llvm::InvokeInst *user_invoke_inst = llvm::dyn_cast<llvm::InvokeInst>(user);
+
+         if(user_call_inst != nullptr || user_invoke_inst != nullptr)
          {
-            auto call_inst = llvm::dyn_cast<llvm::Instruction>(user);
+            llvm::Instruction *call_inst = llvm::dyn_cast<llvm::Instruction>(user);
 
             // Recursively populate the operand vector, expanding with null pointers
             std::vector<llvm::Value*> new_call_ops = std::vector<llvm::Value*>();
-            for(auto& op : (llvm::isa<llvm::CallInst>(user) ? llvm::dyn_cast<llvm::CallInst>(call_inst)->arg_operands() : llvm::dyn_cast<llvm::InvokeInst>(call_inst)->arg_operands()))
+
+            for(auto& op : (user_call_inst != nullptr ? user_call_inst->arg_operands() : user_invoke_inst->arg_operands()))
             {
                llvm::Value* operand = op.get();
 
@@ -2086,8 +2096,12 @@ void expand_signatures_and_call_sites(std::set<llvm::Function*>& function_workli
                }
             }
 
-            call_inst->eraseFromParent();
+	    calls_to_remove.insert(call_inst);
          }
+      }
+
+      for (llvm::Instruction *inst : calls_to_remove) {
+      	inst->eraseFromParent();
       }
    }
 
