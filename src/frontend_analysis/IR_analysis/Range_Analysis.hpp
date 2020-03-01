@@ -44,7 +44,7 @@
 #ifndef RANGE_ANALYSIS_HPP
 #define RANGE_ANALYSIS_HPP
 
-#include <boost/multiprecision/cpp_int.hpp>
+#include <boost/multiprecision/gmp.hpp>
 #include <iostream>
 
 #include "application_frontend_flow_step.hpp"
@@ -60,6 +60,101 @@ struct tree_reindexCompare
    bool operator()(const tree_nodeConstRef& lhs, const tree_nodeConstRef& rhs) const;
 };
 
+class APInt
+{
+ public:
+   using APInt_internal = boost::multiprecision::mpz_int;
+   using bw_t = uint8_t;
+
+ private:
+   APInt_internal _data;
+
+ public:
+   template <typename T>
+   APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) : _data(val,nullptr)
+   {
+   }
+
+   APInt();
+   APInt(const APInt& other);
+   APInt& operator=(const APInt& other);
+   ~APInt() = default;
+
+   friend bool operator<(const APInt& lhs, const APInt& rhs);
+   friend bool operator>(const APInt& lhs, const APInt& rhs);
+   friend bool operator<=(const APInt& lhs, const APInt& rhs);
+   friend bool operator>=(const APInt& lhs, const APInt& rhs);
+   friend bool operator==(const APInt& lhs, const APInt& rhs);
+   friend bool operator!=(const APInt& lhs, const APInt& rhs);
+   explicit operator bool() const;
+
+   /*
+    * Binary operators
+    */
+   friend APInt operator+(const APInt& lhs, const APInt& rhs);
+   friend APInt operator-(const APInt& lhs, const APInt& rhs);
+   friend APInt operator*(const APInt& lhs, const APInt& rhs);
+   friend APInt operator/(const APInt& lhs, const APInt& rhs);
+   friend APInt operator%(const APInt& lhs, const APInt& rhs);
+   friend APInt operator&(const APInt& lhs, const APInt& rhs);
+   friend APInt operator|(const APInt& lhs, const APInt& rhs);
+   friend APInt operator^(const APInt& lhs, const APInt& rhs);
+   friend APInt operator<<(const APInt& lhs, const APInt& rhs);
+   friend APInt operator>>(const APInt& lhs, const APInt& rhs);
+   APInt& operator+=(const APInt& rhs);
+   APInt& operator-=(const APInt& rhs);
+   APInt& operator*=(const APInt& rhs);
+   APInt& operator/=(const APInt& rhs);
+   APInt& operator%=(const APInt& rhs);
+   APInt& operator&=(const APInt& rhs);
+   APInt& operator|=(const APInt& rhs);
+   APInt& operator^=(const APInt& rhs);
+   APInt& operator<<=(const APInt& rhs);
+   APInt& operator>>=(const APInt& rhs);
+
+   /*
+    * Unary operators
+    */
+   APInt abs() const;
+   APInt operator-() const;
+   APInt operator~() const;
+   APInt operator++(int);
+   APInt operator--(int);
+   APInt& operator++();
+   APInt& operator--();
+
+   /*
+    * Bitwise helpers
+    */
+   void bit_set(bw_t i);
+   void bit_clr(bw_t i);
+   bool bit_tst(bw_t i) const;
+   bool sign() const;
+   APInt& extOrTrunc(bw_t bw, bool sign);
+   APInt extOrTrunc(bw_t bw, bool sign) const;
+   bw_t trailingZeros(bw_t bw) const;
+   bw_t trailingOnes(bw_t bw) const;
+   bw_t leadingZeros(bw_t bw) const;
+   bw_t leadingOnes(bw_t bw) const;
+   bw_t minBitwidth(bool sign) const;
+
+   int64_t toInt() const;
+   uint64_t toIntUnsigned() const;
+   template <typename T>
+   T to(typename std::enable_if<std::is_arithmetic<T>::value && std::numeric_limits<T>::digits <= 64>* = nullptr) const
+   {
+      return static_cast<T>(toInt());
+   }
+   std::string str() const;
+
+   static APInt getMaxValue(bw_t bw);
+   static APInt getMinValue(bw_t bw);
+   static APInt getSignedMaxValue(bw_t bw);
+   static APInt getSignedMinValue(bw_t bw);
+};
+
+std::ostream& operator<<(std::ostream& str, const APInt& v);
+
 enum RangeType
 {
    Empty,
@@ -72,8 +167,7 @@ enum RangeType
 class Range
 {
  public:
-   using APInt = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<127, 127, boost::multiprecision::signed_magnitude, boost::multiprecision::unchecked, void>>;
-   using bw_t = unsigned;
+   using bw_t = APInt::bw_t;
 
  private:
    /// The lower bound of the range.
@@ -155,7 +249,7 @@ class Range
    RangeRef Sle(RangeConstRef other, bw_t bw) const;
    RangeRef SMin(RangeConstRef other) const;
    RangeRef SMax(RangeConstRef other) const;
-   
+
    RangeRef sextOrTrunc(bw_t bitwidth) const;
    RangeRef zextOrTrunc(bw_t bitwidth) const;
    RangeRef truncate(bw_t bitwidth) const;

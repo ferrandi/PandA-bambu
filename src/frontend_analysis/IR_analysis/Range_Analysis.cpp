@@ -84,10 +84,6 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-
-
 #define RA_JUMPSET
 //    #define EARLY_DEAD_CODE_RESTART     // Abort analysis when dead code is detected instead of waiting step's end
 #define INTEGER_PTR                 // Pointers are considered as integers
@@ -123,8 +119,6 @@
 #define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
 #define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getFullRangeFor(var)
 
-using APInt = Range::APInt;
-using UAPInt = boost::multiprecision::number<boost::multiprecision::cpp_int_backend<128, 128, boost::multiprecision::unsigned_magnitude, boost::multiprecision::unchecked, void>>;
 using bw_t = Range::bw_t;
 
 union vcFloat {
@@ -160,14 +154,2654 @@ bool tree_reindexCompare::operator()(const tree_nodeConstRef &lhs, const tree_no
    return GET_INDEX_CONST_NODE(lhs) < GET_INDEX_CONST_NODE(rhs);
 }
 
-namespace 
+/**********************************************************
+ * APInt
+ **********************************************************/
+using namespace boost::multiprecision;
+APInt::APInt() : _data()
+{
+}
+
+APInt::APInt(const APInt& other) : _data(other._data,nullptr)
+{
+}
+
+APInt& APInt::operator=(const APInt& other)
+{
+   _data = other._data;
+   return *this;
+}
+
+bool operator<(const APInt& lhs, const APInt& rhs)
+{
+   return lhs._data < rhs._data;
+}
+
+bool operator>(const APInt& lhs, const APInt& rhs)
+{
+   return lhs._data > rhs._data;
+}
+
+bool operator<=(const APInt& lhs, const APInt& rhs)
+{
+   return lhs._data <= rhs._data;
+}
+
+bool operator>=(const APInt& lhs, const APInt& rhs)
+{
+   return lhs._data >= rhs._data;
+}
+
+bool operator==(const APInt& lhs, const APInt& rhs)
+{
+   return lhs._data == rhs._data;
+}
+
+bool operator!=(const APInt& lhs, const APInt& rhs)
+{
+   return lhs._data != rhs._data;
+}
+
+APInt::operator bool() const
+{
+   return _data != 0;
+}
+
+/*
+ * Binary operators
+ */
+APInt operator+(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) += rhs;
+}
+
+APInt operator-(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) -= rhs;
+}
+
+APInt operator*(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) *= rhs;
+}
+
+APInt operator/(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) /= rhs;
+}
+
+APInt operator%(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) %= rhs;
+}
+
+APInt operator&(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) &= rhs;
+}
+
+APInt operator|(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) |= rhs;
+}
+
+APInt operator^(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) ^= rhs;
+}
+
+APInt operator<<(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) <<= rhs;
+}
+
+APInt operator>>(const APInt& lhs, const APInt& rhs)
+{
+   return APInt(lhs) >>= rhs;
+}
+
+APInt& APInt::operator+=(const APInt& rhs)
+{
+   _data += rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator-=(const APInt& rhs)
+{
+   _data -= rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator*=(const APInt& rhs)
+{
+   _data *= rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator/=(const APInt& rhs)
+{
+   _data /= rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator%=(const APInt& rhs)
+{
+   _data %= rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator&=(const APInt& rhs)
+{
+   _data &= rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator|=(const APInt& rhs)
+{
+   _data |= rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator^=(const APInt& rhs)
+{
+   _data ^= rhs._data;
+   return *this;
+}
+
+APInt& APInt::operator<<=(const APInt& rhs)
+{
+   mpz_mul_2exp(_data.backend().data(), _data.backend().data(), mpz_get_ui(rhs._data.backend().data()));
+   return *this;
+}
+
+APInt& APInt::operator>>=(const APInt& rhs)
+{
+   mpz_div_2exp(_data.backend().data(), _data.backend().data(), mpz_get_ui(rhs._data.backend().data()));
+   return *this;
+}
+
+/*
+ * Unary operators
+ */
+APInt APInt::abs() const
+{
+   APInt abs;
+   abs._data = boost::multiprecision::abs(_data);
+   return abs;
+}
+
+APInt APInt::operator-() const
+{
+   APInt neg;
+   neg._data = -_data;
+   return neg;
+}
+
+APInt APInt::operator~() const
+{
+   APInt _not;
+   _not._data = ~_data;
+   return _not;
+}
+
+APInt APInt::operator++(int)
+{
+   APInt t = *this;
+   ++_data;
+   return t;
+}
+
+APInt APInt::operator--(int)
+{
+   APInt t = *this;
+   --_data;
+   return t;
+}
+
+APInt& APInt::operator++()
+{
+   return operator+=(1LL);
+}
+
+APInt& APInt::operator--()
+{
+   return operator-=(1LL);
+}
+
+void APInt::bit_set(bw_t i)
+{
+   boost::multiprecision::bit_set(_data, i);
+}
+
+void APInt::bit_clr(bw_t i)
+{
+   boost::multiprecision::bit_unset(_data, i);
+}
+
+bool APInt::bit_tst(bw_t i) const
+{
+   return boost::multiprecision::bit_test(_data, i);
+}
+
+bool APInt::sign() const
+{
+   return _data < 0;
+}
+
+APInt& APInt::extOrTrunc(bw_t bw, bool sign)
+{
+   THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
+   const APInt_internal mask((APInt_internal(1,nullptr) << bw) - APInt_internal(1,nullptr),nullptr);
+   _data &= mask;
+   if(sign && bit_test(_data, static_cast<unsigned>(bw - 1)))
+   {
+      _data += (APInt_internal(-1,nullptr) << bw);
+   }
+   return *this;
+}
+
+APInt APInt::extOrTrunc(bw_t bw, bool sign) const
+{
+   THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
+   const APInt_internal mask((APInt_internal(1,nullptr) << bw) - APInt_internal(1,nullptr),nullptr);
+   APInt_internal val = _data & mask;
+   if(sign && bit_test(val, static_cast<unsigned>(bw - 1)))
+   {
+      val += (APInt_internal(-1,nullptr) << bw);
+   }
+   return APInt(val);
+}
+
+bw_t APInt::trailingZeros(bw_t bw) const
+{
+   return static_cast<bw_t>(std::min(static_cast<mp_bitcnt_t>(bw), mpz_scan1(_data.backend().data(), 0)));
+}
+
+bw_t APInt::trailingOnes(bw_t bw) const
+{
+   return static_cast<bw_t>(std::min(static_cast<mp_bitcnt_t>(bw), mpz_scan0(_data.backend().data(), 0)));
+}
+
+bw_t APInt::leadingZeros(bw_t bw) const
+{
+   int i = bw;
+   for(; i > 0;)
+   {
+      if(bit_test(_data, static_cast<unsigned>(--i)))
+      {
+         break;
+      }
+   }
+   i = i ? (i + 1) : i;
+   return static_cast<bw_t>(bw - i);
+}
+
+bw_t APInt::leadingOnes(bw_t bw) const
+{
+   int i = bw;
+   for(; i >= 0;)
+   {
+      if(!bit_test(_data, static_cast<unsigned>(--i)))
+      {
+         break;
+      }
+   }
+   ++i;
+   return static_cast<bw_t>(bw - i);
+}
+
+APInt::bw_t APInt::minBitwidth(bool sign) const
+{
+   const auto bw = static_cast<bw_t>(mpz_sizeinbase(_data.backend().data(), 2));
+   return sign ? (leadingOnes(bw) == 1 ? bw : static_cast<bw_t>(bw + 1)) : (_data.sign() < 0 ? static_cast<bw_t>(std::numeric_limits<bw_t>::max()) : bw);
+}
+
+int64_t APInt::toInt() const
+{
+   return _data.convert_to<int64_t>();
+}
+
+uint64_t APInt::toIntUnsigned() const
+{
+   return _data.convert_to<uint64_t>();
+}
+
+std::string APInt::str() const
+{
+   return _data.str();
+}
+
+APInt APInt::getMaxValue(bw_t bw)
+{
+   return (APInt(1) << bw) - 1;
+}
+
+APInt APInt::getMinValue(bw_t)
+{
+   return APInt(0);
+}
+
+APInt APInt::getSignedMaxValue(bw_t bw)
+{
+   return (APInt(1) << (bw - 1)) - APInt(1);
+}
+
+APInt APInt::getSignedMinValue(bw_t bw)
+{
+   return -(APInt(1) << (bw - 1));
+}
+
+std::ostream& operator<<(std::ostream& str, const APInt& v)
+{
+   str << v.str();
+   return str;
+}
+
+// ========================================================================== //
+// Range
+// ========================================================================== //
+namespace
 {
    // The number of bits needed to store the largest variable of the function (APInt).
-   const bw_t MAX_BIT_INT = static_cast<bw_t>(std::numeric_limits<UAPInt>::digits);
-   const APInt Min(std::numeric_limits<APInt>::min());
-   const APInt Max(std::numeric_limits<APInt>::max());
+   const bw_t MAX_BIT_INT = static_cast<bw_t>(128U);
+   const APInt Min = APInt::getSignedMinValue(MAX_BIT_INT);
+   const APInt Max = APInt::getSignedMaxValue(MAX_BIT_INT);
    const APInt MinDelta(1);
+}
 
+static bool enable_add = true;
+static bool enable_sub = true;
+static bool enable_mul = true;
+static bool enable_sdiv = true;
+static bool enable_udiv = true;
+static bool enable_srem = true;
+static bool enable_urem = true;
+static bool enable_shl = true;
+static bool enable_shr = true;
+static bool enable_abs = true;
+static bool enable_negate = true;
+static bool enable_not = true;
+static bool enable_and = true;
+static bool enable_or = true;
+static bool enable_xor = true;
+static bool enable_sext = true;
+static bool enable_zext = true;
+static bool enable_trunc = true;
+static bool enable_min = true;
+static bool enable_max = true;
+
+Range::Range(RangeType rType, bw_t rbw) : l(Min), u(Max), bw(rbw), type(rType)
+{
+   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
+}
+
+Range::Range(RangeType rType, bw_t rbw, const APInt& lb, const APInt& ub) : l(lb), u(ub), bw(rbw), type(rType)
+{
+   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
+   normalizeRange(lb, ub, rType);
+}
+
+Range* Range::clone() const
+{
+   return new Range(*this);
+}
+
+void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
+{
+   if(rType == Real)
+   {
+      THROW_UNREACHABLE("Real range is a storage class only");
+   }
+   if(rType == Empty || rType == Unknown)
+   {
+      l = Min;
+      u = Max;
+   }
+   else if(rType == Anti)
+   {
+      if(lb > ub)
+      {
+         type = Regular;
+         l = Min;
+         u = Max;
+      }
+      else
+      {
+         if((lb == Min) && (ub == Max))
+         {
+            type = Empty;
+         }
+         else if(lb == Min)
+         {
+            type = Regular;
+            l = ub + MinDelta;
+            u = Max;
+         }
+         else if(ub == Max)
+         {
+            type = Regular;
+            l = Min;
+            u = lb - MinDelta;
+         }
+         else
+         {
+            THROW_ASSERT(ub >= lb, "");
+            const auto maxS = APInt::getSignedMaxValue(bw);
+            const auto minS = APInt::getSignedMinValue(bw);
+            const bool lbgt = lb > maxS;
+            const bool ubgt = ub > maxS;
+            const bool lblt = lb < minS;
+            const bool ublt = ub < minS;
+            if(lbgt && ubgt)
+            {
+               l = lb.extOrTrunc(bw, true);
+               u = ub.extOrTrunc(bw, true);
+            }
+            else if(lblt && ublt)
+            {
+               l = ub.extOrTrunc(bw, true);
+               u = lb.extOrTrunc(bw, true);
+            }
+            else if(!lblt && ubgt)
+            {
+               const auto ubnew = ub.extOrTrunc(bw, true);
+               if(ubnew >= (lb - MinDelta))
+               {
+                  l = Min;
+                  u = Max;
+               }
+               else
+               {
+                  type = Regular;
+                  l = ubnew + MinDelta;
+                  u = lb - MinDelta;
+               }
+            }
+            else if(lblt && !ubgt)
+            {
+               const auto lbnew = lb.extOrTrunc(bw, true);
+               if(lbnew <= (ub + MinDelta))
+               {
+                  l = Min;
+                  u = Max;
+               }
+               else
+               {
+                  type = Regular;
+                  l = ub + MinDelta;
+                  u = lbnew - MinDelta;
+               }
+            }
+            else if(!lblt && !ubgt)
+            {
+               l = lb;
+               u = ub;
+            }
+            else
+            {
+               THROW_UNREACHABLE("unexpected condition");
+            }
+         }
+      }
+   }
+   else if((lb - MinDelta) == ub)
+   {
+      type = Regular;
+      l = Min;
+      u = Max;
+   }
+   else if(lb > ub)
+   {
+      normalizeRange(ub + MinDelta, lb - MinDelta, Anti);
+   }
+   else
+   {
+      THROW_ASSERT(ub >= lb, "");
+      const auto maxS = APInt::getSignedMaxValue(bw);
+      const auto minS = APInt::getSignedMinValue(bw);
+      const bool lbgt = lb > maxS;
+      const bool ubgt = ub > maxS;
+      const bool lblt = lb < minS;
+      const bool ublt = ub < minS;
+      if(ubgt && lblt)
+      {
+         l = Min;
+         u = Max;
+      }
+      else if(lbgt && ubgt)
+      {
+         l = lb.extOrTrunc(bw, true);
+         u = ub.extOrTrunc(bw, true);
+      }
+      else if(lblt && ublt)
+      {
+         l = ub.extOrTrunc(bw, true);
+         u = lb.extOrTrunc(bw, true);
+      }
+      else if(!lblt && ubgt)
+      {
+         const auto ubnew = ub.extOrTrunc(bw, true);
+         if(ubnew >= (lb - MinDelta))
+         {
+            l = Min;
+            u = Max;
+         }
+         else
+         {
+            type = Anti;
+            l = ubnew + MinDelta;
+            u = lb - MinDelta;
+         }
+      }
+      else if(lblt && !ubgt)
+      {
+         const auto lbnew = lb.extOrTrunc(bw, true);
+         if(lbnew <= (ub + MinDelta))
+         {
+            l = Min;
+            u = Max;
+         }
+         else
+         {
+            type = Anti;
+            l = ub + MinDelta;
+            u = lbnew - MinDelta;
+         }
+      }
+      else if(!lblt && !ubgt)
+      {
+         l = lb;
+         u = ub;
+      }
+      else
+      {
+         THROW_UNREACHABLE("unexpected condition");
+      }
+   }
+   if(!(u >= l))
+   {
+      l = Min;
+      u = Max;
+   }
+}
+
+bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
+{
+   return std::max(a.minBitwidth(sign), b.minBitwidth(sign));
+}
+
+RangeRef Range::getAnti() const
+{
+   if(type == Anti)
+   {
+      return RangeRef(new Range(Regular, bw, l, u));
+   }
+   if(type == Regular)
+   {
+      return RangeRef(new Range(Anti, bw, l, u));
+   }
+   if(type == Empty)
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(type == Unknown)
+   {
+      return RangeRef(this->clone());
+   }
+   if(type == Real)
+   {
+      THROW_UNREACHABLE("Real range is a storage class only");
+   }
+   THROW_UNREACHABLE("unexpected condition");
+   return nullptr;
+}
+
+bw_t Range::getBitWidth() const
+{
+   return bw;
+}
+
+const APInt &Range::getLower() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isAnti(), "Lower bound not valid for Anti range");
+   return l;
+}
+
+const APInt &Range::getUpper() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isAnti(), "Upper bound not valid for Anti range");
+   return u;
+}
+
+APInt Range::getSignedMax() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "Max not valid for Unknown/Empty range");
+   const auto maxS = APInt::getSignedMaxValue(bw);
+   if(type == Regular)
+   {
+      return u > maxS ? maxS : u;
+   }
+   return maxS;
+}
+
+APInt Range::getSignedMin() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "Min not valid for Unknown/Empty range");
+   const auto minS = APInt::getSignedMinValue(bw);
+   if(type == Regular)
+   {
+      return l < minS ? minS : l;
+   }
+   return minS;
+}
+
+APInt Range::getUnsignedMax() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "UMax not valid for Unknown/Empty range");
+   if(isAnti())
+   {
+      auto lb = l - MinDelta;
+      auto ub = u + MinDelta;
+      return (lb >= 0 || ub < 0) ? APInt::getMaxValue(bw) : lb.extOrTrunc(bw, false);
+   }
+   return (u < 0 || l >= 0) ? u.extOrTrunc(bw, false) : APInt::getMaxValue(bw);
+}
+
+APInt Range::getUnsignedMin() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   THROW_ASSERT(!isUnknown() && !isEmpty(), "UMin not valid for Unknown/Empty range");
+   if(isAnti())
+   {
+      return (l > 0 || u < 0) ? APInt::getMinValue(bw) : (u + MinDelta);
+   }
+   return (l > 0 || u < 0) ? l.extOrTrunc(bw, false) : APInt::getMinValue(bw);
+}
+
+bool Range::isUnknown() const
+{
+   return type == Unknown;
+}
+
+void Range::setUnknown()
+{
+   type = Unknown;
+}
+
+bool Range::isRegular() const
+{
+   return type == Regular;
+}
+
+bool Range::isAnti() const
+{
+   return type == Anti;
+}
+
+bool Range::isEmpty() const
+{
+   return type == Empty;
+}
+
+bool Range::isReal() const
+{
+   return false;
+}
+
+bool Range::isSameType(RangeConstRef other) const
+{
+   return type == other->type;
+}
+
+bool Range::isSameRange(RangeConstRef other) const
+{
+   return this->bw == other->bw && isSameType(other) && (l == other->l) && (u == other->u);
+}
+
+bool Range::isFullSet() const
+{
+   THROW_ASSERT(!isUnknown(), "");
+   if(isEmpty() || isAnti())
+   {
+      return false;
+   }
+   return (APInt::getSignedMaxValue(bw) <= getUpper() && APInt::getSignedMinValue(bw) >= getLower())
+      || (APInt::getMaxValue(bw) <= getUpper() && APInt::getMinValue(bw) >= getLower());
+}
+
+bool Range::isSingleElement() const
+{
+   if(isUnknown() || isEmpty())
+   {
+      return false;
+   }
+   return l == u;
+}
+
+bool Range::isConstant() const
+{
+   return isRegular() && l == u;
+}
+
+#define RETURN_EMPTY_ON_EMPTY(b) if(this->isEmpty() || other->isEmpty()){return RangeRef(new Range(Empty, b));}
+#define RETURN_UNKNOWN_ON_UNKNOWN(b) if(this->isUnknown() || other->isUnknown()){return RangeRef(new Range(Unknown, b));}
+
+/// Add and Mul are commutative. So, they are a little different
+/// than the other operations.
+/// Many Range reductions are done by exploiting ConstantRange code
+RangeRef Range::add(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(isAnti() && other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(ol >= (Max - u))
+      {
+         return RangeRef(new Range(Regular, bw));
+      }
+      return RangeRef(new Range(Anti, bw, l + ol, u + ol));
+   }
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(l == Min)
+      {
+         THROW_ASSERT(u != Max, "");
+         return RangeRef(new Range(Regular, bw, l, u + ol));
+      }
+      if(u == Max)
+      {
+         THROW_ASSERT(l != Min, "");
+         return RangeRef(new Range(Regular, bw, l + ol, u));
+      }
+
+      return RangeRef(new Range(Regular, bw, l + ol, u + ol));
+   }
+
+   auto sMin = std::clamp(getSignedMin() + other->getSignedMin(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
+   auto sMax = std::clamp(getSignedMax() + other->getSignedMax(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
+   auto uMin = std::min({getUnsignedMin() + other->getUnsignedMin(), APInt::getMaxValue(bw)});
+   auto uMax = std::min({getUnsignedMax() + other->getUnsignedMax(), APInt::getMaxValue(bw)});
+
+   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
+   {
+      return RangeRef(new Range(Regular, bw, uMin, uMax));
+   }
+   return RangeRef(new Range(Regular, bw, sMin, sMax));
+}
+
+RangeRef Range::sub(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(this->isAnti() && other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(l <= (Min + ol))
+      {
+         return RangeRef(new Range(Regular, bw));
+      }
+
+      return RangeRef(new Range(Anti, bw, l - ol, u - ol));
+   }
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(l == Min)
+      {
+         THROW_ASSERT(u != Max, "");
+         auto minValue = APInt::getSignedMinValue(bw);
+         auto upper = u - ol;
+         if(minValue > upper)
+         {
+            return RangeRef(new Range(Regular, bw));
+         }
+
+         return RangeRef(new Range(Regular, bw, l, upper));
+      }
+      if(u == Max)
+      {
+         THROW_ASSERT(l != Min, "");
+         auto maxValue = APInt::getSignedMaxValue(bw);
+         auto lower = l - ol;
+         if(maxValue < lower)
+         {
+            return RangeRef(new Range(Regular, bw));
+         }
+
+         return RangeRef(new Range(Regular, bw, l - ol, u));
+      }
+
+      auto lower = (l - ol).extOrTrunc(bw, true);
+      auto upper = (u - ol).extOrTrunc(bw, true);
+      if(lower <= upper)
+      {
+         return RangeRef(new Range(Regular, bw, lower, upper));
+      }
+      return RangeRef(new Range(Anti, bw, upper + 1, lower - 1));
+   }
+
+   auto sMin = std::clamp(getSignedMin() - other->getSignedMax(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
+   auto sMax = std::clamp(getSignedMax() - other->getSignedMin(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
+   auto uMin = getUnsignedMin() - other->getUnsignedMax();
+   auto uMax = getUnsignedMax() - other->getUnsignedMin();
+
+   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
+   {
+      return RangeRef(new Range(Regular, bw, uMin, uMax));
+   }
+   return RangeRef(new Range(Regular, bw, sMin, sMax));
+}
+
+RangeRef Range::mul(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   // Multiplication is signedness-independent. However different ranges can be
+   // obtained depending on how the input ranges are treated. These different
+   // ranges are all conservatively correct, but one might be better than the
+   // other. We calculate two ranges; one treating the inputs as unsigned
+   // and the other signed, then return the smallest of these ranges.
+
+   // Unsigned range first.
+   auto this_min = getUnsignedMin();
+   auto this_max = getUnsignedMax();
+   auto Other_min = other->getUnsignedMin();
+   auto Other_max = other->getUnsignedMax();
+
+   const auto Result_zext = Range(Regular, static_cast<bw_t>(bw * 2), this_min * Other_min, this_max * Other_max);
+   const auto UR = Result_zext.truncate(bw);
+
+   // Now the signed range. Because we could be dealing with negative numbers
+   // here, the lower bound is the smallest of the Cartesian product of the
+   // lower and upper ranges; for example:
+   //   [-1,4] * [-2,3] = min(-1*-2, -1*-3, 4*-2, 4*3) = -8.
+   // Similarly for the upper bound, swapping min for max.
+
+   this_min = getSignedMin();
+   this_max = getSignedMax();
+   Other_min = other->getSignedMin();
+   Other_max = other->getSignedMax();
+
+   const auto [min, max] = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
+   const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), min, max);
+   const auto SR = Result_sext.truncate(bw);
+   if(SR->isFullSet())
+   {
+      return UR;
+   }
+   if(UR->isFullSet())
+   {
+      return SR;
+   }
+   
+   const auto uSpan = UR->isAnti() ? Max : (UR->getUpper() - UR->getLower()).abs();
+   const auto sSpan = SR->isAnti() ? Max : (SR->getUpper() - SR->getLower()).abs();
+   return uSpan < sSpan ? UR : SR;
+}
+
+RangeRef Range::udiv(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   
+   auto a = getUnsignedMin();
+   auto b = getUnsignedMax();
+   auto c = other->getUnsignedMin();
+   auto d = other->getUnsignedMax();
+
+   // Deal with division by 0 exception
+   if((c == 0) && (d == 0))
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(c == 0)
+   {
+      c = 1;
+   }
+   RangeRef res(new Range(Regular, bw, a / d, b / c));
+   return res;
+}
+
+#define DIV_HELPER(x, y) (x == Max) ? ((y < 0) ? Min : ((y == 0) ? 0 : Max)) : ((y == Max) ? 0 : ((x == Min) ? ((y < 0) ? Max : ((y == 0) ? 0 : Min)) : ((y == Min) ? 0 : ((x) / (y)))))
+
+RangeRef Range::sdiv(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || this->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const APInt& a = this->getLower();
+   const APInt& b = this->getUpper();
+   APInt c1, d1, c2, d2;
+   bool is_zero_in = false;
+   if(other->isAnti())
+   {
+      auto antiRange = other->getAnti();
+      c1 = Min;
+      d1 = antiRange->getLower() - 1;
+      if(d1 == 0)
+      {
+         d1 = -1;
+      }
+      else if(d1 > 0)
+      {
+         return RangeRef(new Range(Regular, bw)); /// could be improved
+      }
+      c2 = antiRange->getUpper() + 1;
+      if(c2 == 0)
+      {
+         c2 = 1;
+      }
+      else if(c2 < 0)
+      {
+         return RangeRef(new Range(Regular, bw)); /// could be improved
+      }
+      d2 = Max;
+   }
+   else
+   {
+      c1 = other->getLower();
+      d1 = other->getUpper();
+      // Deal with division by 0 exception
+      if((c1 == 0) && (d1 == 0))
+      {
+         return RangeRef(new Range(Regular, bw));
+      }
+      is_zero_in = (c1 < 0) && (d1 > 0);
+      if(is_zero_in)
+      {
+         d1 = -1;
+         c2 = 1;
+      }
+      else
+      {
+         c2 = other->getLower();
+         if(c2 == 0)
+         {
+            c1 = c2 = 1;
+         }
+      }
+      d2 = other->getUpper();
+      if(d2 == 0)
+      {
+         d1 = d2 = -1;
+      }
+   }
+   auto n_iters = (is_zero_in || other->isAnti()) ? 8u : 4u;
+
+   APInt candidates[8];
+   candidates[0] = DIV_HELPER(a, c1);
+   candidates[1] = DIV_HELPER(a, d1);
+   candidates[2] = DIV_HELPER(b, c1);
+   candidates[3] = DIV_HELPER(b, d1);
+   if(n_iters == 8)
+   {
+      candidates[4] = DIV_HELPER(a, c2);
+      candidates[5] = DIV_HELPER(a, d2);
+      candidates[6] = DIV_HELPER(b, c2);
+      candidates[7] = DIV_HELPER(b, d2);
+   }
+   // Lower bound is the min value from the vector, while upper bound is the max value
+   auto [min, max] = std::minmax_element(candidates, candidates + n_iters);
+   return RangeRef(new Range(Regular, bw, *min, *max));
+}
+
+RangeRef Range::urem(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      if(other->getLower() == 0)
+      {
+         return RangeRef(new Range(Empty, bw));
+      }
+      else if(other->getUnsignedMin() == 1)
+      {
+         return RangeRef(new Range(Regular, bw, 0, 0));
+      }
+   }
+
+   const APInt& a = this->getUnsignedMin();
+   const APInt& b = this->getUnsignedMax();
+   APInt c = other->getUnsignedMin();
+   const APInt& d = other->getUnsignedMax();
+
+   // Deal with mod 0 exception
+   if((c == 0) && (d == 0))
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(c == 0)
+   {
+      c = 1;
+   }
+
+   APInt candidates[8];
+
+   candidates[0] = a < c ? a : 0;
+   candidates[1] = a < d ? a : 0;
+   candidates[2] = b < c ? b : 0;
+   candidates[3] = b < d ? b : 0;
+   candidates[4] = a < c ? a : c - 1;
+   candidates[5] = a < d ? a : d - 1;
+   candidates[6] = b < c ? b : c - 1;
+   candidates[7] = b < d ? b : d - 1;
+
+   // Lower bound is the min value from the vector, while upper bound is the max value
+   auto [min, max] = std::minmax_element(candidates, candidates + 8);
+   RangeRef res(new Range(Regular, bw, *min, *max));
+   return res;
+}
+
+RangeRef Range::srem(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      if(other->getSignedMin() == 0)
+      {
+         return RangeRef(new Range(Empty, bw));
+      }
+      else if(other->getSignedMin() == 1 || other->getSignedMin() == -1)
+      {
+         return RangeRef(new Range(Regular, bw, 0, 0));
+      }
+   }
+
+   const auto& a = this->getLower();
+   const auto& b = this->getUpper();
+   auto c = other->getLower();
+   const auto& d = other->getUpper();
+
+   // Deal with mod 0 exception
+   if((c == 0) && (d == 0))
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(c == 0)
+   {
+      c = 1;
+   }
+
+   APInt candidates[4];
+   candidates[0] = Min;
+   candidates[1] = Min;
+   candidates[2] = Max;
+   candidates[3] = Max;
+   if((a != Min) && (c != Min))
+   {
+      candidates[0] = a % c; // lower lower
+   }
+   if((a != Min) && (d != Max))
+   {
+      candidates[1] = a % d; // lower upper
+   }
+   if((b != Max) && (c != Min))
+   {
+      candidates[2] = b % c; // upper lower
+   }
+   if((b != Max) && (d != Max))
+   {
+      candidates[3] = b % d; // upper upper
+   }
+   // Lower bound is the min value from the vector, while upper bound is the max value
+   auto [min, max] = std::minmax_element(candidates, candidates + 4);
+   RangeRef res(new Range(Regular, bw, *min, *max));
+   return res;
+}
+
+RangeRef Range::shl(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(this->isConstant() && other->isConstant())
+   {
+      const auto c = (this->getLower() << other->getLower()).extOrTrunc(bw, true);
+      return RangeRef(new Range(Regular, bw, c, c));
+   }
+
+   const auto a = this->getLower();
+   const auto b = this->getUpper();
+   const auto c = other->getUnsignedMin();
+   const auto d = other->getUnsignedMax();
+
+   if(c >= bw)
+   {
+      return RangeRef(new Range(Regular, bw, 0, 0));
+   }
+   if(d >= bw)
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(a < 0 && b < 0)
+   {
+      if(d > a.leadingOnes(bw))
+      {
+         return RangeRef(new Range(Regular, bw));
+      }
+      return RangeRef(new Range(Regular, bw, a << d, b << c));
+   }
+   if(a < 0 && b >= 0)
+   {
+      if(d > std::min(a.leadingOnes(bw), b.leadingZeros(bw)))
+      {
+         return RangeRef(new Range(Regular, bw));
+      }
+      return RangeRef(new Range(Regular, bw, a << d, b << d));
+   }
+   if(d > b.leadingZeros(bw))
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   return RangeRef(new Range(Regular, bw, a << c, b << d));
+}
+
+RangeRef Range::shr(RangeConstRef other, bool sign) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto c = other->getUnsignedMin();
+   const auto d = other->getUnsignedMax();
+   
+   if(sign)
+   {
+      const auto a = getSignedMin();
+      const auto b = getSignedMax();
+      const auto min = a >= 0 ? a >> d : a >> c;
+      const auto max = b >= 0 ? b >> c : b >> d;
+
+      return RangeRef(new Range(Regular, bw, min, max));
+   }
+   else
+   {
+      const auto a = getUnsignedMin();
+      const auto b = getUnsignedMax();
+
+      return RangeRef(new Range(Regular, bw, a >> d, b >> c));
+   }
+}
+
+
+/*
+ * 	This and operations are coded following Hacker's Delight algorithm.
+ * 	According to the author, they provide tight results.
+ */
+namespace
+{
+   APInt minOR(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
+      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if(~a & c & m)
+         {
+            temp = (a | m) & (~m+1);
+            if(temp <= b) { a = temp; break; }
+         }
+         else if(a & ~c & m)
+         {
+            temp = (c | m) & (~m+1);
+            if(temp <= d) { c = temp; break; }
+         }
+         m = m >> 1;
+      }
+      return a | c;
+   }
+
+   APInt maxOR(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
+      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if(b & d & m)
+         {
+            temp = (b - m) | (m - 1);
+            if(temp >= a) { b = temp; break; }
+            temp = (d - m) | (m - 1);
+            if(temp >= c) { d = temp; break; }
+         }
+         m = m >> 1;
+      }
+      return b | d;
+   }
+
+   std::pair<APInt,APInt> OR(APInt a, APInt b, APInt c, APInt d)
+   {
+      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
+
+      APInt res_l, res_u;
+      switch(abcd)
+      {
+         case 0:
+         case 3:
+         case 12:
+         case 15:
+            res_l = minOR(a, b, c, d);
+            res_u = maxOR(a, b, c, d);
+            break;
+         case 1:
+            return std::make_pair(a, -1);
+         case 4:
+            return std::make_pair(c, -1);
+         case 5:
+            res_l = std::min({a,c});
+            res_u = maxOR(0, b, 0, d);
+            break;
+         case 7:
+            res_l = minOR(a, -1, c, d);
+            res_u = maxOR(0, b, c, d);
+            break;
+         case 13:
+            res_l = minOR(a, b, c, -1);
+            res_u = maxOR(a, b, 0, d);
+            break;
+         default:
+            THROW_UNREACHABLE("OR unreachable state " + STR(abcd));
+      }
+      return std::make_pair(res_l, res_u);
+   }
+
+   APInt minAND(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
+      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if(~a & ~c & m)
+         {
+            temp = (a | m) & (~m+1);
+            if(temp <= b) { a = temp; break; }
+            temp = (c | m) & (~m+1);
+            if(temp <= d) { c = temp; break; }
+         }
+         m = m >> 1;
+      }
+      return a & c;
+   }
+
+   APInt maxAND(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
+      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if(b & ~d & m)
+         {
+            temp = (b & ~m) | (m - 1);
+            if(temp >= a) { b = temp; break; }
+         }
+         else if(~b & d & m)
+         {
+            temp = (d & ~m) | (m - 1);
+            if(temp >= c) { d = temp; break; }
+         }
+         m = m >> 1;
+      }
+      return b & d;
+   }
+
+   std::pair<APInt,APInt> AND(APInt a, APInt b, APInt c, APInt d)
+   {
+      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
+
+      APInt res_l, res_u;
+      switch(abcd)
+      {
+         case 0:
+         case 3:
+         case 12:
+         case 15:
+            res_l = minAND(a, b, c, d);
+            res_u = maxAND(a, b, c, d);
+            break;
+         case 1:
+            res_l = minAND(a, b, c, -1);
+            res_u = maxAND(a, b, 0, d);
+            break;
+         case 4:
+            res_l = minAND(a, -1, c, d);
+            res_u = maxAND(0, b, c, d);
+            break;
+         case 5:
+            res_l = minAND(a, -1, c, -1);
+            res_u = std::max({b, d});
+            break;
+         case 7:
+            return std::make_pair(0, d);
+         case 13:
+            return std::make_pair(0, b);
+         default:
+            THROW_UNREACHABLE("AND unreachable state " + STR(abcd));
+      }
+      return std::make_pair(res_l, res_u);
+   }
+
+   APInt minXOR(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
+      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if(~a & c & m)
+         {
+            temp = (a | m) & (~m+1);
+            if(temp <= b) { a = temp; }
+         }
+         else if(a & ~c & m)
+         {
+            temp = (c | m) & (~m+1);
+            if(temp <= d) { c = temp; }
+         }
+         m = m >> 1;
+      }
+      return a ^ c;
+   }
+
+   APInt maxXOR(APInt a, APInt b, APInt c, APInt d)
+   {
+      APInt temp;
+      APInt m = APInt(1) << (MAX_BIT_INT - 1);
+      while(m != 0)
+      {
+         if(b & d & m)
+         {
+            temp = (b - m) | (m - 1);
+            if(temp >= a) { b = temp; }
+            else {
+               temp = (d - m) | (m - 1);
+               if(temp >= c) { d = temp; }
+            }
+         }
+         m = m >> 1;
+      }
+      return b ^ d;
+   }
+
+   std::pair<APInt,APInt> uXOR(APInt a, APInt b, APInt c, APInt d)
+   {
+      return std::make_pair(minXOR(a,b,c,d), maxXOR(a,b,c,d));
+   }
+
+} // namespace
+
+RangeRef Range::Or(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+
+   const APInt a = this->isAnti() ? Min : this->getLower();
+   const APInt b = this->isAnti() ? Max : this->getUpper();
+   const APInt c = other->isAnti() ? Min : other->getLower();
+   const APInt d = other->isAnti() ? Max : other->getUpper();
+   
+   const auto [res_l, res_u] = OR(a, b, c, d);
+   return RangeRef(new Range(Regular, bw, res_l, res_u));
+}
+
+RangeRef Range::And(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+
+   const APInt a = this->isAnti() ? Min : this->getLower();
+   const APInt b = this->isAnti() ? Max : this->getUpper();
+   const APInt c = other->isAnti() ? Min : other->getLower();
+   const APInt d = other->isAnti() ? Max : other->getUpper();
+
+   const auto [res_l, res_u] = AND(a, b, c, d);
+   return RangeRef(new Range(Regular, bw, res_l, res_u));
+}
+
+RangeRef Range::Xor(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+
+   const APInt a = this->isAnti() ? Min : this->getLower();
+   const APInt b = this->isAnti() ? Max : this->getUpper();
+   const APInt c = other->isAnti() ? Min : other->getLower();
+   const APInt d = other->isAnti() ? Max : other->getUpper();
+   
+   if(a >= 0 && b >= 0 && c >= 0 && d >= 0)
+   {
+      const auto [res_l,res_u] = uXOR(a, b, c, d);
+      return RangeRef(new Range(Regular, bw, res_l, res_u));
+   }
+   else if(a == -1 && b == -1 && c >= 0 && d >= 0)
+   {
+      return this->sub(other);
+   }
+   else if(c == -1 && d == -1 && a >= 0 && b >= 0)
+   {
+      return other->sub(RangeRef(this->clone()));
+   }
+   return RangeRef(new Range(Regular, bw));
+}
+
+RangeRef Range::Not() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty() || isUnknown())
+   {
+      return RangeRef(new Range(this->type, bw));
+   }
+   
+   const auto min = ~this->u;
+   const auto max = ~this->l;
+
+   return RangeRef(new Range(this->type, bw, min, max));
+}
+
+RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(!isAnti() && !other->isAnti())
+   {
+      if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
+      {
+         return RangeRef(new Range(Regular, _bw, 0, 1));
+      }
+   }
+   bool areTheyEqual = !this->intersectWith(other)->isEmpty();
+   bool areTheyDifferent = !((l == u) && this->isSameRange(other));
+
+   if(areTheyEqual && areTheyDifferent)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+   if(areTheyEqual && !areTheyDifferent)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(!areTheyEqual && areTheyDifferent)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   THROW_UNREACHABLE("condition unexpected");
+   return nullptr;
+}
+
+RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(!isAnti() && !other->isAnti())
+   {
+      if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
+      {
+         return RangeRef(new Range(Regular, _bw, 0, 1));
+      }
+   }
+   bool areTheyEqual = !this->intersectWith(other)->isEmpty();
+   bool areTheyDifferent = !((l == u) && this->isSameRange(other));
+   if(areTheyEqual && areTheyDifferent)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+   if(areTheyEqual && !areTheyDifferent)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+   if(!areTheyEqual && areTheyDifferent)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+
+   THROW_UNREACHABLE("condition unexpected");
+   return nullptr;
+}
+
+RangeRef Range::Ugt(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getUnsignedMin();
+   const auto b = this->getUnsignedMax();
+   const auto c = other->getUnsignedMin();
+   const auto d = other->getUnsignedMax();
+   if(a > d)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(c >= b)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::Uge(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getUnsignedMin();
+   const auto b = this->getUnsignedMax();
+   const auto c = other->getUnsignedMin();
+   const auto d = other->getUnsignedMax();
+   if(a >= d)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(c > b)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::Ult(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getUnsignedMin();
+   const auto b = this->getUnsignedMax();
+   const auto c = other->getUnsignedMin();
+   const auto d = other->getUnsignedMax();
+   if(b < c)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(d <= a)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::Ule(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getUnsignedMin();
+   const auto b = this->getUnsignedMax();
+   const auto c = other->getUnsignedMin();
+   const auto d = other->getUnsignedMax();
+   if(b <= c)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(d < a)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::Sgt(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getSignedMin();
+   const auto b = this->getSignedMax();
+   const auto c = other->getSignedMin();
+   const auto d = other->getSignedMax();
+   if(a > d)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(c >= b)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::Sge(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getSignedMin();
+   const auto b = this->getSignedMax();
+   const auto c = other->getSignedMin();
+   const auto d = other->getSignedMax();
+   if(a >= d)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(c > b)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::Slt(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getSignedMin();
+   const auto b = this->getSignedMax();
+   const auto c = other->getSignedMin();
+   const auto d = other->getSignedMax();
+   if(b < c)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(d <= a)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(_bw)
+   RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
+
+   const auto a = this->getSignedMin();
+   const auto b = this->getSignedMax();
+   const auto c = other->getSignedMin();
+   const auto d = other->getSignedMax();
+   if(b <= c)
+   {
+      return RangeRef(new Range(Regular, _bw, 1, 1));
+   }
+   if(d < a)
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 0));
+   }
+
+   return RangeRef(new Range(Regular, _bw, 0, 1));
+}
+
+RangeRef Range::SMin(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMin = this->Slt(other, 1);
+   if(thisMin->isConstant())
+   {
+      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::min({this->getSignedMin(), other->getSignedMin()});
+   const auto max = std::min({this->getSignedMax(), other->getSignedMax()});
+   return RangeRef(new Range(Regular, bw, min, max));
+}
+
+RangeRef Range::SMax(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMax = this->Sgt(other, 1);
+   if(thisMax->isConstant())
+   {
+      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::max({this->getSignedMin(), other->getSignedMin()});
+   const auto max = std::max({this->getSignedMax(), other->getSignedMax()});
+   return RangeRef(new Range(Regular, bw, min, max));
+}
+
+RangeRef Range::UMin(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMin = this->Ult(other, 1);
+   if(thisMin->isConstant())
+   {
+      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::min({this->getUnsignedMin(), other->getUnsignedMin()});
+   const auto max = std::min({this->getUnsignedMax(), other->getUnsignedMax()});
+   return RangeRef(new Range(Regular, bw, min, max));
+}
+
+RangeRef Range::UMax(RangeConstRef other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+
+   const auto thisMax = this->Ugt(other, 1);
+   if(thisMax->isConstant())
+   {
+      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
+   }
+   const auto min = std::max({this->getUnsignedMin(), other->getUnsignedMin()});
+   const auto max = std::max({this->getUnsignedMax(), other->getUnsignedMax()});
+   return RangeRef(new Range(Regular, bw, min, max));
+}
+
+RangeRef Range::abs() const
+{
+   if(isEmpty() || isUnknown())
+   {
+      return RangeRef(this->clone());
+   }
+   if(isAnti())
+   {
+      if(u < 0)
+      {
+         if(l == APInt::getSignedMinValue(bw))
+         {
+            return RangeRef(new Range(Regular, bw, 0, APInt::getSignedMaxValue(bw)));
+         }
+         return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, -1));
+      }
+      if(l < 0)
+      {
+         if(l == APInt::getSignedMinValue(bw))
+         {
+            return RangeRef(new Range(Regular, bw, u + 1, APInt::getSignedMaxValue(bw)));
+         }
+         const auto min = std::min({-l, u});
+         return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, min));
+      }
+      return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw) + 1, l == 0 ? 0 : -1));
+   }
+
+   const auto smin = getSignedMin();
+   const auto smax = getSignedMax();
+   if(smax < 0)
+   {
+      if(smin == APInt::getSignedMinValue(bw))
+      {
+         return RangeRef(new Range(Anti, bw, smin + 1, -smax - 1));
+      }
+      return RangeRef(new Range(Regular, bw, -smax, -smin));
+   }
+   if(smin < 0)
+   {
+      if(smin == APInt::getSignedMinValue(bw))
+      {
+         return RangeRef(new Range(Anti, bw, smin + 1, -1));
+      }
+      const auto max = std::max({smax, -smin});
+      return RangeRef(new Range(Regular, bw, 0, max));
+   }
+   return RangeRef(this->clone());
+}
+
+RangeRef Range::negate() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty() || isUnknown())
+   {
+      return RangeRef(this->clone());
+   }
+   if(isAnti())
+   {
+      return RangeRef(new Range(Anti, bw, -u, -l));
+   }
+   return RangeRef(new Range(Regular, bw, -u, -l));
+}
+
+// Truncate
+// - if the source range is entirely inside max bit range, it is the result
+// - else, the result is the max bit range
+RangeRef Range::truncate(bw_t bitwidth) const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty())
+   {
+      return RangeRef(new Range(Empty, bitwidth));
+   }
+   if(isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bitwidth));
+   }
+   const auto a = this->getSignedMin();
+   const auto b = this->getSignedMax();
+   if(isFullSet() || isAnti() || (b - a).abs() > APInt::getMaxValue(bitwidth))
+   {
+      return RangeRef(new Range(Regular, bitwidth));
+   }
+   if(bitwidth == bw)
+   {
+      return RangeRef(this->clone());
+   }
+   
+   auto stmin = a.extOrTrunc(bitwidth, true);
+   auto stmax = b.extOrTrunc(bitwidth, true);
+   
+   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)   // Zero crossing range
+   {
+      if(stmax < 0)  // overflow
+      {
+         if(stmax >= stmin)
+         {
+            return RangeRef(new Range(Regular, bitwidth));
+         }
+         return RangeRef(new Range(Anti, bitwidth, stmax + 1, (stmin < 0 ? stmin : 0) - 1));
+      }
+      if(stmin > 0)  // underflow
+      {
+         if(stmax >= stmin)
+         {
+            return RangeRef(new Range(Regular, bitwidth));
+         }
+         return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+      }
+   }
+   else if((a.sign() != stmin.sign()) ^ (b.sign() != stmax.sign()))   // Non zero crossing range
+   {
+      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+   }
+   
+   if(stmin > stmax)
+   {
+      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
+   }
+   return RangeRef(new Range(Regular, bitwidth, stmin, stmax));
+}
+
+RangeRef Range::sextOrTrunc(bw_t bitwidth) const
+{
+   if(bitwidth <= bw)
+   {
+      return truncate(bitwidth);
+   }
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty())
+   {
+      return RangeRef(new Range(Empty, bitwidth));
+   }
+   if(isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bitwidth));
+   }
+
+   const auto this_min = this->getSignedMin();
+   const auto this_max = this->getSignedMax();
+   
+   const auto [min, max] = std::minmax({this_min.extOrTrunc(bitwidth, true), this_max.extOrTrunc(bitwidth, true)});
+   RangeRef sextRes(new Range(Regular, bitwidth, min, max));
+   if(sextRes->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bitwidth));
+   }
+   return sextRes;
+}
+
+RangeRef Range::zextOrTrunc(bw_t bitwidth) const
+{
+   if(bitwidth <= bw)
+   {
+      return truncate(bitwidth);
+   }
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty())
+   {
+      return RangeRef(new Range(Empty, bitwidth));
+   }
+   if(isUnknown())
+   {
+      return RangeRef(new Range(Unknown, bitwidth));
+   }
+   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
+   {
+      return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
+   }
+
+   if(this->getSignedMax() < 0)
+   {
+      return RangeRef(new Range(Regular, bitwidth, this->getSignedMax().extOrTrunc(bw, false), this->getSignedMin().extOrTrunc(bw, false)));
+   }
+   return RangeRef(new Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false), this->getSignedMax().extOrTrunc(bw, false)));
+}
+
+RangeRef Range::intersectWith(RangeConstRef other) const
+{
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
+   #endif
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+
+   if(!this->isAnti() && !other->isAnti())
+   {
+      APInt res_l = getLower() > other->getLower() ? getLower() : other->getLower();
+      APInt res_u = getUpper() < other->getUpper() ? getUpper() : other->getUpper();
+      if(res_u < res_l)
+      {
+         return RangeRef(new Range(Empty, bw));
+      }
+
+      return RangeRef(new Range(Regular, bw, res_l, res_u));
+   }
+   if(this->isAnti() && !other->isAnti())
+   {
+      auto antiRange = this->getAnti();
+      auto antil = antiRange->getLower();
+      auto antiu = antiRange->getUpper();
+      if(antil <= other->getLower())
+      {
+         if(other->getUpper() <= antiu)
+         {
+            return RangeRef(new Range(Empty, bw));
+         }
+         APInt res_l = other->getLower() > antiu ? other->getLower() : antiu + 1;
+         APInt res_u = other->getUpper();
+         return RangeRef(new Range(Regular, bw, res_l, res_u));
+      }
+      if(antiu >= other->getUpper())
+      {
+         THROW_ASSERT(other->getLower() < antil, "");
+         APInt res_l = other->getLower();
+         APInt res_u = other->getUpper() < antil ? other->getUpper() : antil - 1;
+         return RangeRef(new Range(Regular, bw, res_l, res_u));
+      }
+      if(other->getLower() == Min && other->getUpper() == Max)
+      {
+         return RangeRef(this->clone());
+      }
+      if(antil > other->getUpper() || antiu < other->getLower())
+      {
+         return RangeRef(other->clone());
+      }
+
+      // we approximate to the range of other
+      return RangeRef(other->clone());
+   }
+   if(!this->isAnti() && other->isAnti())
+   {
+      auto antiRange = other->getAnti();
+      auto antil = antiRange->getLower();
+      auto antiu = antiRange->getUpper();
+      if(antil <= this->getLower())
+      {
+         if(this->getUpper() <= antiu)
+         {
+            return RangeRef(new Range(Empty, bw));
+         }
+         APInt res_l = this->getLower() > antiu ? this->getLower() : antiu + 1;
+         APInt res_u = this->getUpper();
+         return RangeRef(new Range(Regular, bw, res_l, res_u));
+      }
+      if(antiu >= this->getUpper())
+      {
+         THROW_ASSERT(this->getLower() < antil, "");
+         APInt res_l = this->getLower();
+         APInt res_u = this->getUpper() < antil ? this->getUpper() : antil - 1;
+         return RangeRef(new Range(Regular, bw, res_l, res_u));
+      }
+      if(this->getLower() == Min && this->getUpper() == Max)
+      {
+         return RangeRef(other->clone());
+      }
+      if(antil > this->getUpper() || antiu < this->getLower())
+      {
+         return RangeRef(this->clone());
+      }
+
+      // we approximate to the range of this
+      return RangeRef(this->clone());
+   }
+
+   auto antiRange_a = this->getAnti();
+   auto antiRange_b = other->getAnti();
+   auto antil_a = antiRange_a->getLower();
+   auto antiu_a = antiRange_a->getUpper();
+   auto antil_b = antiRange_b->getLower();
+   auto antiu_b = antiRange_b->getUpper();
+   if(antil_a > antil_b)
+   {
+      std::swap(antil_a, antil_b);
+      std::swap(antiu_a, antiu_b);
+   }
+   if(antil_b > (antiu_a + 1))
+   {
+      return RangeRef(new Range(Anti, bw, antil_a, antiu_a));
+   }
+   auto res_l = antil_a;
+   auto res_u = antiu_a > antiu_b ? antiu_a : antiu_b;
+   if(res_l == Min && res_u == Max)
+   {
+      return RangeRef(new Range(Empty, bw));
+   }
+
+   return RangeRef(new Range(Anti, bw, res_l, res_u));
+}
+
+RangeRef Range::unionWith(RangeConstRef other) const
+{
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
+   #endif
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   if(this->isEmpty() || this->isUnknown())
+   {
+      return RangeRef(other->clone());
+   }
+   if(other->isEmpty() || other->isUnknown())
+   {
+      return RangeRef(this->clone());
+   }
+   if(!this->isAnti() && !other->isAnti())
+   {
+      APInt res_l = getLower() < other->getLower() ? getLower() : other->getLower();
+      APInt res_u = getUpper() > other->getUpper() ? getUpper() : other->getUpper();
+      return RangeRef(new Range(Regular, bw, res_l, res_u));
+   }
+   if(this->isAnti() && !other->isAnti())
+   {
+      auto antiRange = this->getAnti();
+      auto antil = antiRange->getLower();
+      auto antiu = antiRange->getUpper();
+      THROW_ASSERT(antil != Min, "");
+      THROW_ASSERT(antiu != Max, "");
+      if(antil > other->getUpper() || antiu < other->getLower())
+      {
+         return RangeRef(this->clone());
+      }
+      if(antil > other->getLower() && antiu < other->getUpper())
+      {
+         return RangeRef(new Range(Regular, bw));
+      }
+      if(antil >= other->getLower() && antiu > other->getUpper())
+      {
+         return RangeRef(new Range(Anti, bw, other->getUpper() + 1, antiu));
+      }
+      if(antil < other->getLower() && antiu <= other->getUpper())
+      {
+         return RangeRef(new Range(Anti, bw, antil, other->getLower() - 1));
+      }
+
+      return RangeRef(new Range(Regular, bw)); // approximate to the full set
+   }
+   if(!this->isAnti() && other->isAnti())
+   {
+      auto antiRange = other->getAnti();
+      auto antil = antiRange->getLower();
+      auto antiu = antiRange->getUpper();
+      THROW_ASSERT(antil != Min, "");
+      THROW_ASSERT(antiu != Max, "");
+      if(antil > this->getUpper() || antiu < this->getLower())
+      {
+         return RangeRef(other->clone());
+      }
+      if(antil > this->getLower() && antiu < this->getUpper())
+      {
+         return RangeRef(new Range(Regular, bw));
+      }
+      if(antil >= this->getLower() && antiu > this->getUpper())
+      {
+         return RangeRef(new Range(Anti, bw, this->getUpper() + 1, antiu));
+      }
+      if(antil < this->getLower() && antiu <= this->getUpper())
+      {
+         return RangeRef(new Range(Anti, bw, antil, this->getLower() - 1));
+      }
+
+      return RangeRef(new Range(Regular, bw)); // approximate to the full set
+   }
+
+   auto antiRange_a = this->getAnti();
+   auto antiRange_b = other->getAnti();
+   auto antil_a = antiRange_a->getLower();
+   auto antiu_a = antiRange_a->getUpper();
+   THROW_ASSERT(antil_a != Min, "");
+   THROW_ASSERT(antiu_a != Max, "");
+   auto antil_b = antiRange_b->getLower();
+   auto antiu_b = antiRange_b->getUpper();
+   THROW_ASSERT(antil_b != Min, "");
+   THROW_ASSERT(antiu_b != Max, "");
+   if(antil_a > antiu_b || antiu_a < antil_b)
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(antil_a > antil_b && antiu_a < antiu_b)
+   {
+      return RangeRef(this->clone());
+   }
+   if(antil_b > antil_a && antiu_b < antiu_a)
+   {
+      return RangeRef(this->clone());
+   }
+   if(antil_a >= antil_b && antiu_b <= antiu_a)
+   {
+      return RangeRef(new Range(Anti, bw, antil_a, antiu_b));
+   }
+   if(antil_b >= antil_a && antiu_a <= antiu_b)
+   {
+      return RangeRef(new Range(Anti, bw, antil_b, antiu_a));
+   }
+
+   THROW_UNREACHABLE("unsupported condition");
+   return nullptr;
+}
+
+void Range::print(std::ostream& OS) const
+{
+   if(this->isUnknown())
+   {
+      OS << "[Unknown," << +bw << "]";
+   }
+   else if(this->isEmpty())
+   {
+      OS << "[Empty," << +bw << "]";
+   }
+   else if(this->isAnti())
+   {
+      if(l == Min)
+      {
+         OS << ")-inf,";
+      }
+      else
+      {
+         OS << ")" << l.str() << ",";
+      }
+      OS << +bw << ",";
+      if(u == Max)
+      {
+         OS << "+inf(";
+      }
+      else
+      {
+         OS << u.str() << "(";
+      }
+   }
+   else
+   {
+      if(l == Min)
+      {
+         OS << "[-inf,";
+      }
+      else
+      {
+         OS << "[" << l.str() << ",";
+      }
+      OS << +bw << ",";
+      if(u == Max)
+      {
+         OS << "+inf]";
+      }
+      else
+      {
+         OS << u.str() << "]";
+      }
+   }
+}
+
+std::string Range::ToString() const
+{
+   std::stringstream ss;
+   print(ss);
+   return ss.str();
+}
+
+std::ostream& operator<<(std::ostream& OS, const Range& R)
+{
+   R.print(OS);
+   return OS;
+}
+
+RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
+{
+   const auto bw = Other->bw;
+   if(Other->isUnknown() || Other->isEmpty())
+   {
+      return RangeRef(Other->clone());
+   }
+   if(Other->isAnti() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
+   {
+      THROW_UNREACHABLE("Invalid request " + tree_node::GetString(pred) + " " + Other->ToString());
+      return RangeRef(new Range(Empty, bw));
+   }
+   if(Other->isReal() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
+   {
+      THROW_UNREACHABLE("Compare region for real range not handled (" + tree_node::GetString(pred) + ")");
+   }
+
+   switch (pred)
+   {
+      case ge_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getSignedMax(), APInt::getSignedMaxValue(bw)));
+      case gt_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getSignedMax() + MinDelta, APInt::getSignedMaxValue(bw)));
+      case le_expr_K:
+         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), Other->getSignedMin()));
+      case lt_expr_K:
+         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), Other->getSignedMin() - MinDelta));
+      case unge_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax(), APInt::getMaxValue(bw)));
+      case ungt_expr_K:
+         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax() + MinDelta, APInt::getMaxValue(bw)));
+      case unle_expr_K:
+         return RangeRef(new Range(Regular, bw, APInt::getMinValue(bw), Other->getUnsignedMin()));
+      case unlt_expr_K:
+         return RangeRef(new Range(Regular, bw, APInt::getMinValue(bw), Other->getUnsignedMin() - MinDelta));
+      case uneq_expr_K:
+      case eq_expr_K:
+         return RangeRef(Other->clone());
+      case ne_expr_K:
+         return Other->getAnti();
+   
+      case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+      case CASE_UNARY_EXPRESSION:
+      case CASE_TERNARY_EXPRESSION:
+      case CASE_QUATERNARY_EXPRESSION:
+      case CASE_TYPE_NODES:
+      case CASE_CST_NODES:
+      case CASE_DECL_NODES:
+      case CASE_FAKE_NODES:
+      case CASE_GIMPLE_NODES:
+      case CASE_PRAGMA_NODES:
+      case CASE_CPP_NODES:
+      case CASE_MISCELLANEOUS:
+      default:
+         break;
+   }
+   THROW_UNREACHABLE("Unhandled compare operation (" + STR(pred) + ")");
+   return nullptr;
+}
+
+// ========================================================================== //
+// RealRange
+// ========================================================================== //
+RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())), sign(s.clone()), exponent(e.clone()), fractional(f.clone())
+{
+   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s.ToString() + " " + e.ToString() + " " + f.ToString() + "]<" + STR(getBitWidth()) + ">");
+   THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
+}
+
+RealRange::RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
+{
+   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() + " " + e->ToString() + " " + f->ToString() + "]<" + STR(getBitWidth()) + ">");
+   THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
+}
+
+RealRange::RealRange(RangeConstRef vc) : Range(Real, vc->getBitWidth()), sign(vc->Sgt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
+{
+   if(vc->getBitWidth() == 32)
+   {
+      exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)), false)->zextOrTrunc(8);
+      fractional = vc->zextOrTrunc(23);
+   }
+   else if(vc->getBitWidth() == 64)
+   {
+      exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)), false)->zextOrTrunc(11);
+      fractional = vc->zextOrTrunc(52);
+   }
+   else
+   {
+      THROW_UNREACHABLE("Unhandled view convert bitwidth: could not transform " + vc->ToString() + " into real range");
+   }
+}
+
+RangeRef RealRange::getRange() const
+{
+   const auto _bw = getBitWidth();
+   if(_bw == 32)
+   {
+      auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 31, 31)));
+      auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)));
+      return fractional->zextOrTrunc(32)->Or(e)->Or(s);
+   }
+   else if(_bw == 64)
+   {
+      auto s = sign->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 63, 63)));
+      auto e = exponent->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)));
+      return fractional->zextOrTrunc(64)->Or(e)->Or(s);
+   }
+   THROW_UNREACHABLE("Unhandled view convert bitwidth");
+   return nullptr;
+}
+
+RangeRef RealRange::getSign() const
+{
+   return sign;
+}
+
+RangeRef RealRange::getExponent() const
+{
+   return exponent;
+}
+
+RangeRef RealRange::getFractional() const
+{
+   return fractional;
+}
+
+RangeRef RealRange::getAnti() const
+{
+   return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), fractional->getAnti()));
+}
+
+void RealRange::setSign(RangeConstRef s)
+{
+   sign.reset(s->clone());
+}
+
+void RealRange::setExponent(RangeConstRef e)
+{
+   exponent.reset(e->clone());
+}
+
+void RealRange::setFractional(RangeConstRef f)
+{
+   fractional.reset(f->clone());
+}
+
+bool RealRange::isSameRange(RangeConstRef other) const
+{
+   if(other->isReal())
+   {
+      auto rOther = RefcountCast<const RealRange>(other);
+      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && fractional->isSameRange(rOther->fractional);
+   }
+   return false;
+}
+
+bool RealRange::isEmpty() const
+{
+   return sign->isEmpty() || exponent->isEmpty() || fractional->isEmpty();
+}
+
+bool RealRange::isUnknown() const
+{
+   return sign->isUnknown() || exponent->isUnknown() || fractional->isUnknown();
+}
+
+void RealRange::setUnknown()
+{
+   sign->setUnknown();
+   exponent->setUnknown();
+   fractional->setUnknown();
+}
+
+bool RealRange::isFullSet() const
+{
+   return sign->isFullSet() && exponent->isFullSet() && fractional->isFullSet();
+}
+
+bool RealRange::isSingleElement() const
+{
+   return sign->isSingleElement() && exponent->isSingleElement() && fractional->isSingleElement();
+}
+
+bool RealRange::isConstant() const
+{
+   return sign->isConstant() && exponent->isConstant() && fractional->isConstant();
+}
+
+bool RealRange::isReal() const
+{
+   return true;
+}
+
+void RealRange::print(std::ostream& OS) const
+{
+   OS << "[ ";
+   sign->print(OS);
+   OS << ", ";
+   exponent->print(OS);
+   OS << ", ";
+   fractional->print(OS);
+   OS << ", " << STR(getBitWidth()) << "]";
+}
+
+Range* RealRange::clone() const
+{
+   return new RealRange(sign, exponent, fractional);
+}
+
+RangeRef RealRange::abs() const
+{
+   return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, 0, 0)), exponent, fractional));
+}
+
+RangeRef RealRange::negate() const
+{
+   if(sign->isAnti() || sign->isConstant())
+   {
+      const auto s = sign->getUnsignedMin() ? 0 : 1;
+      return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, s, s)), exponent, fractional));
+   }
+   return RangeRef(this->clone());
+}
+
+RangeRef RealRange::Eq(RangeConstRef other, bw_t _bw) const
+{
+   if(const auto rOther = RefcountCast<const RealRange>(other))
+   {
+      return sign->Eq(rOther->sign, _bw)->intersectWith(exponent->Eq(rOther->exponent, _bw))->intersectWith(fractional->Eq(rOther->fractional, _bw));
+   }
+   return RangeRef(new Range(Regular, _bw, 0, 0));
+}
+
+RangeRef RealRange::Ne(RangeConstRef other, bw_t _bw) const
+{
+   if(const auto rOther = RefcountCast<const RealRange>(other))
+   {
+      return sign->Ne(rOther->sign, _bw)->unionWith(exponent->Ne(rOther->exponent, _bw))->unionWith(fractional->Ne(rOther->fractional, _bw));
+   }
+   return RangeRef(new Range(Regular, _bw, 1, 1));
+}
+
+RangeRef RealRange::intersectWith(RangeConstRef other) const
+{
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
+   #endif
+   THROW_ASSERT(other->isReal(), "Real range should intersect with real range only");
+   auto rrOther = RefcountCast<const RealRange>(other);
+   return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), fractional->intersectWith(rrOther->fractional)));
+}
+
+RangeRef RealRange::unionWith(RangeConstRef other) const
+{
+   #ifdef DEBUG_RANGE_OP
+   PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
+   #endif
+   THROW_ASSERT(other->isReal(), "Real range should unite to real range only");
+   auto rrOther = RefcountCast<const RealRange>(other);
+   return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), fractional->unionWith(rrOther->fractional)));
+}
+
+RangeRef RealRange::toFloat64() const
+{
+   if(getBitWidth() == 64)
+   {
+      return RangeRef(this->clone());
+   }
+
+   RangeRef exponent64;
+   // Denormalized case
+   if(exponent->isConstant() && exponent->getUnsignedMin() == 0)
+   {
+      exponent64.reset(new Range(Regular, 11, 0, 0));
+   }
+   else if(exponent->isFullSet())
+   {
+      exponent64.reset(new Range(Regular, 11));
+   }
+   else
+   {
+      exponent64.reset(new Range(Regular, 11, (exponent->getUnsignedMin() + 896).extOrTrunc(11, true), (exponent->getUnsignedMax() + 896).extOrTrunc(11, true)));
+   }
+
+   return RangeRef(new RealRange(sign, 
+      exponent64, 
+      fractional->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
+}
+
+RangeRef RealRange::toFloat32() const
+{
+   if(getBitWidth() == 32)
+   {
+      return RangeRef(this->clone());
+   }
+
+   RangeRef exponent32;
+   RangeRef fractional32 = fractional->shr(RangeRef(new Range(Regular, 52, 29, 29)), false)->zextOrTrunc(23);
+   const auto min = exponent->getUnsignedMin() - 896;
+   const auto max = exponent->getUnsignedMax() - 896;
+   if(min < 0 && max > APInt::getMaxValue(8))
+   {
+      exponent32.reset(new Range(Regular, 8));
+   }
+   else if(exponent->isConstant() && min < 0)
+   {
+      exponent32.reset(new Range(Regular, 8, 0, 0));
+   }
+   else if(exponent->isConstant() && max >= APInt::getMaxValue(8))
+   {
+      exponent32.reset(new Range(Regular, 8, -1, -1));
+      fractional32.reset(new Range(Regular, 23, 0, 0));
+   }
+   else
+   {
+      exponent32.reset(new Range(Regular, 8, std::max({min, APInt(0)}).extOrTrunc(8, true), std::min({max, APInt(255)}).extOrTrunc(8, true)));
+   }
+
+   return RangeRef(new RealRange(sign, 
+      exponent32,
+      fractional32));
+}
+
+namespace 
+{
    // ========================================================================== //
    // Static global functions and definitions
    // ========================================================================== //
@@ -175,89 +2809,6 @@ namespace
    // Used to print pseudo-edges in the Constraint Graph dot
    std::string pestring;
    std::stringstream pseudoEdgesString(pestring);
-
-   APInt getMaxValue(bw_t bitwidth)
-   {
-      return APInt((boost::multiprecision::uint256_t(1) << bitwidth) - 1);
-   }
-
-   APInt getMinValue(bw_t /*bitwidth*/)
-   {
-      return APInt(0);
-   }
-
-   APInt getSignedMaxValue(bw_t bitwidth)
-   {
-      return (APInt(1) << (bitwidth - 1)) - 1;
-   }
-
-   APInt getSignedMinValue(bw_t bitwidth)
-   {
-      return -(APInt(1) << (bitwidth - 1));
-   }
-
-   APInt convert(const UAPInt& i)
-   {
-      return boost::multiprecision::bit_test(i, std::numeric_limits<UAPInt>::digits - 1) ? (APInt(i) - std::numeric_limits<APInt>::max() - 1) : APInt(i);
-   }
-
-   APInt truncExt(const APInt& x, bw_t bitwidth, bool sign)
-   {
-      UAPInt bitmask = (UAPInt(1) << bitwidth) - 1;
-      UAPInt new_val = UAPInt(x) & bitmask;
-      if(sign && boost::multiprecision::bit_test(new_val, static_cast<unsigned>(bitwidth - 1)))
-      {
-         return convert((UAPInt(-1) << bitwidth) + new_val);
-      }
-      return APInt(new_val);
-   }
-
-   bw_t countTrailingZeros(const APInt& b, bw_t bw)
-   {
-      THROW_ASSERT(bw > 0 && bw <= MAX_BIT_INT, "Bitwidth should be between 1 and " + STR(MAX_BIT_INT));
-      UAPInt a(b);
-      int i = 0;
-      for(; i < static_cast<int>(bw); ++i)
-      {
-         if(bit_test(a, static_cast<unsigned>(i)))
-         {
-            break;
-         }
-      }
-      return static_cast<bw_t>(i);
-   }
-
-   bw_t countLeadingZeros(const APInt& b, bw_t bw)
-   {
-      THROW_ASSERT(bw > 0 && bw <= MAX_BIT_INT, "Bitwidth should be between 1 and " + STR(MAX_BIT_INT));
-      UAPInt a(b);
-      int i = static_cast<int>(bw - 1);
-      for(; i >= 0; --i)
-      {
-         if(bit_test(a, static_cast<unsigned>(i)))
-         {
-            break;
-         }
-      }
-      i++;
-      return static_cast<bw_t>(bw - static_cast<bw_t>(i));
-   }
-
-   bw_t countLeadingOnes(const APInt& b, bw_t bw)
-   {
-      THROW_ASSERT(bw > 0 && bw <= MAX_BIT_INT, "Bitwidth should be between 1 and " + STR(MAX_BIT_INT));
-      UAPInt a(b);
-      int i = static_cast<int>(bw - 1);
-      for(; i >= 0; --i)
-      {
-         if(!bit_test(a, static_cast<unsigned>(i)))
-         {
-            break;
-         }
-      }
-      i++;
-      return static_cast<bw_t>(bw - static_cast<bw_t>(i));
-   }
 
    std::tuple<bool, uint8_t, uint32_t> float_view_convert(float fp)
    {
@@ -504,41 +3055,6 @@ namespace
    void printVarName(const tree_nodeConstRef V, std::ostream& OS)
    {
       OS << GET_CONST_NODE(V)->ToString();
-
-      // TODO: implement a better way to correctly print significant name
-
-      //const Argument* A = nullptr;
-      //const Instruction* I = nullptr;
-      //
-      //if((A = dyn_cast<Argument>(V)) != nullptr)
-      //{
-      //   const llvm::Function* currentFunction = A->getParent();
-      //   llvm::ModuleSlotTracker MST(currentFunction->getParent());
-      //   MST.incorporateFunction(*currentFunction);
-      //   auto argID = MST.getLocalSlot(A);
-      //   OS << A->getParent()->getName() << ".%" << argID;
-      //}
-      //else if((I = dyn_cast<Instruction>(V)) != nullptr)
-      //{
-      //   llvm::ModuleSlotTracker MST(I->getParent()->getParent()->getParent());
-      //   MST.incorporateFunction(*I->getParent()->getParent());
-      //   auto instID = MST.getLocalSlot(I);
-      //   auto BBID = MST.getLocalSlot(I->getParent());
-      //
-      //   OS << I->getFunction()->getName() << ".BB" << BBID;
-      //   if(instID < 0)
-      //   {
-      //      I->print(OS);
-      //   }
-      //   else
-      //   {
-      //      OS << ".%" << instID;
-      //   }
-      //}
-      //else
-      //{
-      //   OS << V->getName();
-      //}
    }
 
    bool isValidType(const tree_nodeConstRef tn) 
@@ -909,16 +3425,16 @@ namespace
          #ifdef BITVALUE_UPDATE
          sign = !it->unsigned_flag;
          #endif
-         min = it->unsigned_flag ? getMinValue(bw) : getSignedMinValue(bw);
-         max = it->unsigned_flag ? getMaxValue(bw) : getSignedMaxValue(bw);
+         min = it->unsigned_flag ? APInt::getMinValue(bw) : APInt::getSignedMinValue(bw);
+         max = it->unsigned_flag ? APInt::getMaxValue(bw) : APInt::getSignedMaxValue(bw);
       }
       else if(const auto* et = GetPointer<const enumeral_type>(type))
       {
          #ifdef BITVALUE_UPDATE
          sign = !et->unsigned_flag;
          #endif
-         min = et->unsigned_flag ? getMinValue(bw) : getSignedMinValue(bw);
-         max = et->unsigned_flag ? getMaxValue(bw) : getSignedMaxValue(bw);
+         min = et->unsigned_flag ? APInt::getMinValue(bw) : APInt::getSignedMinValue(bw);
+         max = et->unsigned_flag ? APInt::getMaxValue(bw) : APInt::getSignedMaxValue(bw);
       }
       else if(type->get_kind() == boolean_type_K)
       {
@@ -956,8 +3472,8 @@ namespace
       #ifdef INTEGER_PTR
       else if(GetPointer<const pointer_type>(type) != nullptr)
       {
-         min = getMinValue(bw);
-         max = getMaxValue(bw);
+         min = APInt::getMinValue(bw);
+         max = APInt::getMaxValue(bw);
       }
       #endif
       else 
@@ -971,17 +3487,18 @@ namespace
          if(!ssa->bit_values.empty())
          {
             const auto bitValues = string_to_bitstring(ssa->bit_values);
-            for(auto i = 0U; i < bitValues.size(); ++i)
+            THROW_ASSERT(bitValues.size() > std::numeric_limits<bw_t>::max(), "Bitwidth too wide for the implementation");
+            for(bw_t i = 0U; i < bitValues.size(); ++i)
             {
                switch(bitValues.at(bitValues.size() - i - 1))
                {
                   case bit_lattice::ZERO:
-                     boost::multiprecision::bit_unset(min, i);
-                     boost::multiprecision::bit_unset(max, i);
+                     min.bit_clr(i);
+                     max.bit_clr(i);
                      break;
                   case bit_lattice::ONE:
-                     boost::multiprecision::bit_set(min, i);
-                     boost::multiprecision::bit_set(max, i);
+                     min.bit_set(i);
+                     max.bit_set(i);
                      break;
                   case bit_lattice::U:
                   case bit_lattice::X:
@@ -989,2468 +3506,13 @@ namespace
                      break;
                }
             }
-            min = truncExt(min, bw, sign);
-            max = truncExt(max, bw, sign);
+            min = min.extOrTrunc(bw, sign);
+            max = max.extOrTrunc(bw, sign);
          }
       }
       #endif
       return RangeRef(new Range(Regular, bw, min, max));
    }
-}
-
-// ========================================================================== //
-// Range
-// ========================================================================== //
-static bool enable_add = true;
-static bool enable_sub = true;
-static bool enable_mul = true;
-static bool enable_sdiv = true;
-static bool enable_udiv = true;
-static bool enable_srem = true;
-static bool enable_urem = true;
-static bool enable_shl = true;
-static bool enable_shr = true;
-static bool enable_abs = true;
-static bool enable_negate = true;
-static bool enable_not = true;
-static bool enable_and = true;
-static bool enable_or = true;
-static bool enable_xor = true;
-static bool enable_sext = true;
-static bool enable_zext = true;
-static bool enable_trunc = true;
-static bool enable_min = true;
-static bool enable_max = true;
-
-Range::Range(RangeType rType, bw_t rbw) : l(Min), u(Max), bw(rbw), type(rType)
-{
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
-}
-
-Range::Range(RangeType rType, bw_t rbw, const APInt& lb, const APInt& ub) : l(lb), u(ub), bw(rbw), type(rType)
-{
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
-   normalizeRange(lb, ub, rType);
-}
-
-Range* Range::clone() const
-{
-   return new Range(*this);
-}
-
-void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
-{
-   if(rType == Real)
-   {
-      THROW_UNREACHABLE("Real range is a storage class only");
-   }
-   if(rType == Empty || rType == Unknown)
-   {
-      l = Min;
-      u = Max;
-   }
-   else if(rType == Anti)
-   {
-      if(lb > ub)
-      {
-         type = Regular;
-         l = Min;
-         u = Max;
-      }
-      else
-      {
-         if((lb == Min) && (ub == Max))
-         {
-            type = Empty;
-         }
-         else if(lb == Min)
-         {
-            type = Regular;
-            l = ub + MinDelta;
-            u = Max;
-         }
-         else if(ub == Max)
-         {
-            type = Regular;
-            l = Min;
-            u = lb - MinDelta;
-         }
-         else
-         {
-            THROW_ASSERT(ub >= lb, "");
-            auto maxS = getSignedMaxValue(bw);
-            auto minS = getSignedMinValue(bw);
-            bool lbgt = lb > maxS;
-            bool ubgt = ub > maxS;
-            bool lblt = lb < minS;
-            bool ublt = ub < minS;
-            if(lbgt && ubgt)
-            {
-               l = truncExt(lb, bw, true);
-               u = truncExt(ub, bw, true);
-            }
-            else if(lblt && ublt)
-            {
-               l = truncExt(ub, bw, true);
-               u = truncExt(lb, bw, true);
-            }
-            else if(!lblt && ubgt)
-            {
-               auto ubnew = truncExt(ub, bw, true);
-               if(ubnew >= (lb - MinDelta))
-               {
-                  l = Min;
-                  u = Max;
-               }
-               else
-               {
-                  type = Regular;
-                  l = ubnew + MinDelta;
-                  u = lb - MinDelta;
-               }
-            }
-            else if(lblt && !ubgt)
-            {
-               auto lbnew = truncExt(lb, bw, true);
-               if(lbnew <= (ub + MinDelta))
-               {
-                  l = Min;
-                  u = Max;
-               }
-               else
-               {
-                  type = Regular;
-                  l = ub + MinDelta;
-                  u = lbnew - MinDelta;
-               }
-            }
-            else if(!lblt && !ubgt)
-            {
-               l = lb;
-               u = ub;
-            }
-            else
-            {
-               THROW_UNREACHABLE("unexpected condition");
-            }
-         }
-      }
-   }
-   else if((lb - MinDelta) == ub)
-   {
-      type = Regular;
-      l = Min;
-      u = Max;
-   }
-   else if(lb > ub)
-   {
-      normalizeRange(ub + MinDelta, lb - MinDelta, Anti);
-   }
-   else
-   {
-      THROW_ASSERT(ub >= lb, "");
-      auto maxS = getSignedMaxValue(bw);
-      auto minS = getSignedMinValue(bw);
-
-      bool lbgt = lb > maxS;
-      bool ubgt = ub > maxS;
-      bool lblt = lb < minS;
-      bool ublt = ub < minS;
-      if(ubgt && lblt)
-      {
-         l = Min;
-         u = Max;
-      }
-      else if(lbgt && ubgt)
-      {
-         l = truncExt(lb, bw, true);
-         u = truncExt(ub, bw, true);
-      }
-      else if(lblt && ublt)
-      {
-         l = truncExt(ub, bw, true);
-         u = truncExt(lb, bw, true);
-      }
-      else if(!lblt && ubgt)
-      {
-         auto ubnew = truncExt(ub, bw, true);
-         if(ubnew >= (lb - MinDelta))
-         {
-            l = Min;
-            u = Max;
-         }
-         else
-         {
-            type = Anti;
-            l = ubnew + MinDelta;
-            u = lb - MinDelta;
-         }
-      }
-      else if(lblt && !ubgt)
-      {
-         auto lbnew = truncExt(lb, bw, true);
-         if(lbnew <= (ub + MinDelta))
-         {
-            l = Min;
-            u = Max;
-         }
-         else
-         {
-            type = Anti;
-            l = ub + MinDelta;
-            u = lbnew - MinDelta;
-         }
-      }
-      else if(!lblt && !ubgt)
-      {
-         l = lb;
-         u = ub;
-      }
-      else
-      {
-         THROW_UNREACHABLE("unexpected condition");
-      }
-   }
-   if(!(u >= l))
-   {
-      l = Min;
-      u = Max;
-   }
-}
-
-bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
-{
-   return sign ? std::max(MAX_BIT_INT - countLeadingOnes(a > 0 ? (-a-1) : a, MAX_BIT_INT) + 1, MAX_BIT_INT - countLeadingOnes(b > 0 ? (-b-1) : b, MAX_BIT_INT) + 1) 
-   	: std::max(MAX_BIT_INT - countLeadingZeros(a, MAX_BIT_INT), MAX_BIT_INT - countLeadingZeros(b, MAX_BIT_INT));
-}
-
-RangeRef Range::getAnti() const
-{
-   if(type == Anti)
-   {
-      return RangeRef(new Range(Regular, bw, l, u));
-   }
-   if(type == Regular)
-   {
-      return RangeRef(new Range(Anti, bw, l, u));
-   }
-   if(type == Empty)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(type == Unknown)
-   {
-      return RangeRef(this->clone());
-   }
-   if(type == Real)
-   {
-      THROW_UNREACHABLE("Real range is a storage class only");
-   }
-   THROW_UNREACHABLE("unexpected condition");
-   return nullptr;
-}
-
-bw_t Range::getBitWidth() const
-{
-   return bw;
-}
-
-const APInt &Range::getLower() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   THROW_ASSERT(!isAnti(), "Lower bound not valid for Anti range");
-   return l;
-}
-
-const APInt &Range::getUpper() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   THROW_ASSERT(!isAnti(), "Upper bound not valid for Anti range");
-   return u;
-}
-
-APInt Range::getSignedMax() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   THROW_ASSERT(!isUnknown() && !isEmpty(), "Max not valid for Unknown/Empty range");
-   const auto maxS = getSignedMaxValue(bw);
-   if(type == Regular)
-   {
-      return u > maxS ? maxS : u;
-   }
-   return maxS;
-}
-
-APInt Range::getSignedMin() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   THROW_ASSERT(!isUnknown() && !isEmpty(), "Min not valid for Unknown/Empty range");
-   const auto minS = getSignedMinValue(bw);
-   if(type == Regular)
-   {
-      return l < minS ? minS : l;
-   }
-   return minS;
-}
-
-APInt Range::getUnsignedMax() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   THROW_ASSERT(!isUnknown() && !isEmpty(), "UMax not valid for Unknown/Empty range");
-   if(isAnti())
-   {
-      auto lb = l - MinDelta;
-      auto ub = u + MinDelta;
-      return (lb >= 0 || ub < 0) ? getMaxValue(bw) : truncExt(lb, bw, false);
-   }
-   return (u < 0 || l >= 0) ? truncExt(u, bw, false) : getMaxValue(bw);
-}
-
-APInt Range::getUnsignedMin() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   THROW_ASSERT(!isUnknown() && !isEmpty(), "UMin not valid for Unknown/Empty range");
-   if(isAnti())
-   {
-      return (l > 0 || u < 0) ? getMinValue(bw) : (u + MinDelta);
-   }
-   return (l > 0 || u < 0) ? truncExt(l, bw, false) : getMinValue(bw);
-}
-
-bool Range::isUnknown() const
-{
-   return type == Unknown;
-}
-
-void Range::setUnknown()
-{
-   type = Unknown;
-}
-
-bool Range::isRegular() const
-{
-   return type == Regular;
-}
-
-bool Range::isAnti() const
-{
-   return type == Anti;
-}
-
-bool Range::isEmpty() const
-{
-   return type == Empty;
-}
-
-bool Range::isReal() const
-{
-   return false;
-}
-
-bool Range::isSameType(RangeConstRef other) const
-{
-   return type == other->type;
-}
-
-bool Range::isSameRange(RangeConstRef other) const
-{
-   return this->bw == other->bw && isSameType(other) && (l == other->l) && (u == other->u);
-}
-
-bool Range::isFullSet() const
-{
-   THROW_ASSERT(!isUnknown(), "");
-   if(isEmpty() || isAnti())
-   {
-      return false;
-   }
-   return (getSignedMaxValue(bw) <= getUpper() && getSignedMinValue(bw) >= getLower())
-      || (getMaxValue(bw) <= getUpper() && getMinValue(bw) >= getLower());
-}
-
-bool Range::isSingleElement() const
-{
-   if(isUnknown() || isEmpty())
-   {
-      return false;
-   }
-   return l == u;
-}
-
-bool Range::isConstant() const
-{
-   return isRegular() && l == u;
-}
-
-/// Add and Mul are commutative. So, they are a little different
-/// than the other operations.
-/// Many Range reductions are done by exploiting ConstantRange code
-RangeRef Range::add(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isFullSet() || other->isFullSet())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(isAnti() && other->isConstant())
-   {
-      auto ol = other->getLower();
-      if(ol >= (Max - u))
-      {
-         return RangeRef(new Range(Regular, bw));
-      }
-      return RangeRef(new Range(Anti, bw, l + ol, u + ol));
-   }
-   if(this->isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(other->isConstant())
-   {
-      auto ol = other->getLower();
-      if(l == Min)
-      {
-         THROW_ASSERT(u != Max, "");
-         return RangeRef(new Range(Regular, bw, l, u + ol));
-      }
-      if(u == Max)
-      {
-         THROW_ASSERT(l != Min, "");
-         return RangeRef(new Range(Regular, bw, l + ol, u));
-      }
-
-      return RangeRef(new Range(Regular, bw, l + ol, u + ol));
-   }
-
-   auto sMin = std::clamp(getSignedMin() + other->getSignedMin(), getSignedMinValue(bw), getSignedMaxValue(bw));
-   auto sMax = std::clamp(getSignedMax() + other->getSignedMax(), getSignedMinValue(bw), getSignedMaxValue(bw));
-   auto uMin = std::min(getUnsignedMin() + other->getUnsignedMin(), getMaxValue(bw));
-   auto uMax = std::min(getUnsignedMax() + other->getUnsignedMax(), getMaxValue(bw));
-
-   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
-   {
-      return RangeRef(new Range(Regular, bw, uMin, uMax));
-   }
-   return RangeRef(new Range(Regular, bw, sMin, sMax));
-}
-
-RangeRef Range::sub(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isFullSet() || other->isFullSet())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(this->isAnti() && other->isConstant())
-   {
-      auto ol = other->getLower();
-      if(l <= (Min + ol))
-      {
-         return RangeRef(new Range(Regular, bw));
-      }
-
-      return RangeRef(new Range(Anti, bw, l - ol, u - ol));
-   }
-   if(this->isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(other->isConstant())
-   {
-      auto ol = other->getLower();
-      if(l == Min)
-      {
-         THROW_ASSERT(u != Max, "");
-         auto minValue = getSignedMinValue(bw);
-         auto upper = u - ol;
-         if(minValue > upper)
-         {
-            return RangeRef(new Range(Regular, bw));
-         }
-
-         return RangeRef(new Range(Regular, bw, l, upper));
-      }
-      if(u == Max)
-      {
-         THROW_ASSERT(l != Min, "");
-         auto maxValue = getSignedMaxValue(bw);
-         auto lower = l - ol;
-         if(maxValue < lower)
-         {
-            return RangeRef(new Range(Regular, bw));
-         }
-
-         return RangeRef(new Range(Regular, bw, l - ol, u));
-      }
-
-      auto lower = truncExt(l - ol, bw, true);
-      auto upper = truncExt(u - ol, bw, true);
-      if(lower <= upper)
-      {
-         return RangeRef(new Range(Regular, bw, lower, upper));
-      }
-      return RangeRef(new Range(Anti, bw, upper + 1, lower - 1));
-   }
-
-   auto sMin = std::clamp(getSignedMin() - other->getSignedMax(), getSignedMinValue(bw), getSignedMaxValue(bw));
-   auto sMax = std::clamp(getSignedMax() - other->getSignedMin(), getSignedMinValue(bw), getSignedMaxValue(bw));
-   auto uMin = getUnsignedMin() - other->getUnsignedMax();
-   auto uMax = getUnsignedMax() - other->getUnsignedMin();
-
-   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
-   {
-      return RangeRef(new Range(Regular, bw, uMin, uMax));
-   }
-   return RangeRef(new Range(Regular, bw, sMin, sMax));
-}
-
-RangeRef Range::mul(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   // Multiplication is signedness-independent. However different ranges can be
-   // obtained depending on how the input ranges are treated. These different
-   // ranges are all conservatively correct, but one might be better than the
-   // other. We calculate two ranges; one treating the inputs as unsigned
-   // and the other signed, then return the smallest of these ranges.
-
-   // Unsigned range first.
-   auto this_min = getUnsignedMin();
-   auto this_max = getUnsignedMax();
-   auto Other_min = other->getUnsignedMin();
-   auto Other_max = other->getUnsignedMax();
-
-   const auto Result_zext = Range(Regular, static_cast<bw_t>(bw * 2), this_min * Other_min, this_max * Other_max);
-   const auto UR = Result_zext.truncate(bw);
-
-   // Now the signed range. Because we could be dealing with negative numbers
-   // here, the lower bound is the smallest of the Cartesian product of the
-   // lower and upper ranges; for example:
-   //   [-1,4] * [-2,3] = min(-1*-2, -1*-3, 4*-2, 4*3) = -8.
-   // Similarly for the upper bound, swapping min for max.
-
-   this_min = getSignedMin();
-   this_max = getSignedMax();
-   Other_min = other->getSignedMin();
-   Other_max = other->getSignedMax();
-
-   const auto [min, max] = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
-   const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), min, max);
-   const auto SR = Result_sext.truncate(bw);
-   if(SR->isFullSet())
-   {
-      return UR;
-   }
-   if(UR->isFullSet())
-   {
-      return SR;
-   }
-   
-   const auto uSpan = UR->isAnti() ? std::numeric_limits<APInt>::max() : (UR->getUpper() - UR->getLower());
-   const auto sSpan = SR->isAnti() ? std::numeric_limits<APInt>::max() : (SR->getUpper() - SR->getLower());
-   return boost::multiprecision::abs(uSpan) < boost::multiprecision::abs(sSpan) ? UR : SR;
-}
-
-RangeRef Range::udiv(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isFullSet())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   
-   auto a = getUnsignedMin();
-   auto b = getUnsignedMax();
-   auto c = other->getUnsignedMin();
-   auto d = other->getUnsignedMax();
-
-   // Deal with division by 0 exception
-   if((c == 0) && (d == 0))
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(c == 0)
-   {
-      c = 1;
-   }
-   RangeRef res(new Range(Regular, bw, a / d, b / c));
-   return res;
-}
-
-#define DIV_HELPER(x, y) (x == Max) ? ((y < 0) ? Min : ((y == 0) ? 0 : Max)) : ((y == Max) ? 0 : ((x == Min) ? ((y < 0) ? Max : ((y == 0) ? 0 : Min)) : ((y == Min) ? 0 : ((x) / (y)))))
-
-RangeRef Range::sdiv(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isFullSet() || this->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   const APInt& a = this->getLower();
-   const APInt& b = this->getUpper();
-   APInt c1, d1, c2, d2;
-   bool is_zero_in = false;
-   if(other->isAnti())
-   {
-      auto antiRange = other->getAnti();
-      c1 = Min;
-      d1 = antiRange->getLower() - 1;
-      if(d1 == 0)
-      {
-         d1 = -1;
-      }
-      else if(d1 > 0)
-      {
-         return RangeRef(new Range(Regular, bw)); /// could be improved
-      }
-      c2 = antiRange->getUpper() + 1;
-      if(c2 == 0)
-      {
-         c2 = 1;
-      }
-      else if(c2 < 0)
-      {
-         return RangeRef(new Range(Regular, bw)); /// could be improved
-      }
-      d2 = Max;
-   }
-   else
-   {
-      c1 = other->getLower();
-      d1 = other->getUpper();
-      // Deal with division by 0 exception
-      if((c1 == 0) && (d1 == 0))
-      {
-         return RangeRef(new Range(Regular, bw));
-      }
-      is_zero_in = (c1 < 0) && (d1 > 0);
-      if(is_zero_in)
-      {
-         d1 = -1;
-         c2 = 1;
-      }
-      else
-      {
-         c2 = other->getLower();
-         if(c2 == 0)
-         {
-            c1 = c2 = 1;
-         }
-      }
-      d2 = other->getUpper();
-      if(d2 == 0)
-      {
-         d1 = d2 = -1;
-      }
-   }
-   auto n_iters = (is_zero_in || other->isAnti()) ? 8u : 4u;
-
-   APInt candidates[8];
-   candidates[0] = DIV_HELPER(a, c1);
-   candidates[1] = DIV_HELPER(a, d1);
-   candidates[2] = DIV_HELPER(b, c1);
-   candidates[3] = DIV_HELPER(b, d1);
-   if(n_iters == 8)
-   {
-      candidates[4] = DIV_HELPER(a, c2);
-      candidates[5] = DIV_HELPER(a, d2);
-      candidates[6] = DIV_HELPER(b, c2);
-      candidates[7] = DIV_HELPER(b, d2);
-   }
-   // Lower bound is the min value from the vector, while upper bound is the max value
-   auto [min, max] = std::minmax_element(candidates, candidates + n_iters);
-   return RangeRef(new Range(Regular, bw, *min, *max));
-}
-
-RangeRef Range::urem(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(other->isConstant())
-   {
-      if(other->getLower() == 0)
-      {
-         return RangeRef(new Range(Empty, bw));
-      }
-      else if(other->getUnsignedMin() == 1)
-      {
-         return RangeRef(new Range(Regular, bw, 0, 0));
-      }
-   }
-
-   const APInt& a = this->getUnsignedMin();
-   const APInt& b = this->getUnsignedMax();
-   APInt c = other->getUnsignedMin();
-   const APInt& d = other->getUnsignedMax();
-
-   // Deal with mod 0 exception
-   if((c == 0) && (d == 0))
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(c == 0)
-   {
-      c = 1;
-   }
-
-   APInt candidates[8];
-
-   candidates[0] = a < c ? a : 0;
-   candidates[1] = a < d ? a : 0;
-   candidates[2] = b < c ? b : 0;
-   candidates[3] = b < d ? b : 0;
-   candidates[4] = a < c ? a : c - 1;
-   candidates[5] = a < d ? a : d - 1;
-   candidates[6] = b < c ? b : c - 1;
-   candidates[7] = b < d ? b : d - 1;
-
-   // Lower bound is the min value from the vector, while upper bound is the max value
-   auto [min, max] = std::minmax_element(candidates, candidates + 8);
-   RangeRef res(new Range(Regular, bw, *min, *max));
-   return res;
-}
-
-RangeRef Range::srem(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isFullSet() || this->isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(other->isConstant())
-   {
-      if(other->getSignedMin() == 0)
-      {
-         return RangeRef(new Range(Empty, bw));
-      }
-      else if(other->getSignedMin() == 1 || other->getSignedMin() == -1)
-      {
-         return RangeRef(new Range(Regular, bw, 0, 0));
-      }
-   }
-
-   const APInt& a = this->getLower();
-   const APInt& b = this->getUpper();
-   APInt c = other->getLower();
-   const APInt& d = other->getUpper();
-
-   // Deal with mod 0 exception
-   if((c == 0) && (d == 0))
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(c == 0)
-   {
-      c = 1;
-   }
-
-   APInt candidates[4];
-   candidates[0] = Min;
-   candidates[1] = Min;
-   candidates[2] = Max;
-   candidates[3] = Max;
-   if((a != Min) && (c != Min))
-   {
-      candidates[0] = a % c; // lower lower
-   }
-   if((a != Min) && (d != Max))
-   {
-      candidates[1] = a % d; // lower upper
-   }
-   if((b != Max) && (c != Min))
-   {
-      candidates[2] = b % c; // upper lower
-   }
-   if((b != Max) && (d != Max))
-   {
-      candidates[3] = b % d; // upper upper
-   }
-   // Lower bound is the min value from the vector, while upper bound is the max value
-   auto [min, max] = std::minmax_element(candidates, candidates + 4);
-   RangeRef res(new Range(Regular, bw, *min, *max));
-   return res;
-}
-
-RangeRef Range::shl(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isFullSet() || other->isFullSet() || this->isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(this->isConstant() && other->isConstant())
-   {
-      const auto c = truncExt(this->getLower() << other->getLower().convert_to<unsigned>(), bw, true);
-      return RangeRef(new Range(Regular, bw, c, c));
-   }
-
-   const auto a = this->getLower();
-   const auto b = this->getUpper();
-   const auto c = other->getUnsignedMin().convert_to<unsigned>();
-   const auto d = other->getUnsignedMax().convert_to<unsigned>();
-
-   if(c >= bw)
-   {
-      return RangeRef(new Range(Regular, bw, 0, 0));
-   }
-   if(d >= bw)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(a < 0 && b < 0)
-   {
-      if(d > countLeadingOnes(a, bw))
-      {
-         return RangeRef(new Range(Regular, bw));
-      }
-      return RangeRef(new Range(Regular, bw, a << d, b << c));
-   }
-   if(a < 0 && b >= 0)
-   {
-      if(d > std::min(countLeadingOnes(a, bw), countLeadingZeros(b, bw)))
-      {
-         return RangeRef(new Range(Regular, bw));
-      }
-      return RangeRef(new Range(Regular, bw, a << d, b << d));
-   }
-   if(d > countLeadingZeros(b, bw))
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   return RangeRef(new Range(Regular, bw, a << c, b << d));
-}
-
-RangeRef Range::shr(RangeConstRef other, bool sign) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(this->isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   const auto c = other->getUnsignedMin().convert_to<unsigned>();
-   const auto d = other->getUnsignedMax().convert_to<unsigned>();
-   
-   if(sign)
-   {
-      const auto a = getSignedMin();
-      const auto b = getSignedMax();
-      const auto min = a >= 0 ? a >> d : a >> c;
-      const auto max = b >= 0 ? b >> c : b >> d;
-
-      return RangeRef(new Range(Regular, bw, min, max));
-   }
-   else
-   {
-      const UAPInt a(getUnsignedMin());
-      const UAPInt b(getUnsignedMax());
-
-      return RangeRef(new Range(Regular, bw, convert(a >> d), convert(b >> c)));
-   }
-}
-
-
-/*
- * 	This and operations are coded following Hacker's Delight algorithm.
- * 	According to the author, they provide tight results.
- */
-namespace
-{
-   UAPInt minOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
-   {
-      UAPInt temp;
-      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
-      while(m != 0)
-      {
-         if(~a & c & m)
-         {
-            temp = (a | m) & (~m+1);
-            if(temp <= b) { a = temp; break; }
-         }
-         else if(a & ~c & m)
-         {
-            temp = (c | m) & (~m+1);
-            if(temp <= d) { c = temp; break; }
-         }
-         m = m >> 1;
-      }
-      return a | c;
-   }
-
-   UAPInt maxOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
-   {
-      UAPInt temp;
-      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
-      while(m != 0)
-      {
-         if(b & d & m)
-         {
-            temp = (b - m) | (m - 1);
-            if(temp >= a) { b = temp; break; }
-            temp = (d - m) | (m - 1);
-            if(temp >= c) { d = temp; break; }
-         }
-         m = m >> 1;
-      }
-      return b | d;
-   }
-
-   std::pair<APInt,APInt> OR(APInt a, APInt b, APInt c, APInt d)
-   {
-      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
-
-      UAPInt res_l, res_u;
-      switch(abcd)
-      {
-         case 0:
-         case 3:
-         case 12:
-         case 15:
-            res_l = minOR(UAPInt(a), UAPInt(b), UAPInt(c), UAPInt(d));
-            res_u = maxOR(UAPInt(a), UAPInt(b), UAPInt(c), UAPInt(d));
-            break;
-         case 1:
-            return std::make_pair(a, -1);
-         case 4:
-            return std::make_pair(c, -1);
-         case 5:
-            res_l = UAPInt(std::min(a,c));
-            res_u = maxOR(0, UAPInt(b), 0, UAPInt(d));
-            break;
-         case 7:
-            res_l = minOR(UAPInt(a), UAPInt(-1), UAPInt(c), UAPInt(d));
-            res_u = maxOR(0, UAPInt(b), UAPInt(c), UAPInt(d));
-            break;
-         case 13:
-            res_l = minOR(UAPInt(a), UAPInt(b), UAPInt(c), UAPInt(-1));
-            res_u = maxOR(UAPInt(a), UAPInt(b), 0, UAPInt(d));
-            break;
-         default:
-            THROW_UNREACHABLE("OR unreachable state " + STR(abcd));
-      }
-      return std::make_pair(convert(res_l), convert(res_u));
-   }
-
-   UAPInt minAND(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
-   {
-      UAPInt temp;
-      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
-      while(m != 0)
-      {
-         if((~a & ~c & m) != 0)
-         {
-            temp = (a | m) & (~m+1);
-            if(temp <= b) { a = temp; break; }
-            temp = (c | m) & (~m+1);
-            if(temp <= d) { c = temp; break; }
-         }
-         m = m >> 1;
-      }
-      return a & c;
-   }
-
-   UAPInt maxAND(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
-   {
-      UAPInt temp;
-      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
-      while(m != 0)
-      {
-         if((b & ~d & m) != 0)
-         {
-            temp = (b & ~m) | (m - 1);
-            if(temp >= a) { b = temp; break; }
-         }
-         else if((~b & d & m) != 0)
-         {
-            temp = (d & ~m) | (m - 1);
-            if(temp >= c) { d = temp; break; }
-         }
-         m = m >> 1;
-      }
-      return b & d;
-   }
-
-   std::pair<APInt,APInt> AND(APInt a, APInt b, APInt c, APInt d)
-   {
-      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
-
-      UAPInt res_l, res_u;
-      switch(abcd)
-      {
-         case 0:
-         case 3:
-         case 12:
-         case 15:
-            res_l = minAND(UAPInt(a), UAPInt(b), UAPInt(c), UAPInt(d));
-            res_u = maxAND(UAPInt(a), UAPInt(b), UAPInt(c), UAPInt(d));
-            break;
-         case 1:
-            res_l = minAND(UAPInt(a), UAPInt(b), UAPInt(c), -1);
-            res_u = maxAND(UAPInt(a), UAPInt(b), 0, UAPInt(d));
-            break;
-         case 4:
-            res_l = minAND(UAPInt(a), -1, UAPInt(c), UAPInt(d));
-            res_u = maxAND(0, UAPInt(b), UAPInt(c), UAPInt(d));
-            break;
-         case 5:
-            res_l = minAND(UAPInt(a), -1, UAPInt(c), -1);
-            res_u = UAPInt(std::max(b, d));
-            break;
-         case 7:
-            return std::make_pair(0, d);
-         case 13:
-            return std::make_pair(0, b);
-         default:
-            THROW_UNREACHABLE("AND unreachable state " + STR(abcd));
-      }
-      return std::make_pair(convert(res_l), convert(res_u));
-   }
-
-   UAPInt minXOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
-   {
-      UAPInt temp;
-      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
-      while(m != 0)
-      {
-         if((~a & c & m) != 0)
-         {
-            temp = (a | m) & (~m+1);
-            if(temp <= b) { a = temp; }
-         }
-         else if((a & ~c & m) != 0)
-         {
-            temp = (c | m) & (~m+1);
-            if(temp <= d) { c = temp; }
-         }
-         m = m >> 1;
-      }
-      return a ^ c;
-   }
-
-   UAPInt maxXOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
-   {
-      UAPInt temp;
-      UAPInt m = UAPInt(1) << (MAX_BIT_INT - 1);
-      while(m != 0)
-      {
-         if((b & d & m) != 0)
-         {
-            temp = (b - m) | (m - 1);
-            if(temp >= a) { b = temp; }
-            else {
-               temp = (d - m) | (m - 1);
-               if(temp >= c) { d = temp; }
-            }
-         }
-         m = m >> 1;
-      }
-      return b ^ d;
-   }
-
-   std::pair<APInt,APInt> uXOR(UAPInt a, UAPInt b, UAPInt c, UAPInt d)
-   {
-      return std::make_pair(convert(minXOR(a,b,c,d)), convert(maxXOR(a,b,c,d)));
-   }
-
-} // namespace
-
-RangeRef Range::Or(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-
-   const APInt a = this->isAnti() ? Min : this->getLower();
-   const APInt b = this->isAnti() ? Max : this->getUpper();
-   const APInt c = other->isAnti() ? Min : other->getLower();
-   const APInt d = other->isAnti() ? Max : other->getUpper();
-   
-   const auto [res_l, res_u] = OR(a, b, c, d);
-   return RangeRef(new Range(Regular, bw, res_l, res_u));
-}
-
-RangeRef Range::And(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-
-   const APInt a = this->isAnti() ? Min : this->getLower();
-   const APInt b = this->isAnti() ? Max : this->getUpper();
-   const APInt c = other->isAnti() ? Min : other->getLower();
-   const APInt d = other->isAnti() ? Max : other->getUpper();
-
-   const auto [res_l, res_u] = AND(a, b, c, d);
-   return RangeRef(new Range(Regular, bw, res_l, res_u));
-}
-
-RangeRef Range::Xor(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-
-   const APInt a = this->isAnti() ? Min : this->getLower();
-   const APInt b = this->isAnti() ? Max : this->getUpper();
-   const APInt c = other->isAnti() ? Min : other->getLower();
-   const APInt d = other->isAnti() ? Max : other->getUpper();
-   
-   if(a >= 0 && b >= 0 && c >= 0 && d >= 0)
-   {
-      const auto [res_l,res_u] = uXOR(UAPInt(a),UAPInt(b),UAPInt(c),UAPInt(d));
-      return RangeRef(new Range(Regular, bw, res_l, res_u));
-   }
-   else if(a == -1 && b == -1 && c >= 0 && d >= 0)
-   {
-      return this->sub(other);
-   }
-   else if(c == -1 && d == -1 && a >= 0 && b >= 0)
-   {
-      return other->sub(RangeRef(this->clone()));
-   }
-   return RangeRef(new Range(Regular, bw));
-}
-
-RangeRef Range::Not() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   if(isEmpty() || isUnknown())
-   {
-      return RangeRef(new Range(this->type, bw));
-   }
-   
-   const auto min = convert(~UAPInt(this->u));
-   const auto max = convert(~UAPInt(this->l));
-
-   return RangeRef(new Range(this->type, bw, min, max));
-}
-
-RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(!isAnti() && !other->isAnti())
-   {
-      if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
-      {
-         return RangeRef(new Range(Regular, _bw, 0, 1));
-      }
-   }
-   bool areTheyEqual = !this->intersectWith(other)->isEmpty();
-   bool areTheyDifferent = !((l == u) && this->isSameRange(other));
-
-   if(areTheyEqual && areTheyDifferent)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-   if(areTheyEqual && !areTheyDifferent)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(!areTheyEqual && areTheyDifferent)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   THROW_UNREACHABLE("condition unexpected");
-   return nullptr;
-}
-
-RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(!isAnti() && !other->isAnti())
-   {
-      if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
-      {
-         return RangeRef(new Range(Regular, _bw, 0, 1));
-      }
-   }
-   bool areTheyEqual = !this->intersectWith(other)->isEmpty();
-   bool areTheyDifferent = !((l == u) && this->isSameRange(other));
-   if(areTheyEqual && areTheyDifferent)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-   if(areTheyEqual && !areTheyDifferent)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-   if(!areTheyEqual && areTheyDifferent)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-
-   THROW_UNREACHABLE("condition unexpected");
-   return nullptr;
-}
-
-RangeRef Range::Ugt(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getUnsignedMin();
-   const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
-   if(a > d)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(c >= b)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::Uge(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getUnsignedMin();
-   const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
-   if(a >= d)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(c > b)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::Ult(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getUnsignedMin();
-   const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
-   if(b < c)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(d <= a)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::Ule(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getUnsignedMin();
-   const auto b = this->getUnsignedMax();
-   const auto c = other->getUnsignedMin();
-   const auto d = other->getUnsignedMax();
-   if(b <= c)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(d < a)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::Sgt(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getSignedMin();
-   const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
-   if(a > d)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(c >= b)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::Sge(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getSignedMin();
-   const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
-   if(a >= d)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(c > b)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::Slt(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getSignedMin();
-   const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
-   if(b < c)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(d <= a)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, _bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, _bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 1));
-   }
-
-   const auto a = this->getSignedMin();
-   const auto b = this->getSignedMax();
-   const auto c = other->getSignedMin();
-   const auto d = other->getSignedMax();
-   if(b <= c)
-   {
-      return RangeRef(new Range(Regular, _bw, 1, 1));
-   }
-   if(d < a)
-   {
-      return RangeRef(new Range(Regular, _bw, 0, 0));
-   }
-
-   return RangeRef(new Range(Regular, _bw, 0, 1));
-}
-
-RangeRef Range::SMin(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   const auto thisMin = this->Slt(other, 1);
-   if(thisMin->isConstant())
-   {
-      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
-   }
-   const auto min = std::min(this->getSignedMin(), other->getSignedMin());
-   const auto max = std::min(this->getSignedMax(), other->getSignedMax());
-   return RangeRef(new Range(Regular, bw, min, max));
-}
-
-RangeRef Range::SMax(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   const auto thisMax = this->Sgt(other, 1);
-   if(thisMax->isConstant())
-   {
-      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
-   }
-   const auto min = std::max(this->getSignedMin(), other->getSignedMin());
-   const auto max = std::max(this->getSignedMax(), other->getSignedMax());
-   return RangeRef(new Range(Regular, bw, min, max));
-}
-
-RangeRef Range::UMin(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   const auto thisMin = this->Ult(other, 1);
-   if(thisMin->isConstant())
-   {
-      return thisMin->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
-   }
-   const auto min = std::min(this->getUnsignedMin(), other->getUnsignedMin());
-   const auto max = std::min(this->getUnsignedMax(), other->getUnsignedMax());
-   return RangeRef(new Range(Regular, bw, min, max));
-}
-
-RangeRef Range::UMax(RangeConstRef other) const
-{
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-   if(isAnti() || other->isAnti())
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   const auto thisMax = this->Ugt(other, 1);
-   if(thisMax->isConstant())
-   {
-      return thisMax->getUnsignedMin() ? RangeRef(this->clone()) : RangeRef(other->clone());
-   }
-   const auto min = std::max(this->getUnsignedMin(), other->getUnsignedMin());
-   const auto max = std::max(this->getUnsignedMax(), other->getUnsignedMax());
-   return RangeRef(new Range(Regular, bw, min, max));
-}
-
-RangeRef Range::abs() const
-{
-   if(isEmpty() || isUnknown())
-   {
-      return RangeRef(this->clone());
-   }
-   if(isAnti())
-   {
-      if(u < 0)
-      {
-         if(l == getSignedMinValue(bw))
-         {
-            return RangeRef(new Range(Regular, bw, 0, getSignedMaxValue(bw)));
-         }
-         return RangeRef(new Range(Anti, bw, getSignedMinValue(bw) + 1, -1));
-      }
-      if(l < 0)
-      {
-         if(l == getSignedMinValue(bw))
-         {
-            return RangeRef(new Range(Regular, bw, u + 1, getSignedMaxValue(bw)));
-         }
-         const auto min = std::min(-l, u);
-         return RangeRef(new Range(Anti, bw, getSignedMinValue(bw) + 1, min));
-      }
-      return RangeRef(new Range(Anti, bw, getSignedMinValue(bw) + 1, l == 0 ? 0 : -1));
-   }
-
-   const auto smin = getSignedMin();
-   const auto smax = getSignedMax();
-   if(smax < 0)
-   {
-      if(smin == getSignedMinValue(bw))
-      {
-         return RangeRef(new Range(Anti, bw, smin + 1, -smax - 1));
-      }
-      return RangeRef(new Range(Regular, bw, -smax, -smin));
-   }
-   if(smin < 0)
-   {
-      if(smin == getSignedMinValue(bw))
-      {
-         return RangeRef(new Range(Anti, bw, smin + 1, -1));
-      }
-      const auto max = std::max({smax, -smin});
-      return RangeRef(new Range(Regular, bw, 0, max));
-   }
-   return RangeRef(this->clone());
-}
-
-RangeRef Range::negate() const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   if(isEmpty() || isUnknown())
-   {
-      return RangeRef(this->clone());
-   }
-   if(isAnti())
-   {
-      return RangeRef(new Range(Anti, bw, -u, -l));
-   }
-   return RangeRef(new Range(Regular, bw, -u, -l));
-}
-
-// Truncate
-// - if the source range is entirely inside max bit range, it is the result
-// - else, the result is the max bit range
-RangeRef Range::truncate(bw_t bitwidth) const
-{
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   if(isEmpty())
-   {
-      return RangeRef(new Range(Empty, bitwidth));
-   }
-   if(isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bitwidth));
-   }
-   const auto a = this->getSignedMin();
-   const auto b = this->getSignedMax();
-   if(isFullSet() || isAnti() || boost::multiprecision::abs(b - a) > getMaxValue(bitwidth))
-   {
-      return RangeRef(new Range(Regular, bitwidth));
-   }
-   if(bitwidth == bw)
-   {
-      return RangeRef(this->clone());
-   }
-   
-   const auto stmin = truncExt(a, bitwidth, true);
-   const auto stmax = truncExt(b, bitwidth, true);
-   
-   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)   // Zero crossing range
-   {
-      if(stmax < 0)  // overflow
-      {
-         if(stmax >= stmin)
-         {
-            return RangeRef(new Range(Regular, bitwidth));
-         }
-         return RangeRef(new Range(Anti, bitwidth, stmax + 1, (stmin < 0 ? stmin : 0) - 1));
-      }
-      if(stmin > 0)  // underflow
-      {
-         if(stmax >= stmin)
-         {
-            return RangeRef(new Range(Regular, bitwidth));
-         }
-         return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
-      }
-   }
-   else if((signbit(a) != signbit(stmin)) ^ (signbit(b) != signbit(stmax)))   // Non zero crossing range
-   {
-      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
-   }
-   
-   if(stmin > stmax)
-   {
-      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
-   }
-   return RangeRef(new Range(Regular, bitwidth, stmin, stmax));
-}
-
-RangeRef Range::sextOrTrunc(bw_t bitwidth) const
-{
-   if(bitwidth <= bw)
-   {
-      return truncate(bitwidth);
-   }
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   if(isEmpty())
-   {
-      return RangeRef(new Range(Empty, bitwidth));
-   }
-   if(isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bitwidth));
-   }
-
-   const auto this_min = this->getSignedMin();
-   const auto this_max = this->getSignedMax();
-   
-   const auto [min, max] = std::minmax(truncExt(this_min, bitwidth, true), truncExt(this_max, bitwidth, true));
-   RangeRef sextRes(new Range(Regular, bitwidth, min, max));
-   if(sextRes->isFullSet())
-   {
-      return RangeRef(new Range(Regular, bitwidth));
-   }
-   return sextRes;
-}
-
-RangeRef Range::zextOrTrunc(bw_t bitwidth) const
-{
-   if(bitwidth <= bw)
-   {
-      return truncate(bitwidth);
-   }
-   THROW_ASSERT(!isReal(), "Real range is a storage class only");
-   if(isEmpty())
-   {
-      return RangeRef(new Range(Empty, bitwidth));
-   }
-   if(isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bitwidth));
-   }
-   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
-   {
-      return RangeRef(new Range(Regular, bitwidth, 0, getMaxValue(bw)));
-   }
-
-   if(this->getSignedMax() < 0)
-   {
-      return RangeRef(new Range(Regular, bitwidth, truncExt(this->getSignedMax(), bw, false), truncExt(this->getSignedMin(), bw, false)));
-   }
-   return RangeRef(new Range(Regular, bitwidth, truncExt(this->getSignedMin(), bw, false), truncExt(this->getSignedMax(), bw, false)));
-}
-
-RangeRef Range::intersectWith(RangeConstRef other) const
-{
-   #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
-   #endif
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || other->isEmpty())
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(this->isUnknown() || other->isUnknown())
-   {
-      return RangeRef(new Range(Unknown, bw));
-   }
-
-   if(!this->isAnti() && !other->isAnti())
-   {
-      APInt res_l = getLower() > other->getLower() ? getLower() : other->getLower();
-      APInt res_u = getUpper() < other->getUpper() ? getUpper() : other->getUpper();
-      if(res_u < res_l)
-      {
-         return RangeRef(new Range(Empty, bw));
-      }
-
-      return RangeRef(new Range(Regular, bw, res_l, res_u));
-   }
-   if(this->isAnti() && !other->isAnti())
-   {
-      auto antiRange = this->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
-      if(antil <= other->getLower())
-      {
-         if(other->getUpper() <= antiu)
-         {
-            return RangeRef(new Range(Empty, bw));
-         }
-         APInt res_l = other->getLower() > antiu ? other->getLower() : antiu + 1;
-         APInt res_u = other->getUpper();
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
-      }
-      if(antiu >= other->getUpper())
-      {
-         THROW_ASSERT(other->getLower() < antil, "");
-         APInt res_l = other->getLower();
-         APInt res_u = other->getUpper() < antil ? other->getUpper() : antil - 1;
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
-      }
-      if(other->getLower() == Min && other->getUpper() == Max)
-      {
-         return RangeRef(this->clone());
-      }
-      if(antil > other->getUpper() || antiu < other->getLower())
-      {
-         return RangeRef(other->clone());
-      }
-
-      // we approximate to the range of other
-      return RangeRef(other->clone());
-   }
-   if(!this->isAnti() && other->isAnti())
-   {
-      auto antiRange = other->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
-      if(antil <= this->getLower())
-      {
-         if(this->getUpper() <= antiu)
-         {
-            return RangeRef(new Range(Empty, bw));
-         }
-         APInt res_l = this->getLower() > antiu ? this->getLower() : antiu + 1;
-         APInt res_u = this->getUpper();
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
-      }
-      if(antiu >= this->getUpper())
-      {
-         THROW_ASSERT(this->getLower() < antil, "");
-         APInt res_l = this->getLower();
-         APInt res_u = this->getUpper() < antil ? this->getUpper() : antil - 1;
-         return RangeRef(new Range(Regular, bw, res_l, res_u));
-      }
-      if(this->getLower() == Min && this->getUpper() == Max)
-      {
-         return RangeRef(other->clone());
-      }
-      if(antil > this->getUpper() || antiu < this->getLower())
-      {
-         return RangeRef(this->clone());
-      }
-
-      // we approximate to the range of this
-      return RangeRef(this->clone());
-   }
-
-   auto antiRange_a = this->getAnti();
-   auto antiRange_b = other->getAnti();
-   auto antil_a = antiRange_a->getLower();
-   auto antiu_a = antiRange_a->getUpper();
-   auto antil_b = antiRange_b->getLower();
-   auto antiu_b = antiRange_b->getUpper();
-   if(antil_a > antil_b)
-   {
-      std::swap(antil_a, antil_b);
-      std::swap(antiu_a, antiu_b);
-   }
-   if(antil_b > (antiu_a + 1))
-   {
-      return RangeRef(new Range(Anti, bw, antil_a, antiu_a));
-   }
-   auto res_l = antil_a;
-   auto res_u = antiu_a > antiu_b ? antiu_a : antiu_b;
-   if(res_l == Min && res_u == Max)
-   {
-      return RangeRef(new Range(Empty, bw));
-   }
-
-   return RangeRef(new Range(Anti, bw, res_l, res_u));
-}
-
-RangeRef Range::unionWith(RangeConstRef other) const
-{
-   #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
-   #endif
-   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
-   if(this->isEmpty() || this->isUnknown())
-   {
-      return RangeRef(other->clone());
-   }
-   if(other->isEmpty() || other->isUnknown())
-   {
-      return RangeRef(this->clone());
-   }
-   if(!this->isAnti() && !other->isAnti())
-   {
-      APInt res_l = getLower() < other->getLower() ? getLower() : other->getLower();
-      APInt res_u = getUpper() > other->getUpper() ? getUpper() : other->getUpper();
-      return RangeRef(new Range(Regular, bw, res_l, res_u));
-   }
-   if(this->isAnti() && !other->isAnti())
-   {
-      auto antiRange = this->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
-      THROW_ASSERT(antil != Min, "");
-      THROW_ASSERT(antiu != Max, "");
-      if(antil > other->getUpper() || antiu < other->getLower())
-      {
-         return RangeRef(this->clone());
-      }
-      if(antil > other->getLower() && antiu < other->getUpper())
-      {
-         return RangeRef(new Range(Regular, bw));
-      }
-      if(antil >= other->getLower() && antiu > other->getUpper())
-      {
-         return RangeRef(new Range(Anti, bw, other->getUpper() + 1, antiu));
-      }
-      if(antil < other->getLower() && antiu <= other->getUpper())
-      {
-         return RangeRef(new Range(Anti, bw, antil, other->getLower() - 1));
-      }
-
-      return RangeRef(new Range(Regular, bw)); // approximate to the full set
-   }
-   if(!this->isAnti() && other->isAnti())
-   {
-      auto antiRange = other->getAnti();
-      auto antil = antiRange->getLower();
-      auto antiu = antiRange->getUpper();
-      THROW_ASSERT(antil != Min, "");
-      THROW_ASSERT(antiu != Max, "");
-      if(antil > this->getUpper() || antiu < this->getLower())
-      {
-         return RangeRef(other->clone());
-      }
-      if(antil > this->getLower() && antiu < this->getUpper())
-      {
-         return RangeRef(new Range(Regular, bw));
-      }
-      if(antil >= this->getLower() && antiu > this->getUpper())
-      {
-         return RangeRef(new Range(Anti, bw, this->getUpper() + 1, antiu));
-      }
-      if(antil < this->getLower() && antiu <= this->getUpper())
-      {
-         return RangeRef(new Range(Anti, bw, antil, this->getLower() - 1));
-      }
-
-      return RangeRef(new Range(Regular, bw)); // approximate to the full set
-   }
-
-   auto antiRange_a = this->getAnti();
-   auto antiRange_b = other->getAnti();
-   auto antil_a = antiRange_a->getLower();
-   auto antiu_a = antiRange_a->getUpper();
-   THROW_ASSERT(antil_a != Min, "");
-   THROW_ASSERT(antiu_a != Max, "");
-   auto antil_b = antiRange_b->getLower();
-   auto antiu_b = antiRange_b->getUpper();
-   THROW_ASSERT(antil_b != Min, "");
-   THROW_ASSERT(antiu_b != Max, "");
-   if(antil_a > antiu_b || antiu_a < antil_b)
-   {
-      return RangeRef(new Range(Regular, bw));
-   }
-   if(antil_a > antil_b && antiu_a < antiu_b)
-   {
-      return RangeRef(this->clone());
-   }
-   if(antil_b > antil_a && antiu_b < antiu_a)
-   {
-      return RangeRef(this->clone());
-   }
-   if(antil_a >= antil_b && antiu_b <= antiu_a)
-   {
-      return RangeRef(new Range(Anti, bw, antil_a, antiu_b));
-   }
-   if(antil_b >= antil_a && antiu_a <= antiu_b)
-   {
-      return RangeRef(new Range(Anti, bw, antil_b, antiu_a));
-   }
-
-   THROW_UNREACHABLE("unsupported condition");
-   return nullptr;
-}
-
-void Range::print(std::ostream& OS) const
-{
-   if(this->isUnknown())
-   {
-      OS << "[Unknown," << STR(bw) << "]";
-   }
-   else if(this->isEmpty())
-   {
-      OS << "[Empty," << STR(bw) << "]";
-   }
-   else if(this->isAnti())
-   {
-      if(l == Min)
-      {
-         OS << ")-inf,";
-      }
-      else
-      {
-         OS << ")" << l.str() << ",";
-      }
-      OS << bw << ",";
-      if(u == Max)
-      {
-         OS << "+inf(";
-      }
-      else
-      {
-         OS << u.str() << "(";
-      }
-   }
-   else
-   {
-      if(l == Min)
-      {
-         OS << "[-inf,";
-      }
-      else
-      {
-         OS << "[" << l.str() << ",";
-      }
-      OS << STR(bw) << ",";
-      if(u == Max)
-      {
-         OS << "+inf]";
-      }
-      else
-      {
-         OS << u.str() << "]";
-      }
-   }
-}
-
-std::string Range::ToString() const
-{
-   std::stringstream ss;
-   print(ss);
-   return ss.str();
-}
-
-std::ostream& operator<<(std::ostream& OS, const Range& R)
-{
-   R.print(OS);
-   return OS;
-}
-
-RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
-{
-   const auto bw = Other->bw;
-   if(Other->isUnknown() || Other->isEmpty())
-   {
-      return RangeRef(Other->clone());
-   }
-   if(Other->isAnti() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
-   {
-      THROW_UNREACHABLE("Invalid request " + tree_node::GetString(pred) + " " + Other->ToString());
-      return RangeRef(new Range(Empty, bw));
-   }
-   if(Other->isReal() && pred != eq_expr_K && pred != ne_expr_K && pred != uneq_expr_K)
-   {
-      THROW_UNREACHABLE("Compare region for real range not handled (" + tree_node::GetString(pred) + ")");
-   }
-
-   switch (pred)
-   {
-      case ge_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getSignedMax(), getSignedMaxValue(bw)));
-      case gt_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getSignedMax() + MinDelta, getSignedMaxValue(bw)));
-      case le_expr_K:
-         return RangeRef(new Range(Regular, bw, getSignedMinValue(bw), Other->getSignedMin()));
-      case lt_expr_K:
-         return RangeRef(new Range(Regular, bw, getSignedMinValue(bw), Other->getSignedMin() - MinDelta));
-      case unge_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax(), getMaxValue(bw)));
-      case ungt_expr_K:
-         return RangeRef(new Range(Regular, bw, Other->getUnsignedMax() + MinDelta, getMaxValue(bw)));
-      case unle_expr_K:
-         return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin()));
-      case unlt_expr_K:
-         return RangeRef(new Range(Regular, bw, getMinValue(bw), Other->getUnsignedMin() - MinDelta));
-      case uneq_expr_K:
-      case eq_expr_K:
-         return RangeRef(Other->clone());
-      case ne_expr_K:
-         return Other->getAnti();
-   
-      case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
-      case CASE_UNARY_EXPRESSION:
-      case CASE_TERNARY_EXPRESSION:
-      case CASE_QUATERNARY_EXPRESSION:
-      case CASE_TYPE_NODES:
-      case CASE_CST_NODES:
-      case CASE_DECL_NODES:
-      case CASE_FAKE_NODES:
-      case CASE_GIMPLE_NODES:
-      case CASE_PRAGMA_NODES:
-      case CASE_CPP_NODES:
-      case CASE_MISCELLANEOUS:
-      default:
-         break;
-   }
-   THROW_UNREACHABLE("Unhandled compare operation (" + STR(pred) + ")");
-   return nullptr;
-}
-
-// ========================================================================== //
-// RealRange
-// ========================================================================== //
-RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())), sign(s.clone()), exponent(e.clone()), fractional(f.clone())
-{
-   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s.ToString() + " " + e.ToString() + " " + f.ToString() + "]<" + STR(getBitWidth()) + ">");
-   THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
-}
-
-RealRange::RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
-{
-   THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() + " " + e->ToString() + " " + f->ToString() + "]<" + STR(getBitWidth()) + ">");
-   THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
-}
-
-RealRange::RealRange(RangeConstRef vc) : Range(Real, vc->getBitWidth()), sign(vc->Sgt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
-{
-   if(vc->getBitWidth() == 32)
-   {
-      exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)), false)->zextOrTrunc(8);
-      fractional = vc->zextOrTrunc(23);
-   }
-   else if(vc->getBitWidth() == 64)
-   {
-      exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)), false)->zextOrTrunc(11);
-      fractional = vc->zextOrTrunc(52);
-   }
-   else
-   {
-      THROW_UNREACHABLE("Unhandled view convert bitwidth: could not transform " + vc->ToString() + " into real range");
-   }
-}
-
-RangeRef RealRange::getRange() const
-{
-   const auto _bw = getBitWidth();
-   if(_bw == 32)
-   {
-      auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 31, 31)));
-      auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)));
-      return fractional->zextOrTrunc(32)->Or(e)->Or(s);
-   }
-   else if(_bw == 64)
-   {
-      auto s = sign->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 63, 63)));
-      auto e = exponent->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)));
-      return fractional->zextOrTrunc(64)->Or(e)->Or(s);
-   }
-   THROW_UNREACHABLE("Unhandled view convert bitwidth");
-   return nullptr;
-}
-
-RangeRef RealRange::getSign() const
-{
-   return sign;
-}
-
-RangeRef RealRange::getExponent() const
-{
-   return exponent;
-}
-
-RangeRef RealRange::getFractional() const
-{
-   return fractional;
-}
-
-RangeRef RealRange::getAnti() const
-{
-   return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), fractional->getAnti()));
-}
-
-void RealRange::setSign(RangeConstRef s)
-{
-   sign.reset(s->clone());
-}
-
-void RealRange::setExponent(RangeConstRef e)
-{
-   exponent.reset(e->clone());
-}
-
-void RealRange::setFractional(RangeConstRef f)
-{
-   fractional.reset(f->clone());
-}
-
-bool RealRange::isSameRange(RangeConstRef other) const
-{
-   if(other->isReal())
-   {
-      auto rOther = RefcountCast<const RealRange>(other);
-      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && fractional->isSameRange(rOther->fractional);
-   }
-   return false;
-}
-
-bool RealRange::isEmpty() const
-{
-   return sign->isEmpty() || exponent->isEmpty() || fractional->isEmpty();
-}
-
-bool RealRange::isUnknown() const
-{
-   return sign->isUnknown() || exponent->isUnknown() || fractional->isUnknown();
-}
-
-void RealRange::setUnknown()
-{
-   sign->setUnknown();
-   exponent->setUnknown();
-   fractional->setUnknown();
-}
-
-bool RealRange::isFullSet() const
-{
-   return sign->isFullSet() && exponent->isFullSet() && fractional->isFullSet();
-}
-
-bool RealRange::isSingleElement() const
-{
-   return sign->isSingleElement() && exponent->isSingleElement() && fractional->isSingleElement();
-}
-
-bool RealRange::isConstant() const
-{
-   return sign->isConstant() && exponent->isConstant() && fractional->isConstant();
-}
-
-bool RealRange::isReal() const
-{
-   return true;
-}
-
-void RealRange::print(std::ostream& OS) const
-{
-   OS << "[ ";
-   sign->print(OS);
-   OS << ", ";
-   exponent->print(OS);
-   OS << ", ";
-   fractional->print(OS);
-   OS << ", " << STR(getBitWidth()) << "]";
-}
-
-Range* RealRange::clone() const
-{
-   return new RealRange(sign, exponent, fractional);
-}
-
-RangeRef RealRange::abs() const
-{
-   return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, 0, 0)), exponent, fractional));
-}
-
-RangeRef RealRange::negate() const
-{
-   if(sign->isAnti() || sign->isConstant())
-   {
-      const auto s = sign->getUnsignedMin() ? 0 : 1;
-      return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, s, s)), exponent, fractional));
-   }
-   return RangeRef(this->clone());
-}
-
-RangeRef RealRange::Eq(RangeConstRef other, bw_t _bw) const
-{
-   if(const auto rOther = RefcountCast<const RealRange>(other))
-   {
-      return sign->Eq(rOther->sign, _bw)->intersectWith(exponent->Eq(rOther->exponent, _bw))->intersectWith(fractional->Eq(rOther->fractional, _bw));
-   }
-   return RangeRef(new Range(Regular, _bw, 0, 0));
-}
-
-RangeRef RealRange::Ne(RangeConstRef other, bw_t _bw) const
-{
-   if(const auto rOther = RefcountCast<const RealRange>(other))
-   {
-      return sign->Ne(rOther->sign, _bw)->unionWith(exponent->Ne(rOther->exponent, _bw))->unionWith(fractional->Ne(rOther->fractional, _bw));
-   }
-   return RangeRef(new Range(Regular, _bw, 1, 1));
-}
-
-RangeRef RealRange::intersectWith(RangeConstRef other) const
-{
-   #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
-   #endif
-   THROW_ASSERT(other->isReal(), "Real range should intersect with real range only");
-   auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), fractional->intersectWith(rrOther->fractional)));
-}
-
-RangeRef RealRange::unionWith(RangeConstRef other) const
-{
-   #ifdef DEBUG_RANGE_OP
-   PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
-   #endif
-   THROW_ASSERT(other->isReal(), "Real range should unite to real range only");
-   auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), fractional->unionWith(rrOther->fractional)));
-}
-
-RangeRef RealRange::toFloat64() const
-{
-   if(getBitWidth() == 64)
-   {
-      return RangeRef(this->clone());
-   }
-
-   RangeRef exponent64;
-   // Denormalized case
-   if(exponent->isConstant() && exponent->getUnsignedMin() == 0)
-   {
-      exponent64.reset(new Range(Regular, 11, 0, 0));
-   }
-   else if(exponent->isFullSet())
-   {
-      exponent64.reset(new Range(Regular, 11));
-   }
-   else
-   {
-      exponent64.reset(new Range(Regular, 11, truncExt(exponent->getUnsignedMin() - 127 + 1023, 11, true), truncExt(exponent->getUnsignedMax() - 127 + 1023, 11, true)));
-   }
-
-   return RangeRef(new RealRange(sign, 
-      exponent64, 
-      fractional->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
-}
-
-RangeRef RealRange::toFloat32() const
-{
-   if(getBitWidth() == 32)
-   {
-      return RangeRef(this->clone());
-   }
-
-   RangeRef exponent32;
-   RangeRef fractional32 = fractional->shr(RangeRef(new Range(Regular, 52, 29, 29)), false)->zextOrTrunc(23);
-   const auto min = exponent->getUnsignedMin() - 1023 + 127;
-   const auto max = exponent->getUnsignedMax() - 1023 + 127;
-   if(min < 0 && max > getMaxValue(8))
-   {
-      exponent32.reset(new Range(Regular, 8));
-   }
-   else if(exponent->isConstant() && min < 0)
-   {
-      exponent32.reset(new Range(Regular, 8, 0, 0));
-   }
-   else if(exponent->isConstant() && max >= getMaxValue(8))
-   {
-      exponent32.reset(new Range(Regular, 8, -1, -1));
-      fractional32.reset(new Range(Regular, 23, 0, 0));
-   }
-   else
-   {
-      exponent32.reset(new Range(Regular, 8, truncExt(std::max(min, APInt(0)), 8, true), truncExt(std::min(max, APInt(255)), 8, true)));
-   }
-
-   return RangeRef(new RealRange(sign, 
-      exponent32,
-      fractional32));
 }
 
 
@@ -3654,13 +3716,13 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
          {
             union vcFloat vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint8_t>();
-            vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint32_t>();
+            vc.bits.sign = rRange->getSign()->getLower().to<bool>();
+            vc.bits.exp = rRange->getExponent()->getLower().to<uint8_t>();
+            vc.bits.frac = rRange->getFractional()->getLower().to<uint32_t>();
             #else
-            vc.bits.coded = rRange->getSign()->getUnsignedMax().convert_to<uint32_t>() << 31;
-            vc.bits.coded += rRange->getExponent()->getUnsignedMax().convert_to<uint32_t>() << 23;
-            vc.bits.coded += rRange->getFractional()->getUnsignedMax().convert_to<uint32_t>();
+            vc.bits.coded = rRange->getSign()->getUnsignedMax().to<uint32_t>() << 31;
+            vc.bits.coded += rRange->getExponent()->getUnsignedMax().to<uint32_t>() << 23;
+            vc.bits.coded += rRange->getFractional()->getUnsignedMax().to<uint32_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
             cst_val = static_cast<int64_t>(vc.bits.coded);
@@ -3670,13 +3732,13 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
          {
             union vcDouble vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().convert_to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().convert_to<uint16_t>();
-            vc.bits.frac = rRange->getFractional()->getLower().convert_to<uint64_t>();
+            vc.bits.sign = rRange->getSign()->getLower().to<bool>();
+            vc.bits.exp = rRange->getExponent()->getLower().to<uint16_t>();
+            vc.bits.frac = rRange->getFractional()->getLower().to<uint64_t>();
             #else
-            vc.bits.coded = rRange->getSign()->getUnsignedMax().convert_to<uint64_t>() << 63;
-            vc.bits.coded += rRange->getExponent()->getUnsignedMax().convert_to<uint64_t>() << 52;
-            vc.bits.coded += rRange->getFractional()->getUnsignedMax().convert_to<uint64_t>();
+            vc.bits.coded = rRange->getSign()->getUnsignedMax().to<uint64_t>() << 63;
+            vc.bits.coded += rRange->getExponent()->getUnsignedMax().to<uint64_t>() << 52;
+            vc.bits.coded += rRange->getFractional()->getUnsignedMax().to<uint64_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
             cst_val = static_cast<int64_t>(vc.bits.coded);
@@ -3685,7 +3747,7 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
       }
       else
       {
-         const auto cst_value = isSigned ? range->getSignedMax().convert_to<int64_t>() : static_cast<int64_t>(range->getUnsignedMax().convert_to<uint64_t>());
+         const auto cst_value = isSigned ? range->getSignedMax().to<int64_t>() : static_cast<int64_t>(range->getUnsignedMax().to<uint64_t>());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + (isSigned ? ("Signed int " + STR(cst_value)) : ("Unsigned int " + STR(static_cast<uint64_t>(cst_value)))));
          cst_val = cst_value;
          cst = tree_man->CreateIntegerCst(SSA->type, cst_value, TM->new_tree_node_id());
@@ -3766,13 +3828,13 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
       long long min, max;
       if(isSigned)
       {
-         min = interval->getSignedMin().convert_to<long long>();
-         max = interval->getSignedMax().convert_to<long long>();
+         min = interval->getSignedMin().to<long long>();
+         max = interval->getSignedMax().to<long long>();
       }
       else
       {
-         min = interval->getUnsignedMin().convert_to<long long>();
-         max = interval->getUnsignedMax().convert_to<long long>();
+         min = interval->getUnsignedMin().to<long long>();
+         max = interval->getUnsignedMax().to<long long>();
       }
       #ifdef BITVALUE_UPDATE
       if(SSA->bit_values.empty())
@@ -6224,13 +6286,13 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
             APInt nlconstant = getFirstGreaterFromVector(*constantvector, nLower);
             APInt nuconstant = getFirstLessFromVector(*constantvector, nUpper);
             THROW_ASSERT(oLower != Min, "");
-            const APInt& smin = std::max(oLower, nlconstant);
+            const APInt& smin = std::max({oLower, nlconstant});
             if(oLower != smin)
             {
                sinkInterval = RangeRef(new Range(Anti, bw, smin, oUpper));
             }
             THROW_ASSERT(oUpper != Max, "");
-            const APInt& smax = std::min(oUpper, nuconstant);
+            const APInt& smax = std::min({oUpper, nuconstant});
             if(oUpper != smax)
             {
                if(sinkInterval->isAnti())
@@ -6261,7 +6323,7 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
          }
          else
          {
-            const APInt smin = std::min(oLower, nLower);
+            const APInt smin = std::min({oLower, nLower});
             if(oLower != smin)
             {
                sinkInterval = RangeRef(new Range(Regular, bw, smin, oUpper));
@@ -6275,7 +6337,7 @@ bool Meet::narrow(BasicOp* op, const std::vector<APInt>* constantvector)
             }
             else
             {
-               const APInt smax = std::max(oUpper, nUpper);
+               const APInt smax = std::max({oUpper, nUpper});
                if(oUpper != smax)
                {
                   sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), smax));
@@ -7194,7 +7256,7 @@ class ConstraintGraph
             else if(op_kind == bit_and_expr_K)
             {
                // Trailing zeros indicates a right shift has already been applied, so they are not relevant
-               const auto shift = countTrailingZeros(APInt(mask), std::numeric_limits<decltype(new_mask)>::digits);
+               const auto shift = APInt(mask).trailingZeros(std::numeric_limits<decltype(new_mask)>::digits);
                new_mask = mask & static_cast<std::remove_const<decltype(mask)>::type>(cst_int << shift);
             }
             vcMap.insert({sink, {f, new_mask}});
@@ -7799,14 +7861,14 @@ class ConstraintGraph
                   else if(pred == ungt_expr_K || pred == unle_expr_K)
                   {
                      auto bw = source1->getBitWidth();
-                     auto cnstValU = truncExt(const1->value, bw, false);
+                     auto cnstValU = APInt(const1->value).extOrTrunc(bw, false);
                      insertConstantIntoVector(cnstValU);
                      insertConstantIntoVector(cnstValU + 1);
                   }
                   else if(pred == unge_expr_K || pred == unlt_expr_K)
                   {
                      auto bw = source1->getBitWidth();
-                     auto cnstValU = truncExt(const1->value, bw, false);
+                     auto cnstValU = APInt(const1->value).extOrTrunc(bw, false);
                      insertConstantIntoVector(cnstValU);
                      insertConstantIntoVector(cnstValU - 1);
                   }
@@ -7845,14 +7907,14 @@ class ConstraintGraph
                   else if(pred == ungt_expr_K || pred == unle_expr_K)
                   {
                      auto bw = source2->getBitWidth();
-                     auto cnstValU = truncExt(const2->value, bw, false);
+                     auto cnstValU = APInt(const2->value).extOrTrunc(bw, false);
                      insertConstantIntoVector(cnstValU);
                      insertConstantIntoVector(cnstValU + 1);
                   }
                   else if(pred == unge_expr_K || pred == unlt_expr_K)
                   {
                      auto bw = source2->getBitWidth();
-                     auto cnstValU = truncExt(const2->value, bw, false);
+                     auto cnstValU = APInt(const2->value).extOrTrunc(bw, false);
                      insertConstantIntoVector(cnstValU);
                      insertConstantIntoVector(cnstValU - 1);
                   }
@@ -7897,8 +7959,8 @@ class ConstraintGraph
             if(rintersect->isAnti())
             {
                auto anti = rintersect->getAnti();
-               const APInt lb = anti->getLower();
-               const APInt ub = anti->getUpper();
+               const auto lb = anti->getLower();
+               const auto ub = anti->getUpper();
                if((lb != Min) && (lb != Max))
                {
                   insertConstantIntoVector(lb - 1);
@@ -7912,8 +7974,8 @@ class ConstraintGraph
             }
             else
             {
-               const APInt& lb = rintersect->getLower();
-               const APInt& ub = rintersect->getUpper();
+               const auto& lb = rintersect->getLower();
+               const auto& ub = rintersect->getUpper();
                if((lb != Min) && (lb != Max))
                {
                   insertConstantIntoVector(lb - 1);
@@ -9020,7 +9082,6 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    }
 }
 
-
 bool RangeAnalysis::finalize()
 {
    const auto& vars = CG->getVars();
@@ -9076,6 +9137,3 @@ bool RangeAnalysis::finalize()
    }
    return !updatedFunctions.empty();
 }
-
-#pragma GCC diagnostic pop
-
