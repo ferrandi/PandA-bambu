@@ -38,6 +38,7 @@
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/Operator.h>
+#include <llvm/IR/Intrinsics.h>
 
 llvm::PHINode* get_last_phi(llvm::BasicBlock* bb)
 {
@@ -233,7 +234,7 @@ void lower_chunk_copy(const ChunkCopy& chunk_copy, const llvm::DataLayout& DL)
    llvm::errs() << "          Store bitcast: ";
    chunk_copy.store_bitcast_op->print(llvm::errs());
    llvm::errs() << "          Store inst:    ";
-   chunk_copy.store_bitcast_op->print(llvm::errs());
+   chunk_copy.store_inst->print(llvm::errs());
 
    double fitting = (double)DL.getTypeAllocSize(chunk_copy.dest_ty->getPointerElementType()) / (double)DL.getTypeAllocSize(chunk_copy.src_ty->getPointerElementType());
    std::vector<unsigned long long> gepi_idxs = std::vector<unsigned long long>();
@@ -676,7 +677,7 @@ bool bitcast_vector_removal(llvm::Function& function)
 {
    const llvm::DataLayout& DL = function.getParent()->getDataLayout();
 
-   std::vector<std::tuple<llvm::GEPOperator*, llvm::ConstantInt*, llvm::BitCastOperator*, std::vector<unsigned long long>>> sequential_access_vec;
+   std::vector<std::tuple<llvm::Value*, llvm::ConstantInt*, llvm::BitCastOperator*, std::vector<unsigned long long>>> sequential_access_vec;
    for(llvm::BasicBlock& bb : function)
    {
       for(llvm::Instruction& i : bb)
@@ -709,22 +710,60 @@ bool bitcast_vector_removal(llvm::Function& function)
                   }
                }
             }
+         } else if (llvm::LoadInst *load_inst = llvm::dyn_cast<llvm::LoadInst>(&i)) {
+            if(llvm::BitCastOperator* bitcast_op = llvm::dyn_cast<llvm::BitCastOperator>(load_inst->getPointerOperand()))
+            {
+               unsigned long long src_ty_size = DL.getTypeSizeInBits(bitcast_op->getSrcTy()->getPointerElementType());
+               unsigned long long dest_ty_size = DL.getTypeSizeInBits(bitcast_op->getDestTy()->getPointerElementType());
+
+               if(dest_ty_size < src_ty_size)
+               {
+                  std::vector<unsigned long long> gepi_idxs;
+
+                  bool can_simplify = compute_gepi_idxs_rec(bitcast_op->getSrcTy()->getPointerElementType(), bitcast_op->getDestTy()->getPointerElementType(), 0, gepi_idxs);
+
+                  if(can_simplify)
+                  {
+                     llvm::ConstantInt *first_idx = llvm::dyn_cast<llvm::ConstantInt>(llvm::Constant::getIntegerValue(llvm::Type::getInt32Ty(function.getContext()), llvm::APInt(32, 0)));
+                     sequential_access_vec.push_back(std::make_tuple(load_inst, first_idx, bitcast_op, gepi_idxs));
+                  }
+               }
+            }
+         } else if (llvm::StoreInst *store_inst = llvm::dyn_cast<llvm::StoreInst>(&i)) {
+            if(llvm::BitCastOperator* bitcast_op = llvm::dyn_cast<llvm::BitCastOperator>(store_inst->getPointerOperand()))
+            {
+               unsigned long long src_ty_size = DL.getTypeSizeInBits(bitcast_op->getSrcTy()->getPointerElementType());
+               unsigned long long dest_ty_size = DL.getTypeSizeInBits(bitcast_op->getDestTy()->getPointerElementType());
+
+               if(dest_ty_size < src_ty_size)
+               {
+                  std::vector<unsigned long long> gepi_idxs;
+
+                  bool can_simplify = compute_gepi_idxs_rec(bitcast_op->getSrcTy()->getPointerElementType(), bitcast_op->getDestTy()->getPointerElementType(), 0, gepi_idxs);
+
+                  if(can_simplify)
+                  {
+                     llvm::ConstantInt *first_idx = llvm::dyn_cast<llvm::ConstantInt>(llvm::Constant::getIntegerValue(llvm::Type::getInt32Ty(function.getContext()), llvm::APInt(32, 0)));
+                     sequential_access_vec.push_back(std::make_tuple(store_inst, first_idx, bitcast_op, gepi_idxs));
+                  }
+               }
+            }
          }
       }
    }
 
    for(const auto& sequential_tuple : sequential_access_vec)
    {
-      llvm::GEPOperator* gep_op;
+      llvm::Value* last_inst;
       llvm::ConstantInt* first_idx;
       llvm::BitCastOperator* bitcast_op;
       std::vector<unsigned long long> gepi_idxs;
 
-      std::tie(gep_op, first_idx, bitcast_op, gepi_idxs) = sequential_tuple;
+      std::tie(last_inst, first_idx, bitcast_op, gepi_idxs) = sequential_tuple;
 
       std::vector<llvm::Value*> gepi_idxs_val_vec;
 
-      std::string gepi_name = gep_op->getName().str() + ".srgepi";
+      std::string gepi_name = last_inst->getName().str() + ".srgepi";
       for(unsigned long long idx : gepi_idxs)
       {
          llvm::ConstantInt* c_idx = llvm::ConstantInt::get(first_idx->getType(), idx, false);
@@ -732,16 +771,30 @@ bool bitcast_vector_removal(llvm::Function& function)
          gepi_name += "." + std::to_string(idx);
       }
 
-      for(unsigned long long idx = 2; idx < gep_op->getNumOperands(); ++idx)
-      {
-         gepi_idxs_val_vec.push_back(gep_op->getOperand(idx));
+      if (llvm::GEPOperator *gepop = llvm::dyn_cast<llvm::GEPOperator>(last_inst)) {
+         for (unsigned long long idx = 2; idx < gepop->getNumOperands(); ++idx) {
+            gepi_idxs_val_vec.push_back(gepop->getOperand(idx));
+         }
       }
 
-      llvm::Instruction* next_inst = llvm::dyn_cast<llvm::Instruction>(gep_op->use_begin()->getUser());
+      llvm::Instruction* next_inst = nullptr;
+      if(llvm::GEPOperator* gepi = llvm::dyn_cast<llvm::GEPOperator>(last_inst)) {
+         next_inst = llvm::dyn_cast<llvm::Instruction>(gepi->use_begin()->getUser());;
+      } else if(llvm::Instruction* inst = llvm::dyn_cast<llvm::Instruction>(last_inst)) {
+         next_inst = inst;
+      }
+
       llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::Create(nullptr, bitcast_op->getOperand(0), gepi_idxs_val_vec, gepi_name, next_inst);
 
-      gep_op->replaceAllUsesWith(new_gepi);
-      if(llvm::GetElementPtrInst* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(gep_op))
+      if(llvm::GEPOperator* gepi = llvm::dyn_cast<llvm::GEPOperator>(last_inst)) {
+         last_inst->replaceAllUsesWith(new_gepi);
+      } else if(llvm::LoadInst* load_inst = llvm::dyn_cast<llvm::LoadInst>(last_inst)) {
+         load_inst->setOperand(load_inst->getPointerOperandIndex(), new_gepi);
+      } else if(llvm::StoreInst* store_inst = llvm::dyn_cast<llvm::StoreInst>(last_inst)) {
+         store_inst->setOperand(store_inst->getPointerOperandIndex(), new_gepi);
+      }
+
+      if(llvm::GetElementPtrInst* gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(last_inst))
       {
          if(gepi->getNumUses() == 0)
          {
@@ -760,6 +813,36 @@ bool bitcast_vector_removal(llvm::Function& function)
    return !sequential_access_vec.empty();
 }
 
+bool remove_lifetime(llvm::Function& function)
+{
+   std::vector<llvm::Instruction*> intrinsic_to_remove;
+
+   for(llvm::BasicBlock& bb : function)
+   {
+      for(llvm::Instruction& i : bb)
+      {
+         if (llvm::CallInst *call_inst = llvm::dyn_cast<llvm::CallInst>(&i)) {
+            llvm::Function *called_function = call_inst->getCalledFunction();
+
+            if (called_function) {
+               if (called_function->getIntrinsicID() == llvm::Intrinsic::ID::lifetime_start) {
+                  intrinsic_to_remove.push_back(call_inst);
+               }
+               if (called_function->getIntrinsicID() == llvm::Intrinsic::ID::lifetime_end) {
+                  intrinsic_to_remove.push_back(call_inst);
+               }
+            }
+         }
+      }
+   }
+
+   for (llvm::Instruction *instr : intrinsic_to_remove) {
+      instr->eraseFromParent();
+   }
+
+   return !intrinsic_to_remove.empty();
+}
+
 bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
 {
    switch(optimization_selection)
@@ -770,6 +853,8 @@ bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
          return chunk_operations_lowering(function);
       case SROA_bitcastVectorRemoval:
          return bitcast_vector_removal(function);
+      case SROA_removeLifetime:
+         return remove_lifetime(function);
       default:
          llvm::errs() << "ERR No optimization found\n";
          exit(-1);
@@ -790,4 +875,9 @@ GepiCanonicalizationPass* createChunkOperationsLoweringPass()
 GepiCanonicalizationPass* createBitcastVectorRemovalPass()
 {
    return new GepiCanonicalizationPass(SROA_bitcastVectorRemoval);
+}
+
+GepiCanonicalizationPass* createRemoveIntrinsicPass()
+{
+   return new GepiCanonicalizationPass(SROA_removeLifetime);
 }
