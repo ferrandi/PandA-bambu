@@ -53,6 +53,8 @@
 #include <llvm/Transforms/Utils/Cloning.h>
 #include <stack>
 
+#include <cxxabi.h>
+
 #define DEBUG_TYPE "csroa"
 
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
@@ -86,6 +88,24 @@ std::string get_ty_string(llvm::Type *ty) {
     llvm::raw_string_ostream rso(str);
     ty->print(rso);
     return rso.str();
+}
+
+std::string getDemangled(const std::string& declname) {
+	int status;
+	char* demangled_outbuffer = abi::__cxa_demangle(declname.c_str(), nullptr, nullptr, &status);
+	if(status == 0) {
+		std::string res = declname;
+		if(std::string(demangled_outbuffer).find_last_of('(') != std::string::npos) {
+			res = demangled_outbuffer;
+			auto parPos = res.find('(');
+			assert(parPos != std::string::npos);
+			res = res.substr(0, parPos);
+		}
+		free(demangled_outbuffer);
+		return res;
+	}
+	assert(demangled_outbuffer == nullptr);
+	return declname;
 }
 
 class Utilities
@@ -3926,9 +3946,24 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
    //}
 }
 
+llvm::Function *get_top_function(llvm::Module &module, std::string top_name) {
+	// check if the translation unit has the top function name
+	for(auto& fun : module.getFunctionList()) {
+		if(!fun.isIntrinsic() && !fun.isDeclaration()) {
+			auto funName = fun.getName();
+			auto demangled = getDemangled(funName);
+			if(!fun.hasInternalLinkage() && (funName == top_name || demangled == top_name)) {
+				return &fun;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
 bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 {
-   llvm::Function* kernel_function = module.getFunction(kernel_name);
+   llvm::Function* kernel_function = get_top_function(module, kernel_name);
 #ifdef DEBUG_CSROA
    recorded_expanded_aggregates.clear();
 #endif
