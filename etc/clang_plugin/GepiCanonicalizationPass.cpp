@@ -142,8 +142,8 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
       {
          v->print(llvm::errs());
       }
-      llvm::GetElementPtrInst* load_gep_inst = llvm::GetElementPtrInst::Create(nullptr, load_ptr, gepi_value_idxs, gepi_name, load_inst);
-      llvm::GetElementPtrInst* store_gep_inst = llvm::GetElementPtrInst::Create(nullptr, store_ptr, gepi_value_idxs, gepi_name, store_inst);
+      llvm::GetElementPtrInst* load_gep_inst = llvm::GetElementPtrInst::CreateInBounds(nullptr, load_ptr, gepi_value_idxs, gepi_name, load_inst);
+      llvm::GetElementPtrInst* store_gep_inst = llvm::GetElementPtrInst::CreateInBounds(nullptr, store_ptr, gepi_value_idxs, gepi_name, store_inst);
 
       llvm::LoadInst* lowered_load = new llvm::LoadInst(load_gep_inst, "ccload." + gepi_name, load_inst);
       llvm::StoreInst* lowered_store = new llvm::StoreInst(lowered_load, store_gep_inst, store_inst);
@@ -216,7 +216,7 @@ void recursive_init_lowering(llvm::Type* type, llvm::ConstantInt* init_value, st
          gepi_value_idxs.push_back(llvm::ConstantInt::get(llvm::IntegerType::get(store_ptr->getContext(), 32), idx));
       }
 
-      llvm::GetElementPtrInst* store_gep_inst = llvm::GetElementPtrInst::Create(nullptr, store_ptr, gepi_value_idxs, gepi_name, store_inst);
+      llvm::GetElementPtrInst* store_gep_inst = llvm::GetElementPtrInst::CreateInBounds(nullptr, store_ptr, gepi_value_idxs, gepi_name, store_inst);
 
       llvm::APInt cast_ap_int = llvm::APInt(store_gep_inst->getType()->getPointerElementType()->getIntegerBitWidth(), init_value->getValue().getSExtValue());
       llvm::Constant* cast_init_val = llvm::ConstantInt::get(store_gep_inst->getType()->getPointerElementType(), cast_ap_int);
@@ -527,7 +527,7 @@ bool ptr_iterator_simplification(llvm::Function& function)
 
          std::string new_gepi_name = phi_node->getName().str() + ".gepi";
          // llvm::Type* gepi_type = llvm::cast<llvm::PointerType>(init_ptr->getType()->getScalarType())->getElementType();
-         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::Create(nullptr, base_ptr, idx_vec, new_gepi_name);
+         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr, base_ptr, idx_vec, new_gepi_name);
          new_gepi->insertAfter(get_last_phi(phi_node->getParent()));
 
          phi_node->replaceAllUsesWith(new_gepi);
@@ -784,7 +784,7 @@ bool bitcast_vector_removal(llvm::Function& function)
          next_inst = inst;
       }
 
-      llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::Create(nullptr, bitcast_op->getOperand(0), gepi_idxs_val_vec, gepi_name, next_inst);
+      llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr, bitcast_op->getOperand(0), gepi_idxs_val_vec, gepi_name, next_inst);
 
       if(llvm::GEPOperator* gepi = llvm::dyn_cast<llvm::GEPOperator>(last_inst)) {
          last_inst->replaceAllUsesWith(new_gepi);

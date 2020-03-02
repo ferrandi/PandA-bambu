@@ -2393,7 +2393,7 @@ static void gen_gepi_map(llvm::Value* gepi_base, llvm::Argument* arg, llvm::Use*
 
          std::string new_gepi_name = gepi_name + "." + std::to_string(idx);
 
-         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::Create(gepi_type, gepi_base, gepi_ops, new_gepi_name, llvm::dyn_cast<llvm::Instruction>(use->getUser()));
+         llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(gepi_type, gepi_base, gepi_ops, new_gepi_name, llvm::dyn_cast<llvm::Instruction>(use->getUser()));
          gepi_map[gepi_base].push_back(new_gepi);
          gen_gepi_map(new_gepi, arg, use, gepi_map, arg_map, arg_size_map, new_gepi_name);
 
@@ -3020,8 +3020,7 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
             llvm::errs() << "   Idx chain:\n";
             for(auto const& idx : idx_chain)
             {
-               llvm::errs() << "     Idx type: " << get_ty_string(idx.first) << "\n";
-               llvm::errs() << "     Val: " << get_val_string(idx.second) << "\n";
+               llvm::errs() << "     Val: " << get_val_string(idx.second) << "(" << get_ty_string(idx.first) << ")" << "\n";
             }
          }
          if(inst_chain.empty())
@@ -3036,6 +3035,22 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
                llvm::errs() << "   " << get_val_string(idx) << "\n";
             }
          }
+
+         idx_chain.erase(idx_chain.begin());
+         if(llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(base_address))
+         {
+            auto size_it = arg_dimensions_map.find(arg);
+
+            if(size_it != arg_dimensions_map.end() and !size_it->second.empty() and size_it->second.front() > 0)
+            {
+               // Nothing to do
+            }
+            else
+            {
+               idx_chain.erase(idx_chain.begin());
+            }
+         }
+
 
          if(idx_chain.empty())
          {
@@ -3053,20 +3068,6 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
             }
             else
             {
-               if(llvm::Argument* arg = llvm::dyn_cast<llvm::Argument>(base_address))
-               {
-                  auto size_it = arg_dimensions_map.find(arg);
-
-                  if(size_it != arg_dimensions_map.end() and !size_it->second.empty() and size_it->second.front() > 0)
-                  {
-                     // Nothing to do
-                  }
-                  else
-                  {
-                     idx_chain.erase(idx_chain.begin());
-                  }
-               }
-
                if(llvm::isa<llvm::CallInst>(ptr_u->getUser()) || llvm::isa<llvm::InvokeInst>(ptr_u->getUser()))
                {
                   llvm::Instruction* call_inst = llvm::dyn_cast<llvm::Instruction>(ptr_u->getUser());
@@ -3093,7 +3094,9 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
                         llvm::errs() << "ERR: Wrong decay\n";
                         exit(-1);
                      }
-                     idx_chain.pop_back();
+		        if (idx_chain.size() > 1) {
+                           idx_chain.pop_back();
+			}
                   }
                }
             }
@@ -3106,6 +3109,7 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
 
          if(exp_arg_it != exp_args_map.end())
          {
+            unsigned short bitwidth = 32;//idx_chain.back().second->getType()->getIntegerBitWidth();
             signed long long exp_arg_u_idx = llvm::dyn_cast<llvm::ConstantInt>(idx_chain.back().second)->getSExtValue();
             for(llvm::Argument* exp_arg_u : exp_arg_it->second)
             {
@@ -3114,13 +3118,13 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
                llvm::Value* exp_val = nullptr;
                if(has_expandable_base)
                {
-                  llvm::ConstantInt* c_idx = llvm::ConstantInt::get(base_address->getContext(), llvm::APInt(64, (unsigned long long)exp_arg_u_idx));
+                  llvm::ConstantInt* c_idx = llvm::ConstantInt::get(base_address->getContext(), llvm::APInt(bitwidth, (unsigned long long)exp_arg_u_idx));
                   exp_idx_chain.back() = std::make_pair(exp_arg_u->getType()->getPointerElementType(), c_idx);
                   exp_val = get_expanded_value_from_expandable_base(exp_args_map, exp_allocas_map, exp_globals_map, base_address, exp_idx_chain);
                }
                else
                {
-                  llvm::ConstantInt* c_idx = llvm::ConstantInt::get(base_address->getContext(), llvm::APInt(64, (unsigned long long)exp_arg_u_idx));
+                  llvm::ConstantInt* c_idx = llvm::ConstantInt::get(base_address->getContext(), llvm::APInt(bitwidth, (unsigned long long)exp_arg_u_idx));
                   exp_idx_chain.push_back(std::make_pair(exp_arg_u->getType()->getPointerElementType(), c_idx));
 
                   std::string gepi_name = base_address->getName().str() + ".gepi";
@@ -3132,7 +3136,7 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
                      gepi_idxs.push_back(idx.second);
                   }
 
-                  exp_val = llvm::GetElementPtrInst::Create(nullptr, base_address, gepi_idxs, gepi_name, call_inst);
+                  exp_val = llvm::GetElementPtrInst::CreateInBounds(nullptr, base_address, gepi_idxs, gepi_name, call_inst);
                }
 
                // Take care of array decay now
@@ -3153,7 +3157,7 @@ void process_arg_pointer(llvm::Use* ptr_u, llvm::BasicBlock*& new_bb, std::set<l
                         std::string gepi_name = exp_val->getName().str() + ".decay";
                         llvm::Type* gepi_type = exp_val->getType()->getPointerElementType();
 
-                        llvm::GetElementPtrInst* decay_gep_inst = llvm::GetElementPtrInst::Create(gepi_type, exp_val, gepi_ops, gepi_name, call_inst);
+                        llvm::GetElementPtrInst* decay_gep_inst = llvm::GetElementPtrInst::CreateInBounds(gepi_type, exp_val, gepi_ops, gepi_name, call_inst);
 
                         exp_val = decay_gep_inst;
                      }
