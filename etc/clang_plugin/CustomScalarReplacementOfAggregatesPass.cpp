@@ -421,14 +421,11 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
             exit(-1);
          }
 
-         std::string use_str;
-         llvm::raw_string_ostream use_rso(use_str);
-         ptr_use.getUser()->print(use_rso);
-         llvm::errs() << "WAR: Operand #" << ptr_use.getOperandNo() << "  of " << use_str << " cannot expand since non constant\n";
+         llvm::errs() << "WAR: Operand #" << ptr_use.getOperandNo() << "  of " << get_val_string(ptr_use.getUser()) << " cannot expand since non constant\n";
 
          return false;
       }
-      else if(is_allowed_intrinsic_call(call_inst))
+      else if(false and is_allowed_intrinsic_call(call_inst))
       {
          if(!operands_expandability_map.insert(std::make_pair(std::make_pair(call_trace, &ptr_use), true)).second)
          {
@@ -451,13 +448,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
 
             if(!op_exp)
             {
-               std::string use_str;
-               llvm::raw_string_ostream use_rso(use_str);
-               use.get()->print(use_rso);
-               std::string user_str;
-               llvm::raw_string_ostream user_rso(user_str);
-               ptr_use.getUser()->print(user_rso);
-               llvm::errs() << "WAR: Operand #" << ptr_use.getOperandNo() << "  of " << user_str << " cannot expand because of " << use_str << "\n";
+               llvm::errs() << "WAR: Operand #" << ptr_use.getOperandNo() << "  of " << get_val_string(ptr_use.getUser()) << " cannot expand because of " << get_val_string(ptr_use.get()) << "\n";
             }
          }
          call_trace.pop_back();
@@ -489,25 +480,13 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
             llvm::Instruction* call_inst = llvm::dyn_cast<llvm::Instruction>(use.getUser());
             if(!is_allowed_intrinsic_call(call_inst))
             {
-               std::string base_str;
-               llvm::raw_string_ostream base_rso(base_str);
-               base_ptr->print(base_rso);
-               std::string use_str;
-               llvm::raw_string_ostream use_rso(use_str);
-               use.getUser()->print(use_rso);
-               llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << use_str << "\n";
+               llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << get_val_string(use.getUser()) << "\n";
                return false;
             }
          }
          else
          {
-            std::string base_str;
-            llvm::raw_string_ostream base_rso(base_str);
-            base_ptr->print(base_rso);
-            std::string use_str;
-            llvm::raw_string_ostream use_rso(use_str);
-            use.get()->print(use_rso);
-            llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << use_str << "\n";
+            llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << get_val_string(use.get()) << "\n";
             return false;
          }
       }
@@ -516,13 +495,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
    }
    else
    {
-      std::string base_str;
-      llvm::raw_string_ostream base_rso(base_str);
-      base_ptr->print(base_rso);
-      std::string use_str;
-      llvm::raw_string_ostream use_rso(use_str);
-      ptr_use.getUser()->print(use_rso);
-      llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << use_str << "\n";
+      llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << get_val_string(ptr_use.getUser()) << "\n";
       return false;
    }
 }
@@ -571,6 +544,11 @@ void compute_allocas_expandability_rec(llvm::Instruction* call_inst, llvm::Funct
                   alloca_inst->print(base_rso);
                   llvm::errs() << "WAR: " << get_val_string(alloca_inst) << " (ty:" << get_ty_string(alloca_inst->getAllocatedType())<< ") cannot expand because of its size (" << size_msg << ")\n";
                }
+
+	       if (expandable_size and can_exp)
+	       {
+	       	  llvm::errs() << "INFO: " << get_val_string(alloca_inst) << " can be expanded successfully\n";
+	       }
             }
             else
             {
@@ -3962,7 +3940,6 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 
    if(sroa_phase == SROA_functionVersioning)
    {
-module.dump(); exit(-1);
       const llvm::DataLayout DL = module.getDataLayout();
 
       std::map<llvm::Instruction*, std::vector<llvm::Instruction*>> compact_callgraph;
