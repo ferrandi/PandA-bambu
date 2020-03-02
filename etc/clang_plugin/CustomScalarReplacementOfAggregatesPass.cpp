@@ -61,7 +61,7 @@
 
 static llvm::cl::opt<uint32_t> MaxNumScalarTypes("csroa-expanded-scalar-threshold", llvm::cl::Hidden, llvm::cl::init(64), llvm::cl::desc("Max amount of scalar types contained in a type for allowing disaggregation"));
 
-static llvm::cl::opt<uint32_t> MaxTypeByteSize("csroa-type-byte-size", llvm::cl::Hidden, llvm::cl::init(64), llvm::cl::desc("Max type size (in bytes) allowed for disaggregation"));
+static llvm::cl::opt<uint32_t> MaxTypeByteSize("csroa-type-byte-size", llvm::cl::Hidden, llvm::cl::init(256), llvm::cl::desc("Max type size (in bytes) allowed for disaggregation"));
 
 static llvm::cl::opt<uint32_t> CSROAInlineThreshold("csroa-inline-threshold", llvm::cl::Hidden, llvm::cl::init(200), llvm::cl::desc("number of maximum statements of the single called function after the inline is applied"));
 
@@ -495,7 +495,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
                std::string use_str;
                llvm::raw_string_ostream use_rso(use_str);
                use.getUser()->print(use_rso);
-               llvm::errs() << "WAR: " << base_ptr->getName() << "  cannot expand because of " << use_str << "\n";
+               llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << use_str << "\n";
                return false;
             }
          }
@@ -507,7 +507,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
             std::string use_str;
             llvm::raw_string_ostream use_rso(use_str);
             use.get()->print(use_rso);
-            llvm::errs() << "WAR: " << base_ptr->getName() << "  cannot expand because of " << use_str << "\n";
+            llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << use_str << "\n";
             return false;
          }
       }
@@ -522,7 +522,7 @@ bool check_ptr_expandability(llvm::Use& ptr_use, llvm::Value* base_ptr, std::map
       std::string use_str;
       llvm::raw_string_ostream use_rso(use_str);
       ptr_use.getUser()->print(use_rso);
-      llvm::errs() << "WAR: " << base_ptr->getName() << "  cannot expand because of " << use_str << "\n";
+      llvm::errs() << "WAR: " << get_val_string(base_ptr) << "  cannot expand because of " << use_str << "\n";
       return false;
    }
 }
@@ -569,7 +569,7 @@ void compute_allocas_expandability_rec(llvm::Instruction* call_inst, llvm::Funct
                   std::string base_str;
                   llvm::raw_string_ostream base_rso(base_str);
                   alloca_inst->print(base_rso);
-                  llvm::errs() << "WAR: " << alloca_inst->getName() << " (ty:" << get_ty_string(alloca_inst->getAllocatedType())<< ") cannot expand because of its size (" << size_msg << ")\n";
+                  llvm::errs() << "WAR: " << get_val_string(alloca_inst) << " (ty:" << get_ty_string(alloca_inst->getAllocatedType())<< ") cannot expand because of its size (" << size_msg << ")\n";
                }
             }
             else
@@ -679,7 +679,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
             globals_expandability_map.insert(std::make_pair(&global_var, expandable_size and can_exp));
             if(!expandable_size)
             {
-               llvm::errs() << "WAR: " << global_var.getName() << " (ty: " << get_ty_string(global_var.getType()) << ")  cannot expand because of its size (" << size_msg << ")\n";
+               llvm::errs() << "WAR: " << get_val_string(&global_var) << " (ty: " << get_ty_string(global_var.getType()) << ")  cannot expand because of its size (" << size_msg << ")\n";
             }
             call_trace.pop_back();
          }
@@ -691,7 +691,7 @@ void compute_aggregates_expandability(llvm::Function* kernel_function, llvm::Mod
       else
       {
          globals_expandability_map.insert(std::make_pair(&global_var, false));
-         llvm::errs() << "WAR: " << global_var.getName() << "  cannot expand because some uses out of worklist\n";
+         llvm::errs() << "WAR: " << get_val_string(&global_var) << "  cannot expand because some uses out of worklist\n";
       }
    }
 
@@ -1027,13 +1027,7 @@ void compute_op_exp_and_dims_rec(llvm::Instruction* call_inst, llvm::Instruction
 
                      if(!size_msg.empty())
                      {
-                        std::string user_str;
-                        llvm::raw_string_ostream user_rso(user_str);
-                        op_use.getUser()->print(user_rso);
-                        std::string use_str;
-                        llvm::raw_string_ostream use_rso(use_str);
-                        op_use.get()->print(use_rso);
-                        llvm::errs() << "WAR: " << use_str << " in " << user_str << "  cannot expand because of its size (" << size_msg << ")\n";
+                        llvm::errs() << "WAR: " << get_val_string(op_use.get()) << " in " << get_val_string(op_use.getUser()) << "  cannot expand because of its size (" << size_msg << ")\n";
                      }
                   }
                }
@@ -3957,10 +3951,18 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
    recorded_expanded_aggregates.clear();
 #endif
 
-   assert(kernel_function != nullptr && "Unknown kernel function!");
+   if(kernel_function == nullptr) {
+   	llvm::errs() << "Kernel function (" << kernel_name << ") not found! Possible values:\n";
+	for (llvm::Function &function : module) {
+	    llvm::errs() << "  " << function.getName() << "\n";
+	}
+
+	exit(-1);
+   }
 
    if(sroa_phase == SROA_functionVersioning)
    {
+module.dump(); exit(-1);
       const llvm::DataLayout DL = module.getDataLayout();
 
       std::map<llvm::Instruction*, std::vector<llvm::Instruction*>> compact_callgraph;
