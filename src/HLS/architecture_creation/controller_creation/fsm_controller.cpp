@@ -334,7 +334,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                   {
                      present_state[v][out_ports[s.second]] = 1;
                   }
-                  else if(loop_map[stg->CGetStateInfo(v)->loopId].find(std::get<0>(a)) != loop_map[stg->CGetStateInfo(v)->loopId].end())
+                  else if(loop_map[stg->CGetStateInfo(v)->loopId].find(std::get<0>(a)) != loop_map[stg->CGetStateInfo(v)->loopId].end() && stg->CGetStateInfo(v)->loopId != 0)
                   {
                      present_state[v][out_ports[s.second]] = 1;
                   }
