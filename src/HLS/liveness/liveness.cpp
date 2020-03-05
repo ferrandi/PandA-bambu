@@ -224,7 +224,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
    const CustomOrderedSet<vertex>& op2_run = get_state_where_run(op2);
 
    auto FB = HLSMgr->GetFunctionBehavior(HLS->functionId);
-   if(FB->is_pipelining_enabled())
+   if(FB->is_pipelining_enabled() && !FB->build_simple_pipeline())
    {
       const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
       unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);
@@ -236,7 +236,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
       auto loops = HLSMgr->GetFunctionBehavior(HLS->functionId)->GetLoops()->GetList();
       for(auto loop : loops)
       {
-         int initiation_time = 1; // to be read from parser
+         unsigned int initiation_time = FB->get_initiation_time();
          THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
          auto bbs = loop->get_blocks();
          bool cond1 = false;
@@ -271,7 +271,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
                std::queue<vertex> next_frontier;
                to_analyze.push(s1);
                vertex src;
-               int distance = 1;
+               unsigned int distance = 1;
                graph::out_edge_iterator out_edge, out_edge_end;
                while(to_analyze.size() > 0)
                {

@@ -74,7 +74,7 @@ values_scheme::~values_scheme() = default;
 void values_scheme::Initialize()
 {
    HLSFunctionStep::Initialize();
-   if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
+   if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       HLS->storage_value_information = StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
    else
       HLS->storage_value_information = StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId));
@@ -91,7 +91,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
    vertex current_vertex;
    vertex start_state = HLS->STG->get_entry_state();
    const std::list<vertex>& support = HLS->Rliv->get_support();
-   last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled());
+   last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline());
    next_unique_state get_next(HLS->STG->GetStg());
 
    const std::list<vertex>::const_iterator vEnd = support.end();
@@ -109,7 +109,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
             i++;
          }
       }
-      if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
+      if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       {
          std::list<vertex> running_ops = HLS->STG->GetStg()->GetStateInfo(*vIt)->executing_operations;
          const std::list<vertex>::const_iterator opEnd = running_ops.end();

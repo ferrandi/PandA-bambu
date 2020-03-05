@@ -231,7 +231,7 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
    if(unique_table.find(index) == unique_table.end())
    {
       unique_table[index] = generic_objRef(new register_obj(index));
-      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
+      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       {
          for(vertex v :HLS->Rliv->get_support())
          {
@@ -291,7 +291,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
          SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
-      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled() && stall_reg_table.find(i) != stall_reg_table.end())
+      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline() && stall_reg_table.find(i) != stall_reg_table.end())
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " also needs a stall register, allocating it...");
          name = "stall_" + name;
@@ -326,7 +326,7 @@ std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
    std::string register_type_name;
    std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-   if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
+   if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       register_type_name = register_STD;
    else if(synch_reset == "no")
       register_type_name = register_SE;

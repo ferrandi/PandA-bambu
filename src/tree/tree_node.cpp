@@ -714,6 +714,8 @@ function_decl::function_decl(unsigned int i)
       writing_memory(false),
       reading_memory(false),
       pipeline_enabled(false),
+      simple_pipeline(false),
+      initiation_time(1),
 #if HAVE_FROM_PRAGMA_BUILT
       omp_for_wrapper(0),
       omp_body_loop(false),
@@ -785,6 +787,26 @@ bool function_decl::is_pipelined()
 void function_decl::set_pipelining(bool v)
 {
    pipeline_enabled = v;
+}
+
+bool function_decl::is_simple_pipeline()
+{
+   return simple_pipeline;
+}
+
+void function_decl::set_simple_pipeline(bool v)
+{
+   simple_pipeline = v;
+}
+
+unsigned int function_decl::get_initiation_time()
+{
+   return initiation_time;
+}
+
+void function_decl::set_initiation_time(unsigned int time)
+{
+   initiation_time = time;
 }
 
 void function_type::visit(tree_node_visitor* const v) const

@@ -1337,14 +1337,14 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(op);
    const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
-   last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled());
+   last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline());
    next_unique_state get_next(HLS->STG->GetStg());
    for(auto rs_it = running_states.begin(); rs_it_end != rs_it; ++rs_it)
    {
       unsigned int tree_var_state_in;
       if(!is_not_a_phi)
       {
-         THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled(), "A pipelined function should not contain any phi operations");
+         THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline(), "A pipelined function should not contain any phi operations");
          const StateInfoConstRef state_info = is_PC ? StateInfoConstRef() : HLS->STG->GetStg()->CGetStateInfo(*rs_it);
          if(state_info && state_info->is_duplicated && !state_info->all_paths)
          {
@@ -1383,7 +1383,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
 
          if(!is_not_a_phi)
          {
-            THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled(), "A pipelined function should not contain any phi operations");
+            THROW_ASSERT(not HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline(), "A pipelined function should not contain any phi operations");
             vertex src_state = *s_in_it;
             if(src_state == NULL_VERTEX)
                std::swap(src_state, state);
@@ -1459,7 +1459,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
          else
          {
             vertex tgt_state = *s_in_it;
-            if(tree_helper::is_parameter(TreeM, tree_var) && not HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled())
+            if(tree_helper::is_parameter(TreeM, tree_var) && not HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
             {
                unsigned int base_index = extract_parm_decl(tree_var, TreeM);
                const generic_objRef fu_src_obj = input_ports[base_index];
@@ -1530,7 +1530,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
                      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                                    "       - register: " << r_index << " from " << HLS->Rliv->get_name(state) + " to state " + HLS->Rliv->get_name(tgt_state) + " for " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->PrintVariable(tree_var));
                      reg_obj = HLS->Rreg->get(r_index);
-                     THROW_ASSERT(not(reg_obj == fu_obj && HLSMgr->GetFunctionBehavior(HLS->functionId)->is_pipelining_enabled()), "There can be no direct forwarding in pipelining");
+                     THROW_ASSERT(not(reg_obj == fu_obj && HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline()), "There can be no direct forwarding in pipelining");
                      if(reg_obj != fu_obj)
                      {
                         HLS->Rconn->add_data_transfer(reg_obj, fu_obj, port_num, port_index, data_transfer(tree_var, precision, state, tgt_state, op));
@@ -1628,7 +1628,7 @@ void mux_connection_binding::connect_to_registers(vertex op, const OpGraphConstR
             }
          }
       }
-      if(HLSMgr->CGetFunctionBehavior(funId)->is_pipelining_enabled())
+      if(HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline())
       {
          vertex target;
          vertex previous;

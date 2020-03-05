@@ -56,6 +56,8 @@
 static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMap;
 static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMapArraySize;
 static std::map<std::string, std::vector<clang::SourceLocation>> HLS_pipeline_PragmaMap;
+static std::map<std::string, std::vector<clang::SourceLocation>> HLS_simple_pipeline_PragmaMap;
+static std::map<std::string, std::map<clang::SourceLocation, std::string>> HLS_stallable_pipeline_PragmaMap;
 
 namespace clang
 {
@@ -76,6 +78,8 @@ namespace clang
       std::map<std::string, std::vector<std::string>> HLS_interfaceMap;
       std::map<std::string, std::map<std::string, std::string>> HLS_interfaceArraySizeMap;
       std::set<std::string> HLS_pipelineSet;
+      std::set<std::string> HLS_simple_pipelineSet;
+      std::map<std::string, std::string> HLS_stallable_pipelineMap;
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
       {
@@ -179,16 +183,27 @@ namespace clang
             {
                continue;
             }
-            std::string is_pipelined;
+            std::string is_pipelined = "no";
+            std::string simple_pipeline = "no";
+            std::string initiation_time = "1";
             if(HLS_pipelineSet.find(function_name) != HLS_pipelineSet.end())
             {
                is_pipelined = "yes";
+               if(HLS_simple_pipelineSet.find(function_name) != HLS_simple_pipelineSet.end())
+               {
+                  simple_pipeline = "yes";
+               }
+               else if(HLS_stallable_pipelineMap.find(function_name) != HLS_stallable_pipelineMap.end())
+               {
+                  initiation_time = HLS_stallable_pipelineMap.find(function_name)->second;
+               }
+               else
+               {
+                  DiagnosticsEngine& D = CI.getDiagnostics();
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "The defined pipeline isn't simple nor stallable"));
+               }
             }
-            else
-            {
-               is_pipelined = "no";
-            }
-            stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined << "\"/>\n";
+            stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined << "\" is_simple=\"" << simple_pipeline << "\" initiation_time=\"" << initiation_time << "\"/>\n";
          }
          stream << "</module>\n";
       }
@@ -452,6 +467,39 @@ namespace clang
                      HLS_pipelineSet.insert(funName);
                   }
                }
+               if(HLS_simple_pipeline_PragmaMap.find(filename) != HLS_simple_pipeline_PragmaMap.end())
+               {
+                  if(prevLoc.find(filename) != prevLoc.end())
+                  {
+                     prev = prevLoc.find(filename)->second;
+                  }
+                  for(auto& loc : HLS_simple_pipeline_PragmaMap.find(filename)->second)
+                  {
+                     if((prev.isInvalid() || prev < loc) && (loc < locEnd))
+                     {
+                        HLS_simple_pipelineSet.insert(funName);
+                     }
+                  }
+               }
+               else if(HLS_stallable_pipeline_PragmaMap.find(filename) != HLS_stallable_pipeline_PragmaMap.end())
+               {
+                  if(prevLoc.find(filename) != prevLoc.end())
+                  {
+                     prev = prevLoc.find(filename)->second;
+                  }
+                  for(auto& loc : HLS_stallable_pipeline_PragmaMap.find(filename)->second)
+                  {
+                     if((prev.isInvalid() || prev < loc.first) && (loc.first < locEnd))
+                     {
+                        HLS_stallable_pipelineMap[funName] = HLS_stallable_pipeline_PragmaMap[filename][loc.first];
+                     }
+                  }
+               }
+               else
+               {
+                  DiagnosticsEngine& D = CI.getDiagnostics();
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "Pipeline parser has an error"));
+               }
             }
          }
       }
@@ -580,10 +628,10 @@ namespace clang
       }
    };
 
-   class HLS_pipeline_PragmaHandler : public PragmaHandler
+   class HLS_simple_pipeline_PragmaHandler : public PragmaHandler
    {
     public:
-      HLS_pipeline_PragmaHandler() : PragmaHandler("HLS_pipeline")
+      HLS_simple_pipeline_PragmaHandler() : PragmaHandler("HLS_simple_pipeline")
       {
       }
 
@@ -603,8 +651,44 @@ namespace clang
             D.Report(PragmaTok.getLocation(), ID);
          }
          HLS_pipeline_PragmaMap[filename].push_back(loc);
+         HLS_simple_pipeline_PragmaMap[filename].push_back(loc);
       }
    };
+   
+   class HLS_stallable_pipeline_PragmaHandler : public PragmaHandler
+   {
+    public:
+      HLS_stallable_pipeline_PragmaHandler() : PragmaHandler("HLS_stallable_pipeline")
+      {
+      }
+
+      void HandlePragma(Preprocessor& PP, PragmaIntroducerKind /*Introducer*/, Token& PragmaTok) override
+      {
+         Token Tok{};
+         auto loc = PragmaTok.getLocation();
+         auto& SM = PP.getSourceManager();
+         auto filename = SM.getPresumedLoc(loc, false).getFilename();
+         std::string par;
+         std::string time;
+         PP.Lex(Tok);
+         par = PP.getSpelling(Tok);
+         if(Tok.isNot(tok::numeric_constant))
+         {
+            DiagnosticsEngine& D = PP.getDiagnostics();
+            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline lacks initiation time definition");
+            D.Report(PragmaTok.getLocation(), ID);
+         }
+         time = PP.getSpelling(Tok);
+         if(Tok.isNot(tok::eod))
+         {
+            DiagnosticsEngine& D = PP.getDiagnostics();
+            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
+            D.Report(PragmaTok.getLocation(), ID);
+         }
+         HLS_pipeline_PragmaMap[filename].push_back(loc);
+         HLS_stallable_pipeline_PragmaMap[filename][loc] = time;
+       }
+    };
 
    class CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) : public PluginASTAction
    {
@@ -621,7 +705,8 @@ namespace clang
          }
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_pipeline_PragmaHandler());
+         PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
+         PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
          return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
       }
 

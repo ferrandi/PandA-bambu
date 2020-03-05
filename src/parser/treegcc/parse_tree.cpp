@@ -102,6 +102,8 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                   {
                      std::string fname;
                      std::string is_pipelined = "null";
+                     std::string simple_pipeline = "null";
+                     std::string initiation_time = "null";
                      for(auto attr : Enode->get_attributes())
                      {
                         std::string key = attr->get_name();
@@ -110,11 +112,19 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                            fname = value;
                         if(key == "is_pipelined")
                            is_pipelined = value;
+                        if(key == "is_simple")
+                           simple_pipeline = value;
+                        if(key == "initiation_time")
+                           initiation_time = value;
                      }
                      if(fname == "")
                         THROW_ERROR("malformed pipeline infer file");
                      if(is_pipelined.compare("yes") && is_pipelined.compare("no"))
                         THROW_ERROR("malformed pipeline infer file");
+                     if(simple_pipeline.compare("yes") && simple_pipeline.compare("no"))
+                        THROW_ERROR("malformed pipeline infer file");
+                     if(is_pipelined.compare("yes") && !simple_pipeline.compare("yes"))
+                        THROW_ERROR("simple pipeline but not enabled");
                      for(const auto& iterArg : Enode->get_children())
                      {
                         const auto* EnodeArg = GetPointer<const xml_element>(iterArg);
@@ -125,6 +135,8 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                      auto my_node = GetPointer<function_decl>(TM->get_tree_node_const(findex));
                      THROW_ASSERT(my_node->get_kind() == function_decl_K, "Not a function_decl");
                      my_node->set_pipelining(!is_pipelined.compare("yes"));
+                     my_node->set_simple_pipeline(!simple_pipeline.compare(("yes")));
+                     my_node->set_initiation_time((unsigned int)std::stoi(initiation_time));
                   }
                }
             }

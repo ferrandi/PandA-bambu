@@ -173,7 +173,9 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       has_globals(false),
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
-      pipeline_enabled(),
+      pipeline_enabled(false),
+      simple_pipeline(false),
+      initiation_time(1),
       bb_reachability(),
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),
@@ -195,6 +197,8 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K, "Called function_behavior on a node which is not a funcion_decl");
       function_decl* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
       pipeline_enabled = decl_node->is_pipelined();
+      simple_pipeline = decl_node->is_simple_pipeline();
+      initiation_time = decl_node->get_initiation_time();
    }
 }
 

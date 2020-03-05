@@ -857,7 +857,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing non-shared resources");
    /// compute non-shared resources
    std::map<unsigned int, unsigned int> n_shared_fu;
-   HLS->Rliv->compute_conflicts_with_reachability(HLS);
+   //HLS->Rliv->compute_conflicts_with_reachability(HLS);
    for(const auto operation : fdfg->CGetOperations())
    {
       fu_unit = fu->get_assign(operation);

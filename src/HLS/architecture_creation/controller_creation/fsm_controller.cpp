@@ -231,15 +231,20 @@ void fsm_controller::create_state_machine(std::string& parse)
    std::map<unsigned int, vertex> loop_last_state;
 
    // group vertices per loopId
-   for(const auto& v : working_list)
+   if(FB->is_pipelining_enabled() && !FB->build_simple_pipeline())
    {
-      auto info = astg->CGetStateInfo(v);
-      if(info->loopId != 0)
+      for(const auto& v : working_list)
       {
-         loop_map[info->loopId].insert(v);
+         auto info = astg->CGetStateInfo(v);
+         if(info->loopId != 0)
+         {
+            loop_map[info->loopId].insert(v);
+            PRINT_MSG("Identified loop number " + std::to_string(info->loopId));
+         }
       }
    }
 
+   // detect entry and exit node for each loop
    for(auto loop : loop_map)
    {
       vertex loop_first_state = first_state;
@@ -289,8 +294,9 @@ void fsm_controller::create_state_machine(std::string& parse)
       state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
 
-      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end())
+      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end() || stg->CGetStateInfo(v)->loopId == 0)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing loop " + std::to_string(stg->CGetStateInfo(v)->loopId));
          present_state[v] = std::vector<long long int>(out_num, 0);
          analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
          if(selectors.find(conn_binding::IN) != selectors.end())
@@ -462,7 +468,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          continue;
 
       // skip all but one state per loop
-      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end())
+      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end() || stg->CGetStateInfo(v)->loopId == 0)
       {
          analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
 

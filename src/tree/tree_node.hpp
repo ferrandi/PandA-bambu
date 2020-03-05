@@ -2790,6 +2790,12 @@ struct function_decl : public decl_node, public attr
    /// True if pipelining is enabled for the function
    bool pipeline_enabled;
 
+   /// True if the pipeline does not contain any unbounded operation
+   bool simple_pipeline;
+
+   /// Used for pipelined with unbounded operations
+   unsigned int initiation_time;
+
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
    size_t omp_for_wrapper;
@@ -2908,6 +2914,14 @@ struct function_decl : public decl_node, public attr
    bool is_pipelined();
 
    void set_pipelining(bool v);
+
+   bool is_simple_pipeline();
+
+   void set_simple_pipeline(bool v);
+
+   unsigned int get_initiation_time();
+
+   void set_initiation_time(unsigned int time);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(function_decl)
