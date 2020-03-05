@@ -3974,7 +3974,7 @@ std::ostream& operator<<(std::ostream& OS, const ValueRange* BI)
 /// given by the bounds of a program name, e.g.: [-inf, ub(b) + 1].
 class SymbRange : public ValueRange
 {
-   private:
+ private:
    /// The bound. It is a node which limits the interval of this range.
    const tree_nodeConstRef bound;
    /// The predicate of the operation in which this interval takes part.
@@ -3982,7 +3982,7 @@ class SymbRange : public ValueRange
    /// after we fix the intersects.
    kind pred;
 
-   public:
+ public:
    SymbRange(const RangeConstRef& range, const tree_nodeConstRef& bound, kind pred);
    ~SymbRange() = default;
    SymbRange(const SymbRange&) = delete;
@@ -4205,11 +4205,11 @@ class ConditionalValueRange
 {
  private:
    const tree_nodeConstRef V;
-   std::map<unsigned int, ValueRangeRef> BBsuccs;
+   std::map<unsigned int, ValueRangeRef> bbVR;
 
  public:
-   ConditionalValueRange(const tree_nodeConstRef& _V, const std::map<unsigned int, ValueRangeRef>& _BBsuccs) : V(_V), BBsuccs(_BBsuccs) {}
-   ConditionalValueRange(const tree_nodeConstRef& _V, unsigned int TrueBBI, unsigned int FalseBBI, const ValueRangeRef& TrueVR, const ValueRangeRef& FalseVR) : V(_V), BBsuccs({{FalseBBI, FalseVR}, {TrueBBI, TrueVR}}) {}
+   ConditionalValueRange(const tree_nodeConstRef& _V, const std::map<unsigned int, ValueRangeRef>& _bbVR) : V(_V), bbVR(_bbVR) {}
+   ConditionalValueRange(const tree_nodeConstRef& _V, unsigned int TrueBBI, unsigned int FalseBBI, const ValueRangeRef& TrueVR, const ValueRangeRef& FalseVR) : V(_V), bbVR({{FalseBBI, FalseVR}, {TrueBBI, TrueVR}}) {}
    ~ConditionalValueRange() = default;
    ConditionalValueRange(const ConditionalValueRange&) = default;
    ConditionalValueRange(ConditionalValueRange&&) = default;
@@ -4217,18 +4217,21 @@ class ConditionalValueRange
    /// Get the interval associated to the switch case idx
    const std::map<unsigned int, ValueRangeRef>& getVR() const
    {
-      return BBsuccs;
+      return bbVR;
    }
    /// Get the value associated to the switch.
    const tree_nodeConstRef& getVar() const
    {
       return V;
    }
-   /// Change the interval associated to the true side of the branch
-   void setVR(unsigned int bbi, const ValueRangeRef& Itv)
+   /// Add an interval associated to a new basic block
+   void addVR(unsigned int bbi, const ValueRangeRef& cvr)
    {
-      THROW_ASSERT(static_cast<bool>(BBsuccs.count(bbi)), "Index out of bound");
-      this->BBsuccs.at(bbi) = Itv;
+      if(!static_cast<bool>(bbVR.count(bbi)))
+      {
+         bbVR.insert(std::make_pair(bbi, cvr));
+      }
+      // TODO: maybe find some way to combine two ValueRange instances (difficult because of symbolic ranges)
    }
 };
 
@@ -4441,8 +4444,18 @@ class NodeContainer
 
    void addConditionalValueRange(const ConditionalValueRange&& cvr)
    {
-      THROW_ASSERT(!static_cast<bool>(_cvrMap.count(cvr.getVar())), "Conditional value-ranges already present for " + GET_CONST_NODE(cvr.getVar())->ToString());
-      _cvrMap.insert({cvr.getVar(), cvr});
+      auto cvrIt = _cvrMap.find(cvr.getVar());
+      if(cvrIt != _cvrMap.end())
+      {
+         for(const auto& [BBI, vr] : cvr.getVR())
+         {
+            cvrIt->second.addVR(BBI, vr);
+         }
+      }
+      else
+      {
+         _cvrMap.insert(std::make_pair(cvr.getVar(), cvr));
+      }
    }
 
    const VCMap& getVCMap() const
@@ -7467,7 +7480,7 @@ class ConstraintGraph : public NodeContainer
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
 
                // Symbolic intervals for op0
-               const auto STOp0 =ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
+               const auto STOp0 = ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
                switchSSAMap[cmp_op->op0].insert(std::make_pair(BBI, STOp0));
 
                // Symbolic intervals for operand of op0 (if op0 is a cast instruction)
@@ -7479,13 +7492,13 @@ class ConstraintGraph : public NodeContainer
                      const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression" + cast_inst->ToString());
 
-                     const auto STOp0_0 =ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
+                     const auto STOp0_0 = ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
                      switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, STOp0_0));
                   }
                }
 
                // Symbolic intervals for op1
-               const auto STOp1 =ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
+               const auto STOp1 = ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
                switchSSAMap[cmp_op->op1].insert(std::make_pair(BBI, STOp1));
 
                // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
@@ -7497,7 +7510,7 @@ class ConstraintGraph : public NodeContainer
                      const auto* cast_inst = GetPointer<const unary_expr>(GET_CONST_NODE(VDef->op1));
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
-                     const auto STOp1_1 =ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
+                     const auto STOp1_1 = ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
                      switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, STOp1_1));
                   }
                }
