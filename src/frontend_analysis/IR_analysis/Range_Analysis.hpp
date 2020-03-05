@@ -310,8 +310,16 @@ class RealRange : public Range
    RangeRef toFloat32() const;
 };
 
+enum SolverType
+{
+  st_Cousot,
+  st_Crop
+};
+
 class RangeAnalysis : public ApplicationFrontendFlowStep
 {
+   SolverType solverType;
+
    ConstraintGraphRef CG;
    /// True if dead code elimination step must be restarted
    bool dead_code_restart;

@@ -8880,7 +8880,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
-   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), dead_code_restart(false)
+   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), solverType(st_Cousot), dead_code_restart(false)
 #ifndef NDEBUG
    , graph_debug(DEBUG_LEVEL_NONE), iteration(0), debug_mode(RA_DEBUG_NONE)
 #endif
@@ -8916,6 +8916,10 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       Meet::debug_level = debug_level;
    }
    #endif
+   if(ra_mode.contains("crop"))
+   {
+      solverType = st_Crop;
+   }
    if(ra_mode.contains("noESSA"))
    {
       requireESSA = false;
@@ -8948,12 +8952,28 @@ void RangeAnalysis::Initialize()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
    dead_code_restart = false;
+   switch(solverType)
+   {
+      case st_Cousot:
    CG.reset(new Cousot(AppM, 
    #ifndef NDEBUG
       debug_level, graph_debug));
    #else
       DEBUG_LEVEL_NONE, DEBUG_LEVEL_NONE));
    #endif
+         break;
+      case st_Crop:
+         CG.reset(new CropDFS(AppM,
+            #ifndef NDEBUG
+               debug_level, graph_debug));
+            #else
+               DEBUG_LEVEL_NONE, DEBUG_LEVEL_NONE));
+            #endif
+         break;
+      default:
+         THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
+         break;
+   }
 }
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> 
