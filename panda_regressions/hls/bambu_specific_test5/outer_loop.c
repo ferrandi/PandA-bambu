@@ -1,7 +1,7 @@
 int pipelined_function(int a, int b, int c)
 {
 
-   #pragma HLS_pipeline
+   #pragma HLS_simple_pipeline
    
    return (a - b) * c;
    

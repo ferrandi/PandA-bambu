@@ -1,7 +1,7 @@
 int called_sumprod(int a, int b, int c, int d)
 {
 
-   #pragma HLS_pipeline
+   #pragma HLS_simple_pipeline
    
    return a + b + c * d;
 }
@@ -9,7 +9,7 @@ int called_sumprod(int a, int b, int c, int d)
 int main_caller(int a, int b, int c, int d, int e)
 {
 
-   #pragma HLS_pipeline
+   #pragma HLS_simple_pipeline
    
    int aa = called_sumprod(a, b, c, d);
    int ab = called_sumprod(b, c, d, e);

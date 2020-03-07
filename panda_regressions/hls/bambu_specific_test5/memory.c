@@ -1,7 +1,7 @@
 int memory(int base, int i)
 {
 
-   #pragma HLS_pipeline
+   #pragma HLS_simple_pipeline
    
    static char str[] = {'a','b','c','d'};
    int flag = 0;
