@@ -75,14 +75,15 @@ class APInt
 
  public:
    template <typename T>
-   APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) : _data(val,nullptr)
+   APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr)
    {
+     _data = val;
    }
 
    APInt();
    APInt(const APInt& other);
    APInt& operator=(const APInt& other);
-   ~APInt() = default;
+   ~APInt();
 
    friend bool operator<(const APInt& lhs, const APInt& rhs);
    friend bool operator>(const APInt& lhs, const APInt& rhs);
@@ -210,8 +211,8 @@ class Range
    virtual bool isReal() const;
    bool operator==(const Range& other) const = delete;
    bool operator!=(const Range& other) const = delete;
-   bool isSameType(RangeConstRef other) const;
-   virtual bool isSameRange(RangeConstRef other) const;
+   bool isSameType(const RangeConstRef& other) const;
+   virtual bool isSameRange(const RangeConstRef& other) const;
    virtual bool isFullSet() const;
    virtual bool isSingleElement() const;
    virtual bool isConstant() const;
@@ -220,47 +221,47 @@ class Range
    std::string ToString() const;
 
    /* Arithmetic operations */
-   RangeRef add(RangeConstRef other) const;
-   RangeRef sub(RangeConstRef other) const;
-   RangeRef mul(RangeConstRef other) const;
-   RangeRef udiv(RangeConstRef other) const;
-   RangeRef sdiv(RangeConstRef other) const;
-   RangeRef urem(RangeConstRef other) const;
-   RangeRef srem(RangeConstRef other) const;
-   RangeRef shl(RangeConstRef other) const;
-   RangeRef shr(RangeConstRef other, bool sign) const;
+   RangeRef add(const RangeConstRef& other) const;
+   RangeRef sub(const RangeConstRef& other) const;
+   RangeRef mul(const RangeConstRef& other) const;
+   RangeRef udiv(const RangeConstRef& other) const;
+   RangeRef sdiv(const RangeConstRef& other) const;
+   RangeRef urem(const RangeConstRef& other) const;
+   RangeRef srem(const RangeConstRef& other) const;
+   RangeRef shl(const RangeConstRef& other) const;
+   RangeRef shr(const RangeConstRef& other, bool sign) const;
    virtual RangeRef abs() const;
    virtual RangeRef negate() const;
 
    /* Bitwise operations */
    RangeRef Not() const;
-   RangeRef And(RangeConstRef other) const;
-   RangeRef Or(RangeConstRef other) const;
-   RangeRef Xor(RangeConstRef other) const;
+   RangeRef And(const RangeConstRef& other) const;
+   RangeRef Or(const RangeConstRef& other) const;
+   RangeRef Xor(const RangeConstRef& other) const;
 
    /* Comparators */
-   virtual RangeRef Eq(RangeConstRef other, bw_t bw) const;
-   virtual RangeRef Ne(RangeConstRef other, bw_t bw) const;
-   RangeRef Ugt(RangeConstRef other, bw_t bw) const;
-   RangeRef Uge(RangeConstRef other, bw_t bw) const;
-   RangeRef Ult(RangeConstRef other, bw_t bw) const;
-   RangeRef Ule(RangeConstRef other, bw_t bw) const;
-   RangeRef UMin(RangeConstRef other) const;
-   RangeRef UMax(RangeConstRef other) const;
-   RangeRef Sgt(RangeConstRef other, bw_t bw) const;
-   RangeRef Sge(RangeConstRef other, bw_t bw) const;
-   RangeRef Slt(RangeConstRef other, bw_t bw) const;
-   RangeRef Sle(RangeConstRef other, bw_t bw) const;
-   RangeRef SMin(RangeConstRef other) const;
-   RangeRef SMax(RangeConstRef other) const;
+   virtual RangeRef Eq(const RangeConstRef& other, bw_t bw) const;
+   virtual RangeRef Ne(const RangeConstRef& other, bw_t bw) const;
+   RangeRef Ugt(const RangeConstRef& other, bw_t bw) const;
+   RangeRef Uge(const RangeConstRef& other, bw_t bw) const;
+   RangeRef Ult(const RangeConstRef& other, bw_t bw) const;
+   RangeRef Ule(const RangeConstRef& other, bw_t bw) const;
+   RangeRef UMin(const RangeConstRef& other) const;
+   RangeRef UMax(const RangeConstRef& other) const;
+   RangeRef Sgt(const RangeConstRef& other, bw_t bw) const;
+   RangeRef Sge(const RangeConstRef& other, bw_t bw) const;
+   RangeRef Slt(const RangeConstRef& other, bw_t bw) const;
+   RangeRef Sle(const RangeConstRef& other, bw_t bw) const;
+   RangeRef SMin(const RangeConstRef& other) const;
+   RangeRef SMax(const RangeConstRef& other) const;
 
    RangeRef sextOrTrunc(bw_t bitwidth) const;
    RangeRef zextOrTrunc(bw_t bitwidth) const;
    RangeRef truncate(bw_t bitwidth) const;
-   virtual RangeRef intersectWith(RangeConstRef other) const;
-   virtual RangeRef unionWith(RangeConstRef other) const;
+   virtual RangeRef intersectWith(const RangeConstRef& other) const;
+   virtual RangeRef unionWith(const RangeConstRef& other) const;
 
-   static RangeRef makeSatisfyingCmpRegion(kind pred, RangeConstRef Other);
+   static RangeRef makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other);
    static bw_t neededBits(const APInt& a, const APInt& b, bool sign);
 };
 
@@ -275,8 +276,8 @@ class RealRange : public Range
 
  public:
    RealRange(const Range& s, const Range& e, const Range& f);
-   RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f);
-   RealRange(RangeConstRef vc);
+   RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f);
+   RealRange(const RangeConstRef& vc);
    ~RealRange() = default;
    RealRange(const RealRange& other) = default;
    RealRange(RealRange&&) = default;
@@ -288,10 +289,10 @@ class RealRange : public Range
    RangeRef getExponent() const;
    RangeRef getFractional() const;
    RangeRef getAnti() const override;
-   void setSign(RangeConstRef s);
-   void setExponent(RangeConstRef e);
-   void setFractional(RangeConstRef f);
-   bool isSameRange(RangeConstRef other) const override;
+   void setSign(const RangeConstRef& s);
+   void setExponent(const RangeConstRef& e);
+   void setFractional(const RangeConstRef& f);
+   bool isSameRange(const RangeConstRef& other) const override;
    bool isFullSet() const override;
    bool isUnknown() const override;
    void setUnknown() override;
@@ -305,11 +306,11 @@ class RealRange : public Range
    RangeRef abs() const override;
    RangeRef negate() const override;
 
-   RangeRef Eq(RangeConstRef other, bw_t bw) const override;
-   RangeRef Ne(RangeConstRef other, bw_t bw) const override;
+   RangeRef Eq(const RangeConstRef& other, bw_t bw) const override;
+   RangeRef Ne(const RangeConstRef& other, bw_t bw) const override;
 
-   RangeRef intersectWith(RangeConstRef other) const override;
-   RangeRef unionWith(RangeConstRef other) const override;
+   RangeRef intersectWith(const RangeConstRef& other) const override;
+   RangeRef unionWith(const RangeConstRef& other) const override;
    RangeRef toFloat64() const;
    RangeRef toFloat32() const;
 };

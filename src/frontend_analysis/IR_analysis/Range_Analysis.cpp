@@ -117,7 +117,7 @@
 
 #define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
 #define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
-#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getFullRangeFor(var)
+#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getRangeFor(var, Regular)
 
 using bw_t = Range::bw_t;
 
@@ -158,18 +158,24 @@ bool tree_reindexCompare::operator()(const tree_nodeConstRef &lhs, const tree_no
  * APInt
  **********************************************************/
 using namespace boost::multiprecision;
-APInt::APInt() : _data()
+APInt::APInt()
 {
+   _data = 0;
 }
 
-APInt::APInt(const APInt& other) : _data(other._data,nullptr)
+APInt::APInt(const APInt& other)
 {
+   _data = other._data;
 }
 
 APInt& APInt::operator=(const APInt& other)
 {
    _data = other._data;
    return *this;
+}
+
+APInt::~APInt()
+{
 }
 
 bool operator<(const APInt& lhs, const APInt& rhs)
@@ -853,12 +859,12 @@ bool Range::isReal() const
    return false;
 }
 
-bool Range::isSameType(RangeConstRef other) const
+bool Range::isSameType(const RangeConstRef& other) const
 {
    return type == other->type;
 }
 
-bool Range::isSameRange(RangeConstRef other) const
+bool Range::isSameRange(const RangeConstRef& other) const
 {
    return this->bw == other->bw && isSameType(other) && (l == other->l) && (u == other->u);
 }
@@ -894,7 +900,7 @@ bool Range::isConstant() const
 /// Add and Mul are commutative. So, they are a little different
 /// than the other operations.
 /// Many Range reductions are done by exploiting ConstantRange code
-RangeRef Range::add(RangeConstRef other) const
+RangeRef Range::add(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -945,7 +951,7 @@ RangeRef Range::add(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, sMin, sMax));
 }
 
-RangeRef Range::sub(RangeConstRef other) const
+RangeRef Range::sub(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1017,7 +1023,7 @@ RangeRef Range::sub(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, sMin, sMax));
 }
 
-RangeRef Range::mul(RangeConstRef other) const
+RangeRef Range::mul(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1070,7 +1076,7 @@ RangeRef Range::mul(RangeConstRef other) const
    return uSpan < sSpan ? UR : SR;
 }
 
-RangeRef Range::udiv(RangeConstRef other) const
+RangeRef Range::udiv(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1100,7 +1106,7 @@ RangeRef Range::udiv(RangeConstRef other) const
 
 #define DIV_HELPER(x, y) (x == Max) ? ((y < 0) ? Min : ((y == 0) ? 0 : Max)) : ((y == Max) ? 0 : ((x == Min) ? ((y < 0) ? Max : ((y == 0) ? 0 : Min)) : ((y == Min) ? 0 : ((x) / (y)))))
 
-RangeRef Range::sdiv(RangeConstRef other) const
+RangeRef Range::sdiv(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1186,7 +1192,7 @@ RangeRef Range::sdiv(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, *min, *max));
 }
 
-RangeRef Range::urem(RangeConstRef other) const
+RangeRef Range::urem(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1239,7 +1245,7 @@ RangeRef Range::urem(RangeConstRef other) const
    return res;
 }
 
-RangeRef Range::srem(RangeConstRef other) const
+RangeRef Range::srem(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1302,7 +1308,7 @@ RangeRef Range::srem(RangeConstRef other) const
    return res;
 }
 
-RangeRef Range::shl(RangeConstRef other) const
+RangeRef Range::shl(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1353,7 +1359,7 @@ RangeRef Range::shl(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, a << c, b << d));
 }
 
-RangeRef Range::shr(RangeConstRef other, bool sign) const
+RangeRef Range::shr(const RangeConstRef& other, bool sign) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1434,7 +1440,7 @@ namespace
    {
       auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
 
-      APInt res_l, res_u;
+      APInt res_l = 0, res_u = 0;
       switch(abcd)
       {
          case 0:
@@ -1509,7 +1515,7 @@ namespace
    {
       auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
 
-      APInt res_l, res_u;
+      APInt res_l = 0, res_u = 0;
       switch(abcd)
       {
          case 0:
@@ -1589,7 +1595,7 @@ namespace
 
 } // namespace
 
-RangeRef Range::Or(RangeConstRef other) const
+RangeRef Range::Or(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1604,7 +1610,7 @@ RangeRef Range::Or(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, res_l, res_u));
 }
 
-RangeRef Range::And(RangeConstRef other) const
+RangeRef Range::And(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1619,7 +1625,7 @@ RangeRef Range::And(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, res_l, res_u));
 }
 
-RangeRef Range::Xor(RangeConstRef other) const
+RangeRef Range::Xor(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1660,7 +1666,7 @@ RangeRef Range::Not() const
    return RangeRef(new Range(this->type, bw, min, max));
 }
 
-RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Eq(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1692,7 +1698,7 @@ RangeRef Range::Eq(RangeConstRef other, bw_t _bw) const
    return nullptr;
 }
 
-RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Ne(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1723,7 +1729,7 @@ RangeRef Range::Ne(RangeConstRef other, bw_t _bw) const
    return nullptr;
 }
 
-RangeRef Range::Ugt(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Ugt(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1749,7 +1755,7 @@ RangeRef Range::Ugt(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Uge(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Uge(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1775,7 +1781,7 @@ RangeRef Range::Uge(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Ult(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Ult(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1801,7 +1807,7 @@ RangeRef Range::Ult(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Ule(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Ule(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1827,7 +1833,7 @@ RangeRef Range::Ule(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Sgt(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Sgt(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1853,7 +1859,7 @@ RangeRef Range::Sgt(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Sge(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Sge(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1879,7 +1885,7 @@ RangeRef Range::Sge(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Slt(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Slt(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1905,7 +1911,7 @@ RangeRef Range::Slt(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
+RangeRef Range::Sle(const RangeConstRef& other, bw_t _bw) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
@@ -1931,7 +1937,7 @@ RangeRef Range::Sle(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 1));
 }
 
-RangeRef Range::SMin(RangeConstRef other) const
+RangeRef Range::SMin(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1951,7 +1957,7 @@ RangeRef Range::SMin(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, min, max));
 }
 
-RangeRef Range::SMax(RangeConstRef other) const
+RangeRef Range::SMax(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1971,7 +1977,7 @@ RangeRef Range::SMax(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, min, max));
 }
 
-RangeRef Range::UMin(RangeConstRef other) const
+RangeRef Range::UMin(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -1991,7 +1997,7 @@ RangeRef Range::UMin(RangeConstRef other) const
    return RangeRef(new Range(Regular, bw, min, max));
 }
 
-RangeRef Range::UMax(RangeConstRef other) const
+RangeRef Range::UMax(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
@@ -2189,7 +2195,7 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
    return RangeRef(new Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false), this->getSignedMax().extOrTrunc(bw, false)));
 }
 
-RangeRef Range::intersectWith(RangeConstRef other) const
+RangeRef Range::intersectWith(const RangeConstRef& other) const
 {
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
@@ -2303,7 +2309,7 @@ RangeRef Range::intersectWith(RangeConstRef other) const
    return RangeRef(new Range(Anti, bw, res_l, res_u));
 }
 
-RangeRef Range::unionWith(RangeConstRef other) const
+RangeRef Range::unionWith(const RangeConstRef& other) const
 {
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
@@ -2476,7 +2482,7 @@ std::ostream& operator<<(std::ostream& OS, const Range& R)
    return OS;
 }
 
-RangeRef Range::makeSatisfyingCmpRegion(kind pred, RangeConstRef Other)
+RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
 {
    const auto bw = Other->bw;
    if(Other->isUnknown() || Other->isEmpty())
@@ -2545,13 +2551,13 @@ RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Rea
    THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
 }
 
-RealRange::RealRange(RangeConstRef s, RangeConstRef e, RangeConstRef f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
+RealRange::RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
 {
    THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() + " " + e->ToString() + " " + f->ToString() + "]<" + STR(getBitWidth()) + ">");
    THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
 }
 
-RealRange::RealRange(RangeConstRef vc) : Range(Real, vc->getBitWidth()), sign(vc->Sgt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
+RealRange::RealRange(const RangeConstRef& vc) : Range(Real, vc->getBitWidth()), sign(vc->Sgt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
 {
    if(vc->getBitWidth() == 32)
    {
@@ -2608,22 +2614,22 @@ RangeRef RealRange::getAnti() const
    return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), fractional->getAnti()));
 }
 
-void RealRange::setSign(RangeConstRef s)
+void RealRange::setSign(const RangeConstRef& s)
 {
    sign.reset(s->clone());
 }
 
-void RealRange::setExponent(RangeConstRef e)
+void RealRange::setExponent(const RangeConstRef& e)
 {
    exponent.reset(e->clone());
 }
 
-void RealRange::setFractional(RangeConstRef f)
+void RealRange::setFractional(const RangeConstRef& f)
 {
    fractional.reset(f->clone());
 }
 
-bool RealRange::isSameRange(RangeConstRef other) const
+bool RealRange::isSameRange(const RangeConstRef& other) const
 {
    if(other->isReal())
    {
@@ -2701,7 +2707,7 @@ RangeRef RealRange::negate() const
    return RangeRef(this->clone());
 }
 
-RangeRef RealRange::Eq(RangeConstRef other, bw_t _bw) const
+RangeRef RealRange::Eq(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
@@ -2710,7 +2716,7 @@ RangeRef RealRange::Eq(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 0, 0));
 }
 
-RangeRef RealRange::Ne(RangeConstRef other, bw_t _bw) const
+RangeRef RealRange::Ne(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
@@ -2719,7 +2725,7 @@ RangeRef RealRange::Ne(RangeConstRef other, bw_t _bw) const
    return RangeRef(new Range(Regular, _bw, 1, 1));
 }
 
-RangeRef RealRange::intersectWith(RangeConstRef other) const
+RangeRef RealRange::intersectWith(const RangeConstRef& other) const
 {
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
@@ -2729,7 +2735,7 @@ RangeRef RealRange::intersectWith(RangeConstRef other) const
    return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), fractional->intersectWith(rrOther->fractional)));
 }
 
-RangeRef RealRange::unionWith(RangeConstRef other) const
+RangeRef RealRange::unionWith(const RangeConstRef& other) const
 {
    #ifdef DEBUG_RANGE_OP
    PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
@@ -3052,12 +3058,12 @@ namespace
    }
 
    // Print name of variable according to its type
-   void printVarName(const tree_nodeConstRef V, std::ostream& OS)
+   void printVarName(const tree_nodeConstRef& V, std::ostream& OS)
    {
       OS << GET_CONST_NODE(V)->ToString();
    }
 
-   bool isValidType(const tree_nodeConstRef tn) 
+   bool isValidType(const tree_nodeConstRef& tn) 
    {
       switch(tn->get_kind())
       {
@@ -3113,7 +3119,7 @@ namespace
       return false;
    }
 
-   bool isValidInstruction(const tree_nodeConstRef stmt, const FunctionBehaviorConstRef FB, const tree_managerConstRef TM)
+   bool isValidInstruction(const tree_nodeConstRef& stmt, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM)
    {
       tree_nodeConstRef Type = nullptr;
       switch(GET_CONST_NODE(stmt)->get_kind())
@@ -3263,7 +3269,7 @@ namespace
       return isValidType(Type);
    }
 
-   bool isSignedType(const tree_nodeConstRef tn)
+   bool isSignedType(const tree_nodeConstRef& tn)
    {
       switch(tn->get_kind())
       {
@@ -3315,7 +3321,7 @@ namespace
       return true;
    }
 
-   tree_nodeConstRef getGIMPLE_Type(const tree_nodeConstRef tn)
+   tree_nodeConstRef getGIMPLE_Type(const tree_nodeConstRef& tn)
    {
       if(tn->get_kind() == tree_reindex_K)
       {
@@ -3332,7 +3338,7 @@ namespace
       return tree_helper::CGetType(tn);
    }
 
-   bw_t getGIMPLE_BW(const tree_nodeConstRef tn)
+   bw_t getGIMPLE_BW(const tree_nodeConstRef& tn)
    {
       const auto type = getGIMPLE_Type(tn);
       auto size = tree_helper::Size(type);
@@ -3340,11 +3346,12 @@ namespace
       return static_cast<bw_t>(size);
    }
 
-   RangeRef getUnknownFor(const tree_nodeConstRef tn)
+   RangeRef getRangeFor(const tree_nodeConstRef& tn, RangeType rType)
    {
+      THROW_ASSERT(rType != Anti, "");
       if(tn->get_kind() == tree_reindex_K)
       {
-         return getUnknownFor(GET_CONST_NODE(tn));
+         return getRangeFor(GET_CONST_NODE(tn), rType);
       }
 
       const auto type = getGIMPLE_Type(tn);
@@ -3352,46 +3359,12 @@ namespace
 
       if(GetPointer<const real_type>(type) != nullptr)
       {
-         return RangeRef(new RealRange(RangeRef(new Range(Unknown, bw))));
+         return RangeRef(new RealRange(RangeRef(new Range(rType, bw))));
       }
-      return RangeRef(new Range(Unknown, bw));
+      return RangeRef(new Range(rType, bw));
    }
 
-   RangeRef getEmptyFor(const tree_nodeConstRef tn)
-   {
-      if(tn->get_kind() == tree_reindex_K)
-      {
-         return getEmptyFor(GET_CONST_NODE(tn));
-      }
-
-      const auto type = getGIMPLE_Type(tn);
-      bw_t bw = static_cast<bw_t>(tree_helper::Size(type));
-
-      if(GetPointer<const real_type>(type) != nullptr)
-      {
-         return RangeRef(new RealRange(RangeRef(new Range(Empty, bw))));
-      }
-      return RangeRef(new Range(Empty, bw));
-   }
-
-   RangeRef getFullRangeFor(const tree_nodeConstRef tn)
-   {
-      if(tn->get_kind() == tree_reindex_K)
-      {
-         return getFullRangeFor(GET_CONST_NODE(tn));
-      }
-
-      const auto type = getGIMPLE_Type(tn);
-      bw_t bw = static_cast<bw_t>(tree_helper::Size(type));
-
-      if(GetPointer<const real_type>(type) != nullptr)
-      {
-         return RangeRef(new RealRange(RangeRef(new Range(Regular, bw))));
-      }
-      return RangeRef(new Range(Regular, bw));
-   }
-
-   RangeRef getGIMPLE_range(const tree_nodeConstRef tn)
+   RangeRef getGIMPLE_range(const tree_nodeConstRef& tn)
    {
       if(tn->get_kind() == tree_reindex_K)
       {
@@ -3484,6 +3457,17 @@ namespace
       #ifdef BITVALUE_UPDATE
       if(const auto* ssa = GetPointer<const ssa_name>(tn))
       {
+         if(ssa->min)
+         {
+            THROW_ASSERT(GET_CONST_NODE(ssa->min)->get_kind() == integer_cst_K, "Min value should be integer constant for " + ssa->ToString());
+            min = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(ssa->min)));
+         }
+         if(ssa->max)
+         {
+            THROW_ASSERT(GET_CONST_NODE(ssa->max)->get_kind() == integer_cst_K, "Max value should be integer constant for " + ssa->ToString());
+            max = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(ssa->max)));
+         }
+
          if(!ssa->bit_values.empty())
          {
             const auto bitValues = string_to_bitstring(ssa->bit_values);
@@ -3527,7 +3511,7 @@ class VarNode
    unsigned int function_id;
    /// A Range associated to the variable, that is,
    /// its interval inferred by the analysis.
-   RangeRef interval;
+   RangeConstRef interval;
    /// Used by the crop meet operator
    char abstractState;
 
@@ -3542,7 +3526,7 @@ class VarNode
    /// Initializes the value of the node.
    void init(bool outside);
    /// Returns the range of the variable represented by this node.
-   RangeRef getRange() const
+   const RangeConstRef& getRange() const
    {
       return interval;
    }
@@ -3567,7 +3551,7 @@ class VarNode
 
    RangeRef getMaxRange() const
    {
-      return getFullRangeFor(V);
+      return getRangeFor(V, Regular);
       }
 
    char getAbstractState()
@@ -3577,7 +3561,7 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
-   bool updateIR(tree_managerRef TM, tree_manipulationRef tree_man
+   bool updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
    #ifndef NDEBUG
    , int debug_level
    #endif
@@ -3593,49 +3577,24 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id) : V(_V)
 {
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
-   interval = getUnknownFor(_V);
+   interval = getRangeFor(_V, Unknown);
 }
 
 /// Initializes the value of the node.
 void VarNode::init(bool outside)
 {
-   const auto bw = getGIMPLE_BW(V);
-   THROW_ASSERT(bw, "Bitwidth not valid");
+   THROW_ASSERT(getGIMPLE_BW(V), "Bitwidth not valid");
    if(GET_CONST_NODE(V)->get_kind() == integer_cst_K || GET_CONST_NODE(V)->get_kind() == real_cst_K)
    {
       interval = getGIMPLE_range(V);
    }
    else
    {
-      if(getGIMPLE_Type(V)->get_kind() == real_type_K)
-      {
-         THROW_ASSERT(bw == 64 || bw == 32, "Bitwidth not allowed for floating point variable");
-         if(!outside)
-         {
-            // Initialize with a basic, unknown, interval.
-            interval.reset(new RealRange(RangeRef(new Range(Unknown, bw))));
-         }
-         else
-         {
-            interval.reset(new RealRange(RangeRef(new Range(Regular, bw))));
-         }
-      }
-      else
-      {
-         if(!outside)
-         {
-            // Initialize with a basic, unknown, interval.
-            interval.reset(new Range(Unknown, bw));
-         }
-         else
-         {
-            interval.reset(new Range(Regular, bw));
-         }
-      }
+      interval = getRangeFor(V, outside ? Regular : Unknown);
    }
 }
 
-bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
+bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
    #ifndef NDEBUG
    , int debug_level
    #endif
@@ -3686,15 +3645,21 @@ bool VarNode::updateIR(tree_managerRef TM, tree_manipulationRef tree_man
                return false;
             }
          }
-         else if(interval->isAnti() || interval->isEmpty())
+         else if(interval->isAnti())
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Anti range " + interval->ToString() + " not stored for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+            return false;
+         }
+         else if(interval->isEmpty())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Empty range not stored for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
             return false;
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
    }
 
-   auto getConstNode = [&] (RangeRef range) {
+   auto getConstNode = [&] (const RangeConstRef& range) {
       long long cst_val;
       tree_nodeRef cst;
       if(range->isReal())
@@ -3927,7 +3892,7 @@ class ValueRange
    }
 
    /// Returns the range of this interval.
-   RangeConstRef getRange() const
+   const RangeConstRef& getRange() const
    {
       return this->range;
    }
@@ -4029,8 +3994,8 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
 {
    // Get the lower and the upper bound of the
    // node which bounds this intersection.
-   const auto boundRange = _bound->getRange();
-   const auto sinkRange = _sink->getRange();
+   const auto& boundRange = _bound->getRange();
+   const auto& sinkRange = _sink->getRange();
    THROW_ASSERT(!boundRange->isEmpty(), "Bound range should not be empty");
    THROW_ASSERT(!sinkRange->isEmpty(), "Sink range should not be empty");
 
@@ -4127,7 +4092,7 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
       default:
          break;
    }
-   return getFullRangeFor(_sink->getValue());
+   return getRangeFor(_sink->getValue(), Regular);
 }
 
 /// Pretty print.
@@ -4614,7 +4579,7 @@ RangeConstRef PhiOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      auto aux = this->getIntersect()->getRange();
+      const auto& aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -4669,7 +4634,7 @@ void PhiOpNode::print(std::ostream& OS) const
    OS << "\"]\n";
    for(const VarNode* varNode : sources)
    {
-      const auto V = varNode->getValue();
+      const auto& V = varNode->getValue();
       if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
       {
          OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -4681,7 +4646,7 @@ void PhiOpNode::print(std::ostream& OS) const
          OS << quot << " -> " << quot << this << quot << "\n";
       }
    }
-   const auto VS = this->getSink()->getValue();
+   const auto& VS = this->getSink()->getValue();
    OS << " " << quot << this << quot << " -> " << quot;
    printVarName(VS, OS);
    OS << quot << "\n";
@@ -4762,10 +4727,10 @@ RangeConstRef UnaryOpNode::eval() const
          GET_CONST_NODE(getSink()->getValue())->ToString() + " = " + tree_node::GetString(this->getOpcode()) + "( " + GET_CONST_NODE(getSource()->getValue())->ToString() + " )");
 
    auto bw = getSink()->getBitWidth();
-   RangeRef oprnd = source->getRange();
+   const auto& oprnd = source->getRange();
    const auto resultType = getGIMPLE_Type(getSink()->getValue());
    bool oprndSigned = isSignedType(source->getValue());
-   RangeRef result = getUnknownFor(getSink()->getValue());
+   RangeRef result = getRangeFor(getSink()->getValue(), Unknown);
    if(oprnd->isRegular() || oprnd->isAnti())
    {
       switch(this->getOpcode())
@@ -4841,7 +4806,7 @@ RangeConstRef UnaryOpNode::eval() const
    }
    else if(oprnd->isReal())
    {
-      auto rr = RefcountCast<RealRange>(oprnd);
+      auto rr = std::static_pointer_cast<const RealRange>(oprnd);
       switch (this->getOpcode())
       {
          case bit_and_expr_K:
@@ -4902,7 +4867,7 @@ RangeConstRef UnaryOpNode::eval() const
    auto test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      auto aux = this->getIntersect()->getRange();
+      const auto& aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -5038,7 +5003,7 @@ void UnaryOpNode::print(std::ostream& OS) const
 
    OS << "\"]\n";
 
-   const auto V = this->getSource()->getValue();
+   const auto& V = this->getSource()->getValue();
    if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
    {
       OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5050,7 +5015,7 @@ void UnaryOpNode::print(std::ostream& OS) const
       OS << quot << " -> " << quot << this << quot << "\n";
    }
 
-   const auto VS = this->getSink()->getValue();
+   const auto& VS = this->getSink()->getValue();
    OS << " " << quot << this << quot << " -> " << quot;
    printVarName(VS, OS);
    OS << quot << "\n";
@@ -5139,7 +5104,7 @@ RangeConstRef SigmaOpNode::eval() const
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(getSink()->getValue())->ToString() + " = SIGMA< " + GET_CONST_NODE(getSource()->getValue())->ToString() + " >");
 
    auto result = this->getSource()->getRange();
-   auto aux = this->getIntersect()->getRange();
+   const auto& aux = this->getIntersect()->getRange();
    if(!aux->isUnknown())
    {
       auto _intersect = result->intersectWith(aux);
@@ -5207,7 +5172,7 @@ void SigmaOpNode::print(std::ostream& OS) const
       << "SigmaOp:";
    this->getIntersect()->print(OS);
    OS << "\"]\n";
-   const auto V = this->getSource()->getValue();
+   const auto& V = this->getSource()->getValue();
    if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
    {
       OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5220,7 +5185,7 @@ void SigmaOpNode::print(std::ostream& OS) const
    }
    if(SymbolicSource)
    {
-      const auto _V = SymbolicSource->getValue();
+      const auto& _V = SymbolicSource->getValue();
       if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(_V)))
       {
          OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5233,7 +5198,7 @@ void SigmaOpNode::print(std::ostream& OS) const
       }
    }
 
-   const auto VS = this->getSink()->getValue();
+   const auto& VS = this->getSink()->getValue();
    OS << " " << quot << this << quot << " -> " << quot;
    printVarName(VS, OS);
    OS << quot << "\n";
@@ -5424,11 +5389,11 @@ RangeConstRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& 
 /// taking as its operands the source1 and the source2.
 RangeConstRef BinaryOpNode::eval() const
 {
-   const auto op1 = this->getSource1()->getRange();
-   const auto op2 = this->getSource2()->getRange();
+   const auto& op1 = this->getSource1()->getRange();
+   const auto& op2 = this->getSource2()->getRange();
    // Instruction bitwidth
    const auto bw = getSink()->getBitWidth();
-   RangeConstRef result = getUnknownFor(getSink()->getValue());
+   RangeConstRef result = getRangeFor(getSink()->getValue(), Unknown);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          GET_CONST_NODE(getSink()->getValue())->ToString() + " = (" + GET_CONST_NODE(getSource1()->getValue())->ToString() + ")" + tree_node::GetString(this->getOpcode()) + "(" + GET_CONST_NODE(getSource2()->getValue())->ToString() + ")");
@@ -5449,7 +5414,7 @@ RangeConstRef BinaryOpNode::eval() const
    {
       if(op1->isEmpty() || op2->isEmpty())
       {
-         result = getEmptyFor(getSink()->getValue());
+         result = getRangeFor(getSink()->getValue(), Empty);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = " + op1->ToString() + " " + tree_node::GetString(this->getOpcode()) + " " + op2->ToString());
@@ -5457,7 +5422,7 @@ RangeConstRef BinaryOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      auto aux = this->getIntersect()->getRange();
+      const auto& aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -5601,7 +5566,7 @@ void BinaryOpNode::print(std::ostream& OS) const
    const char* quot = R"(")";
    std::string opcodeName = tree_node::GetString(opcode);
    OS << " " << quot << this << quot << R"( [label=")" << opcodeName << "\"]\n";
-   const auto V1 = this->getSource1()->getValue();
+   const auto& V1 = this->getSource1()->getValue();
    if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V1)))
    {
       OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5612,7 +5577,7 @@ void BinaryOpNode::print(std::ostream& OS) const
       printVarName(V1, OS);
       OS << quot << " -> " << quot << this << quot << "\n";
    }
-   const auto V2 = this->getSource2()->getValue();
+   const auto& V2 = this->getSource2()->getValue();
    if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V2)))
    {
       OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5623,7 +5588,7 @@ void BinaryOpNode::print(std::ostream& OS) const
       printVarName(V2, OS);
       OS << quot << " -> " << quot << this << quot << "\n";
    }
-   const auto VS = this->getSink()->getValue();
+   const auto& VS = this->getSink()->getValue();
    OS << " " << quot << this << quot << " -> " << quot;
    printVarName(VS, OS);
    OS << quot << "\n";
@@ -5769,12 +5734,12 @@ TernaryOpNode::TernaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, co
 
 RangeConstRef TernaryOpNode::eval() const
 {
-   auto op1 = this->getSource1()->getRange();
+   const auto& op1 = this->getSource1()->getRange();
    auto op2 = this->getSource2()->getRange();
    auto op3 = this->getSource3()->getRange();
    // Instruction bitwidth
    const auto bw = getSink()->getBitWidth();
-   RangeConstRef result = getUnknownFor(getSink()->getValue());
+   RangeConstRef result = getRangeFor(getSink()->getValue(), Unknown);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          GET_CONST_NODE(getSink()->getValue())->ToString() + " = " + GET_CONST_NODE(getSource1()->getValue())->ToString() + " ? " + GET_CONST_NODE(getSource2()->getValue())->ToString() + " : " + GET_CONST_NODE(getSource3()->getValue())->ToString());
@@ -5813,14 +5778,14 @@ RangeConstRef TernaryOpNode::eval() const
             {
                if(isCompare(be))
                {
-                  const tree_nodeConstRef CondOp0 = be->op0;
-                  const tree_nodeConstRef CondOp1 = be->op1;
+                  const auto& CondOp0 = be->op0;
+                  const auto& CondOp1 = be->op1;
                   if(GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K || GET_CONST_NODE(CondOp1)->get_kind() == integer_cst_K)
                   {
-                     const auto variable = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp1 : CondOp0;
+                     const auto& variable = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp1 : CondOp0;
                      const auto* constant = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? GetPointer<const integer_cst>(GET_CONST_NODE(CondOp0)) : GetPointer<const integer_cst>(GET_CONST_NODE(CondOp1));
-                     auto opV1 = I->op1;
-                     auto opV2 = I->op2;
+                     const auto& opV1 = I->op1;
+                     const auto& opV2 = I->op2;
                      if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) || GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
                      {
                         RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
@@ -5851,7 +5816,7 @@ RangeConstRef TernaryOpNode::eval() const
    {
       if(op1->isEmpty() || op2->isEmpty() || op3->isEmpty())
       {
-         result = getEmptyFor(getSink()->getValue());
+         result = getRangeFor(getSink()->getValue(), Empty);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = " + op1->ToString() + " ? " + op2->ToString() + " : " + op3->ToString());
@@ -5859,7 +5824,7 @@ RangeConstRef TernaryOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      auto aux = this->getIntersect()->getRange();
+      const auto& aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -5907,7 +5872,7 @@ void TernaryOpNode::print(std::ostream& OS) const
    std::string opcodeName = tree_node::GetString(this->getOpcode());
    OS << " " << quot << this << quot << R"( [label=")" << opcodeName << "\"]\n";
 
-   const auto V1 = this->getSource1()->getValue();
+   const auto& V1 = this->getSource1()->getValue();
    if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V1)))
    {
       OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5918,7 +5883,7 @@ void TernaryOpNode::print(std::ostream& OS) const
       printVarName(V1, OS);
       OS << quot << " -> " << quot << this << quot << "\n";
    }
-   const auto V2 = this->getSource2()->getValue();
+   const auto& V2 = this->getSource2()->getValue();
    if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V2)))
    {
       OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5930,7 +5895,7 @@ void TernaryOpNode::print(std::ostream& OS) const
       OS << quot << " -> " << quot << this << quot << "\n";
    }
 
-   const auto V3 = this->getSource3()->getValue();
+   const auto& V3 = this->getSource3()->getValue();
    if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V3)))
    {
       OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -5941,7 +5906,7 @@ void TernaryOpNode::print(std::ostream& OS) const
       printVarName(V3, OS);
       OS << quot << " -> " << quot << this << quot << "\n";
    }
-   const auto VS = this->getSink()->getValue();
+   const auto& VS = this->getSink()->getValue();
    OS << " " << quot << this << quot << " -> " << quot;
    printVarName(VS, OS);
    OS << quot << "\n";
@@ -6037,7 +6002,7 @@ RangeConstRef LoadOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      auto aux = this->getIntersect()->getRange();
+      const auto& aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -6067,7 +6032,7 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
       VarNode* sink = NC->addVarNode(ga->op0, function_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
-      RangeRef intersection = getEmptyFor(sink->getValue());
+      RangeRef intersection = getRangeFor(sink->getValue(), Empty);
       CustomOrderedSet<unsigned int> res_set;
       bool pointToConstants = tree_helper::is_fully_resolved(TM, GET_INDEX_CONST_NODE(ga->op1), res_set);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Pointer is fully resolved");
@@ -6171,7 +6136,7 @@ void LoadOpNode::print(std::ostream& OS) const
 
    for(auto src : sources)
    {
-      const auto V = src->getValue();
+      const auto& V = src->getValue();
       if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
       {
          OS << " " << C->value << " -> " << quot << this << quot << "\n";
@@ -6184,7 +6149,7 @@ void LoadOpNode::print(std::ostream& OS) const
       }
    }
 
-   const auto VS = this->getSink()->getValue();
+   const auto& VS = this->getSink()->getValue();
    OS << " " << quot << this << quot << " -> " << quot;
    printVarName(VS, OS);
    OS << quot << "\n";
@@ -6356,7 +6321,7 @@ ControlDepNode::ControlDepNode(VarNode* _sink, VarNode* _source) : OpNode(ValueR
 
 RangeConstRef ControlDepNode::eval() const
 {
-   return RangeRef(new Range(Regular, MAX_BIT_INT));
+   return RangeConstRef(new Range(Regular, MAX_BIT_INT));
 }
 
 void ControlDepNode::print(std::ostream& /*OS*/) const
@@ -6502,6 +6467,7 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
 
       for(auto* cd : cds)
       {
+         #ifndef NDEBUG
          // Add pseudo edge to the string
          const auto& V = cd->getSource()->getValue();
          if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
@@ -6519,6 +6485,7 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
          printVarName(VS, pseudoEdgesString);
          pseudoEdgesString << '"';
          pseudoEdgesString << " [style=dashed]\n";
+         #endif
          // Remove pseudo edge from the map
          varOps.second.erase(cd);
       }
@@ -6540,7 +6507,7 @@ void Nuutila::visit(const tree_nodeConstRef& V, std::stack<tree_nodeConstRef>& s
    // Visit every node defined in an instruction that uses V
    for(const auto& op : useMap.at(V))
    {
-      auto name = op->getSink()->getValue();
+      const auto& name = op->getSink()->getValue();
       if(dfs[name] < 0)
       {
          visit(name, stack, useMap);
@@ -6620,7 +6587,7 @@ bool Nuutila::hasEdge(const CustomSet<VarNode*>& componentFrom, const CustomSet<
 {
    for(const auto& v : componentFrom)
    {
-      const auto source = v->getValue();
+      const auto& source = v->getValue();
       THROW_ASSERT(static_cast<bool>(useMap.count(source)), "Variable should be in use map");
       for(const auto& op : useMap.at(source))
       {
@@ -6713,7 +6680,7 @@ const APInt& Meet::getFirstLessFromVector(const std::vector<APInt>& constantvect
 
 bool Meet::fixed(OpNode* op)
 {
-   const auto oldInterval = op->getSink()->getRange();
+   const auto& oldInterval = op->getSink()->getRange();
    const auto newInterval = op->eval();
 
    op->getSink()->setRange(newInterval);
@@ -6736,7 +6703,7 @@ bool Meet::fixed(OpNode* op)
 /// constant interval, or to [-, c], or to [c, +], or to [-, +].
 bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
 {
-   const auto oldRange = op->getSink()->getRange();
+   const auto& oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalWiden = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
@@ -6760,9 +6727,11 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
                return RangeRef(new Range(Anti, bw, newLower > oldLower ? nlconstant : oldLower, newUpper < oldUpper ? nuconstant : oldUpper));
             }
          }
-         
+         else
+         {
             return RangeRef(newInterval->clone());
          }
+      }
       else
       {
          const auto& oldLower = oldInterval->getLower();
@@ -6801,7 +6770,7 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
       op->getSink()->setRange(intervalWiden(oldRange, newRange));
    }
    
-   const auto sinkRange = op->getSink()->getRange();
+   const auto& sinkRange = op->getSink()->getRange();
 
    if(op->getInstruction())
    {
@@ -6816,7 +6785,7 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
 
 bool Meet::growth(OpNode* op)
 {
-   const auto oldRange = op->getSink()->getRange();
+   const auto& oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalGrowth = [](RangeConstRef oldInterval, RangeConstRef newInterval)
@@ -6845,8 +6814,8 @@ bool Meet::growth(OpNode* op)
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      const auto oldRR = RefcountCast<const RealRange>(oldRange);
-      const auto newRR = RefcountCast<const RealRange>(newRange);
+      const auto oldRR = std::static_pointer_cast<const RealRange>(oldRange);
+      const auto newRR = std::static_pointer_cast<const RealRange>(newRange);
       RangeConstRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
       RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
@@ -6860,7 +6829,7 @@ bool Meet::growth(OpNode* op)
       op->getSink()->setRange(intervalGrowth(oldRange, newRange));
    }
    
-   const auto sinkRange = op->getSink()->getRange();
+   const auto& sinkRange = op->getSink()->getRange();
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "GROWTH::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
@@ -6878,7 +6847,7 @@ bool Meet::growth(OpNode* op)
 /// to ranges that respect the intersections.
 bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
 {
-   const auto oldRange = op->getSink()->getRange();
+   const auto& oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
@@ -6964,8 +6933,8 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      const auto oldRR = RefcountCast<const RealRange>(oldRange);
-      const auto newRR = RefcountCast<const RealRange>(newRange);
+      const auto oldRR = std::static_pointer_cast<const RealRange>(oldRange);
+      const auto newRR = std::static_pointer_cast<const RealRange>(newRange);
       RangeConstRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
       RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
@@ -6979,7 +6948,7 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
       op->getSink()->setRange(intervalNarrow(oldRange, newRange));
    }
    
-   const auto sinkRange = op->getSink()->getRange();
+   const auto& sinkRange = op->getSink()->getRange();
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "NARROW::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
@@ -6993,7 +6962,7 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
 
 bool Meet::crop(OpNode* op)
 {
-   const auto oldRange = op->getSink()->getRange();
+   const auto& oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
    const char _abstractState = op->getSink()->getAbstractState();
 
@@ -7022,8 +6991,8 @@ bool Meet::crop(OpNode* op)
    if(oldRange->isReal())
    {
       THROW_ASSERT(newRange->isReal(), "Real range should not change type");
-      const auto oldRR = RefcountCast<const RealRange>(oldRange);
-      const auto newRR = RefcountCast<const RealRange>(newRange);
+      const auto oldRR = std::static_pointer_cast<const RealRange>(oldRange);
+      const auto newRR = std::static_pointer_cast<const RealRange>(newRange);
       RangeConstRef oldIntervals[] = {oldRR->getSign(), oldRR->getExponent(), oldRR->getFractional()};
       RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getFractional()};
       for(auto i = 0; i < 3; ++i)
@@ -7037,7 +7006,7 @@ bool Meet::crop(OpNode* op)
       op->getSink()->setRange(intervalCrop(oldRange, newRange, _abstractState));
    }
    
-   const auto sinkRange = op->getSink()->getRange();
+   const auto& sinkRange = op->getSink()->getRange();
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "CROP::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
@@ -7080,7 +7049,7 @@ class ConstraintGraph : public NodeContainer
             {
                // I want to use it as a set, but I also want
                // keep an order or insertions and removals.
-               const auto val = op->getSink()->getValue();
+               const auto& val = op->getSink()->getValue();
                actv.insert(val);
             }
          }
@@ -7107,7 +7076,7 @@ class ConstraintGraph : public NodeContainer
             --nIterations;
             if(Meet::fixed(op))
             {
-               const auto next = op->getSink()->getValue();
+               const auto& next = op->getSink()->getValue();
                if(std::find(queue.begin(), queue.end(), next) == queue.end())
                {
                   queue.push_back(next);
@@ -7232,7 +7201,7 @@ class ConstraintGraph : public NodeContainer
             const auto TValues = (GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(bin_op->op0)) ? Range::makeSatisfyingCmpRegion(pred, CR) : Range::makeSatisfyingCmpRegion(swappred, CR);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition is true on " + TValues->ToString());
 
-            const auto FValues = TValues->isFullSet() ? getEmptyFor(variable) : TValues->getAnti();
+            const auto FValues = TValues->isFullSet() ? getRangeFor(variable, Empty) : TValues->getAnti();
 
             // Create the interval using the intersection in the branch.
             const auto BT = ValueRangeRef(new ValueRange(TValues));
@@ -7281,7 +7250,7 @@ class ConstraintGraph : public NodeContainer
             THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
             #endif
 
-            const auto CR = getUnknownFor(bin_op->op0);
+            const auto CR = getRangeFor(bin_op->op0, Unknown);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
 
             // Symbolic intervals for op0
@@ -7476,7 +7445,7 @@ class ConstraintGraph : public NodeContainer
                THROW_ASSERT(bw0 == bw1, "Operands of same operation have different bitwidth (Op0 = " + STR(bw0) + ", Op1 = " + STR(bw1) + ").");
                #endif
 
-               const auto CR = getUnknownFor(cmp_op->op0);
+               const auto CR = getRangeFor(cmp_op->op0, Unknown);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,"Variables bitwidth is " + STR(bw0));
 
                // Symbolic intervals for op0
@@ -7530,7 +7499,7 @@ class ConstraintGraph : public NodeContainer
       {
          for(auto& [var, VSM] : switchSSAMap)
          {
-            auto elseRange = getEmptyFor(var);
+            auto elseRange = getRangeFor(var, Empty);
             for(const auto& BBIinterval : VSM)
             {
                elseRange = elseRange->unionWith(BBIinterval.second->getRange());
@@ -7673,7 +7642,7 @@ class ConstraintGraph : public NodeContainer
       for(auto vit = component.begin(), vend = component.end(); vit != vend; ++vit)
       {
          const VarNode* var = *vit;
-         const auto V = var->getValue();
+         const auto& V = var->getValue();
          // Get the component's use list for V (it does not exist until we try to get it)
          auto& list = compUseMap[V];
          // Get the use list of the variable in component
@@ -7833,7 +7802,7 @@ class ConstraintGraph : public NodeContainer
             {
                continue;
             }
-            const auto rintersect = op->getIntersect()->getRange();
+            const auto& rintersect = op->getIntersect()->getRange();
             if(rintersect->isAnti())
             {
                const auto anti = rintersect->getAnti();
@@ -7922,7 +7891,7 @@ class ConstraintGraph : public NodeContainer
    {
       for(auto var : component)
       {
-         const auto V = var->getValue();
+         const auto& V = var->getValue();
          auto p = getUses().at(V);
          for(auto* op : p)
          {
@@ -7946,7 +7915,7 @@ class ConstraintGraph : public NodeContainer
       // Iterate over the varnodes in the component
       for(VarNode* varNode : component)
       {
-         const auto V = varNode->getValue();
+         const auto& V = varNode->getValue();
          if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(V)))
          if(const auto* phi_def = GetPointer<const gimple_phi>(GET_CONST_NODE(ssa->CGetDefStmt())))
          if(phi_def->CGetDefEdgesList().size() == 1)
@@ -8000,7 +7969,7 @@ class ConstraintGraph : public NodeContainer
    {
       for(auto* varNode : component)
       {
-         const auto V = varNode->getValue();
+         const auto& V = varNode->getValue();
          const auto* CI = GetPointer<const integer_cst>(GET_CONST_NODE(V));
          if(CI != nullptr)
          {
@@ -8242,8 +8211,7 @@ class ConstraintGraph : public NodeContainer
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, var->ToString());
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-----------");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-------------");
          }
          #endif
          if(component.size() == 1)
@@ -8279,31 +8247,39 @@ class ConstraintGraph : public NodeContainer
                std::stringstream ss;
                for(auto cnst : constantvector)
                {
-                  ss << " " << cnst;
+                  ss << cnst << ", ";
                }
                if(!constantvector.empty())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, ss.str());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Constant lattice: {-inf, " + ss.str() + "+inf}");
                }
             }
             #endif
+            #ifndef NDEBUG
+            auto printEntryFor = [&](const std::string& mType) {
+               if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, mType + " step entry points:");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-->");
+                  for(const auto& el : entryPoints)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, GET_CONST_NODE(el)->ToString());
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
+               }
+            };
+            #endif
             generateEntryPoints(component, entryPoints);
+            #ifndef NDEBUG
+            printEntryFor("Fixed");
+            #endif
             // iterate a fixed number of time before widening
             update(static_cast<size_t>(component.size() * 16L), compUseMap, entryPoints);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("cgfixed.dot", parameters));
 
             generateEntryPoints(component, entryPoints);
             #ifndef NDEBUG
-            if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "entryPoints:");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "-->");
-               for(const auto& el : entryPoints)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, GET_CONST_NODE(el)->ToString());
-               }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
-            }
+            printEntryFor("Widen");
             #endif
             // First iterate till fix point
             preUpdate(compUseMap, entryPoints);
@@ -8326,9 +8302,13 @@ class ConstraintGraph : public NodeContainer
             // Second iterate till fix point
             std::set<tree_nodeConstRef, tree_reindexCompare> activeVars;
             generateActivesVars(component, activeVars);
+            #ifndef NDEBUG
+            printEntryFor("Narrow");
+            #endif
             posUpdate(compUseMap, activeVars, component);
          }
          propagateToNextSCC(component);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed final constraint graph to " + printToFile("CG" + step_name + ".dot", parameters));
    }
@@ -8352,7 +8332,7 @@ class ConstraintGraph : public NodeContainer
          {
             return getGIMPLE_range(v);
          }
-         return getUnknownFor(v);
+         return getRangeFor(v, Unknown);
       }
       return vit->second->getRange();
    }
@@ -8812,6 +8792,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   #ifndef NDEBUG
+   if(debug_mode == RA_DEBUG_NOEXEC)
+   {
+      return relationships;
+   }
+   #endif
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -8847,6 +8833,12 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 
 bool RangeAnalysis::HasToBeExecuted() const
 {
+   #ifndef NDEBUG
+   if(debug_mode == RA_DEBUG_NOEXEC)
+   {
+      return false;
+   }
+   #endif
    return true;
 }
 
