@@ -247,7 +247,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
       {
          const structural_objectRef obj = fu_curr->CM->get_circ();
          NP_functionalityRef NPF = GetPointer<module>(obj)->get_NP_functionality();
-         size_t max_lut_size = static_cast<size_t>(-1);
+         size_t max_lut_size = 0;
          if(device->has_parameter("max_lut_size"))
          {
             max_lut_size = device->get_parameter<size_t>("max_lut_size");

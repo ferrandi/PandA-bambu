@@ -61,6 +61,7 @@
 #include "trce_wrapper.hpp"
 #include "vivado_flow_wrapper.hpp"
 #include "xst_wrapper.hpp"
+#include "bash_flow_wrapper.hpp"
 
 #if HAVE_EXPERIMENTAL
 #if 0
@@ -158,6 +159,8 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
          break;
       case NXPYTHON_FLOW:
          return SynthesisToolRef(new nxpython_flow_wrapper(_Param, _output_dir, _device));
+      case BASH_FLOW:
+         return SynthesisToolRef(new bash_flow_wrapper(_Param, _output_dir, _device));
          break;
 #if(0 && HAVE_EXPERIMENTAL)
       case PRIME_TIME:

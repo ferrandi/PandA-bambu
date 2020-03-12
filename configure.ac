@@ -2479,6 +2479,7 @@ AC_CONFIG_FILES(
    etc/devices/ASIC_devices/Makefile
    etc/devices/Lattice_devices/Makefile
    etc/devices/NanoXplore_devices/Makefile
+   etc/devices/Generic_devices/Makefile
    )
 
 

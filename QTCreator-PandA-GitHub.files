@@ -2554,6 +2554,8 @@ src/wrapper/synthesis/ASICBackendFlow.cpp
 src/wrapper/synthesis/ASICBackendFlow.hpp
 src/wrapper/synthesis/BackendFlow.cpp
 src/wrapper/synthesis/BackendFlow.hpp
+src/wrapper/synthesis/BashBackendFlow.cpp
+src/wrapper/synthesis/BashBackendFlow.hpp
 src/wrapper/synthesis/DesignParameters.cpp
 src/wrapper/synthesis/DesignParameters.hpp
 src/wrapper/synthesis/SynthesisTool.cpp
@@ -2572,6 +2574,8 @@ src/wrapper/synthesis/altera/quartus_report_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_report_wrapper.hpp
 src/wrapper/synthesis/altera/quartus_wrapper.cpp
 src/wrapper/synthesis/altera/quartus_wrapper.hpp
+src/wrapper/synthesis/bash_flow_wrapper.cpp
+src/wrapper/synthesis/bash_flow_wrapper.hpp
 src/wrapper/synthesis/lattice/LatticeBackendFlow.cpp
 src/wrapper/synthesis/lattice/LatticeBackendFlow.hpp
 src/wrapper/synthesis/lattice/LatticeWrapper.cpp
