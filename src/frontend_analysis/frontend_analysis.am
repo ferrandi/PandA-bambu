@@ -148,6 +148,7 @@ BUILT_SOURCES =
 
 if BUILD_BAMBU
   noinst_HEADERS += \
+     frontend_analysis/IR_analysis/APInt.hpp \
      frontend_analysis/IR_analysis/bit_lattice.hpp \
      frontend_analysis/IR_analysis/Bit_Value.hpp \
      frontend_analysis/IR_analysis/Bit_Value_opt.hpp \
@@ -178,6 +179,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/phi_opt.hpp \
      frontend_analysis/IR_analysis/parm_decl_taken_address_fix.hpp \
      frontend_analysis/IR_analysis/Range_Analysis.hpp \
+     frontend_analysis/IR_analysis/Range.hpp \
      frontend_analysis/IR_analysis/rebuild_initializations.hpp \
      frontend_analysis/IR_analysis/remove_clobber_ga.hpp \
      frontend_analysis/IR_analysis/remove_ending_if.hpp \
@@ -189,6 +191,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/virtual_phi_nodes_split.hpp\
      frontend_analysis/IR_analysis/constant_flop_wrapper.hpp
   lib_IR_analysis_la_SOURCES += \
+     frontend_analysis/IR_analysis/APInt.cpp \
      frontend_analysis/IR_analysis/IR_lowering.cpp \
      frontend_analysis/IR_analysis/IR_lowering_exec.cpp \
      frontend_analysis/IR_analysis/bit_lattice.cpp \
@@ -222,6 +225,7 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/phi_opt.cpp \
      frontend_analysis/IR_analysis/parm_decl_taken_address_fix.cpp \
      frontend_analysis/IR_analysis/Range_Analysis.cpp \
+     frontend_analysis/IR_analysis/Range.cpp \
      frontend_analysis/IR_analysis/rebuild_initializations.cpp \
      frontend_analysis/IR_analysis/remove_clobber_ga.cpp \
      frontend_analysis/IR_analysis/remove_ending_if.cpp \
