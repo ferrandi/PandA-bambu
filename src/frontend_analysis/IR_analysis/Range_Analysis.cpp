@@ -115,10 +115,6 @@
    case tree_vec_K:              \
    case call_expr_K
 
-#define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
-#define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
-#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getRangeFor(var, Regular)
-
 using bw_t = Range::bw_t;
 
 union vcFloat {
@@ -1852,6 +1848,10 @@ static bool enable_zext = true;
 static bool enable_trunc = true;
 static bool enable_min = true;
 static bool enable_max = true;
+
+#define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
+#define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
+#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getRangeFor(var, Regular)
 
 // ========================================================================== //
 // PhiOp
@@ -6320,7 +6320,7 @@ bool RangeAnalysis::finalize()
 
    #ifndef NDEBUG
    unsigned long long updated = 0;
-               #endif
+   #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(const auto& varNode : vars)
