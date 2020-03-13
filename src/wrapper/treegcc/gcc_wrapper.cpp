@@ -1760,22 +1760,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC45_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
@@ -1808,22 +1808,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC46_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
@@ -1863,22 +1863,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC47_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
@@ -1918,22 +1918,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC48_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
@@ -1965,22 +1965,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC49_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
@@ -2012,22 +2012,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC5_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
@@ -2060,22 +2060,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC6_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 
@@ -2109,22 +2109,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC7_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 
@@ -2158,22 +2158,22 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.topfname_plugin_obj = plugin_dir + I386_GCC8_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC8_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = plugin_dir + "../clang_plugin/" + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 
