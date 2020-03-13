@@ -649,6 +649,8 @@ Lattice Diamond is currently distributed in rpm form for Linux distributions. To
 once the package has been converted you can install with:
   $sudo dpkg -i diamond-3-9-base-x64_3.9-100_amd64.deb
 
+Device LFE335EA8FN484C requires a free license available from Lattice Semiconductor. Check this link to get the license: http://www.latticesemi.com/Support/Licensing/DiamondAndiCEcube2SoftwareLicensing/Versa
+
 
 Notes on NanoXplore tools
 *************
