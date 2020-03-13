@@ -575,10 +575,10 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
    }
    const Compiler compiler = GetCompiler();
 
-   if(compiler.is_clang || (Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION))
+   if(!(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER))
+      THROW_WARNING("pragma analysis requires CLANG");
+   else
    {
-      if(!(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER))
-         THROW_ERROR("inferred interfaces analysis requires CLANG");
       for(auto& source_file : source_files)
       {
          if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -619,7 +619,6 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, GccWrapper_CompilerMode::CM_ANALYZER);
       }
    }
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
    bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
    for(auto& source_file : source_files)
