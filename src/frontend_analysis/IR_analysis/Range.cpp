@@ -597,8 +597,8 @@ RangeRef Range::mul(const RangeConstRef& other) const
    Other_min = other->getSignedMin();
    Other_max = other->getSignedMax();
 
-   const auto [min, max] = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
-   const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), min, max);
+   const auto res = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
+   const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), res.first, res.second);
    const auto SR = Result_sext.truncate(bw);
    if(SR->isFullSet())
    {
@@ -726,8 +726,8 @@ RangeRef Range::sdiv(const RangeConstRef& other) const
       candidates[7] = DIV_HELPER(b, d2);
    }
    // Lower bound is the min value from the vector, while upper bound is the max value
-   auto [min, max] = std::minmax_element(candidates, candidates + n_iters);
-   return RangeRef(new Range(Regular, bw, *min, *max));
+   auto res = std::minmax_element(candidates, candidates + n_iters);
+   return RangeRef(new Range(Regular, bw, *res.first, *res.second));
 }
 
 RangeRef Range::urem(const RangeConstRef& other) const
@@ -778,9 +778,8 @@ RangeRef Range::urem(const RangeConstRef& other) const
    candidates[7] = b < d ? b : d - 1;
 
    // Lower bound is the min value from the vector, while upper bound is the max value
-   auto [min, max] = std::minmax_element(candidates, candidates + 8);
-   RangeRef res(new Range(Regular, bw, *min, *max));
-   return res;
+   auto res = std::minmax_element(candidates, candidates + 8);
+   return RangeRef(new Range(Regular, bw, *res.first, *res.second));
 }
 
 RangeRef Range::srem(const RangeConstRef& other) const
@@ -841,9 +840,8 @@ RangeRef Range::srem(const RangeConstRef& other) const
       candidates[3] = b % d; // upper upper
    }
    // Lower bound is the min value from the vector, while upper bound is the max value
-   auto [min, max] = std::minmax_element(candidates, candidates + 4);
-   RangeRef res(new Range(Regular, bw, *min, *max));
-   return res;
+   auto res = std::minmax_element(candidates, candidates + 4);
+   return RangeRef(new Range(Regular, bw, *res.first, *res.second));
 }
 
 RangeRef Range::shl(const RangeConstRef& other) const
@@ -1144,8 +1142,8 @@ RangeRef Range::Or(const RangeConstRef& other) const
    const auto& c = other->isAnti() ? Min : other->getLower();
    const auto& d = other->isAnti() ? Max : other->getUpper();
    
-   const auto [res_l, res_u] = OR(a, b, c, d);
-   return RangeRef(new Range(Regular, bw, res_l, res_u));
+   const auto res = OR(a, b, c, d);
+   return RangeRef(new Range(Regular, bw, res.first, res.second));
 }
 
 RangeRef Range::And(const RangeConstRef& other) const
@@ -1159,8 +1157,8 @@ RangeRef Range::And(const RangeConstRef& other) const
    const auto& c = other->isAnti() ? Min : other->getLower();
    const auto& d = other->isAnti() ? Max : other->getUpper();
 
-   const auto [res_l, res_u] = AND(a, b, c, d);
-   return RangeRef(new Range(Regular, bw, res_l, res_u));
+   const auto res = AND(a, b, c, d);
+   return RangeRef(new Range(Regular, bw, res.first, res.second));
 }
 
 RangeRef Range::Xor(const RangeConstRef& other) const
@@ -1176,8 +1174,8 @@ RangeRef Range::Xor(const RangeConstRef& other) const
    
    if(a >= 0 && b >= 0 && c >= 0 && d >= 0)
    {
-      const auto [res_l,res_u] = uXOR(a, b, c, d);
-      return RangeRef(new Range(Regular, bw, res_l, res_u));
+      const auto res = uXOR(a, b, c, d);
+      return RangeRef(new Range(Regular, bw, res.first, res.second));
    }
    else if(a == -1 && b == -1 && c >= 0 && d >= 0)
    {
@@ -1697,8 +1695,8 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
    const auto this_min = this->getSignedMin();
    const auto this_max = this->getSignedMax();
    
-   const auto [min, max] = std::minmax({this_min.extOrTrunc(bitwidth, true), this_max.extOrTrunc(bitwidth, true)});
-   RangeRef sextRes(new Range(Regular, bitwidth, min, max));
+   const auto res = std::minmax({this_min.extOrTrunc(bitwidth, true), this_max.extOrTrunc(bitwidth, true)});
+   RangeRef sextRes(new Range(Regular, bitwidth, res.first, res.second));
    if(sextRes->isFullSet())
    {
       return RangeRef(new Range(Regular, bitwidth));

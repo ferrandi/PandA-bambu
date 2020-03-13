@@ -859,7 +859,7 @@ class VarNode
    /// Initializes the value of the node.
    void init(bool outside);
    /// Returns the range of the variable represented by this node.
-   const RangeConstRef& getRange() const
+   RangeConstRef getRange() const
    {
       return interval;
    }
@@ -885,7 +885,7 @@ class VarNode
    RangeRef getMaxRange() const
    {
       return getRangeFor(V, Regular);
-      }
+   }
 
    char getAbstractState()
    {
@@ -1225,7 +1225,7 @@ class ValueRange
    }
 
    /// Returns the range of this interval.
-   const RangeConstRef& getRange() const
+   RangeConstRef getRange() const
    {
       return this->range;
    }
@@ -1327,8 +1327,8 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
 {
    // Get the lower and the upper bound of the
    // node which bounds this intersection.
-   const auto& boundRange = _bound->getRange();
-   const auto& sinkRange = _sink->getRange();
+   const auto boundRange = _bound->getRange();
+   const auto sinkRange = _sink->getRange();
    THROW_ASSERT(!boundRange->isEmpty(), "Bound range should not be empty");
    THROW_ASSERT(!sinkRange->isEmpty(), "Sink range should not be empty");
 
@@ -1592,7 +1592,7 @@ class OpNode
 
    /// Given the input of the operation and the operation that will be
    /// performed, evaluates the result of the operation.
-   virtual RangeConstRef eval() const = 0;
+   virtual RangeRef eval() const = 0;
    /// Return the instruction that originated this op node
    const tree_nodeConstRef& getInstruction() const
    {
@@ -1854,7 +1854,7 @@ class PhiOpNode : public OpNode
    std::vector<const VarNode*> sources;
    /// Computes the interval of the sink based on the interval of the sources,
    /// the operation and the interval associated to the operation.
-   RangeConstRef eval() const override;
+   RangeRef eval() const override;
 
  public:
    PhiOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst);
@@ -1918,10 +1918,10 @@ PhiOpNode::PhiOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree
 /// Computes the interval of the sink based on the interval of the sources.
 /// The result of evaluating a phi-function is the union of the ranges of
 /// every variable used in the phi.
-RangeConstRef PhiOpNode::eval() const
+RangeRef PhiOpNode::eval() const
 {
    THROW_ASSERT(sources.size() > 0, "Phi operation sources list empty");
-   auto result = this->getSource(0)->getRange();
+   auto result = getRangeFor(getSink()->getValue(), Empty);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, getSink()->ToString() + " = PHI");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Iterate over the sources of the phiop
@@ -1935,7 +1935,7 @@ RangeConstRef PhiOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      const auto& aux = this->getIntersect()->getRange();
+      const auto aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -2023,7 +2023,7 @@ class UnaryOpNode : public OpNode
    kind opcode;
    /// Computes the interval of the sink based on the interval of the sources,
    /// the operation and the interval associated to the operation.
-   RangeConstRef eval() const override;
+   RangeRef eval() const override;
 
  public:
    UnaryOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst, VarNode* source, kind opcode);
@@ -2077,16 +2077,16 @@ UnaryOpNode::UnaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const 
 
 /// Computes the interval of the sink based on the interval of the sources,
 /// the operation and the interval associated to the operation.
-RangeConstRef UnaryOpNode::eval() const
+RangeRef UnaryOpNode::eval() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          GET_CONST_NODE(getSink()->getValue())->ToString() + " = " + tree_node::GetString(this->getOpcode()) + "( " + GET_CONST_NODE(getSource()->getValue())->ToString() + " )");
 
-   auto bw = getSink()->getBitWidth();
-   const auto& oprnd = source->getRange();
+   const auto bw = getSink()->getBitWidth();
+   const auto oprnd = source->getRange();
    const auto resultType = getGIMPLE_Type(getSink()->getValue());
-   bool oprndSigned = isSignedType(source->getValue());
-   RangeRef result = getRangeFor(getSink()->getValue(), Unknown);
+   const bool oprndSigned = isSignedType(source->getValue());
+   auto result = getRangeFor(getSink()->getValue(), Unknown);
    if(oprnd->isRegular() || oprnd->isAnti())
    {
       switch(this->getOpcode())
@@ -2223,7 +2223,7 @@ RangeConstRef UnaryOpNode::eval() const
    auto test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      const auto& aux = this->getIntersect()->getRange();
+      const auto aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -2386,7 +2386,7 @@ class SigmaOpNode : public UnaryOpNode
  private:
    /// Computes the interval of the sink based on the interval of the sources,
    /// the operation and the interval associated to the operation.
-   RangeConstRef eval() const override;
+   RangeRef eval() const override;
 
    // The symbolic source node of the operation.
    VarNode* SymbolicSource;
@@ -2455,12 +2455,12 @@ SigmaOpNode::SigmaOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const 
 
 /// Computes the interval of the sink based on the interval of the sources,
 /// the operation and the interval associated to the operation.
-RangeConstRef SigmaOpNode::eval() const
+RangeRef SigmaOpNode::eval() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(getSink()->getValue())->ToString() + " = SIGMA< " + GET_CONST_NODE(getSource()->getValue())->ToString() + " >");
 
-   auto result = this->getSource()->getRange();
-   const auto& aux = this->getIntersect()->getRange();
+   RangeRef result(this->getSource()->getRange()->clone());
+   const auto aux = this->getIntersect()->getRange();
    if(!aux->isUnknown())
    {
       auto _intersect = result->intersectWith(aux);
@@ -2575,7 +2575,7 @@ class BinaryOpNode : public OpNode
    kind opcode;
    /// Computes the interval of the sink based on the interval of the sources,
    /// the operation and the interval associated to the operation.
-   RangeConstRef eval() const override;
+   RangeRef eval() const override;
 
  public:
    BinaryOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst, VarNode* source1, VarNode* source2, kind opcode);
@@ -2599,7 +2599,7 @@ class BinaryOpNode : public OpNode
       return BO->getValueId() == OperationId::BinaryOpId;
    }
 
-   static RangeConstRef evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool isSigned);
+   static RangeRef evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool isSigned);
 
    /// Return the opcode of the operation.
    kind getOpcode() const
@@ -2636,7 +2636,7 @@ BinaryOpNode::BinaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, cons
    THROW_ASSERT(isValidType(_sink->getValue()), "Binary operation sink should be of valid type (" + GET_CONST_NODE(_sink->getValue())->ToString() + ")");
 }
 
-RangeConstRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool isSigned)
+RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool isSigned)
 {
    switch(opcode)
    {
@@ -2743,13 +2743,13 @@ RangeConstRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& 
 /// the operation and the interval associated to the operation.
 /// Basically, this function performs the operation indicated in its opcode
 /// taking as its operands the source1 and the source2.
-RangeConstRef BinaryOpNode::eval() const
+RangeRef BinaryOpNode::eval() const
 {
-   const auto& op1 = this->getSource1()->getRange();
-   const auto& op2 = this->getSource2()->getRange();
+   const auto op1 = this->getSource1()->getRange();
+   const auto op2 = this->getSource2()->getRange();
    // Instruction bitwidth
    const auto bw = getSink()->getBitWidth();
-   RangeConstRef result = getRangeFor(getSink()->getValue(), Unknown);
+   auto result = getRangeFor(getSink()->getValue(), Unknown);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          GET_CONST_NODE(getSink()->getValue())->ToString() + " = (" + GET_CONST_NODE(getSource1()->getValue())->ToString() + ")" + tree_node::GetString(this->getOpcode()) + "(" + GET_CONST_NODE(getSource2()->getValue())->ToString() + ")");
@@ -2778,7 +2778,7 @@ RangeConstRef BinaryOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      const auto& aux = this->getIntersect()->getRange();
+      const auto aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -3018,7 +3018,7 @@ class TernaryOpNode : public OpNode
    kind opcode;
    /// Computes the interval of the sink based on the interval of the sources,
    /// the operation and the interval associated to the operation.
-   RangeConstRef eval() const override;
+   RangeRef eval() const override;
 
  public:
    TernaryOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst, VarNode* source1, VarNode* source2, VarNode* source3, kind opcode);
@@ -3088,14 +3088,14 @@ TernaryOpNode::TernaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, co
    #endif
 }
 
-RangeConstRef TernaryOpNode::eval() const
+RangeRef TernaryOpNode::eval() const
 {
-   const auto& op1 = this->getSource1()->getRange();
+   const auto op1 = this->getSource1()->getRange();
    auto op2 = this->getSource2()->getRange();
    auto op3 = this->getSource3()->getRange();
    // Instruction bitwidth
    const auto bw = getSink()->getBitWidth();
-   RangeConstRef result = getRangeFor(getSink()->getValue(), Unknown);
+   auto result = getRangeFor(getSink()->getValue(), Unknown);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          GET_CONST_NODE(getSink()->getValue())->ToString() + " = " + GET_CONST_NODE(getSource1()->getValue())->ToString() + " ? " + GET_CONST_NODE(getSource2()->getValue())->ToString() + " : " + GET_CONST_NODE(getSource3()->getValue())->ToString());
@@ -3108,11 +3108,11 @@ RangeConstRef TernaryOpNode::eval() const
          // Source1 is the selector
          if(op1->isSameRange(RangeRef(new Range(Regular, op1->getBitWidth(), 1, 1))))
          {
-            result = op2;
+            result = RangeRef(op2->clone());
          }
          else if(op1->isSameRange(RangeRef(new Range(Regular, op1->getBitWidth(), 0, 0))))
          {
-            result = op3;
+            result = RangeRef(op3->clone());
          }
          else
          {
@@ -3180,7 +3180,7 @@ RangeConstRef TernaryOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      const auto& aux = this->getIntersect()->getRange();
+      const auto aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -3276,7 +3276,7 @@ class LoadOpNode : public OpNode
  private:
    /// reference to the memory access operand
    std::vector<const VarNode*> sources;
-   RangeConstRef eval() const override;
+   RangeRef eval() const override;
 
  public:
    LoadOpNode(const ValueRangeRef& intersect, VarNode* sink, const tree_nodeConstRef& inst);
@@ -3334,7 +3334,7 @@ LoadOpNode::LoadOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tr
 {
 }
 
-RangeConstRef LoadOpNode::eval() const
+RangeRef LoadOpNode::eval() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, getSink()->ToString() + " = LOAD");
 
@@ -3342,11 +3342,11 @@ RangeConstRef LoadOpNode::eval() const
    {
       THROW_ASSERT(getSink()->getBitWidth() == getIntersect()->getRange()->getBitWidth(), "Sink (" + GET_CONST_NODE(getSink()->getValue())->ToString() + ") has bitwidth " + STR(getSink()->getBitWidth()) + " while intersect has bitwidth " + STR(getIntersect()->getRange()->getBitWidth()));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "= " + getIntersect()->getRange()->ToString());
-      return getIntersect()->getRange();
+      return RangeRef(getIntersect()->getRange()->clone());
    }
 
    // Iterate over the sources of the load
-   RangeConstRef result = this->getSource(0)->getRange();
+   auto result = getRangeFor(getSink()->getValue(), Empty);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(const VarNode* varNode : sources)
    {
@@ -3358,7 +3358,7 @@ RangeConstRef LoadOpNode::eval() const
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
    {
-      const auto& aux = this->getIntersect()->getRange();
+      const auto aux = this->getIntersect()->getRange();
       auto _intersect = result->intersectWith(aux);
       if(!_intersect->isEmpty())
       {
@@ -3388,7 +3388,7 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
       VarNode* sink = NC->addVarNode(ga->op0, function_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
-      RangeRef intersection = getRangeFor(sink->getValue(), Empty);
+      auto intersection = getRangeFor(sink->getValue(), Empty);
       CustomOrderedSet<unsigned int> res_set;
       bool pointToConstants = tree_helper::is_fully_resolved(TM, GET_INDEX_CONST_NODE(ga->op1), res_set);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Pointer is fully resolved");
@@ -3632,7 +3632,7 @@ class ControlDepNode : public OpNode
 {
  private:
    VarNode* source;
-   RangeConstRef eval() const override;
+   RangeRef eval() const override;
 
  public:
    ControlDepNode(VarNode* sink, VarNode* source);
@@ -3675,9 +3675,9 @@ ControlDepNode::ControlDepNode(VarNode* _sink, VarNode* _source) : OpNode(ValueR
 {
 }
 
-RangeConstRef ControlDepNode::eval() const
+RangeRef ControlDepNode::eval() const
 {
-   return RangeConstRef(new Range(Regular, Range::MAX_BIT_INT));
+   return RangeRef(new Range(Regular, Range::MAX_BIT_INT));
 }
 
 void ControlDepNode::print(std::ostream& /*OS*/) const
@@ -4036,7 +4036,7 @@ const APInt& Meet::getFirstLessFromVector(const std::vector<APInt>& constantvect
 
 bool Meet::fixed(OpNode* op)
 {
-   const auto& oldInterval = op->getSink()->getRange();
+   const auto oldInterval = op->getSink()->getRange();
    const auto newInterval = op->eval();
 
    op->getSink()->setRange(newInterval);
@@ -4059,7 +4059,7 @@ bool Meet::fixed(OpNode* op)
 /// constant interval, or to [-, c], or to [c, +], or to [-, +].
 bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
 {
-   const auto& oldRange = op->getSink()->getRange();
+   const auto oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalWiden = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
@@ -4126,7 +4126,7 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
       op->getSink()->setRange(intervalWiden(oldRange, newRange));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
 
    if(op->getInstruction())
    {
@@ -4141,7 +4141,7 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
 
 bool Meet::growth(OpNode* op)
 {
-   const auto& oldRange = op->getSink()->getRange();
+   const auto oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalGrowth = [](RangeConstRef oldInterval, RangeConstRef newInterval)
@@ -4185,7 +4185,7 @@ bool Meet::growth(OpNode* op)
       op->getSink()->setRange(intervalGrowth(oldRange, newRange));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "GROWTH::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
@@ -4203,7 +4203,7 @@ bool Meet::growth(OpNode* op)
 /// to ranges that respect the intersections.
 bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
 {
-   const auto& oldRange = op->getSink()->getRange();
+   const auto oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval)
@@ -4304,7 +4304,7 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
       op->getSink()->setRange(intervalNarrow(oldRange, newRange));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "NARROW::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
@@ -4318,7 +4318,7 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
 
 bool Meet::crop(OpNode* op)
 {
-   const auto& oldRange = op->getSink()->getRange();
+   const auto oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
    const char _abstractState = op->getSink()->getAbstractState();
 
@@ -4362,7 +4362,7 @@ bool Meet::crop(OpNode* op)
       op->getSink()->setRange(intervalCrop(oldRange, newRange, _abstractState));
    }
    
-   const auto& sinkRange = op->getSink()->getRange();
+   const auto sinkRange = op->getSink()->getRange();
    if(op->getInstruction())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "CROP::@" + STR(GET_INDEX_CONST_NODE(op->getInstruction())) + ": " + oldRange->ToString() + " -> " + sinkRange->ToString());
@@ -5158,7 +5158,7 @@ class ConstraintGraph : public NodeContainer
             {
                continue;
             }
-            const auto& rintersect = op->getIntersect()->getRange();
+            const auto rintersect = op->getIntersect()->getRange();
             if(rintersect->isAnti())
             {
                const auto anti = rintersect->getAnti();
@@ -6048,11 +6048,11 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
 // RangeAnalysis
 // ========================================================================== //
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
-   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par), solverType(st_Cousot), dead_code_restart(false)
+   : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par)
    #ifndef NDEBUG
    , graph_debug(DEBUG_LEVEL_NONE), iteration(0), debug_mode(RA_DEBUG_NONE)
    #endif
-   , requireESSA(false) // ESSA disabled because of renaming issues in some cases
+   , solverType(st_Cousot), dead_code_restart(false), requireESSA(false) // ESSA disabled because of renaming issues in some cases
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
@@ -6195,7 +6195,16 @@ bool RangeAnalysis::HasToBeExecuted() const
       return false;
    }
    #endif
-   return true;
+   std::map<unsigned int, unsigned int> cur_bitvalue_ver;
+   std::map<unsigned int, unsigned int> cur_bb_ver;
+   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   for(const auto i : CGMan->GetReachedBodyFunctions())
+   {
+      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
+      cur_bitvalue_ver[i] = FB->GetBitValueVersion();
+      cur_bb_ver[i] = FB->GetBBVersion();
+   }
+   return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
 DesignFlowStep_Status RangeAnalysis::Exec()
@@ -6285,6 +6294,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 bool RangeAnalysis::finalize()
 {
    const auto& vars = std::static_pointer_cast<const ConstraintGraph>(CG)->getVarNodes();
+   CustomSet<unsigned int> updatedFunctions;
    #ifndef NDEBUG
    if(debug_mode >= RA_DEBUG_READONLY)
    {
@@ -6296,14 +6306,11 @@ bool RangeAnalysis::finalize()
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "IR update not applied in read-only mode");
-      CG.reset();
-      return false;
    }
+   else {
    #endif
-
    const auto TM = AppM->get_tree_manager();
    const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
-   CustomSet<unsigned int> updatedFunctions;
 
    #ifndef NDEBUG
    unsigned long long updated = 0;
@@ -6327,13 +6334,25 @@ bool RangeAnalysis::finalize()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds updated for " + STR(updated) + "/" + STR(vars.size()) + " variables");
+   #ifndef NDEBUG
+   }
+   #endif
    CG.reset();
 
-   for(const auto fun_id : updatedFunctions)
+   for(const auto f : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
    {
-      const auto FB = AppM->GetFunctionBehavior(fun_id);
-      FB->UpdateBBVersion();
-      FB->UpdateBitValueVersion();
+      const auto FB = AppM->GetFunctionBehavior(f);
+      const auto updated_f = updatedFunctions.find(f);
+      if(updated_f != updatedFunctions.end())
+      {
+         last_bitvalue_ver[f] = FB->UpdateBBVersion();
+         last_bb_ver[f] = FB->UpdateBitValueVersion();
+      }
+      else
+      {
+         last_bitvalue_ver[f] = FB->GetBBVersion();
+         last_bb_ver[f] = FB->GetBitValueVersion();
+      }
    }
    return !updatedFunctions.empty();
 }

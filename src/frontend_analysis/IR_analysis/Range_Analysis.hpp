@@ -65,18 +65,21 @@ enum SolverType
 
 class RangeAnalysis : public ApplicationFrontendFlowStep
 {
-   SolverType solverType;
-
-   ConstraintGraphRef CG;
-   /// True if dead code elimination step must be restarted
-   bool dead_code_restart;
-
 #ifndef NDEBUG
    int graph_debug;
    unsigned iteration;
    int debug_mode;
 #endif
+
+   SolverType solverType;
+   ConstraintGraphRef CG;
+
+   /// True if dead code elimination step must be restarted
+   bool dead_code_restart;
    bool requireESSA;
+
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+   std::map<unsigned int, unsigned int> last_bb_ver;
 
    bool finalize();
 
