@@ -976,7 +976,7 @@ namespace
 
    std::pair<APInt,APInt> OR(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
-      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
+      auto abcd = ((a >= 0) << 3) | ((b >= 0) << 2) | ((c >= 0) << 1) | (d >= 0);
 
       APInt res_l = 0, res_u = 0;
       switch(abcd)
@@ -1051,7 +1051,7 @@ namespace
 
    std::pair<APInt,APInt> AND(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
-      auto abcd = (a >= 0) << 3 | (b >= 0) << 2 | (c >= 0) << 1 | (d >= 0);
+      auto abcd = ((a >= 0) << 3) | ((b >= 0) << 2) | ((c >= 0) << 1) | (d >= 0);
 
       APInt res_l = 0, res_u = 0;
       switch(abcd)

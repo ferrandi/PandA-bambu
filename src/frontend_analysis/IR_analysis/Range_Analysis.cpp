@@ -801,17 +801,6 @@ namespace
       #ifdef BITVALUE_UPDATE
       if(const auto* ssa = GetPointer<const ssa_name>(tn))
       {
-         if(ssa->min)
-         {
-            THROW_ASSERT(GET_CONST_NODE(ssa->min)->get_kind() == integer_cst_K, "Min value should be integer constant for " + ssa->ToString());
-            min = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(ssa->min)));
-         }
-         if(ssa->max)
-         {
-            THROW_ASSERT(GET_CONST_NODE(ssa->max)->get_kind() == integer_cst_K, "Max value should be integer constant for " + ssa->ToString());
-            max = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(ssa->max)));
-         }
-
          if(!ssa->bit_values.empty())
          {
             const auto bitValues = string_to_bitstring(ssa->bit_values);
@@ -1894,10 +1883,8 @@ class PhiOpNode : public OpNode
    std::vector<tree_nodeConstRef> getSources() const override
    {
       std::vector<tree_nodeConstRef> tSources;
-      for(const auto& v : sources)
-      {
-         tSources.push_back(v->getValue());
-      }
+      std::transform(sources.begin(), sources.end(), std::back_inserter(tSources), 
+            [](const VarNode* vn) -> tree_nodeConstRef { return vn->getValue(); });
       return tSources;
    }
 

@@ -63,16 +63,12 @@ class APInt
    APInt_internal _data;
 
  public:
-   template <typename T>
-   APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr)
-   {
-     _data = val;
-   }
-
    APInt();
-   APInt(const APInt& other);
-   APInt& operator=(const APInt& other);
-   ~APInt();
+   
+   template <typename T>
+   APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) : _data(val)
+   {
+   }
 
    friend bool operator<(const APInt& lhs, const APInt& rhs);
    friend bool operator>(const APInt& lhs, const APInt& rhs);

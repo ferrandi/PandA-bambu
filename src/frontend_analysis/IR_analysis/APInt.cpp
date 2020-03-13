@@ -49,23 +49,7 @@ using namespace boost::multiprecision;
 
 using bw_t = APInt::bw_t;
 
-APInt::APInt()
-{
-   _data = 0;
-}
-
-APInt::APInt(const APInt& other)
-{
-   _data = other._data;
-}
-
-APInt& APInt::operator=(const APInt& other)
-{
-   _data = other._data;
-   return *this;
-}
-
-APInt::~APInt()
+APInt::APInt() : _data(57)
 {
 }
 
