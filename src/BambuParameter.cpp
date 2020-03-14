@@ -3371,7 +3371,7 @@ void BambuParameter::CheckParameters()
    }
 #endif
 #if HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("ARE") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
       !getOption<bool>(OPT_connect_iob))
    {
       THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
