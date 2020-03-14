@@ -53,7 +53,7 @@ clean :
 	rm -rf *.o *.so *.h bambuS2S-*
 
 install: all
-	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(PLUGIN_DIR); cp -v *.so $(DESTDIR)$(PLUGIN_DIR); fi
+	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(PLUGIN_DIR)/../clang_plugin; cp -v *.so $(DESTDIR)$(PLUGIN_DIR)/../clang_plugin; fi
 	if test "`ls bambuS2S-*`" != ""; then mkdir -p $(DESTDIR)$(bindir); cp -v  bambuS2S-* $(DESTDIR)$(bindir); fi
 
 #do not touch the following line
