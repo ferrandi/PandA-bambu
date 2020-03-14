@@ -1733,7 +1733,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       preferred_compiler = compiler_target;
    }
    const std::string gcc_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(GCC_PLUGIN_DIR)) + "/";
-   const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(CLANG_PLUGIN_DIR)) + "/";
+   const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir)+"/../clang_plugin" : STR(CLANG_PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
 #endif
 
