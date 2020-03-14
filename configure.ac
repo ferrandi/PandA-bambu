@@ -2850,11 +2850,40 @@ for file in `find $BUILDDIR/config_headers -name *hpp`; do
    fi
 done;
 
-for keyword in `grep "#undef" $BUILDDIR/lconfig.h.in | awk '{print $2}'`; do
-   if test ! -f config_headers/config_"$keyword".hpp.in; then
-      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp.in
+for keyword in `grep "#undef" $BUILDDIR/lconfig.h | awk '{print $3}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp
+   else
+      echo "#define "$keyword 0 > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
    fi
 done;
+
+for keyword in `grep "#define" $BUILDDIR/lconfig.h | awk '{print $2}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      grep $keyword $BUILDDIR/lconfig.h > config_headers/config_"$keyword".hpp
+   else
+      grep $keyword $BUILDDIR/lconfig.h > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
+   fi
+done;
+
 all_includes=" -I$BUILDDIR/config_headers"
 
 
@@ -2943,37 +2972,4 @@ AC_SUBST(all_includes)
 
 AC_OUTPUT()
 
-for keyword in `grep "#undef" $BUILDDIR/lconfig.h | awk '{print $3}'`; do
-   if test ! -f config_headers/config_"$keyword".hpp; then
-      echo Creating config_headers/config_"$keyword".hpp
-      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp
-   else
-      echo "#define "$keyword 0 > configtest.hpp
-      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
-      { echo config_headers/config_"$keyword".hpp is unchanged >&5
-echo config_headers/config_"$keyword".hpp is unchanged >&6;}
-    else
-      echo config_headers/config_"$keyword".hpp is changed
-      rm -f config_headers/config_"$keyword".hpp
-      mv configtest.hpp config_headers/config_"$keyword".hpp
-    fi
-   fi
-done;
-
-for keyword in `grep "#define" $BUILDDIR/lconfig.h | awk '{print $2}'`; do
-   if test ! -f config_headers/config_"$keyword".hpp; then
-      echo Creating config_headers/config_"$keyword".hpp
-      grep $keyword $BUILDDIR/lconfig.h > config_headers/config_"$keyword".hpp
-   else
-      grep $keyword $BUILDDIR/lconfig.h > configtest.hpp
-      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
-      { echo config_headers/config_"$keyword".hpp is unchanged >&5
-echo config_headers/config_"$keyword".hpp is unchanged >&6;}
-    else
-      echo config_headers/config_"$keyword".hpp is changed
-      rm -f config_headers/config_"$keyword".hpp
-      mv configtest.hpp config_headers/config_"$keyword".hpp
-    fi
-   fi
-done;
 
