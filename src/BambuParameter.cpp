@@ -3361,7 +3361,7 @@ void BambuParameter::CheckParameters()
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
-         THROW_ERROR("Simulation of Lattice device does not work with VERILATOR");
+         THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in Verilog Lattice libraries.");
       }
    }
 #if !HAVE_LATTICE
