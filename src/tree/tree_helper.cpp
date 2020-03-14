@@ -3052,8 +3052,6 @@ bool tree_helper::is_unsigned(const tree_managerConstRef& TM, const unsigned int
    }
    else
    {
-      // decl_node * dn = GetPointer<decl_node>(T);
-      // THROW_ASSERT(dn, "expected a declaration object");
       type_index = 0;
       Type = get_type_node(T, type_index);
       THROW_ASSERT(type_index > 0, "expected a type index");
@@ -3072,7 +3070,7 @@ bool tree_helper::is_unsigned(const tree_managerConstRef& TM, const unsigned int
    }
 
    std::string type_name = name_type(TM, type_index);
-   if(type_name == std::string("unsigned") || type_name.find(" unsigned") != std::string::npos || type_name.find("unsigned ") != std::string::npos || type_name == std::string("sc_uint") || type_name == std::string("sc_lv") ||
+   if(type_name == std::string("sc_uint") || type_name == std::string("sc_lv") ||
       type_name == std::string("sc_in_rv") || type_name == std::string("sc_out_rv") || type_name == std::string("sc_inout_rv") || type_name == std::string("sc_bv") || type_name == std::string("sc_signal_rv"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--yes");
@@ -3081,6 +3079,12 @@ bool tree_helper::is_unsigned(const tree_managerConstRef& TM, const unsigned int
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--no");
    return false;
 }
+
+bool tree_helper::is_scalar(const tree_managerConstRef& TM, const unsigned int var)
+{
+   return tree_helper::is_int(TM, var) || tree_helper::is_real(TM, var) || tree_helper::is_unsigned(TM, var) || tree_helper::is_bool(TM, var);
+}
+
 
 bool tree_helper::is_module(const tree_managerConstRef& TM, const unsigned int index)
 {
