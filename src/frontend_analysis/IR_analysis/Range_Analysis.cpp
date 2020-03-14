@@ -91,10 +91,10 @@
 
 #ifndef NDEBUG
 #define RA_DEBUG_NONE         0
-#define RA_DEBUG_READONLY    1
+#define RA_DEBUG_READONLY     1
 #define RA_DEBUG_NOEXEC       2
 //    #define DEBUG_RANGE_OP
-#define SCC_DEBUG
+//    #define SCC_DEBUG
 #endif
 
 #define CASE_MISCELLANEOUS       \
@@ -1127,6 +1127,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       {
          SSA->bit_values = range_to_bits(min, max, interval->getBitWidth());
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BitValue mask: " + SSA->bit_values);
       #endif
       SSA->min = TM->CreateUniqueIntegerCst(min, type_id);
       SSA->max = TM->CreateUniqueIntegerCst(max, type_id);
@@ -1627,6 +1628,7 @@ class OpNode
 
    /// Prints the content of the operation.
    virtual void print(std::ostream& OS) const = 0;
+   virtual void printDot(std::ostream& OS) const = 0;
    std::string ToString() const;
 };
 
@@ -1902,9 +1904,8 @@ class PhiOpNode : public OpNode
       return BO->getValueId() == OperationId::PhiOpId;
    }
 
-   /// Prints the content of the operation. I didn't it an operator overload
-   /// because I had problems to access the members of the class outside it.
    void print(std::ostream& OS) const override;
+   void printDot(std::ostream& OS) const override;
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(
       const tree_nodeConstRef& stmt,unsigned int,const FunctionBehaviorConstRef& FB,const tree_managerConstRef& TM);
@@ -1980,9 +1981,18 @@ std::function<OpNode*(NodeContainer*)> PhiOpNode::opCtorGenerator(const tree_nod
    };
 }
 
-/// Prints the content of the operation. I didn't it an operator overload
-/// because I had problems to access the members of the class outside it.
 void PhiOpNode::print(std::ostream& OS) const
+{
+   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = PHI<";
+   int i = 0;
+   for(;i < static_cast<int>(sources.size() - 1); ++i)
+   {
+      OS << GET_CONST_NODE(sources.at(static_cast<decltype(sources.size())>(i))->getValue())->ToString() << ", ";
+   }
+   OS << GET_CONST_NODE(sources.at(static_cast<decltype(sources.size())>(i))->getValue())->ToString() << ">";
+}
+
+void PhiOpNode::printDot(std::ostream& OS) const
 {
    const char* quot = R"(")";
    OS << " " << quot << this << quot << R"( [label=")";
@@ -2057,14 +2067,13 @@ class UnaryOpNode : public OpNode
    {
       return source;
    }
-   std::vector<tree_nodeConstRef> getSources() const override
+   virtual std::vector<tree_nodeConstRef> getSources() const override
    {
       return {source->getValue()};
    }
 
-   /// Prints the content of the operation. I didn't it an operator overload
-   /// because I had problems to access the members of the class outside it.
    void print(std::ostream& OS) const override;
+   void printDot(std::ostream& OS) const override;
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(
       const tree_nodeConstRef& stmt,unsigned int,const FunctionBehaviorConstRef& FB,const tree_managerConstRef& TM);
@@ -2079,8 +2088,7 @@ UnaryOpNode::UnaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const 
 /// the operation and the interval associated to the operation.
 RangeRef UnaryOpNode::eval() const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         GET_CONST_NODE(getSink()->getValue())->ToString() + " = " + tree_node::GetString(this->getOpcode()) + "( " + GET_CONST_NODE(getSource()->getValue())->ToString() + " )");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
    const auto bw = getSink()->getBitWidth();
    const auto oprnd = source->getRange();
@@ -2296,9 +2304,12 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
    };
 }
 
-/// Prints the content of the operation. I didn't it an operator overload
-/// because I had problems to access the members of the class outside it.
 void UnaryOpNode::print(std::ostream& OS) const
+{
+   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = " << tree_node::GetString(this->getOpcode()) << "( " << GET_CONST_NODE(getSource()->getValue())->ToString() << " )";
+}
+
+void UnaryOpNode::printDot(std::ostream& OS) const
 {
    const char* quot = R"(")";
    OS << " " << quot << this << quot << R"( [label=")";
@@ -2420,7 +2431,7 @@ class SigmaOpNode : public UnaryOpNode
    }
    std::vector<tree_nodeConstRef> getSources() const override
    {
-      std::vector<tree_nodeConstRef> s;
+      std::vector<tree_nodeConstRef> s = UnaryOpNode::getSources();
       if(SymbolicSource != nullptr)
       {
          s.push_back(SymbolicSource->getValue());
@@ -2441,9 +2452,8 @@ class SigmaOpNode : public UnaryOpNode
       unresolved = true;
    }
 
-   /// Prints the content of the operation. I didn't it an operator overload
-   /// because I had problems to access the members of the class outside it.
    void print(std::ostream& OS) const override;
+   void printDot(std::ostream& OS) const override;
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt,unsigned int,const FunctionBehaviorConstRef& FB,const tree_managerConstRef& TM);
 };
@@ -2457,7 +2467,7 @@ SigmaOpNode::SigmaOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const 
 /// the operation and the interval associated to the operation.
 RangeRef SigmaOpNode::eval() const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(getSink()->getValue())->ToString() + " = SIGMA< " + GET_CONST_NODE(getSource()->getValue())->ToString() + " >");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
    RangeRef result(this->getSource()->getRange()->clone());
    const auto aux = this->getIntersect()->getRange();
@@ -2519,9 +2529,12 @@ std::function<OpNode*(NodeContainer*)> SigmaOpNode::opCtorGenerator(const tree_n
    };
 }
 
-/// Prints the content of the operation. I didn't it an operator overload
-/// because I had problems to access the members of the class outside it.
 void SigmaOpNode::print(std::ostream& OS) const
+{
+   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = SIGMA< " << GET_CONST_NODE(getSource()->getValue())->ToString() << " >";
+}
+
+void SigmaOpNode::printDot(std::ostream& OS) const
 {
    const char* quot = R"(")";
    OS << " " << quot << this << quot << R"( [label=")"
@@ -2621,9 +2634,8 @@ class BinaryOpNode : public OpNode
       return {source1->getValue(), source2->getValue()};
    }
 
-   /// Prints the content of the operation. I didn't it an operator overload
-   /// because I had problems to access the members of the class outside it.
    void print(std::ostream& OS) const override;
+   void printDot(std::ostream& OS) const override;
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(
       const tree_nodeConstRef& stmt,unsigned int,const FunctionBehaviorConstRef& FB,const tree_managerConstRef& TM);
@@ -2751,8 +2763,7 @@ RangeRef BinaryOpNode::eval() const
    const auto bw = getSink()->getBitWidth();
    auto result = getRangeFor(getSink()->getValue(), Unknown);
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         GET_CONST_NODE(getSink()->getValue())->ToString() + " = (" + GET_CONST_NODE(getSource1()->getValue())->ToString() + ")" + tree_node::GetString(this->getOpcode()) + "(" + GET_CONST_NODE(getSource2()->getValue())->ToString() + ")");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
    // only evaluate if all operands are Regular
    if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()))
@@ -2916,8 +2927,12 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
    };
 }
 
-/// Pretty print.
 void BinaryOpNode::print(std::ostream& OS) const
+{
+   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = (" << GET_CONST_NODE(getSource1()->getValue())->ToString() << ")" << tree_node::GetString(this->getOpcode()) + "(" << GET_CONST_NODE(getSource2()->getValue())->ToString() << ")";
+}
+
+void BinaryOpNode::printDot(std::ostream& OS) const
 {
    const char* quot = R"(")";
    std::string opcodeName = tree_node::GetString(opcode);
@@ -3067,9 +3082,8 @@ class TernaryOpNode : public OpNode
       return {source1->getValue(), source2->getValue(), source3->getValue()};
    }
 
-   /// Prints the content of the operation. I didn't it an operator overload
-   /// because I had problems to access the members of the class outside it.
    void print(std::ostream& OS) const override;
+   void printDot(std::ostream& OS) const override;
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef&,unsigned int,const FunctionBehaviorConstRef&,const tree_managerConstRef&);
 };
@@ -3097,8 +3111,7 @@ RangeRef TernaryOpNode::eval() const
    const auto bw = getSink()->getBitWidth();
    auto result = getRangeFor(getSink()->getValue(), Unknown);
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
-         GET_CONST_NODE(getSink()->getValue())->ToString() + " = " + GET_CONST_NODE(getSource1()->getValue())->ToString() + " ? " + GET_CONST_NODE(getSource2()->getValue())->ToString() + " : " + GET_CONST_NODE(getSource3()->getValue())->ToString());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
    // only evaluate if all operands are Regular
    if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()) && (op3->isRegular() || op3->isAnti()))
@@ -3221,8 +3234,12 @@ std::function<OpNode*(NodeContainer*)> TernaryOpNode::opCtorGenerator(const tree
    };
 }
 
-/// Pretty print.
 void TernaryOpNode::print(std::ostream& OS) const
+{
+   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = " << GET_CONST_NODE(getSource1()->getValue())->ToString() << " ? " << GET_CONST_NODE(getSource2()->getValue())->ToString() << " : " << GET_CONST_NODE(getSource3()->getValue())->ToString();
+}
+
+void TernaryOpNode::printDot(std::ostream& OS) const
 {
    const char* quot = R"(")";
    std::string opcodeName = tree_node::GetString(this->getOpcode());
@@ -3326,6 +3343,7 @@ class LoadOpNode : public OpNode
    }
 
    void print(std::ostream& OS) const override;
+   void printDot(std::ostream& OS) const override;
 
    static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt,unsigned int function_id,const FunctionBehaviorConstRef& FB,const tree_managerConstRef& TM);
 };
@@ -3336,7 +3354,7 @@ LoadOpNode::LoadOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tr
 
 RangeRef LoadOpNode::eval() const
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, getSink()->ToString() + " = LOAD");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
    if(getNumSources() == 0)
    {
@@ -3493,6 +3511,11 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
 }
 
 void LoadOpNode::print(std::ostream& OS) const
+{
+   OS << GET_CONST_NODE(getSink()->getValue())->ToString() << " = LOAD()";
+}
+
+void LoadOpNode::printDot(std::ostream& OS) const
 {
    const char* quot = R"(")";
    OS << " " << quot << this << quot << R"( [label=")";
@@ -3675,7 +3698,7 @@ class ControlDepNode : public OpNode
    }
 
    void print(std::ostream& OS) const override;
-
+   void printDot(std::ostream& OS) const override; 
 
 };
 
@@ -3692,6 +3715,10 @@ void ControlDepNode::print(std::ostream& /*OS*/) const
 {
 }
 
+void ControlDepNode::printDot(std::ostream& /*OS*/) const
+{
+}
+
 // ========================================================================== //
 // Nuutila
 // ========================================================================== //
@@ -3702,6 +3729,14 @@ using SymbMap = std::map<tree_nodeConstRef, CustomSet<OpNode*>, tree_reindexComp
 
 class Nuutila
 {
+   #ifndef NDEBUG
+   int debug_level;
+   bool checkWorklist() const;
+   bool checkComponents() const;
+   bool checkTopologicalSort(const UseMap& useMap) const;
+   bool hasEdge(const CustomSet<VarNode*>& componentFrom, const CustomSet<VarNode*>& componentTo, const UseMap& useMap) const;
+   #endif
+   
    const VarNodes& variables;
    int index;
    std::map<tree_nodeConstRef, int, tree_reindexCompare> dfs;
@@ -3709,16 +3744,13 @@ class Nuutila
    std::set<tree_nodeConstRef, tree_reindexCompare> inComponent;
    std::map<tree_nodeConstRef, CustomSet<VarNode*>, tree_reindexCompare> components;
    std::deque<tree_nodeConstRef> worklist;
-
-   #ifdef SCC_DEBUG
-   bool checkWorklist() const;
-   bool checkComponents() const;
-   bool checkTopologicalSort(const UseMap& useMap) const;
-   bool hasEdge(const CustomSet<VarNode*>& componentFrom, const CustomSet<VarNode*>& componentTo, const UseMap& useMap) const;
-   #endif
  
  public:
-   Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMap);
+   Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMap
+   #ifndef NDEBUG
+   , int _debug_level
+   #endif
+   );
    ~Nuutila() = default;
    Nuutila(const Nuutila&) = delete;
    Nuutila(Nuutila&&) = delete;
@@ -3761,7 +3793,13 @@ class Nuutila
  * the control dependence edges in the constraint graph. These edges are removed
  * after the class is done computing the SCCs.
  */
-Nuutila::Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMap) : variables(varNodes)
+Nuutila::Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMap
+   #ifndef NDEBUG
+   , int _debug_level) : debug_level(_debug_level),
+   #else
+   ) : 
+   #endif
+    variables(varNodes)
 {
    // Copy structures
    this->index = 0;
@@ -3779,13 +3817,16 @@ Nuutila::Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMa
       // If the Value has not been visited yet, call visit for him
       if(dfs[vNode.first] < 0)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start visit from " + GET_CONST_NODE(vNode.first)->ToString());
          std::stack<tree_nodeConstRef> pilha;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          visit(vNode.first, pilha, useMap);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
    }
    delControlDependenceEdges(useMap);
 
-   #ifdef SCC_DEBUG
+   #ifndef NDEBUG
    THROW_ASSERT(checkWorklist(), "An inconsistency in SCC worklist have been found");
    THROW_ASSERT(checkComponents(), "A component has been used more than once");
    THROW_ASSERT(checkTopologicalSort(useMap), "Topological sort is incorrect");
@@ -3871,14 +3912,17 @@ void Nuutila::visit(const tree_nodeConstRef& V, std::stack<tree_nodeConstRef>& s
    // Visit every node defined in an instruction that uses V
    for(const auto& op : useMap.at(V))
    {
-      const auto& name = op->getSink()->getValue();
-      if(dfs[name] < 0)
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, op->ToString());
+      const auto& sink = op->getSink()->getValue();
+      if(dfs[sink] < 0)
       {
-         visit(name, stack, useMap);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + GET_CONST_NODE(sink)->ToString());
+         visit(sink, stack, useMap);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-      if((!static_cast<bool>(inComponent.count(name))) && (dfs[root[V]] >= dfs[root[name]]))
+      if((!static_cast<bool>(inComponent.count(sink))) && (dfs[root[V]] >= dfs[root[sink]]))
       {
-         root[V] = root[name];
+         root[V] = root[sink];
       }
    }
 
@@ -3906,7 +3950,7 @@ void Nuutila::visit(const tree_nodeConstRef& V, std::stack<tree_nodeConstRef>& s
    }
 }
 
-#ifdef SCC_DEBUG
+#ifndef NDEBUG
 bool Nuutila::checkWorklist() const
 {
    bool consistent = true;
@@ -3917,7 +3961,7 @@ bool Nuutila::checkWorklist() const
       {
          if(GET_INDEX_CONST_NODE(v1) == GET_INDEX_CONST_NODE(v2))
          {
-            PRINT_MSG("[Nuutila::checkWorklist] Duplicated entry in worklist" << std::endl << GET_CONST_NODE(v1)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "[Nuutila::checkWorklist] Duplicated entry in worklist " + GET_CONST_NODE(v1)->ToString());
             consistent = false;
          }
       }
@@ -3936,7 +3980,7 @@ bool Nuutila::checkComponents() const
          const auto& component2 = components.at(n2);
          if(&component1 == &component2)
          {
-            PRINT_MSG("[Nuutila::checkComponent] Component [" << &component1 << ", " << component1.size() << "]");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "[Nuutila::checkComponent] Component [" + STR(&component1) + ", " + STR(component1.size()) + "]");
             isConsistent = false;
          }
       }
@@ -5560,7 +5604,11 @@ class ConstraintGraph : public NodeContainer
    {
       buildSymbolicIntersectMap();
       // List of SCCs
+      #ifndef NDEBUG
+      Nuutila sccList(getVarNodes(), getUses(), symbMap, graph_debug);
+      #else
       Nuutila sccList(getVarNodes(), getUses(), symbMap);
+      #endif
       
       for(const auto& n : sccList)
       {
@@ -5633,13 +5681,14 @@ class ConstraintGraph : public NodeContainer
                }
             };
             #endif
+
             generateEntryPoints(component, entryPoints);
             #ifndef NDEBUG
             printEntryFor("Fixed");
             #endif
             // iterate a fixed number of time before widening
             update(static_cast<size_t>(component.size() * 16L), compUseMap, entryPoints);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("cgfixed.dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("after_" + step_name + ".fixed." + STR(GET_INDEX_CONST_NODE(n)) + ".dot", parameters));
 
             generateEntryPoints(component, entryPoints);
             #ifndef NDEBUG
@@ -5650,7 +5699,7 @@ class ConstraintGraph : public NodeContainer
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "fixIntersects");
             solveFutures(component);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, " --");
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("cgfixintersect.dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("after_" + step_name + ".futures." + STR(GET_INDEX_CONST_NODE(n)) + ".dot", parameters));
 
             for(VarNode* varNode : component)
             {
@@ -5661,7 +5710,7 @@ class ConstraintGraph : public NodeContainer
                   varNode->setRange(varNode->getMaxRange());
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("cgint.dot", parameters));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed constraint graph to " + printToFile("after_" + step_name + ".int." + STR(GET_INDEX_CONST_NODE(n)) + ".dot", parameters));
 
             // Second iterate till fix point
             std::set<tree_nodeConstRef, tree_reindexCompare> activeVars;
@@ -5674,7 +5723,7 @@ class ConstraintGraph : public NodeContainer
          propagateToNextSCC(component);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed final constraint graph to " + printToFile("CG" + step_name + ".dot", parameters));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed final constraint graph to " + printToFile(step_name + ".constraints.dot", parameters));
    }
 
    RangeConstRef getRange(const tree_nodeConstRef v)
@@ -5710,13 +5759,13 @@ class ConstraintGraph : public NodeContainer
       }
       const std::string full_name = output_directory + file_name;
       std::ofstream file(full_name);
-      print(file);
+      printDot(file);
       return full_name;
    }
 
    /// Prints the content of the graph in dot format. For more information
    /// about the dot format, see: http://www.graphviz.org/pdf/dotguide.pdf
-   void print(std::ostream& OS) const
+   void printDot(std::ostream& OS) const
    {
       const char* quot = R"(")";
       // Print the header of the .dot file.
@@ -5743,7 +5792,7 @@ class ConstraintGraph : public NodeContainer
 
       for(auto* op : getOpNodes())
       {
-         op->print(OS);
+         op->printDot(OS);
          OS << '\n';
       }
       OS << pseudoEdgesString.str();
