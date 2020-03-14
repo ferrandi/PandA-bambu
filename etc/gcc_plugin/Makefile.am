@@ -742,7 +742,7 @@ clean :
 	rm -rf *.o *.so *.h
 
 install: all
-	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(PLUGIN_DIR); cp -v *.so $(DESTDIR)$(PLUGIN_DIR); fi
+	if test "`ls *so`" != ""; then mkdir -p $(DESTDIR)$(GCC_PLUGIN_DIR); cp -v *.so $(DESTDIR)$(GCC_PLUGIN_DIR); fi
 
 #do not touch the following line
 
