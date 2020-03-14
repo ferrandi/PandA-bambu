@@ -3078,12 +3078,6 @@ bool tree_helper::is_unsigned(const tree_managerConstRef& TM, const unsigned int
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--yes");
       return true;
    }
-   if(GetPointer<array_type>(Type))
-   {
-      const bool return_value = is_unsigned(TM, GetElements(TM, index));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--It depends on element");
-      return return_value;
-   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--no");
    return false;
 }
