@@ -3430,7 +3430,15 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString());
                      }
                      #endif
-                     intersection = intersection->unionWith(getGIMPLE_range(value));
+                     auto cst_range = getGIMPLE_range(value);
+                     if(cst_range->getBitWidth() > bw)
+                     {
+                        const auto cst_trunc = cst_range->truncate(bw);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "--Initializer constant truncated " + cst_range->ToString() + " -> " + cst_trunc->ToString());
+                        cst_range = cst_trunc;
+                     }
+                     THROW_ASSERT(cst_range->isConstant(), "Constant initializer value should be constant " + cst_range->ToString());
+                     intersection = intersection->unionWith(cst_range);
                   }
                   else
                   {
