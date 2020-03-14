@@ -161,35 +161,6 @@ static std::string input_vector_to_string(const std::vector<long long int>& to_b
    return output;
 }
 
-// struct edges_filter
-// {
-//   edges_filter() {}
-//   edges_filter(CustomUnorderedSet<vertex> map, StateTransitionGraphConstRef stg) : loopset(map), wholestg(stg) {}
-//   template<typename Edge>
-//   bool operator()(const Edge& e) const {
-//     for(vertex v : loopset)
-//     {
-//        OutEdgeIterator oe, oend;
-//        for(boost::tie(oe, oend) = boost::out_edges(v, *wholestg); oe != oend; oe++)
-//           if(*oe == e)
-//              return true;
-//     }
-//     return false;
-//   }
-//   CustomUnorderedSet<vertex> loopset;
-//   StateTransitionGraphConstRef wholestg;
-// };
-//
-// struct vertices_filter
-// {
-//    vertices_filter() {}
-//    vertices_filter(CustomUnorderedSet<vertex> map) : loopset(map) {}
-//    bool operator()(const vertex& v) const {
-//      return loopset.find(v) != loopset.end();
-//    }
-//    CustomUnorderedSet<vertex> loopset;
-// };
-
 void fsm_controller::create_state_machine(std::string& parse)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Create state machine");
@@ -294,11 +265,14 @@ void fsm_controller::create_state_machine(std::string& parse)
       state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + astg->CGetStateInfo(v)->name);
 
-      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end() || stg->CGetStateInfo(v)->loopId == 0)
+      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing loop " + std::to_string(stg->CGetStateInfo(v)->loopId));
          present_state[v] = std::vector<long long int>(out_num, 0);
-         analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
+         if(stg->CGetStateInfo(v)->loopId != 0)
+         {
+            analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
+         }
          if(selectors.find(conn_binding::IN) != selectors.end())
          {
             for(const auto& s : selectors.at(conn_binding::IN))
@@ -468,10 +442,12 @@ void fsm_controller::create_state_machine(std::string& parse)
          continue;
 
       // skip all but one state per loop
-      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end() || stg->CGetStateInfo(v)->loopId == 0)
+      if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end())
       {
-         analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
-
+         if(stg->CGetStateInfo(v)->loopId != 0)
+         {
+            analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
          parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], 0);
