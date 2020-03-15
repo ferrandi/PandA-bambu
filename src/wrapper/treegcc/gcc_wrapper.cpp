@@ -576,7 +576,10 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
    }
    const Compiler compiler = GetCompiler();
 
-   if(!(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER))
+   bool disable_pragma_parsing = false;
+   if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
+      disable_pragma_parsing = true;
+   if(disable_pragma_parsing || !(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER))
       THROW_WARNING("pragma analysis requires CLANG");
    else
    {
