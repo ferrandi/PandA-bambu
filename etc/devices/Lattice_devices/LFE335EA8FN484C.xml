@@ -3923,6 +3923,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">35</attribute>
         <characterization_timestamp>2016-06-24T11:04:28</characterization_timestamp>
         <operation operation_name="__builtin_signbit" supported_types="REAL:32,64" execution_time="0.93800007128800544"/>
+        <operation operation_name="__builtin_signbitf" supported_types="REAL:32,64" execution_time="0.93800007128800544"/>
       </cell>
       <cell>
         <name>addr_expr_FU</name>

@@ -45,8 +45,6 @@
 /// Includes the class definition
 #include "IcarusWrapper.hpp"
 
-#include "config_HAVE_ICARUS.hpp"
-
 /// Constants include
 #include "file_IO_constants.hpp"
 
@@ -94,9 +92,6 @@ IcarusWrapper::~IcarusWrapper() = default;
 
 void IcarusWrapper::CheckExecution()
 {
-#if !HAVE_ICARUS
-   THROW_ERROR("Icarus not correctly configured!");
-#endif
 }
 
 void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)

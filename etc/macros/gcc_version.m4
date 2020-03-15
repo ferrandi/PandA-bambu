@@ -2438,32 +2438,61 @@ AC_DEFUN([AC_COMPILE_WPEDANTIC], [
 dnl
 dnl checks if the plugin directory exists and is writable
 dnl
-AC_DEFUN([AC_CHECK_PLUGIN_DIR],[
+AC_DEFUN([AC_CHECK_GCC_PLUGIN_DIR],[
 
 if test "$prefix" != "NONE"; then
    if test ! -d "$prefix"; then
       mkdir $prefix || AC_MSG_ERROR(Can not create $prefix)
    fi
-   PLUGIN_DIR=$prefix/gcc_plugins
+   GCC_PLUGIN_DIR=$prefix/gcc_plugins
    if test ! -d $prefix/gcc_plugins; then
-      mkdir $prefix/gcc_plugins || AC_MSG_ERROR(Can not create $PLUGIN_DIR)
+      mkdir $prefix/gcc_plugins || AC_MSG_ERROR(Can not create $GCC_PLUGIN_DIR)
    fi
 else
-   PLUGIN_DIR=/opt/gcc_plugins
+   GCC_PLUGIN_DIR=/opt/gcc_plugins
 fi
 
 dnl check if gcc plugin directory exists
-if test -d $PLUGIN_DIR; then
-  echo "checking $PLUGIN_DIR...yes"
+if test -d $GCC_PLUGIN_DIR; then
+  echo "checking $GCC_PLUGIN_DIR...yes"
 else
-  echo "checking $PLUGIN_DIR...no - creating"
-  mkdir $PLUGIN_DIR || AC_MSG_ERROR(Can not create $PLUGIN_DIR)
+  echo "checking $GCC_PLUGIN_DIR...no - creating"
+  mkdir $GCC_PLUGIN_DIR || AC_MSG_ERROR(Can not create $GCC_PLUGIN_DIR)
 fi
 
-AC_DEFINE_UNQUOTED(PLUGIN_DIR, "${PLUGIN_DIR}", "Define the plugin dir")
-AC_SUBST(PLUGIN_DIR)
+AC_DEFINE_UNQUOTED(GCC_PLUGIN_DIR, "${GCC_PLUGIN_DIR}", "Define the plugin dir")
+AC_SUBST(GCC_PLUGIN_DIR)
 
 ])
 
+dnl
+dnl checks if the plugin directory exists and is writable
+dnl
+AC_DEFUN([AC_CHECK_CLANG_PLUGIN_DIR],[
+
+if test "$prefix" != "NONE"; then
+   if test ! -d "$prefix"; then
+      mkdir $prefix || AC_MSG_ERROR(Can not create $prefix)
+   fi
+   CLANG_PLUGIN_DIR=$prefix/gcc_plugins
+   if test ! -d $prefix/gcc_plugins; then
+      mkdir $prefix/gcc_plugins || AC_MSG_ERROR(Can not create $CLANG_PLUGIN_DIR)
+   fi
+else
+   CLANG_PLUGIN_DIR=/opt/gcc_plugins
+fi
+
+dnl check if gcc plugin directory exists
+if test -d $CLANG_PLUGIN_DIR; then
+  echo "checking $CLANG_PLUGIN_DIR...yes"
+else
+  echo "checking $CLANG_PLUGIN_DIR...no - creating"
+  mkdir $CLANG_PLUGIN_DIR || AC_MSG_ERROR(Can not create $CLANG_PLUGIN_DIR)
+fi
+
+AC_DEFINE_UNQUOTED(CLANG_PLUGIN_DIR, "${CLANG_PLUGIN_DIR}", "Define the plugin dir")
+AC_SUBST(CLANG_PLUGIN_DIR)
+
+])
 
 

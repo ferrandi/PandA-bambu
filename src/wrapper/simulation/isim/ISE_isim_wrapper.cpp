@@ -46,8 +46,6 @@
 /// Autoheader include
 #include "config_XILINX_SETTINGS.hpp"
 
-#include "config_HAVE_XILINX.hpp"
-
 /// Includes the class definition
 #include "ISE_isim_wrapper.hpp"
 
@@ -80,9 +78,6 @@ ISE_isim_wrapper::~ISE_isim_wrapper() = default;
 
 void ISE_isim_wrapper::CheckExecution()
 {
-#if !HAVE_XILINX
-   THROW_ERROR("Xilinx tools not correctly configured!");
-#endif
 }
 
 std::string ISE_isim_wrapper::create_project_script(const std::string& top_filename, const std::list<std::string>& file_list)

@@ -40,7 +40,6 @@
 /// Header include
 #include "NanoXploreBackendFlow.hpp"
 
-#include "config_HAVE_NANOXPLORE.hpp"
 #include "config_NANOXPLORE_BYPASS.hpp"
 #include "config_NANOXPLORE_LICENSE.hpp"
 #include "config_NANOXPLORE_SETTINGS.hpp"
@@ -262,11 +261,7 @@ void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 
 void NanoXploreBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_NANOXPLORE
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("NanoXplore tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }
 
 void NanoXploreBackendFlow::InitDesignParameters()
