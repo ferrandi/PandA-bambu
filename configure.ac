@@ -283,6 +283,7 @@ AC_ARG_ENABLE(verilator,           [  --enable-verilator           compile Veril
 #                                                                              #
 ################################################################################
 panda_USE_FRACTIONS=no;
+panda_USE_GENERIC_BASHBACKEND=no
 panda_USE_I386_GCC=no;
 panda_USE_LIB_AIG=no;
 panda_USE_LIB_ALGORITHMS=no;
@@ -453,9 +454,10 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_SPIDER=yes;
   panda_USE_TASTE=yes;
   panda_USE_ABSEIL=yes;
+  panda_USE_GENERIC_BASHBACKEND=yes;
 
   #characterization requires to configure at least one synthesis toolchain
-  if test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
+  if test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
     AC_APPEND(ENABLE_DOC,"EUCALYPTUS")
     panda_USE_EUCALYPTUS=yes;
   fi
@@ -909,7 +911,7 @@ if test "x$panda_USE_LIB_TARGET_PROFILING" != xyes && test "x$panda_USE_LIB_COMP
    panda_USE_LIB_COMPARE_MODELS=no;
 fi
 
-if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
+if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
    panda_USE_LIB_RTL_CHARACTERIZATION=yes;
 fi
 
@@ -928,7 +930,7 @@ if test "x$panda_USE_LIB_CODE_ESTIMATION" = xyes && test "x$panda_USE_LIB_FROM_C
    panda_USE_LIB_HOST_PROFILING=yes;
 fi
 
-if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes; then
+if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_GENERIC_BASHBACKEND" = xyes; then
    panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
 fi
 
@@ -2307,38 +2309,31 @@ AM_CONDITIONAL(BUILD_CORE_TOOLS, test "x$panda_USE_CORE_TOOLS" = xyes)
 if test "x$panda_USE_WRAPPER_XILINX" = xyes; then
   AC_DEFINE(HAVE_XILINX, 1, "Define if Xilinx wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_XILINX, test "x$panda_USE_WRAPPER_XILINX" = xyes)
 
 ################ Altera stuff ########################
 if test "x$panda_USE_WRAPPER_ALTERA" = xyes; then
   AC_DEFINE(HAVE_ALTERA, 1, "Define if Altera wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_ALTERA, test "x$panda_USE_WRAPPER_ALTERA" = xyes)
 
 ################ Lattice stuff ########################
 if test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
   AC_DEFINE(HAVE_LATTICE, 1, "Define if Lattice wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_LATTICE, test "x$panda_USE_WRAPPER_LATTICE" = xyes)
 
 ################ NanoXplore stuff ########################
 if test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
   AC_DEFINE(HAVE_NANOXPLORE, 1, "Define if NanoXplore wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_NANOXPLORE, test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes)
-
 
 ################ Design Compiler stuff #####################
 if test "x$panda_USE_DESIGN_COMPILER" = xyes; then
   AC_DEFINE(HAVE_DESIGN_COMPILER, 1, "Define if Synopsys Design Compiler is correctly configured")
 fi
-AM_CONDITIONAL(BUILD_DESIGN_COMPILER, test "x$panda_USE_DESIGN_COMPILER" = xyes)
 
 ################ Formality stuff #########################
 if test "x$panda_USE_FORMALITY" = xyes; then
   AC_DEFINE(HAVE_FORMALITY, 1, "Define if Synopsys Formality is correctly configured")
 fi
-AM_CONDITIONAL(BUILD_FORMALITY, test "x$panda_USE_FORMALITY" = xyes)
 
 ################ Library Compiler stuff #########################
 if test "x$panda_USE_LIBRARY_COMPILER" = xyes; then
@@ -2513,7 +2508,7 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    if test "x$MIN_GCC_VERSION" = "x"; then
       AC_MSG_ERROR("Oldest supported version of I386 gcc not set")
    fi
-   AC_CHECK_PLUGIN_DIR
+   AC_CHECK_GCC_PLUGIN_DIR
    AC_CHECK_GCC45_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC46_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC47_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
@@ -2523,6 +2518,7 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    AC_CHECK_GCC6_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC7_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC8_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
+   AC_CHECK_CLANG_PLUGIN_DIR
    AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
    AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
    AC_CHECK_CLANG6_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
@@ -2855,11 +2851,40 @@ for file in `find $BUILDDIR/config_headers -name *hpp`; do
    fi
 done;
 
-for keyword in `grep "#undef" $BUILDDIR/lconfig.h.in | awk '{print $2}'`; do
-   if test ! -f config_headers/config_"$keyword".hpp.in; then
-      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp.in
+for keyword in `grep "#undef" $BUILDDIR/lconfig.h | awk '{print $3}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp
+   else
+      echo "#define "$keyword 0 > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
    fi
 done;
+
+for keyword in `grep "#define" $BUILDDIR/lconfig.h | awk '{print $2}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      grep $keyword $BUILDDIR/lconfig.h > config_headers/config_"$keyword".hpp
+   else
+      grep $keyword $BUILDDIR/lconfig.h > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
+   fi
+done;
+
 all_includes=" -I$BUILDDIR/config_headers"
 
 
@@ -2981,4 +3006,5 @@ echo config_headers/config_"$keyword".hpp is unchanged >&6;}
     fi
    fi
 done;
+
 

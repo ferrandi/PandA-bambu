@@ -196,7 +196,7 @@ flopoco_wrapper::flopoco_wrapper(int
    else if("NG-large" == FU_target)
       target = new flopoco::Virtex5();
    else if(FU_target.find("Generic") != std::string::npos)
-       target = new flopoco::Virtex5();
+      target = new flopoco::Virtex5();
    else
       THROW_UNREACHABLE("Non supported target architecture: " + FU_target);
 

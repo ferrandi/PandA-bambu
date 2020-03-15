@@ -1302,7 +1302,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          }
       }
 
-
       if(!skip_state_transition)
       {
          /// check unique-case condition
@@ -1367,11 +1366,11 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
                               if((*in_or_conditions_tokens_it)[0] != '&')
                               {
-                                  unique_case_condition = false;
+                                 unique_case_condition = false;
                               }
                               else
                               {
-                                 if(n_bits_guard_casez_port==0)
+                                 if(n_bits_guard_casez_port == 0)
                                     n_bits_guard_casez_port = vec_size == 0 ? port_size : vec_size;
                               }
                            }
@@ -1379,7 +1378,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         ++current_input_it;
                      }
                   }
-
                }
             }
          }
@@ -1418,7 +1416,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                if(i == 0)
                {
                   if(unique_case_condition)
-                     indented_output_stream->Append(STR(n_bits_guard_casez_port)+"'b");
+                     indented_output_stream->Append(STR(n_bits_guard_casez_port) + "'b");
                   else
                      indented_output_stream->Append("if (");
                }
@@ -1432,7 +1430,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                else
                {
                   if(unique_case_condition)
-                     indented_output_stream->Append(STR(n_bits_guard_casez_port)+"'b");
+                     indented_output_stream->Append(STR(n_bits_guard_casez_port) + "'b");
                   else
                      indented_output_stream->Append("else if (");
                }

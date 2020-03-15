@@ -40,7 +40,6 @@
  */
 
 /// Autoheader
-#include "config_HAVE_ALTERA.hpp"
 #include "config_HAVE_BEAGLE.hpp"
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_CUDD.hpp"
@@ -674,7 +673,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 
    // Options for Evaluation of HLS results
    os << "  Evaluation of HLS results:\n\n"
-#if HAVE_ICARUS || HAVE_XILINX || HAVE_VERILATOR || HAVE_MODELSIM
       << "    --simulate\n"
       << "        Simulate the RTL implementation.\n\n"
 #if HAVE_MENTOR_VISUALIZER_EXE
@@ -683,19 +681,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
       << "    --simulator=<type>\n"
       << "        Specify the simulator used in generated simulation scripts:\n"
-#if HAVE_MODELSIM
       << "            MODELSIM - Mentor Modelsim\n"
-#endif
-#if HAVE_XILINX
       << "            XSIM - Xilinx XSim\n"
       << "            ISIM - Xilinx iSim\n"
-#endif
-#if HAVE_ICARUS
       << "            ICARUS - Verilog Icarus simulator\n"
-#endif
-#if HAVE_VERILATOR
       << "            VERILATOR - Verilator simulator\n"
-#endif
       << "\n"
       << "    --max-sim-cycles=<cycles>\n"
       << "        Specify the maximum number of cycles a HDL simulation may run.\n"
@@ -705,7 +695,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --generate-vcd\n"
       << "        Enable .vcd output file generation for waveform visualization (requires\n"
       << "        testbench generation).\n\n"
-#endif
       << "    --evaluation[=type]\n"
       << "        Perform evaluation of the results.\n"
       << "        The value of 'type' selects the objectives to be evaluated\n"
@@ -3379,7 +3368,7 @@ void BambuParameter::CheckParameters()
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
-         THROW_ERROR("Simulation of Lattice device does not work with VERILATOR");
+         THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in Verilog Lattice libraries.");
       }
    }
 #if !HAVE_LATTICE
@@ -3389,7 +3378,7 @@ void BambuParameter::CheckParameters()
    }
 #endif
 #if HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("ARE") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
       !getOption<bool>(OPT_connect_iob))
    {
       THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
