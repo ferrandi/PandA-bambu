@@ -367,6 +367,24 @@ APInt Range::getUnsignedMin() const
    return (l > 0 || u < 0) ? l.extOrTrunc(bw, false) : APInt::getMinValue(bw);
 }
 
+APInt Range::getSpan() const
+{
+   THROW_ASSERT(!isReal(), "Real range is a storage class only");
+   if(isEmpty())
+   {
+      return 0;
+   }
+   if(isUnknown())
+   {
+      return APInt::getMaxValue(bw) + 1;
+   }
+   if(isAnti())
+   {
+      return APInt::getMaxValue(bw) - (u - l);
+   }
+   return 1 + u - l;
+}
+
 bool Range::isUnknown() const
 {
    return type == Unknown;
@@ -477,16 +495,14 @@ RangeRef Range::add(const RangeConstRef& other) const
       return RangeRef(new Range(Regular, bw, l + ol, u + ol));
    }
 
-   auto sMin = std::clamp(getSignedMin() + other->getSignedMin(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
-   auto sMax = std::clamp(getSignedMax() + other->getSignedMax(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
-   auto uMin = std::min({getUnsignedMin() + other->getUnsignedMin(), APInt::getMaxValue(bw)});
-   auto uMax = std::min({getUnsignedMax() + other->getUnsignedMax(), APInt::getMaxValue(bw)});
-
-   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
+   const auto min = getLower() + other->getLower();
+   const auto max = getUpper() + other->getUpper();
+   RangeRef res(new Range(Regular, bw, min, max));
+   if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
    {
-      return RangeRef(new Range(Regular, bw, uMin, uMax));
+      return RangeRef(new Range(Regular, bw));
    }
-   return RangeRef(new Range(Regular, bw, sMin, sMax));
+   return res;
 }
 
 RangeRef Range::sub(const RangeConstRef& other) const
@@ -549,16 +565,14 @@ RangeRef Range::sub(const RangeConstRef& other) const
       return RangeRef(new Range(Anti, bw, upper + 1, lower - 1));
    }
 
-   auto sMin = std::clamp(getSignedMin() - other->getSignedMax(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
-   auto sMax = std::clamp(getSignedMax() - other->getSignedMin(), APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw));
-   auto uMin = getUnsignedMin() - other->getUnsignedMax();
-   auto uMax = getUnsignedMax() - other->getUnsignedMin();
-
-   if(neededBits(uMin, uMax, false) < neededBits(sMin, sMax, true))
+   const auto min = getLower() - other->getUpper();
+   const auto max = getUpper() - other->getLower();
+   RangeRef res(new Range(Regular, bw, min, max));
+   if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
    {
-      return RangeRef(new Range(Regular, bw, uMin, uMax));
+      return RangeRef(new Range(Regular, bw));
    }
-   return RangeRef(new Range(Regular, bw, sMin, sMax));
+   return res;
 }
 
 RangeRef Range::mul(const RangeConstRef& other) const
@@ -600,18 +614,8 @@ RangeRef Range::mul(const RangeConstRef& other) const
    const auto res = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
    const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), res.first, res.second);
    const auto SR = Result_sext.truncate(bw);
-   if(SR->isFullSet())
-   {
-      return UR;
-   }
-   if(UR->isFullSet())
-   {
-      return SR;
-   }
    
-   const auto uSpan = UR->isAnti() ? Max : (UR->getUpper() - UR->getLower()).abs();
-   const auto sSpan = SR->isAnti() ? Max : (SR->getUpper() - SR->getLower()).abs();
-   return uSpan < sSpan ? UR : SR;
+   return UR->getSpan() < SR->getSpan() ? UR : SR;
 }
 
 RangeRef Range::udiv(const RangeConstRef& other) const

@@ -91,6 +91,7 @@ class Range
    APInt getSignedMin() const;
    APInt getUnsignedMax() const;
    APInt getUnsignedMin() const;
+   APInt getSpan() const;
    virtual RangeRef getAnti() const;
 
    virtual bool isUnknown() const;

@@ -137,6 +137,7 @@ program_tests_LDADD = -lboost_unit_test_framework ../src/lib_bambu.la @PTHREAD_H
 program_tests_LDFLAGS = $(BOOST_LDFLAGS)
 program_tests_SOURCES = \
      main_tests.cpp \
-     frontend_analysis/IR_analysis/Range_Analysis.cpp
+     frontend_analysis/IR_analysis/Range.cpp \
+     frontend_analysis/IR_analysis/APInt.cpp
 
 TESTS = program_tests

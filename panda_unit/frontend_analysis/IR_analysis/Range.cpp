@@ -1,4 +1,4 @@
-#include "Range_Analysis.hpp"
+#include "Range.hpp"
 
 #include <boost/test/unit_test.hpp>
 
@@ -41,6 +41,19 @@ BOOST_AUTO_TEST_CASE( range )
     const auto antiOne = Range(Anti, 1, 1, 1);
     BOOST_REQUIRE_EQUAL(1, antiZero.getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0, antiOne.getUnsignedMin());
+}
+
+BOOST_AUTO_TEST_CASE( range_span )
+{
+    RangeRef a(new Range(Regular, 8, 5, 12));
+    RangeRef b(new Range(Regular, 8, -50, -20));
+    RangeRef c(new Range(Regular, 8, -23, 12));
+    RangeRef d(new Range(Anti, 8, -5, 7));
+
+    BOOST_REQUIRE_EQUAL(8, a->getSpan());
+    BOOST_REQUIRE_EQUAL(31, b->getSpan());
+    BOOST_REQUIRE_EQUAL(36, c->getSpan());
+    BOOST_REQUIRE_EQUAL(243, d->getSpan());
 }
 
 BOOST_AUTO_TEST_CASE( range_neededBits )
@@ -86,6 +99,13 @@ BOOST_AUTO_TEST_CASE( range_addition )
     BOOST_REQUIRE(addPaNb->isSameRange(addNbPa));
     BOOST_REQUIRE_EQUAL(-1, addPaNb->getSignedMin());
     BOOST_REQUIRE_EQUAL(6, addPaNb->getSignedMax());
+
+    RangeRef limitU63(new Range(Regular, 64, 0ULL, 9223372036854775807ULL));
+
+    auto addLimitU64 = limitU63->add(RangeRef(new Range(Regular, 64, 0, 1)));
+    BOOST_REQUIRE_EQUAL(64, addLimitU64->getBitWidth());
+    BOOST_REQUIRE_EQUAL(9223372036854775808ULL, addLimitU64->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(0, addLimitU64->getUnsignedMin());
 }
 
 BOOST_AUTO_TEST_CASE( range_subtraction )
