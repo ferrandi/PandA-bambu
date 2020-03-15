@@ -47,7 +47,6 @@
 REF_FORWARD_DECL(target_device);
 
 #define PARAM_ucf_file "ucf_file"
-#define PARAM_power_optimization "power_optimization"
 #define PARAM_nxpython_sources_macro_list "nxpython_sources_macro_list"
 #define PARAM_nxpython_report "nxpython_report"
 #define PARAM_nxpython_timing_report "nxpython_timing_report"
@@ -69,7 +68,7 @@ class NanoXploreBackendFlow : public BackendFlow
    void xparse_utilization(const std::string& fn);
 
    /**
-    * Checks the synthesis results and fills the corresponding datastructures
+    * Checks the synthesis results and fills the corresponding data structures
     */
    void CheckSynthesisResults() override;
 

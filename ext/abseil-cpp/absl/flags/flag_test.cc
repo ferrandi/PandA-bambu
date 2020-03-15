@@ -15,15 +15,25 @@
 
 #include "absl/flags/flag.h"
 
-#include <algorithm>
+#include <stdint.h>
+
+#include <cmath>
 #include <string>
+#include <vector>
 
 #include "gtest/gtest.h"
+#include "absl/base/attributes.h"
+#include "absl/flags/config.h"
+#include "absl/flags/declare.h"
+#include "absl/flags/internal/commandlineflag.h"
+#include "absl/flags/internal/flag.h"
+#include "absl/flags/internal/registry.h"
 #include "absl/flags/usage_config.h"
 #include "absl/strings/match.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_split.h"
+#include "absl/strings/string_view.h"
 
 ABSL_DECLARE_FLAG(int64_t, mistyped_int_flag);
 ABSL_DECLARE_FLAG(std::vector<std::string>, mistyped_string_flag);
@@ -32,7 +42,7 @@ namespace {
 
 namespace flags = absl::flags_internal;
 
-std::string TestHelpMsg() { return "help"; }
+std::string TestHelpMsg() { return "dynamic help"; }
 template <typename T>
 void* TestMakeDflt() {
   return new T{};
@@ -41,19 +51,22 @@ void TestCallback() {}
 
 template <typename T>
 bool TestConstructionFor() {
-  constexpr flags::Flag<T> f1("f1", &TestHelpMsg, "file",
-                              &flags::FlagMarshallingOps<T>, &TestMakeDflt<T>);
+  constexpr flags::HelpInitArg help_arg{flags::FlagHelpSrc("literal help"),
+                                        flags::FlagHelpSrcKind::kLiteral};
+  constexpr flags::Flag<T> f1("f1", "file", &flags::FlagMarshallingOps<T>,
+                              help_arg, &TestMakeDflt<T>);
   EXPECT_EQ(f1.Name(), "f1");
-  EXPECT_EQ(f1.Help(), "help");
+  EXPECT_EQ(f1.Help(), "literal help");
   EXPECT_EQ(f1.Filename(), "file");
 
-  ABSL_CONST_INIT static flags::Flag<T> f2("f2", &TestHelpMsg, "file",
-                                           &flags::FlagMarshallingOps<T>,
-                                           &TestMakeDflt<T>);
+  ABSL_CONST_INIT static flags::Flag<T> f2(
+      "f2", "file", &flags::FlagMarshallingOps<T>,
+      {flags::FlagHelpSrc(&TestHelpMsg), flags::FlagHelpSrcKind::kGenFunc},
+      &TestMakeDflt<T>);
   flags::FlagRegistrar<T, false>(&f2).OnUpdate(TestCallback);
 
   EXPECT_EQ(f2.Name(), "f2");
-  EXPECT_EQ(f2.Help(), "help");
+  EXPECT_EQ(f2.Help(), "dynamic help");
   EXPECT_EQ(f2.Filename(), "file");
 
   return true;

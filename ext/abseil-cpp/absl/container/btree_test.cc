@@ -42,13 +42,16 @@
 ABSL_FLAG(int, test_values, 10000, "The number of values to use for tests");
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 namespace {
 
+using ::absl::test_internal::CopyableMovableInstance;
 using ::absl::test_internal::InstanceTracker;
 using ::absl::test_internal::MovableOnlyInstance;
 using ::testing::ElementsAre;
 using ::testing::ElementsAreArray;
+using ::testing::IsEmpty;
 using ::testing::Pair;
 
 template <typename T, typename U>
@@ -1823,25 +1826,80 @@ TEST(Btree, ExtractAndInsertNodeHandleSet) {
   EXPECT_EQ(res.node.value(), 3);
 }
 
-struct Deref {
-  bool operator()(const std::unique_ptr<int> &lhs,
-                  const std::unique_ptr<int> &rhs) const {
-    return *lhs < *rhs;
-  }
-};
+template <typename Set>
+void TestExtractWithTrackingForSet() {
+  InstanceTracker tracker;
+  {
+    Set s;
+    // Add enough elements to make sure we test internal nodes too.
+    const size_t kSize = 1000;
+    while (s.size() < kSize) {
+      s.insert(MovableOnlyInstance(s.size()));
+    }
+    for (int i = 0; i < kSize; ++i) {
+      // Extract with key
+      auto nh = s.extract(MovableOnlyInstance(i));
+      EXPECT_EQ(s.size(), kSize - 1);
+      EXPECT_EQ(nh.value().value(), i);
+      // Insert with node
+      s.insert(std::move(nh));
+      EXPECT_EQ(s.size(), kSize);
 
-TEST(Btree, ExtractWithUniquePtr) {
-  absl::btree_set<std::unique_ptr<int>, Deref> s;
-  s.insert(absl::make_unique<int>(1));
-  s.insert(absl::make_unique<int>(2));
-  s.insert(absl::make_unique<int>(3));
-  s.insert(absl::make_unique<int>(4));
-  s.insert(absl::make_unique<int>(5));
-  auto nh = s.extract(s.find(absl::make_unique<int>(3)));
-  EXPECT_EQ(s.size(), 4);
-  EXPECT_EQ(*nh.value(), 3);
-  s.insert(std::move(nh));
-  EXPECT_EQ(s.size(), 5);
+      // Extract with iterator
+      auto it = s.find(MovableOnlyInstance(i));
+      nh = s.extract(it);
+      EXPECT_EQ(s.size(), kSize - 1);
+      EXPECT_EQ(nh.value().value(), i);
+      // Insert with node and hint
+      s.insert(s.begin(), std::move(nh));
+      EXPECT_EQ(s.size(), kSize);
+    }
+  }
+  EXPECT_EQ(0, tracker.instances());
+}
+
+template <typename Map>
+void TestExtractWithTrackingForMap() {
+  InstanceTracker tracker;
+  {
+    Map m;
+    // Add enough elements to make sure we test internal nodes too.
+    const size_t kSize = 1000;
+    while (m.size() < kSize) {
+      m.insert(
+          {CopyableMovableInstance(m.size()), MovableOnlyInstance(m.size())});
+    }
+    for (int i = 0; i < kSize; ++i) {
+      // Extract with key
+      auto nh = m.extract(CopyableMovableInstance(i));
+      EXPECT_EQ(m.size(), kSize - 1);
+      EXPECT_EQ(nh.key().value(), i);
+      EXPECT_EQ(nh.mapped().value(), i);
+      // Insert with node
+      m.insert(std::move(nh));
+      EXPECT_EQ(m.size(), kSize);
+
+      // Extract with iterator
+      auto it = m.find(CopyableMovableInstance(i));
+      nh = m.extract(it);
+      EXPECT_EQ(m.size(), kSize - 1);
+      EXPECT_EQ(nh.key().value(), i);
+      EXPECT_EQ(nh.mapped().value(), i);
+      // Insert with node and hint
+      m.insert(m.begin(), std::move(nh));
+      EXPECT_EQ(m.size(), kSize);
+    }
+  }
+  EXPECT_EQ(0, tracker.instances());
+}
+
+TEST(Btree, ExtractTracking) {
+  TestExtractWithTrackingForSet<absl::btree_set<MovableOnlyInstance>>();
+  TestExtractWithTrackingForSet<absl::btree_multiset<MovableOnlyInstance>>();
+  TestExtractWithTrackingForMap<
+      absl::btree_map<CopyableMovableInstance, MovableOnlyInstance>>();
+  TestExtractWithTrackingForMap<
+      absl::btree_multimap<CopyableMovableInstance, MovableOnlyInstance>>();
 }
 
 TEST(Btree, ExtractAndInsertNodeHandleMultiSet) {
@@ -2246,6 +2304,48 @@ TEST(Btree, EmptyTree) {
   EXPECT_GT(s.max_size(), 0);
 }
 
+bool IsEven(int k) { return k % 2 == 0; }
+
+TEST(Btree, EraseIf) {
+  // Test that erase_if works with all the container types and supports lambdas.
+  {
+    absl::btree_set<int> s = {1, 3, 5, 6, 100};
+    erase_if(s, [](int k) { return k > 3; });
+    EXPECT_THAT(s, ElementsAre(1, 3));
+  }
+  {
+    absl::btree_multiset<int> s = {1, 3, 3, 5, 6, 6, 100};
+    erase_if(s, [](int k) { return k <= 3; });
+    EXPECT_THAT(s, ElementsAre(5, 6, 6, 100));
+  }
+  {
+    absl::btree_map<int, int> m = {{1, 1}, {3, 3}, {6, 6}, {100, 100}};
+    erase_if(m, [](std::pair<const int, int> kv) { return kv.first > 3; });
+    EXPECT_THAT(m, ElementsAre(Pair(1, 1), Pair(3, 3)));
+  }
+  {
+    absl::btree_multimap<int, int> m = {{1, 1}, {3, 3}, {3, 6},
+                                        {6, 6}, {6, 7}, {100, 6}};
+    erase_if(m, [](std::pair<const int, int> kv) { return kv.second == 6; });
+    EXPECT_THAT(m, ElementsAre(Pair(1, 1), Pair(3, 3), Pair(6, 7)));
+  }
+  // Test that erasing all elements from a large set works and test support for
+  // function pointers.
+  {
+    absl::btree_set<int> s;
+    for (int i = 0; i < 1000; ++i) s.insert(2 * i);
+    erase_if(s, IsEven);
+    EXPECT_THAT(s, IsEmpty());
+  }
+  // Test that erase_if supports other format of function pointers.
+  {
+    absl::btree_set<int> s = {1, 3, 5, 6, 100};
+    erase_if(s, &IsEven);
+    EXPECT_THAT(s, ElementsAre(1, 3, 5));
+  }
+}
+
 }  // namespace
 }  // namespace container_internal
+ABSL_NAMESPACE_END
 }  // namespace absl

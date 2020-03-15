@@ -37,9 +37,9 @@
 // this, consider moving both to config.h instead.
 #if defined(__linux__) || defined(__APPLE__) || defined(__FreeBSD__) || \
     defined(__Fuchsia__) || defined(__native_client__) || \
-    defined(__EMSCRIPTEN__)
-#include <unistd.h>
+    defined(__EMSCRIPTEN__) || defined(__ASYLO__)
 
+#include <unistd.h>
 
 #define ABSL_HAVE_POSIX_WRITE 1
 #define ABSL_LOW_LEVEL_WRITE_SUPPORTED 1
@@ -182,6 +182,7 @@ void RawLogVA(absl::LogSeverity severity, const char* file, int line,
 }  // namespace
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace raw_logging_internal {
 void SafeWriteToStderr(const char *s, size_t len) {
 #if defined(ABSL_HAVE_SYSCALL_WRITE)
@@ -232,4 +233,5 @@ void RegisterInternalLogFunction(InternalLogFunction func) {
 }
 
 }  // namespace raw_logging_internal
+ABSL_NAMESPACE_END
 }  // namespace absl

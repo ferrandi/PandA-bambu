@@ -559,7 +559,14 @@ namespace clang
       {
       }
 
-      void HandlePragma(Preprocessor& PP, PragmaIntroducerKind /*Introducer*/, Token& PragmaTok) override
+      void HandlePragma(Preprocessor& PP,
+#if __clang_major__ >= 9
+                        PragmaIntroducer
+#else
+                        PragmaIntroducerKind
+#endif
+                        /*Introducer*/,
+                        Token& PragmaTok) override
       {
          Token Tok{};
          unsigned int index = 0;

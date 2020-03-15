@@ -336,16 +336,12 @@ public:
 
     if ( db->is_constant( db->get_node( circuit ) ) )
     {
-      output = xag.get_constant( false );
+      output = xag.get_constant( db->is_complemented( circuit ) );
     }
     else
     {
-      cut_view<xag_network> topo{*db, *db_pis, db->get_node( circuit )};
+      cut_view<xag_network> topo{*db, *db_pis, circuit};
       output = cleanup_dangling( topo, xag, pis.begin(), pis.end() ).front();
-    }
-    if ( db->is_complemented( circuit ) )
-    {
-      output = !output;
     }
 
     for ( auto const& g : final_xor )
@@ -433,15 +429,11 @@ private:
       /* verify */
       if (ps.verify_database)
       {
-        cut_view<xag_network> view{*db, *db_pis, db->get_node( f )};
+        cut_view<xag_network> view{*db, *db_pis, f};
         kitty::static_truth_table<6> tt, tt_repr;
         kitty::create_from_hex_string( tt, original );
         kitty::create_from_hex_string( tt_repr, token_f );
         auto result = simulate<kitty::static_truth_table<6>>( view )[0];
-        if ( db->is_complemented( f ) )
-        {
-          result = ~result;
-        }
         if ( tt != result )
         {
           std::cerr << "[w] invalid circuit for " << original << ", got " << kitty::to_hex( result ) << "\n";

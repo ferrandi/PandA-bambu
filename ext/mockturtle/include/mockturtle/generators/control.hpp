@@ -97,4 +97,15 @@ inline void mux_inplace( Ntk& ntk, signal<Ntk> const& cond, std::vector<signal<N
   std::transform( t.begin(), t.end(), e.begin(), t.begin(), [&]( auto const& a, auto const& b ) { return ntk.create_ite( cond, a, b ); } );
 }
 
+template<class Ntk>
+inline std::vector<signal<Ntk>> mux( Ntk& ntk, signal<Ntk> const& cond, std::vector<signal<Ntk>> const& t, std::vector<signal<Ntk>> const& e )
+{
+  static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
+  static_assert( has_create_ite_v<Ntk>, "Ntk does not implement the create_ite method" );
+
+  std::vector<signal<Ntk>> ret;
+  std::transform( t.begin(), t.end(), e.begin(), std::back_inserter( ret ), [&]( auto const& a, auto const& b ) { return ntk.create_ite( cond, a, b ); } );
+  return ret;
+}
+
 } // namespace mockturtle

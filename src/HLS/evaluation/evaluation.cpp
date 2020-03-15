@@ -274,6 +274,16 @@ DesignFlowStep_Status Evaluation::Exec()
             THROW_ASSERT(evaluations.at("FUNCTIONAL_ELEMENTS").size() == 1, "");
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Functional Elements      : " + STR(evaluations.at("FUNCTIONAL_ELEMENTS").at(0)));
          }
+         if(evaluations.find("LOGIC_AREA") != evaluations.end())
+         {
+            THROW_ASSERT(evaluations.at("LOGIC_AREA").size() == 1, "");
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Logic Area               : " + STR(evaluations.at("LOGIC_AREA").at(0)));
+         }
+         if(evaluations.find("POWER") != evaluations.end())
+         {
+            THROW_ASSERT(evaluations.at("POWER").size() == 1, "");
+            INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Power                    : " + STR(evaluations.at("POWER").at(0)));
+         }
          if(evaluations.find("ALMS") != evaluations.end())
          {
             THROW_ASSERT(evaluations.at("ALMS").size() == 1, "");

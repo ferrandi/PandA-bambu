@@ -323,7 +323,7 @@ std::tuple<graph, std::vector<std::pair<node<Ntk>, uint32_t>>> network_cuts_grap
       {
         leaves.push_back( ntk.index_to_node( leaf_index ) );
       }
-      cut_view<Ntk> dcut( ntk, leaves, n );
+      cut_view<Ntk> dcut( ntk, leaves, ntk.make_signal( n ) );
       dcut.foreach_gate( [&]( auto const& n2 ) {
         //if ( dcut.is_constant( n2 ) || dcut.is_pi( n2 ) )
         //  return;

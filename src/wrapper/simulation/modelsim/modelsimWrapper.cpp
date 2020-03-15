@@ -175,11 +175,11 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
          script << MODELSIM_VLOG;
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
          }
          else
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work " + file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -work work " + file;
          }
          script << std::endl << std::endl;
          script << "if [ $? -ne 0 ]; then" << std::endl;

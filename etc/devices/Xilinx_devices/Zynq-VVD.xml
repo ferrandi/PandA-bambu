@@ -31,6 +31,9 @@
       <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
       <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
       <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
+      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
+      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
+      <cmd name="  }"/>
       <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
       <cmd name="    set LUTFFPairs $SliceLUTs1"/>
       <cmd name="  }"/>
@@ -141,6 +144,9 @@
       <cmd name="  regexp --  {\s*Slice\s*\|\s*([^[:blank:]]+)} $util_rpt ignore Slice"/>
       <cmd name="  regexp --  {\s*Slice LUTs\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs"/>
       <cmd name="  regexp --  {\s*Slice LUTs\*\s*\|\s*([^[:blank:]]+)} $util_rpt ignore SliceLUTs1"/>
+      <cmd name="  if { [expr {$SliceLUTs1 == 0}] } {"/>
+      <cmd name="    set SliceLUTs1 $SliceLUTs"/>
+      <cmd name="  }"/>
       <cmd name="  if { [expr {$LUTFFPairs == 0}] } {"/>
       <cmd name="    set LUTFFPairs $SliceLUTs1"/>
       <cmd name="    puts $SliceLUTs1"/>

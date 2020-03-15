@@ -317,7 +317,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
             const auto* ae = GetPointer<const addr_expr>(addr_node);
             ins.push_back(GET_INDEX_NODE(ae->op));
             auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
-            if(fd->writing_memory || fd->reading_memory || ga->vuses.size())
+            if(fd->undefined_flag || fd->writing_memory || fd->reading_memory || ga->vuses.size())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
                return tree_nodeRef();

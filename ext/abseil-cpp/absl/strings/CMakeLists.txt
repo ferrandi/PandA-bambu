@@ -38,6 +38,8 @@ absl_cc_library(
     "internal/charconv_bigint.h"
     "internal/charconv_parse.cc"
     "internal/charconv_parse.h"
+    "internal/escaping.cc"
+    "internal/escaping.h"
     "internal/memutil.cc"
     "internal/memutil.h"
     "internal/stl_type_traits.h"
@@ -81,6 +83,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
+    absl::config
     absl::core_headers
     absl::endian
     absl::type_traits
@@ -276,6 +279,7 @@ absl_cc_test(
     absl::strings
     absl::core_headers
     absl::pow10_helper
+    absl::config
     absl::raw_logging_internal
     absl::random_random
     absl::random_distributions
@@ -331,6 +335,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::strings
+    absl::config
     absl::raw_logging_internal
     gmock_main
 )
@@ -346,6 +351,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::strings
+    absl::config
     gmock_main
 )
 
@@ -502,6 +508,8 @@ absl_cc_library(
     "internal/pow10_helper.cc"
   COPTS
     ${ABSL_TEST_COPTS}
+  DEPS
+    absl::config
   TESTONLY
 )
 

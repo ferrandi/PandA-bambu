@@ -447,7 +447,11 @@ endif
                  -I$(top_srcdir)/src/HLS/scheduling \
                  -I$(top_srcdir)/src/polixml \
                  -I$(top_srcdir)/src/parser/polixml \
+                 -I$(top_srcdir)/src/technology \
+                 -I$(top_srcdir)/src/technology/physical_library \
                  -I$(top_srcdir)/src/technology/physical_library/models \
+                 -I$(top_srcdir)/src/technology/physical_library/models/time \
+                 -I$(top_srcdir)/src/technology/physical_library/models/area \
                  -I$(top_srcdir)/src/technology/target_device \
                  -I$(top_srcdir)/src/technology/target_device/IC \
                  -I$(top_srcdir)/src/technology/target_device/FPGA \
@@ -470,17 +474,27 @@ endif
                  wrapper/synthesis/DesignParameters.hpp \
                  wrapper/synthesis/BackendFlow.hpp \
                  wrapper/synthesis/SynthesisTool.hpp \
-                 wrapper/synthesis/ASICBackendFlow.hpp
+                 wrapper/synthesis/ASICBackendFlow.hpp \
+                 wrapper/synthesis/BashBackendFlow.hpp \
+                 wrapper/synthesis/bash_flow_wrapper.hpp
+
   lib_synthesis_la_SOURCES = wrapper/synthesis/xml_script_command.cpp \
                            wrapper/synthesis/DesignParameters.cpp \
                            wrapper/synthesis/BackendFlow.cpp \
                            wrapper/synthesis/SynthesisTool.cpp \
-                           wrapper/synthesis/ASICBackendFlow.cpp
+                           wrapper/synthesis/ASICBackendFlow.cpp \
+                           wrapper/synthesis/BashBackendFlow.cpp \
+                           wrapper/synthesis/bash_flow_wrapper.cpp
 
 wrapper/synthesis/ASICBackendFlow.cpp : wrapper/synthesis/Nangate.data
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml wrapper/synthesis/Nangate.data
+
+wrapper/synthesis/BashBackendFlow.cpp : wrapper/synthesis/Generic-yosysOpenROAD.data
+#The tab in this rule can't be replaced by blanks
+wrapper/synthesis/Generic-yosysOpenROAD.data: $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml wrapper/synthesis/Generic-yosysOpenROAD.data
 
   lib_synthesis_la_LIBADD = \
                         lib_Xilinxwrapper.la \

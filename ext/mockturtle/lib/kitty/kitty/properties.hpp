@@ -210,6 +210,40 @@ bool is_selfdual( const TT& tt )
   return tt2 == tt1;
 }
 
+/*! \brief Checks if a function is normal
+  A function is normal iff f(0, ..., 0) = 0.
+  \param tt Truth table
+*/
+template<typename TT>
+bool is_normal( const TT& tt )
+{
+  return !get_bit( tt, 0u );
+}
+
+/*! \brief Checks if a function is trivial
+  A function is trival if it is equal to (or the complement of) a
+  variable or constant zero.
+  \param tt Truth table
+*/
+template<typename TT>
+bool is_trivial( const TT& tt )
+{
+  /* compare to constants */
+  if ( is_const0( tt ) || is_const0( ~tt ) )
+    return true;
+
+  /* compare to variables */
+  TT tt_check = tt;
+  for ( auto i = 0; i < tt.num_vars(); ++i )
+  {
+    create_nth_var( tt_check, i );
+    if ( tt == tt_check || tt == ~tt_check )
+      return true;
+  }
+
+  return false;
+}
+
 /*! \brief Generate runlength encoding of a function
   This function iterates through the bits of a function and calls a function
   for each runlength and value.  For example, if this function is called for

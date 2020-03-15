@@ -5,6 +5,7 @@
 #include "absl/strings/str_format.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace str_format_internal {
 namespace {
 
@@ -35,7 +36,7 @@ TEST(StrFormatChecker, ArgumentToConv) {
   EXPECT_EQ(ConvToString(conv), "p");
 }
 
-#if ABSL_INTERNAL_ENABLE_FORMAT_CHECKER
+#ifdef ABSL_INTERNAL_ENABLE_FORMAT_CHECKER
 
 struct Case {
   bool result;
@@ -147,4 +148,5 @@ TEST(StrFormatChecker, LongFormat) {
 
 }  // namespace
 }  // namespace str_format_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
