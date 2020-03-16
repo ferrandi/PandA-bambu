@@ -730,7 +730,7 @@ namespace
       else if(const auto* sc = GetPointer<const string_cst>(tn))
       {
          bw = 8;
-         RangeRef r(new Range(Empty, bw));
+         RangeRef r(new Range(Regular, bw, 0, 0)); // Zero is the string terminator, thus it should always be included
          for(const auto& c : sc->strg)
          {
             r = r->unionWith(RangeRef(new Range(Regular, bw, c, c)));
@@ -1811,6 +1811,7 @@ class NodeContainer
 int NodeContainer::debug_level = DEBUG_LEVEL_NONE;
 #endif
 
+#ifndef NDEBUG
 static bool enable_add = true;
 static bool enable_sub = true;
 static bool enable_mul = true;
@@ -1831,10 +1832,17 @@ static bool enable_zext = true;
 static bool enable_trunc = true;
 static bool enable_min = true;
 static bool enable_max = true;
+static bool enable_load = true;
 
 #define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
 #define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
 #define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getRangeFor(var, Regular)
+#else
+
+#define OPERATION_OPTION(opts, X) void(0)
+#define RETURN_DISABLED_OPTION(x, bw) void(0)
+#define RESULT_DISABLED_OPTION(x, var, stdResult) void(0)
+#endif
 
 // ========================================================================== //
 // PhiOp
@@ -3348,7 +3356,11 @@ RangeRef LoadOpNode::eval() const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
+   #ifndef NDEBUG
+   if(getNumSources() == 0 || !enable_load)
+   #else
    if(getNumSources() == 0)
+   #endif
    {
       THROW_ASSERT(getSink()->getBitWidth() == getIntersect()->getRange()->getBitWidth(), "Sink (" + GET_CONST_NODE(getSink()->getValue())->ToString() + ") has bitwidth " + STR(getSink()->getBitWidth()) + " while intersect has bitwidth " + STR(getIntersect()->getRange()->getBitWidth()));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "= " + getIntersect()->getRange()->ToString());
@@ -3394,109 +3406,122 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
    return [stmt,ga,function_id,TM](NodeContainer* NC) {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Analysing load operation " + ga->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-      auto bw = getGIMPLE_BW(ga->op0);
+      const auto bw = getGIMPLE_BW(ga->op0);
       VarNode* sink = NC->addVarNode(ga->op0, function_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
       auto intersection = getRangeFor(sink->getValue(), Empty);
       CustomOrderedSet<unsigned int> res_set;
       bool pointToConstants = tree_helper::is_fully_resolved(TM, GET_INDEX_CONST_NODE(ga->op1), res_set);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Pointer is fully resolved");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-      for(auto indexIt = res_set.begin(); indexIt != res_set.end() && pointToConstants; ++indexIt)
+      if(pointToConstants && !res_set.empty())
       {
-         const auto TN = TM->CGetTreeNode(*indexIt);
-         if(const auto* vd = GetPointer<const var_decl>(TN))
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Pointer is fully resolved");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
+         for(auto indexIt = res_set.begin(); indexIt != res_set.end() && pointToConstants; ++indexIt)
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Points to " + TN->ToString() + 
-               " (readonly = " + STR(vd->readonly_flag) + 
-               ", defs = " + STR(vd->defs.size()) + 
-               ", full-size = " + STR(GetPointer<const integer_cst>(GET_CONST_NODE(vd->size))->value) + ")");
-            if(!vd->readonly_flag || vd->init == nullptr)
+            const auto TN = TM->CGetTreeNode(*indexIt);
+            if(const auto* vd = GetPointer<const var_decl>(TN))
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Pointed variable is not constant " + TN->ToString());
-               pointToConstants = false;
-               break;
-            }
-            if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->Initializer has " + STR(constr->list_of_idx_valu.size()) + " values:");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-               THROW_ASSERT(static_cast<bool>(constr->list_of_idx_valu.size()), "At least one initializer should be there");
-               for(const auto& idxValue : constr->list_of_idx_valu)
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Points to " + TN->ToString() + 
+                  " (readonly = " + STR(vd->readonly_flag) + 
+                  ", defs = " + STR(vd->defs.size()) + 
+                  ", full-size = " + STR(GetPointer<const integer_cst>(GET_CONST_NODE(vd->size))->value) + ")");
+               if(!vd->readonly_flag || vd->init == nullptr)
                {
-                  const auto& value = idxValue.second;
-                  if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(value)) && isValidType(value))
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Pointed variable is not constant " + TN->ToString());
+                  pointToConstants = false;
+                  break;
+               }
+               if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->Initializer has " + STR(constr->list_of_idx_valu.size()) + " values:");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
+                  THROW_ASSERT(static_cast<bool>(constr->list_of_idx_valu.size()), "At least one initializer should be there");
+                  for(const auto& idxValue : constr->list_of_idx_valu)
                   {
-                     #ifndef NDEBUG
-                     const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(value));
-                     if(ic && bw == 8)
+                     const auto& value = idxValue.second;
+                     if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(value)) && isValidType(value))
                      {
-                        auto asciiChar = tree_helper::get_integer_cst_value(ic);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString() + " '" + static_cast<char>(asciiChar) + "'");
+                        #ifndef NDEBUG
+                        const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(value));
+                        if(ic && bw == 8)
+                        {
+                           auto asciiChar = tree_helper::get_integer_cst_value(ic);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString() + " '" + static_cast<char>(asciiChar) + "'");
+                        }
+                        else
+                        {
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString());
+                        }
+                        #endif
+                        auto cst_range = getGIMPLE_range(value);
+                        if(cst_range->getBitWidth() > bw)
+                        {
+                           const auto cst_trunc = cst_range->truncate(bw);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer constant truncated " + cst_range->ToString() + " -> " + cst_trunc->ToString());
+                           cst_range = cst_trunc;
+                        }
+                        THROW_ASSERT(cst_range->isConstant(), "Constant initializer value should be constant " + cst_range->ToString());
+                        intersection = intersection->unionWith(cst_range);
                      }
                      else
                      {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString());
+                        pointToConstants = false;
+                        break;
                      }
-                     #endif
-                     auto cst_range = getGIMPLE_range(value);
-                     if(cst_range->getBitWidth() > bw)
-                     {
-                        const auto cst_trunc = cst_range->truncate(bw);
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer constant truncated " + cst_range->ToString() + " -> " + cst_trunc->ToString());
-                        cst_range = cst_trunc;
-                     }
-                     THROW_ASSERT(cst_range->isConstant(), "Constant initializer value should be constant " + cst_range->ToString());
-                     intersection = intersection->unionWith(cst_range);
                   }
-                  else
-                  {
-                     pointToConstants = false;
-                     break;
-                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
                }
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
-            }
-            #ifndef NDEBUG
-            else if(const auto* cst_val = GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
-            #else
-            else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)) != nullptr)
-            #endif
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + cst_val->ToString());
-               intersection = getGIMPLE_range(vd->init);
-               THROW_ASSERT(intersection->getBitWidth() == bw, "Initializer bitwidth should be the same as the initialized variable's one (" + intersection->ToString() + ")");
-            }
-            else if(GetPointer<const addr_expr>(GET_CONST_NODE(vd->init)) != nullptr)
-            {
-               pointToConstants = false;  // TODO: put all in the else branch and remove throw_unreachable
+               #ifndef NDEBUG
+               else if(const auto* cst_val = GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
+               #else
+               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)) != nullptr)
+               #endif
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + cst_val->ToString());
+                  intersection = getGIMPLE_range(vd->init);
+                  THROW_ASSERT(intersection->getBitWidth() == bw, "Initializer bitwidth should be the same as the initialized variable's one (" + intersection->ToString() + ")");
+               }
+               else if(GetPointer<const addr_expr>(GET_CONST_NODE(vd->init)) != nullptr)
+               {
+                  pointToConstants = false;  // TODO: put all in the else branch and remove throw_unreachable
+                  break;
+               }
+               else
+               {
+                  THROW_UNREACHABLE("Unhandled initializer " + GET_CONST_NODE(vd->init)->get_kind_text() + " " + GET_CONST_NODE(vd->init)->ToString());
+                  pointToConstants = false;
+                  break;
+               }
             }
             else
             {
-               THROW_UNREACHABLE("Unhandled initializer " + GET_CONST_NODE(vd->init)->get_kind_text() + " " + GET_CONST_NODE(vd->init)->ToString());
+               THROW_UNREACHABLE("Unknown tree node " + TN->get_kind_text() + " " + TN->ToString());
                pointToConstants = false;
+               break;
             }
          }
-         else
-         {
-            THROW_UNREACHABLE("Unknown tree node " + TN->get_kind_text() + " " + TN->ToString());
-            pointToConstants = false;
-         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
-
       if(!pointToConstants)
       {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Pointer not fully resolved");
          intersection = getGIMPLE_range(stmt);
       }
       THROW_ASSERT(intersection->getBitWidth() <= bw, "Pointed variables range should have bitwidth contained in sink bitwidth");
+      THROW_ASSERT(!intersection->isEmpty(), "Variable range should not be empty");
       if(intersection->getBitWidth() < bw)
       {
          intersection = intersection->zextOrTrunc(bw);
       }
       auto BI = ValueRangeRef(new ValueRange(intersection));
+      #ifndef NDEBUG
+      if(!enable_load)
+      {
+         BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+      }
+      #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--Added LoadOp with range " + BI->ToString());
       return new LoadOpNode(BI, sink, stmt);
    };
@@ -6161,6 +6186,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, trunc);
    OPERATION_OPTION(ra_mode, min);
    OPERATION_OPTION(ra_mode, max);
+   OPERATION_OPTION(ra_mode, load);
 }
 
 RangeAnalysis::~RangeAnalysis() = default;

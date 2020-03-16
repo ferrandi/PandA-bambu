@@ -53,8 +53,8 @@ class APInt
 {
  public:
    using APInt_internal = boost::multiprecision::mpz_int;
-   #if !defined(NDEBUG) && defined(__clang__)
-   using bw_t = uint16_t; // Clang would not print uint8_t as number for some strange reason
+   #ifndef NDEBUG
+   using bw_t = uint16_t;
    #else
    using bw_t = uint8_t;
    #endif
