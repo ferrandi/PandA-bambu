@@ -85,11 +85,6 @@ if BUILD_LIB_HOST_PROFILING
 endif
 endif
 
-if BUILD_ALTERA
-  program_tests_CPPFLAGS += \
-        -I$(top_srcdir)/src/wrapper/synthesis/altera
-endif
-
 if BUILD_BEAGLE
   program_tests_CPPFLAGS += \
         -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration \

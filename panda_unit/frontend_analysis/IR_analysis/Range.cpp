@@ -49,11 +49,15 @@ BOOST_AUTO_TEST_CASE( range_span )
     RangeRef b(new Range(Regular, 8, -50, -20));
     RangeRef c(new Range(Regular, 8, -23, 12));
     RangeRef d(new Range(Anti, 8, -5, 7));
+    RangeRef e(new Range(Regular, 8));
+    RangeRef f(new Range(Unknown, 8));
 
     BOOST_REQUIRE_EQUAL(8, a->getSpan());
     BOOST_REQUIRE_EQUAL(31, b->getSpan());
     BOOST_REQUIRE_EQUAL(36, c->getSpan());
     BOOST_REQUIRE_EQUAL(243, d->getSpan());
+    BOOST_REQUIRE_EQUAL(256, e->getSpan());
+    BOOST_REQUIRE_EQUAL(256, f->getSpan());
 }
 
 BOOST_AUTO_TEST_CASE( range_neededBits )
@@ -168,6 +172,17 @@ BOOST_AUTO_TEST_CASE( range_multiplication )
     BOOST_REQUIRE(mulPaNb->isSameRange(mulNbPa));
     BOOST_REQUIRE_EQUAL(-54, mulPaNb->getSignedMin());
     BOOST_REQUIRE_EQUAL(-15, mulPaNb->getSignedMax());
+
+    RangeRef big(new Range(Regular, 8, 57, 85));
+
+    auto mulPaBig = aPositive->mul(big);
+    BOOST_REQUIRE(mulPaBig->isFullSet());
+
+    auto mulNaBig = aNegative->mul(big);
+    BOOST_REQUIRE(mulNaBig->isFullSet());
+
+    auto mulMaBig = aMix->mul(big);
+    BOOST_REQUIRE(mulMaBig->isFullSet());
 }
 
 BOOST_AUTO_TEST_CASE( range_division )
@@ -191,6 +206,12 @@ BOOST_AUTO_TEST_CASE( range_division )
     auto udivPaNb = aPositive->udiv(bNegative);
     BOOST_REQUIRE_EQUAL(0, udivPaNb->getUnsignedMax());
     BOOST_REQUIRE_EQUAL(0, udivPaNb->getSignedMin());
+
+    RangeRef big(new Range(Regular, 8, 57, 85));
+
+    auto sdivPaBig = aPositive->sdiv(big);
+    BOOST_REQUIRE(sdivPaBig->isConstant());
+    BOOST_REQUIRE_EQUAL(0, sdivPaBig->getUnsignedMin());
 }
 
 BOOST_AUTO_TEST_CASE( range_reminder )

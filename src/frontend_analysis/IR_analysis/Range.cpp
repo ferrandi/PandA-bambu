@@ -374,7 +374,7 @@ APInt Range::getSpan() const
    {
       return 0;
    }
-   if(isUnknown())
+   if(isUnknown() || isFullSet())
    {
       return APInt::getMaxValue(bw) + 1;
    }

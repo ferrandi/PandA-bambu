@@ -45,14 +45,14 @@ nangate45_lib_dir = $(nangate45_dir)/lib
 nangate45_tritonCTS_dir = $(nangate45_dir)/tritonCTS
 
 scripts__SCRIPTS = \
- ../../../../etc/devices/Generic_devices/scripts/ICeWall.tcl \
- ../../../../etc/devices/Generic_devices/scripts/def2gds.py\
- ../../../../etc/devices/Generic_devices/scripts/markDontUse.py \
- ../../../../etc/devices/Generic_devices/scripts/mergeLef.py \
- ../../../../etc/devices/Generic_devices/scripts/mergeLib.pl \
- ../../../../etc/devices/Generic_devices/scripts/modifyLefSpacing.py \
- ../../../../etc/devices/Generic_devices/scripts/padLefMacro.py \
- ../../../../etc/devices/Generic_devices/scripts/fixIoPins.py
+ scripts/ICeWall.tcl \
+ scripts/def2gds.py\
+ scripts/markDontUse.py \
+ scripts/mergeLef.py \
+ scripts/mergeLib.pl \
+ scripts/modifyLefSpacing.py \
+ scripts/padLefMacro.py \
+ scripts/fixIoPins.py
 
 nangate45__DATA = \
  nangate45/blackbox_map.tcl \
