@@ -45,9 +45,6 @@
 /// Includes the class definition
 #include "xst_wrapper.hpp"
 
-#include "config_HAVE_XILINX.hpp"
-#include "config_XILINX_SETTINGS.hpp"
-
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"
 

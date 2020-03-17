@@ -48,6 +48,7 @@
 
 /// supported synthesis tools
 #include "DesignCompilerWrapper.hpp"
+#include "bash_flow_wrapper.hpp"
 #include "lattice_flow_wrapper.hpp"
 #include "map_wrapper.hpp"
 #include "ngdbuild_wrapper.hpp"
@@ -61,7 +62,6 @@
 #include "trce_wrapper.hpp"
 #include "vivado_flow_wrapper.hpp"
 #include "xst_wrapper.hpp"
-#include "bash_flow_wrapper.hpp"
 
 #if HAVE_EXPERIMENTAL
 #if 0

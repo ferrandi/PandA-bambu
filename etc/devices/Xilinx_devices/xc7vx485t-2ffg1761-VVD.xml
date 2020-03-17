@@ -3624,6 +3624,7 @@
         <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
         <characterization_timestamp>2016-06-17T09:24:14</characterization_timestamp>
         <operation operation_name="__builtin_signbit" supported_types="REAL:32,64" execution_time="0.45600000000000002"/>
+        <operation operation_name="__builtin_signbitf" supported_types="REAL:32,64" execution_time="0.45600000000000002"/>
       </cell>
       <cell>
         <name>addr_expr_FU</name>
