@@ -292,9 +292,5 @@ void LatticeBackendFlow::InitDesignParameters()
 
 void LatticeBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_LATTICE
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("Lattice tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }

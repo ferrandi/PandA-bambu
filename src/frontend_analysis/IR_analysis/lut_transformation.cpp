@@ -1644,7 +1644,7 @@ bool lut_transformation::HasToBeExecuted() const
    const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
    THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
    auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
-   if(max_lut_size0 != 0 &&  not parameters->getOption<int>(OPT_gcc_openmp_simd) && not parameters->isOption(OPT_context_switch))
+   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd) && not parameters->isOption(OPT_context_switch))
       return FunctionFrontendFlowStep::HasToBeExecuted();
    else
       return false;

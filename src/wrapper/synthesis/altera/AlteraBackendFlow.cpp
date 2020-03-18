@@ -47,7 +47,6 @@
 #include "AlteraBackendFlow.hpp"
 
 /// Autoheader includes
-#include "config_HAVE_ALTERA.hpp"
 #include "config_QUARTUS_13_SETTINGS.hpp"
 #include "config_QUARTUS_SETTINGS.hpp"
 
@@ -340,9 +339,5 @@ void AlteraBackendFlow::InitDesignParameters()
 
 void AlteraBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_ALTERA
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("Altera tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }

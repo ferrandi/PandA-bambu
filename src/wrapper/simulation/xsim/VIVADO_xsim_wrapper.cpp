@@ -43,7 +43,6 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_XILINX_VIVADO.hpp"
 #include "config_XILINX_VIVADO_SETTINGS.hpp"
 
 /// Includes the class definition
@@ -78,9 +77,6 @@ VIVADO_xsim_wrapper::~VIVADO_xsim_wrapper() = default;
 
 void VIVADO_xsim_wrapper::CheckExecution()
 {
-#if !HAVE_XILINX_VIVADO
-   THROW_ERROR("Xilinx tools not correctly configured!");
-#endif
 }
 
 std::string VIVADO_xsim_wrapper::create_project_script(const std::string& top_filename, const std::list<std::string>& file_list)

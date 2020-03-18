@@ -50,9 +50,9 @@
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
+#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 #include "fileIO.hpp"
 #include "utility.hpp"
-#include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
 
 #define PARAM_bash_outdir "bash_outdir"
 
@@ -286,7 +286,6 @@ std::string bash_flow_wrapper::toString(const xml_script_node_tRef node, const D
    /// this point should never be reached
    return "";
 }
-
 
 std::string bash_flow_wrapper::get_command_line(const DesignParametersRef& dp) const
 {

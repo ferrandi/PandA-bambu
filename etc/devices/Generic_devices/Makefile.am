@@ -33,7 +33,8 @@ EXTRA_DIST = Generic-yosysOpenROAD.xml PandA2OpenROAD.md nangate45-seed.xml nang
              scripts/ICeWall.tcl \
              scripts/mergeLef.py \
              scripts/markDontUse.py \
-             scripts/mergeLib.pl
+             scripts/mergeLib.pl \
+             scripts/fixIoPins.py
 
 
 scripts_dir = $(pkgdatadir)/scripts
@@ -50,7 +51,8 @@ scripts__SCRIPTS = \
  ../../../../etc/devices/Generic_devices/scripts/mergeLef.py \
  ../../../../etc/devices/Generic_devices/scripts/mergeLib.pl \
  ../../../../etc/devices/Generic_devices/scripts/modifyLefSpacing.py \
- ../../../../etc/devices/Generic_devices/scripts/padLefMacro.py
+ ../../../../etc/devices/Generic_devices/scripts/padLefMacro.py \
+ ../../../../etc/devices/Generic_devices/scripts/fixIoPins.py
 
 nangate45__DATA = \
  ../../../../etc/devices/Generic_devices/nangate45/blackbox_map.tcl \

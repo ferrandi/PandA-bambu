@@ -47,7 +47,6 @@
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_L2_NAME.hpp"
-#include "config_HAVE_VERILATOR.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -90,9 +89,6 @@ VerilatorWrapper::~VerilatorWrapper() = default;
 
 void VerilatorWrapper::CheckExecution()
 {
-#if !HAVE_VERILATOR
-   THROW_ERROR("VERILATOR not correctly configured!");
-#endif
 }
 
 void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
@@ -116,7 +112,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #else
    script << "verilator";
 #endif
-   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET -sv";
+   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
 #else
 #ifdef _WIN32
    /// this removes the dependency from perl on MinGW32
