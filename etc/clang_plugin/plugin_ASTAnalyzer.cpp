@@ -642,7 +642,14 @@ namespace clang
       {
       }
 
-      void HandlePragma(Preprocessor& PP, PragmaIntroducerKind /*Introducer*/, Token& PragmaTok) override
+      void HandlePragma(Preprocessor& PP,
+#if __clang_major__ >= 9
+                        PragmaIntroducer
+#else
+                        PragmaIntroducerKind
+#endif
+                        /*Introducer*/,
+                        Token& PragmaTok) override
       {
          Token Tok{};
          auto loc = PragmaTok.getLocation();
@@ -669,7 +676,14 @@ namespace clang
       {
       }
 
-      void HandlePragma(Preprocessor& PP, PragmaIntroducerKind /*Introducer*/, Token& PragmaTok) override
+      void HandlePragma(Preprocessor& PP,
+#if __clang_major__ >= 9
+                        PragmaIntroducer
+#else
+                        PragmaIntroducerKind
+#endif
+                        /*Introducer*/,
+                        Token& PragmaTok) override
       {
          Token Tok{};
          auto loc = PragmaTok.getLocation();
@@ -712,8 +726,8 @@ namespace clang
          }
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
-         PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
+         //PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
+         //PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
          return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
       }
 
