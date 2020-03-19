@@ -669,11 +669,11 @@ namespace clang
                   unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
                   D.Report(PragmaTok.getLocation(), ID);
                }
-               HLS_pipeline_PragmaMap[filename].push_back(loc);
-               HLS_simple_pipeline_PragmaMap[filename].push_back(loc);
                ++index;
             }
          }
+         HLS_pipeline_PragmaMap[filename].push_back(loc);
+         HLS_simple_pipeline_PragmaMap[filename].push_back(loc);
       }
    };
    
