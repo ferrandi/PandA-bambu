@@ -124,7 +124,10 @@ DesignFlowStep_Status function_parm_mask::Exec()
    CustomMap<std::string, const function_decl*> nameToFunc;
    for(const auto f : AppM->get_functions_with_body())
    {
-      nameToFunc.insert(std::make_pair(AppM->CGetFunctionBehavior(f)->CGetBehavioralHelper()->get_function_name(), GetPointer<const function_decl>(TM->get_tree_node_const(f))));
+      const auto* fd = GetPointer<const function_decl>(TM->get_tree_node_const(f));
+      std::string fname;
+      tree_helper::get_mangled_fname(fd, fname);
+      nameToFunc.insert(std::make_pair(fname, fd));
    }
 
    bool modified = false;
@@ -146,7 +149,9 @@ DesignFlowStep_Status function_parm_mask::Exec()
             {
                const auto* Enode = GetPointer<const xml_element>(iter);
                if(!Enode)
+               {
                   continue;
+               }
                if(Enode->get_name() == "function")
                {
                   std::string fname;
@@ -158,9 +163,14 @@ DesignFlowStep_Status function_parm_mask::Exec()
                         fname = value;
                   }
 
-                  if(fname == "" || !nameToFunc.contains(fname))
+                  if(fname == "")
                   {
-                     THROW_ERROR("malformed mask file");
+                     THROW_ERROR("malformed mask file: unnamed function");
+                  }
+                  else if(!nameToFunc.contains(fname))
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function " + fname + " has no body, skipping...");
+                     continue;
                   }
                   const auto fd = nameToFunc.at(fname);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
@@ -213,7 +223,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
                         }
                         if(argName == "" || !f_parms.contains(argName))
                         {
-                           THROW_ERROR("malformed mask file");
+                           THROW_ERROR("malformed mask file: argument " + argName + " not valid");
                         }
                         auto* parm = f_parms.at(argName);
                         const auto bw = tree_helper::Size(TM->get_tree_node_const(parm->index));

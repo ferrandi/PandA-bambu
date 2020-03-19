@@ -351,7 +351,7 @@ namespace clang
                   {
                      mask_PragmaMap[loc2pair.second.first] = loc2pair.second.second;
                   }
-                  else 
+                  else
                   {
                      maskInfoIT->second |= loc2pair.second.second;
                   }
@@ -362,74 +362,76 @@ namespace clang
          if(!FD->isVariadic() && FD->hasBody())
          {
             auto funName = getMangledName(FD);
+            bool storeInfos = false;
+            std::vector<MaskInfo> fpInfos;
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
                {
                   MaskInfo userMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
-                  std::string ParamTypeName;
                   auto parName = ND->getNameAsString();
                   if(auto maskInfoIT = mask_PragmaMap.find(parName); maskInfoIT != mask_PragmaMap.end())
                   {
                      userMaskInfo = maskInfoIT->second;
+                     storeInfos = true;
                   }
-                  auto argType = ND->getType();
-                  if(argType->isFloatingType())
+                  if(userMaskInfo.mt != mt_Invalid)
                   {
-                     if(userMaskInfo.mt & mt_Bitmask)
+                     auto argType = ND->getType();
+                     if(argType->isFloatingType())
                      {
-                        DiagnosticsEngine& D = CI.getDiagnostics();
-                        D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of floating point type: use sign/exponent/significand directives"));
+                        if(userMaskInfo.mt & mt_Bitmask)
+                        {
+                           DiagnosticsEngine& D = CI.getDiagnostics();
+                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of floating point type: use sign/exponent/significand directives"));
+                        }
+                        int exp_halfrange;
+                        int s_bits;
+                        const auto* BT = dyn_cast<BuiltinType>(argType);
+                        if(BT && BT->getKind() == BuiltinType::Double)
+                        {
+                           exp_halfrange = 1024;
+                           s_bits = 52;
+                        }
+                        else if(BT && BT->getKind() == BuiltinType::Float)
+                        {
+                           exp_halfrange = 128;
+                           s_bits = 23;
+                        }
+                        else
+                        {
+                           DiagnosticsEngine& D = CI.getDiagnostics();
+                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask sign/exponent/significand directives are valid for 32/64bits IEEE754 floating point types only"));
+                        }
+                        if(userMaskInfo.mt & mt_Exponent)
+                        {
+                           if(userMaskInfo.min_exp < -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
+                           {
+                              DiagnosticsEngine& D = CI.getDiagnostics();
+                              D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
+                           }
+                           // Exponent range is stored as unsigned value range of exponent bits (not actual number exponent)
+                           userMaskInfo.min_exp += exp_halfrange;
+                           userMaskInfo.max_exp += exp_halfrange;
+                        }
+                        if(userMaskInfo.mt & mt_Significand)
+                        {
+                           if(userMaskInfo.significand_bits > s_bits)
+                           {
+                              DiagnosticsEngine& D = CI.getDiagnostics();
+                              D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask significand: too many bits for parameter type"));
+                           }
+                        }
                      }
-                     int exp_halfrange;
-                     int s_bits;
-                     const auto* BT = dyn_cast<BuiltinType>(argType);
-                     if(BT && BT->getKind() == BuiltinType::Double)
+                     else if(argType->isIntegerType())
                      {
-                        exp_halfrange = 1024;
-                        s_bits = 52;
-                     }
-                     else if(BT && BT->getKind() == BuiltinType::Float)
-                     {
-                        exp_halfrange = 128;
-                        s_bits = 23;
+                        if(userMaskInfo.mt != mt_Invalid && userMaskInfo.mt != mt_Bitmask)
+                        {
+                           DiagnosticsEngine& D = CI.getDiagnostics();
+                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of integer type: use bitmask directive"));
+                        }
                      }
                      else
-                     {
-                        DiagnosticsEngine& D = CI.getDiagnostics();
-                        D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask sign/exponent/significand directives are valid for float and double only"));
-                     }
-                     if(userMaskInfo.mt & mt_Exponent)
-                     {
-                        if(userMaskInfo.min_exp < -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
-                        {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
-                        }
-                        // Exponent range is stored as unsigned value range of exponent bits (not actual number exponent)
-                        userMaskInfo.min_exp += exp_halfrange;
-                        userMaskInfo.max_exp += exp_halfrange;
-                     }
-                     if(userMaskInfo.mt & mt_Significand)
-                     {
-                        if(userMaskInfo.significand_bits > s_bits)
-                        {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask significand: too many bits for parameter type"));
-                        }
-                     }
-                  }
-                  else if(argType->isIntegerType())
-                  {
-                     if(userMaskInfo.mt != mt_Invalid && userMaskInfo.mt != mt_Bitmask)
-                     {
-                        DiagnosticsEngine& D = CI.getDiagnostics();
-                        D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of integer type: use bitmask directive"));
-                     }
-                  }
-                  else
-                  {
-                     if(userMaskInfo.mt != mt_Invalid)
                      {
                         DiagnosticsEngine& D = CI.getDiagnostics();
                         if(userMaskInfo.mt == mt_Bitmask)
@@ -443,8 +445,13 @@ namespace clang
                      }
                   }
 
-                  HLS_maskMap[funName].push_back(std::move(userMaskInfo));
+                  fpInfos.push_back(std::move(userMaskInfo));
                }
+            }
+
+            if(storeInfos)
+            {
+               HLS_maskMap[funName] = std::move(fpInfos);
             }
          }
       }
