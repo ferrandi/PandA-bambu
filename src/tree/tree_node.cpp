@@ -799,12 +799,12 @@ void function_decl::set_simple_pipeline(bool v)
    simple_pipeline = v;
 }
 
-unsigned int function_decl::get_initiation_time()
+int function_decl::get_initiation_time()
 {
    return initiation_time;
 }
 
-void function_decl::set_initiation_time(unsigned int time)
+void function_decl::set_initiation_time(int time)
 {
    initiation_time = time;
 }

@@ -236,7 +236,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
       auto loops = HLSMgr->GetFunctionBehavior(HLS->functionId)->GetLoops()->GetList();
       for(auto loop : loops)
       {
-         unsigned int initiation_time = FB->get_initiation_time();
+         int initiation_time = FB->get_initiation_time();
          THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
          auto bbs = loop->get_blocks();
          bool cond1 = false;
@@ -271,7 +271,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
                std::queue<vertex> next_frontier;
                to_analyze.push(s1);
                vertex src;
-               unsigned int distance = 1;
+               int distance = 1;
                graph::out_edge_iterator out_edge, out_edge_end;
                while(to_analyze.size() > 0)
                {

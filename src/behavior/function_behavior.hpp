@@ -418,7 +418,7 @@ class FunctionBehavior
    bool simple_pipeline;
    
    /// used only for stallable pipelines
-   unsigned int initiation_time;
+   int initiation_time;
 
  public:
    /**
@@ -864,7 +864,7 @@ class FunctionBehavior
       return simple_pipeline;
    }
    
-   unsigned int get_initiation_time() const
+   int get_initiation_time() const
    {
       THROW_ASSERT(pipeline_enabled && !simple_pipeline, "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
       return initiation_time;
