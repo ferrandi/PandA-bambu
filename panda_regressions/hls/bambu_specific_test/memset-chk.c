@@ -8,7 +8,7 @@ extern size_t strlen(const char *);
 extern void *memcpy (void *, const void *, size_t);
 extern void *memset (void *, int, size_t);
 extern int memcmp (const void *, const void *, size_t);
-
+extern void *__builtin_malloc(size_t size);
 #include "chk.h"
 
 char buffer[32];
