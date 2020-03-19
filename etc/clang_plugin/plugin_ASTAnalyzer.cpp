@@ -748,8 +748,8 @@ namespace clang
          }
          clang::Preprocessor& PP = CI.getPreprocessor();
          PP.AddPragmaHandler(new HLS_interface_PragmaHandler());
-         //PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
-         //PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
+         PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
+         PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
          return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
       }
 
