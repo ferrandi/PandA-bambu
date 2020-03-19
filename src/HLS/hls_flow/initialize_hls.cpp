@@ -132,13 +132,10 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
 #endif
    {
       HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
-      if(parameters->isOption(OPT_pipelining) && parameters->getOption<bool>(OPT_pipelining))
-      {
-         THROW_ASSERT(HLSMgr->get_tree_manager()->GetTreeNode(funId)->get_kind() == function_decl_K, "Called initialize_hls on a node which is not a funcion_decl");
-         auto current_node = GetPointer<function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funId));
-         if(current_node->is_simple_pipeline())
-            HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
-      }
+      THROW_ASSERT(HLSMgr->get_tree_manager()->GetTreeNode(funId)->get_kind() == function_decl_K, "Called initialize_hls on a node which is not a function_decl");
+      auto current_node = GetPointer<function_decl>(HLSMgr->get_tree_manager()->GetTreeNode(funId));
+      if(current_node->is_simple_pipeline())
+         HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
       HLS->module_binding_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_fu_binding_algorithm));
       HLS->liveness_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_liveness_algorithm));
       HLS->chaining_algorithm = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_chaining_algorithm));

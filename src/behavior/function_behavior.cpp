@@ -68,6 +68,8 @@
 #include "operations_graph_constructor.hpp"     // for OpGraphRef, operati...
 #include "tree_manager.hpp"                     // for pipeline_enabled
 #include "tree_node.hpp"                        // for pipeline_enabled
+#include "tree_helper.hpp"
+#include "utility.hpp"
 #include <boost/graph/adjacency_list.hpp>       // for adjacency_list
 #include <boost/graph/filtered_graph.hpp>       // for filtered_graph<>::v...
 #include <boost/iterator/filter_iterator.hpp>   // for filter_iterator
@@ -192,13 +194,49 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       packed_vars(false)
 {
    pipeline_enabled = false;
-   if(_parameters->isOption(OPT_pipelining) && _parameters->getOption<bool>(OPT_pipelining))
+   THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K, "Called function_behavior on a node which is not a function_decl");
+   function_decl* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
+   std::string fname;
+   tree_helper::get_mangled_fname(decl_node, fname);
+   if(!_parameters->isOption(OPT_pipelining))
    {
-      THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K, "Called function_behavior on a node which is not a funcion_decl");
-      function_decl* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
       pipeline_enabled = decl_node->is_pipelined();
       simple_pipeline = decl_node->is_simple_pipeline();
       initiation_time = decl_node->get_initiation_time();
+   }
+   else
+   {
+      auto tmp_string = _parameters->getOption<std::string>(OPT_pipelining);
+      if(tmp_string == "no-@ll")
+      {
+         // force no pipelining
+      }
+      else if(tmp_string == "@ll")
+      {
+         pipeline_enabled = true;
+         simple_pipeline = true;
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+      }
+      else
+      {
+         std::vector<std::string> funcs_values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
+         for(auto fun_pipeline: funcs_values)
+         {
+            std::vector<std::string> splitted = SplitString(fun_pipeline, "=");
+            if(splitted.size() == 1 && fname == splitted.at(0))
+            {
+               pipeline_enabled = true;
+               simple_pipeline = true;
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+            }
+            else if(splitted.size() == 2 && fname == splitted.at(0))
+            {
+               pipeline_enabled = true;
+               initiation_time = boost::lexical_cast<int>(splitted.at(1));
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+            }
+         }
+      }
    }
 }
 

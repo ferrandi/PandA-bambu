@@ -1058,7 +1058,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p::" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -1107,7 +1107,7 @@ int BambuParameter::Exec()
 #if HAVE_ILP_BUILT
       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
 #endif
-      {"pipelining", no_argument, nullptr, 'p'},
+      {"pipelining", optional_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
       {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
@@ -1915,7 +1915,9 @@ int BambuParameter::Exec()
 #endif
          case 'p':
          {
-            setOption(OPT_pipelining, true);
+            setOption(OPT_pipelining, "@ll");
+            if(optarg)
+               setOption(OPT_pipelining, optarg);
             break;
          }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
