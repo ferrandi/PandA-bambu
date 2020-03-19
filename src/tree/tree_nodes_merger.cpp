@@ -1847,6 +1847,7 @@ void tree_node_index_factory::operator()(const function_decl* obj, unsigned int&
    SET_VALUE(reading_memory, function_decl);
    SET_VALUE(pipeline_enabled, function_decl);
    SET_VALUE(simple_pipeline, function_decl);
+   SET_VALUE(initiation_time, function_decl);
 #if HAVE_FROM_PRAGMA_BUILT
    SET_VALUE(omp_atomic, function_decl);
    SET_VALUE(omp_body_loop, function_decl);
