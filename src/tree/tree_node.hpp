@@ -2794,7 +2794,7 @@ struct function_decl : public decl_node, public attr
    bool simple_pipeline;
 
    /// Used for pipelined with unbounded operations
-   unsigned int initiation_time;
+   int initiation_time;
 
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
@@ -2808,7 +2808,6 @@ struct function_decl : public decl_node, public attr
 
    /// True if function corresponds to an omp atomic
    bool omp_atomic;
-
 #endif
 
    /// Is the result of THUNK_FIXED_OFFSET(t) for this tree node
@@ -2919,9 +2918,9 @@ struct function_decl : public decl_node, public attr
 
    void set_simple_pipeline(bool v);
 
-   unsigned int get_initiation_time();
+   int get_initiation_time();
 
-   void set_initiation_time(unsigned int time);
+   void set_initiation_time(int time);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(function_decl)

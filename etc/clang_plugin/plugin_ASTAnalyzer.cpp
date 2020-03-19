@@ -649,16 +649,24 @@ namespace clang
          auto& SM = PP.getSourceManager();
          auto filename = SM.getPresumedLoc(loc, false).getFilename();
          std::string par;
-         PP.Lex(Tok);
-         par = PP.getSpelling(Tok);
-         if(Tok.isNot(tok::eod))
+         int index = 0;
+         while(Tok.isNot(tok::eod))
          {
-            DiagnosticsEngine& D = PP.getDiagnostics();
-            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
-            D.Report(PragmaTok.getLocation(), ID);
+            PP.Lex(Tok);
+            if(Tok.isNot(tok::eod))
+            {
+               par = PP.getSpelling(Tok);
+               if(index >= 1)
+               {
+                  DiagnosticsEngine& D = PP.getDiagnostics();
+                  unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
+                  D.Report(PragmaTok.getLocation(), ID);
+               }
+               HLS_pipeline_PragmaMap[filename].push_back(loc);
+               HLS_simple_pipeline_PragmaMap[filename].push_back(loc);
+               ++index;
+            }
          }
-         HLS_pipeline_PragmaMap[filename].push_back(loc);
-         HLS_simple_pipeline_PragmaMap[filename].push_back(loc);
       }
    };
    
@@ -677,20 +685,34 @@ namespace clang
          auto filename = SM.getPresumedLoc(loc, false).getFilename();
          std::string par;
          std::string time;
-         PP.Lex(Tok);
-         par = PP.getSpelling(Tok);
-         if(Tok.isNot(tok::numeric_constant))
+         int index = 0;
+         while(Tok.isNot(tok::eod))
          {
-            DiagnosticsEngine& D = PP.getDiagnostics();
-            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline lacks initiation time definition");
-            D.Report(PragmaTok.getLocation(), ID);
-         }
-         time = PP.getSpelling(Tok);
-         if(Tok.isNot(tok::eod))
-         {
-            DiagnosticsEngine& D = PP.getDiagnostics();
-            unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
-            D.Report(PragmaTok.getLocation(), ID);
+            PP.Lex(Tok);
+            if(Tok.isNot(tok::eod))
+            {
+               if(index == 0)
+               {
+                  par = PP.getSpelling(Tok);
+               }
+               else if(index == 1)
+               {
+                  if(Tok.isNot(tok::numeric_constant))
+                  {
+                     DiagnosticsEngine& D = PP.getDiagnostics();
+                     unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline lacks initiation time definition");
+                     D.Report(PragmaTok.getLocation(), ID);
+                  }
+                  time = PP.getSpelling(Tok);
+               }
+               else
+               {
+                  DiagnosticsEngine& D = PP.getDiagnostics();
+                  unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
+                  D.Report(PragmaTok.getLocation(), ID);
+               }
+               ++index;
+            }
          }
          HLS_pipeline_PragmaMap[filename].push_back(loc);
          HLS_stallable_pipeline_PragmaMap[filename][loc] = time;

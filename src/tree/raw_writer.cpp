@@ -687,7 +687,7 @@ void raw_writer::operator()(const function_decl* obj, unsigned int& mask)
    }
    if(obj->pipeline_enabled && !obj->simple_pipeline)
    {
-      WRITE_NFIELD(os, STOK(TOK_STALLABLE_PIPELINE), obj->initiation_time);
+      WRITE_NFIELD(os, STOK(TOK_INITIATION_TIME), obj->initiation_time);
    }
 #if HAVE_FROM_PRAGMA_BUILT
    if(obj->omp_atomic)

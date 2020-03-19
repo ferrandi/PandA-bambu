@@ -136,7 +136,7 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                      THROW_ASSERT(my_node->get_kind() == function_decl_K, "Not a function_decl");
                      my_node->set_pipelining(!is_pipelined.compare("yes"));
                      my_node->set_simple_pipeline(!simple_pipeline.compare(("yes")));
-                     my_node->set_initiation_time((unsigned int)std::stoi(initiation_time));
+                     my_node->set_initiation_time(std::stoi(initiation_time));
                   }
                }
             }
