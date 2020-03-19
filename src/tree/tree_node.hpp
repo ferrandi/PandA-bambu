@@ -77,7 +77,7 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
-CONSTREF_FORWARD_DECL(Range);
+REF_FORWARD_DECL(Range);
 template <class value>
 class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
@@ -3693,6 +3693,9 @@ struct parm_decl : public decl_node
    /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
    const PointToInformationRef point_to_information;
 
+   /// Range information about bounds of the function parameter (valid for real_type too)
+   RangeRef range;
+
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(parm_decl)
 
@@ -4580,7 +4583,7 @@ struct ssa_name : public tree_node
    std::string bit_values;
 
    /// Range information about numerical values of the ssa variable
-   RangeConstRef range;
+   RangeRef range;
 
    /// point to solution
    PointToSolutionRef use_set;

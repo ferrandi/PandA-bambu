@@ -2085,13 +2085,13 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
 // ========================================================================== //
 // RealRange
 // ========================================================================== //
-RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())), sign(s.clone()), exponent(e.clone()), fractional(f.clone())
+RealRange::RealRange(const Range& s, const Range& e, const Range& f) : Range(Real, static_cast<bw_t>(s.getBitWidth() + e.getBitWidth() + f.getBitWidth())), sign(s.clone()), exponent(e.clone()), significand(f.clone())
 {
    THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s.ToString() + " " + e.ToString() + " " + f.ToString() + "]<" + STR(getBitWidth()) + ">");
    THROW_ASSERT(!s.isReal() && !e.isReal() && !f.isReal(), "Real range components shouldn't be real ranges");
 }
 
-RealRange::RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), fractional(f->clone())
+RealRange::RealRange(const RangeConstRef& s, const RangeConstRef& e, const RangeConstRef& f) : Range(Real, static_cast<bw_t>(s->getBitWidth() + e->getBitWidth() + f->getBitWidth())), sign(s->clone()), exponent(e->clone()), significand(f->clone())
 {
    THROW_ASSERT(getBitWidth() == 32 || getBitWidth() == 64, "Composed range bitwidth not valid [" + s->ToString() + " " + e->ToString() + " " + f->ToString() + "]<" + STR(getBitWidth()) + ">");
    THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
@@ -2102,12 +2102,12 @@ RealRange::RealRange(const RangeConstRef& vc) : Range(Real, vc->getBitWidth()), 
    if(vc->getBitWidth() == 32)
    {
       exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)), false)->zextOrTrunc(8);
-      fractional = vc->zextOrTrunc(23);
+      significand = vc->zextOrTrunc(23);
    }
    else if(vc->getBitWidth() == 64)
    {
       exponent = vc->shr(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)), false)->zextOrTrunc(11);
-      fractional = vc->zextOrTrunc(52);
+      significand = vc->zextOrTrunc(52);
    }
    else
    {
@@ -2122,13 +2122,13 @@ RangeRef RealRange::getRange() const
    {
       auto s = sign->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 31, 31)));
       auto e = exponent->zextOrTrunc(32)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 23, 23)));
-      return fractional->zextOrTrunc(32)->Or(e)->Or(s);
+      return significand->zextOrTrunc(32)->Or(e)->Or(s);
    }
    else if(_bw == 64)
    {
       auto s = sign->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 63, 63)));
       auto e = exponent->zextOrTrunc(64)->shl(RangeRef(new Range(Regular, MAX_BIT_INT, 52, 52)));
-      return fractional->zextOrTrunc(64)->Or(e)->Or(s);
+      return significand->zextOrTrunc(64)->Or(e)->Or(s);
    }
    THROW_UNREACHABLE("Unhandled view convert bitwidth");
    return nullptr;
@@ -2144,14 +2144,14 @@ RangeRef RealRange::getExponent() const
    return exponent;
 }
 
-RangeRef RealRange::getFractional() const
+RangeRef RealRange::getSignificand() const
 {
-   return fractional;
+   return significand;
 }
 
 RangeRef RealRange::getAnti() const
 {
-   return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), fractional->getAnti()));
+   return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), significand->getAnti()));
 }
 
 void RealRange::setSign(const RangeConstRef& s)
@@ -2166,7 +2166,7 @@ void RealRange::setExponent(const RangeConstRef& e)
 
 void RealRange::setFractional(const RangeConstRef& f)
 {
-   fractional.reset(f->clone());
+   significand.reset(f->clone());
 }
 
 bool RealRange::isSameRange(const RangeConstRef& other) const
@@ -2174,41 +2174,41 @@ bool RealRange::isSameRange(const RangeConstRef& other) const
    if(other->isReal())
    {
       auto rOther = RefcountCast<const RealRange>(other);
-      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && fractional->isSameRange(rOther->fractional);
+      return this->getBitWidth() == other->getBitWidth() && sign->isSameRange(rOther->sign) && exponent->isSameRange(rOther->exponent) && significand->isSameRange(rOther->significand);
    }
    return false;
 }
 
 bool RealRange::isEmpty() const
 {
-   return sign->isEmpty() || exponent->isEmpty() || fractional->isEmpty();
+   return sign->isEmpty() || exponent->isEmpty() || significand->isEmpty();
 }
 
 bool RealRange::isUnknown() const
 {
-   return sign->isUnknown() || exponent->isUnknown() || fractional->isUnknown();
+   return sign->isUnknown() || exponent->isUnknown() || significand->isUnknown();
 }
 
 void RealRange::setUnknown()
 {
    sign->setUnknown();
    exponent->setUnknown();
-   fractional->setUnknown();
+   significand->setUnknown();
 }
 
 bool RealRange::isFullSet() const
 {
-   return sign->isFullSet() && exponent->isFullSet() && fractional->isFullSet();
+   return sign->isFullSet() && exponent->isFullSet() && significand->isFullSet();
 }
 
 bool RealRange::isSingleElement() const
 {
-   return sign->isSingleElement() && exponent->isSingleElement() && fractional->isSingleElement();
+   return sign->isSingleElement() && exponent->isSingleElement() && significand->isSingleElement();
 }
 
 bool RealRange::isConstant() const
 {
-   return sign->isConstant() && exponent->isConstant() && fractional->isConstant();
+   return sign->isConstant() && exponent->isConstant() && significand->isConstant();
 }
 
 bool RealRange::isReal() const
@@ -2223,18 +2223,18 @@ void RealRange::print(std::ostream& OS) const
    OS << ", ";
    exponent->print(OS);
    OS << ", ";
-   fractional->print(OS);
+   significand->print(OS);
    OS << ", " << STR(getBitWidth()) << "]";
 }
 
 Range* RealRange::clone() const
 {
-   return new RealRange(sign, exponent, fractional);
+   return new RealRange(sign, exponent, significand);
 }
 
 RangeRef RealRange::abs() const
 {
-   return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, 0, 0)), exponent, fractional));
+   return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, 0, 0)), exponent, significand));
 }
 
 RangeRef RealRange::negate() const
@@ -2242,7 +2242,7 @@ RangeRef RealRange::negate() const
    if(sign->isAnti() || sign->isConstant())
    {
       const auto s = sign->getUnsignedMin() ? 0 : 1;
-      return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, s, s)), exponent, fractional));
+      return RangeRef(new RealRange(RangeRef(new Range(Regular, 1, s, s)), exponent, significand));
    }
    return RangeRef(this->clone());
 }
@@ -2251,7 +2251,7 @@ RangeRef RealRange::Eq(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
-      return sign->Eq(rOther->sign, _bw)->intersectWith(exponent->Eq(rOther->exponent, _bw))->intersectWith(fractional->Eq(rOther->fractional, _bw));
+      return sign->Eq(rOther->sign, _bw)->unionWith(exponent->Eq(rOther->exponent, _bw))->unionWith(significand->Eq(rOther->significand, _bw));
    }
    return RangeRef(new Range(Regular, _bw, 0, 0));
 }
@@ -2260,7 +2260,7 @@ RangeRef RealRange::Ne(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
-      return sign->Ne(rOther->sign, _bw)->unionWith(exponent->Ne(rOther->exponent, _bw))->unionWith(fractional->Ne(rOther->fractional, _bw));
+      return sign->Ne(rOther->sign, _bw)->unionWith(exponent->Ne(rOther->exponent, _bw))->unionWith(significand->Ne(rOther->significand, _bw));
    }
    return RangeRef(new Range(Regular, _bw, 1, 1));
 }
@@ -2272,7 +2272,7 @@ RangeRef RealRange::intersectWith(const RangeConstRef& other) const
    #endif
    THROW_ASSERT(other->isReal(), "Real range should intersect with real range only");
    auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), fractional->intersectWith(rrOther->fractional)));
+   return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), significand->intersectWith(rrOther->significand)));
 }
 
 RangeRef RealRange::unionWith(const RangeConstRef& other) const
@@ -2282,7 +2282,7 @@ RangeRef RealRange::unionWith(const RangeConstRef& other) const
    #endif
    THROW_ASSERT(other->isReal(), "Real range should unite to real range only");
    auto rrOther = RefcountCast<const RealRange>(other);
-   return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), fractional->unionWith(rrOther->fractional)));
+   return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), significand->unionWith(rrOther->significand)));
 }
 
 RangeRef RealRange::toFloat64() const
@@ -2309,7 +2309,7 @@ RangeRef RealRange::toFloat64() const
 
    return RangeRef(new RealRange(sign, 
       exponent64, 
-      fractional->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
+      significand->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
 }
 
 RangeRef RealRange::toFloat32() const
@@ -2320,7 +2320,7 @@ RangeRef RealRange::toFloat32() const
    }
 
    RangeRef exponent32;
-   RangeRef fractional32 = fractional->shr(RangeRef(new Range(Regular, 52, 29, 29)), false)->zextOrTrunc(23);
+   RangeRef significand32 = significand->shr(RangeRef(new Range(Regular, 52, 29, 29)), false)->zextOrTrunc(23);
    const auto min = exponent->getUnsignedMin() - 896;
    const auto max = exponent->getUnsignedMax() - 896;
    if(min < 0 && max > APInt::getMaxValue(8))
@@ -2334,7 +2334,7 @@ RangeRef RealRange::toFloat32() const
    else if(exponent->isConstant() && max >= APInt::getMaxValue(8))
    {
       exponent32.reset(new Range(Regular, 8, -1, -1));
-      fractional32.reset(new Range(Regular, 23, 0, 0));
+      significand32.reset(new Range(Regular, 23, 0, 0));
    }
    else
    {
@@ -2343,5 +2343,5 @@ RangeRef RealRange::toFloat32() const
 
    return RangeRef(new RealRange(sign, 
       exponent32,
-      fractional32));
+      significand32));
 }

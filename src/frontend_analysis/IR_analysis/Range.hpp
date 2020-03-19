@@ -44,6 +44,7 @@
 #define RANGE_HPP
 
 #include "APInt.hpp"
+#include "bit_lattice.hpp"
 #include "refcount.hpp"
 #include "tree_common.hpp"
 
@@ -168,7 +169,7 @@ class RealRange : public Range
  private:
    RangeRef sign;
    RangeRef exponent;
-   RangeRef fractional;
+   RangeRef significand;
 
  public:
    RealRange(const Range& s, const Range& e, const Range& f);
@@ -183,7 +184,8 @@ class RealRange : public Range
 
    RangeRef getSign() const;
    RangeRef getExponent() const;
-   RangeRef getFractional() const;
+   RangeRef getSignificand() const;
+   std::deque<bit_lattice> getBitmask() const;
    RangeRef getAnti() const override;
    void setSign(const RangeConstRef& s);
    void setExponent(const RangeConstRef& e);
