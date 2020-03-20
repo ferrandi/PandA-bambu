@@ -723,12 +723,12 @@ BOOST_AUTO_TEST_CASE( real_range )
     RealRange float64(stdFullRange64);
     BOOST_REQUIRE(float64.getSign()->isFullSet());
     BOOST_REQUIRE(float64.getExponent()->isFullSet());
-    BOOST_REQUIRE(float64.getFractional()->isFullSet());
+    BOOST_REQUIRE(float64.getSignificand()->isFullSet());
     
     RealRange float32(stdFullRange);
     BOOST_REQUIRE(float32.getSign()->isFullSet());
     BOOST_REQUIRE(float32.getExponent()->isFullSet());
-    BOOST_REQUIRE(float32.getFractional()->isFullSet());
+    BOOST_REQUIRE(float32.getSignificand()->isFullSet());
 
     auto view_convert32 = float32.getRange();
     BOOST_REQUIRE_EQUAL(32, view_convert32->getBitWidth());
@@ -757,5 +757,5 @@ BOOST_AUTO_TEST_CASE( real_range )
     BOOST_REQUIRE(constDoubleToFloat->isConstant());
     BOOST_REQUIRE_EQUAL(0, constDoubleToFloat->getSign()->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0b11111111, constDoubleToFloat->getExponent()->getUnsignedMax());
-    BOOST_REQUIRE_EQUAL(0, constDoubleToFloat->getFractional()->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(0, constDoubleToFloat->getSignificand()->getUnsignedMin());
 }
