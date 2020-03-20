@@ -1,4 +1,4 @@
-int pipelined_function(int a, int b, int c)
+int __attribute__((noinline)) pipelined_function(int a, int b, int c)
 {
 
    #pragma HLS_simple_pipeline
@@ -7,9 +7,8 @@ int pipelined_function(int a, int b, int c)
    
 }
 
-int outer_loop(int a, int b, int c, int d, int e)
+int __attribute__((noinline)) outer_loop(int a, int b, int c)
 {
-
    int x = 0;
 
    if(a < -10)
@@ -17,7 +16,6 @@ int outer_loop(int a, int b, int c, int d, int e)
 
    while(a < 8)
    {
-      //...
       if(x%2 == 0)
          x += pipelined_function(x, b, c);
       else

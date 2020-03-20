@@ -1,4 +1,4 @@
-int if_clauses(int a, int b, int c, int d)
+int __attribute__((noinline)) if_clauses(int a, int b, int c, int d)
 {
 
    #pragma HLS_simple_pipeline

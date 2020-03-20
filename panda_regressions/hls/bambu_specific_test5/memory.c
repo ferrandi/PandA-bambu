@@ -1,4 +1,4 @@
-int memory(int base, int i)
+int __attribute__((noinline)) memory(int base, int i)
 {
 
    #pragma HLS_simple_pipeline
