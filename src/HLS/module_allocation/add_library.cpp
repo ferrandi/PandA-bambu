@@ -261,6 +261,8 @@ DesignFlowStep_Status add_library::InternalExec()
             exec_time = clk * (min_cycles - 1) + call_delay;
          else
             exec_time = call_delay;
+         if(simple_pipeline)
+            min_cycles = min_cycles + 1;
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {

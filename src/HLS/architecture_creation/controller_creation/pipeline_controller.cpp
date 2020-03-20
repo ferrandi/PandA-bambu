@@ -131,7 +131,7 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    structural_objectRef start_port = circuit->find_member(START_PORT_NAME, port_o_K, circuit);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Determining size of the controller...");
-   unsigned int num_states = HLS->STG->get_number_of_states();
+   unsigned int num_states = HLS->STG->get_number_of_states() - 1;
 
    std::string name = "controller_" + function_name;
    std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_SHIFT);
