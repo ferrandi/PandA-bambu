@@ -654,7 +654,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    ///*****************************************************
 
    HLS->STG->compute_min_max();
-   if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1)
+   if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline())
    {
       HLS->registered_done_port = true;
       /// check for unbounded op executed in the last step
