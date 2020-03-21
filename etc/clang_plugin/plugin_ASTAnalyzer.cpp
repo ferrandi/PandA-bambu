@@ -179,10 +179,6 @@ namespace clang
          for(auto function : Fun2Params)
          {
             std::string function_name = function.first;
-            if(!TopFunctionName.empty() && Fun2Demangled.find(function_name)->second != TopFunctionName && function_name != TopFunctionName)
-            {
-               continue;
-            }
             std::string is_pipelined = "no";
             std::string simple_pipeline = "no";
             std::string initiation_time = "1";
@@ -202,8 +198,8 @@ namespace clang
                   DiagnosticsEngine& D = CI.getDiagnostics();
                   D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "The defined pipeline isn't simple nor stallable"));
                }
+               stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined << "\" is_simple=\"" << simple_pipeline << "\" initiation_time=\"" << initiation_time << "\"/>\n";
             }
-            stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined << "\" is_simple=\"" << simple_pipeline << "\" initiation_time=\"" << initiation_time << "\"/>\n";
          }
          stream << "</module>\n";
       }
