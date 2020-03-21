@@ -343,7 +343,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             structural_objectRef done_port_i = fu_module->find_member(DONE_PORT_NAME, port_o_K, top);
             /// do some checks
             if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
-               THROW_ERROR("Unbonded operations have to have both done_port and start_port ports!" + STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
+               THROW_ERROR("Unbounded operations have to have both done_port and start_port ports!" + STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
             bool is_starting_operation;
             if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
                is_starting_operation = std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end();
