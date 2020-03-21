@@ -6,7 +6,7 @@ int __attribute__((noinline)) called_sumprod(int a, int b, int c, int d)
    return a + b + c * d;
 }
 
-int __attribute__((noinline)) main_caller(int a, int b, int c, int d, int e)
+int main_caller(int a, int b, int c, int d, int e)
 {
 
    #pragma HLS_simple_pipeline

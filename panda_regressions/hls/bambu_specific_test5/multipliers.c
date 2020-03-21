@@ -1,4 +1,4 @@
-int __attribute__((noinline)) multipliers(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l)
+int multipliers(int a, int b, int c, int d, int e, int f, int g, int h, int i, int j, int k, int l)
 {
 
    #pragma HLS_simple_pipeline

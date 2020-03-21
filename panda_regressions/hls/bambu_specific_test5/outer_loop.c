@@ -7,9 +7,9 @@ int __attribute__((noinline)) pipelined_function(int a, int b, int c)
    
 }
 
-int __attribute__((noinline)) outer_loop(int a, int b, int c)
+int outer_loop(int a, int b, int c)
 {
-   int x = 0;
+   int x = b + c;
 
    if(a < -10)
       a = 2;
