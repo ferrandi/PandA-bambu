@@ -366,7 +366,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       }
       else
          top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit, port_type);
-      if(has_registered_inputs)
+      bool is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline();
+      if(has_registered_inputs && !is_pipelined)
       {
          std::string port_prefix = GetPointer<port_o>(in_obj)->get_id();
          if(in_obj->get_kind() == port_vector_o_K)

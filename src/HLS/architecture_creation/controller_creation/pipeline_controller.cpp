@@ -32,9 +32,9 @@
  */
 /**
  * @file pipeline_controller.cpp
- * @brief Starting from the FSM graph, generate a shift register for control
+ * @brief Starting from the FSM graph, it generates a shift register for control
  *
- * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Luca Ezio Pozzoni <lucaezio.pozzoni@mail.polimi.it>
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
@@ -137,6 +137,52 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    std::string library = HLS->HLS_T->get_technology_manager()->get_library(register_SHIFT);
    structural_objectRef controller = SM->add_module_from_technology_library(name, register_SHIFT, library, circuit, HLS->HLS_T->get_technology_manager());
    controller->SetParameter("CONTROLLER_LENGTH", std::to_string(num_states));
+   const StateTransitionGraphConstRef astg = HLS->STG->CGetAstg();
+   const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
+   std::list<vertex> working_list;
+   astg->TopologicalSort(working_list);
+   vertex entry = HLS->STG->get_entry_state();
+   THROW_ASSERT(boost::out_degree(entry, *astg) == 1, "Non deterministic initial state");
+   OutEdgeIterator oe, oend;
+   boost::tie(oe, oend) = boost::out_edges(entry, *astg);
+   /// Getting first state (initial one). It will be also first state for resetting
+   vertex first_state = boost::target(*oe, *astg);
+   THROW_ASSERT(std::find(working_list.begin(), working_list.end(), first_state) != working_list.end(), "unexpected case");
+   working_list.erase(std::find(working_list.begin(), working_list.end(), first_state));
+   working_list.push_front(first_state); /// ensure that first_state is the really first one...
+   std::map<unsigned int, structural_objectRef> null_values;
+   for(const auto& v : working_list)
+   {
+      const auto& operations = astg->CGetStateInfo(v)->executing_operations;
+      for(const auto& op : operations)
+      {
+         technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(op));
+         technology_nodeRef op_tn = GetPointer<functional_unit>(tn)->get_operation(tree_helper::normalized_ID(data->CGetOpNodeInfo(op)->GetOperation()));
+         THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, op));
+         structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
+         if(!CM)
+            continue;
+         structural_objectRef top = CM->get_circ();
+         THROW_ASSERT(top, "expected");
+         auto* fu_module = GetPointer<module>(top);
+         THROW_ASSERT(fu_module, "expected");
+         structural_objectRef start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
+         if((GET_TYPE(data, op) & TYPE_EXTERNAL) && start_port_i)
+         {
+            auto genObj = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data);
+            THROW_ASSERT(genObj, "null object");
+            auto portObj = GetPointer<commandport_obj>(genObj)->get_controller_obj();
+            THROW_ASSERT(portObj, "null object");
+            if(null_values.find(GET_TYPE_SIZE(portObj)) == null_values.end())
+            {
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding null value for bitsize " + STR(GET_TYPE_SIZE(portObj)));
+               structural_objectRef const_obj = SM->add_constant("null_value_" + STR(GET_TYPE_SIZE(portObj)), circuit, portObj->get_typeRef(), STR(0));
+               null_values[GET_TYPE_SIZE(portObj)] = const_obj;
+            }
+            SM->add_connection(portObj, null_values[GET_TYPE_SIZE(portObj)]);
+         }
+      }
+   }
    structural_objectRef port_ck = controller->find_member(CLOCK_PORT_NAME, port_o_K, controller);
    SM->add_connection(clock_port, port_ck);
    structural_objectRef port_rst = controller->find_member(RESET_PORT_NAME, port_o_K, controller);
