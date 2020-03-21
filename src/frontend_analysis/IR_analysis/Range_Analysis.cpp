@@ -53,13 +53,15 @@
 #include "basic_block.hpp"
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
-#include "graph.hpp"
 #include "function_behavior.hpp"
+#include "graph.hpp"
 #include "op_graph.hpp"
 #include "var_pp_functor.hpp"
 
 /// design_flows include
+#include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
+#include "function_frontend_flow_step.hpp"
 
 /// stl
 #include <map>
@@ -1013,6 +1015,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
    auto getConstNode = [&] (const RangeConstRef& range) {
       long long cst_val;
       tree_nodeRef cst;
+      const auto type_node = TM->GetTreeReindex(tree_helper::get_type_index(TM, SSA->index));
       if(range->isReal())
       {
          const auto rRange = RefcountCast<const RealRange>(range);
@@ -1030,7 +1033,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
             cst_val = static_cast<int64_t>(vc.bits.coded);
-            cst = tree_man->CreateRealCst(SSA->type, static_cast<long double>(vc.flt), TM->new_tree_node_id());
+            cst = tree_man->CreateRealCst(type_node, static_cast<long double>(vc.flt), TM->new_tree_node_id());
          }
          else
          {
@@ -1046,7 +1049,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
             cst_val = static_cast<int64_t>(vc.bits.coded);
-            cst = tree_man->CreateRealCst(SSA->type, static_cast<long double>(vc.dub), TM->new_tree_node_id());
+            cst = tree_man->CreateRealCst(type_node, static_cast<long double>(vc.dub), TM->new_tree_node_id());
          }
       }
       else
@@ -1054,7 +1057,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
          const auto cst_value = isSigned ? range->getSignedMax().to<int64_t>() : static_cast<int64_t>(range->getUnsignedMax().to<uint64_t>());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + (isSigned ? ("Signed int " + STR(cst_value)) : ("Unsigned int " + STR(static_cast<uint64_t>(cst_value)))));
          cst_val = cst_value;
-         cst = tree_man->CreateIntegerCst(SSA->type, cst_value, TM->new_tree_node_id());
+         cst = tree_man->CreateIntegerCst(type_node, cst_value, TM->new_tree_node_id());
       }
       return std::make_pair(cst_val, cst);
    };
@@ -6170,7 +6173,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    #ifndef NDEBUG
    , graph_debug(DEBUG_LEVEL_NONE), iteration(0), stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max()), debug_mode(RA_DEBUG_NONE)
    #endif
-   , solverType(st_Cousot), dead_code_restart(false), requireESSA(false) // ESSA disabled because of renaming issues in some cases
+   , solverType(st_Cousot), requireESSA(false) // ESSA disabled because of renaming issues in some cases
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
@@ -6246,34 +6249,6 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
 
 RangeAnalysis::~RangeAnalysis() = default;
 
-void RangeAnalysis::Initialize()
-{
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
-   dead_code_restart = false;
-   switch(solverType)
-   {
-      case st_Cousot:
-         CG.reset(new Cousot(AppM,
-            #ifndef NDEBUG
-               debug_level, graph_debug));
-            #else
-               DEBUG_LEVEL_NONE, DEBUG_LEVEL_NONE));
-            #endif
-         break;
-      case st_Crop:
-         CG.reset(new CropDFS(AppM,
-            #ifndef NDEBUG
-               debug_level, graph_debug));
-            #else
-               DEBUG_LEVEL_NONE, DEBUG_LEVEL_NONE));
-            #endif
-         break;
-      default:
-         THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
-         break;
-   }
-}
-
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> 
 RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -6289,25 +6264,21 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
          if(requireESSA)
          {
             relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          }
          relationships.insert(std::make_pair(FUNCTION_PARM_MASK, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
       {
-         //    if(dead_code_restart)
-         //    {
-         //       relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));   // TODO: could it be more specific?
-         //    }
          break;
       }
       default:
@@ -6361,6 +6332,34 @@ bool RangeAnalysis::HasToBeExecuted() const
    return cur_bb_ver != last_bb_ver || cur_bitvalue_ver != last_bitvalue_ver;
 }
 
+void RangeAnalysis::Initialize()
+{
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
+   fun_id_to_restart.clear();
+   switch(solverType)
+   {
+      case st_Cousot:
+         CG.reset(new Cousot(AppM,
+            #ifndef NDEBUG
+               debug_level, graph_debug));
+            #else
+               DEBUG_LEVEL_NONE, DEBUG_LEVEL_NONE));
+            #endif
+         break;
+      case st_Crop:
+         CG.reset(new CropDFS(AppM,
+            #ifndef NDEBUG
+               debug_level, graph_debug));
+            #else
+               DEBUG_LEVEL_NONE, DEBUG_LEVEL_NONE));
+            #endif
+         break;
+      default:
+         THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
+         break;
+   }
+}
+
 DesignFlowStep_Status RangeAnalysis::Exec()
 {
    #ifndef NDEBUG
@@ -6374,36 +6373,33 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Analyse only reached functions
    const auto TM = AppM->get_tree_manager();
-   auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   auto rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
 
    #ifdef EARLY_DEAD_CODE_RESTART
-   std::vector<unsigned int> dead_code_reboot;
-   for(const auto f : functions)
+   for(const auto f : rb_funcs)
    {
       bool dead_code_necessary = CG->buildGraph(f);
       if(dead_code_necessary)
       {
-         dead_code_reboot.push_back(f);
+         fun_id_to_restart.insert(f);
       }
    }
-   if(!dead_code_reboot.empty())
+   if(fun_id_to_restart.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Following functions have unpropagated constants:");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(const auto f_id : dead_code_reboot)
+      for(const auto f_id : fun_id_to_restart)
       {
          const auto FB = AppM->GetFunctionBehavior(f_id);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, f_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(FB->CGetBehavioralHelper()))));
          FB->UpdateBBVersion();
-         FB->UpdateBitValueVersion();
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-      dead_code_restart = true;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Unpropagated constants detected, aborting...");
       return DesignFlowStep_Status::ABORTED;
    }
    #else
-   for(const auto f : functions)
+   for(const auto f : rb_funcs)
    {
       CG->buildGraph(f);
    }
@@ -6415,11 +6411,11 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          tree_helper::print_type(TM, top_fn, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(top_fn)->CGetBehavioralHelper()))) + " is top function");
-      functions.erase(top_fn);
+      rb_funcs.erase(top_fn);
    }
    // The two operations are split because the CallMap is built for all functions in buildGraph
    // then it is used from MatchParametersAndReturnValues
-   for(const auto f : functions)
+   for(const auto f : rb_funcs)
    {
       MatchParametersAndReturnValues(f, AppM, CG, debug_level);
    }
@@ -6494,13 +6490,35 @@ bool RangeAnalysis::finalize()
    #endif
    CG.reset();
 
-   for(const auto f : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
+   const auto rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   const auto cgm = AppM->CGetCallGraphManager();
+   const auto cg = cgm->CGetCallGraph();
+
+   // Previous steps must be invalidated for caller functions too
+   CustomSet<unsigned int> updatedCalled;
+   for(const auto f : updatedFunctions)
+   {
+      const auto f_v = cgm->GetVertex(f);
+      for(const auto& caller : boost::make_iterator_range(boost::in_edges(f_v, *cg)))
+      {
+         const auto caller_id = cgm->get_function(boost::source(caller, *cg));
+         if(rbf.count(caller_id) && cg->CGetFunctionEdgeInfo(caller)->direct_call_points.size())
+         {
+            updatedCalled.insert(caller_id);
+         }
+      }
+   }
+
+   for(const auto f : rbf)
    {
       const auto FB = AppM->GetFunctionBehavior(f);
-      const auto updated_f = updatedFunctions.find(f);
-      if(updated_f != updatedFunctions.end())
+      if(updatedFunctions.count(f))
       {
          last_bitvalue_ver[f] = FB->UpdateBBVersion();
+         last_bb_ver[f] = FB->UpdateBitValueVersion();
+      }
+      else if(updatedCalled.count(f))
+      {
          last_bb_ver[f] = FB->UpdateBitValueVersion();
       }
       else
@@ -6509,5 +6527,7 @@ bool RangeAnalysis::finalize()
          last_bb_ver[f] = FB->GetBitValueVersion();
       }
    }
-   return !updatedFunctions.empty();
+   fun_id_to_restart.insert(updatedCalled.begin(), updatedCalled.end());
+   fun_id_to_restart.insert(updatedFunctions.begin(), updatedFunctions.end());
+   return !fun_id_to_restart.empty();
 }
