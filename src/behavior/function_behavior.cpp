@@ -203,6 +203,10 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       pipeline_enabled = decl_node->is_pipelined();
       simple_pipeline = decl_node->is_simple_pipeline();
       initiation_time = decl_node->get_initiation_time();
+      if(pipeline_enabled && simple_pipeline)
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+      else if (pipeline_enabled)
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
    }
    else
    {
