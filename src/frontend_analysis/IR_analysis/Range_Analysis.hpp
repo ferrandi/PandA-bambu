@@ -67,7 +67,8 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
 {
 #ifndef NDEBUG
    int graph_debug;
-   unsigned iteration;
+   uint64_t iteration;
+   uint64_t stop_iteration;
    int debug_mode;
 #endif
 

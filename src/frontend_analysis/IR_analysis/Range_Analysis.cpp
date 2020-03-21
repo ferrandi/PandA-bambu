@@ -1835,29 +1835,30 @@ int NodeContainer::debug_level = DEBUG_LEVEL_NONE;
 #endif
 
 #ifndef NDEBUG
-static bool enable_add = true;
-static bool enable_sub = true;
-static bool enable_mul = true;
-static bool enable_sdiv = true;
-static bool enable_udiv = true;
-static bool enable_srem = true;
-static bool enable_urem = true;
-static bool enable_shl = true;
-static bool enable_shr = true;
-static bool enable_abs = true;
-static bool enable_negate = true;
-static bool enable_not = true;
-static bool enable_and = true;
-static bool enable_or = true;
-static bool enable_xor = true;
-static bool enable_sext = true;
-static bool enable_zext = true;
-static bool enable_trunc = true;
-static bool enable_min = true;
-static bool enable_max = true;
-static bool enable_load = true;
+static bool enable_add           = true;
+static bool enable_sub           = true;
+static bool enable_mul           = true;
+static bool enable_sdiv          = true;
+static bool enable_udiv          = true;
+static bool enable_srem          = true;
+static bool enable_urem          = true;
+static bool enable_shl           = true;
+static bool enable_shr           = true;
+static bool enable_abs           = true;
+static bool enable_negate        = true;
+static bool enable_not           = true;
+static bool enable_and           = true;
+static bool enable_or            = true;
+static bool enable_xor           = true;
+static bool enable_sext          = true;
+static bool enable_zext          = true;
+static bool enable_trunc         = true;
+static bool enable_min           = true;
+static bool enable_max           = true;
+static bool enable_load          = true;
+static bool enable_view_convert  = true;
 
-#define OPERATION_OPTION(opts, X) if(opts.contains("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
+#define OPERATION_OPTION(opts, X) if(opts.erase("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
 #define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
 #define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getRangeFor(var, Regular)
 #else
@@ -2152,7 +2153,7 @@ RangeRef UnaryOpNode::eval() const
          case view_convert_expr_K:
          {
             THROW_ASSERT(bw == 64 || bw == 32, "View_convert sink bitwidth should be 64 or 32 bits (" + STR(bw) + ")");
-            result = rr->getRange()->zextOrTrunc(bw);
+            result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), rr->getRange()->zextOrTrunc(bw));
             auto bitmask = getSource()->getBitValues();
             if(bitmask.size())
             {
@@ -2234,12 +2235,12 @@ RangeRef UnaryOpNode::eval() const
          {
             if(resultType->get_kind() == real_type_K)
             {
-               result = RangeRef(new RealRange(oprnd));
+               result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), RangeRef(new RealRange(oprnd)));
             }
             else
             {
                THROW_ASSERT(!oprnd->isReal(), "Operand here should not be real");
-               result = oprnd->sextOrTrunc(bw);
+               result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), oprnd->sextOrTrunc(bw));
             }
             break;
          }
@@ -6167,7 +6168,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
    : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par)
    #ifndef NDEBUG
-   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), debug_mode(RA_DEBUG_NONE)
+   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max()), debug_mode(RA_DEBUG_NONE)
    #endif
    , solverType(st_Cousot), dead_code_restart(false), requireESSA(false) // ESSA disabled because of renaming issues in some cases
 {
@@ -6178,36 +6179,35 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    {
       ra_mode.insert(opt);
    }
+   if(ra_mode.erase("crop"))
+   {
+      solverType = st_Crop;
+   }
+   if(ra_mode.erase("noESSA"))
+   {
+      requireESSA = false;
+   }
    #ifndef NDEBUG
-   if(ra_mode.contains("ro"))
+   if(ra_mode.erase("ro"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: read-only mode enabled");
       debug_mode = RA_DEBUG_READONLY;
    }
-   if(ra_mode.contains("skip"))
+   if(ra_mode.erase("skip"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: skip mode enabled");
       debug_mode = RA_DEBUG_NOEXEC;
    }
-   if(ra_mode.contains("debug_op"))
+   if(ra_mode.erase("debug_op"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: range operations debug");
       OpNode::debug_level = debug_level;
    }
-   if(ra_mode.contains("debug_graph"))
+   if(ra_mode.erase("debug_graph"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: graph debug");
       graph_debug = debug_level;
       Meet::debug_level = debug_level;
-   }
-   #endif
-   if(ra_mode.contains("crop"))
-   {
-      solverType = st_Crop;
-   }
-   if(ra_mode.contains("noESSA"))
-   {
-      requireESSA = false;
    }
    OPERATION_OPTION(ra_mode, add);
    OPERATION_OPTION(ra_mode, sub);
@@ -6230,6 +6230,18 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, min);
    OPERATION_OPTION(ra_mode, max);
    OPERATION_OPTION(ra_mode, load);
+   OPERATION_OPTION(ra_mode, view_convert);
+   if(ra_mode.size() && ra_mode.begin()->size())
+   {
+      THROW_ASSERT(ra_mode.size() == 1, "Too many options left to parse");
+      stop_iteration = std::strtoull(ra_mode.begin()->data(), nullptr, 10);
+      if(stop_iteration == 0)
+      {
+         THROW_ERROR("Invalid range analysis option: " + *ra_mode.begin());
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
+   }
+   #endif
 }
 
 RangeAnalysis::~RangeAnalysis() = default;
@@ -6306,10 +6318,33 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
    return relationships;
 }
 
-bool RangeAnalysis::HasToBeExecuted() const
+void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
    #ifndef NDEBUG
    if(debug_mode == RA_DEBUG_NOEXEC)
+   {
+      return ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
+   }
+   #endif
+   if(relationship_type == INVALIDATION_RELATIONSHIP)
+   {
+      for(const auto f_id : fun_id_to_restart)
+      {
+         const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
+         vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+         THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         relationships.insert(design_flow_step);
+      }
+   }
+   ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
+}
+
+bool RangeAnalysis::HasToBeExecuted() const
+{
+   #ifndef NDEBUG
+   if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
    {
       return false;
    }
@@ -6329,7 +6364,7 @@ bool RangeAnalysis::HasToBeExecuted() const
 DesignFlowStep_Status RangeAnalysis::Exec()
 {
    #ifndef NDEBUG
-   if(debug_mode == RA_DEBUG_NOEXEC)
+   if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
       return DesignFlowStep_Status::SKIPPED;
@@ -6392,7 +6427,8 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    CG->buildVarNodes();
 
    #ifndef NDEBUG
-   CG->findIntervals(parameters, GetName() + "(" + STR(iteration++) + ")");
+   CG->findIntervals(parameters, GetName() + "(" + STR(iteration) + ")");
+   ++iteration;
    #else
    CG->findIntervals();
    #endif
