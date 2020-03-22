@@ -84,7 +84,12 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    bool finalize();
 
  protected:
+
+   /// stores the function ids of the functions whose Dead Code need to be restarted
+   CustomOrderedSet<unsigned int> fun_id_to_restart;
+
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+   void ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type) override;
 
  public:
    /**

@@ -58,8 +58,9 @@
 #include "op_graph.hpp"
 #include "var_pp_functor.hpp"
 
-/// design_flows include
+#include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
+#include "function_frontend_flow_step.hpp"
 
 /// stl
 #include <map>
@@ -5452,8 +5453,9 @@ class ConstraintGraph : public NodeContainer
       }
 
       const auto ssa_uses = tree_helper::ComputeSsaUses(stmt);
-      for(const auto& [ssa, use_counter] : ssa_uses)
+      for(const auto& ssa_use_counter : ssa_uses)
       {
+         auto ssa = ssa_use_counter.first;
          const auto* SSA = GetPointer<const ssa_name>(GET_CONST_NODE(ssa));
          // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function parameter inside the function body
          if(SSA->var != nullptr && GET_CONST_NODE(SSA->var)->get_kind() == parm_decl_K && GET_CONST_NODE(SSA->CGetDefStmt())->get_kind() == gimple_nop_K)
@@ -6292,10 +6294,6 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       }
       case INVALIDATION_RELATIONSHIP:
       {
-         //    if(dead_code_restart)
-         //    {
-         //       relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));   // TODO: could it be more specific?
-         //    }
          break;
       }
       default:
@@ -6335,7 +6333,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
       return DesignFlowStep_Status::SKIPPED;
    }
    #endif
-
+   fun_id_to_restart.clear();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Analyse only reached functions
    const auto TM = AppM->get_tree_manager();
@@ -6443,8 +6441,10 @@ bool RangeAnalysis::finalize()
          , debug_level
             #endif
          ))
-            {
-         updatedFunctions.insert(varNode.second->getFunctionId());
+      {
+         auto funID = varNode.second->getFunctionId();
+         updatedFunctions.insert(funID);
+         fun_id_to_restart.insert(funID);
          #ifndef NDEBUG
          ++updated;
          AppM->RegisterTransformation(GetName(), nullptr);
@@ -6474,4 +6474,21 @@ bool RangeAnalysis::finalize()
       }
    }
    return !updatedFunctions.empty();
+}
+
+void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
+{
+   if(relationship_type == INVALIDATION_RELATIONSHIP)
+   {
+      for(const auto i : fun_id_to_restart)
+      {
+         const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, i);
+         vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
+         THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
+         const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
+         relationships.insert(design_flow_step);
+      }
+   }
+   ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
 }
