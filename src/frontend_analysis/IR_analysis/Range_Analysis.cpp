@@ -6515,17 +6515,17 @@ bool RangeAnalysis::finalize()
       const auto FB = AppM->GetFunctionBehavior(f);
       if(updatedFunctions.count(f))
       {
-         last_bitvalue_ver[f] = FB->UpdateBBVersion();
-         last_bb_ver[f] = FB->UpdateBitValueVersion();
+         last_bitvalue_ver[f] = FB->UpdateBitValueVersion();
+         last_bb_ver[f] = FB->UpdateBBVersion();
       }
       else if(updatedCalled.count(f))
       {
-         last_bb_ver[f] = FB->UpdateBitValueVersion();
+         last_bb_ver[f] = FB->UpdateBBVersion();
       }
       else
       {
-         last_bitvalue_ver[f] = FB->GetBBVersion();
-         last_bb_ver[f] = FB->GetBitValueVersion();
+         last_bitvalue_ver[f] = FB->GetBitValueVersion();
+         last_bb_ver[f] = FB->GetBBVersion();
       }
    }
    fun_id_to_restart.insert(updatedCalled.begin(), updatedCalled.end());
