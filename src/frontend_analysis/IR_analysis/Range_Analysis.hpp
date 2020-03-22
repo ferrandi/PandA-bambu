@@ -67,19 +67,15 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
 {
 #ifndef NDEBUG
    int graph_debug;
-   unsigned iteration;
+   uint64_t iteration;
+   uint64_t stop_iteration;
    int debug_mode;
 #endif
 
    SolverType solverType;
    ConstraintGraphRef CG;
 
-   /// True if dead code elimination step must be restarted
-   bool dead_code_restart;
    bool requireESSA;
-
-   std::map<unsigned int, unsigned int> last_bitvalue_ver;
-   std::map<unsigned int, unsigned int> last_bb_ver;
 
    bool finalize();
 
@@ -87,6 +83,8 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
 
    /// stores the function ids of the functions whose Dead Code need to be restarted
    CustomOrderedSet<unsigned int> fun_id_to_restart;
+   std::map<unsigned int, unsigned int> last_bitvalue_ver;
+   std::map<unsigned int, unsigned int> last_bb_ver;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
    void ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type) override;
