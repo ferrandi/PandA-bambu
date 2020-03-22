@@ -860,7 +860,9 @@ class FunctionBehavior
    bool build_simple_pipeline() const
    {
       if(simple_pipeline)
+      {
          THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
+      }
       return simple_pipeline;
    }
    
