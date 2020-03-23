@@ -222,7 +222,9 @@ void fsm_controller::create_state_machine(std::string& parse)
       bool found_first = false;
       InEdgeIterator le, lend;
 
+#if HAVE_ASSERTS
       bool found_last = false;
+#endif
       OutEdgeIterator lst, lstend;
 
       for(vertex v : loop_map[get<0>(loop)])
@@ -246,7 +248,9 @@ void fsm_controller::create_state_machine(std::string& parse)
          if(all_external)
          {
             THROW_ASSERT(not found_last, "A loop has multiple outgoing edges");
+#if HAVE_ASSERTS
             found_last = true;
+#endif
             loop_last_state[std::get<0>(loop)] = v;
          }
          for(auto op : stg->CGetStateInfo(v)->executing_operations)
