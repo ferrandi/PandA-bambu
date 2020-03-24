@@ -1112,7 +1112,8 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
    }
    else if(interval->isReal())
    {
-      // Nothing to set for real variables
+      SSA->range = RangeRef(interval->clone());
+      return false;
    }
    else if(interval->isAnti() || interval->isEmpty())
    {
@@ -6301,12 +6302,17 @@ void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const
    {
       for(const auto f_id : fun_id_to_restart)
       {
-         const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
-         vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);
-         THROW_ASSERT(frontend_step != NULL_VERTEX, "step " + step_signature + " is not present");
+         const std::string dce_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
+         vertex frontend_dce = design_flow_manager.lock()->GetDesignFlowStep(dce_signature);
+         THROW_ASSERT(frontend_dce != NULL_VERTEX, "step " + dce_signature + " is not present");
+         const std::string bv_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, f_id);
+         vertex frontend_bv = design_flow_manager.lock()->GetDesignFlowStep(bv_signature);
+         THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
-         relationships.insert(design_flow_step);
+         const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
+         const auto dce = design_flow_graph->CGetDesignFlowStepInfo(frontend_dce)->design_flow_step;
+         relationships.insert(dce);
+         relationships.insert(bv);
       }
    }
    ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
@@ -6335,7 +6341,6 @@ bool RangeAnalysis::HasToBeExecuted() const
 void RangeAnalysis::Initialize()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
-   fun_id_to_restart.clear();
    switch(solverType)
    {
       case st_Cousot:
@@ -6494,21 +6499,30 @@ bool RangeAnalysis::finalize()
    const auto rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
    const auto cgm = AppM->CGetCallGraphManager();
    const auto cg = cgm->CGetCallGraph();
+   #ifndef NDEBUG
+   const auto TM = AppM->get_tree_manager();
+   #endif
 
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Modified " + STR(updatedFunctions.size()) + " functions:");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Previous steps must be invalidated for caller functions too
    CustomSet<unsigned int> updatedCalled;
    for(const auto f : updatedFunctions)
    {
       const auto f_v = cgm->GetVertex(f);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, f, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(f)->CGetBehavioralHelper()))));
       for(const auto& caller : boost::make_iterator_range(boost::in_edges(f_v, *cg)))
       {
          const auto caller_id = cgm->get_function(boost::source(caller, *cg));
          if(rbf.count(caller_id) && cg->CGetFunctionEdgeInfo(caller)->direct_call_points.size())
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + tree_helper::print_type(TM, caller_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()))));
             updatedCalled.insert(caller_id);
          }
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   updatedFunctions.insert(updatedCalled.begin(), updatedCalled.end());
 
    for(const auto f : rbf)
    {
@@ -6516,10 +6530,6 @@ bool RangeAnalysis::finalize()
       if(updatedFunctions.count(f))
       {
          last_bitvalue_ver[f] = FB->UpdateBitValueVersion();
-         last_bb_ver[f] = FB->UpdateBBVersion();
-      }
-      else if(updatedCalled.count(f))
-      {
          last_bb_ver[f] = FB->UpdateBBVersion();
       }
       else
