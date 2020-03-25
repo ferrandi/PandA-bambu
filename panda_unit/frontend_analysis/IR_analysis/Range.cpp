@@ -758,4 +758,12 @@ BOOST_AUTO_TEST_CASE( real_range )
     BOOST_REQUIRE_EQUAL(0, constDoubleToFloat->getSign()->getUnsignedMin());
     BOOST_REQUIRE_EQUAL(0b11111111, constDoubleToFloat->getExponent()->getUnsignedMax());
     BOOST_REQUIRE_EQUAL(0, constDoubleToFloat->getSignificand()->getUnsignedMin());
+
+    auto constFloat32VC = constFloat32.getRange();
+    BOOST_REQUIRE(constFloat32VC->isConstant());
+    BOOST_REQUIRE_EQUAL(0b01000000111100000000000000000000, constFloat32VC->getUnsignedMin());
+
+    auto constFloat64VC = constFloat64.getRange();
+    BOOST_REQUIRE(constFloat64VC->isConstant());
+    BOOST_REQUIRE_EQUAL(0b0100000000011110000000000000000000000000000000000000000000000000, constFloat64VC->getUnsignedMin());
 }

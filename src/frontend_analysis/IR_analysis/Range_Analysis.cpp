@@ -1838,28 +1838,31 @@ int NodeContainer::debug_level = DEBUG_LEVEL_NONE;
 #endif
 
 #ifndef NDEBUG
-static bool enable_add = true;
-static bool enable_sub = true;
-static bool enable_mul = true;
-static bool enable_sdiv = true;
-static bool enable_udiv = true;
-static bool enable_srem = true;
-static bool enable_urem = true;
-static bool enable_shl = true;
-static bool enable_shr = true;
-static bool enable_abs = true;
-static bool enable_negate = true;
-static bool enable_not = true;
-static bool enable_and = true;
-static bool enable_or = true;
-static bool enable_xor = true;
-static bool enable_sext = true;
-static bool enable_zext = true;
-static bool enable_trunc = true;
-static bool enable_min = true;
-static bool enable_max = true;
-static bool enable_load = true;
+static bool enable_add           = true;
+static bool enable_sub           = true;
+static bool enable_mul           = true;
+static bool enable_sdiv          = true;
+static bool enable_udiv          = true;
+static bool enable_srem          = true;
+static bool enable_urem          = true;
+static bool enable_shl           = true;
+static bool enable_shr           = true;
+static bool enable_abs           = true;
+static bool enable_negate        = true;
+static bool enable_not           = true;
+static bool enable_and           = true;
+static bool enable_or            = true;
+static bool enable_xor           = true;
+static bool enable_sext          = true;
+static bool enable_zext          = true;
+static bool enable_trunc         = true;
+static bool enable_min           = true;
+static bool enable_max           = true;
+static bool enable_load          = true;
+static bool enable_float_pack    = true;
 static bool enable_view_convert  = true;
+static bool enable_float_unpack  = true;
+static bool enable_ternary       = true;
 
 #define OPERATION_OPTION(opts, X) if(opts.erase("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
 #define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
@@ -2238,12 +2241,12 @@ RangeRef UnaryOpNode::eval() const
          {
             if(resultType->get_kind() == real_type_K)
             {
-               result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), RangeRef(new RealRange(oprnd)));
+               result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), RangeRef(new RealRange(oprnd)));
             }
             else
             {
                THROW_ASSERT(!oprnd->isReal(), "Operand here should not be real");
-               result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), oprnd->sextOrTrunc(bw));
+               result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), oprnd->sextOrTrunc(bw));
             }
             break;
          }
@@ -2317,25 +2320,31 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
       const auto sourceType = getGIMPLE_Type(_source->getValue());
       auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
 
+      #ifndef NDEBUG
+      if(enable_float_unpack) {
+      #endif
       const auto fromVC = NC->getVCMap().find(_source);
       if(fromVC != NC->getVCMap().end()) 
       {
          const auto& [f, mask] = fromVC->second;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
          // Detect exponent trucantion after right shift for 32 bit floats
-         if(un_op->get_kind() == nop_expr_K && f->getBitWidth() == 32 && (mask & 4286578688U) && sink->getBitWidth() == 8)
+         if(un_op->get_kind() == nop_expr_K && f->getBitWidth() == 32 && (mask == 4286578688U) && sink->getBitWidth() == 8)
          {
-            NC->addViewConvertMask(sink, f, 2139095040U);
+            //    NC->addViewConvertMask(sink, f, 2139095040U);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
-            return new UnaryOpNode(BI, sink, stmt, f, rshift_expr_K);
+            return new UnaryOpNode(BI, sink, nullptr, f, rshift_expr_K);
          }
 
          NC->addViewConvertMask(sink, f, mask);
       }
+      #ifndef NDEBUG
+      }
+      #endif
       // Store active bitmask for variable initialized from float view_convert operation
       if(un_op->get_kind() == view_convert_expr_K && sourceType->get_kind() == real_type_K)
       {
-         NC->addViewConvertMask(sink, _source, static_cast<uint64_t>(-1));
+         NC->addViewConvertMask(sink, _source, _source->getBitWidth() == 32 ? UINT32_MAX : UINT64_MAX);
       }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for " + un_op->get_kind_text() + " with range " + BI->ToString());
@@ -2862,6 +2871,9 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
       
       auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
 
+      #ifndef NDEBUG
+      if(enable_float_unpack) {
+      #endif
       if((op_kind == rshift_expr_K || op_kind == lshift_expr_K || op_kind == bit_and_expr_K) && GET_CONST_NODE(_source2->getValue())->get_kind() == integer_cst_K)
       {
          const auto fromVC = NC->getVCMap().find(_source1);
@@ -2886,7 +2898,6 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
                const auto shift = APInt(mask).trailingZeros(std::numeric_limits<decltype(new_mask)>::digits);
                new_mask = mask & static_cast<decltype(new_mask)>(cst_int << shift);
             }
-            NC->addViewConvertMask(sink, f, new_mask);
             
             const auto addSignViewConvert = [&](VarNode* fpVar)
             {
@@ -2932,6 +2943,7 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
                      break;
                }
             }
+            NC->addViewConvertMask(sink, f, new_mask);
          }
       }
       else if(op_kind == lt_expr_K && GET_CONST_NODE(_source2->getValue())->get_kind() == integer_cst_K && tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(_source2->getValue()))) == 0)
@@ -2946,6 +2958,9 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, f, lt_expr_K));
          }
       }
+      #ifndef NDEBUG
+      }
+      #endif
 
       if(isCompare(op_kind))
       {
@@ -3149,6 +3164,9 @@ RangeRef TernaryOpNode::eval() const
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
+   #ifndef NDEBUG
+   if(enable_ternary) {
+   #endif
    // only evaluate if all operands are Regular
    if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()) && (op3->isRegular() || op3->isAnti()))
    {
@@ -3224,6 +3242,13 @@ RangeRef TernaryOpNode::eval() const
          result = getRangeFor(getSink()->getValue(), Empty);
       }
    }
+   #ifndef NDEBUG
+   }
+   else 
+   {
+      result = getRangeFor(getSink()->getValue(), Regular);
+   }
+   #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = " + op1->ToString() + " ? " + op2->ToString() + " : " + op3->ToString());
 
    bool test = this->getIntersect()->getRange()->isFullSet();
@@ -6233,8 +6258,11 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, trunc);
    OPERATION_OPTION(ra_mode, min);
    OPERATION_OPTION(ra_mode, max);
-   OPERATION_OPTION(ra_mode, load);
+   OPERATION_OPTION(ra_mode, float_pack);
    OPERATION_OPTION(ra_mode, view_convert);
+   OPERATION_OPTION(ra_mode, float_unpack);
+   OPERATION_OPTION(ra_mode, load);
+   OPERATION_OPTION(ra_mode, ternary);
    if(ra_mode.size() && ra_mode.begin()->size())
 {
       THROW_ASSERT(ra_mode.size() == 1, "Too many options left to parse");
