@@ -1022,13 +1022,13 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
          {
             union vcFloat vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().to<uint8_t>();
-            vc.bits.frac = rRange->getSignificand()->getLower().to<uint32_t>();
+            vc.bits.sign = rRange->getSign()->getLower().cast_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getLower().cast_to<uint8_t>();
+            vc.bits.frac = rRange->getSignificand()->getLower().cast_to<uint32_t>();
             #else
-            vc.bits.coded = rRange->getSign()->getUnsignedMax().to<uint32_t>() << 31;
-            vc.bits.coded += rRange->getExponent()->getUnsignedMax().to<uint32_t>() << 23;
-            vc.bits.coded += rRange->getSignificand()->getUnsignedMax().to<uint32_t>();
+            vc.bits.coded = rRange->getSign()->getUnsignedMax().cast_to<uint32_t>() << 31;
+            vc.bits.coded += rRange->getExponent()->getUnsignedMax().cast_to<uint32_t>() << 23;
+            vc.bits.coded += rRange->getSignificand()->getUnsignedMax().cast_to<uint32_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
             cst_val = static_cast<int64_t>(vc.bits.coded);
@@ -1038,13 +1038,13 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
          {
             union vcDouble vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().to<uint16_t>();
-            vc.bits.frac = rRange->getSignificand()->getLower().to<uint64_t>();
+            vc.bits.sign = rRange->getSign()->getLower().cast_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getLower().cast_to<uint16_t>();
+            vc.bits.frac = rRange->getSignificand()->getLower().cast_to<uint64_t>();
             #else
-            vc.bits.coded = rRange->getSign()->getUnsignedMax().to<uint64_t>() << 63;
-            vc.bits.coded += rRange->getExponent()->getUnsignedMax().to<uint64_t>() << 52;
-            vc.bits.coded += rRange->getSignificand()->getUnsignedMax().to<uint64_t>();
+            vc.bits.coded = rRange->getSign()->getUnsignedMax().cast_to<uint64_t>() << 63;
+            vc.bits.coded += rRange->getExponent()->getUnsignedMax().cast_to<uint64_t>() << 52;
+            vc.bits.coded += rRange->getSignificand()->getUnsignedMax().cast_to<uint64_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
             cst_val = static_cast<int64_t>(vc.bits.coded);
@@ -1053,7 +1053,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       }
       else
       {
-         const auto cst_value = isSigned ? range->getSignedMax().to<int64_t>() : static_cast<int64_t>(range->getUnsignedMax().to<uint64_t>());
+         const auto cst_value = isSigned ? range->getSignedMax().cast_to<int64_t>() : static_cast<int64_t>(range->getUnsignedMax().cast_to<uint64_t>());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + (isSigned ? ("Signed int " + STR(cst_value)) : ("Unsigned int " + STR(static_cast<uint64_t>(cst_value)))));
          cst_val = cst_value;
          cst = tree_man->CreateIntegerCst(type_node, cst_value, TM->new_tree_node_id());
@@ -1135,13 +1135,13 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       long long min, max;
       if(isSigned)
       {
-         min = interval->getSignedMin().to<long long>();
-         max = interval->getSignedMax().to<long long>();
+         min = interval->getSignedMin().cast_to<long long>();
+         max = interval->getSignedMax().cast_to<long long>();
       }
       else
       {
-         min = interval->getUnsignedMin().to<long long>();
-         max = interval->getUnsignedMax().to<long long>();
+         min = interval->getUnsignedMin().cast_to<long long>();
+         max = interval->getUnsignedMax().cast_to<long long>();
       }
       #ifdef BITVALUE_UPDATE
       if(SSA->bit_values.empty())
@@ -2159,11 +2159,7 @@ RangeRef UnaryOpNode::eval() const
          case view_convert_expr_K:
          {
             THROW_ASSERT(bw == 64 || bw == 32, "View_convert sink bitwidth should be 64 or 32 bits (" + STR(bw) + ")");
-            #ifndef NDEBUG
             result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), rr->getRange()->zextOrTrunc(bw));
-            #else
-            result = getRangeFor(getSink()->getValue(), Regular);
-            #endif
             auto bitmask = getSource()->getBitValues();
             if(bitmask.size())
             {
@@ -2326,20 +2322,22 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
 
       #ifndef NDEBUG
       if(enable_float_unpack) {
-         const auto fromVC = NC->getVCMap().find(_source);
-         if(fromVC != NC->getVCMap().end()) 
+      #endif
+      const auto fromVC = NC->getVCMap().find(_source);
+      if(fromVC != NC->getVCMap().end()) 
+      {
+         const auto& [f, mask] = fromVC->second;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
+         // Detect exponent trucantion after right shift for 32 bit floats
+         if(un_op->get_kind() == nop_expr_K && f->getBitWidth() == 32 && (mask == 4286578688U) && sink->getBitWidth() == 8)
          {
-            const auto& [f, mask] = fromVC->second;
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
-            // Detect exponent trucantion after right shift for 32 bit floats
-            if(un_op->get_kind() == nop_expr_K && f->getBitWidth() == 32 && (mask == 4286578688U) && sink->getBitWidth() == 8)
-            {
-               //    NC->addViewConvertMask(sink, f, 2139095040U);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
-               return new UnaryOpNode(BI, sink, nullptr, f, rshift_expr_K);
-            }
-            NC->addViewConvertMask(sink, f, mask);
+            //    NC->addViewConvertMask(sink, f, 2139095040U);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
+            return new UnaryOpNode(BI, sink, nullptr, f, rshift_expr_K);
          }
+         NC->addViewConvertMask(sink, f, mask);
+      }
+      #ifndef NDEBUG
       }
       #endif
       // Store active bitmask for variable initialized from float view_convert operation
@@ -2874,90 +2872,92 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
 
       #ifndef NDEBUG
       if(enable_float_unpack) {
-         if((op_kind == rshift_expr_K || op_kind == lshift_expr_K || op_kind == bit_and_expr_K) && GET_CONST_NODE(_source2->getValue())->get_kind() == integer_cst_K)
+      #endif
+      if((op_kind == rshift_expr_K || op_kind == lshift_expr_K || op_kind == bit_and_expr_K) && GET_CONST_NODE(_source2->getValue())->get_kind() == integer_cst_K)
+      {
+         const auto fromVC = NC->getVCMap().find(_source1);
+         if(fromVC != NC->getVCMap().end())
          {
-            const auto fromVC = NC->getVCMap().find(_source1);
-            if(fromVC != NC->getVCMap().end())
+            const auto& [f, mask] = fromVC->second;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
+            const auto cst_int = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(_source2->getValue())));
+            auto new_mask = mask;
+      
+            if(op_kind == rshift_expr_K)
             {
-               const auto& [f, mask] = fromVC->second;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
-               const auto cst_int = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(_source2->getValue())));
-               auto new_mask = mask;
-         
-               if(op_kind == rshift_expr_K)
-               {
-                  new_mask = (mask >> cst_int) << cst_int;
-               }
-               else if(op_kind == lshift_expr_K)
-               {
-                  new_mask = (mask << cst_int) >> cst_int;
-               }
-               else if(op_kind == bit_and_expr_K)
-               {
-                  // Trailing zeros indicates a right shift has already been applied, so they are not relevant
-                  const auto shift = APInt(mask).trailingZeros(std::numeric_limits<decltype(new_mask)>::digits);
-                  new_mask = mask & static_cast<decltype(new_mask)>(cst_int << shift);
-               }
-               
-               const auto addSignViewConvert = [&](VarNode* fpVar)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
-                  return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, lt_expr_K));
-               };
-               const auto addExponentViewConvert = [&](VarNode* fpVar)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
-                  return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, rshift_expr_K));
-               };
-               const auto addFractionalViewConvert = [&](VarNode* fpVar)
-               {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for significand view_convert");
-                  return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, bit_and_expr_K));
-               };
-         
-               if(f->getBitWidth() == 32)
-               {
-                  switch(new_mask)
-                  {
-                     case 4294967296U:
-                        return addSignViewConvert(f);
-                     case 2139095040U:
-                        return addExponentViewConvert(f);
-                     case 8388607U:
-                        return addFractionalViewConvert(f);
-                     default:
-                        break;
-                  }
-               }
-               else
-               {
-                  switch(new_mask)
-                  {
-                     case 9223372036854775808ULL:
-                        return addSignViewConvert(f);
-                     case 9218868437227405312ULL:
-                        return addExponentViewConvert(f);
-                     case 4503599627370495ULL:
-                        return addFractionalViewConvert(f);
-                     default:
-                        break;
-                  }
-               }
-               NC->addViewConvertMask(sink, f, new_mask);
+               new_mask = (mask >> cst_int) << cst_int;
             }
-         }
-         else if(op_kind == lt_expr_K && GET_CONST_NODE(_source2->getValue())->get_kind() == integer_cst_K && tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(_source2->getValue()))) == 0)
-         {
-            const auto fromVC = NC->getVCMap().find(_source1);
-            if(fromVC != NC->getVCMap().end())
+            else if(op_kind == lshift_expr_K)
             {
-               auto& [f, mask] = fromVC->second;
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
-               NC->addViewConvertMask(sink, f, f->getBitWidth() == 32 ? 4294967296U : 9223372036854775808ULL);
+               new_mask = (mask << cst_int) >> cst_int;
+            }
+            else if(op_kind == bit_and_expr_K)
+            {
+               // Trailing zeros indicates a right shift has already been applied, so they are not relevant
+               const auto shift = APInt(mask).trailingZeros(std::numeric_limits<decltype(new_mask)>::digits);
+               new_mask = mask & static_cast<decltype(new_mask)>(cst_int << shift);
+            }
+            
+            const auto addSignViewConvert = [&](VarNode* fpVar)
+            {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
-               return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, f, lt_expr_K));
+               return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, lt_expr_K));
+            };
+            const auto addExponentViewConvert = [&](VarNode* fpVar)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
+               return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, rshift_expr_K));
+            };
+            const auto addFractionalViewConvert = [&](VarNode* fpVar)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for significand view_convert");
+               return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, bit_and_expr_K));
+            };
+      
+            if(f->getBitWidth() == 32)
+            {
+               switch(new_mask)
+               {
+                  case 4294967296U:
+                     return addSignViewConvert(f);
+                  case 2139095040U:
+                     return addExponentViewConvert(f);
+                  case 8388607U:
+                     return addFractionalViewConvert(f);
+                  default:
+                     break;
+               }
             }
+            else
+            {
+               switch(new_mask)
+               {
+                  case 9223372036854775808ULL:
+                     return addSignViewConvert(f);
+                  case 9218868437227405312ULL:
+                     return addExponentViewConvert(f);
+                  case 4503599627370495ULL:
+                     return addFractionalViewConvert(f);
+                  default:
+                     break;
+               }
+            }
+            NC->addViewConvertMask(sink, f, new_mask);
          }
+      }
+      else if(op_kind == lt_expr_K && GET_CONST_NODE(_source2->getValue())->get_kind() == integer_cst_K && tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(_source2->getValue()))) == 0)
+      {
+         const auto fromVC = NC->getVCMap().find(_source1);
+         if(fromVC != NC->getVCMap().end())
+         {
+            auto& [f, mask] = fromVC->second;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "&mask(" + STR(mask) + ")");
+            NC->addViewConvertMask(sink, f, f->getBitWidth() == 32 ? 4294967296U : 9223372036854775808ULL);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
+            return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, f, lt_expr_K));
+         }
+      }
+      #ifndef NDEBUG
       }
       #endif
 

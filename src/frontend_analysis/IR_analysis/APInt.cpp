@@ -337,16 +337,6 @@ APInt::bw_t APInt::minBitwidth(bool sign) const
    return sign ? (leadingOnes(bw) == 1 ? bw : static_cast<bw_t>(bw + 1)) : (_data.sign() < 0 ? static_cast<bw_t>(std::numeric_limits<bw_t>::max()) : bw);
 }
 
-int64_t APInt::toInt() const
-{
-   return _data.convert_to<int64_t>();
-}
-
-uint64_t APInt::toIntUnsigned() const
-{
-   return _data.convert_to<uint64_t>();
-}
-
 std::string APInt::str() const
 {
    return _data.str();

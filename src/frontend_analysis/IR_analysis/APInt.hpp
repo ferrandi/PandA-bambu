@@ -128,12 +128,11 @@ class APInt
    bw_t leadingOnes(bw_t bw) const;
    bw_t minBitwidth(bool sign) const;
 
-   int64_t toInt() const;
-   uint64_t toIntUnsigned() const;
    template <typename T>
-   T to(typename std::enable_if<std::is_arithmetic<T>::value && std::numeric_limits<T>::digits <= 64>* = nullptr) const
+   T cast_to(typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) const
    {
-      return static_cast<T>(toInt());
+      using U = typename std::make_unsigned<T>::type;
+      return static_cast<T>(static_cast<U>(_data & std::numeric_limits<U>::max()));
    }
    std::string str() const;
 
