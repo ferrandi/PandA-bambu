@@ -6291,7 +6291,6 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
          if(requireESSA)
          {
             relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
@@ -6301,8 +6300,9 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -6320,7 +6320,7 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
    #ifndef NDEBUG
-   if(debug_mode == RA_DEBUG_NOEXEC)
+   if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
    {
       return ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
    }
@@ -6332,9 +6332,11 @@ void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const
          const std::string dce_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
          vertex frontend_dce = design_flow_manager.lock()->GetDesignFlowStep(dce_signature);
          THROW_ASSERT(frontend_dce != NULL_VERTEX, "step " + dce_signature + " is not present");
+         
          const std::string bv_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, f_id);
          vertex frontend_bv = design_flow_manager.lock()->GetDesignFlowStep(bv_signature);
          THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
+         
          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
          const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
          const auto dce = design_flow_graph->CGetDesignFlowStepInfo(frontend_dce)->design_flow_step;
