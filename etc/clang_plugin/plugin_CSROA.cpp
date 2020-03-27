@@ -49,6 +49,7 @@
 #endif
 
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
+#include "GepiCanonicalizationPass.hpp"
 
 namespace llvm
 {
@@ -97,6 +98,32 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disag
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining>> XPassWI(CLANG_VERSION_STRING(_plugin_CSROA) "WI", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
+namespace llvm
+{
+	template <int OPT_SELECTION>
+	struct CLANG_VERSION_SYMBOL(_plugin_RemLifetime) : public GepiCanonicalizationPass {
+	public:
+		static char ID;
+		CLANG_VERSION_SYMBOL(_plugin_RemLifetime)() : GepiCanonicalizationPass(ID, OPT_SELECTION) {
+			initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
+			initializeLoopPassPass(*PassRegistry::getPassRegistry());
+		}
+
+		bool runOnFunction(llvm::Function& function) override {
+			return GepiCanonicalizationPass::runOnFunction(function);
+		}
+		
+		StringRef getPassName() const override {
+			if(OPT_SELECTION == SROA_removeLifetime)
+				return CLANG_VERSION_STRING(_plugin_RemLifetime) "SLTR";
+		}
+};
+
+	      template <int OPT_SELECTION>
+		         char CLANG_VERSION_SYMBOL(_plugin_RemLifetime)<OPT_SELECTION>::ID = 0;
+
+} // namespace llvm
+
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -121,6 +148,7 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    //   PM.add(llvm::createArgumentPromotionPass());
    //   PM.add(llvm::createSimpleLoopUnrollPass());
    PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_RemLifetime) < SROA_removeLifetime>);
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
    PM.add(llvm::createVerifierPass());
 }

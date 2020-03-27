@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2020 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,13 +39,20 @@
 
 #include <llvm/IR/Instructions.h>
 #include <llvm/Pass.h>
+#include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Analysis/ScalarEvolution.h>
 
 enum SROA_optimizations
 {
+   SROA_cleanLCSSA,
+   SROA_gepiExplicitation,
+   SROA_codeSimplification,
    SROA_ptrIteratorSimplification,
    SROA_chunkOperationsLowering,
    SROA_bitcastVectorRemoval,
-   SROA_removeLifetime
+   SROA_removeLifetime,
+   SROA_selectLowering,
+   SROA_canonicalIdxs
 };
 
 class GepiCanonicalizationPass : public llvm::FunctionPass
@@ -69,8 +76,16 @@ class GepiCanonicalizationPass : public llvm::FunctionPass
    void getAnalysisUsage(llvm::AnalysisUsage& AU) const override
    {
       AU.setPreservesCFG();
+      AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
+      AU.addRequiredTransitive<llvm::ScalarEvolutionWrapperPass>();
    }
 };
+
+GepiCanonicalizationPass* createCleanLCSSA();
+
+GepiCanonicalizationPass* createGepiExplicitation();
+
+GepiCanonicalizationPass* createCodeSimplificationPass();
 
 GepiCanonicalizationPass* createPtrIteratorSimplificationPass();
 
@@ -79,5 +94,9 @@ GepiCanonicalizationPass* createChunkOperationsLoweringPass();
 GepiCanonicalizationPass* createBitcastVectorRemovalPass();
 
 GepiCanonicalizationPass* createRemoveIntrinsicPass();
+
+GepiCanonicalizationPass* createSelectLoweringPass();
+
+GepiCanonicalizationPass* createGepiCanonicalIdxs();
 
 #endif // SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP
