@@ -43,8 +43,7 @@
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
 #include <llvm/Transforms/Utils/Cloning.h>
-
-#include <llvm/IR/Intrinsics.h>
+#include <llvm/Transforms/Utils/UnrollLoop.h>
 
 llvm::PHINode* get_last_phi(llvm::BasicBlock* bb)
 {
@@ -351,7 +350,7 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
       gepi_inst->replaceAllUsesWith(new_gepi);
 
       for (llvm::Use &use : new_gepi->uses()) {
-         llvm::dbgs() << "      Replaced use in user: "; use.getUser()->dump();
+         llvm::dbgs() << "      Replaced use #" << use.getOperandNo() << " in user: "; use.getUser()->dump();
          iterator_canonicalization(use, ptr_iter_init, new_idx, first_phi_node, new_phi_node, encountered_cmps,
                                    encountered_phis, inst_to_remove);
       }
@@ -380,7 +379,7 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
          phi_node->replaceAllUsesWith(new_gepi);
 
          for (llvm::Use &use : new_gepi->uses()) {
-            llvm::dbgs() << "      Replaced use in user: "; use.getUser()->dump();
+            llvm::dbgs() << "      Replaced use# " << use.getOperandNo() << " in user: "; use.getUser()->dump();
             iterator_canonicalization(use, ptr_iter_init, new_phi, first_phi_node, new_phi_node, encountered_cmps,
                                       encountered_phis, inst_to_remove);
          }
@@ -400,7 +399,7 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
       }
    }
 */
-   return ;
+   return;
 }
 
 bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo &LI)
@@ -593,6 +592,8 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo &LI)
          if (gepi_0 and gepi_1) {
             if (gepi_0->getPointerOperand() == gepi_1->getPointerOperand()) {
                if (gepi_0->getNumIndices() == 1 and gepi_1->getNumIndices() == 1) {
+                  gepi_0->dump();
+                  gepi_1->dump();
                   llvm::CmpInst *new_cmp_inst = llvm::CmpInst::Create(llvm::CmpInst::OtherOps::ICmp,
                                                                       cmp_inst->getPredicate(),
                                                                       gepi_0->getOperand(1),
@@ -1299,8 +1300,15 @@ bool canonical_idxs(llvm::Function& function)
       for (llvm::Instruction &i : bb) {
          if (llvm::GetElementPtrInst *gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(&i)) {
             for (unsigned long i = 0; i < gepi->getNumIndices(); ++i) {
-               if (llvm::ConstantInt *c_idx = llvm::dyn_cast<llvm::ConstantInt>(gepi->getOperand(i+1))) {
+               llvm::Value *operand = gepi->getOperand(i+1);
+               if (llvm::ConstantInt *c_idx = llvm::dyn_cast<llvm::ConstantInt>(operand)) {
                   gepi->setOperand(i+1, llvm::ConstantInt::get(idx_ty, c_idx->getSExtValue(), true));
+               } else {
+                  if (operand->getType()->getIntegerBitWidth() > 32) {
+                     std::string name = gepi->getName().str() + "." + std::to_string(i) + ".sext";
+                     llvm::CastInst *trunc_inst = llvm::TruncInst::Create(llvm::CastInst::Trunc, operand, idx_ty, name, gepi);
+                     gepi->setOperand(i+1, trunc_inst);
+                  }
                }
             }
          }
@@ -1347,9 +1355,7 @@ bool code_simplification(llvm::Function &function, llvm::LoopInfo &LI, llvm::Sca
 
                   if (loop) {
                      auto i_it = non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
-                     if (!i_it.second) {
-                        i_it.first->second += 1;
-                     }
+                     non_const_idxs_per_loop.at(loop) += 1;
 
                      if (llvm::CallInst *call_inst = llvm::dyn_cast<llvm::CallInst>(user_inst)) {
                         non_const_idxs_per_call[call_inst] += 1;
@@ -1382,23 +1388,26 @@ bool code_simplification(llvm::Function &function, llvm::LoopInfo &LI, llvm::Sca
       bool cost_threshold = cost_value <= 32;
       bool trip_count_limit = trip_count > 0 and trip_count <= 32;
       bool inst_limit = inst_count <= 32;
+
+      llvm::MDNode *loopID = nullptr;
       if (cost_threshold and trip_count_limit and inst_limit) {
-         llvm::MDNode *loopID = llvm::MDNode::get(function.getContext(),
-                                                  llvm::MDString::get(function.getContext(), "llvm.loop.unroll.full"));
-
-         std::vector<llvm::Metadata *> metas;
-         metas.push_back(loopID);
-         metas.push_back(loopID);
-         llvm::MDTuple *tuple = llvm::MDTuple::getDistinct(function.getContext(), metas);
-         tuple->replaceOperandWith(0, tuple);
-
-         loop->setLoopID(tuple);
+         loopID = llvm::MDNode::get(function.getContext(), llvm::MDString::get(function.getContext(), "llvm.loop.unroll.full"));
          llvm::dbgs() << "INFO: Force unroll of loop " << loop->getName() << " in function " << function.getName() << "(TripCount: " << trip_count << ", CostValue: " << cost_value << ", InstCount: " << inst_count << ")\n";
       } else {
-         llvm::dbgs() << "INFO: Cannot force unroll of loop " << loop->getName() << " in function " << function.getName() << "(TripCount: " << trip_count << ", CostValue: " << cost_value << ", InstCount: " << inst_count << ")\n";
+         loopID = llvm::MDNode::get(function.getContext(), llvm::MDString::get(function.getContext(), "llvm.loop.unroll.disable"));
+         llvm::dbgs() << "INFO: Disable unroll of loop " << loop->getName() << " in function " << function.getName() << "(TripCount: " << trip_count << ", CostValue: " << cost_value << ", InstCount: " << inst_count << ")\n";
       }
+
+      std::vector<llvm::Metadata *> metas;
+      metas.push_back(loopID);
+      metas.push_back(loopID);
+      llvm::MDTuple *tuple = llvm::MDTuple::getDistinct(function.getContext(), metas);
+      tuple->replaceOperandWith(0, tuple);
+
+      loop->setLoopID(tuple);
    }
 
+   unsigned long long inlined_count = 0;
    for (auto call_it : non_const_idxs_per_call) {
       llvm::CallInst *call_inst = const_cast<llvm::CallInst*>(call_it.first);
       unsigned long long idx_count = call_it.second;
@@ -1431,12 +1440,13 @@ bool code_simplification(llvm::Function &function, llvm::LoopInfo &LI, llvm::Sca
                }
 
                llvm::dbgs() << "INFO: Inlining call to " << called_function->getName() << " in function " << call_inst->getFunction()->getName() << "\n";
+               inlined_count++;
             }
          }
       }
    }
 
-   return true;
+   return inlined_count > 0;
 }
 
 bool gepi_explicitation(llvm::Function &function) {
@@ -1459,12 +1469,17 @@ bool gepi_explicitation(llvm::Function &function) {
       if (llvm::GEPOperator *gep_op = llvm::dyn_cast<llvm::GEPOperator>(use->get())) {
          std::string gepi_name = "gepi." + std::to_string(gepi_idx);
          if (llvm::Instruction *user_inst = llvm::dyn_cast<llvm::Instruction>(use->getUser())) {
+            llvm::Instruction *insert_point_inst = user_inst;
+            if (llvm::PHINode *phi_node = llvm::dyn_cast<llvm::PHINode>(use->getUser())) {
+               insert_point_inst = phi_node->getIncomingBlock(*use)->getTerminator();
+            }
+
             std::vector<llvm::Value *> idxs = std::vector<llvm::Value *>(gep_op->idx_begin(), gep_op->idx_end());
             llvm::GetElementPtrInst *gepi = nullptr;
             if (gep_op->isInBounds()) {
-               gepi = llvm::GetElementPtrInst::CreateInBounds(gep_op->getPointerOperand(), idxs, gepi_name, user_inst);
+               gepi = llvm::GetElementPtrInst::CreateInBounds(gep_op->getPointerOperand(), idxs, gepi_name, insert_point_inst);
             } else {
-               gepi = llvm::GetElementPtrInst::Create(nullptr, gep_op->getPointerOperand(), idxs, gepi_name, user_inst);
+               gepi = llvm::GetElementPtrInst::Create(nullptr, gep_op->getPointerOperand(), idxs, gepi_name, insert_point_inst);
             }
 
             user_inst->setOperand(use->getOperandNo(), gepi);
@@ -1514,38 +1529,52 @@ bool clean_lcssa(llvm::Function &function) {
 
 bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
 {
+   auto t_begin = std::chrono::high_resolution_clock::now();
+   bool result = false;
    switch(optimization_selection)
    {
       case SROA_cleanLCSSA:
-         return clean_lcssa(function);
+         result = clean_lcssa(function);
+         break;
       case SROA_gepiExplicitation:
-         return gepi_explicitation(function);
+         result = gepi_explicitation(function);
+         break;
       case SROA_codeSimplification: {
          // Check CHStone adpcm for examples
          llvm::LoopInfo &LI = getAnalysis<llvm::LoopInfoWrapperPass>().getLoopInfo();
          llvm::ScalarEvolution &SE = getAnalysis<llvm::ScalarEvolutionWrapperPass>().getSE();
-         return code_simplification(function, LI, SE);
+         result = code_simplification(function, LI, SE);
+         break;
       }
       case SROA_ptrIteratorSimplification: {
          // Check CHStone adpcm for examples
          llvm::LoopInfo &LI = getAnalysis<llvm::LoopInfoWrapperPass>().getLoopInfo();
-         return ptr_iterator_simplification(function, LI);
+         result = ptr_iterator_simplification(function, LI);
+         break;
       }
       case SROA_chunkOperationsLowering:
-         return chunk_operations_lowering(function);
+         result = chunk_operations_lowering(function);
+         break;
       case SROA_bitcastVectorRemoval:
-         return bitcast_vector_removal(function);
+         result = bitcast_vector_removal(function);
+         break;
       case SROA_removeLifetime:
-         return remove_lifetime(function);
+         result = remove_lifetime(function);
+         break;
       case SROA_selectLowering:
-         return select_lowering(function);
+         result = select_lowering(function);
+         break;
       case SROA_canonicalIdxs:
-         return canonical_idxs(function);
+         result = canonical_idxs(function);
+         break;
       default:
          llvm::errs() << "ERR: No optimization found\n";
          exit(-1);
    }
-   return false;
+   auto t_end = std::chrono::high_resolution_clock::now();
+   double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_begin).count();
+   llvm::dbgs() << "INFO: " << optimization_names[optimization_selection] << " of " << function.getName() << " took " << duration * 1e-9 << " seconds to complete\n";
+   return result;
 }
 
 GepiCanonicalizationPass* createCleanLCSSA() {
