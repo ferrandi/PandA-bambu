@@ -1315,7 +1315,7 @@ bool canonical_idxs(llvm::Function& function)
       }
    }
 
-   return false;
+   return true;
 }
 
 bool code_simplification(llvm::Function &function, llvm::LoopInfo &LI, llvm::ScalarEvolution &SE) {
@@ -1573,7 +1573,7 @@ bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
    }
    auto t_end = std::chrono::high_resolution_clock::now();
    double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_begin).count();
-   llvm::dbgs() << "INFO: " << optimization_names[optimization_selection] << " of " << function.getName() << " took " << duration * 1e-9 << " seconds to complete\n";
+   //llvm::dbgs() << "INFO: " << optimization_names[optimization_selection] << " of " << function.getName() << " took " << duration * 1e-9 << " seconds to complete\n";
    return result;
 }
 
