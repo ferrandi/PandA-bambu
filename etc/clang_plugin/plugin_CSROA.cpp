@@ -50,6 +50,7 @@
 
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 #include "GepiCanonicalizationPass.hpp"
+#include "ExpandMemOpsPass.hpp"
 
 namespace llvm
 {
@@ -167,11 +168,126 @@ static void loadPassLate(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(llvm::createArgumentPromotionPass());
    PM.add(llvm::createSimpleLoopUnrollPass());
 }
+static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
+{
+   llvm::TargetIRAnalysis TIRA = llvm::TargetIRAnalysis();
+   /*
+            // Insert -O3 in chain
+            {
+               PM.add(llvm::createVerifierPass());
+               llvm::PassManagerBuilder passManagerBuilder;
+               passManagerBuilder.OptLevel = 1;
+               passManagerBuilder.DisableUnrollLoops = true;
+               passManagerBuilder.BBVectorize = false;
+               passManagerBuilder.LoopVectorize = false;
+               passManagerBuilder.SLPVectorize = false;
+               /// passManagerBuilder.populateModulePassManager(PM);
+            }
+
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
+   */
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
+   PM.add(new llvm::ScalarEvolutionWrapperPass());
+   PM.add(new llvm::LoopInfoWrapperPass());
+   PM.add(new llvm::DominatorTreeWrapperPass());
+   PM.add(new llvm::AssumptionCacheTracker());
+   PM.add(llvm::createTargetTransformInfoWrapperPass(TIRA));
+
+
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
+   PM.add(createGepiExplicitation());
+#if 0
+   PM.add(createGepiCanonicalIdxs());
+   PM.add(createRemoveIntrinsicPass());
+   PM.add(llvm::createExpandMemOpsPass());
+   PM.add(createPtrIteratorSimplificationPass());
+   PM.add(createChunkOperationsLoweringPass());
+   PM.add(createBitcastVectorRemovalPass());
+   PM.add(createSelectLoweringPass());
+   PM.add(llvm::createVerifierPass());
+
+
+   PM.add(createCodeSimplificationPass());
+
+
+   PM.add(llvm::createPromoteMemoryToRegisterPass());
+   PM.add(llvm::createLoopRotatePass());
+   PM.add(llvm::createLoopUnrollPass());
+   PM.add(createCleanLCSSA());
+   PM.add(llvm::createVerifierPass());
+
+
+   PM.add(createGepiCanonicalIdxs());
+   PM.add(createGepiExplicitation());
+   PM.add(createRemoveIntrinsicPass());
+   PM.add(llvm::createExpandMemOpsPass());
+   PM.add(createPtrIteratorSimplificationPass());
+   PM.add(createChunkOperationsLoweringPass());
+   PM.add(createBitcastVectorRemovalPass());
+   PM.add(createSelectLoweringPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning >);
+   //PM.add(createSROAFunctionVersioningPass(args_info.target_function));
+   PM.add(llvm::createVerifierPass());
+
+   // Insert -O3 in chain
+   {
+      llvm::PassManagerBuilder passManagerBuilder;
+      passManagerBuilder.OptLevel = 0;
+      passManagerBuilder.DisableUnrollLoops = true;
+      //passManagerBuilder.BBVectorize = false;
+      passManagerBuilder.LoopVectorize = false;
+      passManagerBuilder.SLPVectorize = false;
+      passManagerBuilder.populateModulePassManager(PM);
+   }
+
+   PM.add(createGepiCanonicalIdxs());
+   PM.add(createGepiExplicitation());
+   PM.add(createRemoveIntrinsicPass());
+   PM.add(llvm::createExpandMemOpsPass());
+   PM.add(createPtrIteratorSimplificationPass());
+   PM.add(createChunkOperationsLoweringPass());
+   PM.add(createBitcastVectorRemovalPass());
+   PM.add(createSelectLoweringPass());
+   PM.add(llvm::createVerifierPass());
+
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
+   //PM.add(createSROADisaggregationPass(args_info.target_function));
+   PM.add(llvm::createVerifierPass());
+
+
+   // Insert -O3 in chain
+   {
+      llvm::PassManagerBuilder passManagerBuilder;
+      passManagerBuilder.OptLevel = 1;
+      passManagerBuilder.DisableUnrollLoops = true;
+      //passManagerBuilder.BBVectorize = false;
+      passManagerBuilder.LoopVectorize = false;
+      passManagerBuilder.SLPVectorize = false;
+      passManagerBuilder.populateModulePassManager(PM);
+   }
+
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
+   //PM.add(createSROAWrapperInliningPass(args_info.target_function));
+   PM.add(llvm::createVerifierPass());
+
+   // Insert -O3 in chain
+   {
+      llvm::PassManagerBuilder passManagerBuilder;
+      passManagerBuilder.OptLevel = 3;
+      passManagerBuilder.DisableUnrollLoops = true;
+      //passManagerBuilder.BBVectorize = false;
+      passManagerBuilder.LoopVectorize = false;
+      passManagerBuilder.SLPVectorize = false;
+      passManagerBuilder.populateModulePassManager(PM);
+   }
+#endif
+}
 
 #if ADD_RSP
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxFVD)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxIW)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPassLate);
+static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxFull)(llvm::PassManagerBuilder::EP_EarlyAsPossible, loadPassFull);
+//static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxFVD)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
+//static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxIW)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPassLate);
 
 #endif
 
