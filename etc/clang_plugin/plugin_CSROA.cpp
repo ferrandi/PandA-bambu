@@ -193,7 +193,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(new llvm::AssumptionCacheTracker());
    //PM.add(llvm::createTargetTransformInfoWrapperPass(TIRA));
 
-
+#ifdef PRE_UNROLLING
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(createGepiExplicitation());
    PM.add(createGepiCanonicalIdxs());
@@ -214,7 +214,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(llvm::createLoopUnrollPass());
    PM.add(createCleanLCSSA());
    PM.add(llvm::createVerifierPass());
-
+#endif
 
    PM.add(createGepiCanonicalIdxs());
    PM.add(createGepiExplicitation());
@@ -240,9 +240,9 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
       passManagerBuilder.populateLTOPassManager(PM);
    }
 
-   PM.add(createGepiCanonicalIdxs());
-   PM.add(createGepiExplicitation());
    PM.add(createRemoveIntrinsicPass());
+   PM.add(createGepiExplicitation());
+   PM.add(createGepiCanonicalIdxs());
    PM.add(llvm::createExpandMemOpsPass());
    PM.add(createPtrIteratorSimplificationPass());
    PM.add(createChunkOperationsLoweringPass());
