@@ -170,7 +170,7 @@ static void loadPassLate(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
 }
 static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
-   llvm::TargetIRAnalysis TIRA = llvm::TargetIRAnalysis();
+   //llvm::TargetIRAnalysis TIRA = llvm::TargetIRAnalysis();
    /*
             // Insert -O3 in chain
             {
@@ -191,12 +191,11 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(new llvm::LoopInfoWrapperPass());
    PM.add(new llvm::DominatorTreeWrapperPass());
    PM.add(new llvm::AssumptionCacheTracker());
-   PM.add(llvm::createTargetTransformInfoWrapperPass(TIRA));
+   //PM.add(llvm::createTargetTransformInfoWrapperPass(TIRA));
 
 
    PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(createGepiExplicitation());
-#if 0
    PM.add(createGepiCanonicalIdxs());
    PM.add(createRemoveIntrinsicPass());
    PM.add(llvm::createExpandMemOpsPass());
@@ -229,6 +228,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    //PM.add(createSROAFunctionVersioningPass(args_info.target_function));
    PM.add(llvm::createVerifierPass());
 
+
    // Insert -O3 in chain
    {
       llvm::PassManagerBuilder passManagerBuilder;
@@ -237,7 +237,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
       //passManagerBuilder.BBVectorize = false;
       passManagerBuilder.LoopVectorize = false;
       passManagerBuilder.SLPVectorize = false;
-      passManagerBuilder.populateModulePassManager(PM);
+      passManagerBuilder.populateLTOPassManager(PM);
    }
 
    PM.add(createGepiCanonicalIdxs());
@@ -263,7 +263,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
       //passManagerBuilder.BBVectorize = false;
       passManagerBuilder.LoopVectorize = false;
       passManagerBuilder.SLPVectorize = false;
-      passManagerBuilder.populateModulePassManager(PM);
+      passManagerBuilder.populateLTOPassManager(PM);
    }
 
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
@@ -278,14 +278,13 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
       //passManagerBuilder.BBVectorize = false;
       passManagerBuilder.LoopVectorize = false;
       passManagerBuilder.SLPVectorize = false;
-      passManagerBuilder.populateModulePassManager(PM);
+      passManagerBuilder.populateLTOPassManager(PM);
    }
-#endif
 }
 
-#if ADD_RSP
+#if 1
 // These constructors add our pass to a list of global extensions.
-static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxFull)(llvm::PassManagerBuilder::EP_EarlyAsPossible, loadPassFull);
+static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxFull)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPassFull);
 //static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxFVD)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 //static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxIW)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPassLate);
 
