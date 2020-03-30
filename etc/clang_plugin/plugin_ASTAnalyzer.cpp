@@ -649,7 +649,7 @@ namespace clang
                   if(const FunctionDecl* fd = dyn_cast<FunctionDecl>(d))
                   {
                      AnalyzeFunctionDecl(fd);
-                     maskAnalyzeFD(FD);
+                     maskAnalyzeFD(fd);
                      auto endLoc = fd->getSourceRange().getEnd();
                      auto& SM = fd->getASTContext().getSourceManager();
                      auto filename = SM.getPresumedLoc(endLoc, false).getFilename();
