@@ -141,8 +141,17 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
       return res;
    }
 
+   // BEWARE: zero is stored as single bit, but it has to be considered as a full string
+   //         of zeros to propagate values correctly
+   auto extend_if_zero = [](std::deque<bit_lattice>& bv, size_t bw) {
+      if(bv.size() == 1 && bv.front() == bit_lattice::ZERO)
+         for(;bw > 1; --bw)
+            bv.push_front(bit_lattice::ZERO);
+   };
    std::deque<bit_lattice> longer = (_a.size() >= _b.size()) ? _a : _b;
    std::deque<bit_lattice> shorter = (_a.size() >= _b.size()) ? _b : _a;
+   extend_if_zero(longer, out_type_size);
+   extend_if_zero(shorter, out_type_size);
    while(longer.size() > out_type_size)
    {
       longer.pop_front();
