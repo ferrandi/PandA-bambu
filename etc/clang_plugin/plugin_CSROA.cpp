@@ -51,6 +51,7 @@
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 #include "GepiCanonicalizationPass.hpp"
 #include "ExpandMemOpsPass.hpp"
+#include "PtrIteratorSimplifyPass.hpp"
 
 namespace llvm
 {
