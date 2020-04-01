@@ -141,17 +141,8 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
       return res;
    }
 
-   // BEWARE: zero is stored as single bit, but it has to be considered as a full string
-   //         of zeros to propagate values correctly
-   auto extend_if_zero = [](std::deque<bit_lattice>& bv, size_t bw) {
-      if(bv.size() == 1 && bv.front() == bit_lattice::ZERO)
-         for(;bw > 1; --bw)
-            bv.push_front(bit_lattice::ZERO);
-   };
    std::deque<bit_lattice> longer = (_a.size() >= _b.size()) ? _a : _b;
    std::deque<bit_lattice> shorter = (_a.size() >= _b.size()) ? _b : _a;
-   extend_if_zero(longer, out_type_size);
-   extend_if_zero(shorter, out_type_size);
    while(longer.size() > out_type_size)
    {
       longer.pop_front();
@@ -159,6 +150,14 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    while(shorter.size() > out_type_size)
    {
       shorter.pop_front();
+   }
+   // BEWARE: zero is stored as single bit, but it has to be considered as a full string
+   //         of zeros to propagate values correctly
+   if(shorter.size() == 1 && shorter.front() == bit_lattice::ZERO)
+   {
+      auto l_bw = longer.size();
+      for(;l_bw > 1; --l_bw)
+            shorter.push_front(bit_lattice::ZERO);
    }
    if(!out_is_signed && longer.size() > shorter.size() && longer.front() == bit_lattice::ZERO)
    {
@@ -178,6 +177,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
          }
       }
    }
+
    auto a_it = longer.crbegin();
    auto b_it = shorter.crbegin();
    const auto a_end = longer.crend();
@@ -212,11 +212,15 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    {
       const size_t final_size = std::min(out_type_size, std::min(_a.size(), _b.size()));
       THROW_ASSERT(final_size, "final size of sup cannot be 0");
-      if(res.at(0) != bit_lattice::ZERO || (res.size() > 1 && res.at(1) != bit_lattice::X))
+      while(res.size() > final_size)
       {
-         while(res.size() > final_size)
+         if(res.at(0) != bit_lattice::ZERO || (res.size() > 1 && res.at(1) != bit_lattice::X))
          {
             res.pop_front();
+         }
+         else
+         {
+            break;
          }
       }
    }
