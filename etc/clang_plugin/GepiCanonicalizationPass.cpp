@@ -304,7 +304,9 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
                                llvm::PHINode *new_phi_node,
                                std::map<llvm::CmpInst *, std::vector<llvm::Use *>> &encountered_cmps,
                                std::set<llvm::PHINode *> &encountered_phis,
-                               std::set<llvm::Instruction *> &inst_to_remove) {
+                               std::set<llvm::Instruction *> &inst_to_remove,
+                               llvm::LoopInfo &LI,
+                               const llvm::Loop *loop) {
 
    llvm::User *user = iter_use.getUser();
    unsigned long op_num = iter_use.getOperandNo();
@@ -352,7 +354,7 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
       for (llvm::Use &use : new_gepi->uses()) {
          llvm::dbgs() << "      Replaced use #" << use.getOperandNo() << " in user: "; use.getUser()->dump();
          iterator_canonicalization(use, ptr_iter_init, new_idx, first_phi_node, new_phi_node, encountered_cmps,
-                                   encountered_phis, inst_to_remove);
+                                   encountered_phis, inst_to_remove, LI, loop);
       }
 
       inst_to_remove.insert(gepi_inst);
@@ -364,10 +366,20 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
          llvm::dbgs() << "      Setting init PHI: "; new_phi_node->dump();
          return;
       } else {
+         if (LI.getLoopFor(phi_node->getParent()) != loop) {
+            return;
+         }
+
          llvm::dbgs() << "      Expanding conditional PHI: "; new_phi_node->dump();
          llvm::PHINode *new_phi = llvm::PHINode::Create(int_ind_var->getType(), 2, phi_node->getName().str() + ".phi", phi_node);
-         new_phi->addIncoming(llvm::ConstantInt::get(int_ind_var->getType(), 0, true), phi_node->getIncomingBlock(0));
-         new_phi->addIncoming(int_ind_var, phi_node->getIncomingBlock(1));
+         if (phi_node->getIncomingValue(0) == ptr_iter_init) {
+            new_phi->addIncoming(llvm::ConstantInt::get(int_ind_var->getType(), 0, true), phi_node->getIncomingBlock(0));
+            new_phi->addIncoming(int_ind_var, phi_node->getIncomingBlock(1));
+         } else {
+            new_phi->addIncoming(int_ind_var, phi_node->getIncomingBlock(0));
+            new_phi->addIncoming(llvm::ConstantInt::get(int_ind_var->getType(), 0, true), phi_node->getIncomingBlock(1));
+         }
+
          inst_to_remove.insert(phi_node);
 
          std::vector<llvm::Value*> new_gepi_idx_vec;
@@ -381,7 +393,7 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
          for (llvm::Use &use : new_gepi->uses()) {
             llvm::dbgs() << "      Replaced use# " << use.getOperandNo() << " in user: "; use.getUser()->dump();
             iterator_canonicalization(use, ptr_iter_init, new_phi, first_phi_node, new_phi_node, encountered_cmps,
-                                      encountered_phis, inst_to_remove);
+                                      encountered_phis, inst_to_remove, LI, loop);
          }
          return;
       }
@@ -415,27 +427,24 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo &LI)
       std::vector<llvm::PHINode*> one_op_phi_vec;
       std::vector<llvm::PHINode*> two_op_phi_vec;
 
-      for(llvm::Instruction& instruction : *header)
-      {
-         if(llvm::PHINode* phi_node = llvm::dyn_cast<llvm::PHINode>(&instruction))
-         {
-            if(phi_node->getType()->isPointerTy())
-            {
-               if (!phi_node->getType()->getPointerElementType()->isAggregateType()) {
-                  switch (phi_node->getNumOperands()) {
-                     case 1:
-                        one_op_phi_vec.push_back(phi_node);
-                        break;
-                     case 2:
-                        two_op_phi_vec.push_back(phi_node);
-                        break;
+      for (llvm::BasicBlock *bb : loop->blocks()) {
+         for (llvm::Instruction &instruction : *bb) {
+            if (llvm::PHINode *phi_node = llvm::dyn_cast<llvm::PHINode>(&instruction)) {
+               if (phi_node->getType()->isPointerTy()) {
+                  if (!phi_node->getType()->getPointerElementType()->isAggregateType()) {
+                     switch (phi_node->getNumOperands()) {
+                        case 1:
+                           one_op_phi_vec.push_back(phi_node);
+                           break;
+                        case 2:
+                           two_op_phi_vec.push_back(phi_node);
+                           break;
+                     }
                   }
                }
+            } else {
+               break;
             }
-         }
-         else
-         {
-            break;
          }
       }
 
@@ -568,7 +577,7 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo &LI)
 
             for (llvm::Use &use : phi_node->uses()) {
                iterator_canonicalization(use, init_ptr, new_phi_node, phi_node, new_phi_node, encountered_cmps,
-                                         encountered_phis, inst_to_remove);
+                                         encountered_phis, inst_to_remove, LI, loop);
             }
 
             inst_to_remove.insert(phi_node);
@@ -1245,31 +1254,32 @@ bool select_lowering(llvm::Function& function)
                         for (auto idx = gepi->idx_begin(); idx < gepi->idx_end(); ++idx) {
                            gepi_idxs.push_back(idx->get());
                         }
-                        llvm::GetElementPtrInst *true_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr,
-                                                                                             select_inst->getTrueValue(),
-                                                                                             gepi_idxs,
-                                                                                             gepi->getName().str() +
-                                                                                             ".true",
-                                                                                             select_inst);
-                        llvm::GetElementPtrInst *false_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr,
-                                                                                              select_inst->getFalseValue(),
-                                                                                              gepi_idxs,
-                                                                                              gepi->getName().str() +
-                                                                                              ".false",
-                                                                                              select_inst);
 
                         if (llvm::LoadInst *load_inst = llvm::dyn_cast<llvm::LoadInst>(gepi->use_begin()->getUser())) {
+                           llvm::GetElementPtrInst *true_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr,
+                                                                                                        select_inst->getTrueValue(),
+                                                                                                        gepi_idxs,
+                                                                                                        gepi->getName().str() +
+                                                                                                        ".true",
+                                                                                                        gepi);
+                           llvm::GetElementPtrInst *false_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr,
+                                                                                                         select_inst->getFalseValue(),
+                                                                                                         gepi_idxs,
+                                                                                                         gepi->getName().str() +
+                                                                                                         ".false",
+                                                                                                         gepi);
+
                            llvm::LoadInst *true_load = new llvm::LoadInst(true_gepi,
                                                                          load_inst->getName().str() + ".lowered.true",
-                                                                         select_inst);
+                                                                         gepi);
                            llvm::LoadInst *false_load = new llvm::LoadInst(false_gepi,
                                                                           load_inst->getName().str() + ".lowered.false",
-                                                                          select_inst);
+                                                                          gepi);
                            llvm::SelectInst *new_select_inst = llvm::SelectInst::Create(select_inst->getCondition(),
                                                                                         true_load, false_load,
                                                                                         select_inst->getName().str() +
                                                                                         ".lowered",
-                                                                                        select_inst);
+                                                                                        gepi);
 
                            load_inst->replaceAllUsesWith(new_select_inst);
 
@@ -1315,7 +1325,7 @@ bool canonical_idxs(llvm::Function& function)
       }
    }
 
-   return true;
+   return false;
 }
 
 bool code_simplification(llvm::Function &function, llvm::LoopInfo &LI, llvm::ScalarEvolution &SE) {
@@ -1449,6 +1459,17 @@ bool code_simplification(llvm::Function &function, llvm::LoopInfo &LI, llvm::Sca
    return inlined_count > 0;
 }
 
+bool remove_meta(llvm::Function &function) {
+
+   for (llvm::BasicBlock &bb : function) {
+	   llvm::Instruction *terminator = bb.getTerminator();
+
+      terminator->setMetadata("llvm.loop", nullptr);
+   }
+
+   return false;
+}
+
 bool gepi_explicitation(llvm::Function &function) {
    std::vector<llvm::Use*> ops_to_explicit;
    for (llvm::BasicBlock &bb : function) {
@@ -1529,7 +1550,7 @@ bool clean_lcssa(llvm::Function &function) {
 
 bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
 {
-   auto t_begin = std::chrono::high_resolution_clock::now();
+   //auto t_begin = std::chrono::high_resolution_clock::now();
    bool result = false;
    switch(optimization_selection)
    {
@@ -1548,8 +1569,8 @@ bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
       }
       case SROA_ptrIteratorSimplification: {
          // Check CHStone adpcm for examples
-         llvm::LoopInfo &LI = getAnalysis<llvm::LoopInfoWrapperPass>().getLoopInfo();
-         result = ptr_iterator_simplification(function, LI);
+         //llvm::LoopInfo &LI = getAnalysis<llvm::LoopInfoWrapperPass>().getLoopInfo();
+         result = false;//ptr_iterator_simplification(function, LI);
          break;
       }
       case SROA_chunkOperationsLowering:
@@ -1567,12 +1588,15 @@ bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
       case SROA_canonicalIdxs:
          result = canonical_idxs(function);
          break;
+      case SROA_removeMeta:
+         result = remove_meta(function);
+         break;
       default:
          llvm::errs() << "ERR: No optimization found\n";
          exit(-1);
    }
-   auto t_end = std::chrono::high_resolution_clock::now();
-   double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_begin).count();
+   //auto t_end = std::chrono::high_resolution_clock::now();
+   //double duration = std::chrono::duration_cast<std::chrono::nanoseconds>(t_end - t_begin).count();
    //llvm::dbgs() << "INFO: " << optimization_names[optimization_selection] << " of " << function.getName() << " took " << duration * 1e-9 << " seconds to complete\n";
    return result;
 }
@@ -1614,7 +1638,12 @@ GepiCanonicalizationPass* createSelectLoweringPass()
    return new GepiCanonicalizationPass(SROA_selectLowering);
 }
 
-GepiCanonicalizationPass* createGepiCanonicalIdxs()
+GepiCanonicalizationPass* createGepiCanonicalIdxsPass()
 {
    return new GepiCanonicalizationPass(SROA_canonicalIdxs);
+}
+
+GepiCanonicalizationPass* createRemoveMetaPass()
+{
+   return new GepiCanonicalizationPass(SROA_removeMeta);
 }

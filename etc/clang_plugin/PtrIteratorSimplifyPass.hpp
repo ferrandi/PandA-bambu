@@ -36,9 +36,7 @@
  *
  * @author Marco Siracusa
  *
- *///
-// Created by Marco Siracusa on 3/29/20.
-//
+ */
 
 #ifndef SCALAR_REPLACEMENT_OF_AGGREGATES_PTRITERATORSIMPLIFICATIONPASS_HPP
 #define SCALAR_REPLACEMENT_OF_AGGREGATES_PTRITERATORSIMPLIFICATIONPASS_HPP
@@ -250,6 +248,8 @@ public:
              while (iterate and !vec_ptr_addr_set.empty()) {
                 iterate = true;
 
+                unsigned long gepi_updates = 0;
+
                 /// Try intersecting all of the sets and update the gepi pointers
                 std::set<llvm::Value*> intersection = vec_ptr_addr_set.front().second;
                 for (std::pair<llvm::Value*, std::set<llvm::Value*>> &ptr_addr_set_pair : vec_ptr_addr_set) {
@@ -269,6 +269,7 @@ public:
                    if (llvm::GetElementPtrInst *gepi = llvm::dyn_cast<llvm::GetElementPtrInst>(ptr_addr_set_pair.first)) {
                       ptr_addr_set_pair.first = gepi->getPointerOperand();
                       ptr_addr_set_pair.second.insert(gepi->getPointerOperand());
+                      gepi_updates++;
                    }
                 }
 
@@ -286,6 +287,8 @@ public:
                    default:
                       iterate = false;
                 }
+
+                iterate = iterate and gepi_updates > 0;
              }
 
              if (common_external) {
@@ -516,4 +519,3 @@ llvm::Pass *createPtrIteratorSimplifyPass() {
 }
 
 #endif //SCALAR_REPLACEMENT_OF_AGGREGATES_PTRITERATORSIMPLIFICATIONPASS_HPP
-

@@ -1922,6 +1922,7 @@ bool check_function_versioning(const std::map<llvm::Instruction*, std::vector<ll
 
 void propagate_constant_arguments(const std::set<llvm::Function*>& function_worklist)
 {
+   std::map<llvm::Argument*, llvm::Value*> args_to_propagate;
    for(llvm::Function* function : function_worklist)
    {
       for(llvm::Argument& arg : function->args())
@@ -1935,9 +1936,9 @@ void propagate_constant_arguments(const std::set<llvm::Function*>& function_work
             {
                if(!can_propagate)
                   break;
-               if(llvm::isa<llvm::CallInst>(user) || llvm::isa<llvm::InvokeInst>(user))
+               if(llvm::isa<llvm::CallInst>(user->stripPointerCasts()) || llvm::isa<llvm::InvokeInst>(user->stripPointerCasts()))
                {
-                  auto call_inst = llvm::dyn_cast<llvm::Instruction>(user);
+                  auto call_inst = llvm::dyn_cast<llvm::Instruction>(user->stripPointerCasts());
                   llvm::Value* op = call_inst->getOperand(arg.getArgNo());
                   if(!llvm::isa<llvm::ConstantInt>(op))
                   {
@@ -1963,17 +1964,21 @@ void propagate_constant_arguments(const std::set<llvm::Function*>& function_work
                }
                else
                {
-                  llvm::errs() << "ERR: use not call\n";
-                  exit(-1);
+                  can_propagate = false;
+		  break;
                }
             }
 
             if(can_propagate and op_arg != nullptr)
             {
-               arg.replaceAllUsesWith(op_arg);
+	       args_to_propagate.insert(std::make_pair(&arg, op_arg));
             }
          }
       }
+   }
+
+   for (std::pair<llvm::Argument*, llvm::Value*> arg_pair : args_to_propagate) {
+      arg_pair.first->replaceAllUsesWith(arg_pair.second);
    }
 }
 
@@ -4232,6 +4237,7 @@ void cleanup(llvm::Module& module,
 
    std::vector<llvm::GlobalVariable *> globals_to_del;
 
+   std::set<llvm::LoadInst*> loads_to_del;
    for(llvm::GlobalVariable& g_var : module.globals())
    {
       if(!g_var.getType()->getPointerElementType()->isAggregateType())
@@ -4261,10 +4267,10 @@ void cleanup(llvm::Module& module,
             {
                for(auto& u : g_var.uses())
                {
-                  if(llvm::LoadInst* load_isnt = llvm::dyn_cast<llvm::LoadInst>(u.getUser()))
+                  if(llvm::LoadInst* load_inst = llvm::dyn_cast<llvm::LoadInst>(u.getUser()))
                   {
-                     load_isnt->replaceAllUsesWith(g_var.getInitializer());
-                     load_isnt->eraseFromParent();
+                     load_inst->replaceAllUsesWith(g_var.getInitializer());
+                     loads_to_del.insert(load_inst);
                   }
                   else
                   {
@@ -4280,6 +4286,10 @@ void cleanup(llvm::Module& module,
       {
          globals_to_del.push_back(&g_var);
       }
+   }
+
+   for (llvm::LoadInst *load_inst : loads_to_del) {
+      load_inst->eraseFromParent();
    }
 
    for(llvm::GlobalVariable *g_var : globals_to_del) {
@@ -4451,6 +4461,7 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
    }
    if(sroa_phase == SROA_functionVersioning)
    {
+module.dump(); // TODO REMOVE
       llvm::dbgs() << "\n ***********************************************";
       llvm::dbgs() << "\n ********** BEGIN FUNCTION VERSIONING **********";
       llvm::dbgs() << "\n *********************************************** \n";

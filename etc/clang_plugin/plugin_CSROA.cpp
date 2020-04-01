@@ -193,66 +193,29 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(new llvm::DominatorTreeWrapperPass());
    PM.add(new llvm::AssumptionCacheTracker());
    //PM.add(llvm::createTargetTransformInfoWrapperPass(TIRA));
-
-#ifdef PRE_UNROLLING
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
-   PM.add(createGepiExplicitation());
-   PM.add(createGepiCanonicalIdxs());
-   PM.add(createRemoveIntrinsicPass());
-   PM.add(llvm::createExpandMemOpsPass());
-   PM.add(createPtrIteratorSimplificationPass());
-   PM.add(createChunkOperationsLoweringPass());
-   PM.add(createBitcastVectorRemovalPass());
-   PM.add(createSelectLoweringPass());
-   PM.add(llvm::createVerifierPass());
-
-
+   
    PM.add(createCodeSimplificationPass());
 
-
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
    PM.add(llvm::createLoopRotatePass());
    PM.add(llvm::createLoopUnrollPass());
-   PM.add(createCleanLCSSA());
-   PM.add(llvm::createVerifierPass());
-#endif
+   PM.add(createRemoveMetaPass());
 
-   PM.add(createGepiCanonicalIdxs());
-   PM.add(createGepiExplicitation());
    PM.add(createRemoveIntrinsicPass());
+   PM.add(createGepiExplicitation());
+   PM.add(createGepiCanonicalIdxsPass());
    PM.add(llvm::createExpandMemOpsPass());
-   PM.add(createPtrIteratorSimplificationPass());
+   PM.add(createPtrIteratorSimplifyPass());
    PM.add(createChunkOperationsLoweringPass());
    PM.add(createBitcastVectorRemovalPass());
    PM.add(createSelectLoweringPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning >);
-   //PM.add(createSROAFunctionVersioningPass(args_info.target_function));
    PM.add(llvm::createVerifierPass());
-
-
-   // Insert -O3 in chain
-   {
-      llvm::PassManagerBuilder passManagerBuilder;
-      passManagerBuilder.OptLevel = 0;
-      passManagerBuilder.DisableUnrollLoops = true;
-      //passManagerBuilder.BBVectorize = false;
-      passManagerBuilder.LoopVectorize = false;
-      passManagerBuilder.SLPVectorize = false;
-      passManagerBuilder.populateLTOPassManager(PM);
-   }
 
    PM.add(createRemoveIntrinsicPass());
    PM.add(createGepiExplicitation());
-   PM.add(createGepiCanonicalIdxs());
-   PM.add(llvm::createExpandMemOpsPass());
-   PM.add(createPtrIteratorSimplificationPass());
-   PM.add(createChunkOperationsLoweringPass());
-   PM.add(createBitcastVectorRemovalPass());
-   PM.add(createSelectLoweringPass());
+   PM.add(createGepiCanonicalIdxsPass());
    PM.add(llvm::createVerifierPass());
-
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
-   //PM.add(createSROADisaggregationPass(args_info.target_function));
    PM.add(llvm::createVerifierPass());
 
 
@@ -268,7 +231,6 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    }
 
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
-   //PM.add(createSROAWrapperInliningPass(args_info.target_function));
    PM.add(llvm::createVerifierPass());
 
    // Insert -O3 in chain
