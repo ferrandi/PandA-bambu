@@ -766,4 +766,11 @@ BOOST_AUTO_TEST_CASE( real_range )
     auto constFloat64VC = constFloat64.getRange();
     BOOST_REQUIRE(constFloat64VC->isConstant());
     BOOST_REQUIRE_EQUAL(0b0100000000011110000000000000000000000000000000000000000000000000, constFloat64VC->getUnsignedMin());
+
+    auto floatNegOne = RealRange(RangeRef(new Range(Regular, 64, 13830554455654793216ULL, 13830554455654793216ULL)));
+    BOOST_REQUIRE(floatNegOne.isConstant());
+    BOOST_REQUIRE_EQUAL(floatNegOne.getSign()->getUnsignedMax(), 1);
+    auto floatOne = RealRange(RangeRef(new Range(Regular, 64, 4607182418800017408ULL, 4607182418800017408ULL)));
+    BOOST_REQUIRE(floatOne.isConstant());
+    BOOST_REQUIRE_EQUAL(floatOne.getSign()->getUnsignedMax(), 0);
 }

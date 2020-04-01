@@ -2097,7 +2097,7 @@ RealRange::RealRange(const RangeConstRef& s, const RangeConstRef& e, const Range
    THROW_ASSERT(!s->isReal() && !e->isReal() && !f->isReal(), "Real range components shouldn't be real ranges");
 }
 
-RealRange::RealRange(const RangeConstRef& vc) : Range(Real, vc->getBitWidth()), sign(vc->Sgt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
+RealRange::RealRange(const RangeConstRef& vc) : Range(Real, vc->getBitWidth()), sign(vc->Slt(RangeRef(new Range(Regular, 1, 0, 0)), 1))
 {
    if(vc->getBitWidth() == 32)
    {
