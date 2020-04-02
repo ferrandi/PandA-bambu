@@ -27,8 +27,8 @@ AM_PROG_LEX
 AC_PROG_YACC
 AC_PROG_F77
 #Flags have to be emptied since AC_PROG_CXX and AC_PROG_CC set them to "-g -O2"
-CFLAGS=
-CXXFLAGS=
+: ${CFLAGS=""}
+: ${CXXFLAGS=""}
 CFLAGS_EXT=-O2
 CXXFLAGS_EXT=-O2
 CXXFLAGS_EXTFPLL=-O2
