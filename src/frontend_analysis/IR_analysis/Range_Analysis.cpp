@@ -2957,11 +2957,11 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
                THROW_UNREACHABLE("");
             }
             
-            const auto addSignViewConvert = [&](VarNode* fpVar)
-            {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
-               return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, lt_expr_K));
-            };
+            //    const auto addSignViewConvert = [&](VarNode* fpVar)
+            //    {
+            //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
+            //       return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, lt_expr_K));
+            //    };
             const auto addExponentViewConvert = [&](VarNode* fpVar)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
@@ -2977,12 +2977,13 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             {
                switch(new_us.getSelector())
                {
-                  case UnpackSelector::packPos_Sign32:
-                     return addSignViewConvert(f);
+                  //    case UnpackSelector::packPos_Sign32:
+                  //       return addSignViewConvert(f);
                   case UnpackSelector::packPos_Exp32:
                      return addExponentViewConvert(f);
                   case UnpackSelector::packPos_Sigf32:
                      return addFractionalViewConvert(f);
+                  case UnpackSelector::packPos_Sign32:
                   case UnpackSelector::packPos_Sign64:
                   case UnpackSelector::packPos_Exp64:
                   case UnpackSelector::packPos_Sigf64:
@@ -2995,12 +2996,13 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             {
                switch(new_us.getSelector())
                {
-                  case UnpackSelector::packPos_Sign64:
-                     return addSignViewConvert(f);
+                  // case UnpackSelector::packPos_Sign64:
+                  //    return addSignViewConvert(f);
                   case UnpackSelector::packPos_Exp64:
                      return addExponentViewConvert(f);
                   case UnpackSelector::packPos_Sigf64:
                      return addFractionalViewConvert(f);
+                  case UnpackSelector::packPos_Sign64:
                   case UnpackSelector::packPos_Sign32:
                   case UnpackSelector::packPos_Exp32:
                   case UnpackSelector::packPos_Sigf32:
@@ -3607,9 +3609,15 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
                else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)) != nullptr)
                #endif
                {
+                  const auto init_range = getGIMPLE_range(vd->init);
+                  if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + cst_val->ToString());
+                     pointToConstants = false;
+                     break;
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + cst_val->ToString());
-                  intersection = getGIMPLE_range(vd->init);
-                  THROW_ASSERT(intersection->getBitWidth() == bw, "Initializer bitwidth should be the same as the initialized variable's one (" + intersection->ToString() + ")");
+                  intersection = init_range;
                }
                else if(GetPointer<const addr_expr>(GET_CONST_NODE(vd->init)) != nullptr)
                {
