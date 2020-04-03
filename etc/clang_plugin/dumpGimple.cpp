@@ -1844,6 +1844,21 @@ namespace llvm
          auto shiftedLeft = build2(GT(LSHIFT_EXPR), type, casted, MSB_posNode);
          return build2(GT(RSHIFT_EXPR), type, shiftedLeft, MSB_posNode);
       }
+      else if(isa<llvm::TruncInst>(inst) && cast<const llvm::TruncInst>(*inst).getType()->isIntegerTy())
+      {
+         assert(index == 0);
+         const llvm::TruncInst& tI = cast<const llvm::TruncInst>(*inst);
+         auto bw = tI.getType()->getIntegerBitWidth();
+         if(bw != 8 && bw != 16 && bw != 32 && bw != 64)
+         {
+            auto mask = (1ULL << bw)-1;
+            if(uicTable.find(mask) == uicTable.end())
+               uicTable[mask] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), mask, false));
+            const void* maskNode = uicTable.find(mask)->second;
+            auto type = assignCodeType(tI.getType());
+            return build2(GT(BIT_AND_EXPR), type, getOperand(inst->getOperand(index), currentFunction), maskNode);
+         }
+      }
       return getSignedOperandIndex(inst, index, currentFunction);
    }
 
