@@ -166,7 +166,7 @@ $(I386_CLANG4_GEPICANON_PLUGIN) : clang4_plugin_GepiCanon.o clang4_GepiCanon.o
 	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_GepiCanon.o clang4_GepiCanon.o $$compile_options -o clang4_plugin_GepiCanon.so; \
 	fi;
 
-$(I386_CLANG4_CSROA_PLUGIN) : clang4_plugin_CSROA.o clang4_CSROA.o
+$(I386_CLANG4_CSROA_PLUGIN) : clang4_plugin_CSROA.o clang4_CSROA.o clang4_GepiCanon.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG4_LIBS) -lversion `$(I386_LLVM_CONFIG4_EXE) --ldflags --libs --system-libs`'; \
@@ -177,8 +177,8 @@ $(I386_CLANG4_CSROA_PLUGIN) : clang4_plugin_CSROA.o clang4_CSROA.o
 	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
 	esac;\
 	if test -n "$$compile_options"; then \
-	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_CSROA.o clang4_CSROA.o $$compile_options -o clang4_plugin_CSROA_opt.so; \
-	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_CSROA.o clang4_CSROA.o $$compile_options -o clang4_plugin_CSROA.so; \
+	  $(I386_CLANG4_PLUGIN_COMPILER) opt_clang4_plugin_CSROA.o clang4_CSROA.o clang4_GepiCanon.o $$compile_options -o clang4_plugin_CSROA_opt.so; \
+	  $(I386_CLANG4_PLUGIN_COMPILER) clang4_plugin_CSROA.o clang4_CSROA.o clang4_GepiCanon.o $$compile_options -o clang4_plugin_CSROA.so; \
 	fi;
 
 
