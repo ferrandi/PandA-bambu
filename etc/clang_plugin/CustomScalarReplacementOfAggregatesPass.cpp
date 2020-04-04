@@ -4461,7 +4461,6 @@ bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
    }
    if(sroa_phase == SROA_functionVersioning)
    {
-module.dump(); // TODO REMOVE
       llvm::dbgs() << "\n ***********************************************";
       llvm::dbgs() << "\n ********** BEGIN FUNCTION VERSIONING **********";
       llvm::dbgs() << "\n *********************************************** \n";

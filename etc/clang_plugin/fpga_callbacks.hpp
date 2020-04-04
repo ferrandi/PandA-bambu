@@ -154,7 +154,7 @@ Expandability compute_gepi_expandability_profit(llvm::GEPOperator *gep_op, std::
       return Expandability(true,  area_profit, latency_profit);
    } else {
       double area_revenue = 0.0;//3.0 * 32.0 * gep_op->getNumIndices();
-      double area_cost = 3.0 * 32.0 * 32.0;
+      double area_cost = 128.0 * 3.0 * 32.0 * 32.0;
       double area_profit = area_revenue - area_cost;
 
       double latency_revenue = 0.0;

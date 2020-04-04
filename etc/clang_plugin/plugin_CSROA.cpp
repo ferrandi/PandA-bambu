@@ -196,16 +196,20 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    //PM.add(llvm::createTargetTransformInfoWrapperPass(TIRA));
    
    PM.add(createCodeSimplificationPass());
+
 #if (CLANG_CSROA_STEP & 1) == 1
+   printf("Added Loop rotate\n");
    PM.add(llvm::createLoopRotatePass());
 #endif
 #if (CLANG_CSROA_STEP & 2) == 2
+   printf("Added Loop unroll\n");
    PM.add(llvm::createLoopUnrollPass());
 #endif
    PM.add(createRemoveMetaPass());
 
 
 #if (CLANG_CSROA_STEP & 4) == 4
+   printf("Added Canonicalization\n");
    PM.add(createRemoveIntrinsicPass());
    PM.add(createGepiExplicitation());
    PM.add(createGepiCanonicalIdxsPass());
@@ -216,12 +220,14 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(createSelectLoweringPass());
 #endif
 #if (CLANG_CSROA_STEP & 8) == 8
+   printf("Added Versioning\n");
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning >);
    PM.add(llvm::createVerifierPass());
 #endif
 
 
 #if (CLANG_CSROA_STEP & 16) == 16
+   printf("Added Disaggregation\n");
    PM.add(createRemoveIntrinsicPass());
    PM.add(createGepiExplicitation());
    PM.add(createGepiCanonicalIdxsPass());
@@ -231,6 +237,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
 #endif
 
 #if (CLANG_CSROA_STEP & 32) == 32
+   printf("Added Mid Optimization\n");
    // Insert -O3 in chain
    {
       llvm::PassManagerBuilder passManagerBuilder;
@@ -244,11 +251,13 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
 #endif
 
 #if (CLANG_CSROA_STEP & 64) == 64
+   printf("Added Wrapper inlining\n");
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining >);
    PM.add(llvm::createVerifierPass());
 #endif
 
 #if (CLANG_CSROA_STEP & 128) == 128
+   printf("Added Final Optimization\n");
    // Insert -O3 in chain
    {
       llvm::PassManagerBuilder passManagerBuilder;
