@@ -193,30 +193,6 @@ namespace
       return {s, e, f};
    }
 
-   #ifdef BITVALUE_UPDATE
-   std::string range_to_bits(const long long min, const long long max, bw_t bw)
-   {
-      long long mix = min | max;
-      long long mask = 1LL << std::min(std::numeric_limits<long long>::digits, static_cast<int>(bw - 1));
-      std::stringstream bits;
-      while (bw)
-      {
-         if(mix & mask)
-         {
-            break;
-         }
-         bits << '0';
-         mask >>= 1;
-         --bw;
-      }
-      for(;bw > 0; --bw)
-      {
-         bits << 'U';
-      }
-      return bits.str();
-   }
-   #endif
-
    kind op_unsigned(kind op)
    {
       switch (op)
@@ -846,6 +822,9 @@ class VarNode
    /// A Range associated to the variable, that is,
    /// its interval inferred by the analysis.
    RangeConstRef interval;
+
+   std::deque<bit_lattice> bit_values;
+
    /// Used by the crop meet operator
    char abstractState;
 
@@ -877,23 +856,22 @@ class VarNode
    {
       return interval->getBitWidth();
    }
-   std::string getBitValues() const
+   const std::deque<bit_lattice>& getBitValues() const
    {
-      if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(V)))
-      {
-         return ssa->bit_values;
-      }
-      return std::string("");
+      return bit_values;
    }
-   void setBitValues(const std::string& bit_v)
+   void setBitValues(const std::deque<bit_lattice>& bv)
    {
-      #ifdef BITVALUE_UPDATE
-      // Not really the best way to do it, but bringing tree_manager here is too much effort
-      if(auto* ssa = const_cast<ssa_name*>(GetPointer<const ssa_name>(GET_CONST_NODE(V))))
-      {
-         ssa->bit_values = bit_v;
-      }
-      #endif
+      THROW_ASSERT(tree_helper::CGetType(GET_CONST_NODE(V))->get_kind() == real_type_K, "Cannot set bit_values directly for non-real types");
+      bit_values = bv;
+   }
+   void setBitValues(const std::string& bv_str)
+   {
+      setBitValues(string_to_bitstring(bv_str));
+   }
+   void supBitValues(const std::deque<bit_lattice>& other)
+   {
+      bit_values = BitLatticeManipulator::sup(bit_values, other, interval->getBitWidth(), isSignedType(V), interval->getBitWidth() == 1);
    }
    /// Changes the status of the variable represented by this node.
    void setRange(const RangeConstRef& newInterval)
@@ -930,6 +908,30 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id) : V(_V)
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
    interval = getRangeFor(_V, Unknown);
+   if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(_V)))
+   {
+      if(ssa->bit_values.empty())
+      {
+         bit_values = create_u_bitstring(interval->getBitWidth());
+      }
+      else
+      {
+         bit_values = string_to_bitstring(ssa->bit_values);
+      }
+   }
+   else if(GetPointer<const cst_node>(GET_CONST_NODE(_V)))
+   {
+      const auto range = getGIMPLE_range(_V);
+      THROW_ASSERT(range->isConstant(), "Range from constant node should be constant (" + GET_CONST_NODE(_V)->ToString() + " " + range->ToString() + ")");
+      if(range->isReal())
+      {
+         bit_values = create_bitstring_from_constant(std::static_pointer_cast<const RealRange>(range)->getRange()->getUnsignedMin().cast_to<long long>(), range->getBitWidth(), false);
+      }
+      else
+      {
+         bit_values = create_bitstring_from_constant(range->getUnsignedMax().cast_to<long long>(), range->getBitWidth(), isSignedType(_V));
+      }
+   }
 }
 
 /// Initializes the value of the node.
@@ -954,15 +956,24 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
 {
    const auto ssa_node = TM->GetTreeReindex(GET_INDEX_CONST_NODE(V));
    auto* SSA = GetPointer<ssa_name>(GET_NODE(ssa_node));
-   if(SSA == nullptr)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Constant node " + GET_CONST_NODE(V)->ToString());
-      return false;
-   }
-   if(interval->isUnknown())
+   if(SSA == nullptr || interval->isUnknown())
    {
       return false;
    }
+
+   #ifdef BITVALUE_UPDATE
+   auto updateBitValue = [&](ssa_name* ssa, const std::deque<bit_lattice>& bv)
+   {
+      const auto curr_bv = string_to_bitstring(ssa->bit_values);
+      if(curr_bv != bv)
+      {
+         ssa->bit_values = bitstring_to_string(bv);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BitValue updated for " + ssa->ToString() + ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
+         return true;
+      }
+      return false;
+   };
+   #endif
 
    const bool isSigned = isSignedType(SSA->type);
    if(SSA->range != nullptr)
@@ -980,9 +991,9 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       bw_t newBW = interval->getBitWidth();
       if(interval->isFullSet())
       {
-         return false;
+         return updateBitValue(SSA, bit_values);
       }
-      else if(interval->isConstant())
+      if(interval->isConstant())
       {
          newBW = 0U;
       }
@@ -994,13 +1005,13 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
             const auto currentBW = getGIMPLE_BW(V);
             if(newBW >= currentBW)
             {
-               return false;
+               return updateBitValue(SSA, bit_values);
             }
          }
          else if(interval->isAnti())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Anti range " + interval->ToString() + " not stored for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
-            return false;
+            return updateBitValue(SSA, bit_values);
          }
          else if(interval->isEmpty())
          {
@@ -1113,6 +1124,9 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
    else if(interval->isReal())
    {
       SSA->range = RangeRef(interval->clone());
+      #ifdef BITVALUE_UPDATE
+      updateBitValue(SSA, bit_values);
+      #endif
       return false;
    }
    else if(interval->isAnti() || interval->isEmpty())
@@ -1146,15 +1160,22 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       SSA->min = TM->CreateUniqueIntegerCst(min, type_id);
       SSA->max = TM->CreateUniqueIntegerCst(max, type_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Min: " + GET_CONST_NODE(SSA->min)->ToString() + "   Max: " + GET_CONST_NODE(SSA->max)->ToString());
+      
       #ifdef BITVALUE_UPDATE
-      if(SSA->bit_values.empty())
+      const auto bv_min = create_bitstring_from_constant(min, interval->getBitWidth(), isSigned);
+      const auto bv_max = create_bitstring_from_constant(max, interval->getBitWidth(), isSigned);
+      const auto range_bv = BitLatticeManipulator::sup(bv_min, bv_max, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
+      const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
+      if(bit_values != sup_bv)
       {
-         SSA->bit_values = range_to_bits(min, max, interval->getBitWidth());
+         bit_values = sup_bv;
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BitValue: " + SSA->bit_values);
       #endif
    }
 
+   #ifdef BITVALUE_UPDATE
+   updateBitValue(SSA, bit_values);
+   #endif
    SSA->range = RangeRef(interval->clone());
    return true;
 }
@@ -1172,10 +1193,10 @@ void VarNode::print(std::ostream& OS) const
    }
    OS << " ";
    this->getRange()->print(OS);
-   const auto bv = getBitValues();
+   const auto& bv = getBitValues();
    if(bv.size())
    {
-      OS << " " << bv;
+      OS << " " << bitstring_to_string(bv);
    }
 }
 
@@ -1632,13 +1653,7 @@ class OpNode
    }
    /// Returns the target of the operation, that is,
    /// where the result will be stored.
-   const VarNode* getSink() const
-   {
-      return sink;
-   }
-   /// Returns the target of the operation, that is,
-   /// where the result will be stored.
-   VarNode* getSink()
+   VarNode* getSink() const
    {
       return sink;
    }
@@ -1961,6 +1976,12 @@ class PhiOpNode : public OpNode
    void addSource(const VarNode* newsrc)
    {
       sources.push_back(newsrc);
+
+      // Propagate bit_values through phi for real variables
+      if(newsrc->getRange()->isReal())
+      {
+         getSink()->supBitValues(newsrc->getBitValues());
+      }
    }
    /// Return source identified by index
    const VarNode* getSource(size_t index) const
@@ -2221,16 +2242,7 @@ RangeRef UnaryOpNode::eval() const
          {
             THROW_ASSERT(bw == 64 || bw == 32, "View_convert sink bitwidth should be 64 or 32 bits (" + STR(bw) + ")");
             result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), rr->getRange()->zextOrTrunc(bw));
-            auto bitmask = getSource()->getBitValues();
-            if(bitmask.size())
-            {
-               THROW_ASSERT(bw <= bitmask.size(), "View_convert bitwidth should be the same as bitmask bitwidth (" + STR(bw) + " > " + STR(bitmask.size()) + ")");
-               if(bw == 32)
-               {
-                  bitmask = bitmask.substr(32, 32);
-               }
-               const_cast<VarNode*>(getSink())->setBitValues(bitmask);
-            }
+            getSink()->supBitValues(getSource()->getBitValues());
             break;
          }
          case nop_expr_K:
@@ -2303,11 +2315,13 @@ RangeRef UnaryOpNode::eval() const
             if(resultType->get_kind() == real_type_K)
             {
                result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), RangeRef(new RealRange(oprnd)));
+               getSink()->setBitValues(getSource()->getBitValues());
             }
             else
             {
                THROW_ASSERT(!oprnd->isReal(), "Operand here should not be real");
                result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), oprnd->sextOrTrunc(bw));
+               getSink()->supBitValues(getSource()->getBitValues());
             }
             break;
          }
@@ -6041,7 +6055,54 @@ class CropDFS : public ConstraintGraph
    CropDFS(application_managerRef _AppM, int _debug_level, int _graph_debug) : ConstraintGraph(_AppM, _debug_level, _graph_debug) {}
 };
 
-static void MatchParametersAndReturnValues(unsigned int function_id, const application_managerRef AppM, const ConstraintGraphRef CG, int 
+static void TopFunctionUserHits(unsigned int function_id, const application_managerRef AppM, const ConstraintGraphRef CG, int 
+   #ifndef NDEBUG
+   debug_level
+   #endif
+   )
+{
+   const auto TM = AppM->get_tree_manager();
+   const auto fd = TM->get_tree_node_const(function_id);
+   const auto* FD = GetPointer<const function_decl>(fd);
+
+   const auto& parmMap = CG->getParmMap();
+   const auto funParm = parmMap.find(function_id);
+   THROW_ASSERT(funParm != parmMap.end(), "Function parameters binding unavailable");
+   const auto& parmBind = funParm->second.second;
+   THROW_ASSERT(parmBind.size() == FD->list_of_args.size(), "Parameters count mismatch");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(size_t i = 0; i < FD->list_of_args.size(); ++i)
+   {
+      if(const auto& p = parmBind.at(i))
+      {
+         const auto pType = getGIMPLE_Type(p);
+         if(!isValidType(pType))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " is of non-valid type (" + pType->get_kind_text() + ")");
+            continue;
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " defined as " + GET_CONST_NODE(p)->ToString());
+
+         VarNode* sink = CG->addVarNode(p, function_id);
+
+         // Check for pragma mask directives user defined range
+         const auto parm = GetPointer<const parm_decl>(GET_CONST_NODE(FD->list_of_args.at(i)));
+         if(parm->range != nullptr)
+         {
+            sink->setRange(parm->range);
+            sink->setBitValues(parm->bit_values);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->bit_values);
+         }
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " missing from function body");
+      }
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+}
+
+static void ParmAndRetValPropagation(unsigned int function_id, const application_managerRef AppM, const ConstraintGraphRef CG, int 
    #ifndef NDEBUG
    debug_level
    #endif
@@ -6070,12 +6131,13 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
    // Second: real parameter
    std::vector<std::pair<tree_nodeConstRef, tree_nodeConstRef>> parameters(FD->list_of_args.size());
 
-   // Fetch the function arguments (formal parameters) into the data structure
+   // Fetch the function arguments (formal parameters) into the data structure and generate PhiOp nodes for parameters call values
    const auto& parmMap = CG->getParmMap();
    const auto funParm = parmMap.find(function_id);
    THROW_ASSERT(funParm != parmMap.end(), "Function parameters binding unavailable");
    const auto& parmBind = funParm->second.second;
    THROW_ASSERT(parmBind.size() == parameters.size(), "Parameters count mismatch");
+   std::vector<PhiOpNode*> matchers(parameters.size(), nullptr);
    for(size_t i = 0; i < parameters.size(); ++i)
    {
       if(const auto& p = parmBind.at(i))
@@ -6088,6 +6150,22 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
          }
          parameters[i].first = p;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + STR(i) + " defined as " + GET_CONST_NODE(p)->ToString());
+
+         VarNode* sink = CG->addVarNode(p, function_id);
+
+         // Check for pragma mask directives user defined range
+         const auto parm = GetPointer<const parm_decl>(GET_CONST_NODE(FD->list_of_args.at(i)));
+         if(parm->range != nullptr)
+         {
+            sink->setRange(parm->range);
+            sink->setBitValues(parm->bit_values);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->bit_values);
+         }
+         else
+         {
+            sink->setRange(sink->getMaxRange());
+         }
+         matchers[i] = new PhiOpNode(ValueRangeRef(new ValueRange(sink->getRange())), sink, nullptr);
       }
       else
       {
@@ -6104,7 +6182,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
 
    // Creates the data structure which receives the return values of the
    // function, if there is any
-   std::set<tree_nodeConstRef, tree_reindexCompare> returnValues;
+   std::vector<VarNode*> returnVars;
    if(!noReturn)
    {
       const auto* SL = GetPointer<const statement_list>(GET_CONST_NODE(FD->body));
@@ -6116,47 +6194,16 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
          if(const auto* gr = GetPointer<const gimple_return>(GET_CONST_NODE(stmt_list.back())))
          if(gr->op != nullptr)   // Compiler defined return statements may be without argument
          {
-            returnValues.insert(gr->op);
+            returnVars.push_back(CG->addVarNode(gr->op, function_id));
          }
       }
    }
-   if(returnValues.empty() && !noReturn)
+   if(returnVars.empty() && !noReturn)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function should return, but no return statement was found");
       noReturn = true;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Function ") + (noReturn ? "has no" : "has explicit") + " return statement" + (returnValues.size() > 1 ? "s" : ""));
-
-   /// Generate PhiOp nodes for parameters call values
-   std::vector<PhiOpNode*> matchers(parameters.size(), nullptr);
-   for(size_t i = 0, e = parameters.size(); i < e; ++i)
-   {
-      if(parameters[i].first == nullptr)
-      {
-         continue;
-      }
-      VarNode* sink = CG->addVarNode(parameters[i].first, function_id);
-
-      // Check for pragma mask directives user defined range
-      const auto parm = GetPointer<const parm_decl>(GET_CONST_NODE(FD->list_of_args.at(i)));
-      if(parm->range != nullptr)
-      {
-         sink->setRange(parm->range);
-         sink->setBitValues(parm->bit_values);
-      }
-      else
-      {
-         sink->setRange(sink->getMaxRange());
-      }
-      matchers[i] = new PhiOpNode(ValueRangeRef(new ValueRange(sink->getRange())), sink, nullptr);
-   }
-
-   std::vector<VarNode*> returnVars;
-   for(auto returnValue : returnValues)
-   {
-      VarNode* from = CG->addVarNode(returnValue, function_id);
-      returnVars.push_back(from);
-   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Function ") + (noReturn ? "has no" : "has explicit") + " return statement" + (returnVars.size() > 1 ? "s" : ""));
 
    for(const auto& call : functionCalls)
    {
@@ -6253,7 +6300,7 @@ static void MatchParametersAndReturnValues(unsigned int function_id, const appli
       #ifndef NDEBUG
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
       {
-         std::string phiString = GET_CONST_NODE(m->getSink()->getValue())->ToString() + " = PHI<";
+         std::string phiString = GET_CONST_NODE(m->getSink()->getValue())->ToString() + "<" + bitstring_to_string(m->getSink()->getBitValues()) + "> = PHI<";
          for(size_t i = 0; i < m->getNumSources(); ++i)
          {
             phiString += GET_CONST_NODE(m->getSource(i)->getValue())->ToString() + ", ";
@@ -6515,20 +6562,21 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    #endif
 
    // Top functions are not called by any other functions, so they do not have any call statement to analyse
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal analysis...");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters and return value propagation...");
    for(const auto top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
          tree_helper::print_type(TM, top_fn, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(top_fn)->CGetBehavioralHelper()))) + " is top function");
+      TopFunctionUserHits(top_fn, AppM, CG, debug_level);
       rb_funcs.erase(top_fn);
    }
    // The two operations are split because the CallMap is built for all functions in buildGraph
-   // then it is used from MatchParametersAndReturnValues
+   // then it is used from ParmAndRetValPropagation
    for(const auto f : rb_funcs)
    {
-      MatchParametersAndReturnValues(f, AppM, CG, debug_level);
+      ParmAndRetValPropagation(f, AppM, CG, debug_level);
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "MatchParms&RetVal analysis completed");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters and return value propagation completed");
    CG->buildVarNodes();
 
    #ifndef NDEBUG
