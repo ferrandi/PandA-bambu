@@ -257,31 +257,18 @@ DesignFlowStep_Status function_parm_mask::Exec()
                            else
                            {
                               refcount<RealRange> range(new RealRange(RangeRef(new Range(Regular, static_cast<Range::bw_t>(bw)))));
-                              if(sign.size())
-                              {
-                                 const auto sign_val = std::strtol(sign.data(), nullptr, 0);
-                                 range->setSign(RangeRef(new Range(Regular, 1, static_cast<bool>(sign_val), static_cast<bool>(sign_val))));
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point sign fixed to " + sign);
-                              }
-                              if(exp_range.size())
-                              {
-                                 const auto separator_idx = exp_range.find(',');
-                                 const auto exp_l = std::strtol(exp_range.substr(0, separator_idx).data(), nullptr, 0);
-                                 const auto exp_u = std::strtol(exp_range.substr(separator_idx + 1, exp_range.size() - separator_idx - 1).data(), nullptr, 0);
-                                 RangeRef e_range(new Range(Regular, bw == 64 ? 11 : 8, exp_l, exp_u));
-                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point exponent restricted range " + e_range->sub(RangeRef(bw == 64 ? new Range(Regular, 11, 1024, 1024) : new Range(Regular, 8, 128, 128)))->ToString());
-                                 range->setExponent(e_range);
-                              }
+                              auto bv_mask = create_u_bitstring(bw);
                               if(sig_bitwidth.size())
                               {
                                  const auto sig_bw = std::strtol(sig_bitwidth.data(), nullptr, 0);
                                  const auto max_sig_bw = bw == 64 ? 52U : 23U;
                                  THROW_ASSERT(sig_bw < max_sig_bw, "Restricted significand bitwidth should be less than standard bitwidth");
-                                 int64_t sig_mask = static_cast<int64_t>(UINT64_MAX << (max_sig_bw - sig_bw));
-                                 auto bit_mask = create_bitstring_from_constant(sig_mask, bw, false);
-                                 for(auto& b : bit_mask)
+                                 const auto sig_mask = static_cast<int64_t>(UINT64_MAX << (max_sig_bw - sig_bw));
+                                 range->setSignificand(RangeRef(new Range(Anti, static_cast<Range::bw_t>(max_sig_bw), sig_mask + 1, -1)));
+                                 bv_mask = create_bitstring_from_constant(sig_mask, bw, false);
+                                 for(auto& b : bv_mask)
                                  {
-                                    if(b == bit_lattice::ONE)
+                                    if(b == bit_lattice::ONE)  
                                     {
                                        b = bit_lattice::U;
                                     }
@@ -290,12 +277,29 @@ DesignFlowStep_Status function_parm_mask::Exec()
                                        b = bit_lattice::X;
                                     }
                                  }
-                                 parm->bit_values = bitstring_to_string(bit_mask);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point significand bitwidth set to " + sig_bitwidth);
                               }
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point bounds set to " + range->ToString() + " " + parm->bit_values);
+                              if(sign.size())
+                              {
+                                 const auto sign_val = std::strtol(sign.data(), nullptr, 0);
+                                 range->setSign(RangeRef(new Range(Regular, 1, static_cast<bool>(sign_val), static_cast<bool>(sign_val))));
+                                 bv_mask.pop_front();
+                                 bv_mask.push_front(sign_val == 0 ? bit_lattice::ZERO : bit_lattice::ONE);
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("---Floating point sign fixed as ") + (sign_val == 0 ? "positive" : "negative"));
+                              }
+                              if(exp_range.size())
+                              {
+                                 const auto separator_idx = exp_range.find(',');
+                                 const auto exp_l = std::strtol(exp_range.substr(0, separator_idx).data(), nullptr, 0);
+                                 const auto exp_u = std::strtol(exp_range.substr(separator_idx + 1, exp_range.size() - separator_idx - 1).data(), nullptr, 0);
+                                 RangeRef e_range(new Range(Regular, bw == 64 ? 11 : 8, exp_l, exp_u));
+                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point exponent restricted range " + e_range->sub(RangeRef(bw == 64 ? new Range(Regular, 11, 1023, 1023) : new Range(Regular, 8, 127, 127)))->ToString());
+                                 range->setExponent(e_range);
+                              }
+                              parm->bit_values = bitstring_to_string(bv_mask);
                               parm->range = range;
                               modified = true;
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point bounds set to " + parm->range->ToString() + "<" + parm->bit_values + ">");
                            }
                         }
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
