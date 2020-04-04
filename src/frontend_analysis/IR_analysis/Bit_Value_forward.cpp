@@ -454,7 +454,53 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                res.pop_front();
          }
       };
-      mult0();
+      if(0)
+         mult0();
+      auto mult1 = [&] {
+         size_t lenght_arg1 = arg1_bitstring.size();
+         size_t lenght_arg2 = arg2_bitstring.size();
+         auto ga0_bitsize = static_cast<size_t>(tree_helper::Size(GET_NODE(ga->op0)));
+         auto res_bitsize = std::min(lenght_arg1+lenght_arg2, ga0_bitsize);
+         if(res_bitsize > arg1_bitstring.size())
+         {
+            arg1_bitstring = sign_extend_bitstring(arg1_bitstring, tree_helper::is_int(TM, arg1_uid), res_bitsize);
+         }
+         while(arg1_bitstring.size() > res_bitsize)
+            arg1_bitstring.pop_front();
+         while(arg2_bitstring.size() > res_bitsize)
+            arg2_bitstring.pop_front();
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " * " + STR(arg2_uid));
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " *");
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
+
+         while(res.size() < res_bitsize)
+            res.push_front(bit_lattice::ZERO);
+         auto arg2_it = arg2_bitstring.crbegin();
+         for(size_t pos=0; arg2_it != arg2_bitstring.crend() && pos < res_bitsize; ++arg2_it,++pos)
+         {
+            std::deque<bit_lattice> temp_op1;
+            while(temp_op1.size()<pos)
+               temp_op1.push_front(bit_lattice::ZERO);
+            auto arg1_it = arg1_bitstring.crbegin();
+            for(size_t idx = 0; (idx+pos) < res_bitsize; ++idx, ++arg1_it)
+               temp_op1.push_front(bit_and_expr_map.at(*arg1_it).at(*arg2_it));
+            bit_lattice carry1 = bit_lattice::ZERO;
+            std::deque<bit_lattice> temp_res;
+            auto temp_op1_it = temp_op1.crbegin();
+            const auto temp_op1_end = temp_op1.crend();
+            auto res_it = res.crbegin();
+            const auto res_end = res.crend();
+            for(unsigned bit_index = 0; bit_index < res_bitsize and temp_op1_it != temp_op1_end and res_it != res_end; temp_op1_it++, res_it++, bit_index++)
+            {
+               temp_res.push_front(plus_expr_map.at(*temp_op1_it).at(*res_it).at(carry1).back());
+               carry1 = plus_expr_map.at(*temp_op1_it).at(*res_it).at(carry1).front();
+            }
+            res = temp_res;
+         }
+
+      };
+      if(1)
+         mult1();
    }
 #endif
 #if 1
