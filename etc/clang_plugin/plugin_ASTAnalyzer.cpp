@@ -405,14 +405,14 @@ namespace clang
                         }
                         if(userMaskInfo.mt & mt_Exponent)
                         {
-                           if(userMaskInfo.min_exp < -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
+                           if(userMaskInfo.min_exp <= -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
                            {
                               DiagnosticsEngine& D = CI.getDiagnostics();
                               D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
                            }
-                           // Exponent range is stored as unsigned value range of exponent bits (not actual number exponent)
-                           userMaskInfo.min_exp += exp_halfrange;
-                           userMaskInfo.max_exp += exp_halfrange;
+                           // Exponent range is stored as unsigned value range of exponent bits (not actual exponent number)
+                           userMaskInfo.min_exp += exp_halfrange - 1;
+                           userMaskInfo.max_exp += exp_halfrange - 1;
                         }
                         if(userMaskInfo.mt & mt_Significand)
                         {
@@ -838,8 +838,6 @@ namespace clang
                            D.Report(Tok.getLocation(), ID);
                         }
                         sign = static_cast<bool>(s);
-                        s_bits = 1;
-                        exp_l = 1;
                         index = 3;
                      }
                      else if(mask == 2)

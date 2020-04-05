@@ -70,6 +70,26 @@ BOOST_AUTO_TEST_CASE( range_neededBits )
     BOOST_REQUIRE_EQUAL(5, Range::neededBits(5, 31, false));
 }
 
+BOOST_AUTO_TEST_CASE( range_bitvalues )
+{
+    const Range test1(Regular, 8, 8, 10);
+    const Range test2(Regular, 8, -8, -5);
+    const Range test4(Regular, 16, 126, 157);
+    const Range test5(Regular, 8);
+
+    BOOST_REQUIRE_EQUAL("10UU", bitstring_to_string(test1.getBitValues(false)));
+    BOOST_REQUIRE_EQUAL("111110UU", bitstring_to_string(test2.getBitValues(true)));
+    BOOST_REQUIRE_EQUAL("UUUUUUUU", bitstring_to_string(test4.getBitValues(false)));
+    BOOST_REQUIRE_EQUAL("0UUUUUUUU", bitstring_to_string(test4.getBitValues(true)));
+    BOOST_REQUIRE_EQUAL("UUUUUUUU", bitstring_to_string(test5.getBitValues(false)));
+    BOOST_REQUIRE_EQUAL("UUUUUUUU", bitstring_to_string(test5.getBitValues(true)));
+
+    RealRange test3(Range(Regular, 1, 0, 0), Range(Regular, 8, 0b01101110, 0b01111111), Range(Regular, 23, 0b0, 0b11111111111110000000110));
+
+    BOOST_REQUIRE_EQUAL(bitstring_to_string(test3.getBitValues(true)), bitstring_to_string(test3.getBitValues(false)));
+    BOOST_REQUIRE_EQUAL("0011UUUUUUUUUUUUUUUUUUUUUUUUUUUU", bitstring_to_string(test3.getBitValues(true)));
+}
+
 BOOST_AUTO_TEST_CASE( range_addition )
 {
     RangeRef aPositive(new Range(Regular, 8, 5, 9));
