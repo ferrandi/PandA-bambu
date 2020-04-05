@@ -93,6 +93,7 @@ class Range
    APInt getUnsignedMax() const;
    APInt getUnsignedMin() const;
    APInt getSpan() const;
+   virtual std::deque<bit_lattice> getBitValues(bool isSigned) const;
    virtual RangeRef getAnti() const;
 
    virtual bool isUnknown() const;
@@ -185,11 +186,11 @@ class RealRange : public Range
    RangeRef getSign() const;
    RangeRef getExponent() const;
    RangeRef getSignificand() const;
-   std::deque<bit_lattice> getBitmask() const;
+   std::deque<bit_lattice> getBitValues(bool) const override;
    RangeRef getAnti() const override;
    void setSign(const RangeConstRef& s);
    void setExponent(const RangeConstRef& e);
-   void setFractional(const RangeConstRef& f);
+   void setSignificand(const RangeConstRef& f);
    bool isSameRange(const RangeConstRef& other) const override;
    bool isFullSet() const override;
    bool isUnknown() const override;

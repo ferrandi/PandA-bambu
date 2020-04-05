@@ -274,6 +274,45 @@ bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
    return std::max(a.minBitwidth(sign), b.minBitwidth(sign));
 }
 
+std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
+{
+   if(isEmpty() || isAnti())
+   {
+      return create_u_bitstring(bw);
+   }
+   
+   auto min = create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw, isSigned);
+   auto max = create_bitstring_from_constant((isSigned ? getSignedMax() : getUnsignedMax()).cast_to<long long>(), bw, isSigned);
+   auto& longer = min.size() >= max.size() ? min : max;
+   auto& shorter = min.size() >= max.size() ? max : min;
+   if(shorter.size() < longer.size())
+   {
+      shorter = BitLatticeManipulator::sign_extend_bitstring(shorter, isSigned, longer.size());
+   }
+   
+   std::deque<bit_lattice> range_bv;
+   auto s_it = shorter.cbegin();
+   auto l_it = longer.cbegin();
+   const auto s_end = shorter.cend();
+   const auto l_end = longer.cend();
+   for(; s_it != s_end && l_it != l_end; s_it++, l_it++)
+   {
+      if(*s_it == *l_it)
+      {
+         range_bv.push_back(*s_it);
+      }
+      else
+      {
+         break;
+      }
+   }
+   while(range_bv.size() < longer.size())
+   {
+      range_bv.push_back(bit_lattice::U);
+   }
+   return range_bv;
+}
+
 RangeRef Range::getAnti() const
 {
    if(type == Anti)
@@ -1723,6 +1762,15 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
    {
       return RangeRef(new Range(Unknown, bitwidth));
    }
+   if(isAnti())
+   {
+      if(getUnsignedMax() < APInt::getMaxValue(bw))
+      {
+         return RangeRef(new Range(Regular, bitwidth, u + 1, getUnsignedMax()));
+      }
+      return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
+   }
+   
    if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
    {
       return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
@@ -2149,6 +2197,24 @@ RangeRef RealRange::getSignificand() const
    return significand;
 }
 
+std::deque<bit_lattice> RealRange::getBitValues(bool) const
+{
+   const auto sign_bv = sign->getBitValues(true);
+   auto exp_bv = exponent->getBitValues(true);
+   if(exp_bv.size() < exponent->getBitWidth())
+   {
+      exp_bv = BitLatticeManipulator::sign_extend_bitstring(exp_bv, true, exponent->getBitWidth());
+   }
+   auto sig_bv = significand->getBitValues(true);
+   if(sig_bv.size() < significand->getBitWidth())
+   {
+      sig_bv = BitLatticeManipulator::sign_extend_bitstring(sig_bv, true, significand->getBitWidth());
+   }
+   sig_bv.insert(sig_bv.begin(), exp_bv.begin(), exp_bv.end());
+   sig_bv.insert(sig_bv.begin(), sign_bv.front());
+   return sig_bv;
+}
+
 RangeRef RealRange::getAnti() const
 {
    return RangeRef(new RealRange(sign->getAnti(), exponent->getAnti(), significand->getAnti()));
@@ -2164,7 +2230,7 @@ void RealRange::setExponent(const RangeConstRef& e)
    exponent.reset(e->clone());
 }
 
-void RealRange::setFractional(const RangeConstRef& f)
+void RealRange::setSignificand(const RangeConstRef& f)
 {
    significand.reset(f->clone());
 }
