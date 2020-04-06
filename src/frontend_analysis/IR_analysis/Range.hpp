@@ -161,6 +161,7 @@ class Range
    static const APInt MinDelta;
    static RangeRef makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other);
    static bw_t neededBits(const APInt& a, const APInt& b, bool sign);
+   static RangeRef fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned);
 };
 
 std::ostream& operator<<(std::ostream& OS, const Range& R);
@@ -212,6 +213,8 @@ class RealRange : public Range
    RangeRef unionWith(const RangeConstRef& other) const override;
    RangeRef toFloat64() const;
    RangeRef toFloat32() const;
+
+   static refcount<RealRange> fromBitValues(const std::deque<bit_lattice>& bv);
 };
 
 #endif
