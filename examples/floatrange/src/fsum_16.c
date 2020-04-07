@@ -1,5 +1,5 @@
-#pragma mask a significand 10
-#pragma mask b significand 10
+#pragma mask a significand 16
+#pragma mask b significand 16
 float single_prec_addition(float a, float b)
 {
   return a+b;

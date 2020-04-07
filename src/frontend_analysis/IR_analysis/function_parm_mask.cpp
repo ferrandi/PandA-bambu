@@ -296,10 +296,11 @@ DesignFlowStep_Status function_parm_mask::Exec()
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point exponent restricted range " + e_range->sub(RangeRef(bw == 64 ? new Range(Regular, 11, 1023, 1023) : new Range(Regular, 8, 127, 127)))->ToString());
                                  range->setExponent(e_range);
                               }
-                              parm->bit_values = bitstring_to_string(bv_mask);
+                              THROW_ASSERT(bv_mask.size() == range->getBitWidth(), "Floating-point bit_values must be exact (" + parm->ToString() + ")");
+                              parm->ra_bit_values = bitstring_to_string(bv_mask);
                               parm->range = range;
                               modified = true;
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point bounds set to " + parm->range->ToString() + "<" + parm->bit_values + ">");
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point bounds set to " + parm->range->ToString() + "<" + parm->ra_bit_values + ">");
                            }
                         }
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

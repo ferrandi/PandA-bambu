@@ -274,11 +274,67 @@ bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
    return std::max(a.minBitwidth(sign), b.minBitwidth(sign));
 }
 
+RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned)
+{
+   THROW_ASSERT(bv.size() <= bitwidth, "BitValues size not appropriate");
+   auto bitReplace = [](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest)
+   {
+      std::deque<bit_lattice> bv_out;
+      for(const auto& b : bv_in)
+      {
+         bv_out.push_back(b == src ? dest : b);
+      }
+      return bv_out;
+   };
+   auto bitstring_to_int = [&](const std::deque<bit_lattice>& bv_in)
+   {
+      long long out = isSigned && bv_in.front() == bit_lattice::ONE ? std::numeric_limits<long long>::min() : 0LL;
+      for(size_t i = 0; i < bv_in.size(); ++i)
+      {
+         if(bv_in.at(i) == bit_lattice::ONE)
+         {
+            out |= 1LL << i;
+         }
+         else
+         {
+            out &= ~(1LL << i);
+         }
+      }
+      return out;
+   };
+   auto manip = [&](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest)
+   {
+      auto bv_ext = bitReplace(bv_in, src, dest);
+      if(bv_ext.size() < bitwidth)
+      {
+         bv_ext = BitLatticeManipulator::sign_extend_bitstring(bv_ext, isSigned, bitwidth);
+      }
+      return bitstring_to_int(bv_ext);
+   };
+
+   const auto x = bitReplace(bv, bit_lattice::U, bit_lattice::ZERO);
+   const auto y = bitReplace(bv, bit_lattice::U, bit_lattice::ONE);
+
+   // TODO: could be less conservative on X values, but it may interfere with BitValue oeprations
+   const auto a = manip(x, bit_lattice::X, bit_lattice::ZERO);
+   const auto b = manip(x, bit_lattice::X, bit_lattice::ONE);
+   const auto c = manip(y, bit_lattice::X, bit_lattice::ZERO);
+   const auto d = manip(y, bit_lattice::X, bit_lattice::ONE);
+
+   const auto [min, max] = std::minmax({a,b,c,d});
+   
+   return RangeRef(new Range(Regular, bitwidth, min, max));
+}
+
 std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
 {
-   if(isEmpty() || isAnti())
+   if(isEmpty() || isAnti() || isUnknown())
    {
       return create_u_bitstring(bw);
+   }
+   if(isConstant())
+   {
+      return create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw, isSigned);
    }
    
    auto min = create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw, isSigned);
@@ -2212,6 +2268,7 @@ std::deque<bit_lattice> RealRange::getBitValues(bool) const
    }
    sig_bv.insert(sig_bv.begin(), exp_bv.begin(), exp_bv.end());
    sig_bv.insert(sig_bv.begin(), sign_bv.front());
+   THROW_ASSERT(sig_bv.size() == getBitWidth(), "Floating-point bit_values must be exact");
    return sig_bv;
 }
 
@@ -2410,4 +2467,16 @@ RangeRef RealRange::toFloat32() const
    return RangeRef(new RealRange(sign, 
       exponent32,
       significand32));
+}
+
+refcount<RealRange> RealRange::fromBitValues(const std::deque<bit_lattice>& bv)
+{
+   THROW_ASSERT(bv.size() == 32 || bv.size() == 64, "Floating-point bit_values must be exact");
+   const std::deque<bit_lattice> bv_exp(bv.begin() + 1, bv.begin() + (bv.size() == 64 ? 12 : 9));
+   const std::deque<bit_lattice> bv_sigf(bv.begin() + 1 + static_cast<long>(bv_exp.size()), bv.end());
+   return refcount<RealRange>(new RealRange(
+         Range::fromBitValues({bv.front()}, 1, false), 
+         Range::fromBitValues(bv_exp, static_cast<bw_t>(bv_exp.size()), true), 
+         Range::fromBitValues(bv_sigf, static_cast<bw_t>(bv_sigf.size()), true)
+      ));
 }

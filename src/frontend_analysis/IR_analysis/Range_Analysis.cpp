@@ -757,6 +757,13 @@ namespace
       }
       else if(GetPointer<const real_type>(type) != nullptr)
       {
+         //    if(const auto* ssa = GetPointer<const ssa_name>(tn))
+         //    {
+         //       if(ssa->ra_bit_values.size() == bw)
+         //       {
+         //          return RealRange::fromBitValues(string_to_bitstring(ssa->ra_bit_values));
+         //       }
+         //    }
          if(bw == 32)
          {
             return RangeRef(new RealRange(Range(Regular, 1), Range(Regular, 8), Range(Regular, 23)));
@@ -810,6 +817,143 @@ namespace
       }
       #endif
       return RangeRef(new Range(Regular, bw, min, max));
+   }
+
+   #if 0
+   bit_lattice bit_cons_sup(const bit_lattice& a, const bit_lattice& b)
+   {
+      if(a == b)
+      {
+         return a;
+      }
+      else if(a == bit_lattice::X or b == bit_lattice::X)
+      {
+         return bit_lattice::X;
+      }
+      else if(a == bit_lattice::U)
+      {
+         return b;
+      }
+      else if(b == bit_lattice::U)
+      {
+         return a;
+      }
+      else
+      {
+         return bit_lattice::U;
+      }
+   }
+   #else
+   bit_lattice bit_cons_sup(const bit_lattice& a, const bit_lattice& b)
+   {
+      if(b == bit_lattice::X)
+      {
+         return bit_lattice::X;
+      }
+      else
+      {
+         return a;
+      }
+   }
+   #endif
+
+   std::deque<bit_lattice> cons_sup(const std::deque<bit_lattice>& _a, const std::deque<bit_lattice>& _b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool)
+   {
+      THROW_ASSERT(not _a.empty() and not _b.empty(), "");
+      THROW_ASSERT(out_type_size, "");
+      THROW_ASSERT(not out_is_bool or (out_type_size == 1), "boolean with type size != 1");
+      std::deque<bit_lattice> res;
+      if(out_is_bool)
+      {
+         res.push_back(bit_cons_sup(_a.back(), _b.back()));
+         return res;
+      }
+
+      std::deque<bit_lattice> longer = (_a.size() >= _b.size()) ? _a : _b;
+      std::deque<bit_lattice> shorter = (_a.size() >= _b.size()) ? _b : _a;
+      while(longer.size() > out_type_size)
+      {
+         longer.pop_front();
+      }
+      while(shorter.size() > out_type_size)
+      {
+         shorter.pop_front();
+      }
+      // BEWARE: zero is stored as single bit, but it has to be considered as a full string
+      //         of zeros to propagate values correctly
+      if(shorter.size() == 1 && shorter.front() == bit_lattice::ZERO)
+      {
+         auto l_bw = longer.size();
+         for(;l_bw > 1; --l_bw)
+               shorter.push_front(bit_lattice::ZERO);
+      }
+      if(!out_is_signed && longer.size() > shorter.size() && longer.front() == bit_lattice::ZERO)
+      {
+         shorter = BitLatticeManipulator::sign_extend_bitstring(shorter, out_is_signed, longer.size());
+      }
+      else
+      {
+         while(longer.size() > shorter.size())
+         {
+            if(out_is_signed)
+            {
+               shorter = BitLatticeManipulator::sign_extend_bitstring(shorter, out_is_signed, longer.size());
+            }
+            else
+            {
+               longer.pop_front();
+            }
+         }
+      }
+
+      auto a_it = longer.crbegin();
+      auto b_it = shorter.crbegin();
+      const auto a_end = longer.crend();
+      const auto b_end = shorter.crend();
+      for(; a_it != a_end and b_it != b_end; a_it++, b_it++)
+      {
+         res.push_front(bit_cons_sup(*a_it, *b_it));
+      }
+
+      if(res.empty())
+      {
+         res.push_front(bit_lattice::X);
+      }
+      BitLatticeManipulator::sign_reduce_bitstring(res, out_is_signed);
+      if(out_is_signed)
+      {
+         const bool a_sign_is_x = _a.front() == bit_lattice::X;
+         const bool b_sign_is_x = _b.front() == bit_lattice::X;
+         const size_t final_size = std::min(out_type_size, ((a_sign_is_x == b_sign_is_x) ? (std::min(_a.size(), _b.size())) : (a_sign_is_x ? _a.size() : _b.size())));
+         const auto sign_bit = res.front();
+         while(res.size() > final_size)
+         {
+            res.pop_front();
+         }
+         if(sign_bit != bit_lattice::X && res.front() == bit_lattice::X)
+         {
+            res.pop_front();
+            res.push_front(sign_bit);
+         }
+      }
+      else
+      {
+         const size_t final_size = std::min(out_type_size, std::min(_a.size(), _b.size()));
+         THROW_ASSERT(final_size, "final size of sup cannot be 0");
+         while(res.size() > final_size)
+         {
+            if(res.at(0) != bit_lattice::ZERO || (res.size() > 1 && res.at(1) != bit_lattice::X))
+            {
+               res.pop_front();
+            }
+            else
+            {
+               break;
+            }
+         }
+      }
+
+      return res;
    }
 
    #ifdef BITVALUE_PHI
@@ -918,7 +1062,8 @@ class VarNode
    }
    void setBitValues(const std::deque<bit_lattice>& bv)
    {
-      THROW_ASSERT(tree_helper::CGetType(GET_CONST_NODE(V))->get_kind() == real_type_K, "Cannot set bit_values directly for non-real types");
+      THROW_ASSERT(interval->isReal(), "Cannot set bit_values directly for non-real types");
+      THROW_ASSERT(bv.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + GET_CONST_NODE(V)->ToString() + "<" + STR(interval->getBitWidth()) + "> != " + bitstring_to_string(bv) + ")");
       bit_values = bv;
    }
    void setBitValues(const std::string& bv_str)
@@ -927,12 +1072,21 @@ class VarNode
    }
    void supBitValues(const std::deque<bit_lattice>& other)
    {
-      bit_values = BitLatticeManipulator::sup(bit_values, other, interval->getBitWidth(), isSignedType(V), interval->getBitWidth() == 1);
+      THROW_ASSERT(!interval->isReal() || other.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(other) + ")");
+      bit_values = cons_sup(bit_values, other, interval->getBitWidth(), isSignedType(V), interval->getBitWidth() == 1);
+      THROW_ASSERT(!interval->isReal() || bit_values.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(bit_values) + ")");
    }
    #ifdef BITVALUE_PHI
    void phiBitValues(const std::deque<bit_lattice>& other)
    {
-      bit_values = phi(bit_values, other, isSignedType(V), interval->getBitWidth() == 1);
+      THROW_ASSERT(!interval->isReal() || other.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(other) + ")");
+      const auto isSigned = isSignedType(V);
+      bit_values = phi(bit_values, other, isSigned, interval->getBitWidth() == 1);
+      THROW_ASSERT(!interval->isReal() || bit_values.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(bit_values) + ")");
+      if(!interval->isReal())
+      {
+         BitLatticeManipulator::sign_reduce_bitstring(bit_values, isSigned);
+      }
    }
    #endif
    #endif
@@ -974,13 +1128,18 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id) : V(_V)
    #ifdef BITVALUE_UPDATE
    if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(_V)))
    {
-      if(ssa->bit_values.empty())
+      if(!ssa->ra_bit_values.empty())
       {
-         bit_values = create_u_bitstring(interval->getBitWidth());
+         bit_values = string_to_bitstring(ssa->ra_bit_values);
+         THROW_ASSERT(interval->isReal() && bit_values.size() == interval->getBitWidth(), "BitValue for floating-point variable must be exact (" + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ")");
+      }
+      else if(!ssa->bit_values.empty())
+      {
+         bit_values = string_to_bitstring(ssa->bit_values);
       }
       else
       {
-         bit_values = string_to_bitstring(ssa->bit_values);
+         bit_values = create_u_bitstring(interval->getBitWidth());
       }
    }
    else if(GetPointer<const cst_node>(GET_CONST_NODE(_V)))
@@ -1022,12 +1181,26 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
    #ifdef BITVALUE_UPDATE
    auto updateBitValue = [&](ssa_name* ssa, const std::deque<bit_lattice>& bv)
    {
-      const auto curr_bv = string_to_bitstring(ssa->bit_values);
-      if(curr_bv != bv)
+      if(GET_CONST_NODE(ssa->type)->get_kind() == real_type_K)
       {
-         ssa->bit_values = bitstring_to_string(bv);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BitValue updated for " + ssa->ToString() + ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
-         return true;
+         THROW_ASSERT(bv.size() == tree_helper::Size(ssa->type), "Floating-point bit_values must be exact (" + ssa->ToString() + " " + bitstring_to_string(bv) + ")");
+         const auto curr_bv = string_to_bitstring(ssa->ra_bit_values);
+         if(curr_bv != bv)
+         {
+            ssa->ra_bit_values = bitstring_to_string(bv);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "RA BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->ra_bit_values + " <= " + bitstring_to_string(curr_bv));
+            return true;
+         }
+      }
+      else
+      {
+         const auto curr_bv = string_to_bitstring(ssa->bit_values);
+         if(curr_bv != bv)
+         {
+            ssa->bit_values = bitstring_to_string(bv);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
+            return true;
+         }
       }
       return false;
    };
@@ -1038,7 +1211,6 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
    {
       if(SSA->range->isSameRange(interval))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Fixed range " + SSA->range->ToString() + " for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
          return false;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
@@ -1050,7 +1222,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       if(interval->isFullSet())
       {
          #ifdef BITVALUE_UPDATE
-         return updateBitValue(SSA, bit_values);
+         return updateBitValue(SSA, bit_values) && !interval->isReal();
          #else
          return false;
          #endif
@@ -1096,8 +1268,6 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
    }
 
    auto getConstNode = [&] (const RangeConstRef& range) {
-      long long cst_val;
-      tree_nodeRef cst;
       const auto type_node = TM->GetTreeReindex(tree_helper::get_type_index(TM, SSA->index));
       if(range->isReal())
       {
@@ -1106,48 +1276,44 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
          {
             union vcFloat vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().cast_to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().cast_to<uint8_t>();
-            vc.bits.frac = rRange->getSignificand()->getLower().cast_to<uint32_t>();
+            vc.bits.sign = rRange->getSign()->getUnsignedMax().cast_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getUnsignedMax().cast_to<uint8_t>();
+            vc.bits.frac = rRange->getSignificand()->getUnsignedMax().cast_to<uint32_t>();
             #else
             vc.bits.coded = rRange->getSign()->getUnsignedMax().cast_to<uint32_t>() << 31;
             vc.bits.coded += rRange->getExponent()->getUnsignedMax().cast_to<uint32_t>() << 23;
             vc.bits.coded += rRange->getSignificand()->getUnsignedMax().cast_to<uint32_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point constant from range is " + STR(vc.flt));
-            cst_val = static_cast<int64_t>(vc.bits.coded);
-            cst = tree_man->CreateRealCst(type_node, static_cast<long double>(vc.flt), TM->new_tree_node_id());
+            return tree_man->CreateRealCst(type_node, static_cast<long double>(vc.flt), TM->new_tree_node_id());
          }
          else
          {
             union vcDouble vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().cast_to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().cast_to<uint16_t>();
-            vc.bits.frac = rRange->getSignificand()->getLower().cast_to<uint64_t>();
+            vc.bits.sign = rRange->getSign()->getUnsignedMax().cast_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getUnsignedMax().cast_to<uint16_t>();
+            vc.bits.frac = rRange->getSignificand()->getUnsignedMax().cast_to<uint64_t>();
             #else
             vc.bits.coded = rRange->getSign()->getUnsignedMax().cast_to<uint64_t>() << 63;
             vc.bits.coded += rRange->getExponent()->getUnsignedMax().cast_to<uint64_t>() << 52;
             vc.bits.coded += rRange->getSignificand()->getUnsignedMax().cast_to<uint64_t>();
             #endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Double precision constant from range is " + STR(vc.dub));
-            cst_val = static_cast<int64_t>(vc.bits.coded);
-            cst = tree_man->CreateRealCst(type_node, static_cast<long double>(vc.dub), TM->new_tree_node_id());
+            return tree_man->CreateRealCst(type_node, static_cast<long double>(vc.dub), TM->new_tree_node_id());
          }
       }
       else
       {
          const auto cst_value = isSigned ? range->getSignedMax().cast_to<int64_t>() : static_cast<int64_t>(range->getUnsignedMax().cast_to<uint64_t>());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + (isSigned ? ("Signed int " + STR(cst_value)) : ("Unsigned int " + STR(static_cast<uint64_t>(cst_value)))));
-         cst_val = cst_value;
-         cst = tree_man->CreateIntegerCst(type_node, cst_value, TM->new_tree_node_id());
+         return tree_man->CreateIntegerCst(type_node, cst_value, TM->new_tree_node_id());
       }
-      return std::make_pair(cst_val, cst);
    };
 
    if(interval->isConstant())
    {
-      const auto [cst_val, cst_node] = getConstNode(interval);
+      const auto cst_node = getConstNode(interval);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Replacing variable with " + GET_CONST_NODE(cst_node)->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       const auto useStmts = SSA->CGetUseStmts();
@@ -1177,7 +1343,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       #ifdef BITVALUE_UPDATE
-      bit_values = create_bitstring_from_constant(cst_val, interval->getBitWidth(), isSigned);
+      bit_values = interval->getBitValues(isSigned);
       #endif
    }
    else if(interval->isReal())
@@ -1185,6 +1351,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       SSA->range = RangeRef(interval->clone());
       #ifdef BITVALUE_UPDATE
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      THROW_ASSERT(bit_values.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + SSA->ToString() + ")");
       updateBitValue(SSA, bit_values);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       #endif
@@ -1198,7 +1365,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
          SSA->max.reset();
          SSA->min.reset();
          #ifdef BITVALUE_UPDATE
-         bit_values = interval->getBitValues(false);  // BitValues for Empty/Anti range is U-string
+         bit_values = interval->getBitValues(isSigned);  // BitValues for Empty/Anti range is U-string
          #endif
       }
    }
@@ -1207,7 +1374,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       SSA->max.reset();
       SSA->min.reset();
       #ifdef BITVALUE_UPDATE
-      bit_values = interval->getBitValues(false);
+      bit_values = interval->getBitValues(isSigned);
       #endif
    }
    else
@@ -1231,6 +1398,7 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
       #ifdef BITVALUE_UPDATE
       const auto range_bv = interval->getBitValues(isSigned);
       const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
+      THROW_ASSERT(std::count(bit_values.begin(), bit_values.end(), bit_lattice::X) >= std::count(sup_bv.begin(), sup_bv.end(), bit_lattice::X), "Don't care should not be generated here (" + bitstring_to_string(bit_values) + " sup " + bitstring_to_string(range_bv) +" = " + bitstring_to_string(sup_bv) + ")");
       if(bit_values != sup_bv)
       {
          bit_values = sup_bv;
@@ -1319,6 +1487,12 @@ enum ValueRangeType
 
 REF_FORWARD_DECL(ValueRange);
 CONSTREF_FORWARD_DECL(ValueRange);
+
+template <class T>
+inline T* GetVR(const ValueRange* t)
+{
+   return T::classof(t) ? static_cast<T*>(t) : nullptr;
+}
 
 class ValueRange
 {
@@ -1649,6 +1823,18 @@ using ConditionalValueRanges = std::map<tree_nodeConstRef, ConditionalValueRange
 // ========================================================================== //
 // OpNode
 // ========================================================================== //
+
+class OpNode;
+template <typename T>
+inline T* GetOp(OpNode* t)
+{
+   return T::classof(t) ? static_cast<T*>(t) : nullptr;
+}
+template <typename T>
+inline const T* GetOp(const OpNode* t)
+{
+   return T::classof(t) ? static_cast<const T*>(t) : nullptr;
+}
 
 /// This class represents a generic operation in our analysis.
 class OpNode
@@ -2009,6 +2195,7 @@ static bool enable_float_pack    = true;
 static bool enable_view_convert  = true;
 static bool enable_float_unpack  = true;
 static bool enable_ternary       = true;
+static bool enable_bit_phi       = true;
 
 #define OPERATION_OPTION(opts, X) if(opts.erase("no_"#X)) { INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: "#X" operation disabled"); enable_##X = false; }
 #define RETURN_DISABLED_OPTION(x, bw) if(!enable_##x) { return RangeRef(new Range(Regular, bw)); }
@@ -2100,7 +2287,11 @@ RangeRef PhiOpNode::eval() const
    THROW_ASSERT(sources.size() > 0, "Phi operation sources list empty");
    auto result = getRangeFor(getSink()->getValue(), Empty);
    #ifdef BITVALUE_PHI
+   #ifndef NDEBUG
+   if(enable_bit_phi && result->isReal())
+   #else
    if(result->isReal())
+   #endif
    {
       getSink()->setBitValues(sources.at(0)->getBitValues());
    }
@@ -2115,7 +2306,11 @@ RangeRef PhiOpNode::eval() const
       
       #ifdef BITVALUE_PHI
       // Propagate bit_values through phi for real variables
+      #ifndef NDEBUG
+      if(enable_bit_phi && result->isReal())
+      #else
       if(result->isReal())
+      #endif
       {
          getSink()->phiBitValues(varNode->getBitValues());
       }
@@ -2325,7 +2520,14 @@ RangeRef UnaryOpNode::eval() const
             THROW_ASSERT(bw == 64 || bw == 32, "View_convert sink bitwidth should be 64 or 32 bits (" + STR(bw) + ")");
             result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), rr->getRange()->zextOrTrunc(bw));
             #ifdef BITVALUE_UPDATE
+            #ifndef NDEBUG
+            if(enable_view_convert) {
+            #endif
+            // TODO: maybe could sup sink BitValues with phi(getSource()->getBitValues(), rr->getBitValues(false), true, bw)
             getSink()->supBitValues(getSource()->getBitValues());
+            #ifndef NDEBUG
+            }
+            #endif
             #endif
             break;
          }
@@ -2399,17 +2601,36 @@ RangeRef UnaryOpNode::eval() const
             if(resultType->get_kind() == real_type_K)
             {
                result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), RangeRef(new RealRange(oprnd)));
-               #ifdef BITVALUE_UPDATE
-               getSink()->setBitValues(getSource()->getBitValues());
-               #endif
+               //    #ifdef BITVALUE_UPDATE
+               //    #ifndef NDEBUG
+               //    if(enable_float_pack) {
+               //    #endif
+               //    auto oprnd_bv = getSource()->getBitValues();
+               //    if(oprnd_bv.size() < bw)
+               //    {
+               //       oprnd_bv = BitLatticeManipulator::sign_extend_bitstring(oprnd_bv, oprndSigned, bw);
+               //    }
+               //    getSink()->setBitValues(oprnd_bv);
+               //    // result = result->intersectWith(RealRange::fromBitValues(oprnd_bv));
+               //    #ifndef NDEBUG
+               //    }
+               //    #endif
+               //    #endif
             }
             else
             {
+               //    std::cout << "Strange view_convert here " << getSink()->ToString() << " = view_convert(" << getSource()->ToString() << ")" << std::endl;
                THROW_ASSERT(!oprnd->isReal(), "Operand here should not be real");
                result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), oprnd->sextOrTrunc(bw));
-               #ifdef BITVALUE_UPDATE
-               getSink()->supBitValues(getSource()->getBitValues());
-               #endif
+               //    #ifdef BITVALUE_UPDATE
+               //    #ifndef NDEBUG
+               //    if(enable_float_pack) {
+               //    #endif
+               //    getSink()->supBitValues(getSource()->getBitValues());
+               //    #ifndef NDEBUG
+               //    }
+               //    #endif
+               //    #endif
             }
             break;
          }
@@ -3985,10 +4206,12 @@ class Nuutila
 {
    #ifndef NDEBUG
    int debug_level;
+   #ifdef SCC_DEBUG
    bool checkWorklist() const;
    bool checkComponents() const;
    bool checkTopologicalSort(const UseMap& useMap) const;
    bool hasEdge(const CustomSet<VarNode*>& componentFrom, const CustomSet<VarNode*>& componentTo, const UseMap& useMap) const;
+   #endif
    #endif
    
    const VarNodes& variables;
@@ -4080,7 +4303,7 @@ Nuutila::Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMa
    }
    delControlDependenceEdges(useMap);
 
-   #ifndef NDEBUG
+   #ifdef SCC_DEBUG
    THROW_ASSERT(checkWorklist(), "An inconsistency in SCC worklist have been found");
    THROW_ASSERT(checkComponents(), "A component has been used more than once");
    THROW_ASSERT(checkTopologicalSort(useMap), "Topological sort is incorrect");
@@ -4118,7 +4341,7 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
       std::deque<ControlDepNode*> cds;
       for(auto sit : varOps.second)
       {
-         if(auto* cd = dynamic_cast<ControlDepNode*>(sit))
+         if(auto* cd = GetOp<ControlDepNode>(sit))
          {
             cds.push_back(cd);
          }
@@ -4204,7 +4427,7 @@ void Nuutila::visit(const tree_nodeConstRef& V, std::stack<tree_nodeConstRef>& s
    }
 }
 
-#ifndef NDEBUG
+#ifdef SCC_DEBUG
 bool Nuutila::checkWorklist() const
 {
    bool consistent = true;
@@ -5376,48 +5599,48 @@ class ConstraintGraph : public NodeContainer
                   insertConstantIntoVector(cst + 1);
                }
                else if(pred == uneq_expr_K)
-                  {
+               {
                   const auto ucst = cst.extOrTrunc(bw, false);
                   insertConstantIntoVector(ucst);
                   insertConstantIntoVector(ucst - 1);
                   insertConstantIntoVector(ucst + 1);
-                  }
-                  else if(pred == gt_expr_K || pred == le_expr_K)
-                  {
+               }
+               else if(pred == gt_expr_K || pred == le_expr_K)
+               {
                   insertConstantIntoVector(cst);
                   insertConstantIntoVector(cst + 1);
-                  }
-                  else if(pred == ge_expr_K || pred == lt_expr_K)
-                  {
+               }
+               else if(pred == ge_expr_K || pred == lt_expr_K)
+               {
                   insertConstantIntoVector(cst);
                   insertConstantIntoVector(cst - 1);
-                  }
-                  else if(pred == ungt_expr_K || pred == unle_expr_K)
-                  {
+               }
+               else if(pred == ungt_expr_K || pred == unle_expr_K)
+               {
                   const auto ucst = cst.extOrTrunc(bw, false);
                   insertConstantIntoVector(ucst);
                   insertConstantIntoVector(ucst + 1);
-                  }
-                  else if(pred == unge_expr_K || pred == unlt_expr_K)
-                  {
+               }
+               else if(pred == unge_expr_K || pred == unlt_expr_K)
+               {
                   const auto ucst = cst.extOrTrunc(bw, false);
                   insertConstantIntoVector(ucst);
                   insertConstantIntoVector(ucst - 1);
-                  }
-                  else
-                  {
-                  THROW_UNREACHABLE("unexpected condition (" + tree_node::GetString(pred) + ")");
-                  }
                }
                else
                {
+                  THROW_UNREACHABLE("unexpected condition (" + tree_node::GetString(pred) + ")");
+               }
+            }
+            else
+            {
                insertConstantIntoVector(cst);
-                  }
+            }
          };
 
          // Handle BinaryOp case
-         if(const auto* bop = dynamic_cast<BinaryOpNode*>(dfit->second))
-                  {
+         if(const auto* bop = GetOp<BinaryOpNode>(dfit->second))
+         {
             const auto* source1 = bop->getSource1();
             const auto& sourceval1 = source1->getValue();
             const auto* source2 = bop->getSource2();
@@ -5426,24 +5649,24 @@ class ConstraintGraph : public NodeContainer
             const auto pred = bop->getOpcode();
 
             if(const auto *const1 = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval1)))
-                  {
+            {
                const auto bw = source1->getBitWidth();
                const auto cst_val = tree_helper::get_integer_cst_value(const1);
                pushConstFor(cst_val, bw, pred); // TODO: maybe should swap predicate for lhs constant?
-               }
+            }
             if(const auto* const2 = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval2)))
-               {
+            {
                const auto bw = source2->getBitWidth();
                const auto cst_val = tree_helper::get_integer_cst_value(const2);
                pushConstFor(cst_val, bw, pred);
             }
          }
          // Handle PhiOp case
-         else if(const auto* pop = dynamic_cast<PhiOpNode*>(dfit->second))
+         else if(const auto* pop = GetOp<PhiOpNode>(dfit->second))
          {
             for(size_t i = 0, e = pop->getNumSources(); i < e; ++i)
             {
-               const VarNode* source = pop->getSource(i);
+               const auto* source = pop->getSource(i);
                const auto& sourceval = source->getValue();
                if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval)))
                {
@@ -5456,11 +5679,11 @@ class ConstraintGraph : public NodeContainer
       // Get constants used in intersections
       for(const auto& varOps : compusemap)
       {
-         for(auto* op : varOps.second)
+         for(const auto* op : varOps.second)
          {
-            const auto* sigma = dynamic_cast<SigmaOpNode*>(op);
+            const auto* sigma = GetOp<SigmaOpNode>(op);
             // Symbolic intervals are discarded, as they don't have fixed values yet
-            if(sigma == nullptr || SymbRange::classof(sigma->getIntersect().get()))
+            if(sigma == nullptr || SymbRange::classof(sigma->getIntersect().get()) || sigma->getIntersect()->getRange()->isReal())
             {
                continue;
             }
@@ -5524,7 +5747,7 @@ class ConstraintGraph : public NodeContainer
       for(auto* op : getOpNodes())
       {
          // If the operation is unary and its interval is symbolic
-         auto* uop = dynamic_cast<UnaryOpNode*>(op);
+         auto* uop = GetOp<UnaryOpNode>(op);
          if((uop != nullptr) && SymbRange::classof(uop->getIntersect().get()))
          {
             const auto symbi = std::static_pointer_cast<const SymbRange>(uop->getIntersect());
@@ -5562,7 +5785,7 @@ class ConstraintGraph : public NodeContainer
             {
                continue;
             }
-            auto* sigmaop = dynamic_cast<SigmaOpNode*>(op);
+            auto* sigmaop = GetOp<SigmaOpNode>(op);
             op->getSink()->setRange(op->eval());
             if((sigmaop != nullptr) && sigmaop->getIntersect()->getRange()->isUnknown())
             {
@@ -5586,7 +5809,7 @@ class ConstraintGraph : public NodeContainer
             if(dit != getDefs().end())
             {
                auto* bop = dit->second;
-               auto* defop = dynamic_cast<SigmaOpNode*>(bop);
+               auto* defop = GetOp<SigmaOpNode>(bop);
 
                if((defop != nullptr) && defop->isUnresolved())
                {
@@ -6179,8 +6402,8 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
          {
             sink->setRange(parm->range);
             #ifdef BITVALUE_UPDATE
-            sink->setBitValues(parm->bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->bit_values);
+            sink->setBitValues(parm->ra_bit_values);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->ra_bit_values);
             #else
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString());
             #endif
@@ -6251,8 +6474,8 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
          {
             sink->setRange(parm->range);
             #ifdef BITVALUE_UPDATE
-            sink->setBitValues(parm->bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->bit_values);
+            sink->setBitValues(parm->ra_bit_values);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->ra_bit_values);
             #else
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString());
             #endif
@@ -6273,7 +6496,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
    // Check if the function returns a supported value type. If not, no return
    // value matching is done
    const auto ret_type = tree_helper::GetFunctionReturnType(fd);
-   bool noReturn = ret_type == nullptr || ret_type->get_kind() == void_type_K;
+   bool noReturn = ret_type == nullptr || !isValidType(ret_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function has " + (noReturn ? "no return type" : ("return type " + ret_type->get_kind_text())));
 
    // Creates the data structure which receives the return values of the
@@ -6296,7 +6519,16 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
    }
    if(returnVars.empty() && !noReturn)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function should return, but no return statement was found");
+      #ifndef NDEBUG
+      if(isValidType(ret_type))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function should return, but no return statement was found");
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function return type not supported");
+      }
+      #endif
       noReturn = true;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Function ") + (noReturn ? "has no" : "has explicit") + " return statement" + (returnVars.size() > 1 ? "s" : ""));
@@ -6308,7 +6540,6 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
       tree_nodeConstRef ret_var = nullptr;
       if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(call)))
       {
-         THROW_ASSERT(!noReturn, "Function called from gimple_assign should have a return statement");
          const auto* ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
          args = &ce->args;
          ret_var = ga->op0;
@@ -6484,6 +6715,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, float_unpack);
    OPERATION_OPTION(ra_mode, load);
    OPERATION_OPTION(ra_mode, ternary);
+   OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
 {
       THROW_ASSERT(ra_mode.size() == 1, "Too many options left to parse");
@@ -6687,16 +6919,24 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    #endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   if(finalize())
+   #ifndef NDEBUG
+   const auto modified = finalize();
+   if(stop_iteration != std::numeric_limits<decltype(stop_iteration)>::max())
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Iteration " + STR(iteration) + "/" + STR(stop_iteration) + "completed (" + STR(stop_iteration - iteration) + " to go)");
+   }
+   if(modified)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable ranges updated");
-      return DesignFlowStep_Status::SUCCESS;
    }
    else
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable ranges reached fixed point");
-      return DesignFlowStep_Status::UNCHANGED;
    }
+   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   #else
+   return finalize() ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   #endif
 }
 
 bool RangeAnalysis::finalize()

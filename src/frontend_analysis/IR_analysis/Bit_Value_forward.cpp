@@ -1979,9 +1979,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          // Propagate bit_values from range analysis if any
          if(tree_helper::is_real(TM, right_id))
          if(const auto* real_ssa = GetPointer<ssa_name>(GET_NODE(operation->op)))
-         if(!real_ssa->bit_values.empty())
+         if(!real_ssa->ra_bit_values.empty())
          {
-            return string_to_bitstring(real_ssa->bit_values);
+            return string_to_bitstring(real_ssa->ra_bit_values);
          }
          res = create_u_bitstring(right_type_size);
          return res;
