@@ -791,7 +791,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
-                        writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
@@ -959,7 +959,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
                         writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + port_to_be_compared + ", " + output_name + "));\n");
-                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
@@ -1098,7 +1098,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
                         writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + port_to_be_compared + ", " + output_name + "));\n");
-                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
@@ -1277,7 +1277,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
-                        writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
@@ -1390,7 +1390,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                {
                   writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", $bitstoreal(registered_" + std::string(RETURN_PORT_NAME) + "), $bitstoreal(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
                   writer->write("$display(\" FP error %f \\n\", compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
-                  writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                  writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                }
                else
                   THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(return_port)));
