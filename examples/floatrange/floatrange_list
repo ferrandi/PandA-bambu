@@ -1,0 +1,56 @@
+src/f64sum.c         --top-fname=double_prec_addition --benchmark-name=addition64         --generate-tb="a=106,b=57" --evaluation
+src/f64sum_32.c      --top-fname=double_prec_addition --benchmark-name=addition64_32      --generate-tb="a=106,b=57" --evaluation --max-ulp=2097152
+src/f64sum_42.c      --top-fname=double_prec_addition --benchmark-name=addition64_42      --generate-tb="a=106,b=57" --evaluation --max-ulp=2048
+src/f64sum_wo_nan.c  --top-fname=double_prec_addition --benchmark-name=addition64_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/fsum.c         --top-fname=single_prec_addition --benchmark-name=addition         --generate-tb="a=106,b=57" --evaluation
+src/fsum_8.c       --top-fname=single_prec_addition --benchmark-name=addition_8      --generate-tb="a=106,b=57" --evaluation --max-ulp=65536
+src/fsum_16.c      --top-fname=single_prec_addition --benchmark-name=addition_16      --generate-tb="a=106,b=57" --evaluation --max-ulp=256
+src/fsum_wo_nan.c  --top-fname=single_prec_addition --benchmark-name=addition_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/f64sub.c         --top-fname=double_prec_subtraction --benchmark-name=subtraction64         --generate-tb="a=106,b=57" --evaluation
+src/f64sub_32.c      --top-fname=double_prec_subtraction --benchmark-name=subtraction64_32      --generate-tb="a=106,b=57" --evaluation --max-ulp=2097152
+src/f64sub_42.c      --top-fname=double_prec_subtraction --benchmark-name=subtraction64_42      --generate-tb="a=106,b=57" --evaluation --max-ulp=2048
+src/f64sub_wo_nan.c  --top-fname=double_prec_subtraction --benchmark-name=subtraction64_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/fsub.c         --top-fname=single_prec_subtraction --benchmark-name=subtraction         --generate-tb="a=106,b=57" --evaluation
+src/fsub_8.c       --top-fname=single_prec_subtraction --benchmark-name=subtraction_8      --generate-tb="a=106,b=57" --evaluation --max-ulp=65536
+src/fsub_16.c      --top-fname=single_prec_subtraction --benchmark-name=subtraction_16      --generate-tb="a=106,b=57" --evaluation --max-ulp=256
+src/fsub_wo_nan.c  --top-fname=single_prec_subtraction --benchmark-name=subtraction_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/f64mul.c         --top-fname=double_prec_multiplication --benchmark-name=multiplication64         --generate-tb="a=106,b=57" --evaluation
+src/f64mul_32.c      --top-fname=double_prec_multiplication --benchmark-name=multiplication64_32      --generate-tb="a=106,b=57" --evaluation --max-ulp=2097152
+src/f64mul_42.c      --top-fname=double_prec_multiplication --benchmark-name=multiplication64_42      --generate-tb="a=106,b=57" --evaluation --max-ulp=2048
+src/f64mul_wo_nan.c  --top-fname=double_prec_multiplication --benchmark-name=multiplication64_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/fmul.c         --top-fname=single_prec_multiplication --benchmark-name=multiplication         --generate-tb="a=106,b=57" --evaluation
+src/fmul_8.c       --top-fname=single_prec_multiplication --benchmark-name=multiplication_8      --generate-tb="a=106,b=57" --evaluation --max-ulp=65536
+src/fmul_16.c      --top-fname=single_prec_multiplication --benchmark-name=multiplication_16      --generate-tb="a=106,b=57" --evaluation --max-ulp=256
+src/fmul_wo_nan.c  --top-fname=single_prec_multiplication --benchmark-name=multiplication_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/f64div.c         --top-fname=double_prec_division --benchmark-name=division64SRT4         --generate-tb="a=106,b=57" --evaluation
+src/f64div_32.c      --top-fname=double_prec_division --benchmark-name=division64SRT4_32      --generate-tb="a=106,b=57" --evaluation --max-ulp=2097152
+src/f64div_42.c      --top-fname=double_prec_division --benchmark-name=division64SRT4_42      --generate-tb="a=106,b=57" --evaluation --max-ulp=2048
+src/f64div_wo_nan.c  --top-fname=double_prec_division --benchmark-name=division64SRT4_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/fdiv.c         --top-fname=single_prec_division --benchmark-name=divisionSRT4         --generate-tb="a=106,b=57" --evaluation
+src/fdiv_8.c       --top-fname=single_prec_division --benchmark-name=divisionSRT4_8      --generate-tb="a=106,b=57" --evaluation --max-ulp=65536
+src/fdiv_16.c      --top-fname=single_prec_division --benchmark-name=divisionSRT4_16      --generate-tb="a=106,b=57" --evaluation --max-ulp=256
+src/fdiv_wo_nan.c  --top-fname=single_prec_division --benchmark-name=divisionSRT4_wo_nan  --generate-tb="a=106,b=57" --evaluation
+src/f64pow.c         --top-fname=double_prec_pow --benchmark-name=pow64         --generate-tb="a=5,b=7" --evaluation
+src/f64pow_32.c      --top-fname=double_prec_pow --benchmark-name=pow64_32      --generate-tb="a=5,b=7" --evaluation --max-ulp=2097152
+src/f64pow_42.c      --top-fname=double_prec_pow --benchmark-name=pow64_42      --generate-tb="a=5,b=7" --evaluation --max-ulp=2048
+src/f64pow_wo_nan.c  --top-fname=double_prec_pow --benchmark-name=pow64_wo_nan  --generate-tb="a=5,b=7" --evaluation
+src/fpow.c         --top-fname=single_prec_pow --benchmark-name=pow         --generate-tb="a=5,b=7" --evaluation
+src/fpow_8.c       --top-fname=single_prec_pow --benchmark-name=pow_8      --generate-tb="a=5,b=7" --evaluation --max-ulp=65536
+src/fpow_16.c      --top-fname=single_prec_pow --benchmark-name=pow_16      --generate-tb="a=5,b=7" --evaluation --max-ulp=256
+src/fpow_wo_nan.c  --top-fname=single_prec_pow --benchmark-name=pow_wo_nan  --generate-tb="a=5,b=7" --evaluation
+src/f64sqrt.c         --top-fname=double_prec_sqrt --benchmark-name=sqrt64         --generate-tb="a=106" --evaluation
+src/f64sqrt_32.c      --top-fname=double_prec_sqrt --benchmark-name=sqrt64_32      --generate-tb="a=106" --evaluation --max-ulp=2097152
+src/f64sqrt_42.c      --top-fname=double_prec_sqrt --benchmark-name=sqrt64_42      --generate-tb="a=106" --evaluation --max-ulp=2048
+src/f64sqrt_wo_nan.c  --top-fname=double_prec_sqrt --benchmark-name=sqrt64_wo_nan  --generate-tb="a=106" --evaluation
+src/fsqrt.c         --top-fname=single_prec_sqrt --benchmark-name=sqrt         --generate-tb="a=106" --evaluation
+src/fsqrt_8.c       --top-fname=single_prec_sqrt --benchmark-name=sqrt_8      --generate-tb="a=106" --evaluation --max-ulp=65536
+src/fsqrt_16.c      --top-fname=single_prec_sqrt --benchmark-name=sqrt_16      --generate-tb="a=106" --evaluation --max-ulp=256
+src/fsqrt_wo_nan.c  --top-fname=single_prec_sqrt --benchmark-name=sqrt_wo_nan  --generate-tb="a=106" --evaluation
+src/f64exp.c         --top-fname=double_prec_exp --benchmark-name=exp64         --generate-tb="a=5" --evaluation
+src/f64exp_32.c      --top-fname=double_prec_exp --benchmark-name=exp64_32      --generate-tb="a=5" --evaluation --max-ulp=2097152
+src/f64exp_42.c      --top-fname=double_prec_exp --benchmark-name=exp64_42      --generate-tb="a=5" --evaluation --max-ulp=2048
+src/f64exp_wo_nan.c  --top-fname=double_prec_exp --benchmark-name=exp64_wo_nan  --generate-tb="a=5" --evaluation
+src/fexp.c         --top-fname=single_prec_exp --benchmark-name=exp         --generate-tb="a=5" --evaluation
+src/fexp_8.c       --top-fname=single_prec_exp --benchmark-name=exp_8      --generate-tb="a=5" --evaluation --max-ulp=65536
+src/fexp_16.c      --top-fname=single_prec_exp --benchmark-name=exp_16      --generate-tb="a=5" --evaluation --max-ulp=256
+src/fexp_wo_nan.c  --top-fname=single_prec_exp --benchmark-name=exp_wo_nan  --generate-tb="a=5" --evaluation

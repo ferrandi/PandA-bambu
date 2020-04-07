@@ -4338,35 +4338,39 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
 {
    for(auto& varOps : useMap)
    {
-      std::remove_if(varOps.second.begin(), varOps.second.end(), [](OpNode* op) {
-         #ifndef NDEBUG
-         if(ControlDepNode::classof(op))
+      std::deque<ControlDepNode*> cds;
+      for(auto sit : varOps.second)
+      {
+         if(auto* cd = GetOp<ControlDepNode>(sit))
          {
-            // Add pseudo edge to the string
-            const auto* cd = static_cast<const ControlDepNode*>(op);
-            const auto& V = cd->getSource()->getValue();
-            if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
-            {
-               pseudoEdgesString << " " << C->value << " -> ";
-            }
-            else
-            {
-               pseudoEdgesString << " " << '"';
-               printVarName(V, pseudoEdgesString);
-               pseudoEdgesString << '"' << " -> ";
-            }
-            const auto& VS = cd->getSink()->getValue();
-            pseudoEdgesString << '"';
-            printVarName(VS, pseudoEdgesString);
-            pseudoEdgesString << '"';
-            pseudoEdgesString << " [style=dashed]\n";
-            return true;
+            cds.push_back(cd);
          }
-         return false;
-         #else
-         return ControlDepNode::classof(op);
+      }
+
+      for(auto* cd : cds)
+      {
+         #ifndef NDEBUG
+         // Add pseudo edge to the string
+         const auto& V = cd->getSource()->getValue();
+         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+         {
+            pseudoEdgesString << " " << C->value << " -> ";
+         }
+         else
+         {
+            pseudoEdgesString << " " << '"';
+            printVarName(V, pseudoEdgesString);
+            pseudoEdgesString << '"' << " -> ";
+         }
+         const auto& VS = cd->getSink()->getValue();
+         pseudoEdgesString << '"';
+         printVarName(VS, pseudoEdgesString);
+         pseudoEdgesString << '"';
+         pseudoEdgesString << " [style=dashed]\n";
          #endif
-      });
+         // Remove pseudo edge from the map
+         varOps.second.erase(cd);
+      }
    }
 }
 
