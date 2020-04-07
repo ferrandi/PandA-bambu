@@ -1276,9 +1276,9 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
          {
             union vcFloat vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().cast_to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().cast_to<uint8_t>();
-            vc.bits.frac = rRange->getSignificand()->getLower().cast_to<uint32_t>();
+            vc.bits.sign = rRange->getSign()->getUnsignedMax().cast_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getUnsignedMax().cast_to<uint8_t>();
+            vc.bits.frac = rRange->getSignificand()->getUnsignedMax().cast_to<uint32_t>();
             #else
             vc.bits.coded = rRange->getSign()->getUnsignedMax().cast_to<uint32_t>() << 31;
             vc.bits.coded += rRange->getExponent()->getUnsignedMax().cast_to<uint32_t>() << 23;
@@ -1291,9 +1291,9 @@ bool VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tr
          {
             union vcDouble vc;
             #if __BYTE_ORDER == __BIG_ENDIAN
-            vc.bits.sign = rRange->getSign()->getLower().cast_to<bool>();
-            vc.bits.exp = rRange->getExponent()->getLower().cast_to<uint16_t>();
-            vc.bits.frac = rRange->getSignificand()->getLower().cast_to<uint64_t>();
+            vc.bits.sign = rRange->getSign()->getUnsignedMax().cast_to<bool>();
+            vc.bits.exp = rRange->getExponent()->getUnsignedMax().cast_to<uint16_t>();
+            vc.bits.frac = rRange->getSignificand()->getUnsignedMax().cast_to<uint64_t>();
             #else
             vc.bits.coded = rRange->getSign()->getUnsignedMax().cast_to<uint64_t>() << 63;
             vc.bits.coded += rRange->getExponent()->getUnsignedMax().cast_to<uint64_t>() << 52;
@@ -1487,6 +1487,12 @@ enum ValueRangeType
 
 REF_FORWARD_DECL(ValueRange);
 CONSTREF_FORWARD_DECL(ValueRange);
+
+template <class T>
+inline T* GetVR(const ValueRange* t)
+{
+   return T::classof(t) ? static_cast<T*>(t) : nullptr;
+}
 
 class ValueRange
 {
@@ -1817,6 +1823,18 @@ using ConditionalValueRanges = std::map<tree_nodeConstRef, ConditionalValueRange
 // ========================================================================== //
 // OpNode
 // ========================================================================== //
+
+class OpNode;
+template <typename T>
+inline T* GetOp(OpNode* t)
+{
+   return T::classof(t) ? static_cast<T*>(t) : nullptr;
+}
+template <typename T>
+inline const T* GetOp(const OpNode* t)
+{
+   return T::classof(t) ? static_cast<const T*>(t) : nullptr;
+}
 
 /// This class represents a generic operation in our analysis.
 class OpNode
@@ -4320,39 +4338,35 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
 {
    for(auto& varOps : useMap)
    {
-      std::deque<ControlDepNode*> cds;
-      for(auto sit : varOps.second)
-      {
-         if(auto* cd = dynamic_cast<ControlDepNode*>(sit))
-         {
-            cds.push_back(cd);
-         }
-      }
-
-      for(auto* cd : cds)
-      {
+      std::remove_if(varOps.second.begin(), varOps.second.end(), [](OpNode* op) {
          #ifndef NDEBUG
-         // Add pseudo edge to the string
-         const auto& V = cd->getSource()->getValue();
-         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+         if(ControlDepNode::classof(op))
          {
-            pseudoEdgesString << " " << C->value << " -> ";
+            // Add pseudo edge to the string
+            const auto* cd = static_cast<const ControlDepNode*>(op);
+            const auto& V = cd->getSource()->getValue();
+            if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
+            {
+               pseudoEdgesString << " " << C->value << " -> ";
+            }
+            else
+            {
+               pseudoEdgesString << " " << '"';
+               printVarName(V, pseudoEdgesString);
+               pseudoEdgesString << '"' << " -> ";
+            }
+            const auto& VS = cd->getSink()->getValue();
+            pseudoEdgesString << '"';
+            printVarName(VS, pseudoEdgesString);
+            pseudoEdgesString << '"';
+            pseudoEdgesString << " [style=dashed]\n";
+            return true;
          }
-         else
-         {
-            pseudoEdgesString << " " << '"';
-            printVarName(V, pseudoEdgesString);
-            pseudoEdgesString << '"' << " -> ";
-         }
-         const auto& VS = cd->getSink()->getValue();
-         pseudoEdgesString << '"';
-         printVarName(VS, pseudoEdgesString);
-         pseudoEdgesString << '"';
-         pseudoEdgesString << " [style=dashed]\n";
+         return false;
+         #else
+         return ControlDepNode::classof(op);
          #endif
-         // Remove pseudo edge from the map
-         varOps.second.erase(cd);
-      }
+      });
    }
 }
 
@@ -5621,7 +5635,7 @@ class ConstraintGraph : public NodeContainer
          };
 
          // Handle BinaryOp case
-         if(const auto* bop = dynamic_cast<BinaryOpNode*>(dfit->second))
+         if(const auto* bop = GetOp<BinaryOpNode>(dfit->second))
          {
             const auto* source1 = bop->getSource1();
             const auto& sourceval1 = source1->getValue();
@@ -5644,11 +5658,11 @@ class ConstraintGraph : public NodeContainer
             }
          }
          // Handle PhiOp case
-         else if(const auto* pop = dynamic_cast<PhiOpNode*>(dfit->second))
+         else if(const auto* pop = GetOp<PhiOpNode>(dfit->second))
          {
             for(size_t i = 0, e = pop->getNumSources(); i < e; ++i)
             {
-               const VarNode* source = pop->getSource(i);
+               const auto* source = pop->getSource(i);
                const auto& sourceval = source->getValue();
                if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval)))
                {
@@ -5661,11 +5675,11 @@ class ConstraintGraph : public NodeContainer
       // Get constants used in intersections
       for(const auto& varOps : compusemap)
       {
-         for(auto* op : varOps.second)
+         for(const auto* op : varOps.second)
          {
-            const auto* sigma = dynamic_cast<SigmaOpNode*>(op);
+            const auto* sigma = GetOp<SigmaOpNode>(op);
             // Symbolic intervals are discarded, as they don't have fixed values yet
-            if(sigma == nullptr || SymbRange::classof(sigma->getIntersect().get()))
+            if(sigma == nullptr || SymbRange::classof(sigma->getIntersect().get()) || sigma->getIntersect()->getRange()->isReal())
             {
                continue;
             }
@@ -5729,7 +5743,7 @@ class ConstraintGraph : public NodeContainer
       for(auto* op : getOpNodes())
       {
          // If the operation is unary and its interval is symbolic
-         auto* uop = dynamic_cast<UnaryOpNode*>(op);
+         auto* uop = GetOp<UnaryOpNode>(op);
          if((uop != nullptr) && SymbRange::classof(uop->getIntersect().get()))
          {
             const auto symbi = std::static_pointer_cast<const SymbRange>(uop->getIntersect());
@@ -5767,7 +5781,7 @@ class ConstraintGraph : public NodeContainer
             {
                continue;
             }
-            auto* sigmaop = dynamic_cast<SigmaOpNode*>(op);
+            auto* sigmaop = GetOp<SigmaOpNode>(op);
             op->getSink()->setRange(op->eval());
             if((sigmaop != nullptr) && sigmaop->getIntersect()->getRange()->isUnknown())
             {
@@ -5791,7 +5805,7 @@ class ConstraintGraph : public NodeContainer
             if(dit != getDefs().end())
             {
                auto* bop = dit->second;
-               auto* defop = dynamic_cast<SigmaOpNode*>(bop);
+               auto* defop = GetOp<SigmaOpNode>(bop);
 
                if((defop != nullptr) && defop->isUnresolved())
                {
@@ -6478,7 +6492,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
    // Check if the function returns a supported value type. If not, no return
    // value matching is done
    const auto ret_type = tree_helper::GetFunctionReturnType(fd);
-   bool noReturn = ret_type == nullptr || ret_type->get_kind() == void_type_K;
+   bool noReturn = ret_type == nullptr || !isValidType(ret_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function has " + (noReturn ? "no return type" : ("return type " + ret_type->get_kind_text())));
 
    // Creates the data structure which receives the return values of the
@@ -6501,7 +6515,16 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
    }
    if(returnVars.empty() && !noReturn)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function should return, but no return statement was found");
+      #ifndef NDEBUG
+      if(isValidType(ret_type))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function should return, but no return statement was found");
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function return type not supported");
+      }
+      #endif
       noReturn = true;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("Function ") + (noReturn ? "has no" : "has explicit") + " return statement" + (returnVars.size() > 1 ? "s" : ""));
@@ -6513,7 +6536,6 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
       tree_nodeConstRef ret_var = nullptr;
       if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(call)))
       {
-         THROW_ASSERT(!noReturn, "Function called from gimple_assign should have a return statement");
          const auto* ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1));
          args = &ce->args;
          ret_var = ga->op0;
