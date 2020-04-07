@@ -151,7 +151,7 @@ union vcDouble {
 
 bool tree_reindexCompare::operator()(const tree_nodeConstRef &lhs, const tree_nodeConstRef &rhs) const
 {
-   return GET_INDEX_CONST_NODE(lhs) < GET_INDEX_CONST_NODE(rhs);
+   return static_cast<const tree_reindex*>(lhs.get())->actual_tree_node->index < static_cast<const tree_reindex*>(rhs.get())->actual_tree_node->index;
 }
 
 namespace 
@@ -2703,6 +2703,7 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
       auto* _source = NC->addVarNode(un_op->op, function_id);
       const auto sourceType = getGIMPLE_Type(_source->getValue());
       auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
+      const auto op_kind = un_op->get_kind();
 
       #ifndef NDEBUG
       if(enable_float_unpack) {
@@ -2712,10 +2713,11 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
       {
          const auto& [f, us] = fromVC->second;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source->getValue())->ToString() + " is view_convert from " + f->ToString() + "& (" + STR(us.mask) + " >> " + STR(+us.rshift) + ")");
-         // Detect exponent trucantion after right shift for 32 bit floats
-         if(un_op->get_kind() == nop_expr_K && f->getBitWidth() == 32 && us.mask == (UINT8_MAX << 23) && us.rshift == 23U && sink->getBitWidth() == 8)
+         const auto curr_us = us & ((1ULL << sink->getBitWidth()) - 1ULL);
+         // Detect exponent trucantion after right shift for 32 bit floating-point 
+         if((op_kind == nop_expr_K || op_kind == convert_expr_K) && f->getBitWidth() == 32 && curr_us.getSelector() == UnpackSelector::packPos_Exp32)
          {
-            //    NC->addViewConvertMask(sink, f, us & UINT8_MAX);
+            //    NC->addViewConvertMask(sink, f, curr_us);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
             return new UnaryOpNode(BI, sink, nullptr, f, rshift_expr_K);
          }
@@ -2725,13 +2727,13 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
       }
       #endif
       // Store active bitmask for variable initialized from float view_convert operation
-      if(un_op->get_kind() == view_convert_expr_K && sourceType->get_kind() == real_type_K)
+      if(op_kind == view_convert_expr_K && sourceType->get_kind() == real_type_K)
       {
          NC->addViewConvertMask(sink, _source, _source->getBitWidth() == 32 ? UnpackSelector(UINT32_MAX,0U) : UnpackSelector(UINT64_MAX,0U));
       }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for " + un_op->get_kind_text() + " with range " + BI->ToString());
-      return new UnaryOpNode(BI, sink, stmt, _source, un_op->get_kind());
+      return new UnaryOpNode(BI, sink, stmt, _source, op_kind);
    };
 }
 
@@ -5774,10 +5776,11 @@ class ConstraintGraph : public NodeContainer
       */
    void propagateToNextSCC(const CustomSet<VarNode*>& component)
    {
-      for(auto var : component)
+      const auto& uses = getUses();
+      for(const auto& var : component)
       {
          const auto& V = var->getValue();
-         auto p = getUses().at(V);
+         const auto& p = uses.at(V);
          for(auto* op : p)
          {
             /// VarNodes belonging to the current SCC must not be evaluated otherwise we break the fixed point previously computed
