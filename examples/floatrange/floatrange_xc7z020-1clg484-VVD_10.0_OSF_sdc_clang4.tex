@@ -1,0 +1,124 @@
+%Generated at 2020-04-08 13:13:58.475438 with bambu Version: PandA 0.9.7-dev - Revision 5b981f2245edd205e92038ec70e47cc053443bed-range-analysis with arguments --no-iob --soft-float -lm --hls-div --registered-inputs=top --panda-parameter=profile-top=1 --speculative-sdc-scheduling --device=TO_BE_OVERWRITTEN --evaluation --clock-period=10 --device=xc7z020-1clg484-VVD --compiler=I386_CLANG4
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark Name                                            & Tot. Latency            & Num Cycles & LUTs       & Slices    & Registers & DSPs    & BRAMs    & Clock Frequency & Clock Slack & HLS Time(s) \\
+\hline
+addition64:double\_prec\_addition\_0                      & $ 7.855 \cdot 10^{-2} $ & $ 8      $ & $ 917    $ & $ 295   $ & $ 755   $ & $ 0   $ & $ 0    $ & $ 101.84      $ & $ 0.18    $ & $ 23.59   $ \\
+addition64\_32:double\_prec\_addition\_0                  & $ 6.691 \cdot 10^{-2} $ & $ 7      $ & $ 615    $ & $ 209   $ & $ 572   $ & $ 0   $ & $ 0    $ & $ 104.61      $ & $ 0.44    $ & $ 21.83   $ \\
+addition64\_42:double\_prec\_addition\_0                  & $ 6.509 \cdot 10^{-2} $ & $ 7      $ & $ 637    $ & $ 212   $ & $ 582   $ & $ 0   $ & $ 0    $ & $ 107.54      $ & $ 0.70    $ & $ 21.70   $ \\
+addition64\_wo\_nan:double\_prec\_addition\_0             & $ 7.310 \cdot 10^{-2} $ & $ 8      $ & $ 822    $ & $ 264   $ & $ 727   $ & $ 0   $ & $ 0    $ & $ 109.45      $ & $ 0.86    $ & $ 23.00   $ \\
+addition:single\_prec\_addition\_0                        & $ 5.695 \cdot 10^{-2} $ & $ 6      $ & $ 393    $ & $ 126   $ & $ 280   $ & $ 0   $ & $ 0    $ & $ 105.36      $ & $ 0.51    $ & $ 15.72   $ \\
+addition\_16:single\_prec\_addition\_0                    & $ 5.671 \cdot 10^{-2} $ & $ 6      $ & $ 357    $ & $ 116   $ & $ 266   $ & $ 0   $ & $ 0    $ & $ 105.80      $ & $ 0.55    $ & $ 16.35   $ \\
+addition\_8:single\_prec\_addition\_0                     & $ 5.768 \cdot 10^{-2} $ & $ 6      $ & $ 350    $ & $ 118   $ & $ 250   $ & $ 0   $ & $ 0    $ & $ 104.01      $ & $ 0.39    $ & $ 17.14   $ \\
+addition\_wo\_nan:single\_prec\_addition\_0               & $ 5.370 \cdot 10^{-2} $ & $ 6      $ & $ 366    $ & $ 117   $ & $ 281   $ & $ 0   $ & $ 0    $ & $ 111.73      $ & $ 1.05    $ & $ 14.99   $ \\
+division64SRT4:double\_prec\_division\_0                  & $ 3.092 \cdot 10^{-1} $ & $ 33     $ & $ 871    $ & $ 287   $ & $ 750   $ & $ 0   $ & $ 0    $ & $ 106.71      $ & $ 0.63    $ & $ 28.50   $ \\
+division64SRT4\_32:double\_prec\_division\_0              & $ 3.035 \cdot 10^{-1} $ & $ 33     $ & $ 680    $ & $ 218   $ & $ 611   $ & $ 0   $ & $ 0    $ & $ 108.73      $ & $ 0.80    $ & $ 32.30   $ \\
+division64SRT4\_42:double\_prec\_division\_0              & $ 3.101 \cdot 10^{-1} $ & $ 33     $ & $ 787    $ & $ 256   $ & $ 681   $ & $ 0   $ & $ 0    $ & $ 106.42      $ & $ 0.60    $ & $ 31.66   $ \\
+division64SRT4\_wo\_nan:double\_prec\_division\_0         & $ 3.041 \cdot 10^{-1} $ & $ 33     $ & $ 683    $ & $ 226   $ & $ 699   $ & $ 0   $ & $ 0    $ & $ 108.51      $ & $ 0.78    $ & $ 24.91   $ \\
+divisionSRT4:single\_prec\_division\_0                    & $ 1.558 \cdot 10^{-1} $ & $ 18     $ & $ 386    $ & $ 131   $ & $ 372   $ & $ 0   $ & $ 0    $ & $ 115.55      $ & $ 1.35    $ & $ 24.18   $ \\
+divisionSRT4\_16:single\_prec\_division\_0                & $ 1.550 \cdot 10^{-1} $ & $ 18     $ & $ 329    $ & $ 115   $ & $ 325   $ & $ 0   $ & $ 0    $ & $ 116.14      $ & $ 1.39    $ & $ 26.42   $ \\
+divisionSRT4\_8:single\_prec\_division\_0                 & $ 1.677 \cdot 10^{-1} $ & $ 18     $ & $ 246    $ & $ 95    $ & $ 264   $ & $ 0   $ & $ 0    $ & $ 107.32      $ & $ 0.68    $ & $ 26.50   $ \\
+divisionSRT4\_wo\_nan:single\_prec\_division\_0           & $ 1.517 \cdot 10^{-1} $ & $ 18     $ & $ 381    $ & $ 139   $ & $ 350   $ & $ 0   $ & $ 0    $ & $ 118.67      $ & $ 1.57    $ & $ 21.49   $ \\
+exp64:double\_prec\_exp\_0                                & $ 1.843 \cdot 10^{0}  $ & $ 186    $ & $ 6092   $ & $ 1933  $ & $ 4040  $ & $ 10  $ & $ 0    $ & $ 100.92      $ & $ 0.09    $ & $ 161.35  $ \\
+exp64\_32:double\_prec\_exp\_0                            & $ 1.772 \cdot 10^{0}  $ & $ 179    $ & $ 5479   $ & $ 1734  $ & $ 3805  $ & $ 8   $ & $ 0    $ & $ 101.01      $ & $ 0.10    $ & $ 155.70  $ \\
+exp64\_42:double\_prec\_exp\_0                            & $ 1.770 \cdot 10^{0}  $ & $ 179    $ & $ 5803   $ & $ 1834  $ & $ 3809  $ & $ 9   $ & $ 0    $ & $ 101.14      $ & $ 0.11    $ & $ 156.95  $ \\
+exp64\_wo\_nan:double\_prec\_exp\_0                       & $ 1.923 \cdot 10^{0}  $ & $ 186    $ & $ 6085   $ & $ 1933  $ & $ 3997  $ & $ 10  $ & $ 0    $ & $ 96.72       $ & $ -0.34   $ & $ 165.66  $ \\
+exp:single\_prec\_exp\_0                                  & $ 1.037 \cdot 10^{-1} $ & $ 12     $ & $ 572    $ & $ 179   $ & $ 256   $ & $ 5   $ & $ 0    $ & $ 115.71      $ & $ 1.36    $ & $ 13.87   $ \\
+exp\_16:single\_prec\_exp\_0                              & $ 1.037 \cdot 10^{-1} $ & $ 12     $ & $ 572    $ & $ 179   $ & $ 256   $ & $ 5   $ & $ 0    $ & $ 115.71      $ & $ 1.36    $ & $ 13.69   $ \\
+exp\_8:single\_prec\_exp\_0                               & $ 1.037 \cdot 10^{-1} $ & $ 12     $ & $ 572    $ & $ 179   $ & $ 256   $ & $ 5   $ & $ 0    $ & $ 115.71      $ & $ 1.36    $ & $ 13.43   $ \\
+exp\_wo\_nan:single\_prec\_exp\_0                         & $ 1.037 \cdot 10^{-1} $ & $ 12     $ & $ 572    $ & $ 179   $ & $ 256   $ & $ 5   $ & $ 0    $ & $ 115.71      $ & $ 1.36    $ & $ 13.40   $ \\
+multiplication64:double\_prec\_multiplication\_0          & $ 6.738 \cdot 10^{-2} $ & $ 7      $ & $ 691    $ & $ 229   $ & $ 580   $ & $ 10  $ & $ 0    $ & $ 103.89      $ & $ 0.37    $ & $ 12.46   $ \\
+multiplication64\_32:double\_prec\_multiplication\_0      & $ 6.511 \cdot 10^{-2} $ & $ 7      $ & $ 590    $ & $ 206   $ & $ 529   $ & $ 8   $ & $ 0    $ & $ 107.52      $ & $ 0.70    $ & $ 13.25   $ \\
+multiplication64\_42:double\_prec\_multiplication\_0      & $ 6.772 \cdot 10^{-2} $ & $ 7      $ & $ 628    $ & $ 237   $ & $ 614   $ & $ 9   $ & $ 0    $ & $ 103.37      $ & $ 0.33    $ & $ 12.84   $ \\
+multiplication64\_wo\_nan:double\_prec\_multiplication\_0 & $ 5.814 \cdot 10^{-2} $ & $ 6      $ & $ 647    $ & $ 219   $ & $ 554   $ & $ 10  $ & $ 0    $ & $ 103.20      $ & $ 0.31    $ & $ 11.56   $ \\
+multiplication:single\_prec\_multiplication\_0            & $ 3.404 \cdot 10^{-2} $ & $ 5      $ & $ 116    $ & $ 42    $ & $ 173   $ & $ 2   $ & $ 0    $ & $ 146.91      $ & $ 3.19    $ & $ 11.65   $ \\
+multiplication\_16:single\_prec\_multiplication\_0        & $ 2.568 \cdot 10^{-2} $ & $ 5      $ & $ 112    $ & $ 41    $ & $ 157   $ & $ 1   $ & $ 0    $ & $ 194.70      $ & $ 4.86    $ & $ 12.25   $ \\
+multiplication\_8:single\_prec\_multiplication\_0         & $ 3.646 \cdot 10^{-2} $ & $ 5      $ & $ 178    $ & $ 62    $ & $ 164   $ & $ 0   $ & $ 0    $ & $ 137.16      $ & $ 2.71    $ & $ 12.25   $ \\
+multiplication\_wo\_nan:single\_prec\_multiplication\_0   & $ 3.313 \cdot 10^{-2} $ & $ 5      $ & $ 105    $ & $ 39    $ & $ 153   $ & $ 2   $ & $ 0    $ & $ 150.92      $ & $ 3.37    $ & $ 10.57   $ \\
+pow64:double\_prec\_pow\_0                                & $ 5.424 \cdot 10^{0}  $ & $ 503    $ & $ 10745  $ & $ 3421  $ & $ 6257  $ & $ 10  $ & $ 264  $ & $ 92.73       $ & $ -0.78   $ & $ 116.37  $ \\
+pow64\_32:double\_prec\_pow\_0                            & $ 5.052 \cdot 10^{0}  $ & $ 493    $ & $ 10247  $ & $ 3273  $ & $ 5887  $ & $ 8   $ & $ 260  $ & $ 97.59       $ & $ -0.25   $ & $ 122.55  $ \\
+pow64\_42:double\_prec\_pow\_0                            & $ 5.045 \cdot 10^{0}  $ & $ 493    $ & $ 10448  $ & $ 3389  $ & $ 5976  $ & $ 9   $ & $ 260  $ & $ 97.72       $ & $ -0.23   $ & $ 120.61  $ \\
+pow64\_wo\_nan:double\_prec\_pow\_0                       & $ 5.321 \cdot 10^{0}  $ & $ 503    $ & $ 10729  $ & $ 3458  $ & $ 6257  $ & $ 10  $ & $ 264  $ & $ 94.54       $ & $ -0.58   $ & $ 119.24  $ \\
+pow:single\_prec\_pow\_0                                  & $ 2.563 \cdot 10^{-1} $ & $ 27     $ & $ 4397   $ & $ 1308  $ & $ 1177  $ & $ 9   $ & $ 0    $ & $ 105.36      $ & $ 0.51    $ & $ 100.28  $ \\
+pow\_16:single\_prec\_pow\_0                              & $ 2.406 \cdot 10^{-1} $ & $ 27     $ & $ 4375   $ & $ 1284  $ & $ 1177  $ & $ 9   $ & $ 0    $ & $ 112.21      $ & $ 1.09    $ & $ 94.10   $ \\
+pow\_8:single\_prec\_pow\_0                               & $ 2.518 \cdot 10^{-1} $ & $ 28     $ & $ 4320   $ & $ 1227  $ & $ 1195  $ & $ 9   $ & $ 0    $ & $ 111.21      $ & $ 1.01    $ & $ 78.88   $ \\
+pow\_wo\_nan:single\_prec\_pow\_0                         & $ 2.510 \cdot 10^{-1} $ & $ 27     $ & $ 4392   $ & $ 1299  $ & $ 1177  $ & $ 9   $ & $ 0    $ & $ 107.57      $ & $ 0.70    $ & $ 105.43  $ \\
+sqrt64:double\_prec\_sqrt\_0                              & $ 9.999 \cdot 10^{-1} $ & $ 108    $ & $ 1278   $ & $ 426   $ & $ 1130  $ & $ 0   $ & $ 0    $ & $ 108.01      $ & $ 0.74    $ & $ 23.22   $ \\
+sqrt64\_32:double\_prec\_sqrt\_0                          & $ 1.016 \cdot 10^{0}  $ & $ 108    $ & $ 1264   $ & $ 434   $ & $ 1119  $ & $ 0   $ & $ 0    $ & $ 106.32      $ & $ 0.59    $ & $ 26.41   $ \\
+sqrt64\_42:double\_prec\_sqrt\_0                          & $ 9.999 \cdot 10^{-1} $ & $ 108    $ & $ 1278   $ & $ 426   $ & $ 1130  $ & $ 0   $ & $ 0    $ & $ 108.01      $ & $ 0.74    $ & $ 23.30   $ \\
+sqrt64\_wo\_nan:double\_prec\_sqrt\_0                     & $ 1.013 \cdot 10^{0}  $ & $ 108    $ & $ 1266   $ & $ 420   $ & $ 1130  $ & $ 0   $ & $ 0    $ & $ 106.56      $ & $ 0.62    $ & $ 23.32   $ \\
+sqrt:single\_prec\_sqrt\_0                                & $ 5.788 \cdot 10^{-2} $ & $ 9      $ & $ 197    $ & $ 74    $ & $ 142   $ & $ 2   $ & $ 1    $ & $ 155.50      $ & $ 3.57    $ & $ 10.31   $ \\
+sqrt\_16:single\_prec\_sqrt\_0                            & $ 5.153 \cdot 10^{-2} $ & $ 9      $ & $ 291    $ & $ 95    $ & $ 168   $ & $ 2   $ & $ 0    $ & $ 174.64      $ & $ 4.27    $ & $ 10.17   $ \\
+sqrt\_8:single\_prec\_sqrt\_0                             & $ 4.551 \cdot 10^{-2} $ & $ 9      $ & $ 287    $ & $ 90    $ & $ 168   $ & $ 2   $ & $ 0    $ & $ 197.75      $ & $ 4.94    $ & $ 10.41   $ \\
+sqrt\_wo\_nan:single\_prec\_sqrt\_0                       & $ 5.788 \cdot 10^{-2} $ & $ 9      $ & $ 197    $ & $ 74    $ & $ 142   $ & $ 2   $ & $ 1    $ & $ 155.50      $ & $ 3.57    $ & $ 10.22   $ \\
+subtraction64:double\_prec\_subtraction\_0                & $ 7.511 \cdot 10^{-2} $ & $ 8      $ & $ 919    $ & $ 294   $ & $ 755   $ & $ 0   $ & $ 0    $ & $ 106.51      $ & $ 0.61    $ & $ 23.59   $ \\
+subtraction64\_32:double\_prec\_subtraction\_0            & $ 6.403 \cdot 10^{-2} $ & $ 7      $ & $ 616    $ & $ 199   $ & $ 572   $ & $ 0   $ & $ 0    $ & $ 109.33      $ & $ 0.85    $ & $ 22.11   $ \\
+subtraction64\_42:double\_prec\_subtraction\_0            & $ 6.678 \cdot 10^{-2} $ & $ 7      $ & $ 637    $ & $ 206   $ & $ 582   $ & $ 0   $ & $ 0    $ & $ 104.82      $ & $ 0.46    $ & $ 22.36   $ \\
+subtraction64\_wo\_nan:double\_prec\_subtraction\_0       & $ 7.223 \cdot 10^{-2} $ & $ 8      $ & $ 823    $ & $ 270   $ & $ 727   $ & $ 0   $ & $ 0    $ & $ 110.75      $ & $ 0.97    $ & $ 23.18   $ \\
+subtraction:single\_prec\_subtraction\_0                  & $ 5.905 \cdot 10^{-2} $ & $ 6      $ & $ 391    $ & $ 124   $ & $ 280   $ & $ 0   $ & $ 0    $ & $ 101.62      $ & $ 0.16    $ & $ 16.75   $ \\
+subtraction\_16:single\_prec\_subtraction\_0              & $ 5.784 \cdot 10^{-2} $ & $ 6      $ & $ 359    $ & $ 111   $ & $ 266   $ & $ 0   $ & $ 0    $ & $ 103.73      $ & $ 0.36    $ & $ 16.05   $ \\
+subtraction\_8:single\_prec\_subtraction\_0               & $ 5.720 \cdot 10^{-2} $ & $ 6      $ & $ 352    $ & $ 120   $ & $ 250   $ & $ 0   $ & $ 0    $ & $ 104.89      $ & $ 0.47    $ & $ 16.90   $ \\
+subtraction\_wo\_nan:single\_prec\_subtraction\_0         & $ 5.169 \cdot 10^{-2} $ & $ 6      $ & $ 367    $ & $ 117   $ & $ 281   $ & $ 0   $ & $ 0    $ & $ 116.08      $ & $ 1.38    $ & $ 15.21   $ \\
+\hline
+Average                                                   & $                     $ & $        $ & $        $ & $       $ & $       $ & $     $ & $      $ & $ 114.96      $ & $ 1.06    $ & $         $ \\
+\hline
+Overall                                                   & $ 3.706 \cdot 10^{1}  $ & $ 3706   $ & $ 107809 $ & $ 34288 $ & $ 65309 $ & $ 180 $ & $ 1050 $ & $             $ & $         $ & $ 2312.13 $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%src/f64sum.c --top-fname=double_prec_addition --benchmark-name=addition64 --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64sum_32.c --top-fname=double_prec_addition --benchmark-name=addition64_32 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2097152
+%src/f64sum_42.c --top-fname=double_prec_addition --benchmark-name=addition64_42 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2048
+%src/f64sum_wo_nan.c --top-fname=double_prec_addition --benchmark-name=addition64_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/fsum.c --top-fname=single_prec_addition --benchmark-name=addition --generate-tb=a=106\\\,b=57 --evaluation
+%src/fsum_8.c --top-fname=single_prec_addition --benchmark-name=addition_8 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=65536
+%src/fsum_16.c --top-fname=single_prec_addition --benchmark-name=addition_16 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=256
+%src/fsum_wo_nan.c --top-fname=single_prec_addition --benchmark-name=addition_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=subtraction64 --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64sub_32.c --top-fname=double_prec_subtraction --benchmark-name=subtraction64_32 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2097152
+%src/f64sub_42.c --top-fname=double_prec_subtraction --benchmark-name=subtraction64_42 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2048
+%src/f64sub_wo_nan.c --top-fname=double_prec_subtraction --benchmark-name=subtraction64_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=subtraction --generate-tb=a=106\\\,b=57 --evaluation
+%src/fsub_8.c --top-fname=single_prec_subtraction --benchmark-name=subtraction_8 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=65536
+%src/fsub_16.c --top-fname=single_prec_subtraction --benchmark-name=subtraction_16 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=256
+%src/fsub_wo_nan.c --top-fname=single_prec_subtraction --benchmark-name=subtraction_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=multiplication64 --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64mul_32.c --top-fname=double_prec_multiplication --benchmark-name=multiplication64_32 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2097152
+%src/f64mul_42.c --top-fname=double_prec_multiplication --benchmark-name=multiplication64_42 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2048
+%src/f64mul_wo_nan.c --top-fname=double_prec_multiplication --benchmark-name=multiplication64_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=multiplication --generate-tb=a=106\\\,b=57 --evaluation
+%src/fmul_8.c --top-fname=single_prec_multiplication --benchmark-name=multiplication_8 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=65536
+%src/fmul_16.c --top-fname=single_prec_multiplication --benchmark-name=multiplication_16 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=256
+%src/fmul_wo_nan.c --top-fname=single_prec_multiplication --benchmark-name=multiplication_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64div.c --top-fname=double_prec_division --benchmark-name=division64SRT4 --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64div_32.c --top-fname=double_prec_division --benchmark-name=division64SRT4_32 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2097152
+%src/f64div_42.c --top-fname=double_prec_division --benchmark-name=division64SRT4_42 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=2048
+%src/f64div_wo_nan.c --top-fname=double_prec_division --benchmark-name=division64SRT4_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/fdiv.c --top-fname=single_prec_division --benchmark-name=divisionSRT4 --generate-tb=a=106\\\,b=57 --evaluation
+%src/fdiv_8.c --top-fname=single_prec_division --benchmark-name=divisionSRT4_8 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=65536
+%src/fdiv_16.c --top-fname=single_prec_division --benchmark-name=divisionSRT4_16 --generate-tb=a=106\\\,b=57 --evaluation --max-ulp=256
+%src/fdiv_wo_nan.c --top-fname=single_prec_division --benchmark-name=divisionSRT4_wo_nan --generate-tb=a=106\\\,b=57 --evaluation
+%src/f64pow.c --top-fname=double_prec_pow --benchmark-name=pow64 --generate-tb=a=5\\\,b=7 --evaluation
+%src/f64pow_32.c --top-fname=double_prec_pow --benchmark-name=pow64_32 --generate-tb=a=5\\\,b=7 --evaluation --max-ulp=2097152
+%src/f64pow_42.c --top-fname=double_prec_pow --benchmark-name=pow64_42 --generate-tb=a=5\\\,b=7 --evaluation --max-ulp=2048
+%src/f64pow_wo_nan.c --top-fname=double_prec_pow --benchmark-name=pow64_wo_nan --generate-tb=a=5\\\,b=7 --evaluation
+%src/fpow.c --top-fname=single_prec_pow --benchmark-name=pow --generate-tb=a=5\\\,b=7 --evaluation
+%src/fpow_8.c --top-fname=single_prec_pow --benchmark-name=pow_8 --generate-tb=a=5\\\,b=7 --evaluation --max-ulp=65536
+%src/fpow_16.c --top-fname=single_prec_pow --benchmark-name=pow_16 --generate-tb=a=5\\\,b=7 --evaluation --max-ulp=256
+%src/fpow_wo_nan.c --top-fname=single_prec_pow --benchmark-name=pow_wo_nan --generate-tb=a=5\\\,b=7 --evaluation
+%src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=sqrt64 --generate-tb=a=106 --evaluation
+%src/f64sqrt_32.c --top-fname=double_prec_sqrt --benchmark-name=sqrt64_32 --generate-tb=a=106 --evaluation --max-ulp=2097152
+%src/f64sqrt_42.c --top-fname=double_prec_sqrt --benchmark-name=sqrt64_42 --generate-tb=a=106 --evaluation --max-ulp=2048
+%src/f64sqrt_wo_nan.c --top-fname=double_prec_sqrt --benchmark-name=sqrt64_wo_nan --generate-tb=a=106 --evaluation
+%src/fsqrt.c --top-fname=single_prec_sqrt --benchmark-name=sqrt --generate-tb=a=106 --evaluation
+%src/fsqrt_8.c --top-fname=single_prec_sqrt --benchmark-name=sqrt_8 --generate-tb=a=106 --evaluation --max-ulp=65536
+%src/fsqrt_16.c --top-fname=single_prec_sqrt --benchmark-name=sqrt_16 --generate-tb=a=106 --evaluation --max-ulp=256
+%src/fsqrt_wo_nan.c --top-fname=single_prec_sqrt --benchmark-name=sqrt_wo_nan --generate-tb=a=106 --evaluation
+%src/f64exp.c --top-fname=double_prec_exp --benchmark-name=exp64 --generate-tb=a=5 --evaluation
+%src/f64exp_32.c --top-fname=double_prec_exp --benchmark-name=exp64_32 --generate-tb=a=5 --evaluation --max-ulp=2097152
+%src/f64exp_42.c --top-fname=double_prec_exp --benchmark-name=exp64_42 --generate-tb=a=5 --evaluation --max-ulp=2048
+%src/f64exp_wo_nan.c --top-fname=double_prec_exp --benchmark-name=exp64_wo_nan --generate-tb=a=5 --evaluation
+%src/fexp.c --top-fname=single_prec_exp --benchmark-name=exp --generate-tb=a=5 --evaluation
+%src/fexp_8.c --top-fname=single_prec_exp --benchmark-name=exp_8 --generate-tb=a=5 --evaluation --max-ulp=65536
+%src/fexp_16.c --top-fname=single_prec_exp --benchmark-name=exp_16 --generate-tb=a=5 --evaluation --max-ulp=256
+%src/fexp_wo_nan.c --top-fname=single_prec_exp --benchmark-name=exp_wo_nan --generate-tb=a=5 --evaluation
