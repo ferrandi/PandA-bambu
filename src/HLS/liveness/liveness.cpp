@@ -64,8 +64,8 @@
 #include "loop.hpp"
 #include "loops.hpp"
 
-#include "state_transition_graph_manager.hpp"
 #include "state_transition_graph.hpp"
+#include "state_transition_graph_manager.hpp"
 
 liveness::liveness(const HLS_managerRef _HLSMgr, const ParameterConstRef _Param) : TreeM(_HLSMgr->get_tree_manager()), Param(_Param), null_vertex_string("NULL_VERTEX"), HLSMgr(_HLSMgr)
 
@@ -229,7 +229,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
       const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
       unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);
       unsigned int bb_index2 = GET_BB_INDEX(dfg, op2);
-      const CustomUnorderedMap<unsigned int, vertex> & bb_index_map = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
+      const CustomUnorderedMap<unsigned int, vertex>& bb_index_map = FB->CGetBBGraph(FunctionBehavior::FBB)->CGetBBGraphInfo()->bb_index_map;
       vertex bb_1 = bb_index_map.find(bb_index1)->second;
       vertex bb_2 = bb_index_map.find(bb_index2)->second;
 

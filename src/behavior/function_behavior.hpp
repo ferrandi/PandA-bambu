@@ -413,10 +413,10 @@ class FunctionBehavior
 
    /// true when pipelining is enabled for the function
    bool pipeline_enabled;
-   
+
    /// true when the requested pipeline does not include unbounded functions
    bool simple_pipeline;
-   
+
    /// used only for stallable pipelines
    int initiation_time;
 
@@ -851,12 +851,12 @@ class FunctionBehavior
    {
       return packed_vars;
    }
-   
+
    bool is_pipelining_enabled() const
    {
       return pipeline_enabled;
    }
-   
+
    bool build_simple_pipeline() const
    {
       if(simple_pipeline)
@@ -865,7 +865,7 @@ class FunctionBehavior
       }
       return simple_pipeline;
    }
-   
+
    int get_initiation_time() const
    {
       THROW_ASSERT(pipeline_enabled && !simple_pipeline, "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");

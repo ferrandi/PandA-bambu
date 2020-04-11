@@ -356,8 +356,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                // since v now has to wait for loop completion, every operation will be unbounded
                is_starting_operation = true;
             }
-            if(((GET_TYPE(data, op) & TYPE_EXTERNAL && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and !stg->CGetStateInfo(v)->is_dummy and
-               is_starting_operation)
+            if(((GET_TYPE(data, op) & TYPE_EXTERNAL && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and !stg->CGetStateInfo(v)->is_dummy and is_starting_operation)
             {
                unsigned int unbounded_port = out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];
                unbounded_ports.insert(unbounded_port);

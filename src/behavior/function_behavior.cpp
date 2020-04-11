@@ -66,19 +66,19 @@
 #include "loops.hpp"                            // for ProfilingInformatio...
 #include "op_graph.hpp"                         // for OpGraph, OpGraphCon...
 #include "operations_graph_constructor.hpp"     // for OpGraphRef, operati...
-#include "tree_manager.hpp"                     // for pipeline_enabled
-#include "tree_node.hpp"                        // for pipeline_enabled
 #include "tree_helper.hpp"
+#include "tree_manager.hpp" // for pipeline_enabled
+#include "tree_node.hpp"    // for pipeline_enabled
 #include "utility.hpp"
-#include <boost/graph/adjacency_list.hpp>       // for adjacency_list
-#include <boost/graph/filtered_graph.hpp>       // for filtered_graph<>::v...
-#include <boost/iterator/filter_iterator.hpp>   // for filter_iterator
-#include <boost/iterator/iterator_facade.hpp>   // for operator!=, operator++
-#include <boost/tuple/tuple.hpp>                // for tie
-#include <list>                                 // for list, _List_const_i...
-#include <ostream>                              // for operator<<, basic_o...
-#include <string>                               // for operator+, char_traits
-#include <utility>                              // for pair
+#include <boost/graph/adjacency_list.hpp>     // for adjacency_list
+#include <boost/graph/filtered_graph.hpp>     // for filtered_graph<>::v...
+#include <boost/iterator/filter_iterator.hpp> // for filter_iterator
+#include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
+#include <boost/tuple/tuple.hpp>              // for tie
+#include <list>                               // for list, _List_const_i...
+#include <ostream>                            // for operator<<, basic_o...
+#include <string>                             // for operator+, char_traits
+#include <utility>                            // for pair
 #if HAVE_HOST_PROFILING_BUILT
 #include "profiling_information.hpp" // for BBGraphConstRef
 #endif
@@ -205,7 +205,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       initiation_time = decl_node->get_initiation_time();
       if(pipeline_enabled && simple_pipeline)
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
-      else if (pipeline_enabled)
+      else if(pipeline_enabled)
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
    }
    else
@@ -224,7 +224,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       else
       {
          std::vector<std::string> funcs_values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
-         for(auto fun_pipeline: funcs_values)
+         for(auto fun_pipeline : funcs_values)
          {
             std::vector<std::string> splitted = SplitString(fun_pipeline, "=");
             if(splitted.size() == 1 && fname == splitted.at(0))

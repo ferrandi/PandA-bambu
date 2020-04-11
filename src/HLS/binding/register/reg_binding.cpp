@@ -61,8 +61,8 @@
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 
-#include "state_transition_graph_manager.hpp"
 #include "state_transition_graph.hpp"
+#include "state_transition_graph_manager.hpp"
 
 /// HLS/binding/storage_value_information
 #include "storage_value_information.hpp"
@@ -233,7 +233,7 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
       unique_table[index] = generic_objRef(new register_obj(index));
       if(HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       {
-         for(vertex v :HLS->Rliv->get_support())
+         for(vertex v : HLS->Rliv->get_support())
          {
             if(HLS->STG->GetStg()->GetStateInfo(v)->loopId != 0)
             {

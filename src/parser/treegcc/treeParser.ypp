@@ -941,12 +941,12 @@ bool pred;
                          ;
 
    pipeline_enabled : /*empty*/
-          | TOK_BISON_PIPELINE_ENABLED{NSV(function_decl, pipeline_enabled, true)}
-          ;
+                    | TOK_BISON_PIPELINE_ENABLED{NSV(function_decl, pipeline_enabled, true)}
+                    ;
 
    simple_pipeline : /*empty*/
-                      | TOK_BISON_SIMPLE_PIPELINE{NSV(function_decl, simple_pipeline, true)}
-                      ;
+                   | TOK_BISON_SIMPLE_PIPELINE{NSV(function_decl, simple_pipeline, true)}
+                   ;
 
    tok_writing_memory : /*empty*/
                  | TOK_BISON_WRITING_MEMORY{NSV(function_decl, writing_memory, true)}
