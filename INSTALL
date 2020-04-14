@@ -389,34 +389,18 @@ Debian packages
 
 The following packages have to be installed under Debian to compile PandA.
 
-Debian unstable (sid):
+Debian testing (bullseye) and unstable (sid):
 - autoconf
 - autoconf-archive
 - libtool
 - make
 - g++
-- gcc-5
-- g++-5
-- gcc-6
-- g++-6
-- gcc-7
-- g++-7
 - gcc-8
 - g++-8
-- gcc-5-plugin-dev
-- gcc-6-plugin-dev
-- gcc-7-plugin-dev
 - gcc-8-plugin-dev
-- gcc-5-multilib
-- gcc-6-multilib
-- gcc-7-multilib
 - gcc-8-multilib
 - gfortran
 - gfortran-multilib 
-- clang-4.0
-- libclang-4.0-dev
-- clang-5.0
-- libclang-5.0-dev
 - clang-6.0
 - libclang-6.0-dev
 - clang-7
@@ -446,7 +430,7 @@ Debian unstable (sid):
 - make
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-8-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib gfortran gfortran-multilib clang-4.0 libclang-4.0-dev clang-5.0 libclang-5.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
+apt install autoconf autoconf-archive libtool make g++ gcc-8-plugin-dev gcc-8-multilib gfortran gfortran-multilib clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config libsuitesparse-dev libglpk-dev
 
 Debian 9 (Stretch):
 - autoconf
