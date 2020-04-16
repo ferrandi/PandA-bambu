@@ -179,7 +179,7 @@ namespace clang
          for(auto function : Fun2Params)
          {
             std::string function_name = function.first;
-            std::string is_pipelined = "no";
+            std::string is_pipelined = "no";            
             std::string simple_pipeline = "no";
             std::string initiation_time = "1";
             if(HLS_pipelineSet.find(function_name) != HLS_pipelineSet.end())
@@ -196,7 +196,7 @@ namespace clang
                else
                {
                   DiagnosticsEngine& D = CI.getDiagnostics();
-                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "The defined pipeline isn't simple nor stallable"));
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "The defined pipeline is not simple nor stallable"));
                }
                stream << "  <function id=\"" << function_name << "\" is_pipelined=\"" << is_pipelined << "\" is_simple=\"" << simple_pipeline << "\" initiation_time=\"" << initiation_time << "\"/>\n";
             }
@@ -483,11 +483,11 @@ namespace clang
                   {
                      prev = prevLoc.find(filename)->second;
                   }
-                  for(auto& loc : HLS_stallable_pipeline_PragmaMap.find(filename)->second)
+                  for(auto& loc_pair : HLS_stallable_pipeline_PragmaMap.find(filename)->second)
                   {
-                     if((prev.isInvalid() || prev < loc.first) && (loc.first < locEnd))
+                     if((prev.isInvalid() || prev < loc_pair.first) && (loc_pair.first < locEnd))
                      {
-                        HLS_stallable_pipelineMap[funName] = HLS_stallable_pipeline_PragmaMap[filename][loc.first];
+                        HLS_stallable_pipelineMap[funName] = loc_pair.second;
                      }
                   }
                }
@@ -651,21 +651,15 @@ namespace clang
          auto loc = PragmaTok.getLocation();
          auto& SM = PP.getSourceManager();
          auto filename = SM.getPresumedLoc(loc, false).getFilename();
-         std::string par;
          int index = 0;
          while(Tok.isNot(tok::eod))
          {
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
             {
-               par = PP.getSpelling(Tok);
-               if(index >= 1)
-               {
-                  DiagnosticsEngine& D = PP.getDiagnostics();
-                  unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
-                  D.Report(PragmaTok.getLocation(), ID);
-               }
-               ++index;
+               DiagnosticsEngine& D = PP.getDiagnostics();
+               unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_pipeline malformed");
+               D.Report(PragmaTok.getLocation(), ID);
             }
          }
          HLS_pipeline_PragmaMap[filename].push_back(loc);
@@ -693,7 +687,6 @@ namespace clang
          auto loc = PragmaTok.getLocation();
          auto& SM = PP.getSourceManager();
          auto filename = SM.getPresumedLoc(loc, false).getFilename();
-         std::string par;
          std::string time;
          int index = 0;
          while(Tok.isNot(tok::eod))
@@ -701,19 +694,16 @@ namespace clang
             PP.Lex(Tok);
             if(Tok.isNot(tok::eod))
             {
+               auto tokString = PP.getSpelling(Tok);
                if(index == 0)
                {
-                  par = PP.getSpelling(Tok);
-               }
-               else if(index == 1)
-               {
+                  time = tokString;
                   if(Tok.isNot(tok::numeric_constant))
                   {
                      DiagnosticsEngine& D = PP.getDiagnostics();
-                     unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline lacks initiation time definition");
+                     unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_stallable_pipeline malformed");
                      D.Report(PragmaTok.getLocation(), ID);
                   }
-                  time = PP.getSpelling(Tok);
                }
                else
                {

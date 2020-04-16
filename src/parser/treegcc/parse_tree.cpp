@@ -125,6 +125,8 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                         THROW_ERROR("malformed pipeline infer file");
                      if(is_pipelined.compare("yes") && !simple_pipeline.compare("yes"))
                         THROW_ERROR("simple pipeline but not enabled");
+                     if(!simple_pipeline.compare("yes") && std::stoi(initiation_time) != 1)
+                        THROW_ERROR("malformed pipeline infer file");
                      for(const auto& iterArg : Enode->get_children())
                      {
                         const auto* EnodeArg = GetPointer<const xml_element>(iterArg);
@@ -132,6 +134,9 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                            THROW_ERROR("malformed pipeline infer file");
                      }
                      auto findex = TM->function_index(fname);
+                     if(!findex)
+                     // the function is not present in the tree manager
+                        continue;
                      auto my_node = GetPointer<function_decl>(TM->get_tree_node_const(findex));
                      THROW_ASSERT(my_node->get_kind() == function_decl_K, "Not a function_decl");
                      my_node->set_pipelining(!is_pipelined.compare("yes"));
