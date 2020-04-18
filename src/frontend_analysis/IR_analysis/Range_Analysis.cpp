@@ -791,28 +791,8 @@ namespace
       {
          if(!ssa->bit_values.empty())
          {
-            const auto bitValues = string_to_bitstring(ssa->bit_values);
-            THROW_ASSERT(bitValues.size() > std::numeric_limits<bw_t>::max(), "Bitwidth too wide for the implementation");
-            for(bw_t i = 0U; i < bitValues.size(); ++i)
-            {
-               switch(bitValues.at(bitValues.size() - i - 1))
-               {
-                  case bit_lattice::ZERO:
-                     min.bit_clr(i);
-                     max.bit_clr(i);
-                     break;
-                  case bit_lattice::ONE:
-                     min.bit_set(i);
-                     max.bit_set(i);
-                     break;
-                  case bit_lattice::U:
-                  case bit_lattice::X:
-                  default:
-                     break;
-               }
-            }
-            min = min.extOrTrunc(bw, sign);
-            max = max.extOrTrunc(bw, sign);
+            const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bw, sign);
+            return RangeRef(new Range(Regular, bw, min, max))->intersectWith(bvRange);
          }
       }
       #endif
@@ -1371,6 +1351,45 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+
+      #ifndef NDEBUG
+      if(AppM->ApplyNewTransformation())
+      #endif
+      if(SSA->CGetUseStmts().empty())
+      if(const auto def = SSA->CGetDefStmt())
+      {
+         if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(def)))
+         {
+            // Leave call_expr and aggr_init_expr removal to dead_code_elimination step
+            if(GET_NODE(ga->op1)->get_kind() != call_expr_K && GET_NODE(ga->op1)->get_kind() != aggr_init_expr_K)
+            {
+               const auto curr_tn = TM->get_tree_node_const(function_id);
+               const auto* fd = GetPointer<const function_decl>(curr_tn);
+               const auto* sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+               THROW_ASSERT(sl->list_of_bloc.count(ga->bb_index), "BB" + STR(ga->bb_index) + " not found in funciton " + STR(function_id));
+               auto bb = sl->list_of_bloc.at(ga->bb_index);
+               bb->RemoveStmt(def);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + ga->ToString());
+               #ifndef NDEBUG
+               AppM->RegisterTransformation("RangeAnalysis", def);
+               #endif
+            }
+         }
+         else if(const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(def)))
+         {
+            const auto curr_tn = TM->get_tree_node_const(function_id);
+            const auto* fd = GetPointer<const function_decl>(curr_tn);
+            const auto* sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+            THROW_ASSERT(sl->list_of_bloc.count(gp->bb_index), "BB" + STR(gp->bb_index) + " not found in funciton " + STR(function_id));
+            auto bb = sl->list_of_bloc.at(gp->bb_index);
+            bb->RemovePhi(def);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + gp->ToString());
+            #ifndef NDEBUG
+            AppM->RegisterTransformation("RangeAnalysis", def);
+            #endif
+         }
+      }
+
       updateState = ut_Constant;
       #ifdef BITVALUE_UPDATE
       bit_values = interval->getBitValues(isSigned);
@@ -2645,7 +2664,9 @@ RangeRef UnaryOpNode::eval() const
                   oprnd_bv = BitLatticeManipulator::sign_extend_bitstring(oprnd_bv, oprndSigned, bw);
                }
                getSink()->setBitValues(oprnd_bv);
-               result = result->intersectWith(RealRange::fromBitValues(oprnd_bv));
+               const auto bv_aux = RealRange::fromBitValues(oprnd_bv);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bv_aux = " + bv_aux ->ToString() + "<" + bitstring_to_string(oprnd_bv) + ">");
+               result = result->intersectWith(bv_aux);
                #ifndef NDEBUG
                }
                #endif
