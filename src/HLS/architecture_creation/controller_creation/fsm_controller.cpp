@@ -100,6 +100,8 @@
 #include "copyrights_strings.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
+#include "basic_block.hpp"
+
 fsm_controller::fsm_controller(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : ControllerCreatorBaseStep(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)
 {
@@ -201,16 +203,17 @@ void fsm_controller::create_state_machine(std::string& parse)
    CustomUnorderedSet<unsigned int> analyzed_loops;
    std::map<unsigned int, vertex> loop_last_state;
 
-   // group vertices per loopId
+   // group vertices under their respective loopId
    if(FB->is_pipelining_enabled())
    {
       for(const auto& v : working_list)
       {
          auto info = astg->CGetStateInfo(v);
-         if(info->loopId != 0 && FB->is_pipelining_enabled())
+         // checking only the pipeline_enabled condition is sufficient
+         // since this step is taken only for stallable pipelines
+         if(info->loopId != 0)
          {
             loop_map[info->loopId].insert(v);
-            PRINT_MSG("Identified loop number " + std::to_string(info->loopId));
          }
       }
    }
@@ -220,7 +223,7 @@ void fsm_controller::create_state_machine(std::string& parse)
    {
       vertex loop_first_state = first_state;
       bool found_first = false;
-      InEdgeIterator le, lend;
+      InEdgeIterator ie, iend;
 
 #if HAVE_ASSERTS
       bool found_last = false;
@@ -229,9 +232,9 @@ void fsm_controller::create_state_machine(std::string& parse)
 
       for(vertex v : loop_map[get<0>(loop)])
       {
-         for(boost::tie(le, lend) = boost::in_edges(v, *astg); le != lend; ++le)
+         for(boost::tie(ie, iend) = boost::in_edges(v, *astg); ie != iend; ++ie)
          {
-            if(stg->CGetStateInfo(boost::source(*le, *astg))->loopId != std::get<0>(loop))
+            if(stg->CGetStateInfo(boost::source(*ie, *astg))->loopId != std::get<0>(loop))
             {
                THROW_ASSERT(not found_first, "A loop has multiple first states");
                found_first = true;
@@ -258,10 +261,9 @@ void fsm_controller::create_state_machine(std::string& parse)
             loop_executing_ops[get<0>(loop)].push_front(op);
          }
       }
-      if(found_first)
-         loop_starting_ops[get<0>(loop)] = stg->CGetStateInfo(loop_first_state)->starting_operations;
-      else
-         THROW_ERROR("No first state was detected for a loop");
+      THROW_ASSERT(found_last, "No last state was detected for loop " + std::to_string(get<0>(loop)));
+      THROW_ASSERT(found_first, "No first state was detected for loop " + std::to_string(get<0>(loop)));
+      loop_starting_ops[get<0>(loop)] = stg->CGetStateInfo(loop_first_state)->starting_operations;
    }
 
    for(const auto& v : working_list)
@@ -319,13 +321,6 @@ void fsm_controller::create_state_machine(std::string& parse)
                }
             }
          }
-#ifndef NDEBUG
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->default output before considering unbounded:");
-         for(const auto a : present_state[v])
-            PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, STR(a));
-         PRINT_DBG_STRING(DEBUG_LEVEL_PEDANTIC, debug_level, "\n");
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-#endif
 
          CustomOrderedSet<generic_objRef> active_fu;
          const tree_managerRef TreeM = HLSMgr->get_tree_manager();

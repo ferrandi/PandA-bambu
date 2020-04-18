@@ -239,6 +239,25 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          int initiation_time = FB->get_initiation_time();
          THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
          auto bbs = loop->get_blocks();
+         for (auto bb : bbs)
+         {
+            for (auto s_pair : HLS->STG->GetAstg()->GetStateTransitionGraphInfo()->vertex_to_state_id)
+            {
+               auto ids = HLS->STG->CGetAstg()->CGetStateInfo(std::get<0>(s_pair))->BB_ids;
+               for (auto id : ids)
+               {
+                  if(id == HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->get_bb_index())
+                  {
+                     if(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != 0 && 
+                                 HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id)
+                        THROW_ERROR("Attempting to change the loopId of state " + HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name);
+                     HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId = HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id;
+                     std::cerr << "Set loopId=" << std::to_string(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId) << " for state " << HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name << std::endl;
+                  }
+               }
+            }
+         }
+         
          bool cond1 = false;
          bool cond2 = false;
          if(bbs.find(bb_1) != bbs.end())
@@ -248,7 +267,6 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
             {
                auto info = HLS->STG->GetAstg()->GetStateInfo(s1);
                THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
-               info->loopId = loop->GetId();
             }
          }
          if(bbs.find(bb_2) != bbs.end())
@@ -258,7 +276,6 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
             {
                auto info = HLS->STG->GetAstg()->GetStateInfo(s2);
                THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
-               info->loopId = loop->GetId();
             }
          }
 
@@ -268,6 +285,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
             for(auto s1 : op1_run)
             {
                std::queue<vertex> to_analyze;
+               std::set<vertex> analyzed;
                std::queue<vertex> next_frontier;
                to_analyze.push(s1);
                vertex src;
@@ -277,6 +295,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
                {
                   src = to_analyze.front();
                   to_analyze.pop();
+                  analyzed.insert(src);
                   for(boost::tie(out_edge, out_edge_end) = boost::out_edges(src, *stg); out_edge != out_edge_end; ++out_edge)
                   {
                      vertex tgt = boost::target(*out_edge, *stg);
@@ -292,7 +311,10 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
                         continue;
                      }
 
-                     next_frontier.push(tgt);
+                     if(analyzed.find(tgt) != analyzed.end())
+                     {
+                        next_frontier.push(tgt);
+                     }
                   }
                   if(to_analyze.size() == 0)
                   {
