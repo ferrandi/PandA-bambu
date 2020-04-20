@@ -2461,6 +2461,11 @@ RangeRef UnaryOpNode::eval() const
             result = rr->getSign()->zextOrTrunc(bw);
             break;
          }
+         case le_expr_K:
+         {
+            result = rr->getSign()->sextOrTrunc(bw);
+            break;
+         }
          case view_convert_expr_K:
          {
             THROW_ASSERT(bw == 64 || bw == 32, "View_convert sink bitwidth should be 64 or 32 bits (" + STR(bw) + ")");
@@ -2494,7 +2499,7 @@ RangeRef UnaryOpNode::eval() const
             break;
          }
          case addr_expr_K:case paren_expr_K:case arrow_expr_K:case bit_not_expr_K:case buffer_ref_K:case card_expr_K:case cleanup_point_expr_K:case conj_expr_K:case convert_expr_K:case exit_expr_K:case fix_ceil_expr_K:case fix_floor_expr_K:case fix_round_expr_K:case fix_trunc_expr_K:case float_expr_K:case imagpart_expr_K:case indirect_ref_K:case misaligned_indirect_ref_K:case loop_expr_K:case non_lvalue_expr_K:case realpart_expr_K:case reference_expr_K:case reinterpret_cast_expr_K:case sizeof_expr_K:case static_cast_expr_K:case throw_expr_K:case truth_not_expr_K:case unsave_expr_K:case va_arg_expr_K:case reduc_max_expr_K:case reduc_min_expr_K:case reduc_plus_expr_K:case vec_unpack_hi_expr_K:case vec_unpack_lo_expr_K:case vec_unpack_float_hi_expr_K:case vec_unpack_float_lo_expr_K:
-         case assert_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case eq_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case ge_expr_K:case gt_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case le_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ne_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+         case assert_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case eq_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case ge_expr_K:case gt_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ne_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case uneq_expr_K:case ltgt_expr_K:case unge_expr_K:case ungt_expr_K:case unle_expr_K:case unlt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
          case CASE_TYPE_NODES:
@@ -3229,11 +3234,12 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
                THROW_UNREACHABLE("");
             }
             
-            //    const auto addSignViewConvert = [&](VarNode* fpVar)
-            //    {
-            //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
-            //       return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, lt_expr_K));
-            //    };
+            const auto addSignViewConvert = [&](VarNode* fpVar)
+            {
+               const auto oprndSigned = isSignedType(bin_op->op0);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert (" + std::string(oprndSigned ? "signed" : "unsigned") + ")");
+               return static_cast<OpNode*>(new UnaryOpNode(BI, sink, nullptr, fpVar, oprndSigned ? le_expr_K : lt_expr_K));
+            };
             const auto addExponentViewConvert = [&](VarNode* fpVar)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for exponent view_convert");
@@ -3249,13 +3255,12 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             {
                switch(new_us.getSelector())
                {
-                  //    case UnpackSelector::packPos_Sign32:
-                  //       return addSignViewConvert(f);
+                  case UnpackSelector::packPos_Sign32:
+                     return addSignViewConvert(f);
                   case UnpackSelector::packPos_Exp32:
                      return addExponentViewConvert(f);
                   case UnpackSelector::packPos_Sigf32:
                      return addFractionalViewConvert(f);
-                  case UnpackSelector::packPos_Sign32:
                   case UnpackSelector::packPos_Sign64:
                   case UnpackSelector::packPos_Exp64:
                   case UnpackSelector::packPos_Sigf64:
@@ -3268,13 +3273,12 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             {
                switch(new_us.getSelector())
                {
-                  // case UnpackSelector::packPos_Sign64:
-                  //    return addSignViewConvert(f);
+                  case UnpackSelector::packPos_Sign64:
+                     return addSignViewConvert(f);
                   case UnpackSelector::packPos_Exp64:
                      return addExponentViewConvert(f);
                   case UnpackSelector::packPos_Sigf64:
                      return addFractionalViewConvert(f);
-                  case UnpackSelector::packPos_Sign64:
                   case UnpackSelector::packPos_Sign32:
                   case UnpackSelector::packPos_Exp32:
                   case UnpackSelector::packPos_Sigf32:
