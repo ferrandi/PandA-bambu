@@ -88,6 +88,11 @@ BOOST_AUTO_TEST_CASE( range_bitvalues )
 
     BOOST_REQUIRE_EQUAL(bitstring_to_string(test3.getBitValues(true)), bitstring_to_string(test3.getBitValues(false)));
     BOOST_REQUIRE_EQUAL("0011UUUUUUUUUUUUUUUUUUUUUUUUUUUU", bitstring_to_string(test3.getBitValues(true)));
+
+    const auto bv1 = Range::fromBitValues(string_to_bitstring("10000000010"), 11, false);
+    BOOST_REQUIRE(bv1->isConstant());
+    BOOST_REQUIRE_EQUAL(bv1->getBitWidth(), 11);
+    BOOST_REQUIRE_EQUAL(bv1->getUnsignedMax(), 0b10000000010);
 }
 
 BOOST_AUTO_TEST_CASE( range_addition )

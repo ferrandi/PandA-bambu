@@ -289,9 +289,11 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
    auto bitstring_to_int = [&](const std::deque<bit_lattice>& bv_in)
    {
       long long out = isSigned && bv_in.front() == bit_lattice::ONE ? std::numeric_limits<long long>::min() : 0LL;
-      for(size_t i = 0; i < bv_in.size(); ++i)
+      auto bv_it = bv_in.crbegin();
+      const auto bv_end = bv_in.crend();
+      for(size_t i = 0; bv_it != bv_end; ++i, ++bv_it)
       {
-         if(bv_in.at(i) == bit_lattice::ONE)
+         if(*bv_it == bit_lattice::ONE)
          {
             out |= 1LL << i;
          }
