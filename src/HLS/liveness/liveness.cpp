@@ -252,7 +252,6 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
                                  HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id)
                         THROW_ERROR("Attempting to change the loopId of state " + HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name);
                      HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId = HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id;
-                     std::cerr << "Set loopId=" << std::to_string(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId) << " for state " << HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name << std::endl;
                   }
                }
             }

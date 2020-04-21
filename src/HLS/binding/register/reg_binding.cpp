@@ -268,9 +268,18 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs() + stall_reg_table.size()));
+   bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled() && !HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline();
 
-   compute_is_without_enable();
+   if(stallable_pipeline)
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs() + stall_reg_table.size()) + ", " + std::to_string(stall_reg_table.size()) + " introduced for supporting pipelined loops");
+   else
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs()));
+
+   if(!stallable_pipeline)
+   {
+      // all registers need an enable in stallable pipelines
+      compute_is_without_enable();
+   }
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(unsigned int i = 0; i < get_used_regs(); i++)
@@ -291,7 +300,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
          SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
-      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline() && stall_reg_table.find(i) != stall_reg_table.end())
+      if(stallable_pipeline && stall_reg_table.find(i) != stall_reg_table.end())
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " also needs a stall register, allocating it...");
          name = "stall_" + name;
