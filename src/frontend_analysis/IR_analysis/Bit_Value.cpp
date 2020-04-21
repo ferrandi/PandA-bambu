@@ -873,7 +873,7 @@ unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae) const
    if(!vd)
       return 0;
    auto align = vd->algn;
-   align = align < 8 ? 1 : (align / 8);
+   align = align < 64 ? 8 : (align / 8);
    auto index = 0u;
    bool found = false;
    for(; index < AppM->get_address_bitsize(); ++index)
