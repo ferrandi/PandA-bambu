@@ -39,6 +39,8 @@
 // include class header
 #include "Bit_Value.hpp"
 
+#include "Parameter.hpp"
+
 // include from tree/
 #include "application_manager.hpp"
 #include "tree_basic_block.hpp"
@@ -2221,7 +2223,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       auto ae0 = [&] {
          const auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
          auto address_size = AppM->get_address_bitsize();
-         auto lt0 = lsb_to_zero(ae);
+         auto is_pretty_print_used = parameters->isOption(OPT_pretty_print);
+         auto lt0 = lsb_to_zero(ae, is_pretty_print_used);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "address_size: " + STR(address_size) + " lt0: " + STR(lt0));
          if(lt0 && address_size > lt0)
          {
