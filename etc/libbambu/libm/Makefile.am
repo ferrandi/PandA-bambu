@@ -6,7 +6,9 @@ CC=$(top_builddir)/src/tree-panda-gcc
 CFLAGS=
 AM_CFLAGS=
 pkglib_LIBRARIES = 
-common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_scalbn.c s_common.c s_floor.c s_lfloor.c s_atan.c s_copysign.c s_expm1.c s_significand.c s_frexp.c s_nextafter.c s_log1p.c s_tan.c s_cos.c s_logb.c s_cbrt.c s_ldexp.c s_isnan.c s_isinf.c s_rint.c s_lrint.c s_llrint.c s_finite.c s_erf.c s_asinh.c s_ceil.c s_lceil.c s_nearbyint.c \
+common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_scalbn.c s_common.c s_floor.c s_lfloor.c s_atan.c s_copysign.c s_expm1.c s_significand.c s_frexp.c s_nextafter.c \
+ s_log1p.c s_tan.c s_cos.c s_logb.c s_cbrt.c s_ldexp.c s_isnan.c s_isinf.c s_rint.c s_lrint.c s_llrint.c s_finite.c s_erf.c s_asinh.c s_ceil.c s_lceil.c s_nearbyint.c \
+ s_fmin.c s_fmax.c \
  ew_acos.c ew_acosh.c ew_log10.c ew_asin.c ew_sinh.c ew_atanh.c ew_atan2.c ew_cosh.c ew_fmod.c ew_gamma.c ew_hypot.c ew_j0.c ew_remainder.c \
  w_scalb.c w_sincos.c \
  s_round.c \
