@@ -405,6 +405,231 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         break;
                      }
                   }
+                  auto bit_expr_BVO = [&] {
+                     auto* me = GetPointer<binary_expr>(GET_NODE(ga->op1));
+                     tree_nodeRef op0 = GET_NODE(me->op0);
+                     tree_nodeRef op1 = GET_NODE(me->op1);
+                     auto expr_kind = GET_NODE(ga->op1)->get_kind();
+
+                     std::string s0, s1;
+                     if(GetPointer<ssa_name>(op0))
+                        s0 = GetPointer<ssa_name>(op0)->bit_values;
+                     if(GetPointer<ssa_name>(op1))
+                        s1 = GetPointer<ssa_name>(op1)->bit_values;
+                     unsigned int precision;
+                     if(s0.size() && s1.size())
+                        precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
+                     else
+                        precision = static_cast<unsigned int>(std::max(s0.size(), s1.size()));
+
+                     if(precision)
+                     {
+                        unsigned int trailing_zero = 0;
+                        if(GetPointer<integer_cst>(op0))
+                        {
+                           auto* ic = GetPointer<integer_cst>(op0);
+                           auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                           s0 = convert_to_binary(ull_value, precision);
+                        }
+                        if(GetPointer<integer_cst>(op1))
+                        {
+                           auto* ic = GetPointer<integer_cst>(op1);
+                           auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                           s1 = convert_to_binary(ull_value, precision);
+                        }
+                        precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
+                        if(precision == 0)
+                           precision = 1;
+                        for(unsigned int index = 0; index < (precision - 1); ++index)
+                        {
+                           if(((s0[precision - index - 1] == '0' && expr_kind == bit_and_expr_K) || (s1[precision - index - 1] == '0' && expr_kind == bit_and_expr_K)) ||
+                              s0[precision - index - 1] == 'X' || s1[precision - index - 1] == 'X'
+                              )
+                              ++trailing_zero;
+                           else
+                              break;
+                        }
+                        if(trailing_zero)
+                        {
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Bit Value Opt: " + std::string(GET_NODE(ga->op1)->get_kind_text()) + " optimized, nbits = " + STR(trailing_zero));
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
+                           modified = true;
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                           unsigned int type_index0 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
+                           tree_nodeRef op0_op_type = TM->GetTreeReindex(type_index0);
+                           unsigned int type_index1 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op1));
+                           tree_nodeRef op1_op_type = TM->GetTreeReindex(type_index1);
+
+                           if(GetPointer<ssa_name>(op0))
+                           {
+                              tree_nodeRef op0_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero), type_index0);
+                              tree_nodeRef op0_expr = IRman->create_binary_operation(op0_op_type, me->op0, op0_const_node, srcp_default, rshift_expr_K);
+                              tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, tree_nodeRef(), tree_nodeRef(), op0_expr, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
+                              B->PushBefore(op0_ga, stmt);
+                              tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
+                              TM->ReplaceTreeNode(stmt, me->op0, op0_ga_var);
+                              /// set the bit_values to the ssa var
+                              auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
+                              op0_ssa->bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, GetPointer<ssa_name>(op0)->bit_values.size() - trailing_zero);
+                              constrainSSA(op0_ssa, TM);
+                           }
+                           else
+                           {
+                              auto* int_const = GetPointer<integer_cst>(op0);
+                              if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
+                                 TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index0));
+                              else
+                                 TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index0));
+                           }
+                           if(GetPointer<ssa_name>(op1))
+                           {
+                              tree_nodeRef op1_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero), type_index1);
+                              tree_nodeRef op1_expr = IRman->create_binary_operation(op1_op_type, me->op1, op1_const_node, srcp_default, rshift_expr_K);
+                              tree_nodeRef op1_ga = IRman->CreateGimpleAssign(op1_op_type, tree_nodeRef(), tree_nodeRef(), op1_expr, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
+                              B->PushBefore(op1_ga, stmt);
+                              tree_nodeRef op1_ga_var = GetPointer<gimple_assign>(GET_NODE(op1_ga))->op0;
+                              TM->ReplaceTreeNode(stmt, me->op1, op1_ga_var);
+                              /// set the bit_values to the ssa var
+                              auto* op1_ssa = GetPointer<ssa_name>(GET_NODE(op1_ga_var));
+                              op1_ssa->bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, GetPointer<ssa_name>(op1)->bit_values.size() - trailing_zero);
+                              constrainSSA(op1_ssa, TM);
+                           }
+                           else
+                           {
+                              auto* int_const = GetPointer<integer_cst>(op1);
+                              if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op1)))
+                                 TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index1));
+                              else
+                                 TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index1));
+                           }
+
+                           tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
+                           auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_vd));
+                           /// set the bit_values to the ssa var
+                           sn->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - trailing_zero);
+                           constrainSSA(sn, TM);
+                           tree_nodeRef op_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero), type_index);
+                           tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, ssa_vd, op_const_node, srcp_default, lshift_expr_K);
+                           tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, ssa->min, ssa->max, op_expr, B_id, srcp_default);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(curr_ga));
+                           TM->ReplaceTreeNode(curr_ga, GetPointer<gimple_assign>(GET_NODE(curr_ga))->op0, ga->op0);
+                           TM->ReplaceTreeNode(stmt, ga->op0, ssa_vd);
+                           B->PushAfter(curr_ga, stmt);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "pushed");
+                        }
+                     }
+
+                  };
+                  auto rel_expr_BVO = [&] {
+                     auto* me = GetPointer<binary_expr>(GET_NODE(ga->op1));
+                     tree_nodeRef op0 = GET_NODE(me->op0);
+                     tree_nodeRef op1 = GET_NODE(me->op1);
+
+                     std::string s0, s1;
+                     if(GetPointer<ssa_name>(op0))
+                        s0 = GetPointer<ssa_name>(op0)->bit_values;
+                     if(GetPointer<ssa_name>(op1))
+                        s1 = GetPointer<ssa_name>(op1)->bit_values;
+                     unsigned int precision;
+                     if(s0.size() && s1.size())
+                        precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
+                     else
+                        precision = static_cast<unsigned int>(std::max(s0.size(), s1.size()));
+
+                     if(precision)
+                     {
+                        unsigned int trailing_zero = 0;
+                        if(GetPointer<integer_cst>(op0))
+                        {
+                           auto* ic = GetPointer<integer_cst>(op0);
+                           auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                           s0 = convert_to_binary(ull_value, precision);
+                        }
+                        if(GetPointer<integer_cst>(op1))
+                        {
+                           auto* ic = GetPointer<integer_cst>(op1);
+                           auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
+                           s1 = convert_to_binary(ull_value, precision);
+                        }
+                        precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
+                        if(precision == 0)
+                           precision = 1;
+                        for(unsigned int index = 0; index < (precision - 1); ++index)
+                        {
+                           if((s0[precision - index - 1] == s1[precision - index - 1] && (s1[precision - index - 1] == '0' || s1[precision - index - 1] == '1')) ||
+                              s0[precision - index - 1] == 'X' || s1[precision - index - 1] == 'X')
+                              ++trailing_zero;
+                           else
+                              break;
+                        }
+                        if(trailing_zero)
+                        {
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Bit Value Opt: " + std::string(GET_NODE(ga->op1)->get_kind_text()) + " optimized, nbits = " + STR(trailing_zero));
+                           INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
+                           modified = true;
+#ifndef NDEBUG
+                           AppM->RegisterTransformation(GetName(), stmt);
+#endif
+                           const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
+                           unsigned int type_index0 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
+                           tree_nodeRef op0_op_type = TM->GetTreeReindex(type_index0);
+                           unsigned int type_index1 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op1));
+                           tree_nodeRef op1_op_type = TM->GetTreeReindex(type_index1);
+
+                           if(GetPointer<ssa_name>(op0))
+                           {
+                              tree_nodeRef op0_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero), type_index0);
+                              tree_nodeRef op0_expr = IRman->create_binary_operation(op0_op_type, me->op0, op0_const_node, srcp_default, rshift_expr_K);
+                              tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, tree_nodeRef(), tree_nodeRef(), op0_expr, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
+                              B->PushBefore(op0_ga, stmt);
+                              tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
+                              TM->ReplaceTreeNode(stmt, me->op0, op0_ga_var);
+                              /// set the bit_values to the ssa var
+                              auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
+                              op0_ssa->bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, GetPointer<ssa_name>(op0)->bit_values.size() - trailing_zero);
+                              constrainSSA(op0_ssa, TM);
+                           }
+                           else
+                           {
+                              auto* int_const = GetPointer<integer_cst>(op0);
+                              if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
+                                 TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index0));
+                              else
+                                 TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index0));
+                           }
+                           if(GetPointer<ssa_name>(op1))
+                           {
+                              tree_nodeRef op1_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_zero), type_index1);
+                              tree_nodeRef op1_expr = IRman->create_binary_operation(op1_op_type, me->op1, op1_const_node, srcp_default, rshift_expr_K);
+                              tree_nodeRef op1_ga = IRman->CreateGimpleAssign(op1_op_type, tree_nodeRef(), tree_nodeRef(), op1_expr, B_id, srcp_default);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
+                              B->PushBefore(op1_ga, stmt);
+                              tree_nodeRef op1_ga_var = GetPointer<gimple_assign>(GET_NODE(op1_ga))->op0;
+                              TM->ReplaceTreeNode(stmt, me->op1, op1_ga_var);
+                              /// set the bit_values to the ssa var
+                              auto* op1_ssa = GetPointer<ssa_name>(GET_NODE(op1_ga_var));
+                              op1_ssa->bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, GetPointer<ssa_name>(op1)->bit_values.size() - trailing_zero);
+                              constrainSSA(op1_ssa, TM);
+                           }
+                           else
+                           {
+                              auto* int_const = GetPointer<integer_cst>(op1);
+                              if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op1)))
+                                 TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index1));
+                              else
+                                 TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index1));
+                           }
+
+                        }
+                     }
+                  };
+
                   if(is_constant)
                   {
                      auto c_BVO = [&] {
@@ -1211,105 +1436,18 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         }
                         else
                         {
-                           std::string s0, s1;
-                           if(GetPointer<ssa_name>(op0))
-                              s0 = GetPointer<ssa_name>(op0)->bit_values;
-                           if(GetPointer<ssa_name>(op1))
-                              s1 = GetPointer<ssa_name>(op1)->bit_values;
-                           unsigned int precision;
-                           if(s0.size() && s1.size())
-                              precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
-                           else
-                              precision = static_cast<unsigned int>(std::max(s0.size(), s1.size()));
-
-                           if(precision)
-                           {
-                              unsigned int trailing_eq = 0;
-                              if(GetPointer<integer_cst>(op0))
-                              {
-                                 auto* ic = GetPointer<integer_cst>(op0);
-                                 auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                                 s0 = convert_to_binary(ull_value, precision);
-                              }
-                              if(GetPointer<integer_cst>(op1))
-                              {
-                                 auto* ic = GetPointer<integer_cst>(op1);
-                                 auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                                 s1 = convert_to_binary(ull_value, precision);
-                              }
-                              precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
-                              if(precision == 0)
-                                 precision = 1;
-                              for(unsigned int index = 0; index < (precision - 1); ++index)
-                              {
-                                 if(s0[precision - index - 1] == s1[precision - index - 1] && (s0[precision - index - 1] == '0' || s0[precision - index - 1] == '1'))
-                                    ++trailing_eq;
-                                 else
-                                    break;
-                              }
-                              if(trailing_eq)
-                              {
-                                 INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Bit Value Opt: " + (GET_NODE(ga->op1)->get_kind() == eq_expr_K ? std::string("eq_expr") : std::string("ne_expr")) + " optimized, nbits = " + STR(trailing_eq));
-                                 INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
-                                 modified = true;
-#ifndef NDEBUG
-                                 AppM->RegisterTransformation(GetName(), stmt);
-#endif
-                                 const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
-                                 unsigned int type_index0 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
-                                 tree_nodeRef op0_op_type = TM->GetTreeReindex(type_index0);
-                                 unsigned int type_index1 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op1));
-                                 tree_nodeRef op1_op_type = TM->GetTreeReindex(type_index1);
-
-                                 if(GetPointer<ssa_name>(op0))
-                                 {
-                                    tree_nodeRef op0_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index0);
-                                    tree_nodeRef op0_expr = IRman->create_binary_operation(op0_op_type, me->op0, op0_const_node, srcp_default, rshift_expr_K);
-                                    tree_nodeRef op0_ga = IRman->CreateGimpleAssign(op0_op_type, tree_nodeRef(), tree_nodeRef(), op0_expr, B_id, srcp_default);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op0_ga));
-                                    B->PushBefore(op0_ga, stmt);
-                                    tree_nodeRef op0_ga_var = GetPointer<gimple_assign>(GET_NODE(op0_ga))->op0;
-                                    TM->ReplaceTreeNode(stmt, me->op0, op0_ga_var);
-                                    /// set the bit_values to the ssa var
-                                    auto* op0_ssa = GetPointer<ssa_name>(GET_NODE(op0_ga_var));
-                                    op0_ssa->bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, GetPointer<ssa_name>(op0)->bit_values.size() - trailing_eq);
-                                    constrainSSA(op0_ssa, TM);
-                                 }
-                                 else
-                                 {
-                                    auto* int_const = GetPointer<integer_cst>(op0);
-                                    if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
-                                       TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_eq), type_index0));
-                                    else
-                                       TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_eq), type_index0));
-                                 }
-                                 if(GetPointer<ssa_name>(op1))
-                                 {
-                                    tree_nodeRef op1_const_node = TM->CreateUniqueIntegerCst(static_cast<long long int>(trailing_eq), type_index1);
-                                    tree_nodeRef op1_expr = IRman->create_binary_operation(op1_op_type, me->op1, op1_const_node, srcp_default, rshift_expr_K);
-                                    tree_nodeRef op1_ga = IRman->CreateGimpleAssign(op1_op_type, tree_nodeRef(), tree_nodeRef(), op1_expr, B_id, srcp_default);
-                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created " + STR(op1_ga));
-                                    B->PushBefore(op1_ga, stmt);
-                                    tree_nodeRef op1_ga_var = GetPointer<gimple_assign>(GET_NODE(op1_ga))->op0;
-                                    TM->ReplaceTreeNode(stmt, me->op1, op1_ga_var);
-                                    /// set the bit_values to the ssa var
-                                    auto* op1_ssa = GetPointer<ssa_name>(GET_NODE(op1_ga_var));
-                                    op1_ssa->bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, GetPointer<ssa_name>(op1)->bit_values.size() - trailing_eq);
-                                    constrainSSA(op1_ssa, TM);
-                                 }
-                                 else
-                                 {
-                                    auto* int_const = GetPointer<integer_cst>(op1);
-                                    if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op1)))
-                                       TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_eq), type_index1));
-                                    else
-                                       TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_eq), type_index1));
-                                 }
-                              }
-                           }
+                           rel_expr_BVO();
                         }
                      };
                      eq_ne_expr_BVO();
+                  }
+                  else if(GET_NODE(ga->op1)->get_kind() == lt_expr_K || GET_NODE(ga->op1)->get_kind() == gt_expr_K || GET_NODE(ga->op1)->get_kind() == le_expr_K || GET_NODE(ga->op1)->get_kind() == ge_expr_K)
+                  {
+                     rel_expr_BVO();
+                  }
+                  else if(GET_NODE(ga->op1)->get_kind() == bit_and_expr_K || GET_NODE(ga->op1)->get_kind() == bit_xor_expr_K)
+                  {
+                     bit_expr_BVO();
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == cond_expr_K)
                   {
@@ -1759,7 +1897,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               AppM->RegisterTransformation(GetName(), stmt);
 #endif
                            }
+                           else
+                              bit_expr_BVO();
                         }
+                        else
+                           bit_expr_BVO();
                      };
                      bit_ior_expr_BVO();
                   }
