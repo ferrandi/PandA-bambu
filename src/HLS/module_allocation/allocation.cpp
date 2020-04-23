@@ -1569,7 +1569,7 @@ DesignFlowStep_Status allocation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Starting allocation of operations in queued vertices");
 
    for(const auto& tv : tech_vec)
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Resource constraint on " + tv.first + ": " + STR(tv.second));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_VERY_PEDANTIC, output_level, "---Resource constraint on " + tv.first + ": " + STR(tv.second));
 
    std::string bambu_provided_resource;
    for(const auto& lib_name : TM->get_library_list())

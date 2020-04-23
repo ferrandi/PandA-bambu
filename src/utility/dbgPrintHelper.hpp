@@ -66,6 +66,8 @@
 #define OUTPUT_LEVEL_PEDANTIC 3
 /// verbose debugging print is performed.
 #define OUTPUT_LEVEL_VERY_PEDANTIC 4
+/// verbose debugging print is performed.
+#define OUTPUT_LEVEL_VERY_VERY_PEDANTIC 5
 //@}
 
 /**
