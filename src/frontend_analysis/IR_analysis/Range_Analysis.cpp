@@ -6161,7 +6161,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    #ifndef NDEBUG
    , graph_debug(DEBUG_LEVEL_NONE), iteration(0), stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max()), debug_mode(RA_DEBUG_NONE)
    #endif
-   , solverType(st_Cousot), requireESSA(false) // ESSA disabled because of renaming issues in some cases
+   , solverType(st_Cousot), requireESSA(true)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");

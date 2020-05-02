@@ -47,6 +47,7 @@
 #include "function_frontend_flow_step.hpp"
 #include "basic_block.hpp"
 #include "custom_map.hpp"
+#include "tree_node.hpp"
 
 REF_FORWARD_DECL(Operand);
 REF_FORWARD_DECL(tree_node);
@@ -66,7 +67,7 @@ class eSSA : public FunctionFrontendFlowStep
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, 
-      const CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly);
+      CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl);
 
  public:
    /**

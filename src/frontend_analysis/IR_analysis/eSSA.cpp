@@ -66,6 +66,7 @@
 #include "tree_manager.hpp"
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
+#include "token_interface.hpp"
 
 /// wrapper/treegcc include
 #include "gcc_wrapper.hpp"
@@ -123,6 +124,11 @@ class OrderedBasicBlock
  public:
    OrderedBasicBlock(const blocRef BasicB) : LastInstFound(BasicB->CGetStmtList().end()), NextInstPos(0), BBInst(BasicB->CGetStmtList()), BB(BasicB)
    {
+      unsigned int phiPos = 0U;
+      for(const auto& gp : BasicB->CGetPhiList())
+      {
+         NumberedInsts.insert({GetPointer<const gimple_node>(GET_CONST_NODE(gp)), phiPos++});
+      }
    }
 
    /// Find out whether \p A dominates \p B, meaning whether \p A
@@ -151,20 +157,21 @@ class OrderedBasicBlock
       // have numbered NB as well if it didn't. The same is true for NB. If it
       // exists, but NA does not, NA must come after it. If neither exist, we need
       // to number the block and cache the results instComesBefore.
-      auto NAI = NumberedInsts.find(A);
-      auto NBI = NumberedInsts.find(B);
+      const auto NAI = NumberedInsts.find(A);
+      const auto NBI = NumberedInsts.find(B);
       if (NAI != NumberedInsts.end() && NBI != NumberedInsts.end())
       {
          return NAI->second < NBI->second;
       }
       if (NAI != NumberedInsts.end())
       {
-         return true;
+         return B->get_kind() != gimple_phi_K;  // Not found phi nodes have been just added from this step in front of all other phis
       }
       if (NBI != NumberedInsts.end())
       {
          return false;
       }
+      THROW_ASSERT(A->get_kind() != gimple_phi_K, "Non dato, not given, nicht gegeben, pas donné, no dado, non detur");
 
       return instComesBefore(A, B);
    }
@@ -190,6 +197,13 @@ class OrderedInstructions
 
       const auto BBAi_v = BBmap.find(BBIA);
       const auto BBBi_v = BBmap.find(BBIB);
+      
+      if(BBAi_v->second == BBBi_v->second)
+      {
+         // Intermediate BB shadowing incoming BB
+         const auto& b_pred = DT->CGetBBNodeInfo(BBBi_v->second)->block->list_of_pred;
+         return std::find(b_pred.begin(), b_pred.end(), BBIA) != b_pred.end();
+      }
       THROW_ASSERT(BBAi_v != BBmap.end(), "Unknown BB index (" + STR(BBIA) + ")");
       THROW_ASSERT(BBBi_v != BBmap.end(), "Unknown BB index (" + STR(BBIB) + ")");
 
@@ -223,7 +237,6 @@ class OrderedInstructions
 
       const auto BBIA = InstA->bb_index;
       const auto BBIB = InstB->bb_index;
-      const auto BBmap = DT->CGetBBGraphInfo()->bb_index_map;
 
       // Use ordered basic block to do dominance check in case the 2 instructions
       // are in the same basic block.
@@ -232,10 +245,13 @@ class OrderedInstructions
          auto OBB = OBBMap.find(BBIA);
          if(OBB == OBBMap.end())
          {
+            const auto BBmap = DT->CGetBBGraphInfo()->bb_index_map;
             const auto BBvertex = BBmap.find(BBIA);
             THROW_ASSERT(BBvertex != BBmap.end(), "Unknown BB index (" + STR(BBIA) + ")");
 
-            OBB = OBBMap.insert({BBIA, std::make_unique<OrderedBasicBlock>(DT->CGetBBNodeInfo(BBvertex->second)->block)}).first;
+            const auto BB = DT->CGetBBNodeInfo(BBvertex->second)->block;
+            THROW_ASSERT(BB->number == BBIA, "Intermediate BB not allowed here");   // Intermediate BB shadows its incoming BB, thus its index is different from associated vertex
+            OBB = OBBMap.insert({BBIA, std::make_unique<OrderedBasicBlock>(BB)}).first;
          }
          return OBB->second->dominates(InstA, InstB);
       }
@@ -283,8 +299,11 @@ class Operand
       THROW_ASSERT(TM, "Null reference to tree manager");
 
       TM->ReplaceTreeNode(user_stmt, operand, new_ssa);
+
+      // BEWARE: check on ssaOperand is done before operand is reassigned while doing it after could lead to nullptr exception
+      bool emptyUses = ssaOperand->CGetUseStmts().empty();
       operand = new_ssa;
-      return ssaOperand->CGetUseStmts().empty();
+      return emptyUses;
    }
 };
 
@@ -441,6 +460,7 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
       return;
    }
    THROW_ASSERT(GET_CONST_NODE(BI->op0)->get_kind() == ssa_name_K, "Non SSA variable found in branch (" + GET_CONST_NODE(BI->op0)->ToString() + ")");
+   const auto cond_ssa = BI->op0;
    const auto cond_stmt = branchOpRecurse(BI->op0);
    if(cond_stmt == nullptr)
    {
@@ -449,7 +469,6 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
    }
    const auto* CondStmt = GetPointer<const gimple_assign>(GET_CONST_NODE(cond_stmt));
    THROW_ASSERT(CondStmt, "Condition variable should be defined by gimple_assign");
-   const auto cond_ssa = CondStmt->op0;
    const auto CondOp = GET_CONST_NODE(CondStmt->op1);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition is " + CondOp->get_kind_text() + " " + CondOp->ToString());
@@ -526,17 +545,18 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
    const auto* MWII = GetPointer<const gimple_multi_way_if>(GET_CONST_NODE(mwii));
    THROW_ASSERT(MWII, "Multi way if instruction should be gimple_multi_way_if");
    const auto BranchBBI = MWII->bb_index;
+   const auto BranchBB = BBs.at(BranchBBI);
    auto InsertHelper = [&](tree_nodeRef ssa_var, tree_nodeRef use_stmt, unsigned int TargetBBI)
    {
       THROW_ASSERT(static_cast<bool>(BBs.count(TargetBBI)), "Target BB should be in BB list");
       const auto& TargetBB = BBs.at(TargetBBI);
       
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_CONST_NODE(ssa_var)->ToString() + " eligible for renaming in BB" + STR(TargetBBI));
-      auto* PS = new PredicateWithEdge(gimple_multi_way_if_K, ssa_var, BranchBBI, TargetBB->number);
+      auto* PS = new PredicateWithEdge(gimple_multi_way_if_K, ssa_var, BranchBBI, TargetBBI);
       addInfoFor(OperandRef(new Operand(ssa_var, use_stmt)), PS, OpsToRename, ValueInfoNums, ValueInfos);
       if(TargetBB->list_of_pred.size() > 1)
       {
-         EdgeUsesOnly.insert(std::make_pair(BranchBBI, TargetBB->number));
+         EdgeUsesOnly.insert(std::make_pair(BranchBBI, TargetBBI));
       }
    };
 
@@ -603,7 +623,7 @@ bool valueComesBefore(OrderedInstructions& OI, tree_nodeConstRef A, tree_nodeCon
 const std::pair<unsigned int, unsigned int> getBlockEdge(const PredicateBase* PB)
 {
    THROW_ASSERT(PredicateWithEdge::classof(PB), "Not a predicate info type we know how to get an edge from.");
-   const auto* PEdge = reinterpret_cast<const PredicateWithEdge*>(PB);
+   const auto* PEdge = static_cast<const PredicateWithEdge*>(PB);
    return std::make_pair(PEdge->From, PEdge->To);
 }
 
@@ -769,7 +789,6 @@ bool stackIsInScope(const ValueDFSStack& Stack, const ValueDFS& VDUse, const Ord
       // Check edge
       auto EdgePredIt = std::find_if(PHI->CGetDefEdgesList().begin(), PHI->CGetDefEdgesList().end(), 
          [&](const gimple_phi::DefEdge& de) { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(VDUse.U->getOperand()); });
-      THROW_ASSERT(EdgePredIt != PHI->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
       if(EdgePredIt->second != getBranchBlock(Stack.back().PInfo))
       {
          return false;
@@ -804,31 +823,42 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
 {
    const auto* op = GetPointer<const ssa_name>(GET_CONST_NODE(Op));
    THROW_ASSERT(op, "Op is not an ssa_name (" + GET_CONST_NODE(Op)->get_kind_text() + ")");
+   const auto defBBI = GetPointer<const gimple_node>(GET_CONST_NODE(op->CGetDefStmt()))->bb_index;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(auto& Usize : op->CGetUseStmts())
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Checking " + Usize.first->ToString());
+      const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(Usize.first));
+      if(gp)
+      {
+         if(gp->CGetDefEdgesList().size() == 1)
+         {
+            // Sigma uses not intresting (already e-SSA)
+            continue;
+         }
+      }
+
       auto &U = Usize.first;
       const auto* I = GetPointer<const gimple_node>(GET_CONST_NODE(U));
       THROW_ASSERT(I, "Use statement should be a gimple_node");
+      if(I->bb_index == defBBI)
+      {
+         // Uses within the same basic block not intresting (they are casts or the actual branch eveluating the condition)
+         continue;
+      }
       ValueDFS VD;
       
       unsigned int IBlock;
-      // Put the phi node uses in the incoming block
-      if(GetPointer<const gimple_phi>(GET_CONST_NODE(U)) != nullptr)
+      if(gp)
       {
-         // Phi uses may not be renamed
-         continue;
-         //    auto phiDefEdge = std::find_if(PN->CGetDefEdgesList().begin(), PN->CGetDefEdgesList().end(), 
-         //       [&](const gimple_phi::DefEdge& de) { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(Op); });
-         //    THROW_ASSERT(phiDefEdge != PN->CGetDefEdgesList().end(), "Unable to find variable in phi definitions");
-         //    IBlock = phiDefEdge->second;
-         //    // Make phi node users appear last in the incoming block
-         //    // they are from.
-         //    VD.LocalNum = LN_Last;
-      }
+         const auto EdgePredIt = std::find_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(), 
+            [&](const gimple_phi::DefEdge& de) { return GET_INDEX_CONST_NODE(de.first) == GET_INDEX_CONST_NODE(Op); });
+         THROW_ASSERT(EdgePredIt != gp->CGetDefEdgesList().end(), "");
+         IBlock = EdgePredIt->second;
+         VD.LocalNum = LN_Last;
+      } 
       else
       {
-         // If it's not a phi node use, it is somewhere in the middle of the
-         // block.
          IBlock = I->bb_index;
          VD.LocalNum = LN_Middle;
       }
@@ -847,12 +877,19 @@ void convertUsesToDFSOrdered(tree_nodeRef Op, std::vector<ValueDFS>& DFSOrderedS
       VD.DFSOut = DomNode_DFSInfo.DFSOut;
       VD.U = OperandRef(new Operand(Op, U));
       DFSOrderedSet.push_back(VD);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pushed on renaming stack");
    }
+    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 }
 
 // Given the renaming stack, make all the operands currently on the stack real
 // by inserting them into the IR.  Return the last operation's value.
-tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_id, tree_nodeRef OrigOp, CustomMap<tree_nodeConstRef, const PredicateBase*>& PredicateMap, const BBGraphRef DT, tree_managerRef TM, tree_manipulationRef tree_man)
+tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_id, statement_list* sl, tree_nodeRef OrigOp, CustomMap<tree_nodeConstRef, const PredicateBase*>& PredicateMap, 
+   const BBGraphRef DT, tree_managerRef TM, tree_manipulationRef tree_man, CustomMap<std::pair<unsigned int, unsigned int>, blocRef>& interBranchBBs, CustomMap<unsigned int, DFSInfo>& DFSInfos
+#ifndef NDEBUG
+   , int debug_level
+#endif
+   )
 {
    // Find the first thing we have to materialize
    auto RevIter = RenameStack.rbegin();
@@ -865,22 +902,25 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
    }
 
    auto Start = RevIter - RenameStack.rbegin();
-   const auto& BBmap = DT->CGetBBGraphInfo()->bb_index_map;
+   auto& BBmap = DT->GetBBGraphInfo()->bb_index_map;
    // The maximum number of things we should be trying to materialize at once
    // right now is 4, depending on if we had an assume, a branch, and both used
    // and of conditions.
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(auto RenameIter = RenameStack.end() - Start; RenameIter != RenameStack.end(); ++RenameIter)
    {
       auto Op = OrigOp;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Checking variable " + GET_CONST_NODE(Op)->ToString());
       if(RenameIter != RenameStack.begin()) 
       {
          THROW_ASSERT((RenameIter - 1)->Def, "A valid definition shold be on the stack at this point");
          const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE((RenameIter - 1)->Def));
          THROW_ASSERT(gp, "Previous definition on stack should be a gimple_phi (" + GET_CONST_NODE((RenameIter-1)->Def)->ToString() + ")");
          Op = gp->res;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Moving check to " + GET_CONST_NODE(Op)->ToString());
       }
       ValueDFS& Result = *RenameIter;
-      auto* ValInfo = Result.PInfo;
+      const auto* ValInfo = Result.PInfo;
       // For edge predicates, we can just place the operand in the block before
       // the terminator.  For assume, we have to place it right before the assume
       // to ensure we dominate all of our uses.  Always insert right before the
@@ -888,24 +928,115 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
       // order in the case of multiple predicateinfo in the same block.
       if(PredicateWithEdge::classof(ValInfo))
       {
-         auto* pwe = reinterpret_cast<PredicateWithEdge*>(ValInfo);
-
-         tree_nodeRef new_ssa_var;
-         std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge;
-         list_of_def_edge.push_back(std::pair<tree_nodeRef, unsigned int>(Op, pwe->From));
-         auto PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), pwe->To);
+         const auto* pwe = static_cast<const PredicateWithEdge*>(ValInfo);
          THROW_ASSERT(BBmap.contains(pwe->To), "Basic block should be in dominator tree");
          const auto& ToBB_vertex = BBmap.at(pwe->To);
          const auto& ToBB = DT->CGetBBNodeInfo(ToBB_vertex)->block;
-         ToBB->AddPhi(PIC);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Inserting into BB" + STR(ToBB->number));
+
+         tree_nodeRef PIC, new_ssa_var;
+         std::vector<std::pair<tree_nodeRef, unsigned int>> list_of_def_edge = {{Op, pwe->From}};
+         if(ToBB->list_of_pred.size() > 1) // New intermediate BB has to be created
+         {
+            blocRef interBB;
+            // Check if intermediate BB has already been created by previous renaming operation
+            if(auto interBBIt = interBranchBBs.find({pwe->From, ToBB->number}); interBBIt != interBranchBBs.end())
+            {
+               interBB = interBBIt->second;
+            }
+            else  // When intermediate branch BB isn't present, create a new one
+            {
+               THROW_ASSERT(static_cast<bool>(BBmap.count(pwe->From)), "UOT??? ");
+               const auto& FromBB = DT->CGetBBNodeInfo(BBmap.at(pwe->From))->block;
+            
+               // Create new intermediate BB
+               const auto interBBI = (sl->list_of_bloc.rbegin())->first + 1;
+               interBB = blocRef(new bloc(interBBI));
+               sl->list_of_bloc[interBBI] = interBB;
+               interBB->loop_id = FromBB->loop_id;
+               interBB->SetSSAUsesComputed();
+               interBB->schedule = FromBB->schedule;
+
+               // Fix BB connections
+               interBB->list_of_pred.push_back(FromBB->number);
+               FromBB->list_of_succ.erase(std::find(FromBB->list_of_succ.begin(), FromBB->list_of_succ.end(), ToBB->number));
+               FromBB->list_of_succ.push_back(interBBI);
+               interBB->list_of_succ.push_back(ToBB->number);
+               ToBB->list_of_pred.erase(std::find(ToBB->list_of_pred.begin(), ToBB->list_of_pred.end(), FromBB->number));
+               ToBB->list_of_pred.push_back(interBBI);
+
+               // Add new BB to intermediate branch block lookup list
+               interBranchBBs.insert({{FromBB->number, ToBB->number}, interBB});
+
+               // Shadow incoming BB in dominator tree mapping
+               BBmap.insert({interBBI, BBmap.at(FromBB->number)});
+               DFSInfos.insert({interBBI, DFSInfos.at(FromBB->number)});
+
+               // Fix branch routes
+               if(FromBB->false_edge == ToBB->number)
+               {
+                  FromBB->false_edge = interBBI;
+               }
+               if(FromBB->true_edge == ToBB->number)
+               {
+                  FromBB->true_edge = interBBI;
+               }
+
+               // Fix multi_way_if routes
+               if(auto* mwi = GetPointer<gimple_multi_way_if>(GET_NODE(FromBB->CGetStmtList().back())))
+               {
+                  for(auto& cond : mwi->list_of_cond)
+                  {
+                     if(cond.second == ToBB->number)
+                     {
+                        cond.second = interBBI;
+                     }
+                  }
+               }
+
+               // Fix destination BB phis
+               for(auto phi : ToBB->CGetPhiList())
+               {
+                  auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
+                  const auto defFrom = std::find_if(gp->CGetDefEdgesList().begin(), gp->CGetDefEdgesList().end(), 
+                     [&](const gimple_phi::DefEdge& de) { return de.second == FromBB->number; });
+                  if(defFrom != gp->CGetDefEdgesList().end())
+                  {
+                     gp->ReplaceDefEdge(TM, *defFrom, {defFrom->first, interBBI});
+                  }
+               }
+            }
+
+            // Insert required sigma operation into the intermediate basic block
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), interBB->number);
+            GetPointer<gimple_phi>(GET_NODE(PIC))->SetSSAUsesComputed();
+            interBB->AddPhi(PIC);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Insertion moved to intermediate BB" + STR(interBB->number));
+         }
+         else
+         {
+            // Insert required sigma operation into the destination basic block
+            PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), pwe->To);
+            GetPointer<gimple_phi>(GET_NODE(PIC))->SetSSAUsesComputed();
+            ToBB->AddPhi(PIC);
+         }
+
+         const auto* op = GetPointer<const ssa_name>(GET_CONST_NODE(Op));
+         auto* newSSA = GetPointer<ssa_name>(GET_NODE(new_ssa_var));
+         newSSA->bit_values = op->bit_values;
+         //    newSSA->min = op->min;
+         //    newSSA->max = op->max;
+         
          PredicateMap.insert({PIC, ValInfo});
          Result.Def = PIC;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Materialized " + GET_CONST_NODE(PIC)->ToString());
       }
       else
       {
          THROW_UNREACHABLE("Invalid PredicateInfo type");
       }
    }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    return RenameStack.back().Def;
 }
 
@@ -927,9 +1058,11 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 // use it.
 //
 bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, 
-   const CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly)
+   CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl)
 {
    const auto TM = AppM->get_tree_manager();
+   const auto tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   CustomMap<std::pair<unsigned int, unsigned int>, blocRef> interBranchBBs;
    bool modified = false;
    // This maps from copy operands to Predicate Info. Note that it does not own
    // the Predicate Info, they belong to the ValueInfo structs in the ValueInfos
@@ -959,11 +1092,14 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
             // If we can only do phi uses, we treat it like it's in the branch
             // block, and handle it specially. We know that it goes last, and only
             // dominate phi uses.
-            auto BlockEdge = getBlockEdge(PossibleCopy);
+            const auto BlockEdge = getBlockEdge(PossibleCopy);
             if(EdgeUsesOnly.count(BlockEdge))
             {
+               // If we can only do phi uses, we treat it like it's in the branch
+               // block, and handle it specially. We know that it goes last, and only
+               // dominate phi uses.
                VD.LocalNum = LN_Last;
-               auto& DomNode = BlockEdge.first;
+               const auto& DomNode = BlockEdge.first;
                if(DomNode)
                {
                   THROW_ASSERT(DFSInfos.contains(DomNode), "Invalid DT node");
@@ -981,7 +1117,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
                // insertion in the branch block).
                // Insert a possible copy at the split block and before the branch.
                VD.LocalNum = LN_First;
-               auto& DomNode = BlockEdge.second;
+               const auto& DomNode = BlockEdge.second;
                if(DomNode)
                {
                   THROW_ASSERT(DFSInfos.contains(DomNode), "Invalid DT node");
@@ -1008,6 +1144,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
       for(auto& VD : OrderedUses)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing " + VD.ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          
          // We currently do not materialize copy over copy, but we should decide if
          // we want to.
@@ -1039,30 +1176,49 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          if(RenameStack.empty())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Current use needs no renaming");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             continue;
          }
          // Skip values, only want to rename the uses
          if(VD.Def || PossibleCopy)
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             continue;
          }
 
          ValueDFS& Result = RenameStack.back();
          THROW_ASSERT(VD.U, "A use sohuld be in scope for current renaming operation");
-         THROW_ASSERT(GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser())) == nullptr, "Phi uses may not be renamed");
+         #if HAVE_ASSERTS
+         if(const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(VD.U->getUser())))
+         {
+            THROW_ASSERT(gp->CGetDefEdgesList().size() > 1, "Sigma operation should not be renamed (BB" + STR(gp->bb_index) + " " + gp->ToString() + ")");
+         }
+         #endif
 
          // If the possible copy dominates something, materialize our stack up to
          // this point. This ensures every comparison that affects our operation
          // ends up with predicateinfo.
          if(!Result.Def)
          {
-            Result.Def = materializeStack(RenameStack, function_id, Op->getOperand(), PredicateMap, DT, TM, tree_manipulationRef(new tree_manipulation(TM, parameters)));
+            #ifndef NDEBUG
+            if(not AppM->ApplyNewTransformation()) 
+            { 
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+               return modified; 
+            }
+            #endif
+            Result.Def = materializeStack(RenameStack, function_id, sl, Op->getOperand(), PredicateMap, DT, TM, tree_man, interBranchBBs, DFSInfos 
+               #ifndef NDEBUG
+                  , debug_level
+               #endif
+                  );
          }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, 
             "---Found replacement " + GET_CONST_NODE(Result.Def)->ToString() + " for " + GET_CONST_NODE(VD.U->getOperand())->ToString() + " in " + GET_CONST_NODE(VD.U->getUser())->ToString());
          const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(Result.Def));
-         #if HAVE_ASSERTS
+         #if 0
          if(!valueComesBefore(OI, Result.Def, VD.U->getUser()))
          {
             const auto defVertex = DT->CGetBBGraphInfo()->bb_index_map.at(GetPointer<const gimple_node>(GET_CONST_NODE(Result.Def))->bb_index);
@@ -1075,8 +1231,12 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT, but in CFG only");
          }
          #endif
+         #ifndef NDEBUG
+         AppM->RegisterTransformation(GetName(), VD.U->getUser());
+         #endif
          VD.U->set(phi->res, TM);
          modified = true;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
@@ -1121,7 +1281,7 @@ DesignFlowStep_Status eSSA::InternalExec()
 {
    auto TM = AppM->get_tree_manager();
    const auto* fd = GetPointer<const function_decl>(TM->get_tree_node_const(function_id));
-   const auto* sl = GetPointer<const statement_list>(GET_CONST_NODE(fd->body));
+   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
    
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Dominator tree computation...");
@@ -1273,10 +1433,15 @@ DesignFlowStep_Status eSSA::InternalExec()
       return DesignFlowStep_Status::UNCHANGED;
    }
 
-   bool modified = renameUses(OpsToRename, ValueInfoNums, ValueInfos, DFSInfos, EdgeUsesOnly);
+   bool modified = renameUses(OpsToRename, ValueInfoNums, ValueInfos, DFSInfos, EdgeUsesOnly, sl);
    DT.reset();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   if(modified)
+   {
+      AppM->GetFunctionBehavior(function_id)->UpdateBBVersion();
+      return DesignFlowStep_Status::SUCCESS;
+   }
+   return DesignFlowStep_Status::UNCHANGED;
 }
 
 void eSSA::Initialize()
