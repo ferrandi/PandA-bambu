@@ -143,6 +143,10 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
          THROW_ASSERT(GetPointer<const ssa_name>(t), "Expected an ssa_name");
          if(!sa->bit_values.empty())
          {
+            if(GET_NODE(sa->type)->get_kind() == real_type_K)
+            {
+               return Size(GET_NODE(sa->type));
+            }
             return_value = static_cast<unsigned int>(sa->bit_values.size());
             break;
          }

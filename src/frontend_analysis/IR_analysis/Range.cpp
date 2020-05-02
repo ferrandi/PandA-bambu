@@ -368,6 +368,7 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    {
       range_bv.push_back(bit_lattice::U);
    }
+   BitLatticeManipulator::sign_reduce_bitstring(range_bv, isSigned);
    return range_bv;
 }
 
@@ -2376,6 +2377,7 @@ RangeRef RealRange::Eq(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
+      // TODO: fix zero sign bug
       return sign->Eq(rOther->sign, _bw)->unionWith(exponent->Eq(rOther->exponent, _bw))->unionWith(significand->Eq(rOther->significand, _bw));
    }
    return RangeRef(new Range(Regular, _bw, 0, 0));
@@ -2385,6 +2387,7 @@ RangeRef RealRange::Ne(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
+      // TODO: fix zero sign bug
       return sign->Ne(rOther->sign, _bw)->unionWith(exponent->Ne(rOther->exponent, _bw))->unionWith(significand->Ne(rOther->significand, _bw));
    }
    return RangeRef(new Range(Regular, _bw, 1, 1));

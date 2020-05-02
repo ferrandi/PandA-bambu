@@ -75,6 +75,13 @@ bool Bit_Value::manage_forward_binary_operands(const binary_expr* operation, uns
       arg1_bitstring = best.at(arg1_uid);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
    }
+   else if(GET_NODE(operation->op0)->get_kind() == real_cst_K)
+   {
+      arg1_uid = GET_INDEX_NODE(operation->op0);
+      THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
+      arg1_bitstring = best.at(arg1_uid);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op0))->valr) + " : " + bitstring_to_string(arg1_bitstring));
+   }
    else
       return false;
 
@@ -98,6 +105,13 @@ bool Bit_Value::manage_forward_binary_operands(const binary_expr* operation, uns
       THROW_ASSERT(best.find(arg2_uid) != best.end(), "unexpected condition");
       arg2_bitstring = best.at(arg2_uid);
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op1))->value) + " : " + bitstring_to_string(arg2_bitstring));
+   }
+   else if(GET_NODE(operation->op1)->get_kind() == real_cst_K)
+   {
+      arg2_uid = GET_INDEX_NODE(operation->op1);
+      THROW_ASSERT(best.find(arg2_uid) != best.end(), "unexpected condition");
+      arg2_bitstring = best.at(arg2_uid);
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op1))->valr) + " : " + bitstring_to_string(arg2_bitstring));
    }
    else
       return false;
@@ -128,7 +142,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          res = current.at(arg2_uid);
       }
    }
-   else if(op_kind == integer_cst_K)
+   else if(op_kind == integer_cst_K or op_kind == real_cst_K)
    {
       unsigned int arg2_uid;
       arg2_uid = GET_INDEX_NODE(ga->op1);
@@ -881,12 +895,22 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             res.push_front(bit_lattice::ONE);
          }
       };
-      ee0();
+      if(tree_helper::CGetType(GET_NODE(operation->op0))->get_kind() == real_type_K && tree_helper::CGetType(GET_NODE(operation->op1))->get_kind() == real_type_K)
+      {
+         // TODO: add check for real type equality
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer Error: operation unhandled yet with real type operands -> " + GET_NODE(ga->op1)->get_kind_text());
+         return res;
+      }
+      else
+      {
+         ee0();
+      }
    }
    else if(op_kind == ne_expr_K)
    {
       THROW_ASSERT(tree_helper::is_bool(TM, output_uid), "");
       auto* operation = GetPointer<ne_expr>(GET_NODE(ga->op1));
+
 
       std::deque<bit_lattice> arg1_bitstring;
       std::deque<bit_lattice> arg2_bitstring;
@@ -937,7 +961,16 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             res.push_front(bit_lattice::ZERO);
          }
       };
+      if(tree_helper::CGetType(GET_NODE(operation->op0))->get_kind() == real_type_K && tree_helper::CGetType(GET_NODE(operation->op1))->get_kind() == real_type_K)
+      {
+         // TODO: add check for real type inequality
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer Error: operation unhandled yet with real type operands -> " + GET_NODE(ga->op1)->get_kind_text());
+         return res;
+      }
+      else
+      {
       ne0();
+   }
    }
 #endif
 #if 1
@@ -1007,7 +1040,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          else
             arg_bitstring = current.at(arg_uid);
       }
-      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K)
+      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K or GET_NODE(operation->op)->get_kind() == real_cst_K)
       {
          arg_uid = GET_INDEX_NODE(operation->op);
          THROW_ASSERT(best.find(arg_uid) != best.end(), "unexpected condition");
@@ -1036,7 +1069,26 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          if(tree_helper::is_int(TM, output_uid) && res.size() < max_bitsize)
             res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(arg_bitstring.front()).at(borrow).back());
       };
+
+      if(tree_helper::is_real(TM, arg_uid))
+      {
+         THROW_ASSERT(tree_helper::Size(tree_helper::CGetType(GET_NODE(operation->op))) == arg_bitstring.size(), "Real bitstring must be exact");
+         if(arg_bitstring.front() == bit_lattice::ONE)
+         {
+            arg_bitstring.pop_front();
+            arg_bitstring.push_front(bit_lattice::ZERO);
+         }
+         else if(arg_bitstring.front() == bit_lattice::ZERO)
+         {
+            arg_bitstring.pop_front();
+            arg_bitstring.push_front(bit_lattice::ONE);
+         }
+         res = arg_bitstring;
+      }
+      else
+      {
       ne0();
+   }
    }
 #endif
 #if 1
@@ -1049,7 +1101,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          return res;
 
       const unsigned int arg_uid = GET_INDEX_NODE(operation->op);
-      THROW_ASSERT(tree_helper::is_int(TM, output_uid) and tree_helper::is_int(TM, arg_uid), "lhs and rhs of an abs_expr must be signed");
 
       std::deque<bit_lattice> arg_bitstring;
       if(GET_NODE(operation->op)->get_kind() == ssa_name_K)
@@ -1059,7 +1110,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          else
             arg_bitstring = current.at(arg_uid);
       }
-      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K)
+      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K or GET_NODE(operation->op)->get_kind() == real_cst_K)
       {
          THROW_ASSERT(best.find(arg_uid) != best.end(), "unexpected condition");
          arg_bitstring = best.at(arg_uid);
@@ -1118,7 +1169,22 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             }
          }
       };
+
+      if(tree_helper::is_real(TM, arg_uid))
+      {
+         THROW_ASSERT(tree_helper::Size(op_type) == arg_bitstring.size(), "Real bitstring must be exact");
+         if(arg_bitstring.front() == bit_lattice::ONE)
+         {
+            arg_bitstring.pop_front();
+            arg_bitstring.push_front(bit_lattice::ZERO);
+         }
+         res = arg_bitstring;
+      }
+      else
+      {
+         THROW_ASSERT(tree_helper::is_int(TM, output_uid) and tree_helper::is_int(TM, arg_uid), "lhs and rhs of an abs_expr must be signed");
       ae0();
+   }
    }
 #endif
 #if 1
@@ -1925,22 +1991,23 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    else if(op_kind == nop_expr_K || op_kind == convert_expr_K || op_kind == view_convert_expr_K)
    {
       auto* operation = GetPointer<unary_expr>(GET_NODE(ga->op1));
+      const tree_nodeConstRef left_type = tree_helper::CGetType(GET_NODE(ga->op0));
+      const size_t left_type_size = tree_helper::Size(left_type);
       const auto right_id = GET_INDEX_NODE(operation->op);
       const tree_nodeConstRef right_type = tree_helper::CGetType(GET_NODE(operation->op));
       const unsigned int right_type_size = tree_helper::Size(right_type);
       if(not is_handled_by_bitvalue(right_id))
       {
-         // Propagate bit_values from range analysis if any
-         if(tree_helper::is_real(TM, right_id))
-         if(const auto* real_ssa = GetPointer<ssa_name>(GET_NODE(operation->op)))
-         if(!real_ssa->ra_bit_values.empty())
-         {
-            return string_to_bitstring(real_ssa->ra_bit_values);
-         }
          res = create_u_bitstring(right_type_size);
          return res;
+         }
+      if(tree_helper::is_real(TM, left_type->index) and tree_helper::is_real(TM, right_type->index))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer Error: operation unhandled yet with real type operands -> " + GET_NODE(ga->op1)->get_kind_text());
+         return res;
       }
-      if(GET_NODE(operation->op)->get_kind() == ssa_name_K or GET_NODE(operation->op)->get_kind() == integer_cst_K)
+
+      if(GET_NODE(operation->op)->get_kind() == ssa_name_K or GET_NODE(operation->op)->get_kind() == integer_cst_K or GET_NODE(operation->op)->get_kind() == real_cst_K)
       {
          unsigned int arg1_uid = GET_INDEX_NODE(operation->op);
          if(GET_NODE(operation->op)->get_kind() == ssa_name_K)
@@ -1967,17 +2034,26 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          const auto left_id = GET_INDEX_NODE(ga->op0);
          const bool left_signed = tree_helper::is_int(TM, left_id);
          const bool right_signed = tree_helper::is_int(TM, right_id);
-         const tree_nodeConstRef left_type = tree_helper::CGetType(GET_NODE(ga->op0));
-         const size_t left_type_size = tree_helper::Size(left_type);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(left_id) + (left_signed ? "S" : "U") + " = " + (op_kind == nop_expr_K ? "cast" : "convert") + " " + STR(right_id) + (right_signed ? "S" : "U"));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " = op:  " + bitstring_to_string(res) + "(" + STR(right_type_size) + "->" + STR(left_type_size) + ")");
          bool do_not_extend = false;
          if(left_signed && tree_helper::Size(ga->op0) == 1 && tree_helper::is_bool(TM, right_id))
+         {
             do_not_extend = true;
-         if(left_signed != right_signed and res.size() < left_type_size and !do_not_extend)
+         }
+         if(tree_helper::is_real(TM, left_type->index) and res.size() < left_type_size)
+         {
+            res = sign_extend_bitstring(res, res.front() == bit_lattice::U, left_type_size);
+         }
+         if((left_signed != right_signed and !do_not_extend) and res.size() < left_type_size)
+         {
             res = sign_extend_bitstring(res, right_signed, left_type_size);
+         }
          while(res.size() > left_type_size)
+         {
             res.pop_front();
+         }
+         THROW_ASSERT(not tree_helper::is_real(TM, left_type->index) or res.size() == left_type_size, "Real type bit value should be exact");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(res));
       }
    }
@@ -2014,6 +2090,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          arg1_bitstring = best.at(arg1_uid);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
+      else if(GET_NODE(operation->op0)->get_kind() == real_cst_K)
+      {
+         const auto arg1_uid = GET_INDEX_NODE(operation->op0);
+         THROW_ASSERT(best.find(arg1_uid) != best.end(), "unexpected condition");
+         arg1_bitstring = best.at(arg1_uid);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op0))->valr) + " : " + bitstring_to_string(arg1_bitstring));
+      }
       else
          return res;
 
@@ -2038,6 +2121,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          arg2_bitstring = best.at(arg2_uid);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op1))->value) + " : " + bitstring_to_string(arg2_bitstring));
       }
+      else if(GET_NODE(operation->op1)->get_kind() == real_cst_K)
+      {
+         arg2_uid = GET_INDEX_NODE(operation->op1);
+         THROW_ASSERT(best.find(arg2_uid) != best.end(), "unexpected condition");
+         arg2_bitstring = best.at(arg2_uid);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op1))->valr) + " : " + bitstring_to_string(arg2_bitstring));
+      }
       else
          return res;
 
@@ -2061,6 +2151,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          THROW_ASSERT(best.find(arg3_uid) != best.end(), "unexpected condition");
          arg3_bitstring = best.at(arg3_uid);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op2))->value) + " : " + bitstring_to_string(arg3_bitstring));
+      }
+      else if(GET_NODE(operation->op2)->get_kind() == real_cst_K)
+      {
+         arg3_uid = GET_INDEX_NODE(operation->op2);
+         THROW_ASSERT(best.find(arg3_uid) != best.end(), "unexpected condition");
+         arg3_bitstring = best.at(arg3_uid);
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op2))->valr) + " : " + bitstring_to_string(arg3_bitstring));
       }
       else
          return res;

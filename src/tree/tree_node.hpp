@@ -3690,8 +3690,6 @@ struct parm_decl : public decl_node
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
 
-   std::string ra_bit_values;
-
    /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
    const PointToInformationRef point_to_information;
 
@@ -4583,8 +4581,6 @@ struct ssa_name : public tree_node
 
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
-
-   std::string ra_bit_values;
 
    /// Range information about numerical values of the ssa variable
    RangeRef range;

@@ -78,7 +78,8 @@ BOOST_AUTO_TEST_CASE( range_bitvalues )
     const Range test5(Regular, 8);
 
     BOOST_REQUIRE_EQUAL("10UU", bitstring_to_string(test1.getBitValues(false)));
-    BOOST_REQUIRE_EQUAL("111110UU", bitstring_to_string(test2.getBitValues(true)));
+    BOOST_REQUIRE_EQUAL("111110UU", bitstring_to_string(test2.getBitValues(false)));
+    BOOST_REQUIRE_EQUAL("10UU", bitstring_to_string(test2.getBitValues(true)));
     BOOST_REQUIRE_EQUAL("UUUUUUUU", bitstring_to_string(test4.getBitValues(false)));
     BOOST_REQUIRE_EQUAL("0UUUUUUUU", bitstring_to_string(test4.getBitValues(true)));
     BOOST_REQUIRE_EQUAL("UUUUUUUU", bitstring_to_string(test5.getBitValues(false)));

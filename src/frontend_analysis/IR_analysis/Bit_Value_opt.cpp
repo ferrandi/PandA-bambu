@@ -153,11 +153,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
 {
+   if(tree_helper::is_real(TM, GET_INDEX_NODE(op_ssa->type)))
+   {
+      return;
+   }
    auto nbit = op_ssa->bit_values.size();
    auto op0_type_id = GET_INDEX_NODE(op_ssa->type);
    auto nbitType = tree_helper::size(TM, op0_type_id);
    if(nbit != nbitType)
    {
+      // TODO: maybe check range to avoid overwriting
       bool isSigned = tree_helper::is_int(TM, op0_type_id);
       if(isSigned)
          op_ssa->min = TM->CreateUniqueIntegerCst(-(1ll << (nbit - 1)), op0_type_id);
@@ -373,7 +378,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
                   continue;
                }
-               if(GetPointer<integer_cst>(GET_NODE(ga->op1)) && tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op1)))
+               if((GetPointer<integer_cst>(GET_NODE(ga->op1)) || GetPointer<real_cst>(GET_NODE(ga->op1))) && tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op1)))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---constant pointer value assignments not considered: " + STR(GET_INDEX_NODE(ga->op0)));
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined statement " + GET_NODE(stmt)->ToString());
@@ -1120,6 +1125,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         auto* me = GetPointer<binary_expr>(GET_NODE(ga->op1));
                         tree_nodeRef op0 = GET_NODE(me->op0);
                         tree_nodeRef op1 = GET_NODE(me->op1);
+                        if(tree_helper::CGetType(op0)->get_kind() == real_type_K && tree_helper::CGetType(op1)->get_kind() == real_type_K)
+                        {
+                           // TODO: adapt existing operations to real type
+                           return;
+                        }
                         unsigned int op0_size = tree_helper::size(TM, GET_INDEX_NODE(me->op0));
                         bool is_op1_zero = false;
                         if(GetPointer<integer_cst>(op1))

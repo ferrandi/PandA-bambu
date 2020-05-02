@@ -742,7 +742,7 @@ namespace
       }
       else if(const auto* rc = GetPointer<const real_cst>(tn))
       {
-         auto val = strtof64x(rc->valr.data(), nullptr);
+         const auto val = strtof64x(rc->valr.data(), nullptr);
          if(bw == 32)
          {
             auto [s, e, f] = float_view_convert(static_cast<float>(val));
@@ -759,10 +759,12 @@ namespace
       {
          if(const auto* ssa = GetPointer<const ssa_name>(tn))
          {
-            if(ssa->ra_bit_values.size() == bw)
+            auto bv = string_to_bitstring(ssa->bit_values);
+            if(bv.size() < bw)
             {
-               return RealRange::fromBitValues(string_to_bitstring(ssa->ra_bit_values));
+               bv = BitLatticeManipulator::sign_extend_bitstring(bv, false, bw);
             }
+            return RealRange::fromBitValues(bv);
          }
          if(bw == 32)
          {
@@ -798,67 +800,6 @@ namespace
       #endif
       return RangeRef(new Range(Regular, bw, min, max));
    }
-
-   #if 1
-   bit_lattice bit_mask(const bit_lattice& a, const bit_lattice& mask)
-   {
-      if(a == bit_lattice::X)
-      {
-         return bit_lattice::X;
-      }
-      else if(mask != bit_lattice::U)
-      {
-         return mask;
-      }
-      else
-      {
-         return a;
-      }
-   }
-   #else
-   bit_lattice bit_mask(const bit_lattice& a, const bit_lattice& mask)
-   {
-      if(mask == bit_lattice::X)
-      {
-         return bit_lattice::X;
-      }
-      else
-      {
-         return a;
-      }
-   }
-   #endif
-
-   std::deque<bit_lattice> mask(const std::deque<bit_lattice>& _a, const std::deque<bit_lattice>& _b, const bool out_is_signed, const bool out_is_bool)
-   {
-      THROW_ASSERT(not _a.empty() and not _b.empty(), "");
-      std::deque<bit_lattice> res;
-      if(out_is_bool)
-      {
-         return {bit_mask(_a.back(), _b.back())};
-      }
-
-      auto longer = (_a.size() >= _b.size()) ? _a : _b;
-      auto shorter = (_a.size() >= _b.size()) ? _b : _a;
-      if(shorter.size() < longer.size())
-      {
-         shorter = BitLatticeManipulator::sign_extend_bitstring(shorter, out_is_signed, longer.size());
-      }
-
-      auto a_it = longer.crbegin();
-      auto b_it = shorter.crbegin();
-      const auto a_end = longer.crend();
-      const auto b_end = shorter.crend();
-      for(; a_it != a_end and b_it != b_end; a_it++, b_it++)
-      {
-         res.push_front(bit_mask(*a_it, *b_it));
-      }
-      if(res.empty())
-      {
-         res.push_front(bit_lattice::X);
-      }
-      return res;
-   }
 }
 
 
@@ -882,10 +823,6 @@ class VarNode
    /// A Range associated to the variable, that is,
    /// its interval inferred by the analysis.
    RangeConstRef interval;
-
-   #ifdef BITVALUE_UPDATE
-   std::deque<bit_lattice> bit_values;
-   #endif
 
    /// Used by the crop meet operator
    char abstractState;
@@ -918,33 +855,7 @@ class VarNode
    {
       return interval->getBitWidth();
    }
-   #ifdef BITVALUE_UPDATE
-   const std::deque<bit_lattice>& getBitValues() const
-   {
-      return bit_values;
-   }
-   void setBitValues(const std::deque<bit_lattice>& bv)
-   {
-      THROW_ASSERT(interval->isReal(), "Cannot set bit_values directly for non-real types");
-      THROW_ASSERT(bv.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + GET_CONST_NODE(V)->ToString() + "<" + STR(interval->getBitWidth()) + "> != " + bitstring_to_string(bv) + ")");
-      bit_values = bv;
-   }
-   void setBitValues(const std::string& bv_str)
-   {
-      setBitValues(string_to_bitstring(bv_str));
-   }
-   void maskBitValues(const std::deque<bit_lattice>& mask_bv)
-   {
-      THROW_ASSERT(!interval->isReal() || mask_bv.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(mask_bv) + ")");
-      const auto isSigned = isSignedType(V);
-      bit_values = mask(bit_values, mask_bv, isSigned, interval->getBitWidth() == 1);
-      THROW_ASSERT(!interval->isReal() || bit_values.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(bit_values) + ")");
-      if(!interval->isReal())
-      {
-         BitLatticeManipulator::sign_reduce_bitstring(bit_values, isSigned);
-      }
-   }
-   #endif
+   
    /// Changes the status of the variable represented by this node.
    void setRange(const RangeConstRef& newInterval)
    {
@@ -980,30 +891,6 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id) : V(_V)
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
    interval = getRangeFor(_V, Unknown);
-   #ifdef BITVALUE_UPDATE
-   if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(_V)))
-   {
-      if(!ssa->ra_bit_values.empty())
-      {
-         bit_values = string_to_bitstring(ssa->ra_bit_values);
-         THROW_ASSERT(interval->isReal() && bit_values.size() == interval->getBitWidth(), "BitValue for floating-point variable must be exact (" + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ")");
-      }
-      else if(!ssa->bit_values.empty())
-      {
-         bit_values = string_to_bitstring(ssa->bit_values);
-      }
-      else
-      {
-         bit_values = create_u_bitstring(interval->getBitWidth());
-      }
-   }
-   else if(GetPointer<const cst_node>(GET_CONST_NODE(_V)))
-   {
-      const auto range = getGIMPLE_range(_V);
-      THROW_ASSERT(range->isConstant(), "Range from constant node should be constant (" + GET_CONST_NODE(_V)->ToString() + " " + range->ToString() + ")");
-      bit_values = range->getBitValues(isSignedType(_V));
-   }
-   #endif
 }
 
 /// Initializes the value of the node.
@@ -1052,25 +939,12 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
 
    auto updateBitValue = [&](ssa_name* ssa, const std::deque<bit_lattice>& bv) -> int
    {
-      if(GET_CONST_NODE(ssa->type)->get_kind() == real_type_K)
+      const auto curr_bv = string_to_bitstring(ssa->bit_values);
+      if(isBetter(bv, curr_bv))
       {
-         THROW_ASSERT(bv.size() == tree_helper::Size(ssa->type), "Floating-point bit_values must be exact (" + ssa->ToString() + " " + bitstring_to_string(bv) + ")");
-         const auto curr_bv = string_to_bitstring(ssa->ra_bit_values);
-         if(curr_bv != bv)
-         {
-            ssa->ra_bit_values = bitstring_to_string(bv);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "RA BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->ra_bit_values + " <= " + bitstring_to_string(curr_bv));
-         }
-      }
-      else
-      {
-         const auto curr_bv = string_to_bitstring(ssa->bit_values);
-         if(isBetter(bv, curr_bv))
-         {
-            ssa->bit_values = bitstring_to_string(bv);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
-            return ut_BitValue;
-         }
+         ssa->bit_values = bitstring_to_string(bv);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
+         return ut_BitValue;
       }
       return ut_None;
    };
@@ -1094,14 +968,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       bw_t newBW = interval->getBitWidth();
       if(interval->isFullSet())
       {
-         #ifdef BITVALUE_UPDATE
-         #ifndef NDEBUG
-         if(not AppM->ApplyNewTransformation()) { return ut_None; }
-         #endif
-         return updateBitValue(SSA, bit_values) && !interval->isReal();
-         #else
          return ut_None;
-         #endif
       }
       if(interval->isConstant())
       {
@@ -1115,30 +982,13 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
             const auto currentBW = getGIMPLE_BW(V);
             if(newBW >= currentBW)
             {
-               #ifdef BITVALUE_UPDATE
-               #ifndef NDEBUG
-               if(not AppM->ApplyNewTransformation()) { return ut_None; }
-               #endif
-               return updateBitValue(SSA, bit_values);
-               #else
                return ut_None;
-               #endif
             }
          }
          else if(interval->isAnti())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Anti range " + interval->ToString() + " not stored for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
-            #ifdef BITVALUE_UPDATE
-            #ifndef NDEBUG
-            if(not AppM->ApplyNewTransformation()) { return ut_None; }
-            #endif
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-            const auto modified = updateBitValue(SSA, bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            return modified;
-            #else
             return ut_None;
-            #endif
          }
          else if(interval->isEmpty())
          {
@@ -1197,6 +1047,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
    };
 
    int updateState = ut_None;
+   auto bit_values = string_to_bitstring(SSA->bit_values);
    if(interval->isConstant())
    {
       const auto cst_node = getConstNode(interval);
@@ -1232,7 +1083,6 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          AppM->RegisterTransformation("RangeAnalysis", use.first);
          #endif
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       #ifndef NDEBUG
@@ -1272,6 +1122,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
             #endif
          }
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       updateState = ut_Constant;
       #ifdef BITVALUE_UPDATE
@@ -1289,9 +1140,6 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       {
          SSA->max.reset();
          SSA->min.reset();
-         #ifdef BITVALUE_UPDATE
-         bit_values = interval->getBitValues(isSigned);  // BitValues for Empty/Anti range is U-string
-         #endif
       }
    }
    else if(interval->isFullSet())
@@ -1299,9 +1147,6 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       updateState = ut_Range;
       SSA->max.reset();
       SSA->min.reset();
-      #ifdef BITVALUE_UPDATE
-      bit_values = interval->getBitValues(isSigned);
-      #endif
    }
    else
    {
@@ -1323,13 +1168,24 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Min: " + GET_CONST_NODE(SSA->min)->ToString() + "   Max: " + GET_CONST_NODE(SSA->max)->ToString());
       
       #ifdef BITVALUE_UPDATE
-      const auto range_bv = interval->getBitValues(isSigned);
-      const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
-      THROW_ASSERT(std::count(bit_values.begin(), bit_values.end(), bit_lattice::X) >= std::count(sup_bv.begin(), sup_bv.end(), bit_lattice::X), "Don't care should not be generated here (" + bitstring_to_string(bit_values) + " sup " + bitstring_to_string(range_bv) +" = " + bitstring_to_string(sup_bv) + ")");
-      if(bit_values != sup_bv)
+      if(not bit_values.empty())
       {
-         bit_values = sup_bv;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range bit_values: " + bitstring_to_string(range_bv));
+         auto range_bv = interval->getBitValues(isSigned);
+         while (range_bv.size() > bit_values.size())
+         {
+            range_bv.pop_front();
+         }
+         const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
+         THROW_ASSERT(std::count(bit_values.begin(), bit_values.end(), bit_lattice::X) >= std::count(sup_bv.begin(), sup_bv.end(), bit_lattice::X), "Don't care should not be generated here (" + bitstring_to_string(bit_values) + " sup " + bitstring_to_string(range_bv) +" = " + bitstring_to_string(sup_bv) + ")");
+         if(bit_values != sup_bv)
+         {
+            bit_values = sup_bv;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range bit_values: " + bitstring_to_string(range_bv));
+         }
+      }
+      else
+      {
+         // TODO: could initialize bit_values here, but not sure
       }
       #endif
    }
@@ -1365,13 +1221,6 @@ void VarNode::print(std::ostream& OS) const
    }
    OS << " ";
    this->getRange()->print(OS);
-   #ifdef BITVALUE_UPDATE
-   const auto& bv = getBitValues();
-   if(bv.size())
-   {
-      OS << "<" << bitstring_to_string(bv) + ">";
-   }
-   #endif
 }
 
 std::string VarNode::ToString() const
@@ -2222,9 +2071,7 @@ RangeRef PhiOpNode::eval() const
 {
    THROW_ASSERT(sources.size() > 0, "Phi operation sources list empty");
    auto result = getRangeFor(getSink()->getValue(), Empty);
-   #ifdef BITVALUE_PHI_MASK
-   auto result_bv = sources.at(0)->getBitValues();
-   #endif
+   
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(getSink()->getValue())->ToString() + " = PHI");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Iterate over the sources of the phiop
@@ -2232,37 +2079,8 @@ RangeRef PhiOpNode::eval() const
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "->" + varNode->ToString());
       result = result->unionWith(varNode->getRange());
-      
-      #ifdef BITVALUE_PHI_MASK
-      // Propagate bit_values through phi for real variables
-      #ifndef NDEBUG
-      if(enable_bit_phi && result->isReal())
-      #else
-      if(result->isReal())
-      #endif
-      {
-         result_bv = BitLatticeManipulator::inf(result_bv, varNode->getBitValues(), result->getBitWidth(), false, false);
-      }
-      #endif
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--= " + result->ToString());
-
-   #ifdef BITVALUE_PHI_MASK
-   #ifndef NDEBUG
-   if(enable_bit_phi && result->isReal())
-   #else
-   if(result->isReal())
-   #endif
-   {
-      if(result_bv.size() < result->getBitWidth())
-      {
-         result_bv = BitLatticeManipulator::sign_extend_bitstring(result_bv, false, result->getBitWidth());
-      }
-      const auto mask_bv = getSink()->getBitValues();
-      getSink()->setBitValues(result_bv);
-      getSink()->maskBitValues(mask_bv);
-   }
-   #endif
    
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
@@ -2276,11 +2094,7 @@ RangeRef PhiOpNode::eval() const
          result = _intersect;
       }
    }
-   #ifdef BITVALUE_PHI_MASK
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "res = " + result->ToString() + "<" + bitstring_to_string(getSink()->getBitValues()) + ">");
-   #else
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "res = " + result->ToString());
-   #endif
    return result;
 }
 
@@ -2470,16 +2284,6 @@ RangeRef UnaryOpNode::eval() const
          {
             THROW_ASSERT(bw == 64 || bw == 32, "View_convert sink bitwidth should be 64 or 32 bits (" + STR(bw) + ")");
             result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), rr->getRange()->zextOrTrunc(bw));
-            #ifdef BITVALUE_UPDATE
-            #ifndef NDEBUG
-            if(enable_view_convert) {
-            #endif
-            // TODO: maybe could mask sink BitValues with mask(getSource()->getBitValues(), rr->getBitValues(false), true, bw)
-            getSink()->maskBitValues(getSource()->getBitValues());
-            #ifndef NDEBUG
-            }
-            #endif
-            #endif
             break;
          }
          case nop_expr_K:
@@ -2552,23 +2356,6 @@ RangeRef UnaryOpNode::eval() const
             if(resultType->get_kind() == real_type_K)
             {
                result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), RangeRef(new RealRange(oprnd)));
-               #ifdef BITVALUE_UPDATE
-               #ifndef NDEBUG
-               if(enable_float_pack) {
-               #endif
-               auto oprnd_bv = getSource()->getBitValues();
-               if(oprnd_bv.size() < bw)
-               {
-                  oprnd_bv = BitLatticeManipulator::sign_extend_bitstring(oprnd_bv, oprndSigned, bw);
-               }
-               getSink()->setBitValues(oprnd_bv);
-               const auto bv_aux = RealRange::fromBitValues(oprnd_bv);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bv_aux = " + bv_aux ->ToString() + "<" + bitstring_to_string(oprnd_bv) + ">");
-               result = result->intersectWith(bv_aux);
-               #ifndef NDEBUG
-               }
-               #endif
-               #endif
             }
             else
             {
@@ -2582,7 +2369,6 @@ RangeRef UnaryOpNode::eval() const
                {
                   result = RESULT_DISABLED_OPTION(zext, getSink()->getValue(), oprnd->zextOrTrunc(bw));
                }
-               // TODO: propagate bit_values if not already done by Bit_Value step
             }
             break;
          }
@@ -6140,12 +5926,7 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
          if(parm->range != nullptr)
          {
             sink->setRange(parm->range);
-            #ifdef BITVALUE_UPDATE
-            sink->setBitValues(parm->ra_bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->ra_bit_values);
-            #else
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString());
-            #endif
          }
       }
       else
@@ -6211,12 +5992,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
          if(parm->range != nullptr)
          {
             sink->setRange(parm->range);
-            #ifdef BITVALUE_UPDATE
-            sink->setBitValues(parm->ra_bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->ra_bit_values);
-            #else
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString());
-            #endif
          }
          else
          {
@@ -6365,11 +6141,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
       #ifndef NDEBUG
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
       {
-         #ifdef BITVALUE_UPDATE
-         std::string phiString = GET_CONST_NODE(m->getSink()->getValue())->ToString() + "<" + bitstring_to_string(m->getSink()->getBitValues()) + "> = PHI<";
-         #else
          std::string phiString = GET_CONST_NODE(m->getSink()->getValue())->ToString() + " = PHI<";
-         #endif
          for(size_t i = 0; i < m->getNumSources(); ++i)
          {
             phiString += GET_CONST_NODE(m->getSource(i)->getValue())->ToString() + ", ";
