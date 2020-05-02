@@ -2814,6 +2814,9 @@ struct function_decl : public decl_node, public attr
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
 
+   /// Range information about bounds of the function return value (valid for real_type too)
+   RangeRef range;
+
    /**
     * tmpl_parms holds template parameters
     * It is a TREE_LIST, his VALU field is a TREE_VEC whose LIST_OF_OP holds template parameters.

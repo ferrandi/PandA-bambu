@@ -42,11 +42,15 @@
 
 /// Superclass include
 #include "application_frontend_flow_step.hpp"
+#include "Range.hpp"
+#include "xml_attribute.hpp"
 
 class function_parm_mask : public ApplicationFrontendFlowStep
 {
  private:
    static bool executed;
+
+   std::pair<std::string, RangeRef> tagDecode(const attribute_sequence::attribute_list& attributes, Range::bw_t bw) const;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
