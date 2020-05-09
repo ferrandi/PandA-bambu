@@ -183,7 +183,7 @@ class OrderedInstructions
    mutable CustomMap<unsigned int, std::unique_ptr<OrderedBasicBlock>> OBBMap;
 
    /// The dominator tree of the parent function.
-   BBGraphConstRef DT;
+   const BBGraphConstRef DT;
 
  public:
    /// Constructor.
@@ -198,6 +198,11 @@ class OrderedInstructions
       const auto BBAi_v = BBmap.find(BBIA);
       const auto BBBi_v = BBmap.find(BBIB);
       
+      if(BBIA == BBIB)
+      {
+         return true;
+      }
+
       if(BBAi_v->second == BBBi_v->second)
       {
          // Intermediate BB shadowing incoming BB
@@ -267,6 +272,11 @@ class OrderedInstructions
    {
       OBBMap.erase(BBI);
    }
+
+   const BBGraphConstRef& getDT() const 
+   {
+      return DT;
+   }
 };
 
 class Operand
@@ -297,6 +307,37 @@ class Operand
       THROW_ASSERT(GET_NODE(new_ssa)->get_kind() == ssa_name_K, "New variable should be an ssa_name");
       THROW_ASSERT(ssaOperand, "Old variable should be an ssa_name");
       THROW_ASSERT(TM, "Null reference to tree manager");
+
+      if(auto* gp = GetPointer<gimple_phi>(GET_NODE(user_stmt)))
+      {
+         const auto& deList = gp->CGetDefEdgesList();
+         std::vector<gimple_phi::DefEdge> validDE;
+         for(const auto& de : deList)
+         {
+            if(GET_INDEX_CONST_NODE(de.first) == ssaOperand->index)
+            {
+               validDE.push_back(de);
+            }
+         }
+         THROW_ASSERT(static_cast<bool>(validDE.size()), "Required variable to be replaced not found");
+         if(validDE.size() > 1)
+         {
+            const auto newSSADefBBI = GetPointer<const gimple_node>(GET_CONST_NODE(GetPointer<const ssa_name>(GET_CONST_NODE(new_ssa))->CGetDefStmt()))->bb_index;
+            // Replace only correct DefEdge in the list
+            for(const auto& de : validDE)
+            {
+               if(de.second == newSSADefBBI)
+               {
+                  gp->ReplaceDefEdge(TM, de, {new_ssa, newSSADefBBI});
+                  bool emptyUses = ssaOperand->CGetUseStmts().empty();
+                  operand = new_ssa;
+                  return emptyUses;
+               }
+            }
+            // If it is not possible to detect the correct DefEdge skip replacement and keep conservative
+            return false;
+         }
+      }
 
       TM->ReplaceTreeNode(user_stmt, operand, new_ssa);
 
@@ -434,6 +475,10 @@ tree_nodeRef branchOpRecurse(tree_nodeRef op, tree_nodeRef stmt = nullptr)
       }
       THROW_UNREACHABLE("Branch var definition statement not handled (" + GET_CONST_NODE(DefStmt)->get_kind_text() + " " + GET_CONST_NODE(DefStmt)->ToString() + ")");
    }
+   else if(GetPointer<const cst_node>(Op))
+   {
+      return op;
+   }
    return stmt;
 }
 
@@ -467,8 +512,13 @@ void processBranch(tree_nodeConstRef bi, CustomSet<OperandRef>& OpsToRename, eSS
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Could not retrieve condition from branch variable, skipping... (" + GET_CONST_NODE(BI->op0)->ToString() + ")");
       return;
    }
+   if(GetPointer<const cst_node>(GET_CONST_NODE(cond_stmt)))
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Constant condition from branch variable, skipping... (" + GET_CONST_NODE(cond_stmt)->ToString() + ")");
+      return;
+   }
    const auto* CondStmt = GetPointer<const gimple_assign>(GET_CONST_NODE(cond_stmt));
-   THROW_ASSERT(CondStmt, "Condition variable should be defined by gimple_assign");
+   THROW_ASSERT(CondStmt, "Condition variable should be defined by gimple_assign (" + GET_CONST_NODE(cond_stmt)->ToString() + ")");
    const auto CondOp = GET_CONST_NODE(CondStmt->op1);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch condition is " + CondOp->get_kind_text() + " " + CondOp->ToString());
