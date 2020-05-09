@@ -1409,6 +1409,17 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
    const auto sinkRange = _sink->getRange();
    THROW_ASSERT(!boundRange->isEmpty(), "Bound range should not be empty");
    THROW_ASSERT(!sinkRange->isEmpty(), "Sink range should not be empty");
+   THROW_ASSERT(boundRange->isReal() == sinkRange->isReal(), "Range type mismatch");
+
+   if(boundRange->isReal())
+   {
+      const auto* rr = static_cast<const RealRange*>(boundRange.get());
+      if(this->getOperation() == eq_expr_K && !rr->getExponent()->isAnti() && !rr->getSignificand()->isAnti())
+      {
+         return RangeRef(boundRange->clone());
+      }
+      return getRangeFor(_sink->getValue(), Regular);
+   }
 
    auto IsAnti = _bound->getRange()->isAnti() || sinkRange->isAnti();
    const auto l = IsAnti ? (boundRange->isUnknown() ? Range::Min : boundRange->getUnsignedMin()) : boundRange->getLower();
@@ -2645,7 +2656,9 @@ RangeRef SigmaOpNode::eval() const
    if(!aux->isUnknown())
    {
       auto _intersect = result->intersectWith(aux);
-      if(!_intersect->isEmpty())
+      // Sigma operations are used to enhance live range split after conditional statement, 
+      // thus it is useful to intersect their range only if they actually produce tighter intervals
+      if(!_intersect->isEmpty() && _intersect->getSpan() < result->getSpan())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
@@ -4252,6 +4265,11 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
          }
          else
          {
+            // Sometimes sigma operation could cause confusion after maximum widening has been reached and generate loops
+            if(!oldInterval->isUnknown() && oldInterval->isFullSet() && newInterval->isAnti())
+            {
+               return RangeRef(oldInterval->clone());
+            }
             return RangeRef(newInterval->clone());
          }
       }
@@ -4413,7 +4431,14 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
          }
          else
          {
-            sinkInterval = RangeRef(newInterval->clone());
+            if(!newInterval->isUnknown() && newInterval->isFullSet())
+            {
+               sinkInterval = RangeRef(oldInterval->clone());
+            }
+            else
+            {
+               sinkInterval = RangeRef(newInterval->clone());
+            }
          }
       }
       else
@@ -6420,7 +6445,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters and return value propagation completed");
    CG->buildVarNodes();
-
+   
    #ifndef NDEBUG
    CG->findIntervals(parameters, GetName() + "(" + STR(iteration) + ")");
    ++iteration;

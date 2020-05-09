@@ -1309,6 +1309,10 @@ RangeRef Range::Eq(const RangeConstRef& other, bw_t _bw) const
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() && isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
    if(!isAnti() && !other->isAnti())
    {
       if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
@@ -1341,6 +1345,10 @@ RangeRef Range::Ne(const RangeConstRef& other, bw_t _bw) const
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
+   if(isAnti() && isAnti())
+   {
+      return RangeRef(new Range(Regular, _bw, 0, 1));
+   }
    if(!isAnti() && !other->isAnti())
    {
       if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
