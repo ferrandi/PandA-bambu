@@ -518,7 +518,7 @@ unsigned long long int memory::get_allocated_space() const
    return total_amount_of_private_memory + next_base_address - internal_base_address_start;
 }
 
-unsigned int memory::get_allocated_parameters_memory() const
+unsigned long long int memory::get_allocated_parameters_memory() const
 {
    return total_amount_of_parameter_memory;
 }

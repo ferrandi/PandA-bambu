@@ -124,10 +124,10 @@ class memory
    unsigned long long int maximum_private_memory_size;
 
    /// total amount of internal memory allocated
-   unsigned int total_amount_of_private_memory;
+   unsigned long long int total_amount_of_private_memory;
 
    /// total amount of parameter memory
-   unsigned int total_amount_of_parameter_memory;
+   unsigned long long int total_amount_of_parameter_memory;
 
    /// it represents the base address of the external memory
    unsigned long long int off_base_address;
@@ -520,7 +520,7 @@ class memory
    /**
     * Return the total amount of memory allocated for the memory mapped parameters
     */
-   unsigned int get_allocated_parameters_memory() const;
+   unsigned long long get_allocated_parameters_memory() const;
 
    /**
     * Returns the amount of memory allocated internally but not private
