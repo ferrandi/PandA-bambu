@@ -371,9 +371,9 @@ unsigned int mux_connection_binding::address_precision(unsigned int precision, c
       unsigned var = HLS->allocation_information->is_memory_unit(fu_type) ? HLS->allocation_information->get_memory_var(fu_type) : HLS->allocation_information->get_proxy_memory_var(fu_type);
       if(var && HLSMgr->Rmem->is_private_memory(var))
       {
-         unsigned int max_addr = HLSMgr->Rmem->get_base_address(var, HLS->functionId) + tree_helper::size(TreeM, var) / 8;
+         unsigned long long int max_addr = HLSMgr->Rmem->get_base_address(var, HLS->functionId) + tree_helper::size(TreeM, var) / 8;
          unsigned int address_bitsize;
-         for(address_bitsize = 1; max_addr > (1u << address_bitsize); ++address_bitsize)
+         for(address_bitsize = 1; max_addr > (1ull << address_bitsize); ++address_bitsize)
             ;
          return address_bitsize;
       }
@@ -409,7 +409,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
 {
    bool is_not_a_phi = (GET_TYPE(data, op) & TYPE_PHI) == 0;
    unsigned int tree_var = std::get<0>(_var);
-   unsigned int constant_value = std::get<1>(_var);
+   unsigned long long int constant_value = std::get<1>(_var);
    unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
    bus_addr_bitsize = std::min(precision, bus_addr_bitsize);
    memory_symbolRef m_sym;
@@ -444,8 +444,8 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                unsigned local_precision = bus_addr_bitsize;
                if(FB->is_variable_mem(ref_var))
                {
-                  unsigned int max_addr = HLSMgr->Rmem->get_base_address(ref_var, HLS->functionId) + tree_helper::size(TreeM, ref_var) / 8;
-                  for(local_precision = 1; max_addr > (1u << local_precision); ++local_precision)
+                  unsigned long long int max_addr = HLSMgr->Rmem->get_base_address(ref_var, HLS->functionId) + tree_helper::size(TreeM, ref_var) / 8;
+                  for(local_precision = 1; max_addr > (1ull << local_precision); ++local_precision)
                      ;
                }
                determine_connection(op, HLS_manager::io_binding_type(GET_INDEX_NODE(ae->op), 0), fu_obj, port_num, port_index, data, local_precision, alignment);

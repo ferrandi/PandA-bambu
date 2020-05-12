@@ -1627,7 +1627,7 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
 
 void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
-   unsigned int testbench_memsize = HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned int>(OPT_base_address);
+   unsigned long long int testbench_memsize = HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
    if(testbench_memsize == 0)
       testbench_memsize = 1;
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));

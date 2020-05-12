@@ -49,13 +49,13 @@
 #include "string_manipulation.hpp" //STR
 #include "utility.hpp"
 
-memory_symbol::memory_symbol(unsigned int var, unsigned int addr, unsigned int funId) : variable(var), name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), address(addr), resolved(false)
+memory_symbol::memory_symbol(unsigned int var, unsigned long long int addr, unsigned int funId) : variable(var), name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), address(addr), resolved(false)
 {
 }
 
 memory_symbol::~memory_symbol() = default;
 
-void memory_symbol::set_address(unsigned int _address)
+void memory_symbol::set_address(unsigned long long int _address)
 {
    address = _address;
 }
@@ -70,7 +70,7 @@ std::string memory_symbol::get_symbol_name() const
    return name;
 }
 
-unsigned int memory_symbol::get_address() const
+unsigned long long memory_symbol::get_address() const
 {
    return address;
 }
