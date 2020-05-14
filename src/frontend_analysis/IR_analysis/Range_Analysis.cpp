@@ -93,10 +93,10 @@
 #define BITVALUE_PHI_MASK                // Propagate bit_values through phis for floating-point variables
 #endif
 
+#define RA_EXEC_NORMAL       0
+#define RA_EXEC_READONLY     1
+#define RA_EXEC_SKIP         2
 #ifndef NDEBUG
-#define RA_DEBUG_NONE         0
-#define RA_DEBUG_READONLY     1
-#define RA_DEBUG_NOEXEC       2
 //    #define DEBUG_RANGE_OP
 //    #define SCC_DEBUG
 #endif
@@ -2656,13 +2656,20 @@ RangeRef SigmaOpNode::eval() const
    if(!aux->isUnknown())
    {
       auto _intersect = result->intersectWith(aux);
-      // Sigma operations are used to enhance live range split after conditional statement, 
-      // thus it is useful to intersect their range only if they actually produce tighter intervals
-      if(!_intersect->isEmpty() && _intersect->getSpan() < result->getSpan())
+      if(!_intersect->isEmpty())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
-         result = _intersect;
+         // Sigma operations are used to enhance live range split after conditional statements, 
+         // thus it is useful to intersect their range only if it actually produces tighter interval
+         if(_intersect->isReal() || _intersect->getSpan() < result->getSpan())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
+            result = _intersect;
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result not changed because not improved");
+         }
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = SIGMA< " + getSource()->getRange()->ToString() + " >");
@@ -6184,9 +6191,9 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
    : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par)
    #ifndef NDEBUG
-   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max()), debug_mode(RA_DEBUG_NONE)
+   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max())
    #endif
-   , solverType(st_Cousot), requireESSA(true)
+   , solverType(st_Cousot), requireESSA(true), execution_mode(RA_EXEC_NORMAL)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
@@ -6201,19 +6208,22 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    }
    if(ra_mode.erase("noESSA"))
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: no Extended SSA required");
       requireESSA = false;
    }
    #ifndef NDEBUG
    if(ra_mode.erase("ro"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: read-only mode enabled");
-      debug_mode = RA_DEBUG_READONLY;
+      execution_mode = RA_EXEC_READONLY;
    }
+   #endif
    if(ra_mode.erase("skip"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: skip mode enabled");
-      debug_mode = RA_DEBUG_NOEXEC;
+      execution_mode = RA_EXEC_SKIP;
    }
+   #ifndef NDEBUG
    if(ra_mode.erase("debug_op"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: range operations debug");
@@ -6252,17 +6262,17 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, ternary);
    OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
-{
+   {
       THROW_ASSERT(ra_mode.size() == 1, "Too many options left to parse");
       stop_iteration = std::strtoull(ra_mode.begin()->data(), nullptr, 10);
       if(stop_iteration == 0)
-   {
+      {
          THROW_ERROR("Invalid range analysis option: " + *ra_mode.begin());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
    }
-            #endif
-   }
+   #endif
+}
 
 RangeAnalysis::~RangeAnalysis() = default;
 
@@ -6270,12 +6280,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   #ifndef NDEBUG
-   if(debug_mode == RA_DEBUG_NOEXEC)
+   if(execution_mode == RA_EXEC_SKIP)
    {
       return relationships;
    }
-   #endif
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -6309,11 +6317,13 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
    //    #ifndef NDEBUG
-   //    if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
+   //    if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
+   //    #else
+   //    if(execution_mode == RA_EXEC_SKIP)
+   //    #endif
    //    {
    //       return ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
    //    }
-   //    #endif
    //    if(relationship_type == INVALIDATION_RELATIONSHIP)
    //    {
    //       for(const auto f_id : fun_id_to_restart)
@@ -6339,11 +6349,13 @@ void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const
 bool RangeAnalysis::HasToBeExecuted() const
 {
    #ifndef NDEBUG
-   if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
+   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
+   #else
+   if(execution_mode == RA_EXEC_SKIP)
+   #endif
    {
       return false;
    }
-   #endif
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    std::map<unsigned int, unsigned int> cur_bb_ver;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
@@ -6362,6 +6374,7 @@ void RangeAnalysis::Initialize()
    switch(solverType)
    {
       case st_Cousot:
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Using jump-set abstract operators");
          CG.reset(new Cousot(AppM,
             #ifndef NDEBUG
                debug_level, graph_debug));
@@ -6370,6 +6383,7 @@ void RangeAnalysis::Initialize()
             #endif
          break;
       case st_Crop:
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Using standard abstract operators");
          CG.reset(new CropDFS(AppM,
             #ifndef NDEBUG
                debug_level, graph_debug));
@@ -6386,7 +6400,7 @@ void RangeAnalysis::Initialize()
 DesignFlowStep_Status RangeAnalysis::Exec()
 {
    #ifndef NDEBUG
-   if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
+   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
       return DesignFlowStep_Status::SKIPPED;
@@ -6479,7 +6493,7 @@ bool RangeAnalysis::finalize()
    const auto& vars = std::static_pointer_cast<const ConstraintGraph>(CG)->getVarNodes();
    CustomMap<unsigned int, int> modifiedFunctions;
    #ifndef NDEBUG
-   if(debug_mode >= RA_DEBUG_READONLY)
+   if(execution_mode >= RA_EXEC_READONLY)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
