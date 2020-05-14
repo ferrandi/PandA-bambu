@@ -51,6 +51,8 @@
 /// behavior include
 #include "application_manager.hpp"
 #include "behavioral_helper.hpp"
+#include "call_graph.hpp"
+#include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
 #include "pragma_manager.hpp"
 
@@ -79,8 +81,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -104,6 +105,29 @@ bool function_parm_mask::executed = false;
 function_parm_mask::function_parm_mask(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par) : ApplicationFrontendFlowStep(AM, FUNCTION_PARM_MASK, dfm, par)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   const auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
+
+   for(const auto& fMask : opts)
+   {
+      if(fMask.empty())
+      {
+         continue;
+      }
+      const auto mask = SplitString(fMask, "*");
+      if(mask.size() < 5 || mask[0].empty())
+      {
+         THROW_ERROR("Incorrect mask parameter format: <func_name>*<sign>*<exp_l>*<exp_u>*<m_bits>");
+      }
+
+      funcMask m;
+      m.sign =  mask[1] == "0" ? bit_lattice::ZERO : (mask[1] == "1" ? bit_lattice::ONE : bit_lattice::U);
+      m.exp_l = static_cast<int16_t>(strtol(mask[2].data(), nullptr, 10));
+      m.exp_u = static_cast<int16_t>(strtol(mask[3].data(), nullptr, 10));
+      m.m_bits = static_cast<uint8_t>(strtoul(mask[4].data(), nullptr, 10));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask required for function " + mask[0] + ": sign<" + bitstring_to_string({m.sign}) + ">, exp[" + STR(m.exp_l) + "," + STR(m.exp_u) + "], significand<" + STR(+m.m_bits) + ">");
+
+      funcMasks.insert(std::make_pair<>(mask[0], std::move(m)));
+   }
 }
 
 function_parm_mask::~function_parm_mask() = default;
@@ -194,7 +218,7 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
                   b = bit_lattice::X;
                }
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point significand bitwidth set to " + sig_bitwidth);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point significand bitwidth set to " + sig_bitwidth);
          }
          if(sign.size())
          {
@@ -202,7 +226,7 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
             rr->setSign(RangeRef(new Range(Regular, 1, static_cast<bool>(sign_val), static_cast<bool>(sign_val))));
             bv_mask.pop_front();
             bv_mask.push_front(sign_val == 0 ? bit_lattice::ZERO : bit_lattice::ONE);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("---Floating point sign fixed as ") + (sign_val == 0 ? "positive" : "negative"));
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("---Floating-point sign fixed as ") + (sign_val == 0 ? "positive" : "negative"));
          }
          if(exp_range.size())
          {
@@ -210,7 +234,7 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
             const auto exp_l = std::strtol(exp_range.substr(0, separator_idx).data(), nullptr, 0);
             const auto exp_u = std::strtol(exp_range.substr(separator_idx + 1, exp_range.size() - separator_idx - 1).data(), nullptr, 0);
             RangeRef e_range(new Range(Regular, bw == 64 ? 11 : 8, exp_l, exp_u));
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point exponent restricted range " + e_range->sub(RangeRef(bw == 64 ? new Range(Regular, 11, 1023, 1023) : new Range(Regular, 8, 127, 127)))->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point exponent restricted range " + e_range->sub(RangeRef(bw == 64 ? new Range(Regular, 11, 1023, 1023) : new Range(Regular, 8, 127, 127)))->ToString());
             rr->setExponent(e_range);
          }
          THROW_ASSERT(bv_mask.size() == rr->getBitWidth(), "Floating-point bit_values must be exact");
@@ -221,11 +245,85 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
    return {bit_values, range};
 }
 
+void function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const
+{
+   const auto TM = AppM->get_tree_manager();
+   const auto retType = tree_helper::GetFunctionReturnType(TM->get_tree_node_const(fd->index));
+   if(retType->get_kind() != real_type_K)
+   {
+      return;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
+   
+   const auto retBW = static_cast<Range::bw_t>(tree_helper::Size(retType));
+   THROW_ASSERT(retBW == 32 || retBW == 64, "");
+   refcount<RealRange> rr(new RealRange(RangeRef(new Range(Regular, retBW))));
+   std::deque<bit_lattice> bv;
+   if(fm.sign != bit_lattice::U)
+   {
+      const auto sign = fm.sign == bit_lattice::ONE ? 1 : 0;
+      rr->setSign(RangeRef(new Range(Regular, 1, sign, sign)));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("---Floating-point sign fixed as ") + (sign == 0 ? "positive" : "negative"));
+   }
+   if(fm.exp_u - fm.exp_l < (retBW == 64 ? 2047 : 255))
+   {
+      const auto range_fix = retBW == 64 ? 1023 : 127;
+      RangeRef e_range(new Range(Regular, retBW == 64 ? 11 : 8, fm.exp_l + range_fix, fm.exp_u + range_fix));
+      rr->setExponent(e_range);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point exponent restricted range " + e_range->sub(RangeRef(retBW == 64 ? new Range(Regular, 11, 1023, 1023) : new Range(Regular, 8, 127, 127)))->ToString());
+   }
+   if(fm.m_bits < (retBW == 64 ? 52 : 23))
+   {
+      const auto sig_mask = static_cast<int64_t>(UINT64_MAX << ((retBW == 64 ? 52 : 23) - fm.m_bits));
+      rr->setSignificand(RangeRef(new Range(Anti, static_cast<Range::bw_t>((retBW == 64 ? 52 : 23)), sig_mask + 1, -1)));
+      bv = create_bitstring_from_constant(sig_mask, retBW, false);
+      for(auto& b : bv)
+      {
+         if(b == bit_lattice::ONE)  
+         {
+            b = bit_lattice::U;
+         }
+         else if(b == bit_lattice::ZERO)
+         {
+            b = bit_lattice::X;
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point significand bitwidth set to " + STR(+fm.m_bits));
+   }
+   if(rr->isFullSet())
+   {
+      return;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   const auto bv_str = bitstring_to_string(bv);
+   fd->bit_values = bv_str;
+   fd->range = RangeRef(rr->clone());
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Floating-point bounds set to " + fd->range->ToString() + "<" + fd->bit_values + "> on the following: ");
+
+   const auto f_args = fd->list_of_args;
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(const auto parmNode : f_args)
+   {
+      auto* parm = GetPointer<parm_decl>(GET_NODE(parmNode));
+      const auto parmBW = tree_helper::Size(GET_NODE(parmNode));
+      if(GET_NODE(parm->type)->get_kind() != real_type_K || parmBW != retBW)
+      {
+         continue;
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + GET_CONST_NODE(parm->type)->get_kind_text() + "<" + STR(parmBW) + "> " + GetPointer<const identifier_node>(GET_CONST_NODE(parm->name))->strg);
+      parm->bit_values = bv_str;
+      parm->range = RangeRef(rr->clone());
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Return value " + retType->get_kind_text() + "<" + STR(retBW) + ">");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+}
+
 DesignFlowStep_Status function_parm_mask::Exec()
 {
    const auto TM = AppM->get_tree_manager();
    CustomMap<std::string, function_decl*> nameToFunc;
-   for(const auto f : AppM->get_functions_with_body())
+   for(const auto f : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
    {
       auto* fd = GetPointer<function_decl>(TM->GetTreeNode(f));
       std::string fname;
@@ -241,7 +339,8 @@ DesignFlowStep_Status function_parm_mask::Exec()
       auto XMLfilename = output_temporary_directory + leaf_name + ".mask.xml";
       if(boost::filesystem::exists(boost::filesystem::path(XMLfilename)))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + leaf_name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "parsing " + leaf_name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
          XMLDomParser parser(XMLfilename);
          parser.Exec();
          if(parser)
@@ -315,7 +414,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
                         parm->bit_values = bit_values;
                         parm->range = range;
                         modified = true;
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point bounds set to " + parm->range->ToString() + "<" + parm->bit_values + ">");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point bounds set to " + parm->range->ToString() + "<" + parm->bit_values + ">");
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                      }
                   }
@@ -330,18 +429,29 @@ DesignFlowStep_Status function_parm_mask::Exec()
                      fd->bit_values = bit_values;
                      fd->range = range;
                      modified = true;
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating point bounds set to " + fd->range->ToString() + "<" + fd->bit_values + ">");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point bounds set to " + fd->range->ToString() + "<" + fd->bit_values + ">");
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + leaf_name);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "parsed file " + leaf_name);
       }
       else
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function parameter mask for " + leaf_name + " not present");
       }
+   }
+
+   for(const auto& fm : funcMasks)
+   {
+      const auto f = nameToFunc.find(fm.first);
+      if(f == nameToFunc.end())
+      {
+         THROW_ERROR("Required function not found: " + fm.first);
+      }
+      fullFunctionMask(f->second, fm.second);
    }
 
    executed = true;
