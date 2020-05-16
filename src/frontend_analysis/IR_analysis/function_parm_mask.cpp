@@ -101,11 +101,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 }
 
 bool function_parm_mask::executed = false;
+bit_lattice function_parm_mask::dc = bit_lattice::ZERO;
 
 function_parm_mask::function_parm_mask(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par) : ApplicationFrontendFlowStep(AM, FUNCTION_PARM_MASK, dfm, par)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   const auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
+   auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
+   
+   if(opts.size() && opts.front().front() == 'X')
+   {
+      dc = bit_lattice::X;
+      opts[0] = std::string();
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bit value mask don't care symbol: " + std::string(dc == bit_lattice::X ? "X" : "0"));
 
    for(const auto& fMask : opts)
    {
@@ -184,12 +192,12 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
             }
             else if(b == bit_lattice::ZERO)
             {
-               b = bit_lattice::X;
+               b = dc;
             }
          }
          for(auto i = bit_mask.size(); i < bw; ++i)
          {
-            bit_mask.push_front(bit_lattice::X);
+            bit_mask.push_front(dc);
          }
          bit_values = bitstring_to_string(bit_mask);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bitmask " + bit_values);
@@ -215,7 +223,7 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
                }
                else if(b == bit_lattice::ZERO)
                {
-                  b = bit_lattice::X;
+                  b = dc;
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point significand bitwidth set to " + sig_bitwidth);
@@ -285,7 +293,7 @@ void function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
          }
          else if(b == bit_lattice::ZERO)
          {
-            b = bit_lattice::X;
+            b = dc;
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point significand bitwidth set to " + STR(+fm.m_bits));

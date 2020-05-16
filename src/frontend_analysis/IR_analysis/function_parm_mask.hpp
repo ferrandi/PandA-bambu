@@ -51,6 +51,7 @@ class function_parm_mask : public ApplicationFrontendFlowStep
 {
  private:
    static bool executed;
+   static bit_lattice dc;
 
    struct funcMask {
       bit_lattice sign;
