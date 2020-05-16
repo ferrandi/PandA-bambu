@@ -1205,6 +1205,12 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
    AppM->RegisterTransformation("RangeAnalysis", V);
    #endif
 
+   if(const auto* gp = GetPointer<const gimple_phi>(GET_NODE(SSA->CGetDefStmt())))
+   if(gp->CGetDefEdgesList().size() == 1)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Sigma defined variable not considered for invalidation loop...");
+      return ut_None;
+   }
    return updateState;
 }
 
@@ -6316,33 +6322,26 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 
 void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
-   //    #ifndef NDEBUG
-   //    if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
-   //    #else
-   //    if(execution_mode == RA_EXEC_SKIP)
-   //    #endif
-   //    {
-   //       return ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
-   //    }
-   //    if(relationship_type == INVALIDATION_RELATIONSHIP)
-   //    {
-   //       for(const auto f_id : fun_id_to_restart)
-   //       {
-   //          const std::string dce_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
-   //          vertex frontend_dce = design_flow_manager.lock()->GetDesignFlowStep(dce_signature);
-   //          THROW_ASSERT(frontend_dce != NULL_VERTEX, "step " + dce_signature + " is not present");
-   //          
-   //          const std::string bv_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, f_id);
-   //          vertex frontend_bv = design_flow_manager.lock()->GetDesignFlowStep(bv_signature);
-   //          THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
-   //          
-   //          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   //          const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
-   //          const auto dce = design_flow_graph->CGetDesignFlowStepInfo(frontend_dce)->design_flow_step;
-   //          relationships.insert(dce);
-   //          relationships.insert(bv);
-   //       }
-   //    }
+   if(relationship_type == INVALIDATION_RELATIONSHIP)
+   {
+      for(const auto f_id : fun_id_to_restart)
+      {
+         const std::string dce_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
+         vertex frontend_dce = design_flow_manager.lock()->GetDesignFlowStep(dce_signature);
+         THROW_ASSERT(frontend_dce != NULL_VERTEX, "step " + dce_signature + " is not present");
+         
+         const std::string bv_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, f_id);
+         vertex frontend_bv = design_flow_manager.lock()->GetDesignFlowStep(bv_signature);
+         THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
+         
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
+         const auto dce = design_flow_graph->CGetDesignFlowStepInfo(frontend_dce)->design_flow_step;
+         relationships.insert(dce);
+         relationships.insert(bv);
+      }
+      fun_id_to_restart.clear();
+   }
    ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
 }
 
@@ -6358,10 +6357,10 @@ bool RangeAnalysis::HasToBeExecuted() const
    }
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    std::map<unsigned int, unsigned int> cur_bb_ver;
-   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   const auto CGMan = AppM->CGetCallGraphManager();
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
+      const auto FB = AppM->CGetFunctionBehavior(i);
       cur_bitvalue_ver[i] = FB->GetBitValueVersion();
       cur_bb_ver[i] = FB->GetBBVersion();
    }
@@ -6395,18 +6394,20 @@ void RangeAnalysis::Initialize()
          THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
          break;
    }
+   fun_id_to_restart.clear();
 }
 
 DesignFlowStep_Status RangeAnalysis::Exec()
 {
    #ifndef NDEBUG
    if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
+   #else
+   if(execution_mode == RA_EXEC_SKIP)
+   #endif
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
       return DesignFlowStep_Status::SKIPPED;
    }
-   #endif
-   fun_id_to_restart.clear();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Analyse only reached functions
    const auto TM = AppM->get_tree_manager();

@@ -72,6 +72,8 @@
 #include "gcc_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
+#include "Range.hpp"
+
 class OrderedBasicBlock
 {
    /// Map a instruction to its position in a BasicBlock.
@@ -1071,11 +1073,13 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
             ToBB->AddPhi(PIC);
          }
 
+         // Clone renamed ssa properties
          const auto* op = GetPointer<const ssa_name>(GET_CONST_NODE(Op));
          auto* newSSA = GetPointer<ssa_name>(GET_NODE(new_ssa_var));
          newSSA->bit_values = op->bit_values;
-         //    newSSA->min = op->min;
-         //    newSSA->max = op->max;
+         newSSA->range = RangeRef(op->range ? op->range->clone() : nullptr);
+         newSSA->min = op->min;
+         newSSA->max = op->max;
          
          PredicateMap.insert({PIC, ValInfo});
          Result.Def = PIC;
@@ -1314,7 +1318,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -1325,6 +1329,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          THROW_UNREACHABLE("");
    }
    return relationships;
+}
+
+bool eSSA::HasToBeExecuted() const
+{
+   const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_id);
+   return FB->GetBBVersion() != bb_ver || FB->GetBitValueVersion() != bv_ver;
 }
 
 DesignFlowStep_Status eSSA::InternalExec()
@@ -1486,9 +1496,12 @@ DesignFlowStep_Status eSSA::InternalExec()
    bool modified = renameUses(OpsToRename, ValueInfoNums, ValueInfos, DFSInfos, EdgeUsesOnly, sl);
    DT.reset();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   const auto FB = AppM->GetFunctionBehavior(function_id);
+   bb_ver = FB->GetBBVersion();
+   bv_ver = FB->GetBitValueVersion();
    if(modified)
    {
-      AppM->GetFunctionBehavior(function_id)->UpdateBBVersion();
+      bb_ver = FB->UpdateBBVersion();
       return DesignFlowStep_Status::SUCCESS;
    }
    return DesignFlowStep_Status::UNCHANGED;
