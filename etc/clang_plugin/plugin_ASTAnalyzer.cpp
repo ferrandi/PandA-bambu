@@ -173,35 +173,43 @@ namespace clang
             }
             if(auto maskInfoIT = HLS_maskMap.find(funArgPair.first); maskInfoIT != HLS_maskMap.end())
             {
-               stream << "  <function id=\"" << funArgPair.first << "\">\n";
-               const auto& maskInfos = maskInfoIT->second;
-               unsigned int ArgIndex = 0;
-               for(const auto& par : funArgPair.second)
+               auto pushMaskInfoAttributes = [] (const MaskInfo& maskInfo, llvm::raw_fd_ostream& str)
                {
-                  const auto& maskInfo = maskInfos.at(ArgIndex);
-                  stream << "    <arg id=\"" << par << "\"";
                   if(maskInfo.mt != mt_Invalid)
                   {
                      if(maskInfo.mt & mt_Sign)
                      {
-                        stream << " sign=\"" << +maskInfo.sign << "\"";
+                        str << " sign=\"" << +maskInfo.sign << "\"";
                      }
                      if(maskInfo.mt & mt_Exponent)
                      {
-                        stream << " exp_range=\"" << +maskInfo.min_exp << "," << +maskInfo.max_exp << "\"";
+                        str << " exp_range=\"" << +maskInfo.min_exp << "," << +maskInfo.max_exp << "\"";
                      }
                      if(maskInfo.mt & mt_Significand)
                      {
-                        stream << " sig_bitwidth=\"" << +maskInfo.significand_bits << "\"";
+                        str << " sig_bitwidth=\"" << +maskInfo.significand_bits << "\"";
                      }
                      if(maskInfo.mt & mt_Bitmask)
                      {
-                        stream << " bitmask=\"" << +maskInfo.bitmask << "\"";
+                        str << " bitmask=\"" << +maskInfo.bitmask << "\"";
                      }
                   }
+               };
+               const auto& maskInfos = maskInfoIT->second;
+               
+               stream << "  <function id=\"" << funArgPair.first << "\"";
+               pushMaskInfoAttributes(maskInfos.back(), stream);
+               stream << ">\n";
+
+               unsigned int ArgIndex = 0;
+               for(const auto& par : funArgPair.second)
+               {
+                  stream << "    <arg id=\"" << par << "\"";
+                  pushMaskInfoAttributes(maskInfos.at(ArgIndex), stream);
                   stream << "/>\n";
                   ++ArgIndex;
                }
+
                stream << "  </function>\n";
             }
          }
@@ -359,6 +367,80 @@ namespace clang
             }
          }
 
+         auto maskInfoParser = [&](MaskInfo& userMaskInfo, clang::QualType argType)
+         {
+            if(userMaskInfo.mt == mt_Invalid)
+            {
+               return;
+            }
+
+            if(argType->isFloatingType())
+            {
+               if(userMaskInfo.mt & mt_Bitmask)
+               {
+                  DiagnosticsEngine& D = CI.getDiagnostics();
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of floating point type: use sign/exponent/significand directives"));
+               }
+               int exp_halfrange;
+               int s_bits;
+               const auto* BT = dyn_cast<BuiltinType>(argType);
+               if(BT && BT->getKind() == BuiltinType::Double)
+               {
+                  exp_halfrange = 1024;
+                  s_bits = 52;
+               }
+               else if(BT && BT->getKind() == BuiltinType::Float)
+               {
+                  exp_halfrange = 128;
+                  s_bits = 23;
+               }
+               else
+               {
+                  DiagnosticsEngine& D = CI.getDiagnostics();
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask sign/exponent/significand directives are valid for 32/64bits IEEE754 floating point types only"));
+               }
+               if(userMaskInfo.mt & mt_Exponent)
+               {
+                  if(userMaskInfo.min_exp <= -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
+                  {
+                     DiagnosticsEngine& D = CI.getDiagnostics();
+                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
+                  }
+                  // Exponent range is stored as unsigned value range of exponent bits (not actual exponent number)
+                  userMaskInfo.min_exp += exp_halfrange - 1;
+                  userMaskInfo.max_exp += exp_halfrange - 1;
+               }
+               if(userMaskInfo.mt & mt_Significand)
+               {
+                  if(userMaskInfo.significand_bits > s_bits)
+                  {
+                     DiagnosticsEngine& D = CI.getDiagnostics();
+                     D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask significand: too many bits for parameter type"));
+                  }
+               }
+            }
+            else if(argType->isIntegerType())
+            {
+               if(userMaskInfo.mt != mt_Invalid && userMaskInfo.mt != mt_Bitmask)
+               {
+                  DiagnosticsEngine& D = CI.getDiagnostics();
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of integer type: use bitmask directive"));
+               }
+            }
+            else
+            {
+               DiagnosticsEngine& D = CI.getDiagnostics();
+               if(userMaskInfo.mt == mt_Bitmask)
+               {
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of non-integer type"));
+               }
+               else
+               {
+                  D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of non-floating-point type"));
+               }
+            }
+         };
+
          if(!FD->isVariadic() && FD->hasBody())
          {
             auto funName = getMangledName(FD);
@@ -373,81 +455,20 @@ namespace clang
                   if(auto maskInfoIT = mask_PragmaMap.find(parName); maskInfoIT != mask_PragmaMap.end())
                   {
                      userMaskInfo = maskInfoIT->second;
+                     maskInfoParser(userMaskInfo, ND->getType());
                      storeInfos = true;
                   }
-                  if(userMaskInfo.mt != mt_Invalid)
-                  {
-                     auto argType = ND->getType();
-                     if(argType->isFloatingType())
-                     {
-                        if(userMaskInfo.mt & mt_Bitmask)
-                        {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of floating point type: use sign/exponent/significand directives"));
-                        }
-                        int exp_halfrange;
-                        int s_bits;
-                        const auto* BT = dyn_cast<BuiltinType>(argType);
-                        if(BT && BT->getKind() == BuiltinType::Double)
-                        {
-                           exp_halfrange = 1024;
-                           s_bits = 52;
-                        }
-                        else if(BT && BT->getKind() == BuiltinType::Float)
-                        {
-                           exp_halfrange = 128;
-                           s_bits = 23;
-                        }
-                        else
-                        {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask sign/exponent/significand directives are valid for 32/64bits IEEE754 floating point types only"));
-                        }
-                        if(userMaskInfo.mt & mt_Exponent)
-                        {
-                           if(userMaskInfo.min_exp <= -exp_halfrange || userMaskInfo.max_exp > exp_halfrange)
-                           {
-                              DiagnosticsEngine& D = CI.getDiagnostics();
-                              D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask exponent: range out of bounds"));
-                           }
-                           // Exponent range is stored as unsigned value range of exponent bits (not actual exponent number)
-                           userMaskInfo.min_exp += exp_halfrange - 1;
-                           userMaskInfo.max_exp += exp_halfrange - 1;
-                        }
-                        if(userMaskInfo.mt & mt_Significand)
-                        {
-                           if(userMaskInfo.significand_bits > s_bits)
-                           {
-                              DiagnosticsEngine& D = CI.getDiagnostics();
-                              D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask significand: too many bits for parameter type"));
-                           }
-                        }
-                     }
-                     else if(argType->isIntegerType())
-                     {
-                        if(userMaskInfo.mt != mt_Invalid && userMaskInfo.mt != mt_Bitmask)
-                        {
-                           DiagnosticsEngine& D = CI.getDiagnostics();
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of integer type: use bitmask directive"));
-                        }
-                     }
-                     else
-                     {
-                        DiagnosticsEngine& D = CI.getDiagnostics();
-                        if(userMaskInfo.mt == mt_Bitmask)
-                        {
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of non-integer type"));
-                        }
-                        else
-                        {
-                           D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma mask non-consistent with parameter of non-floating-point type"));
-                        }
-                     }
-                  }
-
                   fpInfos.push_back(std::move(userMaskInfo));
                }
             }
+            MaskInfo returnMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
+            if(const auto returnUI = mask_PragmaMap.find("@"); returnUI != mask_PragmaMap.end())
+            {
+               returnMaskInfo = returnUI->second;
+               maskInfoParser(returnMaskInfo, FD->getReturnType());
+               storeInfos = true;
+            }
+            fpInfos.push_back(std::move(returnMaskInfo));
 
             if(storeInfos)
             {

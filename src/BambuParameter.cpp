@@ -325,6 +325,7 @@
 #define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
+#define OPT_MASK (1 + OPT_RANGE_ANALYSIS_MODE)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -1240,6 +1241,7 @@ int BambuParameter::Exec()
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
       {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
+      {"mask", optional_argument, nullptr, OPT_MASK},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
@@ -2253,6 +2255,11 @@ int BambuParameter::Exec()
          case OPT_RANGE_ANALYSIS_MODE:
          {
             setOption(OPT_range_analysis_mode, optarg);
+            break;
+         }
+         case OPT_MASK:
+         {
+            setOption(OPT_mask, optarg);
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
@@ -3818,6 +3825,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_no_return_zero, false);
    setOption(OPT_bitvalue_ipa, true);
    setOption(OPT_range_analysis_mode, "");
+   setOption(OPT_mask, "");
 
 
 #if HAVE_HOST_PROFILING_BUILT

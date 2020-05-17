@@ -42,11 +42,29 @@
 
 /// Superclass include
 #include "application_frontend_flow_step.hpp"
+#include "bit_lattice.hpp"
+#include "Range.hpp"
+#include "tree_node.hpp"
+#include "xml_attribute.hpp"
 
 class function_parm_mask : public ApplicationFrontendFlowStep
 {
  private:
    static bool executed;
+   static bit_lattice dc;
+
+   struct funcMask {
+      bit_lattice sign;
+      int16_t exp_l;
+      int16_t exp_u;
+      uint8_t m_bits;
+   };
+
+   CustomMap<std::string, funcMask> funcMasks;
+
+   std::pair<std::string, RangeRef> tagDecode(const attribute_sequence::attribute_list& attributes, Range::bw_t bw) const;
+
+   void fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 

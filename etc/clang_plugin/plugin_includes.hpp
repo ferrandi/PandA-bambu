@@ -652,7 +652,7 @@ namespace llvm
       const void* SSA_NAME_DEF_STMT(const void* t) const;
       const void* getMinValue(const void* t);
       const void* getMaxValue(const void* t);
-      RangeAnalysis::InterProceduralRACropDFSHelper* RA;
+      //    RangeAnalysis::InterProceduralRACropDFSHelper* RA;
       const std::list<std::pair<const void*, const void*>> CONSTRUCTOR_ELTS(const void* t);
 
       const void* CASE_LOW(const void* t);
@@ -721,10 +721,10 @@ namespace llvm
       bool RebuildConstants(llvm::Module& M);
       bool lowerIntrinsics(llvm::Module& M);
 
-      void compute_eSSA(llvm::Module& M);
+      //    void compute_eSSA(llvm::Module& M);
 
-      void computeValueRange(llvm::Module& M);
-      void ValueRangeOptimizer(llvm::Module& M);
+      //    void computeValueRange(llvm::Module& M);
+      //    void ValueRangeOptimizer(llvm::Module& M);
       bool LoadStoreOptimizer(llvm::Module& M);
       void computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);
 

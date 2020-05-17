@@ -93,10 +93,10 @@
 #define BITVALUE_PHI_MASK                // Propagate bit_values through phis for floating-point variables
 #endif
 
+#define RA_EXEC_NORMAL       0
+#define RA_EXEC_READONLY     1
+#define RA_EXEC_SKIP         2
 #ifndef NDEBUG
-#define RA_DEBUG_NONE         0
-#define RA_DEBUG_READONLY     1
-#define RA_DEBUG_NOEXEC       2
 //    #define DEBUG_RANGE_OP
 //    #define SCC_DEBUG
 #endif
@@ -742,7 +742,7 @@ namespace
       }
       else if(const auto* rc = GetPointer<const real_cst>(tn))
       {
-         auto val = strtof64x(rc->valr.data(), nullptr);
+         const auto val = strtof64x(rc->valr.data(), nullptr);
          if(bw == 32)
          {
             auto [s, e, f] = float_view_convert(static_cast<float>(val));
@@ -759,10 +759,12 @@ namespace
       {
          if(const auto* ssa = GetPointer<const ssa_name>(tn))
          {
-            if(ssa->ra_bit_values.size() == bw)
+            auto bv = string_to_bitstring(ssa->bit_values);
+            if(bv.size() < bw)
             {
-               return RealRange::fromBitValues(string_to_bitstring(ssa->ra_bit_values));
+               bv = BitLatticeManipulator::sign_extend_bitstring(bv, false, bw);
             }
+            return RealRange::fromBitValues(bv);
          }
          if(bw == 32)
          {
@@ -798,67 +800,6 @@ namespace
       #endif
       return RangeRef(new Range(Regular, bw, min, max));
    }
-
-   #if 1
-   bit_lattice bit_mask(const bit_lattice& a, const bit_lattice& mask)
-   {
-      if(a == bit_lattice::X)
-      {
-         return bit_lattice::X;
-      }
-      else if(mask != bit_lattice::U)
-      {
-         return mask;
-      }
-      else
-      {
-         return a;
-      }
-   }
-   #else
-   bit_lattice bit_mask(const bit_lattice& a, const bit_lattice& mask)
-   {
-      if(mask == bit_lattice::X)
-      {
-         return bit_lattice::X;
-      }
-      else
-      {
-         return a;
-      }
-   }
-   #endif
-
-   std::deque<bit_lattice> mask(const std::deque<bit_lattice>& _a, const std::deque<bit_lattice>& _b, const bool out_is_signed, const bool out_is_bool)
-   {
-      THROW_ASSERT(not _a.empty() and not _b.empty(), "");
-      std::deque<bit_lattice> res;
-      if(out_is_bool)
-      {
-         return {bit_mask(_a.back(), _b.back())};
-      }
-
-      auto longer = (_a.size() >= _b.size()) ? _a : _b;
-      auto shorter = (_a.size() >= _b.size()) ? _b : _a;
-      if(shorter.size() < longer.size())
-      {
-         shorter = BitLatticeManipulator::sign_extend_bitstring(shorter, out_is_signed, longer.size());
-      }
-
-      auto a_it = longer.crbegin();
-      auto b_it = shorter.crbegin();
-      const auto a_end = longer.crend();
-      const auto b_end = shorter.crend();
-      for(; a_it != a_end and b_it != b_end; a_it++, b_it++)
-      {
-         res.push_front(bit_mask(*a_it, *b_it));
-      }
-      if(res.empty())
-      {
-         res.push_front(bit_lattice::X);
-      }
-      return res;
-   }
 }
 
 
@@ -882,10 +823,6 @@ class VarNode
    /// A Range associated to the variable, that is,
    /// its interval inferred by the analysis.
    RangeConstRef interval;
-
-   #ifdef BITVALUE_UPDATE
-   std::deque<bit_lattice> bit_values;
-   #endif
 
    /// Used by the crop meet operator
    char abstractState;
@@ -918,33 +855,7 @@ class VarNode
    {
       return interval->getBitWidth();
    }
-   #ifdef BITVALUE_UPDATE
-   const std::deque<bit_lattice>& getBitValues() const
-   {
-      return bit_values;
-   }
-   void setBitValues(const std::deque<bit_lattice>& bv)
-   {
-      THROW_ASSERT(interval->isReal(), "Cannot set bit_values directly for non-real types");
-      THROW_ASSERT(bv.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + GET_CONST_NODE(V)->ToString() + "<" + STR(interval->getBitWidth()) + "> != " + bitstring_to_string(bv) + ")");
-      bit_values = bv;
-   }
-   void setBitValues(const std::string& bv_str)
-   {
-      setBitValues(string_to_bitstring(bv_str));
-   }
-   void maskBitValues(const std::deque<bit_lattice>& mask_bv)
-   {
-      THROW_ASSERT(!interval->isReal() || mask_bv.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(mask_bv) + ")");
-      const auto isSigned = isSignedType(V);
-      bit_values = mask(bit_values, mask_bv, isSigned, interval->getBitWidth() == 1);
-      THROW_ASSERT(!interval->isReal() || bit_values.size() == interval->getBitWidth(), "Floating-point bit_values must be exact (" + bitstring_to_string(bit_values) + ")");
-      if(!interval->isReal())
-      {
-         BitLatticeManipulator::sign_reduce_bitstring(bit_values, isSigned);
-      }
-   }
-   #endif
+   
    /// Changes the status of the variable represented by this node.
    void setRange(const RangeConstRef& newInterval)
    {
@@ -980,30 +891,6 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id) : V(_V)
    THROW_ASSERT(_V != nullptr, "Variable cannot be null");
    THROW_ASSERT(_V->get_kind() == tree_reindex_K, "Variable should be a tree_reindex node");
    interval = getRangeFor(_V, Unknown);
-   #ifdef BITVALUE_UPDATE
-   if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(_V)))
-   {
-      if(!ssa->ra_bit_values.empty())
-      {
-         bit_values = string_to_bitstring(ssa->ra_bit_values);
-         THROW_ASSERT(interval->isReal() && bit_values.size() == interval->getBitWidth(), "BitValue for floating-point variable must be exact (" + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ")");
-      }
-      else if(!ssa->bit_values.empty())
-      {
-         bit_values = string_to_bitstring(ssa->bit_values);
-      }
-      else
-      {
-         bit_values = create_u_bitstring(interval->getBitWidth());
-      }
-   }
-   else if(GetPointer<const cst_node>(GET_CONST_NODE(_V)))
-   {
-      const auto range = getGIMPLE_range(_V);
-      THROW_ASSERT(range->isConstant(), "Range from constant node should be constant (" + GET_CONST_NODE(_V)->ToString() + " " + range->ToString() + ")");
-      bit_values = range->getBitValues(isSignedType(_V));
-   }
-   #endif
 }
 
 /// Initializes the value of the node.
@@ -1052,25 +939,12 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
 
    auto updateBitValue = [&](ssa_name* ssa, const std::deque<bit_lattice>& bv) -> int
    {
-      if(GET_CONST_NODE(ssa->type)->get_kind() == real_type_K)
+      const auto curr_bv = string_to_bitstring(ssa->bit_values);
+      if(isBetter(bv, curr_bv))
       {
-         THROW_ASSERT(bv.size() == tree_helper::Size(ssa->type), "Floating-point bit_values must be exact (" + ssa->ToString() + " " + bitstring_to_string(bv) + ")");
-         const auto curr_bv = string_to_bitstring(ssa->ra_bit_values);
-         if(curr_bv != bv)
-         {
-            ssa->ra_bit_values = bitstring_to_string(bv);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "RA BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->ra_bit_values + " <= " + bitstring_to_string(curr_bv));
-         }
-      }
-      else
-      {
-         const auto curr_bv = string_to_bitstring(ssa->bit_values);
-         if(isBetter(bv, curr_bv))
-         {
-            ssa->bit_values = bitstring_to_string(bv);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
-            return ut_BitValue;
-         }
+         ssa->bit_values = bitstring_to_string(bv);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "BitValue updated for " + ssa->ToString() + " " + GET_CONST_NODE(ssa->type)->get_kind_text() + ": " + SSA->bit_values + " <= " + bitstring_to_string(curr_bv));
+         return ut_BitValue;
       }
       return ut_None;
    };
@@ -1094,14 +968,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       bw_t newBW = interval->getBitWidth();
       if(interval->isFullSet())
       {
-         #ifdef BITVALUE_UPDATE
-         #ifndef NDEBUG
-         if(not AppM->ApplyNewTransformation()) { return ut_None; }
-         #endif
-         return updateBitValue(SSA, bit_values) && !interval->isReal();
-         #else
          return ut_None;
-         #endif
       }
       if(interval->isConstant())
       {
@@ -1115,30 +982,13 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
             const auto currentBW = getGIMPLE_BW(V);
             if(newBW >= currentBW)
             {
-               #ifdef BITVALUE_UPDATE
-               #ifndef NDEBUG
-               if(not AppM->ApplyNewTransformation()) { return ut_None; }
-               #endif
-               return updateBitValue(SSA, bit_values);
-               #else
                return ut_None;
-               #endif
             }
          }
          else if(interval->isAnti())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Anti range " + interval->ToString() + " not stored for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
-            #ifdef BITVALUE_UPDATE
-            #ifndef NDEBUG
-            if(not AppM->ApplyNewTransformation()) { return ut_None; }
-            #endif
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-            const auto modified = updateBitValue(SSA, bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-            return modified;
-            #else
             return ut_None;
-            #endif
          }
          else if(interval->isEmpty())
          {
@@ -1197,6 +1047,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
    };
 
    int updateState = ut_None;
+   auto bit_values = string_to_bitstring(SSA->bit_values);
    if(interval->isConstant())
    {
       const auto cst_node = getConstNode(interval);
@@ -1232,7 +1083,6 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          AppM->RegisterTransformation("RangeAnalysis", use.first);
          #endif
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       #ifndef NDEBUG
@@ -1272,6 +1122,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
             #endif
          }
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       updateState = ut_Constant;
       #ifdef BITVALUE_UPDATE
@@ -1289,9 +1140,6 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       {
          SSA->max.reset();
          SSA->min.reset();
-         #ifdef BITVALUE_UPDATE
-         bit_values = interval->getBitValues(isSigned);  // BitValues for Empty/Anti range is U-string
-         #endif
       }
    }
    else if(interval->isFullSet())
@@ -1299,9 +1147,6 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       updateState = ut_Range;
       SSA->max.reset();
       SSA->min.reset();
-      #ifdef BITVALUE_UPDATE
-      bit_values = interval->getBitValues(isSigned);
-      #endif
    }
    else
    {
@@ -1323,13 +1168,24 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Min: " + GET_CONST_NODE(SSA->min)->ToString() + "   Max: " + GET_CONST_NODE(SSA->max)->ToString());
       
       #ifdef BITVALUE_UPDATE
-      const auto range_bv = interval->getBitValues(isSigned);
-      const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
-      THROW_ASSERT(std::count(bit_values.begin(), bit_values.end(), bit_lattice::X) >= std::count(sup_bv.begin(), sup_bv.end(), bit_lattice::X), "Don't care should not be generated here (" + bitstring_to_string(bit_values) + " sup " + bitstring_to_string(range_bv) +" = " + bitstring_to_string(sup_bv) + ")");
-      if(bit_values != sup_bv)
+      if(not bit_values.empty())
       {
-         bit_values = sup_bv;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range bit_values: " + bitstring_to_string(range_bv));
+         auto range_bv = interval->getBitValues(isSigned);
+         while (range_bv.size() > bit_values.size())
+         {
+            range_bv.pop_front();
+         }
+         const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
+         THROW_ASSERT(std::count(bit_values.begin(), bit_values.end(), bit_lattice::X) >= std::count(sup_bv.begin(), sup_bv.end(), bit_lattice::X), "Don't care should not be generated here (" + bitstring_to_string(bit_values) + " sup " + bitstring_to_string(range_bv) +" = " + bitstring_to_string(sup_bv) + ")");
+         if(bit_values != sup_bv)
+         {
+            bit_values = sup_bv;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range bit_values: " + bitstring_to_string(range_bv));
+         }
+      }
+      else
+      {
+         // TODO: could initialize bit_values here, but not sure
       }
       #endif
    }
@@ -1349,6 +1205,12 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
    AppM->RegisterTransformation("RangeAnalysis", V);
    #endif
 
+   if(const auto* gp = GetPointer<const gimple_phi>(GET_NODE(SSA->CGetDefStmt())))
+   if(gp->CGetDefEdgesList().size() == 1)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Sigma defined variable not considered for invalidation loop...");
+      return ut_None;
+   }
    return updateState;
 }
 
@@ -1365,13 +1227,6 @@ void VarNode::print(std::ostream& OS) const
    }
    OS << " ";
    this->getRange()->print(OS);
-   #ifdef BITVALUE_UPDATE
-   const auto& bv = getBitValues();
-   if(bv.size())
-   {
-      OS << "<" << bitstring_to_string(bv) + ">";
-   }
-   #endif
 }
 
 std::string VarNode::ToString() const
@@ -1560,6 +1415,17 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
    const auto sinkRange = _sink->getRange();
    THROW_ASSERT(!boundRange->isEmpty(), "Bound range should not be empty");
    THROW_ASSERT(!sinkRange->isEmpty(), "Sink range should not be empty");
+   THROW_ASSERT(boundRange->isReal() == sinkRange->isReal(), "Range type mismatch");
+
+   if(boundRange->isReal())
+   {
+      const auto* rr = static_cast<const RealRange*>(boundRange.get());
+      if(this->getOperation() == eq_expr_K && !rr->getExponent()->isAnti() && !rr->getSignificand()->isAnti())
+      {
+         return RangeRef(boundRange->clone());
+      }
+      return getRangeFor(_sink->getValue(), Regular);
+   }
 
    auto IsAnti = _bound->getRange()->isAnti() || sinkRange->isAnti();
    const auto l = IsAnti ? (boundRange->isUnknown() ? Range::Min : boundRange->getUnsignedMin()) : boundRange->getLower();
@@ -2222,9 +2088,7 @@ RangeRef PhiOpNode::eval() const
 {
    THROW_ASSERT(sources.size() > 0, "Phi operation sources list empty");
    auto result = getRangeFor(getSink()->getValue(), Empty);
-   #ifdef BITVALUE_PHI_MASK
-   auto result_bv = sources.at(0)->getBitValues();
-   #endif
+   
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_CONST_NODE(getSink()->getValue())->ToString() + " = PHI");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Iterate over the sources of the phiop
@@ -2232,37 +2096,8 @@ RangeRef PhiOpNode::eval() const
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "->" + varNode->ToString());
       result = result->unionWith(varNode->getRange());
-      
-      #ifdef BITVALUE_PHI_MASK
-      // Propagate bit_values through phi for real variables
-      #ifndef NDEBUG
-      if(enable_bit_phi && result->isReal())
-      #else
-      if(result->isReal())
-      #endif
-      {
-         result_bv = BitLatticeManipulator::inf(result_bv, varNode->getBitValues(), result->getBitWidth(), false, false);
-      }
-      #endif
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--= " + result->ToString());
-
-   #ifdef BITVALUE_PHI_MASK
-   #ifndef NDEBUG
-   if(enable_bit_phi && result->isReal())
-   #else
-   if(result->isReal())
-   #endif
-   {
-      if(result_bv.size() < result->getBitWidth())
-      {
-         result_bv = BitLatticeManipulator::sign_extend_bitstring(result_bv, false, result->getBitWidth());
-      }
-      const auto mask_bv = getSink()->getBitValues();
-      getSink()->setBitValues(result_bv);
-      getSink()->maskBitValues(mask_bv);
-   }
-   #endif
    
    bool test = this->getIntersect()->getRange()->isFullSet();
    if(!test)
@@ -2276,11 +2111,7 @@ RangeRef PhiOpNode::eval() const
          result = _intersect;
       }
    }
-   #ifdef BITVALUE_PHI_MASK
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "res = " + result->ToString() + "<" + bitstring_to_string(getSink()->getBitValues()) + ">");
-   #else
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "res = " + result->ToString());
-   #endif
    return result;
 }
 
@@ -2470,16 +2301,6 @@ RangeRef UnaryOpNode::eval() const
          {
             THROW_ASSERT(bw == 64 || bw == 32, "View_convert sink bitwidth should be 64 or 32 bits (" + STR(bw) + ")");
             result = RESULT_DISABLED_OPTION(view_convert, getSink()->getValue(), rr->getRange()->zextOrTrunc(bw));
-            #ifdef BITVALUE_UPDATE
-            #ifndef NDEBUG
-            if(enable_view_convert) {
-            #endif
-            // TODO: maybe could mask sink BitValues with mask(getSource()->getBitValues(), rr->getBitValues(false), true, bw)
-            getSink()->maskBitValues(getSource()->getBitValues());
-            #ifndef NDEBUG
-            }
-            #endif
-            #endif
             break;
          }
          case nop_expr_K:
@@ -2552,23 +2373,6 @@ RangeRef UnaryOpNode::eval() const
             if(resultType->get_kind() == real_type_K)
             {
                result = RESULT_DISABLED_OPTION(float_pack, getSink()->getValue(), RangeRef(new RealRange(oprnd)));
-               #ifdef BITVALUE_UPDATE
-               #ifndef NDEBUG
-               if(enable_float_pack) {
-               #endif
-               auto oprnd_bv = getSource()->getBitValues();
-               if(oprnd_bv.size() < bw)
-               {
-                  oprnd_bv = BitLatticeManipulator::sign_extend_bitstring(oprnd_bv, oprndSigned, bw);
-               }
-               getSink()->setBitValues(oprnd_bv);
-               const auto bv_aux = RealRange::fromBitValues(oprnd_bv);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---bv_aux = " + bv_aux ->ToString() + "<" + bitstring_to_string(oprnd_bv) + ">");
-               result = result->intersectWith(bv_aux);
-               #ifndef NDEBUG
-               }
-               #endif
-               #endif
             }
             else
             {
@@ -2582,7 +2386,6 @@ RangeRef UnaryOpNode::eval() const
                {
                   result = RESULT_DISABLED_OPTION(zext, getSink()->getValue(), oprnd->zextOrTrunc(bw));
                }
-               // TODO: propagate bit_values if not already done by Bit_Value step
             }
             break;
          }
@@ -2862,8 +2665,17 @@ RangeRef SigmaOpNode::eval() const
       if(!_intersect->isEmpty())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "aux = " + aux->ToString() + " from " + getIntersect()->ToString());
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
-         result = _intersect;
+         // Sigma operations are used to enhance live range split after conditional statements, 
+         // thus it is useful to intersect their range only if it actually produces tighter interval
+         if(_intersect->isReal() || _intersect->getSpan() < result->getSpan())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result = " + _intersect->ToString());
+            result = _intersect;
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "result not changed because not improved");
+         }
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = SIGMA< " + getSource()->getRange()->ToString() + " >");
@@ -4466,6 +4278,11 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
          }
          else
          {
+            // Sometimes sigma operation could cause confusion after maximum widening has been reached and generate loops
+            if(!oldInterval->isUnknown() && oldInterval->isFullSet() && newInterval->isAnti())
+            {
+               return RangeRef(oldInterval->clone());
+            }
             return RangeRef(newInterval->clone());
          }
       }
@@ -4627,7 +4444,14 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
          }
          else
          {
-            sinkInterval = RangeRef(newInterval->clone());
+            if(!newInterval->isUnknown() && newInterval->isFullSet())
+            {
+               sinkInterval = RangeRef(oldInterval->clone());
+            }
+            else
+            {
+               sinkInterval = RangeRef(newInterval->clone());
+            }
          }
       }
       else
@@ -6140,12 +5964,7 @@ static void TopFunctionUserHits(unsigned int function_id, const application_mana
          if(parm->range != nullptr)
          {
             sink->setRange(parm->range);
-            #ifdef BITVALUE_UPDATE
-            sink->setBitValues(parm->ra_bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->ra_bit_values);
-            #else
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString());
-            #endif
          }
       }
       else
@@ -6211,12 +6030,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
          if(parm->range != nullptr)
          {
             sink->setRange(parm->range);
-            #ifdef BITVALUE_UPDATE
-            sink->setBitValues(parm->ra_bit_values);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString() + " " + parm->ra_bit_values);
-            #else
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---User-defined hints found " + parm->range->ToString());
-            #endif
          }
          else
          {
@@ -6365,11 +6179,7 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
       #ifndef NDEBUG
       if(DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
       {
-         #ifdef BITVALUE_UPDATE
-         std::string phiString = GET_CONST_NODE(m->getSink()->getValue())->ToString() + "<" + bitstring_to_string(m->getSink()->getBitValues()) + "> = PHI<";
-         #else
          std::string phiString = GET_CONST_NODE(m->getSink()->getValue())->ToString() + " = PHI<";
-         #endif
          for(size_t i = 0; i < m->getNumSources(); ++i)
          {
             phiString += GET_CONST_NODE(m->getSource(i)->getValue())->ToString() + ", ";
@@ -6387,9 +6197,9 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
 RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
    : ApplicationFrontendFlowStep(AM, RANGE_ANALYSIS, dfm, par)
    #ifndef NDEBUG
-   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max()), debug_mode(RA_DEBUG_NONE)
+   , graph_debug(DEBUG_LEVEL_NONE), iteration(0), stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max())
    #endif
-   , solverType(st_Cousot), requireESSA(false) // ESSA disabled because of renaming issues in some cases
+   , solverType(st_Cousot), requireESSA(true), execution_mode(RA_EXEC_NORMAL)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
@@ -6404,19 +6214,22 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    }
    if(ra_mode.erase("noESSA"))
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: no Extended SSA required");
       requireESSA = false;
    }
    #ifndef NDEBUG
    if(ra_mode.erase("ro"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: read-only mode enabled");
-      debug_mode = RA_DEBUG_READONLY;
+      execution_mode = RA_EXEC_READONLY;
    }
+   #endif
    if(ra_mode.erase("skip"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: skip mode enabled");
-      debug_mode = RA_DEBUG_NOEXEC;
+      execution_mode = RA_EXEC_SKIP;
    }
+   #ifndef NDEBUG
    if(ra_mode.erase("debug_op"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: range operations debug");
@@ -6455,17 +6268,17 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, ternary);
    OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
-{
+   {
       THROW_ASSERT(ra_mode.size() == 1, "Too many options left to parse");
       stop_iteration = std::strtoull(ra_mode.begin()->data(), nullptr, 10);
       if(stop_iteration == 0)
-   {
+      {
          THROW_ERROR("Invalid range analysis option: " + *ra_mode.begin());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
    }
-            #endif
-   }
+   #endif
+}
 
 RangeAnalysis::~RangeAnalysis() = default;
 
@@ -6473,12 +6286,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   #ifndef NDEBUG
-   if(debug_mode == RA_DEBUG_NOEXEC)
+   if(execution_mode == RA_EXEC_SKIP)
    {
       return relationships;
    }
-   #endif
    switch(relationship_type)
    {
       case DEPENDENCE_RELATIONSHIP:
@@ -6511,48 +6322,45 @@ RangeAnalysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipTy
 
 void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const DesignFlowStep::RelationshipType relationship_type)
 {
-   //    #ifndef NDEBUG
-   //    if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
-   //    {
-   //       return ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
-   //    }
-   //    #endif
-   //    if(relationship_type == INVALIDATION_RELATIONSHIP)
-   //    {
-   //       for(const auto f_id : fun_id_to_restart)
-   //       {
-   //          const std::string dce_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
-   //          vertex frontend_dce = design_flow_manager.lock()->GetDesignFlowStep(dce_signature);
-   //          THROW_ASSERT(frontend_dce != NULL_VERTEX, "step " + dce_signature + " is not present");
-   //          
-   //          const std::string bv_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, f_id);
-   //          vertex frontend_bv = design_flow_manager.lock()->GetDesignFlowStep(bv_signature);
-   //          THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
-   //          
-   //          const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-   //          const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
-   //          const auto dce = design_flow_graph->CGetDesignFlowStepInfo(frontend_dce)->design_flow_step;
-   //          relationships.insert(dce);
-   //          relationships.insert(bv);
-   //       }
-   //    }
+   if(relationship_type == INVALIDATION_RELATIONSHIP)
+   {
+      for(const auto f_id : fun_id_to_restart)
+      {
+         const std::string dce_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
+         vertex frontend_dce = design_flow_manager.lock()->GetDesignFlowStep(dce_signature);
+         THROW_ASSERT(frontend_dce != NULL_VERTEX, "step " + dce_signature + " is not present");
+         
+         const std::string bv_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, f_id);
+         vertex frontend_bv = design_flow_manager.lock()->GetDesignFlowStep(bv_signature);
+         THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
+         
+         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
+         const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
+         const auto dce = design_flow_graph->CGetDesignFlowStepInfo(frontend_dce)->design_flow_step;
+         relationships.insert(dce);
+         relationships.insert(bv);
+      }
+      fun_id_to_restart.clear();
+   }
    ApplicationFrontendFlowStep::ComputeRelationships(relationships, relationship_type);
 }
 
 bool RangeAnalysis::HasToBeExecuted() const
 {
    #ifndef NDEBUG
-   if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
+   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
+   #else
+   if(execution_mode == RA_EXEC_SKIP)
+   #endif
    {
       return false;
    }
-   #endif
    std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    std::map<unsigned int, unsigned int> cur_bb_ver;
-   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   const auto CGMan = AppM->CGetCallGraphManager();
    for(const auto i : CGMan->GetReachedBodyFunctions())
    {
-      const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(i);
+      const auto FB = AppM->CGetFunctionBehavior(i);
       cur_bitvalue_ver[i] = FB->GetBitValueVersion();
       cur_bb_ver[i] = FB->GetBBVersion();
    }
@@ -6565,6 +6373,7 @@ void RangeAnalysis::Initialize()
    switch(solverType)
    {
       case st_Cousot:
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Using jump-set abstract operators");
          CG.reset(new Cousot(AppM,
             #ifndef NDEBUG
                debug_level, graph_debug));
@@ -6573,6 +6382,7 @@ void RangeAnalysis::Initialize()
             #endif
          break;
       case st_Crop:
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Using standard abstract operators");
          CG.reset(new CropDFS(AppM,
             #ifndef NDEBUG
                debug_level, graph_debug));
@@ -6584,18 +6394,20 @@ void RangeAnalysis::Initialize()
          THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
          break;
    }
+   fun_id_to_restart.clear();
 }
 
 DesignFlowStep_Status RangeAnalysis::Exec()
 {
    #ifndef NDEBUG
-   if(iteration >= stop_iteration || debug_mode == RA_DEBUG_NOEXEC)
+   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
+   #else
+   if(execution_mode == RA_EXEC_SKIP)
+   #endif
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
       return DesignFlowStep_Status::SKIPPED;
    }
-   #endif
-   fun_id_to_restart.clear();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Analyse only reached functions
    const auto TM = AppM->get_tree_manager();
@@ -6648,7 +6460,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters and return value propagation completed");
    CG->buildVarNodes();
-
+   
    #ifndef NDEBUG
    CG->findIntervals(parameters, GetName() + "(" + STR(iteration) + ")");
    ++iteration;
@@ -6682,7 +6494,7 @@ bool RangeAnalysis::finalize()
    const auto& vars = std::static_pointer_cast<const ConstraintGraph>(CG)->getVarNodes();
    CustomMap<unsigned int, int> modifiedFunctions;
    #ifndef NDEBUG
-   if(debug_mode >= RA_DEBUG_READONLY)
+   if(execution_mode >= RA_EXEC_READONLY)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");

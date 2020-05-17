@@ -948,6 +948,13 @@ bool Bit_Value::update_IR()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Updating IR");
    for(auto b : best)
    {
+      #ifndef NDEBUG
+      if(not AppM->ApplyNewTransformation())
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--"); 
+         return res;
+      }
+      #endif
       const unsigned int tn_id = b.first;
       tree_nodeRef tn = TM->get_tree_node_const(tn_id);
       const auto kind = tn->get_kind();
@@ -960,6 +967,9 @@ bool Bit_Value::update_IR()
             ssa->bit_values = bitstring_to_string(b.second);
             res = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var id: " + STR(tn_id) + " bitstring: " + ssa->bit_values);
+            #ifndef NDEBUG
+            AppM->RegisterTransformation(GetName(), tn);
+            #endif
          }
          if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
          {
@@ -1001,7 +1011,7 @@ bool Bit_Value::update_IR()
           */
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "fun id: " + STR(tn_id) + " bitstring: " + fd->bit_values);
       }
-      else if(kind == integer_cst_K)
+      else if(kind == integer_cst_K or kind == real_cst_K)
       {
          // do nothing, constants are recomputed every time
          ;
@@ -1188,6 +1198,34 @@ void Bit_Value::initialize()
                                     auto* int_const = GetPointer<integer_cst>(GET_NODE(vd->init));
                                     current_inf = create_bitstring_from_constant(int_const->value, tree_helper::Size(GET_NODE(vd->init)), tree_helper::is_int(TM, GET_INDEX_NODE(int_const->type)));
                                  }
+                                 else if(GET_NODE(vd->init)->get_kind() == real_cst_K)
+                                 {
+                                    auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
+                                    const auto real_size = tree_helper::Size(GET_CONST_NODE(real_const->type));
+                                    const auto val = strtof64x(real_const->valr.data(), nullptr);
+                                    if(real_size == 64)
+                                    {
+                                       union {
+                                          double d;
+                                          long long ll;
+                                       } vc;
+                                       vc.d = static_cast<double>(val);
+                                       current_inf = create_bitstring_from_constant(vc.ll, 64, false);
+                                    }
+                                    else if(real_size == 32)
+                                    {
+                                       union {
+                                          float f;
+                                          long l;
+                                       } vc;
+                                       vc.f = static_cast<float>(val);
+                                       current_inf = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                                    }
+                                    else
+                                    {
+                                       THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                                    }
+                                 }
                                  else if(GET_NODE(vd->init)->get_kind() == string_cst_K)
                                  {
                                     current_inf = string_cst_bitstring(GET_NODE(vd->init), ssa_node_id);
@@ -1237,6 +1275,34 @@ void Bit_Value::initialize()
                                     {
                                        auto* int_const = GetPointer<integer_cst>(GET_NODE(vd->init));
                                        current_inf = create_bitstring_from_constant(int_const->value, tree_helper::Size(GET_NODE(vd->init)), tree_helper::is_int(TM, GET_INDEX_NODE(int_const->type)));
+                                    }
+                                    else if(GET_NODE(vd->init)->get_kind() == real_cst_K)
+                                    {
+                                       auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
+                                       const auto real_size = tree_helper::Size(GET_CONST_NODE(real_const->type));
+                                       const auto val = strtof64x(real_const->valr.data(), nullptr);
+                                       if(real_size == 64)
+                                       {
+                                          union {
+                                             double d;
+                                             long long ll;
+                                          } vc;
+                                          vc.d = static_cast<double>(val);
+                                          current_inf = create_bitstring_from_constant(vc.ll, 64, false);
+                                       }
+                                       else if(real_size == 32)
+                                       {
+                                          union {
+                                             float f;
+                                             long l;
+                                          } vc;
+                                          vc.f = static_cast<float>(val);
+                                          current_inf = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                                       }
+                                       else
+                                       {
+                                          THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                                       }
                                     }
                                     else if(GET_NODE(vd->init)->get_kind() == string_cst_K)
                                     {
@@ -1302,6 +1368,36 @@ void Bit_Value::initialize()
                                        cur_bitstring = create_bitstring_from_constant(cst->value, source_type_size, loaded_is_signed);
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "bitstring = " + bitstring_to_string(cur_bitstring));
                                        sign_reduce_bitstring(cur_bitstring, loaded_is_signed);
+                                       INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "bitstring = " + bitstring_to_string(cur_bitstring));
+                                    }
+                                    else if(cur_node->get_kind() == real_cst_K)
+                                    {
+                                       INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Real constant");
+                                       const auto* cst = GetPointer<const real_cst>(cur_node);
+                                       const auto real_size = tree_helper::Size(GET_CONST_NODE(cst->type));
+                                       const auto val = strtof64x(cst->valr.data(), nullptr);
+                                       if(real_size == 64)
+                                       {
+                                          union {
+                                             double d;
+                                             long long ll;
+                                          } vc;
+                                          vc.d = static_cast<double>(val);
+                                          cur_bitstring = create_bitstring_from_constant(vc.ll, 64, false);
+                                       }
+                                       else if(real_size == 32)
+                                       {
+                                          union {
+                                             float f;
+                                             long l;
+                                          } vc;
+                                          vc.f = static_cast<float>(val);
+                                          cur_bitstring = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                                       }
+                                       else
+                                       {
+                                          THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                                       }
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "bitstring = " + bitstring_to_string(cur_bitstring));
                                     }
                                     else
@@ -1556,6 +1652,35 @@ void Bit_Value::initialize()
                }
                sign_reduce_bitstring(best.at(ssa_use_node_id), tree_helper::is_int(TM, ssa_use_node_id));
             }
+            else if(GetPointer<real_cst>(use_node))
+            {
+               auto* real_const = GetPointer<real_cst>(use_node);
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(ssa_use_node_id) + " -> " + STR(real_const->valr));
+               const auto real_size = tree_helper::Size(GET_CONST_NODE(real_const->type));
+               const auto val = strtof64x(real_const->valr.data(), nullptr);
+               if(real_size == 64)
+               {
+                  union {
+                     double d;
+                     long long ll;
+                  } vc;
+                  vc.d = static_cast<double>(val);
+                  best[ssa_use_node_id] = create_bitstring_from_constant(vc.ll, 64, false);
+               }
+               else if(real_size == 32)
+               {
+                  union {
+                     float f;
+                     long l;
+                  } vc;
+                  vc.f = static_cast<float>(val);
+                  best[ssa_use_node_id] = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+               }
+               else
+               {
+                  THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+               }
+            }
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use: " + STR(ssa_use_node_id));
@@ -1605,6 +1730,35 @@ void Bit_Value::initialize()
                      signed_var.insert(GET_INDEX_NODE(def_edge.first));
                   }
                   sign_reduce_bitstring(best.at(GET_INDEX_NODE(def_edge.first)), tree_helper::is_int(TM, GET_INDEX_NODE(def_edge.first)));
+               }
+               else if(GET_NODE(def_edge.first)->get_kind() == real_cst_K)
+               {
+                  auto* real_const = GetPointer<real_cst>(GET_NODE(def_edge.first));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(GET_INDEX_NODE(def_edge.first)) + " -> " + STR(real_const->valr));
+                  const auto real_size = tree_helper::Size(GET_CONST_NODE(real_const->type));
+                  const auto val = strtof64x(real_const->valr.data(), nullptr);
+                  if(real_size == 64)
+                  {
+                     union {
+                        double d;
+                        long long ll;
+                     } vc;
+                     vc.d = static_cast<double>(val);
+                     best[GET_INDEX_NODE(def_edge.first)] = create_bitstring_from_constant(vc.ll, 64, false);
+                  }
+                  else if(real_size == 32)
+                  {
+                     union {
+                        float f;
+                        long l;
+                     } vc;
+                     vc.f = static_cast<float>(val);
+                     best[GET_INDEX_NODE(def_edge.first)] = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                  }
+                  else
+                  {
+                     THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                  }
                }
                else
                {

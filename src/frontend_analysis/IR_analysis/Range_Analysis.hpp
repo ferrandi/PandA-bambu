@@ -69,13 +69,13 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    int graph_debug;
    uint64_t iteration;
    uint64_t stop_iteration;
-   int debug_mode;
 #endif
 
    SolverType solverType;
-   ConstraintGraphRef CG;
-
    bool requireESSA;
+   int execution_mode;
+
+   ConstraintGraphRef CG;
 
    bool finalize();
 

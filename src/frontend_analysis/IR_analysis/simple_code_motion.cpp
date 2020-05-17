@@ -857,7 +857,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or def_gn->index, sn->ToString() + " is defined in entry");
                   THROW_ASSERT(def_gn->get_kind() == gimple_nop_K or (def_gn->get_kind() == gimple_assign_K and GetPointer<const gimple_assign>(GET_NODE(def_stmt))->clobber) or def_gn->bb_index or sn->virtual_flag,
                                "Definition " + def_gn->ToString() + " of " + sn->ToString() + " is in BB" + STR(def_gn->bb_index));
-                  if(statement == list_of_stmt.begin() && list_of_bloc[curr_bb]->list_of_pred.size() == 1 && def_gn->bb_index == curr_bb)
+                  if(statement == list_of_stmt.begin() && list_of_bloc[curr_bb]->list_of_pred.size() == 1 && def_gn->bb_index == curr_bb && def_gn->get_kind() != gimple_phi_K)
                   {
                      /// allow to move first statements later overwritten in the same BB
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  no constraint because is the first one");

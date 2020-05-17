@@ -301,6 +301,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
          // --- backward ----
          if(not is_root)
          {
+            #ifndef NDEBUG
+            if(not AppM->ApplyNewTransformation())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--"); 
+               break;
+            }
+            #endif
+
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Backward");
 
             current.insert(std::make_pair(fu_id, best.at(fu_id)));
@@ -396,6 +405,10 @@ DesignFlowStep_Status BitValueIPA::Exec()
             mix();
             current.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
+
+            #ifndef NDEBUG
+            AppM->RegisterTransformation(GetName(), fu_node);
+            #endif
          }
 
          // --- forward ---
@@ -460,6 +473,36 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            res_tmp = create_bitstring_from_constant(ic->value, tree_helper::Size(returned_tn), fu_signed);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "constant return value: " + bitstring_to_string(res_tmp));
                         }
+                        else if(ret_kind == real_cst_K)
+                        {
+                           const auto* rc = GetPointer<const real_cst>(returned_tn);
+                           THROW_ASSERT(rc, "not a real_cst");
+                           const auto ret_size = tree_helper::Size(GET_CONST_NODE(rc->type));
+                           const auto val = strtof64x(rc->valr.data(), nullptr);
+                           if(ret_size == 64)
+                           {
+                              union {
+                                 double d;
+                                 long long ll;
+                              } vc;
+                              vc.d = static_cast<double>(val);
+                              res_tmp = create_bitstring_from_constant(vc.ll, 64, false);
+                           }
+                           else if(ret_size == 32)
+                           {
+                              union {
+                                 float f;
+                                 long l;
+                              } vc;
+                              vc.f = static_cast<float>(val);
+                              res_tmp = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                           }
+                           else
+                           {
+                              THROW_UNREACHABLE("Unhandled real type size (" + STR(ret_size) + ")");
+                           }
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "constant return value: " + bitstring_to_string(res_tmp));
+                        }
                         else
                         {
                            res_tmp = create_u_bitstring(tree_helper::Size(fret_type_node));
@@ -502,6 +545,13 @@ DesignFlowStep_Status BitValueIPA::Exec()
       int args_n = 0;
       for(const auto& pd : fd->list_of_args)
       {
+         #ifndef NDEBUG
+         if(not AppM->ApplyNewTransformation())
+         {
+            break;
+         }
+         #endif
+
          args_n++;
          const unsigned int pd_id = GET_INDEX_NODE(pd);
          if(best.find(pd_id) != best.cend())
@@ -705,6 +755,36 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               res_tmp = create_bitstring_from_constant(ic->value, tree_helper::Size(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
+                           else if(ap_kind == real_cst_K)
+                           {
+                              const auto* rc = GetPointer<const real_cst>(ap_node);
+                              THROW_ASSERT(rc, "not a real_cst");
+                              const auto ap_size = tree_helper::Size(GET_CONST_NODE(rc->type));
+                              const auto val = strtof64x(rc->valr.data(), nullptr);
+                              if(ap_size == 64)
+                              {
+                                 union {
+                                    double d;
+                                    long long ll;
+                                 } vc;
+                                 vc.d = static_cast<double>(val);
+                                 res_tmp = create_bitstring_from_constant(vc.ll, 64, false);
+                              }
+                              else if(ap_size == 32)
+                              {
+                                 union {
+                                    float f;
+                                    long l;
+                                 } vc;
+                                 vc.f = static_cast<float>(val);
+                                 res_tmp = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                              }
+                              else
+                              {
+                                 THROW_UNREACHABLE("Unhandled real type size (" + STR(ap_size) + ")");
+                              }
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                           }
                            else if(ap_kind == var_decl_K)
                            {
                               res_tmp = create_u_bitstring(tree_helper::Size(GET_NODE(pd)));
@@ -742,6 +822,36 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            THROW_ASSERT(ic, "not an integer_cst");
                            res_tmp = create_bitstring_from_constant(ic->value, tree_helper::Size(ap_node), parm_signed);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                        }
+                        else if(ap_kind == real_cst_K)
+                        {
+                           const auto* rc = GetPointer<const real_cst>(ap_node);
+                           THROW_ASSERT(rc, "not a real_cst");
+                           const auto ap_size = tree_helper::Size(GET_CONST_NODE(rc->type));
+                           const auto val = strtof64x(rc->valr.data(), nullptr);
+                           if(ap_size == 64)
+                           {
+                              union {
+                                 double d;
+                                 long long ll;
+                              } vc;
+                              vc.d = static_cast<double>(val);
+                              res_tmp = create_bitstring_from_constant(vc.ll, 64, false);
+                           }
+                           else if(ap_size == 32)
+                           {
+                              union {
+                                 float f;
+                                 long l;
+                              } vc;
+                              vc.f = static_cast<float>(val);
+                              res_tmp = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                           }
+                           else
+                           {
+                              THROW_UNREACHABLE("Unhandled real type size (" + STR(ap_size) + ")");
+                           }
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
                         }
                         else if(ap_kind == var_decl_K)
                         {
@@ -781,6 +891,10 @@ DesignFlowStep_Status BitValueIPA::Exec()
                current.clear();
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
             }
+
+            #ifndef NDEBUG
+            AppM->RegisterTransformation(GetName(), pd);
+            #endif
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Propagated bitvalue through parameter " + STR(GET_NODE(pd)) + " of function " + fu_name + " parm id: " + STR(pd_id));
          }
