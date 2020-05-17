@@ -1176,7 +1176,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
             range_bv.pop_front();
          }
          const auto sup_bv = BitLatticeManipulator::sup(bit_values, range_bv, interval->getBitWidth(), isSigned, interval->getBitWidth() == 1);
-         THROW_ASSERT(std::count(bit_values.begin(), bit_values.end(), bit_lattice::X) >= std::count(sup_bv.begin(), sup_bv.end(), bit_lattice::X), "Don't care should not be generated here (" + bitstring_to_string(bit_values) + " sup " + bitstring_to_string(range_bv) +" = " + bitstring_to_string(sup_bv) + ")");
+         //    THROW_ASSERT(std::count(bit_values.begin(), bit_values.end(), bit_lattice::X) >= std::count(sup_bv.begin(), sup_bv.end(), bit_lattice::X), "Don't care should not be generated here (" + bitstring_to_string(bit_values) + " sup " + bitstring_to_string(range_bv) +" = " + bitstring_to_string(sup_bv) + ")");
          if(bit_values != sup_bv)
          {
             bit_values = sup_bv;
