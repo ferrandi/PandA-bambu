@@ -2385,8 +2385,19 @@ RangeRef RealRange::Eq(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
-      // TODO: fix zero sign bug
-      return sign->Eq(rOther->sign, _bw)->unionWith(exponent->Eq(rOther->exponent, _bw))->unionWith(significand->Eq(rOther->significand, _bw));
+      const auto zeroEt = exponent->Eq(RangeRef(new Range(Regular, exponent->getBitWidth(), 0, 0)), 1);
+      const auto zeroMt = significand->Eq(RangeRef(new Range(Regular, significand->getBitWidth(), 0, 0)), 1);
+      const auto zeroContainedt = zeroEt->And(zeroMt);
+      const auto zeroEo = rOther->exponent->Eq(RangeRef(new Range(Regular, rOther->exponent->getBitWidth(), 0, 0)), 1);
+      const auto zeroMo = rOther->significand->Eq(RangeRef(new Range(Regular, rOther->significand->getBitWidth(), 0, 0)), 1);
+      const auto zeroContainedo = zeroEo->And(zeroMo);
+      const auto zeroContained = zeroContainedt->And(zeroContainedo);
+      if(!zeroContained->isConstant() || zeroContained->getUnsignedMin() == 1)
+      {
+         return zeroContained->zextOrTrunc(_bw);
+      }
+
+      return sign->Eq(rOther->sign, _bw)->intersectWith(exponent->Eq(rOther->exponent, _bw))->intersectWith(significand->Eq(rOther->significand, _bw));
    }
    return RangeRef(new Range(Regular, _bw, 0, 0));
 }
@@ -2395,8 +2406,21 @@ RangeRef RealRange::Ne(const RangeConstRef& other, bw_t _bw) const
 {
    if(const auto rOther = RefcountCast<const RealRange>(other))
    {
-      // TODO: fix zero sign bug
-      return sign->Ne(rOther->sign, _bw)->unionWith(exponent->Ne(rOther->exponent, _bw))->unionWith(significand->Ne(rOther->significand, _bw));
+      const auto zeroEt = exponent->Eq(RangeRef(new Range(Regular, exponent->getBitWidth(), 0, 0)), 1);
+      const auto zeroMt = significand->Eq(RangeRef(new Range(Regular, significand->getBitWidth(), 0, 0)), 1);
+      const auto zeroContainedt = zeroEt->And(zeroMt);
+      const auto zeroEo = rOther->exponent->Eq(RangeRef(new Range(Regular, rOther->exponent->getBitWidth(), 0, 0)), 1);
+      const auto zeroMo = rOther->significand->Eq(RangeRef(new Range(Regular, rOther->significand->getBitWidth(), 0, 0)), 1);
+      const auto zeroContainedo = zeroEo->And(zeroMo);
+      const auto zeroContained = zeroContainedt->And(zeroContainedo);
+      const auto hasZero = !(zeroContained->isConstant() && zeroContained->getUnsignedMax() == 0);
+
+      const auto ne = sign->Ne(rOther->sign, _bw)->intersectWith(exponent->Ne(rOther->exponent, _bw))->intersectWith(significand->Ne(rOther->significand, _bw));
+      if(hasZero && ne->isConstant() && ne->getUnsignedMax() == 1)
+      {
+         return RangeRef(new Range(Regular, _bw, 0, 1));
+      }
+      return ne;
    }
    return RangeRef(new Range(Regular, _bw, 1, 1));
 }
