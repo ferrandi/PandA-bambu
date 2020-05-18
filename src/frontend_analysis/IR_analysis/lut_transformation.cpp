@@ -1094,7 +1094,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   pis_offset.push_back(0);
                }
                else
-                  THROW_ERROR("unexpected condition: "+GET_NODE(op)->ToString());
+                  THROW_ERROR("unexpected condition: " + GET_NODE(op)->ToString());
 
                nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                ops.push_back(kop);

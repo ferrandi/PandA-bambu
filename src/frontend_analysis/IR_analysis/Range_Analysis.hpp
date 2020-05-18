@@ -59,8 +59,8 @@ struct tree_reindexCompare
 
 enum SolverType
 {
-  st_Cousot,
-  st_Crop
+   st_Cousot,
+   st_Crop
 };
 
 class RangeAnalysis : public ApplicationFrontendFlowStep
@@ -80,7 +80,6 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    bool finalize();
 
  protected:
-
    /// stores the function ids of the functions whose Dead Code need to be restarted
    CustomOrderedSet<unsigned int> fun_id_to_restart;
    std::map<unsigned int, unsigned int> last_bitvalue_ver;

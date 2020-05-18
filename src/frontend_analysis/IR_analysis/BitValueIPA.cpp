@@ -301,14 +301,14 @@ DesignFlowStep_Status BitValueIPA::Exec()
          // --- backward ----
          if(not is_root)
          {
-            #ifndef NDEBUG
+#ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--"); 
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
                break;
             }
-            #endif
+#endif
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Backward");
 
@@ -406,9 +406,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
             current.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
 
-            #ifndef NDEBUG
+#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), fu_node);
-            #endif
+#endif
          }
 
          // --- forward ---
@@ -545,12 +545,12 @@ DesignFlowStep_Status BitValueIPA::Exec()
       int args_n = 0;
       for(const auto& pd : fd->list_of_args)
       {
-         #ifndef NDEBUG
+#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-         #endif
+#endif
 
          args_n++;
          const unsigned int pd_id = GET_INDEX_NODE(pd);
@@ -892,9 +892,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
             }
 
-            #ifndef NDEBUG
+#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), pd);
-            #endif
+#endif
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Propagated bitvalue through parameter " + STR(GET_NODE(pd)) + " of function " + fu_name + " parm id: " + STR(pd_id));
          }

@@ -925,10 +925,10 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
    /// Topological sorted vertices
    const std::map<vertex, unsigned int>& ref;
 
-   /// Graph
-   #if HAVE_ASSERTS
+/// Graph
+#if HAVE_ASSERTS
    const graph* g;
-   #endif
+#endif
 
  public:
    /**
@@ -936,12 +936,14 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
     * @param ref_ is the map with the topological sort of vertices
     * @param g_ is a graph used only for debugging purpose to print name of vertex
     */
-   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph* 
-   #if HAVE_ASSERTS 
-      g_) : ref(ref_), g(g_)
-   #else
-      ) : ref(ref_)
-   #endif
+   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph*
+#if HAVE_ASSERTS
+                                                                          g_)
+       : ref(ref_), g(g_)
+#else
+                          )
+       : ref(ref_)
+#endif
    {
    }
 

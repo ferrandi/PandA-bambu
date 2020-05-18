@@ -41,9 +41,9 @@
 #define FUNCTION_PARM_MASK_HPP
 
 /// Superclass include
+#include "Range.hpp"
 #include "application_frontend_flow_step.hpp"
 #include "bit_lattice.hpp"
-#include "Range.hpp"
 #include "tree_node.hpp"
 #include "xml_attribute.hpp"
 
@@ -53,7 +53,8 @@ class function_parm_mask : public ApplicationFrontendFlowStep
    static bool executed;
    static bit_lattice dc;
 
-   struct funcMask {
+   struct funcMask
+   {
       bit_lattice sign;
       int16_t exp_l;
       int16_t exp_u;

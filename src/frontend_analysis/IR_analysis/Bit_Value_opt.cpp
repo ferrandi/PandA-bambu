@@ -510,7 +510,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               else
                                  TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index1));
                            }
-
                         }
                      }
                   };
@@ -1371,9 +1370,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            }
                            for(auto s0it = s0.rbegin(), s1it = s1.rbegin(), s0end = s0.rend(), s1end = s1.rend(); s0it != s0end && s1it != s1end; ++s0it, ++s1it)
                            {
-                              if((expr_kind == bit_and_expr_K && (*s0it == '0' || *s1it == '0')) ||
-                                 *s0it == 'X' || *s1it == 'X'
-                                 )
+                              if((expr_kind == bit_and_expr_K && (*s0it == '0' || *s1it == '0')) || *s0it == 'X' || *s1it == 'X')
                                  ++trailing_zero;
                               else
                                  break;
@@ -1382,9 +1379,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            {
                               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Bit Value Opt: " + std::string(GET_NODE(ga->op1)->get_kind_text()) + " optimized, nbits = " + STR(trailing_zero));
                               modified = true;
-   #ifndef NDEBUG
+#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-   #endif
+#endif
                               const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                               unsigned int type_index0 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
                               tree_nodeRef op0_op_type = TM->GetTreeReindex(type_index0);
@@ -1451,7 +1448,6 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "pushed");
                            }
                         }
-
                      };
                      bit_expr_BVO();
                   }

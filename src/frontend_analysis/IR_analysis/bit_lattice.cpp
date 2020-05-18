@@ -241,7 +241,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    THROW_ASSERT(out_type_size, "");
    const bool out_is_bool = tree_helper::is_bool(TM, output_uid);
    THROW_ASSERT(not out_is_bool or (out_type_size == 1), "boolean with type size != 1");
-   
+
    return sup(_a, _b, out_type_size, out_is_signed, out_is_bool);
 }
 
@@ -348,7 +348,7 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    const bool out_is_bool = tree_helper::is_bool(TM, output_uid);
    THROW_ASSERT(not out_is_bool or (out_type_size == 1), "boolean with type size != 1");
    bool out_is_signed = signed_var.find(output_uid) != signed_var.end() or tree_helper::is_int(TM, output_uid);
-   
+
    return inf(a, b, out_type_size, out_is_signed, out_is_bool);
 }
 

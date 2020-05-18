@@ -57,22 +57,22 @@
 #include "pragma_manager.hpp"
 
 /// tree includes
-#include "tree_node.hpp"
-#include "tree_helper.hpp"
-#include "tree_reindex.hpp"
-#include "tree_manager.hpp"
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "tree_helper.hpp"
+#include "tree_manager.hpp"
+#include "tree_node.hpp"
+#include "tree_reindex.hpp"
 
 /// XML includes used for writing and reading the configuration file
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
+#include "Range.hpp"
 #include "bit_lattice.hpp"
 #include "custom_map.hpp"
-#include "Range.hpp"
-#include "var_pp_functor.hpp"  // for std_var_pp_functor
+#include "var_pp_functor.hpp" // for std_var_pp_functor
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> function_parm_mask::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
@@ -107,7 +107,7 @@ function_parm_mask::function_parm_mask(const application_managerRef AM, const De
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
    auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
-   
+
    if(opts.size() && opts.front().front() == 'X')
    {
       dc = bit_lattice::X;
@@ -128,7 +128,7 @@ function_parm_mask::function_parm_mask(const application_managerRef AM, const De
       }
 
       funcMask m;
-      m.sign =  mask[1] == "0" ? bit_lattice::ZERO : (mask[1] == "1" ? bit_lattice::ONE : bit_lattice::U);
+      m.sign = mask[1] == "0" ? bit_lattice::ZERO : (mask[1] == "1" ? bit_lattice::ONE : bit_lattice::U);
       m.exp_l = static_cast<int16_t>(strtol(mask[2].data(), nullptr, 10));
       m.exp_u = static_cast<int16_t>(strtol(mask[3].data(), nullptr, 10));
       m.m_bits = static_cast<uint8_t>(strtoul(mask[4].data(), nullptr, 10));
@@ -217,7 +217,7 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
             bv_mask = create_bitstring_from_constant(sig_mask, bw, false);
             for(auto& b : bv_mask)
             {
-               if(b == bit_lattice::ONE)  
+               if(b == bit_lattice::ONE)
                {
                   b = bit_lattice::U;
                }
@@ -261,8 +261,9 @@ void function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
    {
       return;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
-   
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
+
    const auto retBW = static_cast<Range::bw_t>(tree_helper::Size(retType));
    THROW_ASSERT(retBW == 32 || retBW == 64, "");
    refcount<RealRange> rr(new RealRange(RangeRef(new Range(Regular, retBW))));
@@ -287,7 +288,7 @@ void function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
       bv = create_bitstring_from_constant(sig_mask, retBW, false);
       for(auto& b : bv)
       {
-         if(b == bit_lattice::ONE)  
+         if(b == bit_lattice::ONE)
          {
             b = bit_lattice::U;
          }
@@ -383,14 +384,14 @@ DesignFlowStep_Status function_parm_mask::Exec()
                      continue;
                   }
                   auto fd = nameToFunc.at(fname);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Parameter mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
                   const auto f_args = fd->list_of_args;
                   CustomMap<std::string, parm_decl*> f_parms;
-                  std::transform(f_args.begin(), f_args.end(), std::inserter(f_parms, f_parms.end()), 
-                     [](const tree_nodeRef& tn){
-                        auto* parm_dec = GetPointer<parm_decl>(GET_NODE(tn));
-                        return std::make_pair(GetPointer<const identifier_node>(GET_CONST_NODE(parm_dec->name))->strg, parm_dec);
-                     });
+                  std::transform(f_args.begin(), f_args.end(), std::inserter(f_parms, f_parms.end()), [](const tree_nodeRef& tn) {
+                     auto* parm_dec = GetPointer<parm_decl>(GET_NODE(tn));
+                     return std::make_pair(GetPointer<const identifier_node>(GET_CONST_NODE(parm_dec->name))->strg, parm_dec);
+                  });
 
                   for(const auto& iterArg : Enode->get_children())
                   {
@@ -411,7 +412,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
                         const auto bw = tree_helper::Size(TM->get_tree_node_const(parm->index));
                         THROW_ASSERT(parm->bit_values.empty(), "Parameter bitmask should be empty (" + parm->bit_values + ")");
                         THROW_ASSERT(parm->range == nullptr, "Parameter range should be unset (" + parm->range->ToString() + ")");
-                        
+
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + GET_CONST_NODE(parm->type)->get_kind_text() + "<" + STR(bw) + "> " + argName);
                         const auto [bit_values, range] = tagDecode(EnodeArg->get_attributes(), static_cast<Range::bw_t>(bw));
                         if(range == nullptr)

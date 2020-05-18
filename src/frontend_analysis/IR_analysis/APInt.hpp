@@ -53,18 +53,18 @@ class APInt
 {
  public:
    using APInt_internal = boost::multiprecision::mpz_int;
-   #ifndef NDEBUG
+#ifndef NDEBUG
    using bw_t = uint16_t;
-   #else
+#else
    using bw_t = uint8_t;
-   #endif
+#endif
 
  private:
    APInt_internal _data;
 
  public:
    APInt();
-   
+
    template <typename T>
    APInt(T val, typename std::enable_if<std::is_arithmetic<T>::value>* = nullptr) : _data(val)
    {

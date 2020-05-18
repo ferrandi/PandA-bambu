@@ -149,11 +149,11 @@
 #endif
 #if HAVE_BAMBU_BUILT
 #include "FixStructsPassedByValue.hpp"
-#include "function_parm_mask.hpp"
 #include "FunctionCallTypeCleanup.hpp"
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
 #include "fanout_opt.hpp"
+#include "function_parm_mask.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "FunctionPointerCallGraphComputation.hpp"
@@ -236,8 +236,8 @@
 #include "host_profiling.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
-#include "eSSA.hpp"
 #include "Range_Analysis.hpp"
+#include "eSSA.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "rebuild_initializations.hpp"
@@ -735,7 +735,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case RANGE_ANALYSIS:
       {
-            return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
+         return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
 #if HAVE_ZEBU_BUILT
@@ -1150,7 +1150,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case(ESSA):
       {
-            return DesignFlowStepRef(new eSSA(parameters, AppM, function_id, design_flow_manager.lock()));
+         return DesignFlowStepRef(new eSSA(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case(FANOUT_OPT):
       {

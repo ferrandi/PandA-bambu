@@ -416,7 +416,7 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ProbabilityPath";
 #endif
 #if HAVE_BAMBU_BUILT
-       case RANGE_ANALYSIS:
+      case RANGE_ANALYSIS:
          return "RangeAnalysis";
       case(REBUILD_INITIALIZATION):
          return "RebuildInitialization";

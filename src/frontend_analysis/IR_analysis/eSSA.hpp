@@ -32,7 +32,7 @@
  */
 /**
  * @file eSSA.hpp
- * @brief 
+ * @brief
  *
  * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
  * $Revision$
@@ -44,9 +44,9 @@
 #ifndef ESSA_HPP
 #define ESSA_HPP
 
-#include "function_frontend_flow_step.hpp"
 #include "basic_block.hpp"
 #include "custom_map.hpp"
+#include "function_frontend_flow_step.hpp"
 #include "tree_node.hpp"
 
 REF_FORWARD_DECL(Operand);
@@ -61,15 +61,13 @@ class eSSA : public FunctionFrontendFlowStep
    using ValueInfoLookup = CustomMap<tree_nodeConstRef, unsigned int>;
 
  private:
-
    BBGraphRef DT;
    unsigned int bb_ver;
    unsigned int bv_ver;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
-   bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, 
-      CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl);
+   bool renameUses(CustomSet<OperandRef>& OpSet, ValueInfoLookup& ValueInfoNums, std::vector<ValueInfo>& ValueInfos, CustomMap<unsigned int, DFSInfo>& DFSInfos, CustomSet<std::pair<unsigned int, unsigned int>>& EdgeUsesOnly, statement_list* sl);
 
  public:
    /**

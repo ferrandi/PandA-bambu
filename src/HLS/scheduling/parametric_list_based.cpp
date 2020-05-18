@@ -224,10 +224,10 @@ class edge_integer_order_by_map : std::binary_function<vertex, vertex, bool>
    /// Topological sorted vertices
    const std::map<vertex, unsigned int>& ref;
 
-   /// Graph
-   #if HAVE_ASSERTS
+/// Graph
+#if HAVE_ASSERTS
    const graph* g;
-   #endif
+#endif
 
  public:
    /**
@@ -235,12 +235,14 @@ class edge_integer_order_by_map : std::binary_function<vertex, vertex, bool>
     * @param ref is the map with the topological sort of vertices
     * @param g is a graph used only for debugging purpose to print name of vertex
     */
-   edge_integer_order_by_map(const std::map<vertex, unsigned int>& _ref, const graph* 
-   #if HAVE_ASSERTS
-   _g) : ref(_ref), g(_g)
-   #else
-   ) : ref(_ref)
-   #endif
+   edge_integer_order_by_map(const std::map<vertex, unsigned int>& _ref, const graph*
+#if HAVE_ASSERTS
+                                                                             _g)
+       : ref(_ref), g(_g)
+#else
+                             )
+       : ref(_ref)
+#endif
    {
    }
 

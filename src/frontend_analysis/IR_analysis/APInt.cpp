@@ -32,7 +32,7 @@
  */
 /**
  * @file APInt.cpp
- * @brief 
+ * @brief
  *
  * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
  * $Revision$
@@ -272,11 +272,11 @@ bool APInt::sign() const
 APInt& APInt::extOrTrunc(bw_t bw, bool sign)
 {
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
-   const APInt_internal mask((APInt_internal(1,nullptr) << bw) - APInt_internal(1,nullptr),nullptr);
+   const APInt_internal mask((APInt_internal(1, nullptr) << bw) - APInt_internal(1, nullptr), nullptr);
    _data &= mask;
    if(sign && bit_test(_data, static_cast<unsigned>(bw - 1)))
    {
-      _data += (APInt_internal(-1,nullptr) << bw);
+      _data += (APInt_internal(-1, nullptr) << bw);
    }
    return *this;
 }
@@ -284,11 +284,11 @@ APInt& APInt::extOrTrunc(bw_t bw, bool sign)
 APInt APInt::extOrTrunc(bw_t bw, bool sign) const
 {
    THROW_ASSERT(bw, "Minimum bitwidth of 1 is required");
-   const APInt_internal mask((APInt_internal(1,nullptr) << bw) - APInt_internal(1,nullptr),nullptr);
+   const APInt_internal mask((APInt_internal(1, nullptr) << bw) - APInt_internal(1, nullptr), nullptr);
    APInt_internal val = _data & mask;
    if(sign && bit_test(val, static_cast<unsigned>(bw - 1)))
    {
-      val += (APInt_internal(-1,nullptr) << bw);
+      val += (APInt_internal(-1, nullptr) << bw);
    }
    return APInt(val);
 }

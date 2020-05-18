@@ -875,11 +875,11 @@ unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae, bool safe) const
    auto align = vd->algn;
    if(safe)
    {
-       align = align < 8 ? 1 : (align/8);
+      align = align < 8 ? 1 : (align / 8);
    }
    else
    {
-       align = align < 64 ? 8 : (align/8);
+      align = align < 64 ? 8 : (align / 8);
    }
    auto index = 0u;
    bool found = false;
@@ -952,13 +952,13 @@ bool Bit_Value::update_IR()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Updating IR");
    for(auto b : best)
    {
-      #ifndef NDEBUG
+#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--"); 
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
          return res;
       }
-      #endif
+#endif
       const unsigned int tn_id = b.first;
       tree_nodeRef tn = TM->get_tree_node_const(tn_id);
       const auto kind = tn->get_kind();
@@ -971,9 +971,9 @@ bool Bit_Value::update_IR()
             ssa->bit_values = bitstring_to_string(b.second);
             res = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var id: " + STR(tn_id) + " bitstring: " + ssa->bit_values);
-            #ifndef NDEBUG
+#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), tn);
-            #endif
+#endif
          }
          if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
          {

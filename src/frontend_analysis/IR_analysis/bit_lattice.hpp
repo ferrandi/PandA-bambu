@@ -183,7 +183,7 @@ class BitLatticeManipulator
    static bit_lattice bit_inf(const bit_lattice a, const bit_lattice b);
 
    static std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
-   
+
    static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
 };
 

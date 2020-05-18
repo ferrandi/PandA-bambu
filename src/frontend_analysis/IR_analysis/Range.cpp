@@ -32,7 +32,7 @@
  */
 /**
  * @file Range.cpp
- * @brief 
+ * @brief
  *
  * @author Michele Fiorito <michele2.fiorito@mail.polimi.it>
  * $Revision$
@@ -44,25 +44,25 @@
 #include "Range.hpp"
 
 #include "exceptions.hpp"
-#include "tree_node.hpp"
 #include "string_manipulation.hpp"
+#include "tree_node.hpp"
 
-#define CASE_MISCELLANEOUS       \
-   aggr_init_expr_K:             \
-   case case_label_expr_K:       \
-   case lut_expr_K:              \
-   case target_expr_K:           \
-   case target_mem_ref_K:        \
-   case target_mem_ref461_K:     \
-   case binfo_K:                 \
-   case block_K:                 \
-   case constructor_K:           \
-   case error_mark_K:            \
-   case identifier_node_K:       \
-   case ssa_name_K:              \
-   case statement_list_K:        \
-   case tree_list_K:             \
-   case tree_vec_K:              \
+#define CASE_MISCELLANEOUS   \
+   aggr_init_expr_K:         \
+   case case_label_expr_K:   \
+   case lut_expr_K:          \
+   case target_expr_K:       \
+   case target_mem_ref_K:    \
+   case target_mem_ref461_K: \
+   case binfo_K:             \
+   case block_K:             \
+   case constructor_K:       \
+   case error_mark_K:        \
+   case identifier_node_K:   \
+   case ssa_name_K:          \
+   case statement_list_K:    \
+   case tree_list_K:         \
+   case tree_vec_K:          \
    case call_expr_K
 
 using bw_t = Range::bw_t;
@@ -73,15 +73,14 @@ const APInt Range::Min = APInt::getSignedMinValue(Range::MAX_BIT_INT);
 const APInt Range::Max = APInt::getSignedMaxValue(Range::MAX_BIT_INT);
 const APInt Range::MinDelta(1);
 
-
 Range::Range(RangeType rType, bw_t rbw) : l(Min), u(Max), bw(rbw), type(rType)
 {
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
+   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) + ")");
 }
 
 Range::Range(RangeType rType, bw_t rbw, const APInt& lb, const APInt& ub) : l(lb), u(ub), bw(rbw), type(rType)
 {
-   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) +")");
+   THROW_ASSERT(rbw > 0 && rbw <= MAX_BIT_INT, "Invalid bitwidth for range (bw = " + STR(rbw) + ")");
    normalizeRange(lb, ub, rType);
 }
 
@@ -277,8 +276,7 @@ bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
 RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned)
 {
    THROW_ASSERT(bv.size() <= bitwidth, "BitValues size not appropriate");
-   auto bitReplace = [](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest)
-   {
+   auto bitReplace = [](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest) {
       std::deque<bit_lattice> bv_out;
       for(const auto& b : bv_in)
       {
@@ -286,8 +284,7 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
       }
       return bv_out;
    };
-   auto bitstring_to_int = [&](const std::deque<bit_lattice>& bv_in)
-   {
+   auto bitstring_to_int = [&](const std::deque<bit_lattice>& bv_in) {
       long long out = isSigned && bv_in.front() == bit_lattice::ONE ? std::numeric_limits<long long>::min() : 0LL;
       auto bv_it = bv_in.crbegin();
       const auto bv_end = bv_in.crend();
@@ -304,8 +301,7 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
       }
       return out;
    };
-   auto manip = [&](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest)
-   {
+   auto manip = [&](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest) {
       auto bv_ext = bitReplace(bv_in, src, dest);
       if(bv_ext.size() < bitwidth)
       {
@@ -323,8 +319,8 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
    const auto c = manip(y, bit_lattice::X, bit_lattice::ZERO);
    const auto d = manip(y, bit_lattice::X, bit_lattice::ONE);
 
-   const auto [min, max] = std::minmax({a,b,c,d});
-   
+   const auto [min, max] = std::minmax({a, b, c, d});
+
    return RangeRef(new Range(Regular, bitwidth, min, max));
 }
 
@@ -338,7 +334,7 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    {
       return create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw, isSigned);
    }
-   
+
    auto min = create_bitstring_from_constant((isSigned ? getSignedMin() : getUnsignedMin()).cast_to<long long>(), bw, isSigned);
    auto max = create_bitstring_from_constant((isSigned ? getSignedMax() : getUnsignedMax()).cast_to<long long>(), bw, isSigned);
    auto& longer = min.size() >= max.size() ? min : max;
@@ -347,7 +343,7 @@ std::deque<bit_lattice> Range::getBitValues(bool isSigned) const
    {
       shorter = BitLatticeManipulator::sign_extend_bitstring(shorter, isSigned, longer.size());
    }
-   
+
    std::deque<bit_lattice> range_bv;
    auto s_it = shorter.cbegin();
    auto l_it = longer.cbegin();
@@ -403,14 +399,14 @@ bw_t Range::getBitWidth() const
    return bw;
 }
 
-const APInt &Range::getLower() const
+const APInt& Range::getLower() const
 {
    THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isAnti(), "Lower bound not valid for Anti range");
    return l;
 }
 
-const APInt &Range::getUpper() const
+const APInt& Range::getUpper() const
 {
    THROW_ASSERT(!isReal(), "Real range is a storage class only");
    THROW_ASSERT(!isAnti(), "Upper bound not valid for Anti range");
@@ -530,8 +526,7 @@ bool Range::isFullSet() const
    {
       return false;
    }
-   return (APInt::getSignedMaxValue(bw) <= getUpper() && APInt::getSignedMinValue(bw) >= getLower())
-      || (APInt::getMaxValue(bw) <= getUpper() && APInt::getMinValue(bw) >= getLower());
+   return (APInt::getSignedMaxValue(bw) <= getUpper() && APInt::getSignedMinValue(bw) >= getLower()) || (APInt::getMaxValue(bw) <= getUpper() && APInt::getMinValue(bw) >= getLower());
 }
 
 bool Range::isSingleElement() const
@@ -548,8 +543,16 @@ bool Range::isConstant() const
    return isRegular() && l == u;
 }
 
-#define RETURN_EMPTY_ON_EMPTY(b) if(this->isEmpty() || other->isEmpty()){return RangeRef(new Range(Empty, b));}
-#define RETURN_UNKNOWN_ON_UNKNOWN(b) if(this->isUnknown() || other->isUnknown()){return RangeRef(new Range(Unknown, b));}
+#define RETURN_EMPTY_ON_EMPTY(b)            \
+   if(this->isEmpty() || other->isEmpty())  \
+   {                                        \
+      return RangeRef(new Range(Empty, b)); \
+   }
+#define RETURN_UNKNOWN_ON_UNKNOWN(b)           \
+   if(this->isUnknown() || other->isUnknown()) \
+   {                                           \
+      return RangeRef(new Range(Unknown, b));  \
+   }
 
 /// Add and Mul are commutative. So, they are a little different
 /// than the other operations.
@@ -712,7 +715,7 @@ RangeRef Range::mul(const RangeConstRef& other) const
    const auto res = std::minmax({this_min * Other_min, this_min * Other_max, this_max * Other_min, this_max * Other_max});
    const auto Result_sext = Range(Regular, static_cast<bw_t>(bw * 2), res.first, res.second);
    const auto SR = Result_sext.truncate(bw);
-   
+
    return UR->getSpan() < SR->getSpan() ? UR : SR;
 }
 
@@ -725,7 +728,7 @@ RangeRef Range::udiv(const RangeConstRef& other) const
    {
       return RangeRef(new Range(Regular, bw));
    }
-   
+
    auto a = getUnsignedMin();
    auto b = getUnsignedMax();
    auto c = other->getUnsignedMin();
@@ -1009,7 +1012,7 @@ RangeRef Range::shr(const RangeConstRef& other, bool sign) const
 
    const auto c = other->getUnsignedMin();
    const auto d = other->getUnsignedMax();
-   
+
    if(sign)
    {
       const auto a = getSignedMin();
@@ -1028,7 +1031,6 @@ RangeRef Range::shr(const RangeConstRef& other, bool sign) const
    }
 }
 
-
 /*
  * 	This and operations are coded following Hacker's Delight algorithm.
  * 	According to the author, they provide tight results.
@@ -1043,13 +1045,21 @@ namespace
       {
          if(~a & c & m)
          {
-            temp = (a | m) & (~m+1);
-            if(temp <= b) { a = temp; break; }
+            temp = (a | m) & (~m + 1);
+            if(temp <= b)
+            {
+               a = temp;
+               break;
+            }
          }
          else if(a & ~c & m)
          {
-            temp = (c | m) & (~m+1);
-            if(temp <= d) { c = temp; break; }
+            temp = (c | m) & (~m + 1);
+            if(temp <= d)
+            {
+               c = temp;
+               break;
+            }
          }
          m = m >> 1;
       }
@@ -1065,16 +1075,24 @@ namespace
          if(b & d & m)
          {
             temp = (b - m) | (m - 1);
-            if(temp >= a) { b = temp; break; }
+            if(temp >= a)
+            {
+               b = temp;
+               break;
+            }
             temp = (d - m) | (m - 1);
-            if(temp >= c) { d = temp; break; }
+            if(temp >= c)
+            {
+               d = temp;
+               break;
+            }
          }
          m = m >> 1;
       }
       return b | d;
    }
 
-   std::pair<APInt,APInt> OR(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
+   std::pair<APInt, APInt> OR(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
       auto abcd = ((a >= 0) << 3) | ((b >= 0) << 2) | ((c >= 0) << 1) | (d >= 0);
 
@@ -1093,7 +1111,7 @@ namespace
          case 4:
             return std::make_pair(c, -1);
          case 5:
-            res_l = std::min({a,c});
+            res_l = std::min({a, c});
             res_u = maxOR(0, b, 0, d);
             break;
          case 7:
@@ -1118,10 +1136,18 @@ namespace
       {
          if(~a & ~c & m)
          {
-            temp = (a | m) & (~m+1);
-            if(temp <= b) { a = temp; break; }
-            temp = (c | m) & (~m+1);
-            if(temp <= d) { c = temp; break; }
+            temp = (a | m) & (~m + 1);
+            if(temp <= b)
+            {
+               a = temp;
+               break;
+            }
+            temp = (c | m) & (~m + 1);
+            if(temp <= d)
+            {
+               c = temp;
+               break;
+            }
          }
          m = m >> 1;
       }
@@ -1137,19 +1163,27 @@ namespace
          if(b & ~d & m)
          {
             temp = (b & ~m) | (m - 1);
-            if(temp >= a) { b = temp; break; }
+            if(temp >= a)
+            {
+               b = temp;
+               break;
+            }
          }
          else if(~b & d & m)
          {
             temp = (d & ~m) | (m - 1);
-            if(temp >= c) { d = temp; break; }
+            if(temp >= c)
+            {
+               d = temp;
+               break;
+            }
          }
          m = m >> 1;
       }
       return b & d;
    }
 
-   std::pair<APInt,APInt> AND(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
+   std::pair<APInt, APInt> AND(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
       auto abcd = ((a >= 0) << 3) | ((b >= 0) << 2) | ((c >= 0) << 1) | (d >= 0);
 
@@ -1193,13 +1227,19 @@ namespace
       {
          if(~a & c & m)
          {
-            temp = (a | m) & (~m+1);
-            if(temp <= b) { a = temp; }
+            temp = (a | m) & (~m + 1);
+            if(temp <= b)
+            {
+               a = temp;
+            }
          }
          else if(a & ~c & m)
          {
-            temp = (c | m) & (~m+1);
-            if(temp <= d) { c = temp; }
+            temp = (c | m) & (~m + 1);
+            if(temp <= d)
+            {
+               c = temp;
+            }
          }
          m = m >> 1;
       }
@@ -1215,10 +1255,17 @@ namespace
          if(b & d & m)
          {
             temp = (b - m) | (m - 1);
-            if(temp >= a) { b = temp; }
-            else {
+            if(temp >= a)
+            {
+               b = temp;
+            }
+            else
+            {
                temp = (d - m) | (m - 1);
-               if(temp >= c) { d = temp; }
+               if(temp >= c)
+               {
+                  d = temp;
+               }
             }
          }
          m = m >> 1;
@@ -1226,9 +1273,9 @@ namespace
       return b ^ d;
    }
 
-   std::pair<APInt,APInt> uXOR(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
+   std::pair<APInt, APInt> uXOR(const APInt& a, const APInt& b, const APInt& c, const APInt& d)
    {
-      return std::make_pair(minXOR(a,b,c,d), maxXOR(a,b,c,d));
+      return std::make_pair(minXOR(a, b, c, d), maxXOR(a, b, c, d));
    }
 
 } // namespace
@@ -1243,7 +1290,7 @@ RangeRef Range::Or(const RangeConstRef& other) const
    const auto& b = this->isAnti() ? Max : this->getUpper();
    const auto& c = other->isAnti() ? Min : other->getLower();
    const auto& d = other->isAnti() ? Max : other->getUpper();
-   
+
    const auto res = OR(a, b, c, d);
    return RangeRef(new Range(Regular, bw, res.first, res.second));
 }
@@ -1273,7 +1320,7 @@ RangeRef Range::Xor(const RangeConstRef& other) const
    const auto& b = this->isAnti() ? Max : this->getUpper();
    const auto& c = other->isAnti() ? Min : other->getLower();
    const auto& d = other->isAnti() ? Max : other->getUpper();
-   
+
    if(a >= 0 && b >= 0 && c >= 0 && d >= 0)
    {
       const auto res = uXOR(a, b, c, d);
@@ -1297,7 +1344,7 @@ RangeRef Range::Not() const
    {
       return RangeRef(new Range(this->type, bw));
    }
-   
+
    const auto min = ~this->u;
    const auto max = ~this->l;
 
@@ -1751,13 +1798,13 @@ RangeRef Range::truncate(bw_t bitwidth) const
    {
       return RangeRef(this->clone());
    }
-   
+
    auto stmin = a.extOrTrunc(bitwidth, true);
    auto stmax = b.extOrTrunc(bitwidth, true);
-   
-   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)   // Zero crossing range
+
+   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0) // Zero crossing range
    {
-      if(stmax < 0)  // overflow
+      if(stmax < 0) // overflow
       {
          if(stmax >= stmin)
          {
@@ -1765,7 +1812,7 @@ RangeRef Range::truncate(bw_t bitwidth) const
          }
          return RangeRef(new Range(Anti, bitwidth, stmax + 1, (stmin < 0 ? stmin : 0) - 1));
       }
-      if(stmin > 0)  // underflow
+      if(stmin > 0) // underflow
       {
          if(stmax >= stmin)
          {
@@ -1774,11 +1821,11 @@ RangeRef Range::truncate(bw_t bitwidth) const
          return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
       }
    }
-   else if((a.sign() != stmin.sign()) ^ (b.sign() != stmax.sign()))   // Non zero crossing range
+   else if((a.sign() != stmin.sign()) ^ (b.sign() != stmax.sign())) // Non zero crossing range
    {
       return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
    }
-   
+
    if(stmin > stmax)
    {
       return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
@@ -1804,7 +1851,7 @@ RangeRef Range::sextOrTrunc(bw_t bitwidth) const
 
    const auto this_min = this->getSignedMin();
    const auto this_max = this->getSignedMax();
-   
+
    const auto res = std::minmax({this_min.extOrTrunc(bitwidth, true), this_max.extOrTrunc(bitwidth, true)});
    RangeRef sextRes(new Range(Regular, bitwidth, res.first, res.second));
    if(sextRes->isFullSet())
@@ -1837,7 +1884,7 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
       }
       return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
    }
-   
+
    if(this->getSignedMin() < 0 && this->getSignedMax() >= 0)
    {
       return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
@@ -1852,9 +1899,9 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
 
 RangeRef Range::intersectWith(const RangeConstRef& other) const
 {
-   #ifdef DEBUG_RANGE_OP
+#ifdef DEBUG_RANGE_OP
    PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
-   #endif
+#endif
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
@@ -1966,9 +2013,9 @@ RangeRef Range::intersectWith(const RangeConstRef& other) const
 
 RangeRef Range::unionWith(const RangeConstRef& other) const
 {
-   #ifdef DEBUG_RANGE_OP
+#ifdef DEBUG_RANGE_OP
    PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
-   #endif
+#endif
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    if(this->isEmpty() || this->isUnknown())
    {
@@ -2154,7 +2201,7 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
       THROW_UNREACHABLE("Compare region for real range not handled (" + tree_node::GetString(pred) + ")");
    }
 
-   switch (pred)
+   switch(pred)
    {
       case ge_expr_K:
          return RangeRef(new Range(Regular, bw, Other->getSignedMax(), APInt::getSignedMaxValue(bw)));
@@ -2177,8 +2224,73 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
          return RangeRef(Other->clone());
       case ne_expr_K:
          return Other->getAnti();
-   
-      case assert_expr_K:case bit_and_expr_K:case bit_ior_expr_K:case bit_xor_expr_K:case catch_expr_K:case ceil_div_expr_K:case ceil_mod_expr_K:case complex_expr_K:case compound_expr_K:case eh_filter_expr_K:case exact_div_expr_K:case fdesc_expr_K:case floor_div_expr_K:case floor_mod_expr_K:case goto_subroutine_K:case in_expr_K:case init_expr_K:case lrotate_expr_K:case lshift_expr_K:case max_expr_K:case mem_ref_K:case min_expr_K:case minus_expr_K:case modify_expr_K:case mult_expr_K:case mult_highpart_expr_K:case ordered_expr_K:case plus_expr_K:case pointer_plus_expr_K:case postdecrement_expr_K:case postincrement_expr_K:case predecrement_expr_K:case preincrement_expr_K:case range_expr_K:case rdiv_expr_K:case round_div_expr_K:case round_mod_expr_K:case rrotate_expr_K:case rshift_expr_K:case set_le_expr_K:case trunc_div_expr_K:case trunc_mod_expr_K:case truth_and_expr_K:case truth_andif_expr_K:case truth_or_expr_K:case truth_orif_expr_K:case truth_xor_expr_K:case try_catch_expr_K:case try_finally_K:case ltgt_expr_K:case unordered_expr_K:case widen_sum_expr_K:case widen_mult_expr_K:case with_size_expr_K:case vec_lshift_expr_K:case vec_rshift_expr_K:case widen_mult_hi_expr_K:case widen_mult_lo_expr_K:case vec_pack_trunc_expr_K:case vec_pack_sat_expr_K:case vec_pack_fix_trunc_expr_K:case vec_extracteven_expr_K:case vec_extractodd_expr_K:case vec_interleavehigh_expr_K:case vec_interleavelow_expr_K:case extract_bit_expr_K:
+
+      case assert_expr_K:
+      case bit_and_expr_K:
+      case bit_ior_expr_K:
+      case bit_xor_expr_K:
+      case catch_expr_K:
+      case ceil_div_expr_K:
+      case ceil_mod_expr_K:
+      case complex_expr_K:
+      case compound_expr_K:
+      case eh_filter_expr_K:
+      case exact_div_expr_K:
+      case fdesc_expr_K:
+      case floor_div_expr_K:
+      case floor_mod_expr_K:
+      case goto_subroutine_K:
+      case in_expr_K:
+      case init_expr_K:
+      case lrotate_expr_K:
+      case lshift_expr_K:
+      case max_expr_K:
+      case mem_ref_K:
+      case min_expr_K:
+      case minus_expr_K:
+      case modify_expr_K:
+      case mult_expr_K:
+      case mult_highpart_expr_K:
+      case ordered_expr_K:
+      case plus_expr_K:
+      case pointer_plus_expr_K:
+      case postdecrement_expr_K:
+      case postincrement_expr_K:
+      case predecrement_expr_K:
+      case preincrement_expr_K:
+      case range_expr_K:
+      case rdiv_expr_K:
+      case round_div_expr_K:
+      case round_mod_expr_K:
+      case rrotate_expr_K:
+      case rshift_expr_K:
+      case set_le_expr_K:
+      case trunc_div_expr_K:
+      case trunc_mod_expr_K:
+      case truth_and_expr_K:
+      case truth_andif_expr_K:
+      case truth_or_expr_K:
+      case truth_orif_expr_K:
+      case truth_xor_expr_K:
+      case try_catch_expr_K:
+      case try_finally_K:
+      case ltgt_expr_K:
+      case unordered_expr_K:
+      case widen_sum_expr_K:
+      case widen_mult_expr_K:
+      case with_size_expr_K:
+      case vec_lshift_expr_K:
+      case vec_rshift_expr_K:
+      case widen_mult_hi_expr_K:
+      case widen_mult_lo_expr_K:
+      case vec_pack_trunc_expr_K:
+      case vec_pack_sat_expr_K:
+      case vec_pack_fix_trunc_expr_K:
+      case vec_extracteven_expr_K:
+      case vec_extractodd_expr_K:
+      case vec_interleavehigh_expr_K:
+      case vec_interleavelow_expr_K:
+      case extract_bit_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -2427,9 +2539,9 @@ RangeRef RealRange::Ne(const RangeConstRef& other, bw_t _bw) const
 
 RangeRef RealRange::intersectWith(const RangeConstRef& other) const
 {
-   #ifdef DEBUG_RANGE_OP
+#ifdef DEBUG_RANGE_OP
    PRINT_MSG("intersectWith-this: " << *this << std::endl << "intersectWith-other: " << *other);
-   #endif
+#endif
    THROW_ASSERT(other->isReal(), "Real range should intersect with real range only");
    auto rrOther = RefcountCast<const RealRange>(other);
    return RangeRef(new RealRange(sign->intersectWith(rrOther->sign), exponent->intersectWith(rrOther->exponent), significand->intersectWith(rrOther->significand)));
@@ -2437,9 +2549,9 @@ RangeRef RealRange::intersectWith(const RangeConstRef& other) const
 
 RangeRef RealRange::unionWith(const RangeConstRef& other) const
 {
-   #ifdef DEBUG_RANGE_OP
+#ifdef DEBUG_RANGE_OP
    PRINT_MSG("unionWith-this: " << *this << std::endl << "unionWith-other: " << *other);
-   #endif
+#endif
    THROW_ASSERT(other->isReal(), "Real range should unite to real range only");
    auto rrOther = RefcountCast<const RealRange>(other);
    return RangeRef(new RealRange(sign->unionWith(rrOther->sign), exponent->unionWith(rrOther->exponent), significand->unionWith(rrOther->significand)));
@@ -2467,9 +2579,7 @@ RangeRef RealRange::toFloat64() const
       exponent64.reset(new Range(Regular, 11, (exponent->getUnsignedMin() + 896).extOrTrunc(11, true), (exponent->getUnsignedMax() + 896).extOrTrunc(11, true)));
    }
 
-   return RangeRef(new RealRange(sign, 
-      exponent64, 
-      significand->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
+   return RangeRef(new RealRange(sign, exponent64, significand->zextOrTrunc(52)->shl(RangeRef(new Range(Regular, 52, 29, 29)))));
 }
 
 RangeRef RealRange::toFloat32() const
@@ -2501,9 +2611,7 @@ RangeRef RealRange::toFloat32() const
       exponent32.reset(new Range(Regular, 8, std::max({min, APInt(0)}).extOrTrunc(8, true), std::min({max, APInt(255)}).extOrTrunc(8, true)));
    }
 
-   return RangeRef(new RealRange(sign, 
-      exponent32,
-      significand32));
+   return RangeRef(new RealRange(sign, exponent32, significand32));
 }
 
 refcount<RealRange> RealRange::fromBitValues(const std::deque<bit_lattice>& bv)
@@ -2511,9 +2619,5 @@ refcount<RealRange> RealRange::fromBitValues(const std::deque<bit_lattice>& bv)
    THROW_ASSERT(bv.size() == 32 || bv.size() == 64, "Floating-point bit_values must be exact");
    const std::deque<bit_lattice> bv_exp(bv.begin() + 1, bv.begin() + (bv.size() == 64 ? 12 : 9));
    const std::deque<bit_lattice> bv_sigf(bv.begin() + 1 + static_cast<long>(bv_exp.size()), bv.end());
-   return refcount<RealRange>(new RealRange(
-         Range::fromBitValues({bv.front()}, 1, false), 
-         Range::fromBitValues(bv_exp, static_cast<bw_t>(bv_exp.size()), true), 
-         Range::fromBitValues(bv_sigf, static_cast<bw_t>(bv_sigf.size()), true)
-      ));
+   return refcount<RealRange>(new RealRange(Range::fromBitValues({bv.front()}, 1, false), Range::fromBitValues(bv_exp, static_cast<bw_t>(bv_exp.size()), true), Range::fromBitValues(bv_sigf, static_cast<bw_t>(bv_sigf.size()), true)));
 }

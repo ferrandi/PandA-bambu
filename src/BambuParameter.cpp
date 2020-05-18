@@ -3827,7 +3827,6 @@ void BambuParameter::SetDefaults()
    setOption(OPT_range_analysis_mode, "");
    setOption(OPT_mask, "");
 
-
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);
    setOption(OPT_profiling_method, static_cast<int>(HostProfiling_Method::PM_NONE));

@@ -401,14 +401,14 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
 
       unsigned int arg1_uid = GET_INDEX_NODE(operation->op);
       THROW_ASSERT(output_id == arg1_uid, "unexpected condition");
-      
+
       std::deque<bit_lattice> arg1_bitstring = best.at(arg1_uid);
       if(tree_helper::is_real(TM, arg1_uid))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer Error: operation unhandled yet with real type operand -> " + GET_NODE(ga->op1)->get_kind_text());
          return std::deque<bit_lattice>();
       }
-      
+
       size_t initial_size = arg1_bitstring.size();
       while(arg1_bitstring.size() > output_bitstring.size())
          arg1_bitstring.pop_front();
@@ -426,7 +426,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       {
          //    const auto left_id = GET_INDEX_NODE(ga->op0);
          //    const auto& left_bitstring = current.at(left_id);
-         
+
          // TODO: Back-propagate X on msb and other bits as in standard cast for real types
       }
 
