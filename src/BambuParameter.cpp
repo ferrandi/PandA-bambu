@@ -3205,7 +3205,7 @@ void BambuParameter::CheckParameters()
       setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::LSS);
 
    /// base address and initial internal address checks
-   if(isOption(OPT_initial_internal_address) && (getOption<unsigned int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
+   if(isOption(OPT_initial_internal_address) && (getOption<unsigned long long int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
    {
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))

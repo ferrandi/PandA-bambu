@@ -55,7 +55,7 @@ class memory_symbol
    std::string name;
 
    /// current variable address
-   unsigned int address;
+   unsigned long long int address;
 
    /// flag to check if the memory address is defined or not (i.e., it has been actually resolved)
    bool resolved;
@@ -64,7 +64,7 @@ class memory_symbol
    /**
     * Constructor
     */
-   memory_symbol(unsigned int var, unsigned int address, unsigned int funId);
+   memory_symbol(unsigned int var, unsigned long long address, unsigned int funId);
 
    /**
     * Destructor
@@ -84,12 +84,12 @@ class memory_symbol
    /**
     * Sets the actual address for the variable
     */
-   void set_address(unsigned int address);
+   void set_address(unsigned long long address);
 
    /**
     * Gets the current address for the variable
     */
-   unsigned int get_address() const;
+   unsigned long long int get_address() const;
 
    /**
     * Gets the current the variable

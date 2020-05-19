@@ -145,7 +145,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
 {
    std::map<unsigned int, structural_objectRef> null_values;
 
-   unsigned int base_address = HLSMgr->base_address;
+   unsigned long long int base_address = HLSMgr->base_address;
    bool Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
    bool Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses();
    const auto cg_man = HLSMgr->CGetCallGraphManager();
@@ -314,8 +314,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
             unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
             unsigned int bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
-            unsigned int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
-            unsigned int vec_size = n_bytes / (bus_data_bitsize / 8);
+            unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
+            unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
             std::ofstream init_file_a((init_filename).c_str());
             std::ofstream init_file_b((+"0_" + init_filename).c_str());
@@ -384,7 +384,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                std::vector<std::string> splitted = SplitString(init_v, ",");
                unsigned int byte_allocated = 0;
-               unsigned int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first) / 8;
+               unsigned long long int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first) / 8;
                std::vector<std::string> eightbit_string;
                for(const auto& i : splitted)
                {
@@ -433,7 +433,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                /// alignment padding
                m_next = m;
                ++m_next;
-               unsigned int object_offset;
+               unsigned long long int object_offset;
                if(m_next != mem_variables.end())
                {
                   object_offset = HLSMgr->Rmem->get_base_address(m_next->first, HLS->functionId) - HLSMgr->Rmem->get_base_address(m->first, HLS->functionId);
@@ -445,7 +445,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                THROW_ASSERT(object_offset >= actual_byte, "more allocated memory than expected");
                if(object_offset > actual_byte)
                {
-                  for(unsigned int base_index = 0; base_index < object_offset - actual_byte; ++base_index)
+                  for(unsigned long long int base_index = 0; base_index < object_offset - actual_byte; ++base_index)
                   {
                      str_bit = "00000000" + str_bit;
                      counter++;

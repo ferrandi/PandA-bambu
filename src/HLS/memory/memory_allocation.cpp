@@ -454,6 +454,7 @@ void memory_allocation::finalize_memory_allocation()
             maximum_bus_size = std::max(tree_helper::size(TreeM, function_return), maximum_bus_size);
          }
       }
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Analyzed function for bus size: " + behavioral_helper->get_function_name());
    }
 
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
@@ -496,19 +497,20 @@ void memory_allocation::finalize_memory_allocation()
       addr_bus_bitsize = 32;
    else
    {
-      unsigned int addr_range = HLSMgr->Rmem->get_max_address();
+      unsigned long long int addr_range = HLSMgr->Rmem->get_max_address();
       if(addr_range)
       {
-         addr_range = std::max(addr_range, ((2 * HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max")) / 8));
+         addr_range = std::max(addr_range, ((2 * HLS_T->get_target_device()->get_parameter<unsigned long long int>("BRAM_bitsize_max")) / 8));
          --addr_range;
       }
       unsigned int index;
-      for(index = 1; addr_range >= (1u << index); ++index)
+      for(index = 1; addr_range >= (1ull << index); ++index)
          ;
       addr_bus_bitsize = index;
       if(HLSMgr->Rmem->count_non_private_internal_symbols() == 1)
          ++addr_bus_bitsize;
    }
+
    HLSMgr->set_address_bitsize(addr_bus_bitsize);
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));
    if(needMemoryMappedRegisters)

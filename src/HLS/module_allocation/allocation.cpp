@@ -1152,7 +1152,7 @@ DesignFlowStep_Status allocation::InternalExec()
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Module allocation information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-   unsigned int base_address = HLSMgr->base_address;
+   unsigned long long int base_address = HLSMgr->base_address;
    bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM &&
                                      parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) ||
                                     (HLSMgr->Rmem->has_unknown_addresses() && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM &&
@@ -1569,7 +1569,7 @@ DesignFlowStep_Status allocation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Starting allocation of operations in queued vertices");
 
    for(const auto& tv : tech_vec)
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Resource constraint on " + tv.first + ": " + STR(tv.second));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_VERY_PEDANTIC, output_level, "---Resource constraint on " + tv.first + ": " + STR(tv.second));
 
    std::string bambu_provided_resource;
    for(const auto& lib_name : TM->get_library_list())

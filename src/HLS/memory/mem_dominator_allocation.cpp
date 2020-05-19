@@ -152,7 +152,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
    /// TODO: to be fixed with information coming out from the target platform description
-   auto base_address = parameters->getOption<unsigned int>(OPT_base_address);
+   auto base_address = parameters->getOption<unsigned long long int>(OPT_base_address);
    bool initial_internal_address_p = parameters->isOption(OPT_initial_internal_address);
    unsigned int initial_internal_address = initial_internal_address_p ? parameters->getOption<unsigned int>(OPT_initial_internal_address) : std::numeric_limits<unsigned int>::max();
    auto max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");

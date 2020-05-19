@@ -82,7 +82,7 @@ class HLS_manager : public application_manager
 
  public:
    /// base address for memory space addressing
-   unsigned int base_address;
+   unsigned long long int base_address;
 
    /// HLS execution time
    long HLS_execution_time;

@@ -37,7 +37,7 @@
  */
 #include "memory_cs.hpp"
 
-memory_cs::memory_cs(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int _address_bitsize)
+memory_cs::memory_cs(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int _address_bitsize)
     : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize)
 {
    bus_tag_bitsize = 0;

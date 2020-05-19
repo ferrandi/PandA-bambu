@@ -143,7 +143,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
 
    /// print base address
-   unsigned int base_address = HLSMgr->base_address;
+   unsigned long long int base_address = HLSMgr->base_address;
    output_stream << "//base address " + STR(base_address) << std::endl;
    std::string trimmed_value;
    for(unsigned int ind = 0; ind < 32; ind++)
@@ -153,7 +153,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
    // get the mapping between variables in external memory and their external
    // base address
-   std::map<unsigned int, unsigned int> address;
+   std::map<unsigned long long int, unsigned int> address;
    for(const auto& m : mem_vars)
       address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
 

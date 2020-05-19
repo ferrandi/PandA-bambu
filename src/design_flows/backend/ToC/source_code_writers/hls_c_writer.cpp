@@ -783,7 +783,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(Param));
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    // print base address
-   unsigned int base_address = hls_c_backend_information->HLSMgr->base_address;
+   unsigned long long int base_address = hls_c_backend_information->HLSMgr->base_address;
    indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//base address " + STR(base_address) + "\\n\");\n");
    std::string trimmed_value;
    for(unsigned int ind = 0; ind < 32; ind++)
@@ -793,7 +793,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    const std::map<unsigned int, memory_symbolRef>& mem_vars = hls_c_backend_information->HLSMgr->Rmem->get_ext_memory_variables();
    // get the mapping between variables in external memory and their external
    // base address
-   std::map<unsigned int, unsigned int> address;
+   std::map<unsigned long long int, unsigned int> address;
    for(const auto& m : mem_vars)
       address[hls_c_backend_information->HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
 

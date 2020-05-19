@@ -104,7 +104,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
    // get the mapping between variables in external memory and their external
    // base address
-   std::map<unsigned int, unsigned int> address;
+   std::map<unsigned long long int, unsigned int> address;
    for(const auto& m : mem_vars)
       address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
 
@@ -126,7 +126,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    for(const auto& curr_test_vector : HLSMgr->RSim->test_vectors)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
-      HLSMgr->RSim->param_address[v_idx] = std::map<unsigned int, unsigned int>();
+      HLSMgr->RSim->param_address[v_idx].clear();
       // loop on the variables in memory
       for(std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
       {
@@ -212,7 +212,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          std::list<unsigned int>::const_iterator l_next;
          l_next = l;
          ++l_next;
-         unsigned int next_object_offset = 0;
+         unsigned long long int next_object_offset = 0;
          /// check the next free aligned address
          if(l_next != mem.end() && mem_vars.find(*l_next) != mem_vars.end() && mem_vars.find(*l) != mem_vars.end())
          {
