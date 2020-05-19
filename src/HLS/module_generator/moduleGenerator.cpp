@@ -521,6 +521,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
 
       NP_parameters = new_fu_name + std::string(" ") + param_list;
       CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
+      if(fu_module->get_NP_functionality()->exist_NP_functionality(NP_functionality::IP_COMPONENT))
+         CM->add_NP_functionality(top, NP_functionality::IP_COMPONENT, fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::IP_COMPONENT));
 
       const auto np = fu_module->get_NP_functionality();
       const auto writer = [&]() -> HDLWriter_Language {
