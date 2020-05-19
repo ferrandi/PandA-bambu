@@ -1,0 +1,40 @@
+%Generated at 2020-01-25 16:06:42.439676 with bambu Version: PandA 0.9.7-dev - Revision 59920332e0a3f18bd8af020c640601bff6f21cba-Clang8 with arguments --compiler=I386_GCC49 --device-name=TO_BE_OVERWRITTEN --evaluation -fwhole-program -fno-delete-null-pointer-checks --no-iob --clock-period=15 --speculative-sdc-scheduling --experimental-setup=BAMBU-BALANCED-MP --device=xc7z020-1clg484-VVD --compiler=I386_CLANG9 --simulator=VERILATOR
+\begin{tabular}{|l|c|c|c|c|c|c|c|c|c|c|}
+\hline
+Benchmark Name          & Tot. Latency           & Num Cycles & LUTs      & Slices    & Registers & DSPs    & BRAMs   & Clock Frequency & Clock Slack & HLS Time(s) \\
+\hline
+adpcm:main\_0           & $ 1.157 \cdot 10^{2} $ & $ 7696   $ & $ 9775  $ & $ 3076  $ & $ 4951  $ & $ 63  $ & $ 30  $ & $ 66.50       $ & $ -0.04   $ & $ 50.92   $ \\
+aes:main\_0             & $ 2.144 \cdot 10^{1} $ & $ 1852   $ & $ 5046  $ & $ 1779  $ & $ 3711  $ & $ 0   $ & $ 6   $ & $ 86.40       $ & $ 3.43    $ & $ 47.67   $ \\
+bf:main\_0              & $ 1.098 \cdot 10^{3} $ & $ 93791  $ & $ 3308  $ & $ 1052  $ & $ 2064  $ & $ 0   $ & $ 14  $ & $ 85.45       $ & $ 3.30    $ & $ 20.36   $ \\
+dfadd:main\_0           & $ 2.957 \cdot 10^{0} $ & $ 218    $ & $ 1935  $ & $ 619   $ & $ 790   $ & $ 0   $ & $ 8   $ & $ 73.74       $ & $ 1.44    $ & $ 31.49   $ \\
+dfdiv:main\_0           & $ 2.375 \cdot 10^{1} $ & $ 1785   $ & $ 3041  $ & $ 985   $ & $ 1811  $ & $ 18  $ & $ 8   $ & $ 75.15       $ & $ 1.69    $ & $ 22.31   $ \\
+dfdiv\_hls\_div:main\_0 & $ 8.315 \cdot 10^{0} $ & $ 585    $ & $ 4069  $ & $ 1375  $ & $ 2219  $ & $ 61  $ & $ 8   $ & $ 70.35       $ & $ 0.79    $ & $ 23.28   $ \\
+dfmul:main\_0           & $ 1.283 \cdot 10^{0} $ & $ 91     $ & $ 1610  $ & $ 527   $ & $ 787   $ & $ 10  $ & $ 8   $ & $ 70.90       $ & $ 0.90    $ & $ 23.54   $ \\
+dfsin:main\_0           & $ 6.597 \cdot 10^{2} $ & $ 45535  $ & $ 9399  $ & $ 2929  $ & $ 4746  $ & $ 31  $ & $ 16  $ & $ 69.02       $ & $ 0.51    $ & $ 74.38   $ \\
+dfsin\_hls\_div:main\_0 & $ 2.685 \cdot 10^{2} $ & $ 18835  $ & $ 10987 $ & $ 3415  $ & $ 5590  $ & $ 74  $ & $ 16  $ & $ 70.15       $ & $ 0.74    $ & $ 78.92   $ \\
+gsm:main\_0             & $ 3.814 \cdot 10^{1} $ & $ 2640   $ & $ 5538  $ & $ 1786  $ & $ 2955  $ & $ 31  $ & $ 3   $ & $ 69.22       $ & $ 0.55    $ & $ 72.50   $ \\
+jpeg:main\_0            & $ 6.434 \cdot 10^{3} $ & $ 466801 $ & $ 18488 $ & $ 6181  $ & $ 10549 $ & $ 9   $ & $ 82  $ & $ 72.55       $ & $ 1.22    $ & $ 104.76  $ \\
+mips:main\_0            & $ 3.138 \cdot 10^{1} $ & $ 2450   $ & $ 1361  $ & $ 416   $ & $ 460   $ & $ 8   $ & $ 4   $ & $ 78.08       $ & $ 2.19    $ & $ 15.94   $ \\
+mpeg2:main\_0           & $ 2.384 \cdot 10^{1} $ & $ 2133   $ & $ 6571  $ & $ 2376  $ & $ 4656  $ & $ 0   $ & $ 1   $ & $ 89.46       $ & $ 3.82    $ & $ 22.40   $ \\
+sha\_driver:main\_0     & $ 1.088 \cdot 10^{3} $ & $ 106358 $ & $ 2019  $ & $ 695   $ & $ 1441  $ & $ 0   $ & $ 12  $ & $ 97.71       $ & $ 4.77    $ & $ 11.57   $ \\
+\hline
+Average                 & $                    $ & $        $ & $       $ & $       $ & $       $ & $     $ & $     $ & $ 76.76       $ & $ 1.81    $ & $         $ \\
+\hline
+Overall                 & $ 9.816 \cdot 10^{3} $ & $ 750770 $ & $ 83147 $ & $ 27211 $ & $ 46730 $ & $ 305 $ & $ 216 $ & $             $ & $         $ & $ 600.04  $ \\
+\hline
+\end{tabular}
+%Benchmarks:
+%adpcm/adpcm.c
+%aes/aes.c
+%dfadd/dfadd.c
+%dfdiv/dfdiv.c --benchmark-name=dfdiv
+%dfdiv/dfdiv.c --hls-div --benchmark-name=dfdiv_hls_div
+%dfmul/dfmul.c
+%dfsin/dfsin.c --benchmark-name=dfsin
+%dfsin/dfsin.c --hls-div --benchmark-name=dfsin_hls_div
+%gsm/gsm.c
+%mips/mips.c
+%motion/mpeg2.c
+%sha/sha_driver.c
+%blowfish/bf.c
+%jpeg/main.c --benchmark-name=jpeg -fno-tree-pre

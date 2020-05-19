@@ -47,7 +47,6 @@
 #include "AlteraBackendFlow.hpp"
 
 /// Autoheader includes
-#include "config_HAVE_ALTERA.hpp"
 #include "config_QUARTUS_13_SETTINGS.hpp"
 #include "config_QUARTUS_SETTINGS.hpp"
 
@@ -285,7 +284,7 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(get_flow_name() != "Characterization" && (boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)))
+      if(get_flow_name() != "Characterization" && (boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) && !Param->isOption(OPT_backend_sdc_extensions))
       {
          sdc_file << "set_min_delay 0 -from [all_inputs] -to [all_registers]\n";
          sdc_file << "set_min_delay 0 -from [all_registers] -to [all_outputs]\n";
@@ -340,9 +339,5 @@ void AlteraBackendFlow::InitDesignParameters()
 
 void AlteraBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_ALTERA
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("Altera tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }

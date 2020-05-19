@@ -8,6 +8,10 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu -llibm-tests_list -o 
    --args="--configuration-name=soft-floatC6-libm --compiler=I386_CLANG6 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
    --args="--configuration-name=soft-floatC7 --compiler=I386_CLANG7 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN -O0 -DFAITHFULLY_ROUNDED" \
    --args="--configuration-name=soft-floatC7-libm --compiler=I386_CLANG7 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
+   --args="--configuration-name=soft-floatC8 --compiler=I386_CLANG8 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN -O0 -DFAITHFULLY_ROUNDED" \
+   --args="--configuration-name=soft-floatC8-libm --compiler=I386_CLANG8 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
+   --args="--configuration-name=soft-floatC9 --compiler=I386_CLANG9 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN -O0 -DFAITHFULLY_ROUNDED" \
+   --args="--configuration-name=soft-floatC9-libm --compiler=I386_CLANG9 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
   $@
 return_value=$?
 if test $return_value != 0; then

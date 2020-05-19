@@ -87,6 +87,9 @@ class target_device
    /// Map containing all the parameters of the technology. All the values are stored as strings and they have correctly converted through the get_parameter template.
    std::map<std::string, std::string> parameters;
 
+   /// map with all the pairs variable/variable value used in the script as bash default values
+   std::map<std::string, std::string> bash_vars;
+
    /// Height of the core area dedicated for the design (in um).
    double core_height;
 
@@ -172,6 +175,11 @@ class target_device
       return parameters.find(key) != parameters.end();
    }
 
+   const std::map<std::string, std::string>& get_bash_vars() const
+   {
+      return bash_vars;
+   }
+
    /**
     * Returns the height of the area dedicated for the implementation
     */
@@ -188,7 +196,7 @@ class target_device
    virtual void initialize() = 0;
 
    /**
-    * Returns the target technology datastructure
+    * Returns the target technology data structure
     */
    target_technologyRef get_target_technology() const;
 

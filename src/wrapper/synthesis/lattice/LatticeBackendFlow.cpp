@@ -233,7 +233,7 @@ void LatticeBackendFlow::create_sdc(const DesignParametersRef dp)
    if(!boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
    {
       sdc_file << "create_clock -period " + dp->parameter_values[PARAM_clk_period] + " -name " + clock + " [get_ports " + clock + "]\n";
-      if(boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1))
+      if((boost::lexical_cast<bool>(dp->parameter_values[PARAM_connect_iob]) || (Param->IsParameter("profile-top") && Param->GetParameter<int>("profile-top") == 1)) && !Param->isOption(OPT_backend_sdc_extensions))
          sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
    }
    else
@@ -292,9 +292,5 @@ void LatticeBackendFlow::InitDesignParameters()
 
 void LatticeBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_LATTICE
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("Lattice tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }

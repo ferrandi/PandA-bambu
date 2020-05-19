@@ -173,6 +173,122 @@ TEST_CASE( "create and use primary outputs in an xag", "[xag]" )
   } );
 }
 
+TEST_CASE( "create and use register in an xag network", "[xag]" )
+{
+  xag_network xag;
+
+  CHECK( has_foreach_po_v<xag_network> );
+  CHECK( has_create_po_v<xag_network> );
+  CHECK( has_create_pi_v<xag_network> );
+  CHECK( has_create_ro_v<xag_network> );
+  CHECK( has_create_ri_v<xag_network> );
+  CHECK( has_create_maj_v<xag_network> );
+
+  const auto c0 = xag.get_constant( false );
+  const auto x1 = xag.create_pi();
+  const auto x2 = xag.create_pi();
+  const auto x3 = xag.create_pi();
+  const auto x4 = xag.create_pi();
+
+  CHECK( xag.size() == 5 );
+  CHECK( xag.num_registers() == 0 );
+  CHECK( xag.num_cis() == 4 );
+  CHECK( xag.num_cos() == 0 );
+
+  const auto f1 = xag.create_xor3( x1, x2, x3 );
+  xag.create_po( f1 );
+
+  CHECK( xag.num_pos() == 1 );
+
+  const auto s1 = xag.create_ro(); // ntk. input
+  xag.create_po( s1 );             // po
+
+  const auto f2 = xag.create_xor3( f1, x4, c0 );
+  xag.create_ri( f2 ); // ntk. output
+
+  CHECK( xag.num_registers() == 1 );
+  CHECK( xag.num_cis() == 4 + 1 );
+  CHECK( xag.num_cos() == 2 + 1 );
+
+  xag.foreach_pi( [&]( auto const& node, auto index ) {
+    CHECK( xag.is_pi( node ) );
+    switch ( index )
+    {
+    case 0:
+      CHECK( xag.make_signal( node ) == x1 ); /* first pi */
+      break;
+    case 1:
+      CHECK( xag.make_signal( node ) == x2 ); /* second pi */
+      break;
+    case 2:
+      CHECK( xag.make_signal( node ) == x3 ); /* third pi */
+      break;
+    case 3:
+      CHECK( xag.make_signal( node ) == x4 ); /* fourth pi */
+      break;
+    default:
+      CHECK( false );
+    }
+  } );
+
+  xag.foreach_ci( [&]( auto const& node, auto index ) {
+    CHECK( xag.is_ci( node ) );
+    switch ( index )
+    {
+    case 0:
+      CHECK( xag.make_signal( node ) == x1 ); /* first pi */
+      break;
+    case 1:
+      CHECK( xag.make_signal( node ) == x2 ); /* second pi */
+      break;
+    case 2:
+      CHECK( xag.make_signal( node ) == x3 ); /* third pi */
+      break;
+    case 3:
+      CHECK( xag.make_signal( node ) == x4 ); /* fourth pi */
+      break;
+    case 4:
+      CHECK( xag.make_signal( node ) == s1 ); /* first state-bit */
+      CHECK( xag.is_ci( node ) );
+      CHECK( !xag.is_pi( node ) );
+      break;
+    default:
+      CHECK( false );
+    }
+  } );
+
+  xag.foreach_po( [&]( auto const& node, auto index ) {
+    switch ( index )
+    {
+    case 0:
+      CHECK( node == f1 ); /* first po */
+      break;
+    case 1:
+      CHECK( node == s1 ); /* second po */
+      break;
+    default:
+      CHECK( false );
+    }
+  } );
+
+  xag.foreach_co( [&]( auto const& node, auto index ) {
+    switch ( index )
+    {
+    case 0:
+      CHECK( node == f1 ); /* first po */
+      break;
+    case 1:
+      CHECK( node == s1 ); /* second po */
+      break;
+    case 2:
+      CHECK( node == f2 ); /* first next-state bit */
+      break;
+    default:
+      CHECK( false );
+    }
+  } );
+}
+
 TEST_CASE( "create unary operations in an xag", "[xag]" )
 {
   xag_network xag;

@@ -32,8 +32,6 @@
 */
 #pragma once
 
-#include <iostream>
-
 #include "../networks/mig.hpp"
 #include "../traits.hpp"
 #include "../utils/progress_bar.hpp"
@@ -136,7 +134,6 @@ public:
 
   void run()
   {
-    const auto size = ntk.size();
     progress_bar pbar{ntk.size(), "refactoring |{0}| node = {1:>4}   cand = {2:>4}   est. reduction = {3:>5}", ps.progress};
 
     stopwatch t( st.time_total );
@@ -147,6 +144,7 @@ public:
       ntk.set_value( n, ntk.fanout_size( n ) );
     } );
 
+    const auto size = ntk.num_gates();
     ntk.foreach_gate( [&]( auto const& n, auto i ) {
       if ( i >= size )
       {
@@ -282,7 +280,7 @@ private:
 /*! \brief Boolean refactoring.
  *
  * This algorithm performs refactoring by collapsing maximal fanout-free cones
- * (MFFCs) into truth tables and recreate a new network structure from it.
+ * (MFFCs) into truth tables and recreating a new network structure from it.
  * The algorithm performs changes directly in the input network and keeps the
  * substituted structures dangling in the network.  They can be cleaned up using
  * the `cleanup_dangling` algorithm.

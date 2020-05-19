@@ -2,7 +2,7 @@
 open_checkpoint pong_synth/HLS_output/Synthesis/vivado_flow/post_route.dcp
 write_bitstream -force final_bistream.bit
 #program the NEXYS4
-open_hw
+open_hw_manager
 connect_hw_server -url localhost:3121
 current_hw_target [lindex [get_hw_targets] 0]
 open_hw_target

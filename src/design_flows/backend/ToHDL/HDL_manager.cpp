@@ -1026,6 +1026,14 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
       one_hot_encoding = true;
    else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" && list_of_states.size() < 256)
       one_hot_encoding = true;
+   std::string family;
+   if(device->has_parameter("vendor"))
+   {
+      family = device->get_parameter<std::string>("family");
+      boost::algorithm::to_lower(family);
+   }
+
+   bool is_yosys = family.find("yosys") != std::string::npos;
 
    writer->write_state_declaration(cir, list_of_states, reset_port, reset_state, one_hot_encoding);
 
@@ -1049,11 +1057,11 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
             continue;
          if(output_index != n_outs && mod->get_out_port(output_index)->get_id() == NEXT_STATE_PORT_NAME)
             continue;
-         writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port, clock_port, first, end);
+         writer->write_transition_output_functions(false, output_index, cir, reset_state, reset_port, start_port, clock_port, first, end, is_yosys);
       }
    }
    else
-      writer->write_transition_output_functions(true, 0, cir, reset_state, reset_port, start_port, clock_port, first, end);
+      writer->write_transition_output_functions(true, 0, cir, reset_state, reset_port, start_port, clock_port, first, end, is_yosys);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "FSM writing completed!");
 }

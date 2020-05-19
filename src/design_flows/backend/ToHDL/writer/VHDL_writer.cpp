@@ -1216,7 +1216,7 @@ void VHDL_writer::write_present_state_update(const structural_objectRef, const s
 }
 
 void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                                    std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end)
+                                                    std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing transition output function");
    auto* mod = GetPointer<module>(cir);

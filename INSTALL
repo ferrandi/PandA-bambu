@@ -47,7 +47,7 @@ mixed-language simulator. Both Modelsim from Mentor and XSIM/ISIM from Xilinx
 have such support.
 
 The suggested configuration is
-../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-xilinx --enable-modelsim --enable-altera --enable-nanoxplore --enable-opt --enable-lattice --enable-release --with-mentor-license=<license-string> --with-nanoxplore-license=<license-string>
+../configure --prefix=/opt/panda --enable-flopoco --enable-icarus --enable-verilator --enable-opt --enable-release 
 
 Options --enable-xilinx, --enable-modelsim, --enable-altera, --enable-lattice, --enable-nanoxplore, --with-mentor-license=<license-string>, and --with-nanoxplore-license=<license-string> require that third-party tools have been installed before PandA is configured. Details on where these third-party tools are searched are provided at the end of this file.
 
@@ -144,6 +144,10 @@ Ubuntu 18.04 64bit:
 - libclang-6.0-dev
 - clang-7
 - libclang-7-dev
+- clang-8
+- libclang-8-dev
+- clang-9
+- libclang-9-dev
 - libbdd-dev
 - libboost-all-dev
 - libmpc-dev
@@ -166,7 +170,7 @@ Ubuntu 18.04 64bit:
 
 
 In a single line:
-sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-8 g++-8 gcc-4.8-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev  gcc-8-plugin-dev gcc-4.8-multilib gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib g++-4.8-multilib g++-5-multilib g++-6-multilib g++-7-multilib g++-8-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib clang-4.0 libclang-4.0-dev libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
+sudo apt-get install autoconf autoconf-archive automake libtool g++ gcc-4.8 g++-4.8 gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-8 g++-8 gcc-4.8-plugin-dev gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev  gcc-8-plugin-dev gcc-4.8-multilib gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib g++-4.8-multilib g++-5-multilib g++-6-multilib g++-7-multilib g++-8-multilib gfortran-4.8 gfortran-4.8-multilib gfortran-5 gfortran-5-multilib gfortran-6 gfortran-6-multilib gfortran-7 gfortran-7-multilib gfortran-8 gfortran-8-multilib clang-4.0 libclang-4.0-dev libclang-6.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator make libsuitesparse-dev libglpk-dev
 
 
 Ubuntu 17.04 64bit and Ubuntu 17.04 32bit:
@@ -415,6 +419,12 @@ Debian unstable (sid):
 - libclang-5.0-dev
 - clang-6.0
 - libclang-6.0-dev
+- clang-7
+- libclang-7-dev
+- clang-8
+- libclang-8-dev
+- clang-9
+- libclang-9-dev
 - libbdd-dev
 - libboost-all-dev
 - libmpc-dev
@@ -436,7 +446,7 @@ Debian unstable (sid):
 - make
 
 In a single line (as root user):
-apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-8-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib gfortran gfortran-multilib clang-4.0 libclang-4.0-dev clang-5.0 libclang-5.0-dev clang-6.0 libclang-6.0-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
+apt install autoconf autoconf-archive libtool make g++ gcc-5 g++-5 gcc-6 g++-6 gcc-7 g++-7 gcc-5-plugin-dev gcc-6-plugin-dev gcc-7-plugin-dev gcc-8-plugin-dev gcc-5-multilib gcc-6-multilib gcc-7-multilib gcc-8-multilib gfortran gfortran-multilib clang-4.0 libclang-4.0-dev clang-5.0 libclang-5.0-dev clang-6.0 libclang-6.0-dev clang-7 libclang-7-dev clang-8 libclang-8-dev clang-9 libclang-9-dev libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison doxygen flex graphviz iverilog verilator pkg-config
 
 Debian 9 (Stretch):
 - autoconf
@@ -611,9 +621,10 @@ Here the list of commands required:
      $sudo cp /opt/local/bin/greadlink /opt/local/bin/readlink
      $git clone https://github.com/ferrandi/PandA-bambu.git
      $cd PandA-bambu
+     $export PATH=/opt/local/bin:/opt/local/sbin:$PATH
      $make -f Makefile.init
      $mkdir build
-     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
+     $cd build && ../configure --prefix=$HOME/panda --enable-icarus --enable-glpk --enable-opt --enable-flopoco --with-opt-level=fast --disable-Werror --with-clang6=/opt/local/bin/clang-mp-6.0 --with-gcc8=/opt/local/bin/gcc-mp-8 LDFLAGS=-L/opt/local/lib CPPFLAGS=-I/opt/local/include/ && make -j3 && make install && make clean
 
 
 
@@ -637,6 +648,8 @@ Lattice Diamond is currently distributed in rpm form for Linux distributions. To
   $sudo alien --scripts diamond_3_9-base_x64-99-2-x86_64-linux.rpm
 once the package has been converted you can install with:
   $sudo dpkg -i diamond-3-9-base-x64_3.9-100_amd64.deb
+
+Device LFE335EA8FN484C requires a free license available from Lattice Semiconductor. Check this link to get the license: http://www.latticesemi.com/Support/Licensing/DiamondAndiCEcube2SoftwareLicensing/Versa
 
 
 Notes on NanoXplore tools

@@ -35,14 +35,19 @@
 #include <cstdint>
 #include <vector>
 
-#include "../traits.hpp"
+#include "../algorithms/cnf.hpp"
 #include "../algorithms/reconv_cut.hpp"
 #include "../algorithms/simulation.hpp"
+#include "../traits.hpp"
+#include "../utils/node_map.hpp"
 #include "../views/fanout_view.hpp"
+#include "../views/topo_view.hpp"
 #include "../views/window_view.hpp"
 
+#include <fmt/format.h>
 #include <kitty/bit_operations.hpp>
 #include <kitty/dynamic_truth_table.hpp>
+#include <percy/solvers/bsat2.hpp>
 
 namespace mockturtle
 {
@@ -120,5 +125,49 @@ kitty::dynamic_truth_table observability_dont_cares( Ntk const& ntk, node<Ntk> c
   }
   return ~care;
 }
+
+/*! \brief SAT-based satisfiability don't cares checker
+ *
+ * Initialize this class with a network and then call `is_dont_care` on a node
+ * to check whether the given assignment is a satisfiability don't care.
+ *
+ * The assignment is assumed to be directly at the inputs of the gate, not
+ * taking into account possible complemented fanins.
+ */
+template<class Ntk>
+struct satisfiability_dont_cares_checker
+{
+  explicit satisfiability_dont_cares_checker( Ntk const& ntk )
+      : ntk_( ntk ),
+        literals_( node_literals( ntk ) )
+  {
+    init();
+  }
+
+  bool is_dont_care( node<Ntk> const& n, std::vector<bool> const& assignment )
+  {
+    if ( ntk_.fanin_size( n ) != assignment.size() ) return false;
+
+    std::vector<pabc::lit> assumptions( assignment.size() );
+    ntk_.foreach_fanin( n, [&]( auto const& f, auto i ) {
+      assumptions[i] = lit_not_cond( literals_[ntk_.get_node( f )], assignment[i] == ntk_.is_complemented( f )  );
+    } );
+
+    return solver_.solve( &assumptions[0], &assumptions[0] + assumptions.size(), 0 ) == percy::failure;
+  }
+
+private:
+  void init()
+  {
+    generate_cnf<Ntk>( ntk_, [&]( auto const& clause ) {
+      solver_.add_clause( clause );
+    }, literals_ );
+  }
+
+private:
+  Ntk const& ntk_;
+  percy::bsat_wrapper solver_;
+  node_map<uint32_t, Ntk> literals_;
+};
 
 } /* namespace mockturtle */

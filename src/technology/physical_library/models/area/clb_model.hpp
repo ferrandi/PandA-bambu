@@ -67,8 +67,10 @@ class clb_model : public area_model
       ALMS,
       LOGIC_ELEMENTS,
       FUNCTIONAL_ELEMENTS,
+      LOGIC_AREA,
       DSP,
-      BRAM
+      BRAM,
+      POWER
    } value_t;
 
  protected:

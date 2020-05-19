@@ -2518,6 +2518,7 @@
         <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
         <characterization_timestamp>2016-06-08T23:09:45</characterization_timestamp>
         <operation operation_name="__builtin_signbit" supported_types="REAL:32,64" execution_time="0.78700000000000003"/>
+        <operation operation_name="__builtin_signbitf" supported_types="REAL:32,64" execution_time="0.78700000000000003"/>
       </cell>
       <cell>
         <name>addr_expr_FU</name>
@@ -9189,12 +9190,12 @@
       </cell>
       <cell>
         <name>lut_expr_FU</name>
-        <attribute name="area" value_type="float64">30</attribute>
+        <attribute name="area" value_type="float64">8</attribute>
         <attribute name="REGISTERS" value_type="float64">38</attribute>
-        <attribute name="SLICE_LUTS" value_type="float64">30</attribute>
-        <attribute name="SLICE" value_type="float64">22</attribute>
-        <characterization_timestamp>2019-12-11T13:12:38</characterization_timestamp>
-        <operation operation_name="lut_expr" execution_time="3.524"/>
+        <attribute name="SLICE_LUTS" value_type="float64">8</attribute>
+        <attribute name="SLICE" value_type="float64">17</attribute>
+        <characterization_timestamp>2019-12-11T13:06:17</characterization_timestamp>
+        <operation operation_name="lut_expr" execution_time="1.4909999999999999"/>
       </cell>
       <cell>
         <name>max_expr_FU_0_16_16</name>

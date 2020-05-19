@@ -40,7 +40,6 @@
 /// Header include
 #include "NanoXploreBackendFlow.hpp"
 
-#include "config_HAVE_NANOXPLORE.hpp"
 #include "config_NANOXPLORE_BYPASS.hpp"
 #include "config_NANOXPLORE_LICENSE.hpp"
 #include "config_NANOXPLORE_SETTINGS.hpp"
@@ -59,13 +58,9 @@
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define NANOXPLORE_FE "NANOXPLORE_FE"
 #define NANOXPLORE_LUTS "NANOXPLORE_LUTS"
@@ -266,11 +261,7 @@ void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 
 void NanoXploreBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_NANOXPLORE
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("NanoXplore tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }
 
 void NanoXploreBackendFlow::InitDesignParameters()

@@ -44,7 +44,6 @@
 
 /// Autoheader include
 #include "config_HAVE_MENTOR_VISUALIZER_EXE.hpp"
-#include "config_HAVE_MODELSIM.hpp"
 #include "config_MENTOR_LICENSE.hpp"
 #include "config_MENTOR_MODELSIM_BIN.hpp"
 #include "config_MODELSIM_OPTIMIZER_FLAGS.hpp"
@@ -103,9 +102,6 @@ modelsimWrapper::~modelsimWrapper() = default;
 
 void modelsimWrapper::CheckExecution()
 {
-#if !HAVE_MODELSIM
-   THROW_ERROR("modelsim tools not correctly configured!");
-#endif
 }
 
 void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
@@ -175,11 +171,11 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
          script << MODELSIM_VLOG;
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
          }
          else
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work " + file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -work work " + file;
          }
          script << std::endl << std::endl;
          script << "if [ $? -ne 0 ]; then" << std::endl;

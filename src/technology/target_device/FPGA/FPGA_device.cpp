@@ -143,6 +143,10 @@ void FPGA_device::load_devices(const target_deviceRef device)
 #include "nx1h140tsp.data"
        ;
 
+   default_device_data["nangate45"] =
+#include "nangate45.data"
+       ;
+
    auto output_level = Param->getOption<unsigned int>(OPT_output_level);
 
    try
