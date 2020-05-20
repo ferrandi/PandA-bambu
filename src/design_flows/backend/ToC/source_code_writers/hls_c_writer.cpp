@@ -518,7 +518,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
 
    bool is_system;
    std::string decl = std::get<0>(behavioral_helper->get_definition(behavioral_helper->get_function_index(), is_system));
-   if((is_system || decl == "<built-in>") && behavioral_helper->is_real(return_type_index))
+   if((is_system || decl == "<built-in>") && return_type_index && behavioral_helper->is_real(return_type_index))
    {
       indented_output_stream->Append("extern " + behavioral_helper->print_type(return_type_index) + " " + function_name + "(");
       bool is_first_parameter = true;
@@ -569,6 +569,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
       indented_output_stream->Append("\"" + Param->getOption<std::string>(OPT_output_directory) + "/simulation/main_exec\"");
    }
    indented_output_stream->Append(");\n");
+
    if(function_name == "system" and return_type_index)
    {
       if(not Param->getOption<bool>(OPT_no_return_zero))
