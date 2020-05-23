@@ -225,7 +225,7 @@ class memory
    /**
     * Allocates a variable to the set of variables allocated outside to outermost function
     */
-   void add_external_variable(unsigned int var);
+   void add_external_variable(unsigned int var, const std::string &var_name);
 
    /**
     * Allocates a variable to the set of variables allocated outside to outermost function. The corresponding symbol is already provided
@@ -235,7 +235,7 @@ class memory
    /**
     * Allocates a variable to the set of variables allocated internally to the given function
     */
-   void add_internal_variable(unsigned int funID_scope, unsigned int var);
+   void add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string &var_name);
 
    /**
     * allocate a proxy for the variable for the specified function
@@ -324,7 +324,7 @@ class memory
    /**
     * Allocates a parameter to the set of the interface registers
     */
-   void add_parameter(unsigned int funID_scope, unsigned int var, bool is_last);
+   void add_parameter(unsigned int funID_scope, unsigned int var, const std::string &var_name, bool is_last);
 
    /**
     * Allocates a parameter to the set of the interface registers
@@ -806,6 +806,16 @@ class memory
     * Writes the current memory allocation into an XML description
     */
    void xwrite(xml_element* node);
+
+   /**
+    * Writes the current memory allocation into an XML description
+    */
+   void xwrite2(xml_element* node);
+
+   /**
+    * Writes the current memory allocation into an XML description
+    */
+   void xwrite(const std::string& filename);
 
    /**
     * @return return the number of internal symbols non private

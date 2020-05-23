@@ -696,17 +696,13 @@ noinst_HEADERS += \
    memory/memory_symbol.hpp \
    memory/memory.hpp \
    memory/mem_dominator_allocation.hpp \
-   memory/mem_xml_allocation.hpp \
    memory/mem_dominator_allocation_cs.hpp \
    memory/memory_cs.hpp
 lib_HLS_memory_la_SOURCES = \
    memory/memory_allocation.cpp \
-   memory/memory_symbol.cpp \
    memory/memory.cpp \
    memory/mem_dominator_allocation.cpp \
-   memory/mem_xml_allocation.cpp \
-   memory/mem_dominator_allocation_cs.cpp \
-   memory/memory_cs.cpp
+   memory/mem_dominator_allocation_cs.cpp
 
 noinst_LTLIBRARIES += lib_allocation.la
 lib_allocation_la_CPPFLAGS = \

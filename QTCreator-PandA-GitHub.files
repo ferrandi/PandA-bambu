@@ -1808,15 +1808,11 @@ src/HLS/memory/mem_dominator_allocation.cpp
 src/HLS/memory/mem_dominator_allocation.hpp
 src/HLS/memory/mem_dominator_allocation_cs.cpp
 src/HLS/memory/mem_dominator_allocation_cs.hpp
-src/HLS/memory/mem_xml_allocation.cpp
-src/HLS/memory/mem_xml_allocation.hpp
 src/HLS/memory/memory.cpp
 src/HLS/memory/memory.hpp
 src/HLS/memory/memory_allocation.cpp
 src/HLS/memory/memory_allocation.hpp
-src/HLS/memory/memory_cs.cpp
 src/HLS/memory/memory_cs.hpp
-src/HLS/memory/memory_symbol.cpp
 src/HLS/memory/memory_symbol.hpp
 src/HLS/module_allocation/add_library.cpp
 src/HLS/module_allocation/add_library.hpp

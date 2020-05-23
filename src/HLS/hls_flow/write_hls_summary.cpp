@@ -51,6 +51,9 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
+
+#include <boost/filesystem/operations.hpp>
+
 WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
 {
 }

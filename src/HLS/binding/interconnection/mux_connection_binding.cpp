@@ -1289,7 +1289,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "       - Constant value: " + STR(constant_value));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - " + string_value);
       std::string param_name;
-      if(m_sym && !m_sym->is_resolved())
+      if(m_sym)
       {
          param_name = m_sym->get_symbol_name();
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "         - param: " + param_name);

@@ -71,7 +71,6 @@ REF_FORWARD_DECL(structural_object);
 CONSTREF_FORWARD_DECL(technology_manager);
 //@}
 
-#define MEM_PREFIX "MEM_"
 #define BITSIZE_PREFIX "BITSIZE_"
 #define PORTSIZE_PREFIX "PORTSIZE_"
 #define NUM_ELEM_PREFIX "NUM_ELEM_"

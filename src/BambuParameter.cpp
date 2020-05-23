@@ -549,13 +549,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 
    // Memory allocation options
    os << "  Memory allocation:\n\n"
-      << "    --memory-allocation=<type>\n"
-      << "        Set the algorithm used for memory allocation. Possible values for the\n"
-      << "        type argument are the following:\n"
-      << "            DOMINATOR          - all local variables, static variables and\n"
-      << "                                 strings are allocated on BRAMs (default)\n"
-      << "            XML_SPECIFICATION  - import the memory allocation from an XML\n"
-      << "                                 specification\n\n"
       << "    --xml-memory-allocation=<xml_file_name>\n"
       << "        Specify the file where the XML configuration has been defined.\n\n"
       << "    --memory-allocation-policy=<type>\n"
@@ -1127,7 +1120,6 @@ int BambuParameter::Exec()
       {"register-allocation", required_argument, nullptr, OPT_REGISTER_ALLOCATION},
       {"storage-value-insertion", required_argument, nullptr, 0},
       /// Memory allocation
-      {"memory-allocation", required_argument, nullptr, 0},
       {"memory-allocation-policy", required_argument, nullptr, 0},
       {"xml-memory-allocation", required_argument, nullptr, 0},
       {"base-address", required_argument, nullptr, 0},
@@ -2395,19 +2387,8 @@ int BambuParameter::Exec()
                   throw "BadParameters: module binding option not correctly specified";
                break;
             }
-            if(strcmp(long_options[option_index].name, "memory-allocation") == 0)
-            {
-               if(std::string(optarg) == "DOMINATOR")
-                  setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
-               else if(std::string(optarg) == "XML_SPECIFICATION")
-                  setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR);
-               else
-                  throw "BadParameters: memory allocation option not correctly specified";
-               break;
-            }
             if(strcmp(long_options[option_index].name, "xml-memory-allocation") == 0)
             {
-               setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR);
                setOption(OPT_xml_memory_allocation, optarg);
                break;
             }
@@ -3214,11 +3195,6 @@ void BambuParameter::CheckParameters()
    }
 
    /// Checks
-   if(getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm) == HLSFlowStep_Type::XML_MEMORY_ALLOCATOR and not!isOption(OPT_xml_memory_allocation))
-   {
-      if(!isOption(OPT_xml_input_configuration))
-         THROW_ERROR("XML specification of the memory allocation has not been specified!");
-   }
    if(isOption(OPT_memory_banks_number) && getOption<int>(OPT_memory_banks_number) > 1)
    {
       setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);

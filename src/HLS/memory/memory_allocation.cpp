@@ -559,8 +559,8 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
    const unsigned int function_return = behavioral_helper->GetFunctionReturnType(functionId);
 
    // Allocate memory for the start register.
-   HLSMgr->Rmem->add_parameter(functionId, functionId, behavioral_helper->get_parameters().empty() && !function_return);
    std::string functionName = tree_helper::name_function(HLSMgr->get_tree_manager(), functionId);
+   HLSMgr->Rmem->add_parameter(functionId, functionId, functionName, behavioral_helper->get_parameters().empty() && !function_return);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Function: " + functionName);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(functionId));
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, functionId)));
@@ -571,8 +571,9 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
    {
       auto itr_next = itr;
       ++itr_next;
-      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), *itr, !function_return && itr_next == end);
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Parameter " + behavioral_helper->PrintVariable(*itr) + " of Function " + functionName);
+      auto par_name = behavioral_helper->PrintVariable(*itr);
+      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), *itr, par_name, !function_return && itr_next == end);
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Parameter " + par_name + " of Function " + functionName);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(*itr));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, *itr)));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Size: " + STR(tree_helper::size(HLSMgr->get_tree_manager(), *itr) / 8));
@@ -582,7 +583,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
    // Allocate the return value on chip.
    if(function_return)
    {
-      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), function_return, true);
+      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), function_return, "@return_"+functionName, true);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Return parameter for Function: " + functionName);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(function_return));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, function_return)));

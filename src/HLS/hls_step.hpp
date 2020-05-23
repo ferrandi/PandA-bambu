@@ -255,7 +255,6 @@ enum class HLSFlowStep_Type
 #if HAVE_EXPERIMENTAL
    XML_HLS_SYNTHESIS_FLOW,
 #endif
-   XML_MEMORY_ALLOCATOR,
 };
 
 enum class HLSFlowStep_Relationship

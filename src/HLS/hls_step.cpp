@@ -378,8 +378,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW:
          return "XMLHLSSynthesisFlow";
 #endif
-      case HLSFlowStep_Type::XML_MEMORY_ALLOCATOR:
-         return "XmlMemoryAllocator";
       default:
          THROW_UNREACHABLE("HLS flow step type does not exist");
    }

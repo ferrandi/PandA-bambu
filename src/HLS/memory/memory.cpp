@@ -148,7 +148,7 @@ void memory::compute_next_base_address(unsigned long long int& address, unsigned
    align(address, alignment);
 }
 
-void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
+void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string &var_name)
 {
    memory_symbolRef m_sym;
    if(in_vars.find(var) != in_vars.end())
@@ -160,17 +160,17 @@ void memory::add_internal_variable(unsigned int funID_scope, unsigned int var)
       if(null_pointer_check)
       {
          align(internal_base_address_start, tree_helper::get_var_alignment(TreeM, var));
-         m_sym = memory_symbolRef(new memory_symbol(var, internal_base_address_start, funID_scope));
+         m_sym = memory_symbolRef(new memory_symbol(var, var_name, internal_base_address_start, funID_scope));
       }
       else
       {
-         m_sym = memory_symbolRef(new memory_symbol(var, 0, funID_scope));
+         m_sym = memory_symbolRef(new memory_symbol(var, var_name, 0, funID_scope));
       }
    }
    else
    {
       align(next_base_address, tree_helper::get_var_alignment(TreeM, var));
-      m_sym = memory_symbolRef(new memory_symbol(var, next_base_address, funID_scope));
+      m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_base_address, funID_scope));
    }
    add_internal_symbol(funID_scope, var, m_sym);
 }
@@ -248,10 +248,10 @@ unsigned int memory::count_non_private_internal_symbols() const
    return n_non_private;
 }
 
-void memory::add_external_variable(unsigned int var)
+void memory::add_external_variable(unsigned int var, const std::string &var_name)
 {
    align(next_off_base_address, tree_helper::get_var_alignment(TreeM, var));
-   memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, next_off_base_address, 0));
+   memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_off_base_address, 0));
    add_external_symbol(var, m_sym);
 }
 
@@ -282,9 +282,9 @@ void memory::add_source_value(unsigned int var, unsigned int value)
    source_values[var].insert(value);
 }
 
-void memory::add_parameter(unsigned int funID_scope, unsigned int var, bool is_last)
+void memory::add_parameter(unsigned int funID_scope, unsigned int var, const std::string &var_name, bool is_last)
 {
-   memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, next_base_address, funID_scope));
+   memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_base_address, funID_scope));
    add_parameter_symbol(funID_scope, var, m_sym);
    if(is_last)
    {
@@ -652,7 +652,7 @@ void memory::xwrite(xml_element* node)
 {
    xml_element* Enode = node->add_child_element("HLS_memory");
    unsigned long long int base_address = off_base_address;
-   WRITE_XVM(base_address, node);
+   WRITE_XVM(base_address, Enode);
    if(internal.size() or parameter.size())
    {
       xml_element* IntNode = Enode->add_child_element("internal_memory");
@@ -670,7 +670,9 @@ void memory::xwrite(xml_element* node)
             WRITE_XNVM(id, variable, VarNode);
             unsigned long long int address = vIt->second->get_address();
             WRITE_XVM(address, VarNode);
-            std::string var_name = vIt->second->get_symbol_name();
+            std::string var_symbol_name = vIt->second->get_symbol_name();
+            WRITE_XNVM(name, var_symbol_name, VarNode);
+            std::string var_name = vIt->second->get_name();
             WRITE_XNVM(name, var_name, VarNode);
          }
          if(parameter.find(iIt->first) != parameter.end())
@@ -683,6 +685,8 @@ void memory::xwrite(xml_element* node)
                WRITE_XNVM(id, variable, VarNode);
                unsigned long long int address = vIt->second->get_address();
                WRITE_XVM(address, VarNode);
+               std::string var_symbol_name = vIt->second->get_symbol_name();
+               WRITE_XNVM(symbol, var_symbol_name, VarNode);
                std::string var_name = vIt->second->get_symbol_name();
                WRITE_XNVM(symbol, var_name, VarNode);
             }
@@ -707,6 +711,8 @@ void memory::xwrite(xml_element* node)
                WRITE_XNVM(id, variable, VarNode);
                unsigned long long int address = vIt->second->get_address();
                WRITE_XVM(address, VarNode);
+               std::string var_symbol_name = vIt->second->get_symbol_name();
+               WRITE_XNVM(symbol, var_symbol_name, VarNode);
                std::string var_name = vIt->second->get_symbol_name();
                WRITE_XNVM(symbol, var_name, VarNode);
             }
@@ -854,4 +860,59 @@ bool memory::notEQ(refcount<memory> ref) const
       return true;
 
    return false;
+}
+
+
+void memory::xwrite2(xml_element* node)
+{
+   xml_element* Enode = node->add_child_element("memory_allocation");
+   unsigned long long int base_address = off_base_address;
+   WRITE_XVM(base_address, Enode);
+   for(auto int_obj : internal)
+   {
+      for(auto var_obj : int_obj.second)
+      {
+         xml_element* ObjNode = Enode->add_child_element("object");
+         std::string scope = tree_helper::name_function(TreeM, int_obj.first);
+         WRITE_XVM(scope, ObjNode);
+         std::string name = var_obj.second->get_name();
+         WRITE_XVM(name, ObjNode);
+         WRITE_XNVM(is_internal, "T", ObjNode);
+      }
+   }
+   for(auto ext_obj : external)
+   {
+         xml_element* ObjNode = Enode->add_child_element("object");
+         std::string name = ext_obj.second->get_name();
+         WRITE_XVM(name, ObjNode);
+         WRITE_XNVM(is_internal, "F", ObjNode);
+   }
+}
+
+
+void memory::xwrite(const std::string& filename)
+{
+   try
+   {
+      xml_document document;
+      xml_element* nodeRoot = document.create_root_node("memory");
+      xwrite2(nodeRoot);
+      document.write_to_file_formatted(filename);
+   }
+   catch(const char* msg)
+   {
+      std::cerr << msg << std::endl;
+   }
+   catch(const std::string& msg)
+   {
+      std::cerr << msg << std::endl;
+   }
+   catch(const std::exception& ex)
+   {
+      std::cout << "Exception caught: " << ex.what() << std::endl;
+   }
+   catch(...)
+   {
+      std::cerr << "unknown exception" << std::endl;
+   }
 }
