@@ -96,6 +96,9 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["xc7z020-1clg484-VVD"] =
 #include "xc7z020-1clg484-VVD.data"
        ;
+   default_device_data["xc7z045-2ffg900-VVD"] =
+#include "xc7z045-2ffg900-VVD.data"
+       ;
    default_device_data["xc7z020-1clg484-YOSYS-VVD"] =
 #include "xc7z020-1clg484-YOSYS-VVD.data"
        ;

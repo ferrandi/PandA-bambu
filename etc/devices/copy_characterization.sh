@@ -18,4 +18,7 @@ cp xc7vx485t-2ffg1761-VVD/output/xc7vx485t-2ffg1761-VVD.xml $root_dir/Xilinx_dev
 cp xc7vx690t-3ffg1930-VVD/output/xc7vx690t-3ffg1930-VVD.xml $root_dir/Xilinx_devices
 cp xc7z020-1clg484/output/xc7z020-1clg484.xml $root_dir/Xilinx_devices
 cp xc7z020-1clg484-VVD/output/xc7z020-1clg484-VVD.xml $root_dir/Xilinx_devices
+cp xc7z045-2ffg900-VVD/output/xc7z045-2ffg900-VVD.xml $root_dir/Xilinx_devices
 cp xc7z020-1clg484-YOSYS-VVD/output/xc7z020-1clg484-YOSYS-VVD.xml $root_dir/Xilinx_devices
+cp nx1h35S/output/nx1h35S.xml $root_dir/NanoXplore_devices
+cp nx1h140tsp/output/nx1h140tsp.xml $root_dir/NanoXplore_devices
