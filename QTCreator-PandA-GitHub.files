@@ -2035,6 +2035,7 @@ src/constants/pragma_constants.hpp
 src/constants/synthesis_constants.hpp
 src/constants/taste_constants.hpp
 src/constants/technology_xml.hpp
+src/constants/testbench_generation_constants.hpp
 src/constants/treegcc_constants.hpp
 src/constants/treegcc_xml.hpp
 src/constants/weights_xml.hpp
