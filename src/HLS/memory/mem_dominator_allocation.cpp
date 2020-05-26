@@ -1153,17 +1153,5 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       TM->erase_library(PROXY_LIBRARY);
       TM->erase_library(WORK_LIBRARY);
    }
-   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-   {
-      std::string out_file_name = "memory_allocation";
-      unsigned int progressive = 0;
-      std::string candidate_out_file_name;
-      do
-      {
-         candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
-      } while (boost::filesystem::exists(candidate_out_file_name));
-      out_file_name = candidate_out_file_name;
-      HLSMgr->Rmem->xwrite(out_file_name);
-   }
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
