@@ -287,7 +287,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
       else
       {
-         if(with_master && !Has_unknown_addresses)
+         if(with_master && !Has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
          {
             THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
