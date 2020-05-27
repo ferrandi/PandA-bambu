@@ -662,7 +662,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
             }
          }
-         else if(with_slave && HLSMgr->Rmem->get_allocated_intern_memory() == 0)
+         else if(with_slave && (HLSMgr->Rmem->get_allocated_intern_memory() == 0 || parameters->isOption(OPT_do_not_expose_globals)))
          {
             /// slave INs
             portsToConstant.insert(wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj));
