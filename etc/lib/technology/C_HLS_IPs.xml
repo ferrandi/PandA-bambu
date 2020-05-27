@@ -1147,7 +1147,7 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
     <template>
       <name>widen_mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="widen_mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2" commutative="1"/>
+      <operation operation_name="widen_mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="widen_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1178,7 +1178,7 @@ assign out1 = (in1 &lt;&lt; (in2[marg2_bitsize-1:0]))|(in1 &gt;&gt; (PRECISION-(
     <template>
       <name>mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2" commutative="1"/>
+      <operation operation_name="mult_expr" supported_types="INT:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1275,7 +1275,7 @@ begin
     <template>
       <name>ui_widen_mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="widen_mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2" commutative="1"/>
+      <operation operation_name="widen_mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="ui_widen_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
@@ -1308,7 +1308,7 @@ begin
     <template>
       <name>ui_mult_expr_FU</name>
       <no_constant_characterization></no_constant_characterization>
-      <operation operation_name="mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2" commutative="1"/>
+      <operation operation_name="mult_expr" supported_types="UINT:*|VECTOR_BOOL:*" pipe_parameters="1:0|8:0,1,2|16:0,1,2|32:0,1,2,3,4,5,6,7|64:0,1,2,3,4,5,6,17|DSPs_y_sizes:0,1,2,3,4,5,6,7" commutative="1"/>
       <circuit>
         <component_o id="ui_mult_expr_FU">
           <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
