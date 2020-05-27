@@ -266,6 +266,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    std::ofstream fileOut(fileName.c_str(), std::ios::out);
 
    std::string top_fname = mod->get_typeRef()->id_type;
+   PP(os, "#include <iostream>\n");
    PP(os, "#include <string>\n");
    PP(os, "#include <verilated.h>\n");
    PP(os, "#include \"V" + top_fname + "_tb.h\"\n");
@@ -275,7 +276,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "#endif\n");
    PP(os, "\n");
    PP(os, "\n");
-   PP(os, "#define SIMULATION_MAX " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
+   PP(os, "#define SIMULATION_MAX " + STR(2*parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
    PP(os, "static const double CLOCK_PERIOD =" + boost::lexical_cast<std::string>(target_period) + ";\n");
    PP(os, "static const double HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");
@@ -314,6 +315,8 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "     main_time += HALF_CLOCK_PERIOD;\n");
    PP(os, "     cycleCounter++;\n");
    PP(os, "   }\n");
+   PP(os, "if(cycleCounter>=SIMULATION_MAX)\n");
+   PP(os, "  std::cerr << \"Simulation not completed into " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + " cycles\\n\";\n");
    PP(os, "#if VM_TRACE\n");
    PP(os, "   if (tfp) tfp->dump (main_time);\n");
    PP(os, "#endif\n");
