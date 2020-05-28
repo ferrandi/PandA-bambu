@@ -959,7 +959,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   indented_output_stream->Append("ssize_t read;\n");
                   indented_output_stream->Append("__bambu_testbench_fp_local_copy = fopen(\"" + output_parameter_initialization_filename + "\", \"r\");\n");
                   indented_output_stream->Append("if (__bambu_testbench_fp_local_copy == NULL)\n");
-                  indented_output_stream->Append("   exit(EXIT_FAILURE);\n");
+                  indented_output_stream->Append("   exit(1);\n");
                   indented_output_stream->Append("while ((read = getline(&line, &len, __bambu_testbench_fp_local_copy)) != -1) {\n");
                   indented_output_stream->Append("   fprintf(__bambu_testbench_fp, \"%s\", line);\n");
                   indented_output_stream->Append("}\n");
