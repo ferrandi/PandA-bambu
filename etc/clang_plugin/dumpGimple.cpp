@@ -444,6 +444,9 @@ namespace llvm
                   case llvm::Intrinsic::ssa_copy:
                      return assignCode(t, GT(GIMPLE_SSACOPY));
 #endif
+                  case llvm::Intrinsic::minnum:
+                  case llvm::Intrinsic::maxnum:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -598,8 +601,37 @@ namespace llvm
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          }
-         case Intrinsic::fmuladd:
-            return "__float32_muladdif";
+         case llvm::Intrinsic::fmuladd:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "__float32_muladdif";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "__float64_muladdif";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+         case llvm::Intrinsic::minnum:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "fminf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "fmin";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "fminl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+         case llvm::Intrinsic::maxnum:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "fmaxf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "fmax";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "fmaxl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
          default:
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
@@ -4855,7 +4887,9 @@ namespace llvm
          case llvm::Intrinsic::memmove:
          case llvm::Intrinsic::trap:
          case llvm::Intrinsic::rint:
-         case Intrinsic::fmuladd:
+         case llvm::Intrinsic::fmuladd:
+         case llvm::Intrinsic::minnum:
+         case llvm::Intrinsic::maxnum:
             return true;
          default:
             return false;
