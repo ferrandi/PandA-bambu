@@ -45,6 +45,8 @@
 // Header include
 #include "Bit_Value_opt.hpp"
 
+#include "bit_lattice.hpp"
+
 /// Autoheader include
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
 #include "config_HAVE_STDCXX_17.hpp"
@@ -159,7 +161,7 @@ static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
    }
    auto nbit = op_ssa->bit_values.size();
    auto op0_type_id = GET_INDEX_NODE(op_ssa->type);
-   auto nbitType = tree_helper::size(TM, op0_type_id);
+   auto nbitType = BitLatticeManipulator::size(TM, op0_type_id);
    if(nbit != nbitType)
    {
       // TODO: maybe check range to avoid overwriting
@@ -311,7 +313,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            if(GET_NODE(vce->op)->get_kind() == integer_cst_K)
                            {
                               auto* int_const = GetPointer<integer_cst>(GET_NODE(vce->op));
-                              auto bitwidth_op = tree_helper::Size(vce->type);
+                              auto bitwidth_op = BitLatticeManipulator::Size(vce->type);
                               tree_nodeRef val;
                               if(bitwidth_op == 32)
                               {
@@ -599,14 +601,14 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         }
                         else
                         {
-                           auto bw_op1 = tree_helper::Size(GET_NODE(ga->op1));
-                           auto bw_op0 = tree_helper::Size(GET_NODE(ga->op0));
+                           auto bw_op1 = BitLatticeManipulator::Size(GET_NODE(ga->op1));
+                           auto bw_op0 = BitLatticeManipulator::Size(GET_NODE(ga->op0));
                            auto max_bw = 0u;
                            const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                            for(const auto& use : StmtUses)
                            {
                               if(GET_NODE(use.first)->get_kind() == gimple_assign_K && GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)->get_kind() == ssa_name_K)
-                                 max_bw = std::max(max_bw, tree_helper::Size(GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)));
+                                 max_bw = std::max(max_bw, BitLatticeManipulator::Size(GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)));
                               else
                                  max_bw = bw_op1;
                            }
@@ -615,7 +617,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                               auto ssa1 = GetPointer<ssa_name>(GET_NODE(ga->op1));
                               ssa1->min = ssa->min;
                               ssa1->max = ssa->max;
-                              bw_op1 = tree_helper::Size(GET_NODE(ga->op1));
+                              bw_op1 = BitLatticeManipulator::Size(GET_NODE(ga->op1));
                            }
 
                            if(bw_op1 <= bw_op0)
@@ -647,9 +649,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         tree_nodeRef op0 = GET_NODE(me->op0);
                         tree_nodeRef op1 = GET_NODE(me->op1);
                         /// first check if we have to change a mult_expr in a widen_mult_expr
-                        unsigned int data_bitsize_out = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(GET_NODE(ga->op0)));
-                        unsigned int data_bitsize_in0 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(op0));
-                        unsigned int data_bitsize_in1 = resize_to_1_8_16_32_64_128_256_512(tree_helper::Size(op1));
+                        unsigned int data_bitsize_out = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(GET_NODE(ga->op0)));
+                        unsigned int data_bitsize_in0 = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op0));
+                        unsigned int data_bitsize_in1 = resize_to_1_8_16_32_64_128_256_512(BitLatticeManipulator::Size(op1));
                         bool realp = tree_helper::is_real(TM, GET_INDEX_NODE(GetPointer<binary_expr>(GET_NODE(ga->op1))->type));
                         if(GET_NODE(ga->op1)->get_kind() == mult_expr_K && !realp && std::max(data_bitsize_in0, data_bitsize_in1) * 2 == data_bitsize_out)
                         {
@@ -1234,7 +1236,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            // TODO: adapt existing operations to real type (zero sign bug to be considered)
                            return;
                         }
-                        unsigned int op0_size = tree_helper::size(TM, GET_INDEX_NODE(me->op0));
+                        unsigned int op0_size = BitLatticeManipulator::size(TM, GET_INDEX_NODE(me->op0));
                         bool is_op1_zero = false;
                         if(GetPointer<integer_cst>(op1))
                         {
@@ -1269,7 +1271,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         {
                            unsigned int op0_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
                            tree_nodeRef op0_op_type = TM->GetTreeReindex(op0_type_index);
-                           unsigned data_bitsize = tree_helper::size(TM, op0_type_index);
+                           unsigned data_bitsize = BitLatticeManipulator::size(TM, op0_type_index);
                            if(data_bitsize == 1)
                            {
                               const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
@@ -1557,13 +1559,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                            {
                               auto* ic = GetPointer<integer_cst>(op0);
                               auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                              s0 = convert_to_binary(ull_value, std::max(precision, tree_helper::Size(op0)));
+                              s0 = convert_to_binary(ull_value, std::max(precision, BitLatticeManipulator::Size(op0)));
                            }
                            if(GetPointer<integer_cst>(op1))
                            {
                               auto* ic = GetPointer<integer_cst>(op1);
                               auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
-                              s1 = convert_to_binary(ull_value, std::max(precision, tree_helper::Size(op1)));
+                              s1 = convert_to_binary(ull_value, std::max(precision, BitLatticeManipulator::Size(op1)));
                            }
                            precision = static_cast<unsigned int>(std::max(s0.size(), s1.size()));
 
@@ -2023,14 +2025,14 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                         auto ebe_op0_ssa = GetPointer<ssa_name>(GET_NODE(ebe->op0));
                         if(ebe_op0_ssa)
                         {
-                           if(tree_helper::Size(ebe->op0) <= pos_value)
+                           if(BitLatticeManipulator::Size(ebe->op0) <= pos_value)
                            {
                               const auto right_id = GET_INDEX_NODE(ebe->op0);
                               const bool right_signed = tree_helper::is_int(TM, right_id);
                               if(right_signed)
                               {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
-                                 tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(tree_helper::Size(ebe->op0) - 1, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                                 tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(BitLatticeManipulator::Size(ebe->op0) - 1, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
                                  tree_nodeRef eb_op = IRman->create_extract_bit_expr(ebe->op0, new_pos, srcp_default);
                                  tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
@@ -2135,7 +2137,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                        const tree_nodeConstRef neType_node = tree_helper::CGetType(GET_NODE(ne->op));
                                        if(neType_node->get_kind() == integer_type_K)
                                        {
-                                          if(tree_helper::Size(ne->op) > pos_value)
+                                          if(BitLatticeManipulator::Size(ne->op) > pos_value)
                                           {
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
                                              tree_nodeRef eb_op = IRman->create_extract_bit_expr(ne->op, ebe->op1, srcp_default);
@@ -2158,7 +2160,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                              if(right_signed)
                                              {
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
-                                                tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(tree_helper::Size(ne->op) - 1, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
+                                                tree_nodeRef new_pos = TM->CreateUniqueIntegerCst(BitLatticeManipulator::Size(ne->op) - 1, GET_INDEX_NODE(GetPointer<integer_cst>(GET_NODE(ebe->op1))->type));
                                                 tree_nodeRef eb_op = IRman->create_extract_bit_expr(ne->op, new_pos, srcp_default);
                                                 tree_nodeRef eb_ga = IRman->CreateGimpleAssign(ebe->type, TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type)), TM->CreateUniqueIntegerCst(1, GET_INDEX_NODE(ebe->type)), eb_op, B_id, srcp_default);
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(eb_ga));
@@ -2352,7 +2354,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                        if(res_value)
                                        {
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
-                                          unsigned int precision = tree_helper::Size(ebe_op0_ssa->type);
+                                          unsigned int precision = BitLatticeManipulator::Size(ebe_op0_ssa->type);
                                           unsigned int log2;
                                           for(log2 = 1; precision > (1u << log2); ++log2)
                                              ;
@@ -2512,7 +2514,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
                                     THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "");
                                     auto max_lut_size = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
                                     auto pe = GetPointer<plus_expr>(GET_NODE(prev_ga->op1));
-                                    if(GET_NODE(pe->op1)->get_kind() == integer_cst_K && tree_helper::Size(ebe->op0) <= max_lut_size)
+                                    if(GET_NODE(pe->op1)->get_kind() == integer_cst_K && BitLatticeManipulator::Size(ebe->op0) <= max_lut_size)
                                     {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage before: " + stmt->ToString());
                                        tree_nodeRef carry = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(ebe->type));

@@ -211,7 +211,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    size_t out_type_size = 0;
    if(kind == ssa_name_K or kind == integer_cst_K or kind == real_cst_K)
    {
-      out_type_size = tree_helper::size(TM, tree_helper::get_type_index(TM, output_uid));
+      out_type_size = size(TM, tree_helper::get_type_index(TM, output_uid));
    }
    else if(kind == function_decl_K)
    {
@@ -228,11 +228,11 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
          const auto* mt = GetPointer<const method_type>(fu_type);
          fret_type_node = GET_NODE(mt->retn);
       }
-      out_type_size = tree_helper::Size(fret_type_node);
+      out_type_size = Size(fret_type_node);
    }
    else if(kind == parm_decl_K)
    {
-      out_type_size = tree_helper::Size(tree_helper::CGetType(node));
+      out_type_size = Size(tree_helper::CGetType(node));
    }
    else
    {
@@ -327,18 +327,18 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    unsigned int out_type_size = 0;
    if(kind == ssa_name_K or kind == integer_cst_K or kind == real_cst_K)
    {
-      out_type_size = tree_helper::size(TM, tree_helper::get_type_index(TM, output_uid));
+      out_type_size = size(TM, tree_helper::get_type_index(TM, output_uid));
    }
    else if(kind == function_decl_K)
    {
       const tree_nodeConstRef fu_type = tree_helper::CGetType(node);
       THROW_ASSERT(fu_type->get_kind() == function_type_K, "node " + STR(output_uid) + " is " + fu_type->get_kind_text());
       const auto* ft = GetPointer<const function_type>(fu_type);
-      out_type_size = tree_helper::Size(GET_NODE(ft->retn));
+      out_type_size = Size(GET_NODE(ft->retn));
    }
    else if(kind == parm_decl_K)
    {
-      out_type_size = tree_helper::Size(tree_helper::CGetType(node));
+      out_type_size = Size(tree_helper::CGetType(node));
    }
    else
    {
@@ -423,7 +423,7 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
       else if(el->get_kind() == real_cst_K)
       {
          auto* real_const = GetPointer<real_cst>(el);
-         const auto real_size = tree_helper::Size(GET_CONST_NODE(real_const->type));
+         const auto real_size = Size(GET_CONST_NODE(real_const->type));
          const auto val = strtof64x(real_const->valr.data(), nullptr);
          if(real_size == 64)
          {
@@ -643,4 +643,441 @@ bool bitstring_constant(const std::deque<bit_lattice>& a)
       }
    }
    return res;
+}
+
+unsigned int BitLatticeManipulator::size(const tree_managerConstRef tm, unsigned int index)
+{
+   return BitLatticeManipulator::Size(tm->get_tree_node_const(index));
+}
+
+unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef t)
+{
+   unsigned int return_value = 0;
+   switch(t->get_kind())
+   {
+      case tree_reindex_K:
+      {
+         return_value = Size(GET_CONST_NODE(t));
+         break;
+      }
+      case var_decl_K:
+      {
+         THROW_ASSERT(GetPointer<const var_decl>(t)->type, "expected a var decl type");
+         return_value = Size(GET_NODE(GetPointer<const var_decl>(t)->type));
+         break;
+      }
+      case parm_decl_K:
+      {
+         THROW_ASSERT(GetPointer<const parm_decl>(t)->type, "expected a var decl type");
+         return_value = Size(GET_NODE(GetPointer<const parm_decl>(t)->type));
+         break;
+      }
+      case result_decl_K:
+      {
+         THROW_ASSERT(GetPointer<const result_decl>(t)->type, "expected a var decl type");
+         return_value = Size(GET_NODE(GetPointer<const result_decl>(t)->type));
+         break;
+      }
+      case ssa_name_K:
+      {
+         const auto* sa = GetPointer<const ssa_name>(t);
+         THROW_ASSERT(GetPointer<const ssa_name>(t), "Expected an ssa_name");
+         if(!sa->bit_values.empty())
+         {
+            if(GET_NODE(sa->type)->get_kind() == real_type_K)
+            {
+               return Size(GET_NODE(sa->type));
+            }
+            return_value = static_cast<unsigned int>(sa->bit_values.size());
+            break;
+         }
+         else if(sa->min && sa->max && GET_NODE(sa->min)->get_kind() == integer_cst_K && GET_NODE(sa->max)->get_kind() == integer_cst_K)
+         {
+            const tree_nodeRef type = sa->var ? GET_NODE(GetPointer<decl_node>(GET_NODE(sa->var))->type) : GET_NODE(sa->type);
+            if(type->get_kind() != integer_type_K && type->get_kind() != enumeral_type_K)
+            {
+               return_value = Size(type);
+               break;
+            }
+            long long max = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->max)));
+            long long min = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(sa->min)));
+            if(min == max) /// It may happen with GCC8 -O0
+            {
+               return_value = Size(type);
+               break;
+            }
+
+            long long min_it;
+            long long max_it;
+            bool unsigned_p;
+            if(type->get_kind() == integer_type_K)
+            {
+               const integer_type* it = GetPointer<integer_type>(type);
+               min_it = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min)));
+               max_it = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max)));
+               unsigned_p = it->unsigned_flag;
+            }
+            else
+            {
+               const enumeral_type* it = GetPointer<enumeral_type>(type);
+               min_it = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min)));
+               max_it = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max)));
+               unsigned_p = it->unsigned_flag;
+            }
+            if((min_it == min and min != 0) or max_it == max)
+            {
+               return_value = sa->var ? Size(GET_NODE(sa->var)) : Size(GET_NODE(sa->type));
+               break;
+            }
+            if(unsigned_p)
+            {
+               return_value = (64 - static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max))));
+            }
+            else
+            {
+               if(max == -1 || max == 0)
+               {
+                  return_value = 1;
+               }
+               else if(max < -1)
+               {
+                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(max)));
+               }
+               else
+               {
+                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
+               }
+               if(min < -1)
+               {
+                  unsigned minbits = 65u - static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
+                  return_value = std::max(return_value, minbits);
+               }
+               else if(min == -1)
+               {
+                  return_value = std::max(return_value, 1u);
+               }
+            }
+         }
+         else if(sa->var)
+         {
+            return_value = Size(GET_NODE(sa->var));
+         }
+         else
+         {
+            return_value = Size(GET_NODE(sa->type));
+         }
+         break;
+      }
+      case field_decl_K:
+      {
+         THROW_ASSERT(GetPointer<const field_decl>(t)->type, "expected a field decl type");
+         return_value = Size(GET_NODE(GetPointer<const field_decl>(t)->type));
+         break;
+      }
+      case pointer_type_K:
+      {
+         const auto* ic = GetPointer<const integer_cst>(GET_NODE(GetPointer<const pointer_type>(t)->size));
+         return_value = static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+         break;
+      }
+      case reference_type_K:
+      {
+         const auto* ic = GetPointer<const integer_cst>(GET_NODE(GetPointer<const reference_type>(t)->size));
+         return_value = static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+         break;
+      }
+      case array_type_K:
+      {
+         const auto* at = GetPointer<const array_type>(t);
+         if(at->size)
+         {
+            const auto* ic = GetPointer<const integer_cst>(GET_NODE(at->size));
+            if(ic)
+            {
+               return_value = static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+            }
+            else
+            {
+               return_value = 32;
+            }
+         }
+         else
+         {
+            return_value = 0;
+         }
+         break;
+      }
+
+      case boolean_type_K:
+      {
+         return_value = 1;
+         break;
+      }
+      case void_type_K:
+      {
+         return_value = 32;
+         break;
+      }
+      case enumeral_type_K:
+      {
+         const auto* et = GetPointer<const enumeral_type>(t);
+         if(et->min && et->max && GET_NODE(et->min)->get_kind() == integer_cst_K && GET_NODE(et->max)->get_kind() == integer_cst_K)
+         {
+            long long max = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(et->max)));
+            long long min = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(et->min)));
+            if(et->unsigned_flag)
+            {
+               return_value = 64u - static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
+            }
+            else
+            {
+               if(max == -1 || max == 0)
+               {
+                  return_value = 1;
+               }
+               else if(max < -1)
+               {
+                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(max)));
+               }
+               else
+               {
+                  return_value = 65u - static_cast<unsigned>(__builtin_clzll(static_cast<unsigned long long>(max)));
+               }
+               if(min < -1)
+               {
+                  unsigned minbits = 65u - static_cast<unsigned>(__builtin_clzll(~static_cast<unsigned long long>(min)));
+                  return_value = std::max(return_value, minbits);
+               }
+               else if(min == -1)
+               {
+                  return_value = std::max(return_value, 1u);
+               }
+            }
+         }
+         else
+         {
+            if(!GetPointer<const type_node>(t)->size)
+            {
+               return_value = 0;
+               break;
+            }
+            const auto* ic = GetPointer<const integer_cst>(GET_NODE(GetPointer<const type_node>(t)->size));
+            return_value = static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+         }
+         break;
+      }
+      case vector_type_K:
+      case CharType_K:
+      case nullptr_type_K:
+      case type_pack_expansion_K:
+      case type_argument_pack_K:
+      case real_type_K:
+      case complex_type_K:
+      case function_type_K:
+      case method_type_K:
+      case union_type_K:
+      case record_type_K:
+      {
+         if(!GetPointer<const type_node>(t)->size)
+         {
+            return_value = 0;
+            break;
+         }
+         const auto* ic = GetPointer<const integer_cst>(GET_NODE(GetPointer<const type_node>(t)->size));
+         return_value = static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+         break;
+      }
+      case integer_type_K:
+      {
+         const auto* it = GetPointer<const integer_type>(t);
+         unsigned int prec = it->prec;
+         unsigned int algn = it->algn;
+         if(prec != algn && prec % algn)
+         {
+            return_value = prec;
+         }
+         else
+         {
+            auto* ic = GetPointer<integer_cst>(GET_NODE(it->size));
+            return_value = static_cast<unsigned int>(tree_helper::get_integer_cst_value(ic));
+         }
+         break;
+      }
+      case call_expr_K:
+      case aggr_init_expr_K:
+      {
+         const auto* ce = GetPointer<const call_expr>(t);
+         return_value = Size(GET_NODE(ce->type));
+         break;
+      }
+      case CASE_UNARY_EXPRESSION:
+      {
+         const auto* ue = GetPointer<const unary_expr>(t);
+         THROW_ASSERT(ue->type, "Expected an unary expr with type");
+         return_value = Size(GET_NODE(ue->type));
+         break;
+      }
+      case CASE_BINARY_EXPRESSION:
+      {
+         const auto* be = GetPointer<const binary_expr>(t);
+         return_value = Size(GET_NODE(be->type));
+         break;
+      }
+      case CASE_TERNARY_EXPRESSION:
+      {
+         const auto* te = GetPointer<const ternary_expr>(t);
+         return_value = Size(GET_NODE(te->type));
+         break;
+      }
+      case lut_expr_K:
+      {
+         return_value = 1;
+         break;
+      }
+      case array_ref_K:
+      {
+         const auto* ar = GetPointer<const array_ref>(t);
+         return_value = Size(GET_NODE(ar->type));
+         break;
+      }
+      case string_cst_K:
+      {
+         const auto* sc = GetPointer<const string_cst>(t);
+         return_value = Size(GET_NODE(sc->type));
+         break;
+      }
+      case vector_cst_K:
+      {
+         const auto* vc = GetPointer<const vector_cst>(t);
+         return_value = Size(GET_NODE(vc->type));
+         break;
+      }
+      case integer_cst_K:
+      {
+         const auto* ic = GetPointer<const integer_cst>(t);
+         tree_nodeRef Type = GET_NODE(ic->type);
+         auto ic_value = static_cast<long long unsigned int>(ic->value);
+         if(ic_value == 0)
+         {
+            return_value = 1;
+         }
+         else
+         {
+            return_value = Size(Type);
+            bool is_integer_type = (GetPointer<enumeral_type>(Type) && !GetPointer<enumeral_type>(Type)->unsigned_flag) || (GetPointer<integer_type>(Type) && !GetPointer<integer_type>(Type)->unsigned_flag);
+            unsigned int counter = 0;
+            while(ic_value > 0)
+            {
+               ic_value /= 2;
+               ++counter;
+               if(counter >= return_value)
+               {
+                  break;
+               }
+            }
+            if(counter < return_value && is_integer_type)
+            {
+               return_value = counter + 1;
+            }
+            else if(counter == return_value && is_integer_type && ic->value < 0)
+            {
+               /// count leading ONEs
+               unsigned int index = return_value - 1;
+               while(((1ULL << index) & static_cast<long long unsigned int>(ic->value)) && index > 0)
+               {
+                  --counter;
+                  --index;
+               }
+               ++counter;
+               return_value = counter;
+            }
+            else
+            {
+               return_value = counter;
+            }
+         }
+         break;
+      }
+      case real_cst_K:
+      {
+         const auto* rc = GetPointer<const real_cst>(t);
+         return_value = Size(GET_NODE(rc->type));
+         break;
+      }
+      case complex_cst_K:
+      {
+         const auto* cc = GetPointer<const complex_cst>(t);
+         return_value = Size(GET_NODE(cc->type));
+         break;
+      }
+      case constructor_K:
+      {
+         const auto* c = GetPointer<const constructor>(t);
+         return_value = Size(GET_NODE(c->type));
+         break;
+      }
+      case target_mem_ref461_K:
+      {
+         const auto tmr = GetPointer<const target_mem_ref461>(t);
+         return_value = Size(GET_NODE(tmr->type));
+         break;
+      }
+      case gimple_call_K:
+      case function_decl_K:
+      {
+         return_value = 32; // static_cast<unsigned int>(GccWrapper::CGetPointerSize(parameters));
+         break;
+      }
+      case array_range_ref_K:
+      case binfo_K:
+      case block_K:
+      case case_label_expr_K:
+      case const_decl_K:
+      case identifier_node_K:
+      case label_decl_K:
+      case lang_type_K:
+      case namespace_decl_K:
+      case offset_type_K:
+      case qual_union_type_K:
+      case set_type_K:
+      case statement_list_K:
+      case target_expr_K:
+      case target_mem_ref_K:
+      case template_type_parm_K:
+      case translation_unit_decl_K:
+      case template_decl_K:
+      case using_decl_K:
+      case tree_list_K:
+      case tree_vec_K:
+      case type_decl_K:
+      case typename_type_K:
+      case CASE_CPP_NODES:
+      case last_tree_K:
+      case none_K:
+      case placeholder_expr_K:
+      case gimple_asm_K:
+      case gimple_assign_K:
+      case gimple_bind_K:
+      case gimple_cond_K:
+      case gimple_for_K:
+      case gimple_goto_K:
+      case gimple_label_K:
+      case gimple_multi_way_if_K:
+      case gimple_nop_K:
+      case gimple_phi_K:
+      case gimple_pragma_K:
+      case gimple_predict_K:
+      case gimple_resx_K:
+      case gimple_return_K:
+      case gimple_switch_K:
+      case gimple_while_K:
+      case CASE_PRAGMA_NODES:
+      case void_cst_K:
+      case error_mark_K:
+      default:
+      {
+         THROW_UNREACHABLE(std::string("Unexpected type pattern ") + t->get_kind_text());
+      }
+   }
+   return return_value;
 }

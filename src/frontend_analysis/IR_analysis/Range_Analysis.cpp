@@ -1001,7 +1001,7 @@ namespace
    bw_t getGIMPLE_BW(const tree_nodeConstRef& tn)
    {
       const auto type = getGIMPLE_Type(tn);
-      auto size = tree_helper::Size(type);
+      const auto size = BitLatticeManipulator::Size(type);
       THROW_ASSERT(static_cast<bool>(size), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
       return static_cast<bw_t>(size);
    }
@@ -1015,7 +1015,8 @@ namespace
       }
 
       const auto type = getGIMPLE_Type(tn);
-      bw_t bw = static_cast<bw_t>(tree_helper::Size(type));
+      const auto bw = static_cast<bw_t>(BitLatticeManipulator::Size(type));
+      THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
 
       if(GetPointer<const real_type>(type) != nullptr)
       {
@@ -1032,11 +1033,11 @@ namespace
       }
 
       const auto type = getGIMPLE_Type(tn);
-      bw_t bw = static_cast<bw_t>(tree_helper::Size(type));
+      bw_t bw = static_cast<bw_t>(BitLatticeManipulator::Size(type));
+      THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
 #ifdef BITVALUE_UPDATE
       bool sign = false;
 #endif
-      THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
       APInt min, max;
       if(const auto* ic = GetPointer<const integer_cst>(tn))
       {
