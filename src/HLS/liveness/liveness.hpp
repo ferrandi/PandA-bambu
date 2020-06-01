@@ -359,7 +359,12 @@ class liveness
    bool are_in_conflict(vertex op1, vertex op2) const;
 
    // activate conflicts with reachability computation
-   void compute_conflicts_with_reachability(hlsRef _HLS)
+   // void compute_conflicts_with_reachability(hlsRef _HLS)
+   //{
+   //   HLS = _HLS;
+   //}
+
+   void set_HLS(hlsRef _HLS)
    {
       HLS = _HLS;
    }

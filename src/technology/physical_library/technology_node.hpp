@@ -208,6 +208,9 @@ enum class TargetDevice_Type;
 #define MC_STD "MC_FU"
 #define FC_STD "FC_FU"
 
+/// simple shift register with reset
+#define register_SHIFT "register_SHIFT"
+
 /// simple register without reset
 #define register_STD "register_STD"
 

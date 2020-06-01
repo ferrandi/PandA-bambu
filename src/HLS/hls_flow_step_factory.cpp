@@ -68,6 +68,7 @@
 #include "control_flow_checker.hpp"
 #include "controller_cs.hpp"
 #include "fsm_controller.hpp"
+#include "pipeline_controller.hpp"
 #if HAVE_EXPERIMENTAL
 #include "ParallelController.hpp"
 #endif
@@ -678,6 +679,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
+      case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
+      {
+         design_flow_step = DesignFlowStepRef(new pipeline_controller(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
       case HLSFlowStep_Type::PORT_SWAPPING:
       {
          design_flow_step = DesignFlowStepRef(new port_swapping(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -1000,6 +1006,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnord
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
 #endif
+         case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::PORT_SWAPPING:
          case HLSFlowStep_Type::SCHED_CHAINING:
 #if HAVE_ILP_BUILT

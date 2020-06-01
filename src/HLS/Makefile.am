@@ -43,12 +43,14 @@ noinst_HEADERS += \
    architecture_creation/controller_creation/controller_creator_base_step.hpp \
    architecture_creation/controller_creation/control_flow_checker.hpp \
    architecture_creation/controller_creation/controller_cs.hpp \
-   architecture_creation/controller_creation/fsm_controller.hpp
+   architecture_creation/controller_creation/fsm_controller.hpp \
+   architecture_creation/controller_creation/pipeline_controller.hpp
 lib_controller_creation_la_SOURCES = \
    architecture_creation/controller_creation/controller_creator_base_step.cpp \
    architecture_creation/controller_creation/control_flow_checker.cpp \
    architecture_creation/controller_creation/controller_cs.cpp \
-   architecture_creation/controller_creation/fsm_controller.cpp
+   architecture_creation/controller_creation/fsm_controller.cpp \
+   architecture_creation/controller_creation/pipeline_controller.cpp
 
 #DOCUMENTATION STUFF
 PRJ_DOC += architecture_creation/controller_creation/controller.doc architecture_creation/controller_creation/fsm.doc
@@ -212,6 +214,7 @@ lib_registerbinding_la_CPPFLAGS = \
     -I$(top_srcdir)/src/HLS/binding/register/algorithms \
     -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
     -I$(top_srcdir)/src/HLS/liveness \
+    -I$(top_srcdir)/src/HLS/stg \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology/target_device \
     -I$(top_srcdir)/src/technology/target_device/FPGA \
@@ -324,8 +327,8 @@ lib_storage_value_insertion_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
-noinst_HEADERS += binding/storage_value_insertion/storage_value_information.hpp binding/storage_value_insertion/storage_value_insertion.hpp binding/storage_value_insertion/values_scheme.hpp
-lib_storage_value_insertion_la_SOURCES = binding/storage_value_insertion/storage_value_information.cpp binding/storage_value_insertion/storage_value_insertion.cpp binding/storage_value_insertion/values_scheme.cpp
+noinst_HEADERS += binding/storage_value_insertion/storage_value_information.hpp binding/storage_value_insertion/storage_value_information_fsm.hpp binding/storage_value_insertion/storage_value_information_pipeline.hpp binding/storage_value_insertion/storage_value_insertion.hpp binding/storage_value_insertion/values_scheme.hpp
+lib_storage_value_insertion_la_SOURCES = binding/storage_value_insertion/storage_value_information.cpp binding/storage_value_insertion/storage_value_information_fsm.cpp binding/storage_value_insertion/storage_value_information_pipeline.cpp binding/storage_value_insertion/storage_value_insertion.cpp binding/storage_value_insertion/values_scheme.cpp
 
 lib_binding_la_SOURCES =
 lib_binding_la_LIBADD = lib_registerbinding.la lib_interconnectionbinding.la lib_storage_value_insertion.la lib_modulebinding.la

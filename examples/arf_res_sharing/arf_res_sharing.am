@@ -78,5 +78,4 @@ TESTS += \
    %D%/constrained_synth_xilinx_vx690t_vvd.sh \
    %D%/unconstrained_synth_xilinx_vx690t_vvd.sh \
    %D%/constrained_synth_xilinx_artix7_vvd.sh \
-   %D%/unconstrained_synth_xilinx_artix7_vvd.sh \
-   %D%/bambu_nanoxplore.sh
+   %D%/unconstrained_synth_xilinx_artix7_vvd.sh

@@ -85,7 +85,7 @@ void BuildVirtualPhi::ComputeRelationships(DesignFlowStepSet& relationship, cons
       }
       case INVALIDATION_RELATIONSHIP:
       {
-         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS && AppM->CGetFunctionBehavior(function_id)->is_pipelining_enabled())
+         if(design_flow_manager.lock()->GetStatus(GetSignature()) == DesignFlowStep_Status::SUCCESS && AppM->CGetFunctionBehavior(function_id)->build_simple_pipeline())
          {
             const std::string step_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id);
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(step_signature);

@@ -834,6 +834,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    long step_time;
    START_TIME(step_time);
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
+   HLS->Rliv->set_HLS(HLS);
 
    // resource binding and allocation  info
    fu_bindingRef fu = HLS->Rfu;
@@ -857,6 +858,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing non-shared resources");
    /// compute non-shared resources
    std::map<unsigned int, unsigned int> n_shared_fu;
+   // HLS->Rliv->compute_conflicts_with_reachability(HLS);
    for(const auto operation : fdfg->CGetOperations())
    {
       fu_unit = fu->get_assign(operation);
@@ -2067,6 +2069,7 @@ bool cdfc_module_binding::can_be_clustered(vertex v, OpGraphConstRef fsdg, fu_bi
    }
    unsigned int fu_s1 = fu->get_assign(v);
    /*
+   HLS->Rliv->set_HLS(HLS);
    std::string res_name = HLS->allocation_information->get_fu_name(fu_s1).first;
    std::string lib_name = HLS->HLS_T->get_technology_manager()->get_library(res_name);
    bool disabling_slack_based_binding = (HLS->allocation_information->get_number_channels(fu_s1) >= 1) ||

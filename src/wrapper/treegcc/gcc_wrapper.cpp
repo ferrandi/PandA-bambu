@@ -51,6 +51,8 @@
 #include "config_ARM_RTL_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGINCPP.hpp"
+#include "config_CLANG_PLUGIN_DIR.hpp"
+#include "config_GCC_PLUGIN_DIR.hpp"
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
@@ -230,8 +232,6 @@
 #include "config_I386_LLVM9_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
-#include "config_GCC_PLUGIN_DIR.hpp"
-#include "config_CLANG_PLUGIN_DIR.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
 #include "config_SPARC_ELF_CPP.hpp"
 #include "config_SPARC_ELF_GCC.hpp"
@@ -1872,7 +1872,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       preferred_compiler = compiler_target;
    }
    const std::string gcc_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(GCC_PLUGIN_DIR)) + "/";
-   const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir)+"/../clang_plugin" : STR(CLANG_PLUGIN_DIR)) + "/";
+   const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) + "/../clang_plugin" : STR(CLANG_PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
 #endif
 
@@ -2348,7 +2348,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM4_LINK_EXE;
       compiler.llvm_opt = I386_LLVM4_OPT_EXE;
-
    }
 #endif
 
@@ -2376,7 +2375,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM5_LINK_EXE;
       compiler.llvm_opt = I386_LLVM5_OPT_EXE;
-
    }
 #endif
 
@@ -2404,7 +2402,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM6_LINK_EXE;
       compiler.llvm_opt = I386_LLVM6_OPT_EXE;
-
    }
 #endif
 
@@ -2432,7 +2429,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM7_LINK_EXE;
       compiler.llvm_opt = I386_LLVM7_OPT_EXE;
-
    }
 #endif
 
@@ -2460,7 +2456,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM8_LINK_EXE;
       compiler.llvm_opt = I386_LLVM8_OPT_EXE;
-
    }
 #endif
 

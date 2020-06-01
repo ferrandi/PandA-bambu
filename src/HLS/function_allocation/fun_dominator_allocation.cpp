@@ -209,7 +209,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(HLSMgr->get_tree_manager()->get_tree_node_const(funID))))
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Warning: " + fname + " is empty or the compiler killed all the statements");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + fname);
-      HLSMgr->global_resource_constraints[std::make_pair(fname, WORK_LIBRARY)] = 1;
+      if(not function_behavior->build_simple_pipeline())
+         HLSMgr->global_resource_constraints[std::make_pair(fname, WORK_LIBRARY)] = 1;
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
