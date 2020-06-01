@@ -222,10 +222,10 @@ void fsm_controller::create_state_machine(std::string& parse)
    for(auto loop : loop_map)
    {
       vertex loop_first_state = first_state;
-      bool found_first = false;
       InEdgeIterator ie, iend;
 
 #if HAVE_ASSERTS
+      bool found_first = false;
       bool found_last = false;
 #endif
       OutEdgeIterator lst, lstend;
@@ -237,7 +237,9 @@ void fsm_controller::create_state_machine(std::string& parse)
             if(stg->CGetStateInfo(boost::source(*ie, *astg))->loopId != std::get<0>(loop))
             {
                THROW_ASSERT(not found_first, "A loop has multiple first states");
+#if HAVE_ASSERTS
                found_first = true;
+#endif
                loop_first_state = v;
             }
          }
