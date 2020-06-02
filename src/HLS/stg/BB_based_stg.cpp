@@ -654,7 +654,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    ///*****************************************************
 
    HLS->STG->compute_min_max();
-   if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1)
+   bool is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline();
+   if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !is_pipelined)
    {
       HLS->registered_done_port = true;
       /// check for unbounded op executed in the last step
@@ -681,7 +682,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    HLS->STG->print_statistics();
    if(has_registered_inputs)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Parameters are registered");
-   if(HLS->registered_done_port)
+   if(HLS->registered_done_port || is_pipelined)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Done port is registered");
 
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");

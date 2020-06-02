@@ -551,13 +551,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 
    // Memory allocation options
    os << "  Memory allocation:\n\n"
-      << "    --memory-allocation=<type>\n"
-      << "        Set the algorithm used for memory allocation. Possible values for the\n"
-      << "        type argument are the following:\n"
-      << "            DOMINATOR          - all local variables, static variables and\n"
-      << "                                 strings are allocated on BRAMs (default)\n"
-      << "            XML_SPECIFICATION  - import the memory allocation from an XML\n"
-      << "                                 specification\n\n"
       << "    --xml-memory-allocation=<xml_file_name>\n"
       << "        Specify the file where the XML configuration has been defined.\n\n"
       << "    --memory-allocation-policy=<type>\n"
@@ -1060,7 +1053,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p::" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -1109,7 +1102,7 @@ int BambuParameter::Exec()
 #if HAVE_ILP_BUILT
       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
 #endif
-      {"pipelining", no_argument, nullptr, 'p'},
+      {"pipelining", optional_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
       {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
@@ -1129,7 +1122,6 @@ int BambuParameter::Exec()
       {"register-allocation", required_argument, nullptr, OPT_REGISTER_ALLOCATION},
       {"storage-value-insertion", required_argument, nullptr, 0},
       /// Memory allocation
-      {"memory-allocation", required_argument, nullptr, 0},
       {"memory-allocation-policy", required_argument, nullptr, 0},
       {"xml-memory-allocation", required_argument, nullptr, 0},
       {"base-address", required_argument, nullptr, 0},
@@ -1919,7 +1911,9 @@ int BambuParameter::Exec()
 #endif
          case 'p':
          {
-            setOption(OPT_pipelining, true);
+            setOption(OPT_pipelining, "@ll");
+            if(optarg)
+               setOption(OPT_pipelining, optarg);
             break;
          }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
@@ -2409,19 +2403,8 @@ int BambuParameter::Exec()
                   throw "BadParameters: module binding option not correctly specified";
                break;
             }
-            if(strcmp(long_options[option_index].name, "memory-allocation") == 0)
-            {
-               if(std::string(optarg) == "DOMINATOR")
-                  setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
-               else if(std::string(optarg) == "XML_SPECIFICATION")
-                  setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR);
-               else
-                  throw "BadParameters: memory allocation option not correctly specified";
-               break;
-            }
             if(strcmp(long_options[option_index].name, "xml-memory-allocation") == 0)
             {
-               setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR);
                setOption(OPT_xml_memory_allocation, optarg);
                break;
             }
@@ -2808,7 +2791,8 @@ void BambuParameter::CheckParameters()
    }
 
    /// controller options
-   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR)
+   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+      getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR)
       setOption(OPT_stg, true);
 
    /// chaining options
@@ -3219,7 +3203,7 @@ void BambuParameter::CheckParameters()
       setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::LSS);
 
    /// base address and initial internal address checks
-   if(isOption(OPT_initial_internal_address) && (getOption<unsigned int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
+   if(isOption(OPT_initial_internal_address) && (getOption<unsigned long long int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
    {
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))
@@ -3228,11 +3212,6 @@ void BambuParameter::CheckParameters()
    }
 
    /// Checks
-   if(getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm) == HLSFlowStep_Type::XML_MEMORY_ALLOCATOR and not!isOption(OPT_xml_memory_allocation))
-   {
-      if(!isOption(OPT_xml_input_configuration))
-         THROW_ERROR("XML specification of the memory allocation has not been specified!");
-   }
    if(isOption(OPT_memory_banks_number) && getOption<int>(OPT_memory_banks_number) > 1)
    {
       setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);

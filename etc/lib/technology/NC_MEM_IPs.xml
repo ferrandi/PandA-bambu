@@ -3025,7 +3025,7 @@ reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 generate
@@ -3201,7 +3201,7 @@ reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 generate
@@ -3610,12 +3610,12 @@ begin
   reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a = dout_a_tmp;
   assign dout_b = dout_b_tmp;
   initial
   begin
-    $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+    $readmemb(MEMORY_INIT_file, memory);
   end
 
 
@@ -3731,12 +3731,12 @@ begin
     reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a = dout_a_tmp;
     assign dout_b = dout_b_tmp;
     initial
     begin
-      $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+      $readmemb(MEMORY_INIT_file, memory);
     end
     always @(posedge clock)
     begin
@@ -3884,7 +3884,7 @@ reg [BITSIZE_din_value_aggregated-1:0] din_value_aggregated1 1INIT_ZERO_VALUE;
 initial
 begin
   //dout_a=0;  dout_b=0;
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 generate
@@ -4547,12 +4547,12 @@ begin
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
   assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
   initial
   begin
-    $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+    $readmemb(MEMORY_INIT_file, memory);
   end
   if(n_mem_elements == 1)
   begin
@@ -4666,12 +4666,12 @@ begin
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
     assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
     initial
     begin
-      $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+      $readmemb(MEMORY_INIT_file, memory);
     end
     always @(posedge clock)
     begin
@@ -4810,7 +4810,7 @@ reg [(n_byte_on_databus/2)*max_n_writes-1:0] we_a1 1INIT_ZERO_VALUE;
 (* syn_ramstyle = &quot;no_rw_check&quot; *) reg [(BRAM_BITSIZE/8)-1:0][7:0] memory_a [0:n_mem_elements-1];
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory_a, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory_a);
 end
 
 generate
@@ -6848,7 +6848,7 @@ reg [BITSIZE_data_out-1:0] data_out_r;
 reg [BITSIZE_data_out-1:0] memory [0:n_elements-1]/* synthesis syn_ramstyle =  &quot;no_rw_check &quot; */;
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 always @(posedge clock)
@@ -6958,7 +6958,7 @@ reg we_a1 1INIT_ZERO_VALUE;
 (* syn_ramstyle = &quot;no_rw_check&quot; *) reg [BRAM_BITSIZE-1:0] memory_a [0:n_mem_elements-1];
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory_a, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory_a);
 end
 always @(posedge clock)
 begin
@@ -7573,7 +7573,7 @@ reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 assign dout_value_a = dout_value_a1;
 assign dout_value_b = dout_value_b1;
@@ -8039,12 +8039,12 @@ begin
   reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a = dout_a_tmp;
   assign dout_b = dout_b_tmp;
   initial
   begin
-    $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+    $readmemb(MEMORY_INIT_file, memory);
   end
 
 
@@ -8160,12 +8160,12 @@ begin
     reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a = dout_a_tmp;
     assign dout_b = dout_b_tmp;
     initial
     begin
-      $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+      $readmemb(MEMORY_INIT_file, memory);
     end
     always @(posedge clock)
     begin
@@ -8455,7 +8455,7 @@ reg [(n_byte_on_databus)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
 reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
 reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
 reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
 
 generate
   if(HIGH_LATENCY==2)
@@ -8476,7 +8476,7 @@ assign dout_a = dout_a_tmp;
 assign dout_b = dout_b_tmp;
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 always @(posedge clock)
@@ -8796,7 +8796,7 @@ reg [BRAM_BITSIZE-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 always @(posedge clock)
@@ -9284,12 +9284,12 @@ begin
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
   assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
   initial
   begin
-    $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+    $readmemb(MEMORY_INIT_file, memory);
   end
   if(n_mem_elements == 1)
   begin
@@ -9403,12 +9403,12 @@ begin
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
     assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
     initial
     begin
-      $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+      $readmemb(MEMORY_INIT_file, memory);
     end
     always @(posedge clock)
     begin
@@ -11599,7 +11599,7 @@ reg [data_size-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quo
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 generate
@@ -11925,7 +11925,7 @@ reg [data_size-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quo
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 generate

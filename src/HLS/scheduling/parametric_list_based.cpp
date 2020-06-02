@@ -1040,7 +1040,6 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                ++n_scheduled_ops;
                /// update resource usage
                used_resources[fu_type]++;
-
                /// check if there exist enough resources available
                if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end())
                {

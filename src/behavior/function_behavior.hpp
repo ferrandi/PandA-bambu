@@ -412,8 +412,14 @@ class FunctionBehavior
    /// set of global variables
    CustomOrderedSet<unsigned int> state_variables;
 
-   /// when true pipelining has been requested for this function
-   bool pipelining_enabled;
+   /// true when pipelining is enabled for the function
+   bool pipeline_enabled;
+
+   /// true when the requested pipeline does not include unbounded functions
+   bool simple_pipeline;
+
+   /// used only for stallable pipelines
+   int initiation_time;
 
  public:
    /**
@@ -846,14 +852,25 @@ class FunctionBehavior
    {
       return packed_vars;
    }
+
    bool is_pipelining_enabled() const
    {
-      return pipelining_enabled;
+      return pipeline_enabled;
    }
 
-   void set_pipelining_enabled(bool f)
+   bool build_simple_pipeline() const
    {
-      pipelining_enabled = f;
+      if(simple_pipeline)
+      {
+         THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
+      }
+      return simple_pipeline;
+   }
+
+   int get_initiation_time() const
+   {
+      THROW_ASSERT(pipeline_enabled && !simple_pipeline, "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
+      return initiation_time;
    }
 
    /**

@@ -213,6 +213,7 @@ DesignFlowStep_Status add_library::InternalExec()
       auto* op = GetPointer<operation>(fu->get_operation(function_name));
       op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
+      bool simple_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline();
       /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
       if(HLS->STG and HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
       {
@@ -229,7 +230,8 @@ DesignFlowStep_Status add_library::InternalExec()
          {
             unsigned int min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
             unsigned int max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
-            if(max_cycles == min_cycles && min_cycles > 0 && min_cycles < 8)
+            /// pipelined functions are always bounded
+            if(max_cycles == min_cycles && min_cycles > 0 && (min_cycles < 8 || simple_pipeline))
             {
                op->bounded = true;
             }
@@ -245,6 +247,7 @@ DesignFlowStep_Status add_library::InternalExec()
       }
       else
       {
+         THROW_ASSERT(not simple_pipeline, "A pipelined function should always generate a DAG");
          op->bounded = false;
       }
       double call_delay = HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
@@ -272,7 +275,11 @@ DesignFlowStep_Status add_library::InternalExec()
             {
                //+1 prevents chaining of two operations mapped on the same functional unit
                const ControlStep ii(max_cycles + 1);
-               op->time_m->set_initiation_time(ii);
+               const ControlStep jj(1);
+               if(not simple_pipeline)
+                  op->time_m->set_initiation_time(ii);
+               else
+                  op->time_m->set_initiation_time(jj);
             }
          }
          else

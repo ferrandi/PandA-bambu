@@ -114,6 +114,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       register_clique->add_vertex(*v_it, STR(vertex_index));
    if(vertex_index > 0)
    {
+      HLS->Rreg->set_used_regs(num_registers);
       boost::graph_traits<compatibility_graph>::edge_iterator cg_ei, cg_ei_end;
       for(boost::tie(cg_ei, cg_ei_end) = boost::edges(CG); cg_ei != cg_ei_end; ++cg_ei)
       {

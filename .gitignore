@@ -43,6 +43,10 @@ etc/macros/ltoptions.m4
 etc/macros/ltsugar.m4
 etc/macros/ltversion.m4
 etc/macros/lt~obsolete.m4
+ext/abseil-cpp/aclocal.m4
+ext/abseil-cpp/autom4te.cache/
+ext/abseil-cpp/configure
+ext/abseil-cpp/m4/
 ext/aclocal.m4
 ext/autom4te.cache/
 ext/autoreconf_log

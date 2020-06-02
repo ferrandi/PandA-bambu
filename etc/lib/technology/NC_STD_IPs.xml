@@ -2784,6 +2784,58 @@ end process;
       </circuit>
     </cell>
     <cell>
+      <name>register_SHIFT</name>
+      <circuit>
+        <component_o id="register_SHIFT">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2019 Politecnico di Milano</copyright>
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="register_SHIFT"/>
+          <parameter name="CONTROLLER_LENGTH">0</parameter>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="wenable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="register_SHIFT in1 out1 CONTROLLER_LENGTH" VERILOG_PROVIDED=
+"reg [CONTROLLER_LENGTH-1:0] reg_out1 1INIT_ZERO_VALUE;
+assign out1 = reg_out1[CONTROLLER_LENGTH-1];
+always @(posedge clock)
+  if(1RESET_VALUE)
+    reg_out1 &lt;= {CONTROLLER_LENGTH{1&apos;b0}};
+  else
+    reg_out1 &lt;= (reg_out1 &lt;&lt; 1) | in1;
+" VHDL_PROVIDED="
+signal reg_out1 : std_logic_vector(CONTROLLER_LENGTH-1 downto 0) 1INIT_ZERO_VALUE;
+begin
+out1 &lt;= reg_out1(CONTROLLER_LENGTH-1);
+process(clock)
+begin
+  if(clock&apos;event and clock = &apos;1&apos;) then
+    if(1RESET_VALUE) then
+      reg_out1 = (others = &gt; &apos;0&apos;);
+    else
+      reg_out1(CONTROLLER_LENGTH-1 downto 1) &lt;= reg_out1(CONTROLLER_LENGTH-2 downto 0);
+      reg_out1(0) &lt;= in1;
+    end if;
+  end if;
+end process;
+"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
       <name>split_signal</name>
       <attribute name="area" value_type="float64">0</attribute>
       <circuit>
@@ -2803,6 +2855,119 @@ end process;
           </port_vector_o>
           <NP_functionality LIBRARY="split_signal in1 out1" VERILOG_PROVIDED="assign out1 = in1;" VHDL_PROVIDED="begin
   out1 &lt;= in1;"/>
+        </component_o>
+      </circuit>
+    </cell>
+    <cell>
+      <name>Stage_controller</name>
+      <circuit>
+        <component_o id="Stage_controller">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+          <authors>Luca Ezio Pozzoni &lt;lucaezio.pozzoni@mail.polimi.it&gt;</authors>
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="Stage_controller"/>
+          <port_o id="clock" dir="IN" is_clock="1">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="reset" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="valid_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ready_in" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="valid_out" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="ready_out" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="selector_out" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="std_wenable" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <port_o id="stall_wenable" dir="OUT">
+            <structural_type_descriptor type="BOOL" size="1"/>
+          </port_o>
+          <NP_functionality LIBRARY="Stage_controller" VERILOG_PROVIDED="parameter [1:0] IDLE = 2'b00;
+  parameter [1:0] SEND = 2'b01;
+  parameter [1:0] FULL = 2'b10;
+
+  reg selector_out;
+  reg std_wenable;
+  reg stall_wenable;
+
+  reg [1:0] state, state_next;
+  
+  always @(posedge in_clk)
+  begin
+    state &lt;= state_next;
+    if(1RESET_VALUE)
+    begin
+      state &lt;= IDLE;
+    end
+  end
+  
+  always @(*)
+  begin
+    state_next = state;
+    std_wenable = 0;
+    stall_wenable = 0;
+    selector_out = 0;
+    case (state)
+      IDLE    :
+      begin
+        if(valid_in)
+        begin
+          state_next = SEND;
+          std_wenable = 1;
+        end
+      end
+      SEND    :
+      begin
+        if(valid_in ^ ready_in)
+        begin
+          if(valid_in)
+          begin
+            state_next = FULL;
+            stall_wenable = 1;
+          end
+          else
+          begin
+            state_next = IDLE;
+          end
+        end
+        else
+        begin
+          if(ready_in)
+          begin
+            std_wenable = 1;
+          end
+        end
+      end
+      FULL    :
+      begin
+        selector_out = 1;
+        if((!valid_in) &lt;&lt; (ready_in))
+        begin
+          state_next = SEND;
+          std_wenable = 1;
+        end
+      end
+      default :
+      begin
+        state_next = IDLE;
+      end
+    endcase
+  end
+
+  assign valid_out = ((state == SEND) || (state == FULL));
+  assign ready_out = ((state == IDLE) || (state == SEND));"/>
         </component_o>
       </circuit>
     </cell>

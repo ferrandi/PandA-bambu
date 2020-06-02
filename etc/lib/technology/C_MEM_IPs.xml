@@ -5545,7 +5545,7 @@ reg [data_size-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 assign din_a = (sel_STORE &amp; in4) ? in1 : proxy_in1;
@@ -5838,7 +5838,7 @@ reg [data_size-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quo
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 assign int_sel_LOAD = sel_LOAD &amp; in4;
@@ -6085,7 +6085,7 @@ reg [data_size-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
+  $readmemb(MEMORY_INIT_file, memory);
 end
 
 generate

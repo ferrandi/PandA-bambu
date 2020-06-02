@@ -197,6 +197,14 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                   HLSMgr->RSim->results_available = true;
                   test_vector[param + ":output"] = STR((Enode)->get_attribute(param + ":output")->get_value());
                }
+               else if((Enode)->get_attribute(param + ":init_output_file"))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  const auto test_directory = GetDirectory(input_xml_filename);
+                  const auto input_file_name = BuildPath(test_directory, Enode->get_attribute(param + ":init_output_file")->get_value());
+                  const auto input_file = fileIO_istream_open(input_file_name);
+                  test_vector[param + ":output"] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+               }
             }
             if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))
             {

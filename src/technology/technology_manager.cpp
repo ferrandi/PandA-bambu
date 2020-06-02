@@ -518,13 +518,17 @@ bool technology_manager::IsBuiltin(const std::string& component_name) const
 const functional_unit* technology_manager::CGetSetupHoldFU() const
 {
    const technology_nodeConstRef f_unit_as = get_fu("ASSIGN_SINGLE_UNSIGNED_FU", LIBRARY_STD_FU);
-   THROW_ASSERT(f_unit_as, "Library miss component: ASSIGN_SINGLE_UNSIGNED_FU");
-   return GetPointer<const functional_unit>(f_unit_as);
+   if(f_unit_as)
+      return GetPointer<const functional_unit>(f_unit_as);
+   else
+      return nullptr;
 }
 
 double technology_manager::CGetSetupHoldTime() const
 {
    const auto fu_as = CGetSetupHoldFU();
+   if(!fu_as)
+      return 0.1;
    const technology_nodeConstRef op_as_node = fu_as->get_operation("ASSIGN_SINGLE");
    const auto op_ASSIGN = GetPointer<const operation>(op_as_node);
    THROW_ASSERT(op_ASSIGN->time_m->get_execution_time() > 0.0, "expected a setup time greater than zero");
@@ -533,5 +537,9 @@ double technology_manager::CGetSetupHoldTime() const
 
 TimeStamp technology_manager::CGetSetupHoldTimeStamp() const
 {
-   return CGetSetupHoldFU()->characterization_timestamp;
+   auto fu = CGetSetupHoldFU();
+   if(fu)
+      return CGetSetupHoldFU()->characterization_timestamp;
+   else
+      return TimeStamp();
 }

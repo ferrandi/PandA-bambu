@@ -253,14 +253,14 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added reg_status");
 
    /// Computing the mask for addresses
-   unsigned int addr_range = aadl_information->exposed_memory_sizes[function_name];
+   unsigned long long int addr_range = aadl_information->exposed_memory_sizes[function_name];
    unsigned int index;
-   for(index = 1; addr_range >= (1u << index); ++index)
+   for(index = 1; addr_range >= (1ull << index); ++index)
       ;
    const auto relative_address_bitsize = index;
-   unsigned int address_mask = 0;
+   unsigned long long int address_mask = 0;
    for(index = 0; index < relative_address_bitsize; index++)
-      address_mask += 1u << index;
+      address_mask += 1ull << index;
 
    /// Preparing masked version of address
    const auto filtered_address = SM_taste_interface->add_module_from_technology_library("filtered_address", "ui_bit_and_expr_FU", TM->get_library("ui_bit_and_expr_FU"), taste_interface_circuit, TM);
@@ -389,7 +389,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       if(HLS->Param->isOption(OPT_context_switch))
          bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
-      const unsigned int n_elements = aadl_information->internal_memory_sizes[function_name] / bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name] % bus_data_bytesize) ? 1 : 0);
+      const unsigned long long int n_elements = aadl_information->internal_memory_sizes[function_name] / bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name] % bus_data_bytesize) ? 1 : 0);
 
       memory->SetParameter("n_elements", STR(n_elements));
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,18 +31,34 @@
  *
  */
 /**
- * @file mem_dominator_allocation_CS.hpp
- * @brief add tag information
- * @author Nicola Saporetti <nicola.saporetti@gmail.com>
+ * @file storage_value_information_fsm.cpp
+ * @brief This package is used to define the storage value scheme adopted by the register allocation algorithms.
+ *
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
+ *
  */
-#include "memory_cs.hpp"
+/// Header include
+#include "storage_value_information_fsm.hpp"
 
-memory_cs::memory_cs(const tree_managerRef _TreeM, unsigned int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int _address_bitsize)
-    : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize)
+StorageValueInformationFsm::StorageValueInformationFsm(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : StorageValueInformation(_HLS_mgr, _function_id)
 {
-   bus_tag_bitsize = 0;
 }
 
-memory_cs::~memory_cs()
+StorageValueInformationFsm::~StorageValueInformationFsm() = default;
+
+bool StorageValueInformationFsm::is_a_storage_value(vertex, unsigned int var_index)
 {
+   return storage_index_map.find(var_index) != storage_index_map.end();
+}
+
+unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigned int var_index)
+{
+   THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing");
+   return storage_index_map.find(var_index)->second;
+}
+
+void StorageValueInformationFsm::set_storage_value_index(vertex, unsigned int variable, unsigned int sv)
+{
+   storage_index_map[variable] = sv;
 }

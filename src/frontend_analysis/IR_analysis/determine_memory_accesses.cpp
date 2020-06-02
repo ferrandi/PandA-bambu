@@ -162,6 +162,14 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
 void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, bool dynamic_address, bool no_dynamic_address)
 {
    const tree_nodeRef tn = TM->get_tree_node_const(node_id);
+   auto tnKind = tn->get_kind();
+   if(tnKind != addr_expr_K && tnKind != var_decl_K)
+   {
+      if(already_visited.find(node_id) != already_visited.end())
+         return;
+      else
+         already_visited.insert(node_id);
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing node " + tn->ToString() + " - Dynamic address: " + (dynamic_address ? " true" : "false") + " - No dynamic address: " + (no_dynamic_address ? "true" : "false"));
    std::string function_name = behavioral_helper->get_function_name();
 
@@ -178,7 +186,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       }
    }
 
-   switch(tn->get_kind())
+   switch(tnKind)
    {
       case gimple_assign_K:
       {
