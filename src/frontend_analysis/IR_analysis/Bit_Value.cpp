@@ -822,9 +822,9 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
       {
          if(var and function_behavior->is_variable_mem(var))
          {
-            unsigned int max_addr = hm->Rmem->get_base_address(var, function_id) + tree_helper::size(TM, var) / 8;
+            unsigned long long int max_addr = hm->Rmem->get_base_address(var, function_id) + tree_helper::size(TM, var) / 8;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Maximum address is " + STR(max_addr - 1));
-            for(address_bitsize = 1; max_addr > (1u << address_bitsize); ++address_bitsize)
+            for(address_bitsize = 1; max_addr > (1ull << address_bitsize); ++address_bitsize)
             {
                ;
             }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,61 +31,42 @@
  *
  */
 /**
- * @file memory_symbol.cpp
- * @brief Implementations of the methods to manage memory symbols
- *
+ * @file pipeline_controller.hpp
+ * @brief Header class for the creation of a shift register controlling a pipeline.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
  *
  */
-#include "memory_symbol.hpp"
 
-#include "exceptions.hpp"
+#ifndef PIPELINE_CONTROLLER_HPP
+#define PIPELINE_CONTROLLER_HPP
 
-#include "language_writer.hpp"
-#include "string_manipulation.hpp" //STR
-#include "utility.hpp"
+#include "controller_creator_base_step.hpp"
 
-memory_symbol::memory_symbol(unsigned int var, unsigned int addr, unsigned int funId) : variable(var), name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), address(addr), resolved(false)
+/// STD include
+#include <string>
+
+REF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(OpGraph);
+
+class pipeline_controller : public ControllerCreatorBaseStep
 {
-}
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
 
-memory_symbol::~memory_symbol() = default;
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   pipeline_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR);
 
-void memory_symbol::set_address(unsigned int _address)
-{
-   address = _address;
-}
-
-void memory_symbol::set_symbol_name(const std::string& _name)
-{
-   name = _name;
-}
-
-std::string memory_symbol::get_symbol_name() const
-{
-   return name;
-}
-
-unsigned int memory_symbol::get_address() const
-{
-   return address;
-}
-
-bool memory_symbol::is_resolved() const
-{
-   return resolved;
-}
-
-std::string memory_symbol::get_address_string(unsigned int precision) const
-{
-   return STR("\"") + convert_to_binary(static_cast<unsigned long long int>(address), precision) + "\"";
-}
-
-unsigned int memory_symbol::get_variable() const
-{
-   return variable;
-}
+   /**
+    * Destructor.
+    */
+   ~pipeline_controller() override;
+};
+#endif

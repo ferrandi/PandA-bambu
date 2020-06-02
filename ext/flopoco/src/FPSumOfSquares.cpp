@@ -302,7 +302,7 @@ namespace flopoco{
 			inPortMap   (adder, "X0", "paddedA");
 			inPortMap   (adder, "X1", "paddedB");
 			inPortMap   (adder, "X2", "paddedC");
-			inPortMapCst(adder, "Cin", "'0'"); // a 1 would compensate the two truncations in the worst case -- to explore
+			//inPortMapCst(adder, "Cin", "'0'"); // a 1 would compensate the two truncations in the worst case -- to explore
 			outPortMap  (adder, "R","sum");
 			vhdl << instance(adder, "adder1");
 

@@ -737,7 +737,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Memory Unit: " + allocation_information->get_string_name(fu_type_id) + " for variable: " + HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(var));
       std::string base_address = HLSMgr->Rmem->get_symbol(var, HLS->functionId)->get_symbol_name();
-      unsigned int rangesize = HLSMgr->Rmem->get_rangesize(var);
+      unsigned long long int rangesize = HLSMgr->Rmem->get_rangesize(var);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - base address: " + STR(base_address));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - range size: " + STR(rangesize));
       unsigned int n_channels = allocation_information->get_number_channels(fu_type_id);
@@ -1769,7 +1769,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      tree_nodeRef functionType = getFunctionType(addrExpr);
                      tree_nodeRef paramList = GetPointer<function_type>(functionType)->prms;
                      unsigned int count_param = 0;
-                     unsigned int address = 0;
+                     unsigned long long int address = 0;
                      unsigned int alignment = HLSMgr->Rmem->get_parameter_alignment();
                      HLSMgr->Rmem->compute_next_base_address(address, index, alignment);
                      while(paramList)
@@ -1903,7 +1903,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory,
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory,
                                         bool is_sds)
 {
    auto* fu_module = GetPointer<module>(fu_obj);

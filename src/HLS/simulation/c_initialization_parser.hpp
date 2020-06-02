@@ -78,7 +78,7 @@ class CInitializationParser
     * @param c_initialization_parser_functor is the functor used during parsing
     * @param initialization_string is the C initialization string of a variable
     */
-   void Parse(const CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const;
+   void Parse(CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const;
 };
 typedef refcount<const CInitializationParser> CInitializationParserConstRef;
 typedef refcount<CInitializationParser> CInitializationParserRef;

@@ -1114,7 +1114,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
          auto* gn = GetPointer<gimple_node>(GET_NODE(*stmt));
 
-         if(not gn->vuses.empty() && !is_single_write_memory)
+         if(not gn->vuses.empty() && !is_single_write_memory && GET_NODE(*stmt)->get_kind() != gimple_return_K)
             fd->reading_memory = true;
          else if(gn->memuse && is_single_write_memory)
             fd->reading_memory = true;

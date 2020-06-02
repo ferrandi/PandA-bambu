@@ -69,6 +69,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
 
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /// True if already executed
    bool already_executed;

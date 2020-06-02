@@ -141,7 +141,7 @@ unsigned int WB4_interface::get_data_bus_bitsize()
 unsigned int WB4_interface::get_addr_bus_bitsize()
 {
    unsigned int addr_bus_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int allocated_space = HLSMgr->Rmem->get_max_address();
+   unsigned long long int allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
       ++parameter_addr_bit;
@@ -319,7 +319,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    }
 
    // check memory allocation consistency
-   if(HLSMgr->Rmem->get_max_address() > parameters->getOption<unsigned int>(OPT_base_address))
+   if(HLSMgr->Rmem->get_max_address() > parameters->getOption<unsigned long long int>(OPT_base_address))
       THROW_ERROR("Internal memory addresses overlap with the external addresses: change the base address value with --base-address");
 
    // Connect clock, start, reset and done port since they are always present
@@ -425,7 +425,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             SM->add_connection(signControl, orGateControl->find_member("out1", port_o_K, orGateControl));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Added control signal");
 
-            unsigned int base_address = HLSMgr->base_address;
+            unsigned long long int base_address = HLSMgr->base_address;
             bool Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
             bool Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses() && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM &&
                                          parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM;
