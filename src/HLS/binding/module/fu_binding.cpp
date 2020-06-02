@@ -2122,8 +2122,14 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
          }
          if(!is_even && is_memory_splitted)
          {
+            bool need_newline_b = false;
             for(unsigned int l = 0; l < (nbyte_on_memory * 8); ++l)
+            {
                init_file_b << "0";
+               need_newline_b = true;
+            }
+            if(need_newline_b)
+               init_file_b << std::endl;
          }
       }
    }
@@ -2143,21 +2149,35 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       {
          unsigned int counter = 0;
          bool is_even = true;
+         bool need_newline_a = false;
+         bool need_newline_b = false;
          for(unsigned int i = 0; i < vec_size; ++i)
          {
             for(unsigned int j = 0; j < elts_size; ++j)
             {
                if(is_even || !is_memory_splitted)
+               {
                   init_file_a << "0";
+                  need_newline_a = true;
+               }
                else
+               {
                   init_file_b << "0";
+                  need_newline_b = true;
+               }
                counter++;
                if(counter % (nbyte_on_memory * 8) == 0)
                {
                   if(is_even || !is_memory_splitted)
+                  {
                      init_file_a << std::endl;
+                     need_newline_a = false;
+                  }
                   else
+                  {
                      init_file_b << std::endl;
+                     need_newline_b = false;
+                  }
                   is_even = !is_even;
                }
             }
@@ -2167,17 +2187,30 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
             for(unsigned int l = counter % (nbyte_on_memory * 8); l < (nbyte_on_memory * 8); ++l)
             {
                if(is_even || !is_memory_splitted)
+               {
                   init_file_a << "0";
+                  need_newline_a = true;
+               }
                else
+               {
                   init_file_b << "0";
+                  need_newline_b = true;
+               }
             }
             is_even = !is_even;
          }
          if(!is_even && is_memory_splitted)
          {
             for(unsigned int l = 0; l < (nbyte_on_memory * 8); ++l)
+            {
                init_file_b << "0";
+               need_newline_b = true;
+            }
          }
+         if(need_newline_a)
+            init_file_a << std::endl;
+         if(need_newline_b)
+            init_file_b << std::endl;
       }
    }
 }
