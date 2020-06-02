@@ -65,7 +65,7 @@ class function_parm_mask : public ApplicationFrontendFlowStep
 
    std::pair<std::string, RangeRef> tagDecode(const attribute_sequence::attribute_list& attributes, Range::bw_t bw) const;
 
-   void fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const;
+   bool fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 

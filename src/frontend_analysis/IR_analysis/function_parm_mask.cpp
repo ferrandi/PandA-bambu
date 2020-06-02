@@ -253,20 +253,59 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
    return {bit_values, range};
 }
 
-void function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const
+bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const
 {
    const auto TM = AppM->get_tree_manager();
-   const auto retType = tree_helper::GetFunctionReturnType(TM->get_tree_node_const(fd->index));
-   if(retType->get_kind() != real_type_K)
+   
+   Range::bw_t typeBW = 0;
+   // Gather valid function parameters to mask
+   std::vector<tree_nodeRef> maskParms;
+   const auto f_args = fd->list_of_args;
+   for(const auto& parmNode : f_args)
    {
-      return;
+      if(tree_helper::is_real(TM, GET_INDEX_CONST_NODE(parmNode)))
+      {
+         maskParms.push_back(parmNode);
+         const auto parmBW = static_cast<Range::bw_t>(tree_helper::Size(GET_NODE(parmNode)));
+         if(typeBW)
+         {
+            THROW_ASSERT(typeBW == parmBW, "All real parameters should have same size when using full function mask");
+         }
+         else
+         {
+            typeBW = parmBW;
+         }
+      }
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
+   
+   // Check if return value may be masked
+   bool retMask = false;
+   const auto retType = tree_helper::GetFunctionReturnType(TM->get_tree_node_const(fd->index));
+   if(tree_helper::is_real(TM, retType->index))
+   {
+      retMask = true;
+      const auto retBW = static_cast<Range::bw_t>(tree_helper::Size(retType));
+      if(typeBW)
+      {
+         THROW_ASSERT(typeBW == retBW, "Return type should have same size of parameters when using full function mask");
+      }
+      else
+      {
+         typeBW = retBW;
+      }
+   }
 
-   const auto retBW = static_cast<Range::bw_t>(tree_helper::Size(retType));
-   THROW_ASSERT(retBW == 32 || retBW == 64, "");
-   refcount<RealRange> rr(new RealRange(RangeRef(new Range(Regular, retBW))));
+   // Abort if no real type value is present
+   if(!typeBW)
+   {
+      return false;
+   }
+   THROW_ASSERT(typeBW == 32 || typeBW == 64, "");
+   
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
+
+   // Decode function mask
+   refcount<RealRange> rr(new RealRange(RangeRef(new Range(Regular, typeBW))));
    std::deque<bit_lattice> bv;
    if(fm.sign != bit_lattice::U)
    {
@@ -274,18 +313,18 @@ void function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
       rr->setSign(RangeRef(new Range(Regular, 1, sign, sign)));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, std::string("---Floating-point sign fixed as ") + (sign == 0 ? "positive" : "negative"));
    }
-   if(fm.exp_u - fm.exp_l < (retBW == 64 ? 2047 : 255))
+   if((fm.exp_u - fm.exp_l) < (typeBW == 64 ? 2047 : 255))
    {
-      const auto range_fix = retBW == 64 ? 1023 : 127;
-      RangeRef e_range(new Range(Regular, retBW == 64 ? 11 : 8, fm.exp_l + range_fix, fm.exp_u + range_fix));
+      const auto range_fix = typeBW == 64 ? 1023 : 127;
+      RangeRef e_range(new Range(Regular, typeBW == 64 ? 11 : 8, fm.exp_l + range_fix, fm.exp_u + range_fix));
       rr->setExponent(e_range);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point exponent restricted range " + e_range->sub(RangeRef(retBW == 64 ? new Range(Regular, 11, 1023, 1023) : new Range(Regular, 8, 127, 127)))->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point exponent restricted range " + e_range->sub(RangeRef(typeBW == 64 ? new Range(Regular, 11, 1023, 1023) : new Range(Regular, 8, 127, 127)))->ToString());
    }
-   if(fm.m_bits < (retBW == 64 ? 52 : 23))
+   if(fm.m_bits < (typeBW == 64 ? 52 : 23))
    {
-      const auto sig_mask = static_cast<int64_t>(UINT64_MAX << ((retBW == 64 ? 52 : 23) - fm.m_bits));
-      rr->setSignificand(RangeRef(new Range(Anti, static_cast<Range::bw_t>((retBW == 64 ? 52 : 23)), sig_mask + 1, -1)));
-      bv = create_bitstring_from_constant(sig_mask, retBW, false);
+      const auto sig_mask = static_cast<int64_t>(UINT64_MAX << ((typeBW == 64 ? 52 : 23) - fm.m_bits));
+      rr->setSignificand(RangeRef(new Range(Anti, static_cast<Range::bw_t>((typeBW == 64 ? 52 : 23)), sig_mask + 1, -1)));
+      bv = create_bitstring_from_constant(sig_mask, typeBW, false);
       for(auto& b : bv)
       {
          if(b == bit_lattice::ONE)
@@ -299,33 +338,32 @@ void function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point significand bitwidth set to " + STR(+fm.m_bits));
    }
-   if(rr->isFullSet())
-   {
-      return;
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   const auto bv_str = bitstring_to_string(bv);
-   fd->bit_values = bv_str;
-   fd->range = RangeRef(rr->clone());
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Floating-point bounds set to " + fd->range->ToString() + "<" + fd->bit_values + "> on the following: ");
 
-   const auto f_args = fd->list_of_args;
+   // Skip if function mask is useless
+   if(rr->isFullSet() && bv.empty())
+   {
+      return false;
+   }
+   const auto bv_str = bitstring_to_string(bv);
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Floating-point bounds set to " + rr->ToString() + "<" + bv_str + "> on the following: ");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   for(const auto parmNode : f_args)
+   for(const auto& parmNode : maskParms)
    {
       auto* parm = GetPointer<parm_decl>(GET_NODE(parmNode));
-      const auto parmBW = tree_helper::Size(GET_NODE(parmNode));
-      if(GET_NODE(parm->type)->get_kind() != real_type_K || parmBW != retBW)
-      {
-         continue;
-      }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + GET_CONST_NODE(parm->type)->get_kind_text() + "<" + STR(parmBW) + "> " + GetPointer<const identifier_node>(GET_CONST_NODE(parm->name))->strg);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter " + GET_CONST_NODE(parm->type)->get_kind_text() + "<" + STR(typeBW) + "> " + GetPointer<const identifier_node>(GET_CONST_NODE(parm->name))->strg);
       parm->bit_values = bv_str;
       parm->range = RangeRef(rr->clone());
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Return value " + retType->get_kind_text() + "<" + STR(retBW) + ">");
+   if(retMask)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Return value " + retType->get_kind_text() + "<" + STR(typeBW) + ">");
+      fd->bit_values = bv_str;
+      fd->range = RangeRef(rr->clone());
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   return true;
 }
 
 DesignFlowStep_Status function_parm_mask::Exec()
@@ -383,7 +421,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function " + fname + " has no body, skipping...");
                      continue;
                   }
-                  auto fd = nameToFunc.at(fname);
+                  auto* fd = nameToFunc.at(fname);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                  "Parameter mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
                   const auto f_args = fd->list_of_args;
@@ -453,6 +491,19 @@ DesignFlowStep_Status function_parm_mask::Exec()
       }
    }
 
+   const auto maskAll = funcMasks.find("@");
+   if(maskAll != funcMasks.end())
+   {
+      const auto mask = maskAll->second;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Global full function mask required");
+      for(const auto& nameFunc : nameToFunc)
+      {
+         THROW_ASSERT(nameFunc.second, "");
+         modified |= fullFunctionMask(nameFunc.second, mask);
+      }
+      funcMasks.erase(maskAll);
+   }
+   
    for(const auto& fm : funcMasks)
    {
       const auto f = nameToFunc.find(fm.first);
@@ -460,7 +511,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
       {
          THROW_ERROR("Required function not found: " + fm.first);
       }
-      fullFunctionMask(f->second, fm.second);
+      modified |= fullFunctionMask(f->second, fm.second);
    }
 
    executed = true;
