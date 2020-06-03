@@ -276,7 +276,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "#endif\n");
    PP(os, "\n");
    PP(os, "\n");
-   PP(os, "#define SIMULATION_MAX " + STR(2*parameters->getOption<int>(OPT_max_sim_cycles)) + "ULL\n\n");
+   PP(os, "#define SIMULATION_MAX " + STR(2*parameters->getOption<long long int>(OPT_max_sim_cycles)) + "ULL\n\n");
    PP(os, "static vluint64_t CLOCK_PERIOD = 1000*" + boost::lexical_cast<std::string>(target_period) + ";\n");
    PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");
@@ -318,7 +318,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "     cycleCounter++;\n");
    PP(os, "   }\n");
    PP(os, "if(cycleCounter>=SIMULATION_MAX)\n");
-   PP(os, "  std::cerr << \"Simulation not completed into " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + " cycles\\n\";\n");
+   PP(os, "  std::cerr << \"Simulation not completed into " + STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + " cycles\\n\";\n");
    PP(os, "#if VM_TRACE\n");
    PP(os, "   if (tfp) tfp->dump (main_time);\n");
    PP(os, "#endif\n");
@@ -1544,7 +1544,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
 
    writer->write("`timescale 1ns / 1ps\n");
    writer->write_comment("CONSTANTS DECLARATION\n");
-   writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
+   writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " + STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + "\n\n");
    std::string half_target_period_string = STR(target_period / 2);
    // If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
    if(half_target_period_string.find(".") == std::string::npos)
