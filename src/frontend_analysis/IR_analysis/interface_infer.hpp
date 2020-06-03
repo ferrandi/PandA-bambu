@@ -87,13 +87,13 @@ class interface_infer : public FunctionFrontendFlowStep
                               bool commonRWSignature);
 
    void create_resource_Read_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, unsigned n_resources);
-   void create_resource_Write_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize, unsigned n_resources);
+   void create_resource_Write_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize, unsigned n_resources, bool is_real);
    void create_resource_array(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, unsigned int arraySize,
-                              unsigned n_resources, unsigned alignment);
+                              unsigned n_resources, unsigned alignment, bool is_real);
    void create_resource_m_axi(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& portNameSpecializer, const std::string& interfaceType, unsigned int inputBitWidth,
                               unsigned n_resources, m_axi_type mat);
    void create_resource(const std::vector<std::string>& operationsR, const std::vector<std::string>& operationsW, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool isDiffSize, const std::string& fname,
-                        unsigned n_resources, unsigned alignment);
+                        unsigned n_resources, unsigned alignment, bool isReal);
 
    void ComputeResourcesAlignment(unsigned& n_resources, unsigned& alignment, unsigned int inputBitWidth, bool is_acType, bool is_signed, bool is_fixed);
 

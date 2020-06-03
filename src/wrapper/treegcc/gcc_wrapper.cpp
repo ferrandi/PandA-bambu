@@ -51,6 +51,8 @@
 #include "config_ARM_RTL_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGINCPP.hpp"
+#include "config_CLANG_PLUGIN_DIR.hpp"
+#include "config_GCC_PLUGIN_DIR.hpp"
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
@@ -230,8 +232,6 @@
 #include "config_I386_LLVM9_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
 #include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
-#include "config_GCC_PLUGIN_DIR.hpp"
-#include "config_CLANG_PLUGIN_DIR.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
 #include "config_SPARC_ELF_CPP.hpp"
 #include "config_SPARC_ELF_GCC.hpp"
@@ -437,6 +437,75 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          if(compiler.is_clang)
          {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
+            std::string extern_symbols;
+            std::vector<std::string> xml_files;
+            if(Param->isOption(OPT_xml_memory_allocation))
+            {
+               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
+            }
+            else
+            {
+               /// load xml memory allocation file
+               auto source_file = real_file_name;
+               const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+               std::string leaf_name = GetLeafFileName(source_file);
+               auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
+               if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+               {
+                  xml_files.push_back(XMLfilename);
+               }
+            }
+            for(auto XMLfilename: xml_files)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+               XMLDomParser parser(XMLfilename);
+               parser.Exec();
+               if(parser)
+               {
+                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+                  const xml_node::node_list list = node->get_children();
+                  for(const auto& l : list)
+                  {
+                     const xml_element* child = GetPointer<xml_element>(l);
+                     if(!child)
+                        continue;
+                     if(child->get_name() == "memory_allocation")
+                     {
+                        for(const auto& it : child->get_children())
+                        {
+                           const xml_element* mem_node = GetPointer<xml_element>(it);
+                           if(!mem_node)
+                              continue;
+                           if(mem_node->get_name() == "object")
+                           {
+                              std::string is_internal;
+                              if(!CE_XVM(is_internal, mem_node))
+                                 THROW_ERROR("expected the is_internal attribute");
+                              LOAD_XVM(is_internal, mem_node);
+                              if(is_internal == "T")
+                              {
+                              }
+                              else if(is_internal == "F")
+                              {
+                                 if(!CE_XVM(name, mem_node))
+                                    THROW_ERROR("expected the name attribute");
+                                 std::string name;
+                                 LOAD_XVM(name, mem_node);
+                                 extern_symbols = extern_symbols + name + ",";
+                              }
+                              else
+                                 THROW_ERROR("unexpected value for is_internal attribute");
+                           }
+                        }
+                     }
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+            }
+            if(!extern_symbols.empty())
+            {
+               command += " -mllvm -panda-ESL="+ extern_symbols;
+            }
             command += " -mllvm -panda-Internalize";
             if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
@@ -735,6 +804,73 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             command += " -load=" + renamed_plugin;
 #endif
             command += " -panda-TFN=" + fname + " " + temporary_file_o_bc;
+            std::string extern_symbols;
+            std::vector<std::string> xml_files;
+            if(Param->isOption(OPT_xml_memory_allocation))
+            {
+               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
+            }
+            else
+            {
+               for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(output_temporary_directory), {}))
+               {
+                  auto source_file = GetLeafFileName(entry.path().string());
+                  if(source_file.find(".memory_allocation.xml") != std::string::npos)
+                     xml_files.push_back(source_file);
+               }
+            }
+            for(auto XMLfilename: xml_files)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+               XMLDomParser parser(XMLfilename);
+               parser.Exec();
+               if(parser)
+               {
+                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+                  const xml_node::node_list list = node->get_children();
+                  for(const auto& l : list)
+                  {
+                     const xml_element* child = GetPointer<xml_element>(l);
+                     if(!child)
+                        continue;
+                     if(child->get_name() == "memory_allocation")
+                     {
+                        for(const auto& it : child->get_children())
+                        {
+                           const xml_element* mem_node = GetPointer<xml_element>(it);
+                           if(!mem_node)
+                              continue;
+                           if(mem_node->get_name() == "object")
+                           {
+                              std::string is_internal;
+                              if(!CE_XVM(is_internal, mem_node))
+                                 THROW_ERROR("expected the is_internal attribute");
+                              LOAD_XVM(is_internal, mem_node);
+                              if(is_internal == "T")
+                              {
+                              }
+                              else if(is_internal == "F")
+                              {
+                                 if(!CE_XVM(name, mem_node))
+                                    THROW_ERROR("expected the name attribute");
+                                 std::string name;
+                                 LOAD_XVM(name, mem_node);
+                                 extern_symbols = extern_symbols + name + ",";
+                              }
+                              else
+                                 THROW_ERROR("unexpected value for is_internal attribute");
+                           }
+                        }
+                     }
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+            }
+            if(!extern_symbols.empty())
+            {
+               command += " -mllvm -panda-ESL="+ extern_symbols;
+            }
+
             if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
                command += " -panda-Internalize";
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
@@ -1736,7 +1872,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       preferred_compiler = compiler_target;
    }
    const std::string gcc_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(GCC_PLUGIN_DIR)) + "/";
-   const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir)+"/../clang_plugin" : STR(CLANG_PLUGIN_DIR)) + "/";
+   const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) + "/../clang_plugin" : STR(CLANG_PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
 #endif
 
@@ -2212,7 +2348,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM4_LINK_EXE;
       compiler.llvm_opt = I386_LLVM4_OPT_EXE;
-
    }
 #endif
 
@@ -2240,7 +2375,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM5_LINK_EXE;
       compiler.llvm_opt = I386_LLVM5_OPT_EXE;
-
    }
 #endif
 
@@ -2268,7 +2402,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM6_LINK_EXE;
       compiler.llvm_opt = I386_LLVM6_OPT_EXE;
-
    }
 #endif
 
@@ -2296,7 +2429,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM7_LINK_EXE;
       compiler.llvm_opt = I386_LLVM7_OPT_EXE;
-
    }
 #endif
 
@@ -2324,7 +2456,6 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
       compiler.llvm_link = I386_LLVM8_LINK_EXE;
       compiler.llvm_opt = I386_LLVM8_OPT_EXE;
-
    }
 #endif
 

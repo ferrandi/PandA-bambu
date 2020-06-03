@@ -86,5 +86,16 @@ class MemoryInitializationWriter : public MemoryInitializationWriterBase
     * Process an element
     */
    void Process(const std::string& content) override;
+
+   /**
+    * In this case the function does not activate anything
+    */
+   void ActivateFileInit(const std::string& ) override {}
+
+   /**
+    * do nothing
+    */
+   void FinalizeFileInit() override {}
+
 };
 #endif

@@ -73,6 +73,7 @@
 #include "memory_initialization_c_writer.hpp"
 #include "testbench_generation.hpp"
 #include "testbench_generation_base_step.hpp"
+#include "testbench_generation_constants.hpp"
 
 /// STD include
 #include <string>
@@ -82,6 +83,7 @@
 #include "custom_set.hpp"
 #include <list>
 #include <vector>
+#include <boost/filesystem/operations.hpp>
 
 /// technology/physical_library include
 #include "technology_node.hpp"
@@ -931,105 +933,143 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
             }
             else
             {
-               for(unsigned int i = 0; i < splitted.size(); i++)
+               if(is_memory && test_v.size() > DATA_SIZE_THRESHOLD)
                {
-                  THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
-                  unsigned int base_type = tree_helper::get_type_index(TM, l);
-
-                  std::string initial_string = splitted[i];
-                  std::string binary_string;
-                  if(is_memory)
+                  std::string param_name = param;
+                  boost::replace_all(param_name, "@", "_");
+                  auto output_parameter_initialization_filename = Param->getOption<std::string>(OPT_output_directory) + "/simulation/";
+                  unsigned int progressive = 0;
+                  std::string candidate_out_file_name;
+                  do
                   {
-                     printed_bytes += WriteBinaryMemoryInit(initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
+                     candidate_out_file_name = output_parameter_initialization_filename + param_name + "_" + std::to_string(progressive++) + ".data";
+                  } while (boost::filesystem::exists(candidate_out_file_name));
+                  output_parameter_initialization_filename = candidate_out_file_name;
+                  std::ofstream parameter_init_file(output_parameter_initialization_filename.c_str());
+                  for(unsigned int i = 0; i < splitted.size(); i++)
+                  {
+                     THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
+                     std::string initial_string = splitted[i];
+                     printed_bytes += WriteBinaryMemoryInitToFile(parameter_init_file,initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
                   }
-                  else
+                  indented_output_stream->Append("{\n");
+                  indented_output_stream->Append("FILE * __bambu_testbench_fp_local_copy;\n");
+                  indented_output_stream->Append("char * line = NULL;\n");
+                  indented_output_stream->Append("size_t len = 0;\n");
+                  indented_output_stream->Append("ssize_t read;\n");
+                  indented_output_stream->Append("__bambu_testbench_fp_local_copy = fopen(\"" + output_parameter_initialization_filename + "\", \"r\");\n");
+                  indented_output_stream->Append("if (__bambu_testbench_fp_local_copy == NULL)\n");
+                  indented_output_stream->Append("   exit(1);\n");
+                  indented_output_stream->Append("while ((read = getline(&line, &len, __bambu_testbench_fp_local_copy)) != -1) {\n");
+                  indented_output_stream->Append("   fprintf(__bambu_testbench_fp, \"%s\", line);\n");
+                  indented_output_stream->Append("}\n");
+                  indented_output_stream->Append("fclose(__bambu_testbench_fp_local_copy);\n");
+                  indented_output_stream->Append("if (line)\n");
+                  indented_output_stream->Append("   free(line);\n");
+                  indented_output_stream->Append("}\n");
+               }
+               else
+               {
+                  for(unsigned int i = 0; i < splitted.size(); i++)
                   {
-                     std::string init_value_copy = initial_string;
-                     boost::replace_all(init_value_copy, "\\", "\\\\");
-                     boost::replace_all(init_value_copy, "\n", "");
-                     boost::replace_all(init_value_copy, "\"", "");
-                     if(output_level > OUTPUT_LEVEL_MINIMUM)
-                        indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param /*+ " value: " + init_value_copy */ + "\\n\");\n");
-                     tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-                     unsigned int ptd_base_type = 0;
-                     if(pt_node->get_kind() == pointer_type_K)
-                        ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-                     else if(pt_node->get_kind() == reference_type_K)
-                        ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
-                     else
-                        THROW_ERROR("A pointer type is expected");
-                     tree_nodeRef ptd_base_type_node;
-                     if(pt_node->get_kind() == pointer_type_K)
-                        ptd_base_type_node = GET_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-                     else if(pt_node->get_kind() == reference_type_K)
-                        ptd_base_type_node = GET_NODE(GetPointer<reference_type>(pt_node)->refd);
-                     else
-                        THROW_ERROR("A pointer type is expected");
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed base type is " + ptd_base_type_node->get_kind_text());
-                     unsigned int data_bitsize = tree_helper::size(TM, ptd_base_type);
-                     if(behavioral_helper->is_a_struct(ptd_base_type))
-                     {
-                        std::vector<std::string> splitted_fields = SplitString(initial_string, "|");
-                        const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
-                        size_t n_values = splitted_fields.size();
-                        unsigned int index = 0;
-                        for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
-                        {
-                           const tree_nodeConstRef field_type = *it;
-                           unsigned int field_size = tree_helper::Size(field_type);
-                           if(index < n_values)
-                           {
-                              binary_string = ConvertInBinary(splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
-                           }
-                           else
-                           {
-                              binary_string = ConvertInBinary("0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
-                           }
+                     THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
+                     std::string initial_string = splitted[i];
 
-                           printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
+                     if(is_memory)
+                     {
+                        printed_bytes += WriteBinaryMemoryInit(initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
+                     }
+                     else
+                     {
+                        unsigned int base_type = tree_helper::get_type_index(TM, l);
+                        std::string binary_string;
+                        std::string init_value_copy = initial_string;
+                        boost::replace_all(init_value_copy, "\\", "\\\\");
+                        boost::replace_all(init_value_copy, "\n", "");
+                        boost::replace_all(init_value_copy, "\"", "");
+                        if(output_level > OUTPUT_LEVEL_MINIMUM)
+                           indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable " + param /*+ " value: " + init_value_copy */ + "\\n\");\n");
+                        tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
+                        unsigned int ptd_base_type = 0;
+                        if(pt_node->get_kind() == pointer_type_K)
+                           ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+                        else if(pt_node->get_kind() == reference_type_K)
+                           ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
+                        else
+                           THROW_ERROR("A pointer type is expected");
+                        tree_nodeRef ptd_base_type_node;
+                        if(pt_node->get_kind() == pointer_type_K)
+                           ptd_base_type_node = GET_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+                        else if(pt_node->get_kind() == reference_type_K)
+                           ptd_base_type_node = GET_NODE(GetPointer<reference_type>(pt_node)->refd);
+                        else
+                           THROW_ERROR("A pointer type is expected");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Pointed base type is " + ptd_base_type_node->get_kind_text());
+                        unsigned int data_bitsize = tree_helper::size(TM, ptd_base_type);
+                        if(behavioral_helper->is_a_struct(ptd_base_type))
+                        {
+                           std::vector<std::string> splitted_fields = SplitString(initial_string, "|");
+                           const auto fields = tree_helper::CGetFieldTypes(TM->CGetTreeNode(ptd_base_type));
+                           size_t n_values = splitted_fields.size();
+                           unsigned int index = 0;
+                           for(auto it = fields.begin(); it != fields.end(); ++it, ++index)
+                           {
+                              const tree_nodeConstRef field_type = *it;
+                              unsigned int field_size = tree_helper::Size(field_type);
+                              if(index < n_values)
+                              {
+                                 binary_string = ConvertInBinary(splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                              }
+                              else
+                              {
+                                 binary_string = ConvertInBinary("0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                              }
+
+                              printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
+                           }
                         }
-                     }
-                     else if(behavioral_helper->is_an_union(ptd_base_type))
-                     {
-                        unsigned int max_bitsize_field = 0;
-                        tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
-                        binary_string = ConvertInBinary("0", max_bitsize_field, false, false);
-                        printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
-                     }
-                     else if(behavioral_helper->is_an_array(ptd_base_type))
-                     {
-                        unsigned int elmts_type = behavioral_helper->GetElements(ptd_base_type);
-
-                        while(behavioral_helper->is_an_array(elmts_type))
-                           elmts_type = behavioral_helper->GetElements(elmts_type);
-
-                        data_bitsize = tree_helper::get_array_data_bitsize(TM, ptd_base_type);
-
-                        unsigned int num_elements = 1;
-                        if(splitted.size() == 1)
-                           num_elements = tree_helper::get_array_num_elements(TM, ptd_base_type);
-
-                        indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
-
-                        binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
-                        printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
-                        indented_output_stream->Append("}\n");
-                     }
-                     else
-                     {
-                        binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
-
-                        if(data_bitsize == 1)
+                        else if(behavioral_helper->is_an_union(ptd_base_type))
                         {
-                           data_bitsize = 8;
-                           binary_string = "0000000" + binary_string;
+                           unsigned int max_bitsize_field = 0;
+                           tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
+                           binary_string = ConvertInBinary("0", max_bitsize_field, false, false);
+                           printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
+                        }
+                        else if(behavioral_helper->is_an_array(ptd_base_type))
+                        {
+                           unsigned int elmts_type = behavioral_helper->GetElements(ptd_base_type);
+
+                           while(behavioral_helper->is_an_array(elmts_type))
+                              elmts_type = behavioral_helper->GetElements(elmts_type);
+
+                           data_bitsize = tree_helper::get_array_data_bitsize(TM, ptd_base_type);
+
+                           unsigned int num_elements = 1;
+                           if(splitted.size() == 1)
+                              num_elements = tree_helper::get_array_num_elements(TM, ptd_base_type);
+
+                           indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
+
+                           binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
+                           printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                           indented_output_stream->Append("}\n");
                         }
                         else
                         {
-                           THROW_ASSERT(data_bitsize % 8 == 0, "unexpected case");
-                        }
+                           binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
 
-                        printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                           if(data_bitsize == 1)
+                           {
+                              data_bitsize = 8;
+                              binary_string = "0000000" + binary_string;
+                           }
+                           else
+                           {
+                              THROW_ASSERT(data_bitsize % 8 == 0, "unexpected case");
+                           }
+
+                           printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
+                        }
                      }
                   }
                }
@@ -1227,6 +1267,48 @@ size_t HLSCWriter::WriteBinaryMemoryInit(const std::string& binary_string, const
    }
    return printed_bytes;
 }
+
+size_t HLSCWriter::WriteBinaryMemoryInitToFile(std::ofstream &parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset)
+{
+   size_t printed_bytes = 0;
+   std::string local_binary_string;
+   size_t local_data_bitsize;
+   if(bits_offset.size())
+   {
+      if(static_cast<int>(data_bitsize) - 8 + static_cast<int>(bits_offset.size()) >= 0)
+      {
+         local_data_bitsize = data_bitsize - (8 - bits_offset.size());
+         parameter_init_file << "m" + binary_string.substr(data_bitsize - (8 - bits_offset.size()), 8 - bits_offset.size()) + bits_offset + "\n";
+         local_binary_string = binary_string.substr(0, local_data_bitsize);
+         bits_offset = "";
+         printed_bytes++;
+      }
+      else
+      {
+         local_data_bitsize = 0;
+         bits_offset = binary_string + bits_offset;
+      }
+   }
+   else
+   {
+      local_binary_string = binary_string;
+      local_data_bitsize = data_bitsize;
+   }
+   for(unsigned int base_index = 0; base_index < local_data_bitsize; base_index = base_index + 8)
+   {
+      if((static_cast<int>(local_data_bitsize) - 8 - static_cast<int>(base_index)) >= 0)
+      {
+         parameter_init_file << "m" + local_binary_string.substr(local_data_bitsize - 8 - base_index, 8) + "\n";
+         printed_bytes++;
+      }
+      else
+      {
+         bits_offset = local_binary_string.substr(0, local_data_bitsize - base_index);
+      }
+   }
+   return printed_bytes;
+}
+
 
 bool HLSCWriter::is_all_8zeros(const std::string& str)
 {

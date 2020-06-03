@@ -9,6 +9,12 @@ AC_DEFINE(HAVE_L2_NAME, 1, "Define if verilator has the --l2-name option")
 else
 AC_DEFINE(HAVE_L2_NAME, 0, "Define if verilator has the --l2-name option")
 fi
+has_support_threads=$(verilator --threads 2 2>&1 | head -n1 | grep 'Invalid Option')
+if test "$has_support_threads"x == x; then
+AC_DEFINE(HAVE_THREADS, 1, "Define if verilator has the --threads option")
+else
+AC_DEFINE(HAVE_THREADS, 0, "Define if verilator has the --threads option")
+fi
 AC_PROVIDE([$0])dnl
 ])
 

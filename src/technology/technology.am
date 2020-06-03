@@ -100,7 +100,7 @@ endif
 technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP2C70F896C6-R.data \
 technology/target_device/FPGA/EP4SGX530KH40C2.data \
 technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
-technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
+technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
 technology/target_device/FPGA/xc7a100t-1csg324-VVD.data\
 technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
 technology/target_device/FPGA/LFE335EA8FN484C.data \
@@ -112,7 +112,7 @@ FPGA_device.cpp : technology/target_device/FPGA/xc4vlx100-10ff1513.data technolo
 technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP2C70F896C6-R.data \
 technology/target_device/FPGA/EP4SGX530KH40C2.data \
 technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
-technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
+technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
 technology/target_device/FPGA/xc7a100t-1csg324-VVD.data\
 technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
 technology/target_device/FPGA/LFE335EA8FN484C.data \
@@ -143,6 +143,9 @@ technology/target_device/FPGA/xc7z020-1clg484.data: $(top_srcdir)/etc/devices/Xi
 
 technology/target_device/FPGA/xc7z020-1clg484-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml technology/target_device/FPGA/xc7z020-1clg484-VVD.data
+
+technology/target_device/FPGA/xc7z045-2ffg900-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml
+	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml technology/target_device/FPGA/xc7z045-2ffg900-VVD.data
 
 technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml
 	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data

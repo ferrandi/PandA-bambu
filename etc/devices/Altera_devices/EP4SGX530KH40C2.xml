@@ -1840,7 +1840,7 @@
       </cell>
       <cell>
         <name>ASSIGN_REAL_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-16T10:48:12</characterization_timestamp>
@@ -1848,7 +1848,7 @@
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-16T10:48:13</characterization_timestamp>
@@ -1864,7 +1864,7 @@
       </cell>
       <cell>
         <name>ASSIGN_UNSIGNED_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-16T10:48:12</characterization_timestamp>
@@ -1872,7 +1872,7 @@
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-16T10:48:12</characterization_timestamp>
@@ -3816,7 +3816,7 @@
       </cell>
       <cell>
         <name>addr_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-16T11:21:21</characterization_timestamp>
@@ -3824,7 +3824,7 @@
       </cell>
       <cell>
         <name>assert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-16T11:21:25</characterization_timestamp>
@@ -6636,7 +6636,7 @@
       </cell>
       <cell>
         <name>fp_view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-16T13:48:44</characterization_timestamp>
@@ -8061,31 +8061,73 @@
         <name>mult_expr_FU_12_12_16_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="12 12 16 0"/>
-        <characterization_timestamp>2017-02-20T23:47:59</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="0" execution_time="3.8590668776289894"/>
+        <characterization_timestamp>2020-05-27T19:21:43</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="0" execution_time="3.839"/>
       </cell>
       <cell>
         <name>mult_expr_FU_12_12_16_1</name>
         <attribute name="area" value_type="float64">23</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">23</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="12 12 16 1"/>
-        <characterization_timestamp>2017-02-20T23:48:01</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.3730225655209631"/>
+        <characterization_timestamp>2020-05-27T19:21:42</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.3530000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_12_12_16_2</name>
         <attribute name="area" value_type="float64">25</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">25</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="12 12 16 2"/>
-        <characterization_timestamp>2017-02-20T23:47:56</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5490046136983509"/>
+        <characterization_timestamp>2020-05-27T19:21:37</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5289999999999999"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_12_12_16_3</name>
+        <attribute name="area" value_type="float64">46</attribute>
+        <attribute name="REGISTERS" value_type="float64">84</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="12 12 16 3"/>
+        <characterization_timestamp>2020-05-27T19:21:43</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.3399999999999999"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_12_12_16_4</name>
+        <attribute name="area" value_type="float64">60</attribute>
+        <attribute name="REGISTERS" value_type="float64">108</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="12 12 16 4"/>
+        <characterization_timestamp>2020-05-27T19:21:47</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.351"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_12_12_16_5</name>
+        <attribute name="area" value_type="float64">69</attribute>
+        <attribute name="REGISTERS" value_type="float64">132</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="12 12 16 5"/>
+        <characterization_timestamp>2020-05-27T19:21:36</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.3450000000000002"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_12_12_16_6</name>
+        <attribute name="area" value_type="float64">80</attribute>
+        <attribute name="REGISTERS" value_type="float64">156</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="12 12 16 6"/>
+        <characterization_timestamp>2020-05-27T19:21:42</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.351"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_12_12_16_7</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">180</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="12 12 16 7"/>
+        <characterization_timestamp>2020-05-27T19:21:48</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.3530000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_16_0_16_0</name>
@@ -8121,61 +8163,100 @@
         <name>mult_expr_FU_16_16_16_0</name>
         <attribute name="area" value_type="float64">28</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">28</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="16 16 16 0"/>
-        <characterization_timestamp>2017-02-20T23:48:00</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="0" execution_time="3.6520341830399534"/>
+        <characterization_timestamp>2020-05-27T19:21:49</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="0" execution_time="3.6320000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_16_16_16_1</name>
         <attribute name="area" value_type="float64">29</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">29</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="16 16 16 1"/>
-        <characterization_timestamp>2017-02-20T23:48:01</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1750063500127004"/>
+        <characterization_timestamp>2020-05-27T19:21:46</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1549999999999998"/>
       </cell>
       <cell>
         <name>mult_expr_FU_16_16_16_2</name>
         <attribute name="area" value_type="float64">28</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">28</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="16 16 16 2"/>
-        <characterization_timestamp>2017-02-20T23:47:56</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:21:33</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
       </cell>
       <cell>
         <name>mult_expr_FU_18_18_32_0</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">54</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="18 18 32 0"/>
-        <characterization_timestamp>2017-02-20T23:48:02</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="0" execution_time="3.5679880115602813"/>
+        <characterization_timestamp>2020-05-27T19:21:43</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="0" execution_time="3.548"/>
       </cell>
       <cell>
         <name>mult_expr_FU_18_18_32_1</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">54</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="18 18 32 1"/>
-        <characterization_timestamp>2017-02-20T23:48:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0059819039889377"/>
+        <characterization_timestamp>2020-05-27T19:21:46</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.9860000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_18_18_32_2</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">54</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="18 18 32 2"/>
-        <characterization_timestamp>2017-02-20T23:52:28</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:21:34</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_18_18_32_3</name>
+        <attribute name="area" value_type="float64">70</attribute>
+        <attribute name="REGISTERS" value_type="float64">126</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="18 18 32 3"/>
+        <characterization_timestamp>2020-05-27T19:21:51</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.9969999999999999"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_18_18_32_4</name>
+        <attribute name="area" value_type="float64">81</attribute>
+        <attribute name="REGISTERS" value_type="float64">162</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="18 18 32 4"/>
+        <characterization_timestamp>2020-05-27T19:21:43</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0139999999999998"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_18_18_32_5</name>
+        <attribute name="area" value_type="float64">100</attribute>
+        <attribute name="REGISTERS" value_type="float64">198</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="18 18 32 5"/>
+        <characterization_timestamp>2020-05-27T19:21:44</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_18_18_32_6</name>
+        <attribute name="area" value_type="float64">125</attribute>
+        <attribute name="REGISTERS" value_type="float64">234</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="18 18 32 6"/>
+        <characterization_timestamp>2020-05-27T19:21:46</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.9980000000000002"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_18_18_32_7</name>
+        <attribute name="area" value_type="float64">148</attribute>
+        <attribute name="REGISTERS" value_type="float64">270</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="mult_expr_FU" parameter="18 18 32 7"/>
+        <characterization_timestamp>2020-05-27T19:21:44</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.9910000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_1_0_1_0</name>
@@ -8191,10 +8272,9 @@
         <name>mult_expr_FU_1_1_1_0</name>
         <attribute name="area" value_type="float64">2</attribute>
         <attribute name="REGISTERS" value_type="float64">3</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="1 1 1 0"/>
-        <characterization_timestamp>2017-02-20T23:52:12</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:1" pipe_parameters="0" execution_time="0.62400159744408945"/>
+        <characterization_timestamp>2020-05-27T19:21:30</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:1" pipe_parameters="0" execution_time="0.60399999999999998"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_0_32_0</name>
@@ -8288,111 +8368,145 @@
         <name>mult_expr_FU_32_32_32_0</name>
         <attribute name="area" value_type="float64">56</attribute>
         <attribute name="REGISTERS" value_type="float64">96</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">56</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 0"/>
-        <characterization_timestamp>2017-02-20T23:52:44</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="0" execution_time="4.7890426703701934"/>
+        <characterization_timestamp>2020-05-27T19:21:55</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="0" execution_time="4.7690000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_1</name>
         <attribute name="area" value_type="float64">54</attribute>
         <attribute name="REGISTERS" value_type="float64">96</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">54</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 1"/>
-        <characterization_timestamp>2017-02-20T23:53:01</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8780733731482195"/>
+        <characterization_timestamp>2020-05-27T19:21:58</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8580000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_2</name>
         <attribute name="area" value_type="float64">63</attribute>
         <attribute name="REGISTERS" value_type="float64">96</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">63</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 2"/>
-        <characterization_timestamp>2017-02-20T23:52:39</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:21:42</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_3</name>
         <attribute name="area" value_type="float64">126</attribute>
         <attribute name="REGISTERS" value_type="float64">224</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">126</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 3"/>
-        <characterization_timestamp>2017-02-20T23:52:51</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="4.0520280400340374"/>
+        <characterization_timestamp>2020-05-27T19:21:55</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="4.032"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_4</name>
         <attribute name="area" value_type="float64">150</attribute>
         <attribute name="REGISTERS" value_type="float64">288</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">150</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 4"/>
-        <characterization_timestamp>2017-02-20T23:53:06</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0410571405479674"/>
+        <characterization_timestamp>2020-05-27T19:21:58</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0209999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_5</name>
         <attribute name="area" value_type="float64">180</attribute>
         <attribute name="REGISTERS" value_type="float64">352</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">180</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 5"/>
-        <characterization_timestamp>2017-02-20T23:53:12</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="4.0420371867421183"/>
+        <characterization_timestamp>2020-05-27T19:25:10</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="4.0220000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_6</name>
         <attribute name="area" value_type="float64">222</attribute>
         <attribute name="REGISTERS" value_type="float64">416</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">222</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 6"/>
-        <characterization_timestamp>2017-02-20T23:57:07</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="4.0549856048011028"/>
+        <characterization_timestamp>2020-05-27T19:25:16</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="4.0350000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_32_32_32_7</name>
         <attribute name="area" value_type="float64">267</attribute>
         <attribute name="REGISTERS" value_type="float64">480</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">267</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="32 32 32 7"/>
-        <characterization_timestamp>2017-02-20T23:57:21</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="4.0729879439556855"/>
+        <characterization_timestamp>2020-05-27T19:25:17</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="4.0529999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_36_36_64_0</name>
         <attribute name="area" value_type="float64">60</attribute>
         <attribute name="REGISTERS" value_type="float64">108</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">60</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="36 36 64 0"/>
-        <characterization_timestamp>2017-02-20T23:57:25</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="0" execution_time="4.8749573441232394"/>
+        <characterization_timestamp>2020-05-27T19:25:20</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="0" execution_time="4.8550000000000004"/>
       </cell>
       <cell>
         <name>mult_expr_FU_36_36_64_1</name>
         <attribute name="area" value_type="float64">62</attribute>
         <attribute name="REGISTERS" value_type="float64">108</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">62</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="36 36 64 1"/>
-        <characterization_timestamp>2017-02-20T23:57:26</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8060439978686151"/>
+        <characterization_timestamp>2020-05-27T19:25:17</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.786"/>
       </cell>
       <cell>
         <name>mult_expr_FU_36_36_64_2</name>
         <attribute name="area" value_type="float64">60</attribute>
         <attribute name="REGISTERS" value_type="float64">108</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">60</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="mult_expr_FU" parameter="36 36 64 2"/>
-        <characterization_timestamp>2017-02-20T23:57:23</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:25:15</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_36_36_64_3</name>
+        <attribute name="area" value_type="float64">149</attribute>
+        <attribute name="REGISTERS" value_type="float64">252</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="mult_expr_FU" parameter="36 36 64 3"/>
+        <characterization_timestamp>2020-05-27T19:25:25</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="4.0449999999999999"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_36_36_64_4</name>
+        <attribute name="area" value_type="float64">162</attribute>
+        <attribute name="REGISTERS" value_type="float64">324</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="mult_expr_FU" parameter="36 36 64 4"/>
+        <characterization_timestamp>2020-05-27T19:25:30</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0430000000000001"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_36_36_64_5</name>
+        <attribute name="area" value_type="float64">200</attribute>
+        <attribute name="REGISTERS" value_type="float64">396</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="mult_expr_FU" parameter="36 36 64 5"/>
+        <characterization_timestamp>2020-05-27T19:25:33</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="4.0540000000000003"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_36_36_64_6</name>
+        <attribute name="area" value_type="float64">248</attribute>
+        <attribute name="REGISTERS" value_type="float64">468</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="mult_expr_FU" parameter="36 36 64 6"/>
+        <characterization_timestamp>2020-05-27T19:25:31</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="4.0419999999999998"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_36_36_64_7</name>
+        <attribute name="area" value_type="float64">302</attribute>
+        <attribute name="REGISTERS" value_type="float64">540</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="mult_expr_FU" parameter="36 36 64 7"/>
+        <characterization_timestamp>2020-05-27T19:25:37</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="4.0510000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_0_64_0</name>
@@ -8486,81 +8600,73 @@
         <name>mult_expr_FU_64_64_64_0</name>
         <attribute name="area" value_type="float64">130</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 0"/>
-        <characterization_timestamp>2017-02-21T00:00:00</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="0" execution_time="6.8908489525909591"/>
+        <characterization_timestamp>2020-05-27T19:26:47</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="0" execution_time="6.8680000000000003"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_64_64_1</name>
         <attribute name="area" value_type="float64">142</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">142</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 1"/>
-        <characterization_timestamp>2017-02-20T23:59:34</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8969642648376914"/>
+        <characterization_timestamp>2020-05-27T19:26:41</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.9049999999999998"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_64_64_17</name>
         <attribute name="area" value_type="float64">898</attribute>
         <attribute name="REGISTERS" value_type="float64">1484</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">898</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 17"/>
-        <characterization_timestamp>2017-02-20T23:59:58</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="9.3843843843843846"/>
+        <characterization_timestamp>2020-05-27T19:26:40</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="4.7789999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_64_64_2</name>
         <attribute name="area" value_type="float64">140</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">140</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 2"/>
-        <characterization_timestamp>2017-02-21T00:03:51</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.8409832917226807"/>
+        <characterization_timestamp>2020-05-27T19:26:54</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.8069999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_64_64_3</name>
         <attribute name="area" value_type="float64">185</attribute>
         <attribute name="REGISTERS" value_type="float64">320</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">185</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 3"/>
-        <characterization_timestamp>2017-02-21T00:03:38</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.9200313602508823"/>
+        <characterization_timestamp>2020-05-27T19:26:40</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.8999999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_64_64_4</name>
         <attribute name="area" value_type="float64">296</attribute>
         <attribute name="REGISTERS" value_type="float64">448</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">296</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 4"/>
-        <characterization_timestamp>2017-02-21T00:03:36</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.8140279949654832"/>
+        <characterization_timestamp>2020-05-27T19:26:32</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.7930000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_64_64_5</name>
         <attribute name="area" value_type="float64">310</attribute>
         <attribute name="REGISTERS" value_type="float64">576</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">310</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 5"/>
-        <characterization_timestamp>2017-02-21T00:03:51</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.9000039000038997"/>
+        <characterization_timestamp>2020-05-27T19:26:49</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.8799999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_64_64_64_6</name>
         <attribute name="area" value_type="float64">349</attribute>
         <attribute name="REGISTERS" value_type="float64">640</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">349</attribute>
         <attribute name="DSP" value_type="float64">20</attribute>
         <template name="mult_expr_FU" parameter="64 64 64 6"/>
-        <characterization_timestamp>2017-02-21T00:03:38</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.9129754265143215"/>
+        <characterization_timestamp>2020-05-27T19:26:41</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.8820000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_8_0_8_0</name>
@@ -8596,61 +8702,100 @@
         <name>mult_expr_FU_8_8_8_0</name>
         <attribute name="area" value_type="float64">18</attribute>
         <attribute name="REGISTERS" value_type="float64">24</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="mult_expr_FU" parameter="8 8 8 0"/>
-        <characterization_timestamp>2017-02-21T00:03:37</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="0" execution_time="4.049074786411305"/>
+        <characterization_timestamp>2020-05-27T19:25:20</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="0" execution_time="4.0289999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_8_8_8_1</name>
         <attribute name="area" value_type="float64">17</attribute>
         <attribute name="REGISTERS" value_type="float64">24</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="mult_expr_FU" parameter="8 8 8 1"/>
-        <characterization_timestamp>2017-02-21T00:04:08</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.4860210555671753"/>
+        <characterization_timestamp>2020-05-27T19:25:22</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.4660000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_8_8_8_2</name>
         <attribute name="area" value_type="float64">16</attribute>
         <attribute name="REGISTERS" value_type="float64">24</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">16</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="mult_expr_FU" parameter="8 8 8 2"/>
-        <characterization_timestamp>2017-02-21T00:03:49</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:25:14</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
       </cell>
       <cell>
         <name>mult_expr_FU_9_9_16_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">27</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="mult_expr_FU" parameter="9 9 16 0"/>
-        <characterization_timestamp>2017-02-21T00:08:10</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="0" execution_time="4.056959714390036"/>
+        <characterization_timestamp>2020-05-27T19:25:23</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="0" execution_time="4.0369999999999999"/>
       </cell>
       <cell>
         <name>mult_expr_FU_9_9_16_1</name>
         <attribute name="area" value_type="float64">27</attribute>
         <attribute name="REGISTERS" value_type="float64">27</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">27</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="mult_expr_FU" parameter="9 9 16 1"/>
-        <characterization_timestamp>2017-02-21T00:08:05</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.482015390508026"/>
+        <characterization_timestamp>2020-05-27T19:25:26</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.4620000000000002"/>
       </cell>
       <cell>
         <name>mult_expr_FU_9_9_16_2</name>
         <attribute name="area" value_type="float64">19</attribute>
         <attribute name="REGISTERS" value_type="float64">27</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">19</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="mult_expr_FU" parameter="9 9 16 2"/>
-        <characterization_timestamp>2017-02-21T00:08:04</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:25:17</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_9_9_16_3</name>
+        <attribute name="area" value_type="float64">44</attribute>
+        <attribute name="REGISTERS" value_type="float64">63</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="mult_expr_FU" parameter="9 9 16 3"/>
+        <characterization_timestamp>2020-05-27T19:28:35</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.46"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_9_9_16_4</name>
+        <attribute name="area" value_type="float64">41</attribute>
+        <attribute name="REGISTERS" value_type="float64">81</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="mult_expr_FU" parameter="9 9 16 4"/>
+        <characterization_timestamp>2020-05-27T19:28:37</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.46"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_9_9_16_5</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">99</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="mult_expr_FU" parameter="9 9 16 5"/>
+        <characterization_timestamp>2020-05-27T19:28:38</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.464"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_9_9_16_6</name>
+        <attribute name="area" value_type="float64">63</attribute>
+        <attribute name="REGISTERS" value_type="float64">117</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="mult_expr_FU" parameter="9 9 16 6"/>
+        <characterization_timestamp>2020-05-27T19:28:42</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.46"/>
+      </cell>
+      <cell>
+        <name>mult_expr_FU_9_9_16_7</name>
+        <attribute name="area" value_type="float64">71</attribute>
+        <attribute name="REGISTERS" value_type="float64">135</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="mult_expr_FU" parameter="9 9 16 7"/>
+        <characterization_timestamp>2020-05-27T19:28:40</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.46"/>
       </cell>
       <cell>
         <name>ne_expr_FU_0_16_16</name>
@@ -16016,31 +16161,73 @@
         <name>ui_mult_expr_FU_12_12_16_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="12 12 16 0"/>
-        <characterization_timestamp>2017-02-21T00:08:18</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="0" execution_time="3.8590668776289894"/>
+        <characterization_timestamp>2020-05-27T19:28:42</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="0" execution_time="3.839"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_12_12_16_1</name>
         <attribute name="area" value_type="float64">23</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">23</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="12 12 16 1"/>
-        <characterization_timestamp>2017-02-21T00:08:20</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.3730225655209631"/>
+        <characterization_timestamp>2020-05-27T19:28:40</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.3530000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_12_12_16_2</name>
         <attribute name="area" value_type="float64">25</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">25</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="12 12 16 2"/>
-        <characterization_timestamp>2017-02-21T00:08:18</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5490046136983509"/>
+        <characterization_timestamp>2020-05-27T19:28:39</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5289999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_12_12_16_3</name>
+        <attribute name="area" value_type="float64">46</attribute>
+        <attribute name="REGISTERS" value_type="float64">84</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="12 12 16 3"/>
+        <characterization_timestamp>2020-05-27T19:28:45</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.3399999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_12_12_16_4</name>
+        <attribute name="area" value_type="float64">60</attribute>
+        <attribute name="REGISTERS" value_type="float64">108</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="12 12 16 4"/>
+        <characterization_timestamp>2020-05-27T19:28:55</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.351"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_12_12_16_5</name>
+        <attribute name="area" value_type="float64">69</attribute>
+        <attribute name="REGISTERS" value_type="float64">132</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="12 12 16 5"/>
+        <characterization_timestamp>2020-05-27T19:28:51</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.3450000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_12_12_16_6</name>
+        <attribute name="area" value_type="float64">80</attribute>
+        <attribute name="REGISTERS" value_type="float64">156</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="12 12 16 6"/>
+        <characterization_timestamp>2020-05-27T19:28:55</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.351"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_12_12_16_7</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">180</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="12 12 16 7"/>
+        <characterization_timestamp>2020-05-27T19:28:55</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.3530000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_16_0_16_0</name>
@@ -16076,61 +16263,100 @@
         <name>ui_mult_expr_FU_16_16_16_0</name>
         <attribute name="area" value_type="float64">28</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">28</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="16 16 16 0"/>
-        <characterization_timestamp>2017-02-21T00:08:31</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="0" execution_time="3.6520341830399534"/>
+        <characterization_timestamp>2020-05-27T19:28:57</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="0" execution_time="3.6320000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_16_16_16_1</name>
         <attribute name="area" value_type="float64">29</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">29</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="16 16 16 1"/>
-        <characterization_timestamp>2017-02-21T00:08:43</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1750063500127004"/>
+        <characterization_timestamp>2020-05-27T19:28:59</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1549999999999998"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_16_16_16_2</name>
         <attribute name="area" value_type="float64">28</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">28</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="16 16 16 2"/>
-        <characterization_timestamp>2017-02-21T00:12:36</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:28:54</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_18_18_32_0</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">54</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="18 18 32 0"/>
-        <characterization_timestamp>2017-02-21T00:12:40</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="0" execution_time="3.5679880115602813"/>
+        <characterization_timestamp>2020-05-27T19:29:07</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="0" execution_time="3.548"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_18_18_32_1</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">54</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="18 18 32 1"/>
-        <characterization_timestamp>2017-02-21T00:12:52</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0059819039889377"/>
+        <characterization_timestamp>2020-05-27T19:29:54</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.9860000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_18_18_32_2</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">54</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="18 18 32 2"/>
-        <characterization_timestamp>2017-02-21T00:12:44</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:29:59</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_18_18_32_3</name>
+        <attribute name="area" value_type="float64">70</attribute>
+        <attribute name="REGISTERS" value_type="float64">126</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="18 18 32 3"/>
+        <characterization_timestamp>2020-05-27T19:30:09</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="2.9969999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_18_18_32_4</name>
+        <attribute name="area" value_type="float64">81</attribute>
+        <attribute name="REGISTERS" value_type="float64">162</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="18 18 32 4"/>
+        <characterization_timestamp>2020-05-27T19:30:08</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0139999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_18_18_32_5</name>
+        <attribute name="area" value_type="float64">100</attribute>
+        <attribute name="REGISTERS" value_type="float64">198</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="18 18 32 5"/>
+        <characterization_timestamp>2020-05-27T19:30:09</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_18_18_32_6</name>
+        <attribute name="area" value_type="float64">125</attribute>
+        <attribute name="REGISTERS" value_type="float64">234</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="18 18 32 6"/>
+        <characterization_timestamp>2020-05-27T19:30:10</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="2.9980000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_18_18_32_7</name>
+        <attribute name="area" value_type="float64">148</attribute>
+        <attribute name="REGISTERS" value_type="float64">270</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_mult_expr_FU" parameter="18 18 32 7"/>
+        <characterization_timestamp>2020-05-27T19:30:15</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="2.9910000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_1_0_1_0</name>
@@ -16146,10 +16372,9 @@
         <name>ui_mult_expr_FU_1_1_1_0</name>
         <attribute name="area" value_type="float64">2</attribute>
         <attribute name="REGISTERS" value_type="float64">3</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
         <template name="ui_mult_expr_FU" parameter="1 1 1 0"/>
-        <characterization_timestamp>2017-02-21T00:12:36</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="0.62400159744408945"/>
+        <characterization_timestamp>2020-05-27T19:30:04</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="0.60399999999999998"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_0_32_0</name>
@@ -16243,111 +16468,145 @@
         <name>ui_mult_expr_FU_32_32_32_0</name>
         <attribute name="area" value_type="float64">56</attribute>
         <attribute name="REGISTERS" value_type="float64">96</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">56</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 0"/>
-        <characterization_timestamp>2017-02-21T00:13:09</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="0" execution_time="4.7890426703701934"/>
+        <characterization_timestamp>2020-05-27T19:32:09</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="0" execution_time="4.7690000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_1</name>
         <attribute name="area" value_type="float64">54</attribute>
         <attribute name="REGISTERS" value_type="float64">96</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">54</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 1"/>
-        <characterization_timestamp>2017-02-21T00:13:40</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8780733731482195"/>
+        <characterization_timestamp>2020-05-27T19:32:15</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8580000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_2</name>
         <attribute name="area" value_type="float64">63</attribute>
         <attribute name="REGISTERS" value_type="float64">96</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">63</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 2"/>
-        <characterization_timestamp>2017-02-21T00:13:23</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:32:04</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_3</name>
         <attribute name="area" value_type="float64">126</attribute>
         <attribute name="REGISTERS" value_type="float64">224</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">126</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 3"/>
-        <characterization_timestamp>2017-02-21T00:17:25</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="4.0520280400340374"/>
+        <characterization_timestamp>2020-05-27T19:32:15</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="4.032"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_4</name>
         <attribute name="area" value_type="float64">150</attribute>
         <attribute name="REGISTERS" value_type="float64">288</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">150</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 4"/>
-        <characterization_timestamp>2017-02-21T00:17:32</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0410571405479674"/>
+        <characterization_timestamp>2020-05-27T19:32:22</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0209999999999999"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_5</name>
         <attribute name="area" value_type="float64">180</attribute>
         <attribute name="REGISTERS" value_type="float64">352</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">180</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 5"/>
-        <characterization_timestamp>2017-02-21T00:17:31</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="4.0420371867421183"/>
+        <characterization_timestamp>2020-05-27T19:32:22</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="4.0220000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_6</name>
         <attribute name="area" value_type="float64">222</attribute>
         <attribute name="REGISTERS" value_type="float64">416</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">222</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 6"/>
-        <characterization_timestamp>2017-02-21T00:17:36</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="4.0549856048011028"/>
+        <characterization_timestamp>2020-05-27T19:32:22</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="4.0350000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_32_32_32_7</name>
         <attribute name="area" value_type="float64">267</attribute>
         <attribute name="REGISTERS" value_type="float64">480</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">267</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="32 32 32 7"/>
-        <characterization_timestamp>2017-02-21T00:17:46</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="4.0729879439556855"/>
+        <characterization_timestamp>2020-05-27T19:32:25</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="4.0529999999999999"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_36_36_64_0</name>
         <attribute name="area" value_type="float64">60</attribute>
         <attribute name="REGISTERS" value_type="float64">108</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">60</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="36 36 64 0"/>
-        <characterization_timestamp>2017-02-21T00:17:48</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="0" execution_time="4.8749573441232394"/>
+        <characterization_timestamp>2020-05-27T19:32:24</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="0" execution_time="4.8550000000000004"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_36_36_64_1</name>
         <attribute name="area" value_type="float64">62</attribute>
         <attribute name="REGISTERS" value_type="float64">108</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">62</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="36 36 64 1"/>
-        <characterization_timestamp>2017-02-21T00:18:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8060439978686151"/>
+        <characterization_timestamp>2020-05-27T19:32:27</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.786"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_36_36_64_2</name>
         <attribute name="area" value_type="float64">60</attribute>
         <attribute name="REGISTERS" value_type="float64">108</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">60</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_mult_expr_FU" parameter="36 36 64 2"/>
-        <characterization_timestamp>2017-02-21T00:17:55</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:32:20</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_36_36_64_3</name>
+        <attribute name="area" value_type="float64">149</attribute>
+        <attribute name="REGISTERS" value_type="float64">252</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_mult_expr_FU" parameter="36 36 64 3"/>
+        <characterization_timestamp>2020-05-27T19:32:38</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="4.0449999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_36_36_64_4</name>
+        <attribute name="area" value_type="float64">162</attribute>
+        <attribute name="REGISTERS" value_type="float64">324</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_mult_expr_FU" parameter="36 36 64 4"/>
+        <characterization_timestamp>2020-05-27T19:32:37</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0430000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_36_36_64_5</name>
+        <attribute name="area" value_type="float64">200</attribute>
+        <attribute name="REGISTERS" value_type="float64">396</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_mult_expr_FU" parameter="36 36 64 5"/>
+        <characterization_timestamp>2020-05-27T19:32:39</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="4.0540000000000003"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_36_36_64_6</name>
+        <attribute name="area" value_type="float64">248</attribute>
+        <attribute name="REGISTERS" value_type="float64">468</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_mult_expr_FU" parameter="36 36 64 6"/>
+        <characterization_timestamp>2020-05-27T19:32:43</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="4.0419999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_36_36_64_7</name>
+        <attribute name="area" value_type="float64">302</attribute>
+        <attribute name="REGISTERS" value_type="float64">540</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_mult_expr_FU" parameter="36 36 64 7"/>
+        <characterization_timestamp>2020-05-27T19:32:42</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="4.0510000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_0_64_0</name>
@@ -16441,81 +16700,73 @@
         <name>ui_mult_expr_FU_64_64_64_0</name>
         <attribute name="area" value_type="float64">118</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">118</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 0"/>
-        <characterization_timestamp>2017-02-21T00:23:13</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="0" execution_time="6.3000063000063005"/>
+        <characterization_timestamp>2020-05-27T19:33:29</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="0" execution_time="6.2800000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_64_64_1</name>
         <attribute name="area" value_type="float64">114</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">114</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 1"/>
-        <characterization_timestamp>2017-02-21T00:23:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.9569484013928458"/>
+        <characterization_timestamp>2020-05-27T19:34:06</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.9369999999999998"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_64_64_17</name>
         <attribute name="area" value_type="float64">834</attribute>
         <attribute name="REGISTERS" value_type="float64">1484</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">834</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 17"/>
-        <characterization_timestamp>2017-02-21T00:23:36</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="6.4918203064139188"/>
+        <characterization_timestamp>2020-05-27T19:34:29</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="3.2360000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_64_64_2</name>
         <attribute name="area" value_type="float64">109</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">109</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 2"/>
-        <characterization_timestamp>2017-02-21T00:22:59</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0339805825242716"/>
+        <characterization_timestamp>2020-05-27T19:34:05</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0139999999999998"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_64_64_3</name>
         <attribute name="area" value_type="float64">172</attribute>
         <attribute name="REGISTERS" value_type="float64">320</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">172</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 3"/>
-        <characterization_timestamp>2017-02-21T00:23:03</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.0329683661399414"/>
+        <characterization_timestamp>2020-05-27T19:34:05</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.0129999999999999"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_64_64_4</name>
         <attribute name="area" value_type="float64">274</attribute>
         <attribute name="REGISTERS" value_type="float64">448</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">274</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 4"/>
-        <characterization_timestamp>2017-02-21T00:22:59</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0370212895192399"/>
+        <characterization_timestamp>2020-05-27T19:34:09</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0169999999999999"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_64_64_5</name>
         <attribute name="area" value_type="float64">294</attribute>
         <attribute name="REGISTERS" value_type="float64">576</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">294</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 5"/>
-        <characterization_timestamp>2017-02-21T00:23:14</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.0380362133916634"/>
+        <characterization_timestamp>2020-05-27T19:34:17</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.0179999999999998"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_64_64_64_6</name>
         <attribute name="area" value_type="float64">358</attribute>
         <attribute name="REGISTERS" value_type="float64">704</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">358</attribute>
         <attribute name="DSP" value_type="float64">12</attribute>
         <template name="ui_mult_expr_FU" parameter="64 64 64 6"/>
-        <characterization_timestamp>2017-02-21T00:23:21</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.031956824934813"/>
+        <characterization_timestamp>2020-05-27T19:34:17</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.012"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_8_0_8_0</name>
@@ -16551,61 +16802,100 @@
         <name>ui_mult_expr_FU_8_8_8_0</name>
         <attribute name="area" value_type="float64">18</attribute>
         <attribute name="REGISTERS" value_type="float64">24</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_mult_expr_FU" parameter="8 8 8 0"/>
-        <characterization_timestamp>2017-02-21T00:27:31</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="0" execution_time="4.049074786411305"/>
+        <characterization_timestamp>2020-05-27T19:33:38</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="0" execution_time="4.0289999999999999"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_8_8_8_1</name>
         <attribute name="area" value_type="float64">17</attribute>
         <attribute name="REGISTERS" value_type="float64">24</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_mult_expr_FU" parameter="8 8 8 1"/>
-        <characterization_timestamp>2017-02-21T00:27:30</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.4860210555671753"/>
+        <characterization_timestamp>2020-05-27T19:35:24</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.4660000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_8_8_8_2</name>
         <attribute name="area" value_type="float64">16</attribute>
         <attribute name="REGISTERS" value_type="float64">24</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">16</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_mult_expr_FU" parameter="8 8 8 2"/>
-        <characterization_timestamp>2017-02-21T00:27:28</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:35:21</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_9_9_16_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">27</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_mult_expr_FU" parameter="9 9 16 0"/>
-        <characterization_timestamp>2017-02-21T00:27:51</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="0" execution_time="4.056959714390036"/>
+        <characterization_timestamp>2020-05-27T19:35:38</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="0" execution_time="4.0369999999999999"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_9_9_16_1</name>
         <attribute name="area" value_type="float64">27</attribute>
         <attribute name="REGISTERS" value_type="float64">27</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">27</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_mult_expr_FU" parameter="9 9 16 1"/>
-        <characterization_timestamp>2017-02-21T00:27:40</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.482015390508026"/>
+        <characterization_timestamp>2020-05-27T19:35:39</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.4620000000000002"/>
       </cell>
       <cell>
         <name>ui_mult_expr_FU_9_9_16_2</name>
         <attribute name="area" value_type="float64">19</attribute>
         <attribute name="REGISTERS" value_type="float64">27</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">19</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_mult_expr_FU" parameter="9 9 16 2"/>
-        <characterization_timestamp>2017-02-21T00:27:36</characterization_timestamp>
-        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:35:37</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_9_9_16_3</name>
+        <attribute name="area" value_type="float64">44</attribute>
+        <attribute name="REGISTERS" value_type="float64">63</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_mult_expr_FU" parameter="9 9 16 3"/>
+        <characterization_timestamp>2020-05-27T19:35:44</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.46"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_9_9_16_4</name>
+        <attribute name="area" value_type="float64">41</attribute>
+        <attribute name="REGISTERS" value_type="float64">81</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_mult_expr_FU" parameter="9 9 16 4"/>
+        <characterization_timestamp>2020-05-27T19:35:46</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.46"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_9_9_16_5</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">99</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_mult_expr_FU" parameter="9 9 16 5"/>
+        <characterization_timestamp>2020-05-27T19:35:46</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.464"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_9_9_16_6</name>
+        <attribute name="area" value_type="float64">63</attribute>
+        <attribute name="REGISTERS" value_type="float64">117</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_mult_expr_FU" parameter="9 9 16 6"/>
+        <characterization_timestamp>2020-05-27T19:35:50</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.46"/>
+      </cell>
+      <cell>
+        <name>ui_mult_expr_FU_9_9_16_7</name>
+        <attribute name="area" value_type="float64">71</attribute>
+        <attribute name="REGISTERS" value_type="float64">135</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_mult_expr_FU" parameter="9 9 16 7"/>
+        <characterization_timestamp>2020-05-27T19:35:49</characterization_timestamp>
+        <operation operation_name="mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.46"/>
       </cell>
       <cell>
         <name>ui_ne_expr_FU_0_16_16</name>
@@ -20024,13 +20314,13 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_16_8_0_16_8</name>
-        <attribute name="area" value_type="float64">88</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">176</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">88</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="16 8 0 16 8"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2015-12-16T21:55:12</characterization_timestamp>
-        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:16" execution_time="0.55100061712069115"/>
+        <characterization_timestamp>2016-11-12T16:07:44</characterization_timestamp>
+        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:16" execution_time="0.55500055500055501"/>
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_16_8_16_16_8</name>
@@ -20043,11 +20333,11 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_1_128_0_1_128</name>
-        <attribute name="area" value_type="float64">0</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="1 128 0 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2015-12-16T21:55:38</characterization_timestamp>
-        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:1"/>
+        <characterization_timestamp>2016-11-12T16:07:44</characterization_timestamp>
+        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:1" execution_time="0.55500055500055501"/>
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_1_128_1_1_128</name>
@@ -20060,7 +20350,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_32_4_0_32_4</name>
-        <attribute name="area" value_type="float64">44</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">88</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">44</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="32 4 0 32 4"/>
@@ -20079,13 +20369,13 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_64_2_0_64_2</name>
-        <attribute name="area" value_type="float64">86</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">172</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">86</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="64 2 0 64 2"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2015-12-16T21:57:15</characterization_timestamp>
-        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:64" execution_time="0.50600117392272348"/>
+        <characterization_timestamp>2016-11-12T16:07:44</characterization_timestamp>
+        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:64" execution_time="0.55500055500055501"/>
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_64_2_64_64_2</name>
@@ -20098,13 +20388,13 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_8_16_0_8_16</name>
-        <attribute name="area" value_type="float64">48</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">96</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="8 16 0 8 16"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2015-12-16T21:58:04</characterization_timestamp>
-        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:8" execution_time="0.50600117392272348"/>
+        <characterization_timestamp>2016-11-12T16:07:44</characterization_timestamp>
+        <operation operation_name="lshift_expr" supported_types="VECTOR_UINT:8" execution_time="0.55500055500055501"/>
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_8_16_8_8_16</name>
@@ -23594,7 +23884,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_16_8_0_16_8</name>
-        <attribute name="area" value_type="float64">123</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">246</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">123</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="16 8 0 16 8"/>
@@ -23613,13 +23903,13 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_1_128_0_1_128</name>
-        <attribute name="area" value_type="float64">127</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">254</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">127</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="1 128 0 1 128"/>
         <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
-        <characterization_timestamp>2015-12-17T00:18:10</characterization_timestamp>
-        <operation operation_name="vec_lshift_expr" supported_types="VECTOR_UINT:1" execution_time="0.60500093775145347"/>
+        <characterization_timestamp>2016-11-12T16:07:44</characterization_timestamp>
+        <operation operation_name="vec_lshift_expr" supported_types="VECTOR_UINT:1" execution_time="0.55500055500055501"/>
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_1_128_1_1_128</name>
@@ -23632,7 +23922,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_32_4_0_32_4</name>
-        <attribute name="area" value_type="float64">107</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">214</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">107</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="32 4 0 32 4"/>
@@ -23651,7 +23941,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_64_2_0_64_2</name>
-        <attribute name="area" value_type="float64">107</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">214</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">107</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="64 2 0 64 2"/>
@@ -23670,7 +23960,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_8_16_0_8_16</name>
-        <attribute name="area" value_type="float64">123</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">246</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">123</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="8 16 0 8 16"/>
@@ -28429,7 +28719,7 @@
       </cell>
       <cell>
         <name>ui_view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-17T02:39:28</characterization_timestamp>
@@ -28685,31 +28975,73 @@
         <name>ui_widen_mult_expr_FU_12_12_24_0</name>
         <attribute name="area" value_type="float64">29</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">29</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="12 12 24 0"/>
-        <characterization_timestamp>2017-02-21T00:28:03</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="0" execution_time="3.9539757225890635"/>
+        <characterization_timestamp>2020-05-27T19:35:56</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="0" execution_time="3.9340000000000002"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_12_12_24_1</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="12 12 24 1"/>
-        <characterization_timestamp>2017-02-21T00:28:10</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0470154483683234"/>
+        <characterization_timestamp>2020-05-27T19:36:02</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0270000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_12_12_24_2</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="12 12 24 2"/>
-        <characterization_timestamp>2017-02-21T00:32:00</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5490046136983509"/>
+        <characterization_timestamp>2020-05-27T19:35:59</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5289999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_12_12_24_3</name>
+        <attribute name="area" value_type="float64">28</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="12 12 24 3"/>
+        <characterization_timestamp>2020-05-27T19:36:00</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_12_12_24_4</name>
+        <attribute name="area" value_type="float64">42</attribute>
+        <attribute name="REGISTERS" value_type="float64">72</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="12 12 24 4"/>
+        <characterization_timestamp>2020-05-27T19:36:02</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_12_12_24_5</name>
+        <attribute name="area" value_type="float64">55</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="12 12 24 5"/>
+        <characterization_timestamp>2020-05-27T19:36:02</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_12_12_24_6</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">120</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="12 12 24 6"/>
+        <characterization_timestamp>2020-05-27T19:36:49</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_12_12_24_7</name>
+        <attribute name="area" value_type="float64">77</attribute>
+        <attribute name="REGISTERS" value_type="float64">144</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="12 12 24 7"/>
+        <characterization_timestamp>2020-05-27T19:36:59</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:12|VECTOR_BOOL:12" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.855"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_16_0_32_0</name>
@@ -28745,61 +29077,100 @@
         <name>ui_widen_mult_expr_FU_16_16_32_0</name>
         <attribute name="area" value_type="float64">34</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="16 16 32 0"/>
-        <characterization_timestamp>2017-02-21T00:32:10</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="0" execution_time="3.7940585043821375"/>
+        <characterization_timestamp>2020-05-27T19:37:35</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="0" execution_time="3.774"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_16_16_32_1</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="16 16 32 1"/>
-        <characterization_timestamp>2017-02-21T00:32:15</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.7880004460800714"/>
+        <characterization_timestamp>2020-05-27T19:37:33</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.7679999999999998"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_16_16_32_2</name>
         <attribute name="area" value_type="float64">34</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="16 16 32 2"/>
-        <characterization_timestamp>2017-02-21T00:32:08</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:37:26</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_18_18_36_0</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">72</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="18 18 36 0"/>
-        <characterization_timestamp>2017-02-21T00:32:28</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="0" execution_time="3.7419547971860498"/>
+        <characterization_timestamp>2020-05-27T19:37:39</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="0" execution_time="3.722"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_18_18_36_1</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">72</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="18 18 36 1"/>
-        <characterization_timestamp>2017-02-21T00:32:34</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.8199994360001126"/>
+        <characterization_timestamp>2020-05-27T19:37:50</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.7999999999999998"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_18_18_36_2</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">72</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="18 18 36 2"/>
-        <characterization_timestamp>2017-02-21T00:32:19</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:37:35</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_18_18_36_3</name>
+        <attribute name="area" value_type="float64">40</attribute>
+        <attribute name="REGISTERS" value_type="float64">72</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="18 18 36 3"/>
+        <characterization_timestamp>2020-05-27T19:37:49</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_18_18_36_4</name>
+        <attribute name="area" value_type="float64">58</attribute>
+        <attribute name="REGISTERS" value_type="float64">108</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="18 18 36 4"/>
+        <characterization_timestamp>2020-05-27T19:38:45</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_18_18_36_5</name>
+        <attribute name="area" value_type="float64">74</attribute>
+        <attribute name="REGISTERS" value_type="float64">144</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="18 18 36 5"/>
+        <characterization_timestamp>2020-05-27T19:38:50</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_18_18_36_6</name>
+        <attribute name="area" value_type="float64">90</attribute>
+        <attribute name="REGISTERS" value_type="float64">180</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="18 18 36 6"/>
+        <characterization_timestamp>2020-05-27T19:39:02</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_18_18_36_7</name>
+        <attribute name="area" value_type="float64">114</attribute>
+        <attribute name="REGISTERS" value_type="float64">216</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="18 18 36 7"/>
+        <characterization_timestamp>2020-05-27T19:39:07</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:18|VECTOR_BOOL:18" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.5780000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_1_0_2_0</name>
@@ -28815,10 +29186,9 @@
         <name>ui_widen_mult_expr_FU_1_1_2_0</name>
         <attribute name="area" value_type="float64">4</attribute>
         <attribute name="REGISTERS" value_type="float64">4</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="1 1 2 0"/>
-        <characterization_timestamp>2017-02-21T00:32:13</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="0.65200099104150633"/>
+        <characterization_timestamp>2020-05-27T19:38:51</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" pipe_parameters="0" execution_time="0.63200000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_0_64_0</name>
@@ -28912,111 +29282,145 @@
         <name>ui_widen_mult_expr_FU_32_32_64_0</name>
         <attribute name="area" value_type="float64">69</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">69</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 0"/>
-        <characterization_timestamp>2017-02-21T00:36:56</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="0" execution_time="4.8721071863581003"/>
+        <characterization_timestamp>2020-05-27T19:39:24</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="0" execution_time="4.8520000000000003"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_1</name>
         <attribute name="area" value_type="float64">75</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">75</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 1"/>
-        <characterization_timestamp>2017-02-21T00:37:05</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8819875776397512"/>
+        <characterization_timestamp>2020-05-27T19:39:34</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8620000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_2</name>
         <attribute name="area" value_type="float64">74</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">74</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 2"/>
-        <characterization_timestamp>2017-02-21T00:36:49</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:39:18</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_3</name>
         <attribute name="area" value_type="float64">104</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">104</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 3"/>
-        <characterization_timestamp>2017-02-21T00:36:51</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:39:25</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_4</name>
         <attribute name="area" value_type="float64">149</attribute>
         <attribute name="REGISTERS" value_type="float64">256</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">149</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 4"/>
-        <characterization_timestamp>2017-02-21T00:36:53</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:39:22</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_5</name>
         <attribute name="area" value_type="float64">167</attribute>
         <attribute name="REGISTERS" value_type="float64">320</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">167</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 5"/>
-        <characterization_timestamp>2017-02-21T00:37:10</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:39:31</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_6</name>
         <attribute name="area" value_type="float64">203</attribute>
         <attribute name="REGISTERS" value_type="float64">384</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">203</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 6"/>
-        <characterization_timestamp>2017-02-21T00:37:14</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:39:36</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_32_32_64_7</name>
         <attribute name="area" value_type="float64">248</attribute>
         <attribute name="REGISTERS" value_type="float64">448</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">248</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="32 32 64 7"/>
-        <characterization_timestamp>2017-02-21T00:37:16</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:39:39</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_36_36_72_0</name>
         <attribute name="area" value_type="float64">74</attribute>
         <attribute name="REGISTERS" value_type="float64">144</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">74</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="36 36 72 0"/>
-        <characterization_timestamp>2017-02-21T00:41:51</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="0" execution_time="4.9181134116952734"/>
+        <characterization_timestamp>2020-05-27T19:39:40</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="0" execution_time="4.8979999999999997"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_36_36_72_1</name>
         <attribute name="area" value_type="float64">79</attribute>
         <attribute name="REGISTERS" value_type="float64">144</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">79</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="36 36 72 1"/>
-        <characterization_timestamp>2017-02-21T00:41:57</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8119925284946445"/>
+        <characterization_timestamp>2020-05-27T19:39:59</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.7919999999999998"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_36_36_72_2</name>
         <attribute name="area" value_type="float64">80</attribute>
         <attribute name="REGISTERS" value_type="float64">144</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">80</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="36 36 72 2"/>
-        <characterization_timestamp>2017-02-21T00:41:45</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:39:35</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_36_36_72_3</name>
+        <attribute name="area" value_type="float64">123</attribute>
+        <attribute name="REGISTERS" value_type="float64">216</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="36 36 72 3"/>
+        <characterization_timestamp>2020-05-27T19:40:18</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_36_36_72_4</name>
+        <attribute name="area" value_type="float64">167</attribute>
+        <attribute name="REGISTERS" value_type="float64">288</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="36 36 72 4"/>
+        <characterization_timestamp>2020-05-27T19:40:31</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_36_36_72_5</name>
+        <attribute name="area" value_type="float64">188</attribute>
+        <attribute name="REGISTERS" value_type="float64">360</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="36 36 72 5"/>
+        <characterization_timestamp>2020-05-27T19:41:01</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_36_36_72_6</name>
+        <attribute name="area" value_type="float64">223</attribute>
+        <attribute name="REGISTERS" value_type="float64">432</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="36 36 72 6"/>
+        <characterization_timestamp>2020-05-27T19:41:12</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_36_36_72_7</name>
+        <attribute name="area" value_type="float64">274</attribute>
+        <attribute name="REGISTERS" value_type="float64">504</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="36 36 72 7"/>
+        <characterization_timestamp>2020-05-27T19:41:13</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:36|VECTOR_BOOL:36" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_0_128_0</name>
@@ -29110,81 +29514,73 @@
         <name>ui_widen_mult_expr_FU_64_64_128_0</name>
         <attribute name="area" value_type="float64">141</attribute>
         <attribute name="REGISTERS" value_type="float64">256</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">141</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 0"/>
-        <characterization_timestamp>2017-02-21T00:44:43</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="0" execution_time="7.8758761912262738"/>
+        <characterization_timestamp>2020-05-27T19:43:18</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="0" execution_time="7.8499999999999996"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_64_128_1</name>
         <attribute name="area" value_type="float64">148</attribute>
         <attribute name="REGISTERS" value_type="float64">256</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">148</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 1"/>
-        <characterization_timestamp>2017-02-21T00:45:16</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="4.2709490048688821"/>
+        <characterization_timestamp>2020-05-27T19:43:33</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="4.258"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_64_128_17</name>
         <attribute name="area" value_type="float64">1407</attribute>
         <attribute name="REGISTERS" value_type="float64">2572</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">1407</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 17"/>
-        <characterization_timestamp>2017-02-21T00:45:34</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="5.0040032025620498"/>
+        <characterization_timestamp>2020-05-27T19:43:52</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="3.899"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_64_128_2</name>
         <attribute name="area" value_type="float64">150</attribute>
         <attribute name="REGISTERS" value_type="float64">256</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">150</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 2"/>
-        <characterization_timestamp>2017-02-21T00:45:57</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="4.037956793862306"/>
+        <characterization_timestamp>2020-05-27T19:44:16</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="4.0359999999999996"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_64_128_3</name>
         <attribute name="area" value_type="float64">210</attribute>
         <attribute name="REGISTERS" value_type="float64">384</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">210</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 3"/>
-        <characterization_timestamp>2017-02-21T00:45:41</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="4.0070524122455522"/>
+        <characterization_timestamp>2020-05-27T19:45:05</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.9830000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_64_128_4</name>
         <attribute name="area" value_type="float64">282</attribute>
         <attribute name="REGISTERS" value_type="float64">512</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">282</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 4"/>
-        <characterization_timestamp>2017-02-21T00:49:50</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0299830740710894"/>
+        <characterization_timestamp>2020-05-27T19:45:05</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="4.0119999999999996"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_64_128_5</name>
         <attribute name="area" value_type="float64">362</attribute>
         <attribute name="REGISTERS" value_type="float64">640</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">362</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 5"/>
-        <characterization_timestamp>2017-02-21T00:50:08</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.8939293641213348"/>
+        <characterization_timestamp>2020-05-27T19:45:20</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.875"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_64_64_128_6</name>
         <attribute name="area" value_type="float64">411</attribute>
         <attribute name="REGISTERS" value_type="float64">768</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">411</attribute>
         <attribute name="DSP" value_type="float64">16</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="64 64 128 6"/>
-        <characterization_timestamp>2017-02-21T00:50:07</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.9950461427829489"/>
+        <characterization_timestamp>2020-05-27T19:45:14</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.9980000000000002"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_8_0_16_0</name>
@@ -29220,61 +29616,100 @@
         <name>ui_widen_mult_expr_FU_8_8_16_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">32</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="8 8 16 0"/>
-        <characterization_timestamp>2017-02-21T00:48:58</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="0" execution_time="4.0549856048011028"/>
+        <characterization_timestamp>2020-05-27T19:42:30</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="0" execution_time="4.0350000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_8_8_16_1</name>
         <attribute name="area" value_type="float64">22</attribute>
         <attribute name="REGISTERS" value_type="float64">32</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">22</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="8 8 16 1"/>
-        <characterization_timestamp>2017-02-21T00:49:21</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0959752321981426"/>
+        <characterization_timestamp>2020-05-27T19:42:38</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0760000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_8_8_16_2</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">32</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="8 8 16 2"/>
-        <characterization_timestamp>2017-02-21T00:49:35</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:42:44</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_9_9_18_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="9 9 18 0"/>
-        <characterization_timestamp>2017-02-21T00:50:01</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="0" execution_time="4.049074786411305"/>
+        <characterization_timestamp>2020-05-27T19:42:50</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="0" execution_time="4.0289999999999999"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_9_9_18_1</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="9 9 18 1"/>
-        <characterization_timestamp>2017-02-21T00:50:04</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1879622545269064"/>
+        <characterization_timestamp>2020-05-27T19:42:46</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1680000000000001"/>
       </cell>
       <cell>
         <name>ui_widen_mult_expr_FU_9_9_18_2</name>
         <attribute name="area" value_type="float64">21</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">21</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="ui_widen_mult_expr_FU" parameter="9 9 18 2"/>
-        <characterization_timestamp>2017-02-21T00:53:33</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:42:48</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_9_9_18_3</name>
+        <attribute name="area" value_type="float64">21</attribute>
+        <attribute name="REGISTERS" value_type="float64">36</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="9 9 18 3"/>
+        <characterization_timestamp>2020-05-27T19:42:51</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_9_9_18_4</name>
+        <attribute name="area" value_type="float64">29</attribute>
+        <attribute name="REGISTERS" value_type="float64">54</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="9 9 18 4"/>
+        <characterization_timestamp>2020-05-27T19:42:58</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_9_9_18_5</name>
+        <attribute name="area" value_type="float64">40</attribute>
+        <attribute name="REGISTERS" value_type="float64">72</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="9 9 18 5"/>
+        <characterization_timestamp>2020-05-27T19:43:00</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_9_9_18_6</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">90</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="9 9 18 6"/>
+        <characterization_timestamp>2020-05-27T19:43:03</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>ui_widen_mult_expr_FU_9_9_18_7</name>
+        <attribute name="area" value_type="float64">58</attribute>
+        <attribute name="REGISTERS" value_type="float64">108</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="ui_widen_mult_expr_FU" parameter="9 9 18 7"/>
+        <characterization_timestamp>2020-05-27T19:43:06</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="UINT:9|VECTOR_BOOL:9" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.946"/>
       </cell>
       <cell>
         <name>ui_widen_sum_expr_FU_0_16_32</name>
@@ -38046,7 +38481,7 @@
       </cell>
       <cell>
         <name>view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2015-12-17T07:54:24</characterization_timestamp>
@@ -38302,31 +38737,73 @@
         <name>widen_mult_expr_FU_12_12_24_0</name>
         <attribute name="area" value_type="float64">29</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">29</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="12 12 24 0"/>
-        <characterization_timestamp>2017-02-21T00:54:02</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="0" execution_time="3.9539757225890635"/>
+        <characterization_timestamp>2020-05-27T19:43:29</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="0" execution_time="3.9340000000000002"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_12_12_24_1</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="12 12 24 1"/>
-        <characterization_timestamp>2017-02-21T00:54:09</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0470154483683234"/>
+        <characterization_timestamp>2020-05-27T19:43:38</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0270000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_12_12_24_2</name>
         <attribute name="area" value_type="float64">30</attribute>
         <attribute name="REGISTERS" value_type="float64">48</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">30</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="12 12 24 2"/>
-        <characterization_timestamp>2017-02-21T00:54:12</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5490046136983509"/>
+        <characterization_timestamp>2020-05-27T19:43:44</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.5289999999999999"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_12_12_24_3</name>
+        <attribute name="area" value_type="float64">28</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="12 12 24 3"/>
+        <characterization_timestamp>2020-05-27T19:44:13</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_12_12_24_4</name>
+        <attribute name="area" value_type="float64">42</attribute>
+        <attribute name="REGISTERS" value_type="float64">72</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="12 12 24 4"/>
+        <characterization_timestamp>2020-05-27T19:44:32</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_12_12_24_5</name>
+        <attribute name="area" value_type="float64">55</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="12 12 24 5"/>
+        <characterization_timestamp>2020-05-27T19:44:30</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_12_12_24_6</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">120</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="12 12 24 6"/>
+        <characterization_timestamp>2020-05-27T19:45:49</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.855"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_12_12_24_7</name>
+        <attribute name="area" value_type="float64">77</attribute>
+        <attribute name="REGISTERS" value_type="float64">144</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="12 12 24 7"/>
+        <characterization_timestamp>2020-05-27T19:46:00</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:12" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.855"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_16_0_32_0</name>
@@ -38362,61 +38839,100 @@
         <name>widen_mult_expr_FU_16_16_32_0</name>
         <attribute name="area" value_type="float64">34</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="16 16 32 0"/>
-        <characterization_timestamp>2017-02-21T00:54:35</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="0" execution_time="3.7940585043821375"/>
+        <characterization_timestamp>2020-05-27T19:46:15</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="0" execution_time="3.774"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_16_16_32_1</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="16 16 32 1"/>
-        <characterization_timestamp>2017-02-21T00:54:49</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.7880004460800714"/>
+        <characterization_timestamp>2020-05-27T19:46:17</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.7679999999999998"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_16_16_32_2</name>
         <attribute name="area" value_type="float64">34</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="16 16 32 2"/>
-        <characterization_timestamp>2017-02-21T00:54:30</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:46:09</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_18_18_36_0</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">72</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="18 18 36 0"/>
-        <characterization_timestamp>2017-02-21T00:54:59</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="0" execution_time="3.7419547971860498"/>
+        <characterization_timestamp>2020-05-27T19:46:24</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="0" execution_time="3.722"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_18_18_36_1</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">72</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="18 18 36 1"/>
-        <characterization_timestamp>2017-02-21T00:58:21</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.8199994360001126"/>
+        <characterization_timestamp>2020-05-27T19:46:20</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="2.7999999999999998"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_18_18_36_2</name>
         <attribute name="area" value_type="float64">40</attribute>
         <attribute name="REGISTERS" value_type="float64">72</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">40</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="widen_mult_expr_FU" parameter="18 18 36 2"/>
-        <characterization_timestamp>2017-02-21T00:58:27</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2720043622483757"/>
+        <characterization_timestamp>2020-05-27T19:46:17</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.2519999999999998"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_18_18_36_3</name>
+        <attribute name="area" value_type="float64">40</attribute>
+        <attribute name="REGISTERS" value_type="float64">72</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="18 18 36 3"/>
+        <characterization_timestamp>2020-05-27T19:46:23</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_18_18_36_4</name>
+        <attribute name="area" value_type="float64">58</attribute>
+        <attribute name="REGISTERS" value_type="float64">108</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="18 18 36 4"/>
+        <characterization_timestamp>2020-05-27T19:46:32</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_18_18_36_5</name>
+        <attribute name="area" value_type="float64">74</attribute>
+        <attribute name="REGISTERS" value_type="float64">144</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="18 18 36 5"/>
+        <characterization_timestamp>2020-05-27T19:46:32</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_18_18_36_6</name>
+        <attribute name="area" value_type="float64">90</attribute>
+        <attribute name="REGISTERS" value_type="float64">180</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="18 18 36 6"/>
+        <characterization_timestamp>2020-05-27T19:46:42</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.5780000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_18_18_36_7</name>
+        <attribute name="area" value_type="float64">114</attribute>
+        <attribute name="REGISTERS" value_type="float64">216</attribute>
+        <attribute name="DSP" value_type="float64">2</attribute>
+        <template name="widen_mult_expr_FU" parameter="18 18 36 7"/>
+        <characterization_timestamp>2020-05-27T19:46:54</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.5780000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_1_0_2_0</name>
@@ -38432,10 +38948,9 @@
         <name>widen_mult_expr_FU_1_1_2_0</name>
         <attribute name="area" value_type="float64">4</attribute>
         <attribute name="REGISTERS" value_type="float64">4</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="1 1 2 0"/>
-        <characterization_timestamp>2017-02-21T00:58:22</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:1" pipe_parameters="0" execution_time="0.65200099104150633"/>
+        <characterization_timestamp>2020-05-27T19:46:44</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:1" pipe_parameters="0" execution_time="0.63200000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_0_64_0</name>
@@ -38529,111 +39044,145 @@
         <name>widen_mult_expr_FU_32_32_64_0</name>
         <attribute name="area" value_type="float64">69</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">69</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 0"/>
-        <characterization_timestamp>2017-02-21T00:59:07</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="0" execution_time="4.8721071863581003"/>
+        <characterization_timestamp>2020-05-27T19:47:15</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="0" execution_time="4.8520000000000003"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_1</name>
         <attribute name="area" value_type="float64">75</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">75</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 1"/>
-        <characterization_timestamp>2017-02-21T00:59:42</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8819875776397512"/>
+        <characterization_timestamp>2020-05-27T19:47:28</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8620000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_2</name>
         <attribute name="area" value_type="float64">74</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">74</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 2"/>
-        <characterization_timestamp>2017-02-21T00:59:10</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:47:18</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_3</name>
         <attribute name="area" value_type="float64">104</attribute>
         <attribute name="REGISTERS" value_type="float64">192</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">104</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 3"/>
-        <characterization_timestamp>2017-02-21T00:59:22</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:47:41</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_4</name>
         <attribute name="area" value_type="float64">149</attribute>
         <attribute name="REGISTERS" value_type="float64">256</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">149</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 4"/>
-        <characterization_timestamp>2017-02-21T00:59:51</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:47:42</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_5</name>
         <attribute name="area" value_type="float64">167</attribute>
         <attribute name="REGISTERS" value_type="float64">320</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">167</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 5"/>
-        <characterization_timestamp>2017-02-21T01:03:08</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:48:04</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_6</name>
         <attribute name="area" value_type="float64">203</attribute>
         <attribute name="REGISTERS" value_type="float64">384</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">203</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 6"/>
-        <characterization_timestamp>2017-02-21T01:03:12</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:48:07</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_32_32_64_7</name>
         <attribute name="area" value_type="float64">248</attribute>
         <attribute name="REGISTERS" value_type="float64">448</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">248</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="32 32 64 7"/>
-        <characterization_timestamp>2017-02-21T01:03:19</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:48:33</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:32" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_36_36_72_0</name>
         <attribute name="area" value_type="float64">74</attribute>
         <attribute name="REGISTERS" value_type="float64">144</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">74</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="36 36 72 0"/>
-        <characterization_timestamp>2017-02-21T01:04:02</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="0" execution_time="4.9181134116952734"/>
+        <characterization_timestamp>2020-05-27T19:48:43</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="0" execution_time="4.8979999999999997"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_36_36_72_1</name>
         <attribute name="area" value_type="float64">79</attribute>
         <attribute name="REGISTERS" value_type="float64">144</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">79</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="36 36 72 1"/>
-        <characterization_timestamp>2017-02-21T01:04:13</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.8119925284946445"/>
+        <characterization_timestamp>2020-05-27T19:48:57</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.7919999999999998"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_36_36_72_2</name>
         <attribute name="area" value_type="float64">80</attribute>
         <attribute name="REGISTERS" value_type="float64">144</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">80</attribute>
         <attribute name="DSP" value_type="float64">4</attribute>
         <template name="widen_mult_expr_FU" parameter="36 36 72 2"/>
-        <characterization_timestamp>2017-02-21T01:04:01</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.031037827352085"/>
+        <characterization_timestamp>2020-05-27T19:48:49</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_36_36_72_3</name>
+        <attribute name="area" value_type="float64">123</attribute>
+        <attribute name="REGISTERS" value_type="float64">216</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="widen_mult_expr_FU" parameter="36 36 72 3"/>
+        <characterization_timestamp>2020-05-27T19:49:12</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_36_36_72_4</name>
+        <attribute name="area" value_type="float64">167</attribute>
+        <attribute name="REGISTERS" value_type="float64">288</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="widen_mult_expr_FU" parameter="36 36 72 4"/>
+        <characterization_timestamp>2020-05-27T19:49:33</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_36_36_72_5</name>
+        <attribute name="area" value_type="float64">188</attribute>
+        <attribute name="REGISTERS" value_type="float64">360</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="widen_mult_expr_FU" parameter="36 36 72 5"/>
+        <characterization_timestamp>2020-05-27T19:49:44</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_36_36_72_6</name>
+        <attribute name="area" value_type="float64">223</attribute>
+        <attribute name="REGISTERS" value_type="float64">432</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="widen_mult_expr_FU" parameter="36 36 72 6"/>
+        <characterization_timestamp>2020-05-27T19:49:55</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="3.0110000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_36_36_72_7</name>
+        <attribute name="area" value_type="float64">274</attribute>
+        <attribute name="REGISTERS" value_type="float64">504</attribute>
+        <attribute name="DSP" value_type="float64">4</attribute>
+        <template name="widen_mult_expr_FU" parameter="36 36 72 7"/>
+        <characterization_timestamp>2020-05-27T19:49:55</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:36" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="3.0110000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_0_128_0</name>
@@ -38727,81 +39276,73 @@
         <name>widen_mult_expr_FU_64_64_128_0</name>
         <attribute name="area" value_type="float64">217</attribute>
         <attribute name="REGISTERS" value_type="float64">256</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">217</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 0"/>
-        <characterization_timestamp>2017-02-21T01:08:35</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="0" execution_time="8.42034355001684"/>
+        <characterization_timestamp>2020-05-27T19:52:31</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="0" execution_time="8.3979999999999997"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_64_128_1</name>
         <attribute name="area" value_type="float64">306</attribute>
         <attribute name="REGISTERS" value_type="float64">504</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">306</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 1"/>
-        <characterization_timestamp>2017-02-21T01:09:11</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="7.2358900144717806"/>
+        <characterization_timestamp>2020-05-27T19:52:55</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="7.032"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_64_128_17</name>
         <attribute name="area" value_type="float64">1556</attribute>
         <attribute name="REGISTERS" value_type="float64">2820</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">1556</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 17"/>
-        <characterization_timestamp>2017-02-21T01:11:39</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="6.1180789232181096"/>
+        <characterization_timestamp>2020-05-27T19:52:49</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="17" cycles="18" initiation_time="1" stage_period="6.0289999999999999"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_64_128_2</name>
         <attribute name="area" value_type="float64">301</attribute>
         <attribute name="REGISTERS" value_type="float64">504</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">301</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 2"/>
-        <characterization_timestamp>2017-02-21T01:12:21</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="5.9640961412297973"/>
+        <characterization_timestamp>2020-05-27T19:53:03</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="5.9489999999999998"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_64_128_3</name>
         <attribute name="area" value_type="float64">388</attribute>
         <attribute name="REGISTERS" value_type="float64">632</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">388</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 3"/>
-        <characterization_timestamp>2017-02-21T01:12:02</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="6.11695620259359"/>
+        <characterization_timestamp>2020-05-27T19:52:49</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="6.0750000000000002"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_64_128_4</name>
         <attribute name="area" value_type="float64">456</attribute>
         <attribute name="REGISTERS" value_type="float64">760</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">456</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 4"/>
-        <characterization_timestamp>2017-02-21T01:12:44</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="6.1061244428161441"/>
+        <characterization_timestamp>2020-05-27T19:53:01</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="6.0880000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_64_128_5</name>
         <attribute name="area" value_type="float64">519</attribute>
         <attribute name="REGISTERS" value_type="float64">888</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">519</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 5"/>
-        <characterization_timestamp>2017-02-21T01:12:36</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="6.2131096613855235"/>
+        <characterization_timestamp>2020-05-27T19:52:57</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="6.1909999999999998"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_64_64_128_6</name>
         <attribute name="area" value_type="float64">604</attribute>
         <attribute name="REGISTERS" value_type="float64">1016</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">604</attribute>
         <attribute name="DSP" value_type="float64">32</attribute>
         <template name="widen_mult_expr_FU" parameter="64 64 128 6"/>
-        <characterization_timestamp>2017-02-21T01:12:56</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="6.083835249741437"/>
+        <characterization_timestamp>2020-05-27T19:52:58</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:64" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="6.0579999999999998"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_8_0_16_0</name>
@@ -38837,61 +39378,100 @@
         <name>widen_mult_expr_FU_8_8_16_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">32</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="widen_mult_expr_FU" parameter="8 8 16 0"/>
-        <characterization_timestamp>2017-02-21T01:12:35</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="0" execution_time="4.0549856048011028"/>
+        <characterization_timestamp>2020-05-27T19:50:13</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="0" execution_time="4.0350000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_8_8_16_1</name>
         <attribute name="area" value_type="float64">22</attribute>
         <attribute name="REGISTERS" value_type="float64">32</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">22</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="widen_mult_expr_FU" parameter="8 8 16 1"/>
-        <characterization_timestamp>2017-02-21T01:13:00</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0959752321981426"/>
+        <characterization_timestamp>2020-05-27T19:50:30</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.0760000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_8_8_16_2</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">32</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="widen_mult_expr_FU" parameter="8 8 16 2"/>
-        <characterization_timestamp>2017-02-21T01:14:35</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:50:33</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:8" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_9_9_18_0</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="widen_mult_expr_FU" parameter="9 9 18 0"/>
-        <characterization_timestamp>2017-02-21T01:14:51</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="0" execution_time="4.049074786411305"/>
+        <characterization_timestamp>2020-05-27T19:50:48</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="0" execution_time="4.0289999999999999"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_9_9_18_1</name>
         <attribute name="area" value_type="float64">20</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">20</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="widen_mult_expr_FU" parameter="9 9 18 1"/>
-        <characterization_timestamp>2017-02-21T01:14:58</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1879622545269064"/>
+        <characterization_timestamp>2020-05-27T19:50:53</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.1680000000000001"/>
       </cell>
       <cell>
         <name>widen_mult_expr_FU_9_9_18_2</name>
         <attribute name="area" value_type="float64">21</attribute>
         <attribute name="REGISTERS" value_type="float64">36</attribute>
-        <attribute name="LUT_FF_PAIRS" value_type="float64">21</attribute>
         <attribute name="DSP" value_type="float64">1</attribute>
         <template name="widen_mult_expr_FU" parameter="9 9 18 2"/>
-        <characterization_timestamp>2017-02-21T01:14:59</characterization_timestamp>
-        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6399852160827897"/>
+        <characterization_timestamp>2020-05-27T19:50:53</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="2.6200000000000001"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_9_9_18_3</name>
+        <attribute name="area" value_type="float64">21</attribute>
+        <attribute name="REGISTERS" value_type="float64">36</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="widen_mult_expr_FU" parameter="9 9 18 3"/>
+        <characterization_timestamp>2020-05-27T19:51:10</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="3" cycles="4" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_9_9_18_4</name>
+        <attribute name="area" value_type="float64">29</attribute>
+        <attribute name="REGISTERS" value_type="float64">54</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="widen_mult_expr_FU" parameter="9 9 18 4"/>
+        <characterization_timestamp>2020-05-27T19:51:11</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="4" cycles="5" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_9_9_18_5</name>
+        <attribute name="area" value_type="float64">40</attribute>
+        <attribute name="REGISTERS" value_type="float64">72</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="widen_mult_expr_FU" parameter="9 9 18 5"/>
+        <characterization_timestamp>2020-05-27T19:51:38</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="5" cycles="6" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_9_9_18_6</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">90</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="widen_mult_expr_FU" parameter="9 9 18 6"/>
+        <characterization_timestamp>2020-05-27T19:51:42</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="6" cycles="7" initiation_time="1" stage_period="1.946"/>
+      </cell>
+      <cell>
+        <name>widen_mult_expr_FU_9_9_18_7</name>
+        <attribute name="area" value_type="float64">58</attribute>
+        <attribute name="REGISTERS" value_type="float64">108</attribute>
+        <attribute name="DSP" value_type="float64">1</attribute>
+        <template name="widen_mult_expr_FU" parameter="9 9 18 7"/>
+        <characterization_timestamp>2020-05-27T19:51:47</characterization_timestamp>
+        <operation operation_name="widen_mult_expr" commutative="1" supported_types="INT:9" pipe_parameters="7" cycles="8" initiation_time="1" stage_period="1.946"/>
       </cell>
       <cell>
         <name>widen_sum_expr_FU_0_16_32</name>

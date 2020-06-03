@@ -100,7 +100,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 void ControllerCreatorBaseStep::Initialize()
 {
    HLSFunctionStep::Initialize();
-   /// Test on previuos steps. They check if schedule, register and connection binding have been performed.
+   /// Test on previous steps. They check if schedule, register and connection binding have been performed.
    /// Otherwise, the circuit cannot be created.
    THROW_ASSERT(this->HLS->Rsch, "Scheduling not performed");
    THROW_ASSERT(this->HLS->Rreg, "Register allocation not performed");

@@ -3070,8 +3070,8 @@ bool tree_helper::is_unsigned(const tree_managerConstRef& TM, const unsigned int
    }
 
    std::string type_name = name_type(TM, type_index);
-   if(type_name == std::string("sc_uint") || type_name == std::string("sc_lv") ||
-      type_name == std::string("sc_in_rv") || type_name == std::string("sc_out_rv") || type_name == std::string("sc_inout_rv") || type_name == std::string("sc_bv") || type_name == std::string("sc_signal_rv"))
+   if(type_name == std::string("sc_uint") || type_name == std::string("sc_lv") || type_name == std::string("sc_in_rv") || type_name == std::string("sc_out_rv") || type_name == std::string("sc_inout_rv") || type_name == std::string("sc_bv") ||
+      type_name == std::string("sc_signal_rv"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--yes");
       return true;
@@ -3084,7 +3084,6 @@ bool tree_helper::is_scalar(const tree_managerConstRef& TM, const unsigned int v
 {
    return tree_helper::is_int(TM, var) || tree_helper::is_real(TM, var) || tree_helper::is_unsigned(TM, var) || tree_helper::is_bool(TM, var);
 }
-
 
 bool tree_helper::is_module(const tree_managerConstRef& TM, const unsigned int index)
 {

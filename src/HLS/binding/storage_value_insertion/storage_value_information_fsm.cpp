@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,61 +31,34 @@
  *
  */
 /**
- * @file memory_symbol.cpp
- * @brief Implementations of the methods to manage memory symbols
+ * @file storage_value_information_fsm.cpp
+ * @brief This package is used to define the storage value scheme adopted by the register allocation algorithms.
  *
- *
- * @author Christian Pilato <pilato@elet.polimi.it>
- * $Revision$
- * $Date$
- * Last modified by $Author$
+ * @author Marco Lattuada <marco.lattuada@polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
-#include "memory_symbol.hpp"
+/// Header include
+#include "storage_value_information_fsm.hpp"
 
-#include "exceptions.hpp"
-
-#include "language_writer.hpp"
-#include "string_manipulation.hpp" //STR
-#include "utility.hpp"
-
-memory_symbol::memory_symbol(unsigned int var, unsigned long long int addr, unsigned int funId) : variable(var), name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), address(addr), resolved(false)
+StorageValueInformationFsm::StorageValueInformationFsm(const HLS_managerConstRef _HLS_mgr, const unsigned int _function_id) : StorageValueInformation(_HLS_mgr, _function_id)
 {
 }
 
-memory_symbol::~memory_symbol() = default;
+StorageValueInformationFsm::~StorageValueInformationFsm() = default;
 
-void memory_symbol::set_address(unsigned long long int _address)
+bool StorageValueInformationFsm::is_a_storage_value(vertex, unsigned int var_index)
 {
-   address = _address;
+   return storage_index_map.find(var_index) != storage_index_map.end();
 }
 
-void memory_symbol::set_symbol_name(const std::string& _name)
+unsigned int StorageValueInformationFsm::get_storage_value_index(vertex, unsigned int var_index)
 {
-   name = _name;
+   THROW_ASSERT(storage_index_map.find(var_index) != storage_index_map.end(), "the storage value is missing");
+   return storage_index_map.find(var_index)->second;
 }
 
-std::string memory_symbol::get_symbol_name() const
+void StorageValueInformationFsm::set_storage_value_index(vertex, unsigned int variable, unsigned int sv)
 {
-   return name;
-}
-
-unsigned long long memory_symbol::get_address() const
-{
-   return address;
-}
-
-bool memory_symbol::is_resolved() const
-{
-   return resolved;
-}
-
-std::string memory_symbol::get_address_string(unsigned int precision) const
-{
-   return STR("\"") + convert_to_binary(static_cast<unsigned long long int>(address), precision) + "\"";
-}
-
-unsigned int memory_symbol::get_variable() const
-{
-   return variable;
+   storage_index_map[variable] = sv;
 }

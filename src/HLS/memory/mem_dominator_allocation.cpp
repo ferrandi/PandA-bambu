@@ -72,6 +72,7 @@
 #include <algorithm>
 #include <list>
 #include <utility>
+#include <boost/filesystem/operations.hpp>
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
@@ -87,9 +88,13 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "polixml.hpp"
+#include "xml_dom_parser.hpp"
+#include "xml_helper.hpp"
+
 mem_dominator_allocation::mem_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization,
                                                    const HLSFlowStep_Type _hls_flow_step_type)
-    : memory_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
+    : memory_allocation(_parameters, _HLSMgr, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization), user_defined_base_address(static_cast<unsigned long long>(-1LL))
 {
    debug_level = _parameters->get_class_debug_level(GET_CLASS(*this));
 }
@@ -111,6 +116,103 @@ static void buildAllocationOrderRecursively(const HLS_managerRef HLSMgr, std::ve
 
 void mem_dominator_allocation::Initialize()
 {
+   std::vector<std::string> xml_files;
+   if(parameters->isOption(OPT_xml_memory_allocation))
+   {
+      xml_files.push_back(parameters->getOption<std::string>(OPT_xml_memory_allocation));
+   }
+   else
+   {
+      /// load xml memory allocation file
+      for(auto source_file : HLSMgr->input_files)
+      {
+         const std::string output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+         std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
+         auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
+         if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+         {
+            xml_files.push_back(XMLfilename);
+         }
+      }
+   }
+   for(auto XMLfilename: xml_files)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+      XMLDomParser parser(XMLfilename);
+      parser.Exec();
+      if(parser)
+      {
+         const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+         const xml_node::node_list list = node->get_children();
+         for(const auto& l : list)
+         {
+            const xml_element* child = GetPointer<xml_element>(l);
+            if(!child)
+               continue;
+            if(child->get_name() == "memory_allocation")
+            {
+               unsigned long long int base_address = static_cast<unsigned long long int>(-1LL);
+               if(CE_XVM(base_address, child))
+                  LOAD_XVM(base_address, child);
+               user_defined_base_address = base_address;
+               for(const auto& it : child->get_children())
+               {
+                  const xml_element* mem_node = GetPointer<xml_element>(it);
+                  if(!mem_node)
+                     continue;
+                  if(mem_node->get_name() == "object")
+                  {
+                     std::string is_internal;
+                     if(!CE_XVM(is_internal, mem_node))
+                        THROW_ERROR("expected the is_internal attribute");
+                     LOAD_XVM(is_internal, mem_node);
+                     if(is_internal == "T")
+                     {
+                        if(!CE_XVM(scope, mem_node))
+                           THROW_ERROR("expected the scope attribute when the object is internal");
+                        std::string scope;
+                        LOAD_XVM(scope, mem_node);
+                        if(!CE_XVM(name, mem_node))
+                           THROW_ERROR("expected the name attribute");
+                        std::string name;
+                        LOAD_XVM(name, mem_node);
+                        user_internal_objects[scope].insert(name);
+                     }
+                     else if(is_internal == "F")
+                     {
+                        std::string scope;
+                        if(CE_XVM(scope, mem_node))
+                           LOAD_XVM(scope, mem_node);
+                        else
+                           scope = "*";
+                        if(!CE_XVM(name, mem_node))
+                           THROW_ERROR("expected the name attribute");
+                        std::string name;
+                        LOAD_XVM(name, mem_node);
+                        user_external_objects[scope].insert(name);
+                     }
+                     else
+                        THROW_ERROR("unexpected value for is_internal attribute");
+                  }
+               }
+            }
+         }
+         /// check xml consistency
+         for(auto user_obj: user_internal_objects)
+         {
+            for(auto var_obj: user_obj.second)
+            {
+               if(user_external_objects.find(user_obj.first) != user_external_objects.end() &&
+                  user_external_objects.find(user_obj.first)->second.find(var_obj) != user_external_objects.find(user_obj.first)->second.end())
+                  THROW_ERROR("An allocated object cannot be both internal and external: " + var_obj + " in function " + user_obj.first);
+               if(user_external_objects.find("*") != user_external_objects.end() &&
+                  user_external_objects.find("*")->second.find(var_obj) != user_external_objects.find("*")->second.end())
+                  THROW_ERROR("An allocated object cannot be both internal and external: " + var_obj + " in function " + user_obj.first);
+            }
+         }
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+   }
 }
 
 std::vector<unsigned int> mem_dominator_allocation::getFunctionAllocationOrder(CustomOrderedSet<unsigned int> top_functions)
@@ -129,6 +231,68 @@ std::vector<unsigned int> mem_dominator_allocation::getFunctionAllocationOrder(C
    }
    return functionAllocationOrder;
 }
+
+bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std::string &var_name, const std::string &fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM)
+{
+   bool is_internal = false;
+   if(user_external_objects.find(fun_name) != user_external_objects.end() && user_external_objects.find(fun_name)->second.find(var_name) != user_external_objects.find(fun_name)->second.end())
+      return false;
+   if(user_external_objects.find("*") != user_external_objects.end() && user_external_objects.find("*")->second.find(var_name) != user_external_objects.find("*")->second.end())
+      return false;
+   if(user_internal_objects.find(fun_name) != user_internal_objects.end() && user_internal_objects.find(fun_name)->second.find(var_name) != user_internal_objects.find(fun_name)->second.end())
+      return true;
+   if(not multiple_top_call_graph)
+   {
+      const tree_nodeRef tn = TreeM->get_tree_node_const(var_index);
+      switch(memory_allocation_policy)
+      {
+         case MemoryAllocation_Policy::LSS:
+         {
+            auto* vd = GetPointer<var_decl>(tn);
+            if(vd && (vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K)))
+               is_internal = true;
+            if(GetPointer<string_cst>(tn))
+               is_internal = true;
+            if(HLSMgr->Rmem->is_parm_decl_copied(var_index) || HLSMgr->Rmem->is_parm_decl_stored(var_index))
+               is_internal = true;
+            break;
+         }
+         case MemoryAllocation_Policy::GSS:
+         {
+            auto* vd = GetPointer<var_decl>(tn);
+            if(vd && (vd->static_flag || !vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K))
+               is_internal = true;
+            if(GetPointer<string_cst>(tn))
+               is_internal = true;
+            if(HLSMgr->Rmem->is_parm_decl_copied(var_index) || HLSMgr->Rmem->is_parm_decl_stored(var_index))
+               is_internal = true;
+            break;
+         }
+         case MemoryAllocation_Policy::ALL_BRAM:
+         {
+            is_internal = true;
+            break;
+         }
+         case MemoryAllocation_Policy::EXT_PIPELINED_BRAM:
+         case MemoryAllocation_Policy::NO_BRAM:
+         {
+            is_internal = false;
+            break;
+         }
+         case MemoryAllocation_Policy::NONE:
+         default:
+            THROW_UNREACHABLE("not supported memory allocation policy");
+      }
+      // The address of the call site is internal.
+      // We are using the address of the call site in the notification
+      // mechanism of the hw call between accelerators.
+      if(GetPointer<gimple_call>(tn))
+         is_internal = true;
+   }
+   return is_internal;
+}
+
+
 
 /// check if current_vertex is a proxied function
 static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerConstRef CG, const HLS_managerRef HLSMgr)
@@ -153,6 +317,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    const HLS_targetRef HLS_T = HLSMgr->get_HLS_target();
    /// TODO: to be fixed with information coming out from the target platform description
    auto base_address = parameters->getOption<unsigned long long int>(OPT_base_address);
+   if(user_defined_base_address != static_cast<unsigned long long>(-1))
+      base_address = user_defined_base_address;
    bool initial_internal_address_p = parameters->isOption(OPT_initial_internal_address);
    unsigned int initial_internal_address = initial_internal_address_p ? parameters->getOption<unsigned int>(OPT_initial_internal_address) : std::numeric_limits<unsigned int>::max();
    auto max_bram = HLS_T->get_target_device()->get_parameter<unsigned int>("BRAM_bitsize_max");
@@ -694,60 +860,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       THROW_ASSERT(funID, "null function id index unexpected");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Found common dominator for variable " + STR(var_index) + ":" + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
 
-      bool is_internal = false;
-      if(not multiple_top_call_graph)
-      {
-         const tree_nodeRef tn = TreeM->get_tree_node_const(var_index);
-         switch(memory_allocation_policy)
-         {
-            case MemoryAllocation_Policy::LSS:
-            {
-               auto* vd = GetPointer<var_decl>(tn);
-               if(vd && (vd->static_flag || (vd->scpe && GET_NODE(vd->scpe)->get_kind() != translation_unit_decl_K)))
-                  is_internal = true;
-               if(GetPointer<string_cst>(tn))
-                  is_internal = true;
-               if(HLSMgr->Rmem->is_parm_decl_copied(var_index) || HLSMgr->Rmem->is_parm_decl_stored(var_index))
-                  is_internal = true;
-               break;
-            }
-            case MemoryAllocation_Policy::GSS:
-            {
-               auto* vd = GetPointer<var_decl>(tn);
-               if(vd && (vd->static_flag || !vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K))
-                  is_internal = true;
-               if(GetPointer<string_cst>(tn))
-                  is_internal = true;
-               if(HLSMgr->Rmem->is_parm_decl_copied(var_index) || HLSMgr->Rmem->is_parm_decl_stored(var_index))
-                  is_internal = true;
-               break;
-            }
-            case MemoryAllocation_Policy::ALL_BRAM:
-            {
-               is_internal = true;
-               break;
-            }
-            case MemoryAllocation_Policy::EXT_PIPELINED_BRAM:
-            case MemoryAllocation_Policy::NO_BRAM:
-            {
-               is_internal = false;
-               break;
-            }
-            case MemoryAllocation_Policy::INTERN_UNALIGNED:
-            {
-               is_internal = HLSMgr->Rmem->has_sds_var(var_index) && HLSMgr->Rmem->is_sds_var(var_index);
-               break;
-            }
-            case MemoryAllocation_Policy::NONE:
-            default:
-               THROW_UNREACHABLE("not supported memory allocation policy");
-         }
-         // The address of the call site is internal.
-         // We are using the address of the call site in the notification
-         // mechanism of the hw call between accelerators.
-         if(GetPointer<gimple_call>(tn))
-            is_internal = true;
-      }
+      bool is_internal = is_internal_obj(var_index, HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->PrintVariable(var_index), HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name(), multiple_top_call_graph, TreeM);
 
       memory_allocation_map[funID].push_back(std::make_pair(var_index, is_internal));
    }
@@ -824,8 +937,6 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                }
             }
-            if(memory_allocation_policy == MemoryAllocation_Policy::INTERN_UNALIGNED && (!HLSMgr->Rmem->has_sds_var(var_index) || !HLSMgr->Rmem->is_sds_var(var_index)))
-               mem_map.second = false;
          }
          else
          {
@@ -922,7 +1033,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(*wiu_it);
                   const BehavioralHelperConstRef cur_BH = cur_function_behavior->CGetBehavioralHelper();
                   INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Internal variable: " + cur_BH->PrintVariable(var_index) + " - " + STR(var_index) + " - " + var_index_string + " in function " + cur_BH->get_function_name());
-                  HLSMgr->Rmem->add_internal_variable(*wiu_it, var_index);
+                  HLSMgr->Rmem->add_internal_variable(*wiu_it, var_index, cur_BH->PrintVariable(var_index));
                }
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->");
             }
@@ -931,14 +1042,14 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
                const BehavioralHelperConstRef cur_BH = cur_function_behavior->CGetBehavioralHelper();
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Internal variable: " + cur_BH->PrintVariable(var_index) + " - " + STR(var_index) + " - " + var_index_string + " in function " + cur_BH->get_function_name());
-               HLSMgr->Rmem->add_internal_variable(funID, var_index);
+               HLSMgr->Rmem->add_internal_variable(funID, var_index, cur_BH->PrintVariable(var_index));
             }
             else
             {
                const FunctionBehaviorConstRef cur_function_behavior = HLSMgr->CGetFunctionBehavior(funID);
                const BehavioralHelperConstRef cur_BH = cur_function_behavior->CGetBehavioralHelper();
                INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Internal variable: " + cur_BH->PrintVariable(var_index) + " - " + STR(var_index) + " - " + var_index_string + " in function " + cur_BH->get_function_name());
-               HLSMgr->Rmem->add_internal_variable(funID, var_index);
+               HLSMgr->Rmem->add_internal_variable(funID, var_index, cur_BH->PrintVariable(var_index));
                /// add proxies
                if((!parameters->IsParameter("no-private-mem") || parameters->GetParameter<int>("no-private-mem") == 0) && (!parameters->IsParameter("no-local-mem") || parameters->GetParameter<int>("no-local-mem") == 0))
                {
@@ -954,7 +1065,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
             const BehavioralHelperConstRef BH = function_behavior->CGetBehavioralHelper();
             var_index_string = BH->PrintVariable(var_index);
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Variable external to the top module: " + BH->PrintVariable(var_index) + " - " + STR(var_index) + " - " + var_index_string);
-            HLSMgr->Rmem->add_external_variable(var_index);
+            HLSMgr->Rmem->add_external_variable(var_index, BH->PrintVariable(var_index));
             is_dynamic_address_used = true;
          }
          bool is_packed = GetPointer<decl_node>(TreeM->get_tree_node_const(var_index)) && tree_helper::is_packed(TreeM, var_index);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -31,18 +31,42 @@
  *
  */
 /**
- * @file mem_dominator_allocation_CS.hpp
- * @brief add tag information
- * @author Nicola Saporetti <nicola.saporetti@gmail.com>
+ * @file pipeline_controller.hpp
+ * @brief Header class for the creation of a shift register controlling a pipeline.
+ *
+ * @author Christian Pilato <pilato@elet.polimi.it>
+ *
  */
-#include "memory_cs.hpp"
 
-memory_cs::memory_cs(const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address, const unsigned int _address_bitsize)
-    : memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize)
-{
-   bus_tag_bitsize = 0;
-}
+#ifndef PIPELINE_CONTROLLER_HPP
+#define PIPELINE_CONTROLLER_HPP
 
-memory_cs::~memory_cs()
+#include "controller_creator_base_step.hpp"
+
+/// STD include
+#include <string>
+
+REF_FORWARD_DECL(tree_manager);
+CONSTREF_FORWARD_DECL(OpGraph);
+
+class pipeline_controller : public ControllerCreatorBaseStep
 {
-}
+   /**
+    * Execute the step
+    * @return the exit status of this step
+    */
+   DesignFlowStep_Status InternalExec() override;
+
+ public:
+   /**
+    * Constructor.
+    * @param design_flow_manager is the design flow manager
+    */
+   pipeline_controller(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR);
+
+   /**
+    * Destructor.
+    */
+   ~pipeline_controller() override;
+};
+#endif

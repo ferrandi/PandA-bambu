@@ -41,6 +41,10 @@
 /// Header include
 #include "c_initialization_parser_functor.hpp"
 
+CInitializationParserFunctor::CInitializationParserFunctor(): write_in_a_file(false), file_variable("")
+{
+}
+
 CInitializationParserFunctor::~CInitializationParserFunctor()
 {
 }

@@ -1647,6 +1647,8 @@ src/HLS/architecture_creation/controller_creation/controller_cs.cpp
 src/HLS/architecture_creation/controller_creation/controller_cs.hpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.cpp
 src/HLS/architecture_creation/controller_creation/fsm_controller.hpp
+src/HLS/architecture_creation/controller_creation/pipeline_controller.cpp
+src/HLS/architecture_creation/controller_creation/pipeline_controller.hpp
 src/HLS/architecture_creation/datapath_creation/classic_datapath.cpp
 src/HLS/architecture_creation/datapath_creation/classic_datapath.hpp
 src/HLS/architecture_creation/datapath_creation/datapath_creator.cpp
@@ -1724,6 +1726,10 @@ src/HLS/binding/register/reg_binding_cs.cpp
 src/HLS/binding/register/reg_binding_cs.hpp
 src/HLS/binding/storage_value_insertion/storage_value_information.cpp
 src/HLS/binding/storage_value_insertion/storage_value_information.hpp
+src/HLS/binding/storage_value_insertion/storage_value_information_fsm.cpp
+src/HLS/binding/storage_value_insertion/storage_value_information_fsm.hpp
+src/HLS/binding/storage_value_insertion/storage_value_information_pipeline.cpp
+src/HLS/binding/storage_value_insertion/storage_value_information_pipeline.hpp
 src/HLS/binding/storage_value_insertion/storage_value_insertion.cpp
 src/HLS/binding/storage_value_insertion/storage_value_insertion.hpp
 src/HLS/binding/storage_value_insertion/values_scheme.cpp
@@ -1808,15 +1814,11 @@ src/HLS/memory/mem_dominator_allocation.cpp
 src/HLS/memory/mem_dominator_allocation.hpp
 src/HLS/memory/mem_dominator_allocation_cs.cpp
 src/HLS/memory/mem_dominator_allocation_cs.hpp
-src/HLS/memory/mem_xml_allocation.cpp
-src/HLS/memory/mem_xml_allocation.hpp
 src/HLS/memory/memory.cpp
 src/HLS/memory/memory.hpp
 src/HLS/memory/memory_allocation.cpp
 src/HLS/memory/memory_allocation.hpp
-src/HLS/memory/memory_cs.cpp
 src/HLS/memory/memory_cs.hpp
-src/HLS/memory/memory_symbol.cpp
 src/HLS/memory/memory_symbol.hpp
 src/HLS/module_allocation/add_library.cpp
 src/HLS/module_allocation/add_library.hpp
@@ -2039,6 +2041,7 @@ src/constants/pragma_constants.hpp
 src/constants/synthesis_constants.hpp
 src/constants/taste_constants.hpp
 src/constants/technology_xml.hpp
+src/constants/testbench_generation_constants.hpp
 src/constants/treegcc_constants.hpp
 src/constants/treegcc_xml.hpp
 src/constants/weights_xml.hpp
@@ -2204,6 +2207,8 @@ src/frontend_analysis/IR_analysis/parm_decl_taken_address_fix.cpp
 src/frontend_analysis/IR_analysis/parm_decl_taken_address_fix.hpp
 src/frontend_analysis/IR_analysis/phi_opt.cpp
 src/frontend_analysis/IR_analysis/phi_opt.hpp
+src/frontend_analysis/IR_analysis/pipeline_infer.cpp
+src/frontend_analysis/IR_analysis/pipeline_infer.hpp
 src/frontend_analysis/IR_analysis/pragma_analysis.cpp
 src/frontend_analysis/IR_analysis/pragma_analysis.hpp
 src/frontend_analysis/IR_analysis/rebuild_initializations.cpp

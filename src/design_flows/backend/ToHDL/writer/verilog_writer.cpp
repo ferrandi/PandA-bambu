@@ -885,6 +885,21 @@ void verilog_writer::write_io_signal_post_fix(const structural_objectRef& port, 
       indented_output_stream->Append("assign " + port_string + " = " + signal_string + ";\n");
 }
 
+void verilog_writer::write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig)
+{
+   THROW_ASSERT(port && port->get_kind() == port_vector_o_K, "Expected a port got something of different");
+   THROW_ASSERT(port->get_owner(), "Expected a port with an owner");
+   THROW_ASSERT(sig && sig->get_kind() == signal_vector_o_K, "Expected a signal got something of different");
+   std::string port_string;
+   std::string signal_string;
+   signal_string = HDL_manager::convert_to_identifier(this, sig->get_id());
+   port_string = HDL_manager::convert_to_identifier(this, port->get_id());
+   if(GetPointer<port_o>(port)->get_port_direction() == port_o::IN)
+      std::swap(port_string, signal_string);
+   if(port_string != signal_string)
+      indented_output_stream->Append("assign " + port_string + " = " + signal_string + ";\n");
+}
+
 void verilog_writer::write_module_parametrization(const structural_objectRef& cir)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module generics of " + cir->get_path());

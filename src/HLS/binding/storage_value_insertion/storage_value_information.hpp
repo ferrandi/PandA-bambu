@@ -61,11 +61,8 @@ class StorageValueInformation
    /// current number of storage values
    unsigned int number_of_storage_values;
 
-   /// put into relation variables/values with storage values
-   CustomUnorderedMapUnstable<unsigned int, unsigned int> storage_index_map;
-
    /// put into relation storage value index with variables
-   std::vector<unsigned int> variable_index_vect;
+   CustomUnorderedMap<unsigned int, unsigned int> variable_index_map;
 
    /// relation between var written and operations
    CustomUnorderedMap<unsigned int, vertex> vw2vertex;
@@ -91,7 +88,7 @@ class StorageValueInformation
    /**
     * Destructor
     */
-   ~StorageValueInformation();
+   virtual ~StorageValueInformation();
 
    /**
     * Initialize the step (i.e., like a constructor)
@@ -108,14 +105,14 @@ class StorageValueInformation
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   bool is_a_storage_value(vertex curr_vertex, unsigned int var_index) const;
+   virtual bool is_a_storage_value(vertex curr_vertex, unsigned int var_index) = 0;
 
    /**
     * Returns the index of the storage value associated with the variable in a given vertex
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) const;
+   virtual unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) = 0;
 
    /**
     * Returns the index of the variable associated with the storage value in a given vertex
@@ -127,6 +124,13 @@ class StorageValueInformation
     * An high value returned means an high compatibility between the two storage values.
     */
    int get_compatibility_weight(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
+
+   /**
+    * assign a storage value to a couple state-variable
+    * @param curr_state is the current state
+    * @param variable is the assigned variable
+    * @param sv is the assigned storage value*/
+   virtual void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) = 0;
 
    /**
     * return the in case the storage values have compatible size

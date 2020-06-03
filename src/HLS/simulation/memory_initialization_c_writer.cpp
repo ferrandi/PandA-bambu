@@ -209,38 +209,83 @@ void MemoryInitializationCWriter::Process(const std::string& content)
    switch(testbench_generation_memory_type)
    {
       case TestbenchGeneration_MemoryType::INPUT_PARAMETER:
+      {
+         THROW_ASSERT(write_in_a_file, "unexpected condition");
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//parameter: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"p" + binary_value + "\\n\");\n");
          break;
+      }
       case TestbenchGeneration_MemoryType::MEMORY_INITIALIZATION:
-         indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
-         if(is_all_8zeros(binary_value))
-         {
-            indented_output_stream->Append("for (__testbench_index = 0; "
-                                           "__testbench_index < " +
-                                           STR(binary_value.size() / 8) + "; " +
-                                           "++__testbench_index)\n"
-                                           "   fprintf(__bambu_testbench_fp, \"m00000000\\n\");\n");
-         }
-         else
+      {
+         if(write_in_a_file)
          {
             for(size_t bit = 0; bit < binary_value.size(); bit += 8)
             {
-               indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
+               memory_init_file << "m" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\n";
+            }
+         }
+         else
+         {
+            indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//memory initialization for variable: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
+            if(is_all_8zeros(binary_value))
+            {
+               indented_output_stream->Append("for (__testbench_index = 0; "
+                                              "__testbench_index < " +
+                                              STR(binary_value.size() / 8) + "; " +
+                                              "++__testbench_index)\n"
+                                              "   fprintf(__bambu_testbench_fp, \"m00000000\\n\");\n");
+            }
+            else
+            {
+               for(size_t bit = 0; bit < binary_value.size(); bit += 8)
+               {
+                  indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"m" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
+               }
             }
          }
          break;
+      }
       case TestbenchGeneration_MemoryType::OUTPUT_PARAMETER:
+      {
+         THROW_ASSERT(write_in_a_file, "unexpected condition");
          indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"//expected value for output: " + behavioral_helper->PrintVariable(function_parameter->index) + " value: " + content + "\\n\");\n");
          for(size_t bit = 0; bit < binary_value.size(); bit += 8)
          {
             indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"o" + binary_value.substr(binary_value.size() - 8 - bit, 8) + "\\n\");\n");
          }
          break;
+      }
       case TestbenchGeneration_MemoryType::RETURN:
       default:
          THROW_UNREACHABLE("");
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added code to write " + content + " (" + STR(binary_value.size() / 8) + " bytes) in binary form to initialize memory");
+}
+
+
+void MemoryInitializationCWriter::ActivateFileInit(const std::string& filename)
+{
+   write_in_a_file = true;
+   file_variable = filename;
+   memory_init_file.open(file_variable.c_str());
+}
+
+void MemoryInitializationCWriter::FinalizeFileInit()
+{
+   indented_output_stream->Append("{\n");
+   indented_output_stream->Append("FILE * __bambu_testbench_fp_local_copy;\n");
+   indented_output_stream->Append("char * line = NULL;\n");
+   indented_output_stream->Append("size_t len = 0;\n");
+   indented_output_stream->Append("ssize_t read;\n");
+   indented_output_stream->Append("__bambu_testbench_fp_local_copy = fopen(\"" + file_variable + "\", \"r\");\n");
+   indented_output_stream->Append("if (__bambu_testbench_fp_local_copy == NULL)\n");
+   indented_output_stream->Append("   exit(1);\n");
+   indented_output_stream->Append("while ((read = getline(&line, &len, __bambu_testbench_fp_local_copy)) != -1) {\n");
+   indented_output_stream->Append("   fprintf(__bambu_testbench_fp, \"%s\", line);\n");
+   indented_output_stream->Append("}\n");
+   indented_output_stream->Append("fclose(__bambu_testbench_fp_local_copy);\n");
+   indented_output_stream->Append("if (line)\n");
+   indented_output_stream->Append("   free(line);\n");
+   indented_output_stream->Append("}\n");
 }
