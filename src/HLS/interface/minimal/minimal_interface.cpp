@@ -334,7 +334,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
             shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
-            if((Has_extern_allocated_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) || Has_unknown_addresses)
+            if((Has_extern_allocated_data) || Has_unknown_addresses)
                shared_memory_module->SetParameter("BUS_PIPELINED", "0");
             else
                shared_memory_module->SetParameter("BUS_PIPELINED", "1");
@@ -1055,8 +1055,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
             }
          }
+         std::cerr << "add interconnection " << port_out->get_path() << " to " << portsToSigConnect.find(port_out)->second->get_path() << "\n";
          port_o::fix_port_properties(port_out, ext_port);
-         SM_minimal_interface->add_connection(portsToSigConnect[port_out], ext_port);
+         SM_minimal_interface->add_connection(portsToSigConnect.find(port_out)->second, ext_port);
       }
       else if(port_out->get_kind() == port_vector_o_K && !GetPointer<port_o>(port_out)->find_bounded_object())
       {

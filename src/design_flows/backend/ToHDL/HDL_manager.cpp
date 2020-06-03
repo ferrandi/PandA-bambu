@@ -500,6 +500,30 @@ void HDL_manager::io_signal_fix_ith(const language_writerRef writer, const struc
    }
 }
 
+void HDL_manager::io_signal_fix_ith_vector(const language_writerRef writer, const structural_objectRef po, bool& lspf) const
+{
+   THROW_ASSERT(po && po->get_kind() == port_vector_o_K, "Expected a port; got something different");
+   auto* p = GetPointer<port_o>(po);
+   THROW_ASSERT(p, "Expected a port; got something different");
+   structural_objectRef po_owner = po->get_owner();
+   for(unsigned int j = 0; j < p->get_connections_size(); j++)
+   {
+      if(p->get_connection(j)->get_kind() == signal_vector_o_K and p->get_connection(j)->get_owner() == po_owner)
+      {
+         if(!lspf)
+         {
+            writer->write_comment("io-signal post fix\n");
+            lspf = true;
+         }
+         writer->write_io_signal_post_fix_vector(po, p->get_connection(j));
+      }
+      if(p->get_connection(j)->get_kind() == constant_o_K and p->get_connection(j)->get_owner() == po_owner)
+      {
+         THROW_ERROR("unexpected condition");
+      }
+   }
+}
+
 void HDL_manager::write_module(const language_writerRef writer, const structural_objectRef cir, bool equation, std::list<std::string>& aux_files) const
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module " + GET_TYPE_NAME(cir));
@@ -820,6 +844,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_in_port(i), lspf);
                else
                {
+                  io_signal_fix_ith_vector(writer, mod->get_in_port(i), lspf);
                   auto* pv = GetPointer<port_o>(mod->get_in_port(i));
                   for(unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
@@ -834,6 +859,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_out_port(i), lspf);
                else
                {
+                  io_signal_fix_ith_vector(writer, mod->get_out_port(i), lspf);
                   auto* pv = GetPointer<port_o>(mod->get_out_port(i));
                   for(unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
@@ -848,6 +874,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_in_out_port(i), lspf);
                else
                {
+                  io_signal_fix_ith_vector(writer, mod->get_in_out_port(i), lspf);
                   auto* pv = GetPointer<port_o>(mod->get_in_out_port(i));
                   for(unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
