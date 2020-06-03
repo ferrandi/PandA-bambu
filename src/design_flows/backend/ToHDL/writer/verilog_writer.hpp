@@ -177,6 +177,7 @@ class verilog_writer : public language_writer
     * @param sig is the attached signal.
     */
    void write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig) override;
+   void write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig) override;
    /**
     * Module can be parameterized with respect different features. Port vectors areparameterizedd with the number of port associated,
     * while ports are parameterized in case the type is a integer with the number of bits. The id of the module is modified

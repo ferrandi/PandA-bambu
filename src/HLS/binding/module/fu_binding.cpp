@@ -1540,8 +1540,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
-         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM and
-                                           parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) or
+         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) or
                                           (HLSMgr->Rmem->has_unknown_addresses() and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
                                            parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
          if(Has_extern_allocated_data)

@@ -105,9 +105,6 @@ const std::string MemoryAllocationSpecialization::GetKindText() const
       case MemoryAllocation_Policy::EXT_PIPELINED_BRAM:
          ret += "EXT_PIPELINED_BRAM";
          break;
-      case MemoryAllocation_Policy::INTERN_UNALIGNED:
-         ret += "INTERN_UNALIGNED";
-         break;
       case MemoryAllocation_Policy::NONE:
       default:
          THROW_UNREACHABLE("");

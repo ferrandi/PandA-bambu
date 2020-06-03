@@ -59,7 +59,6 @@ enum class MemoryAllocation_Policy
    ALL_BRAM,           /// all objects that need to be stored in memory are allocated on BRAMs
    NO_BRAM,            /// all objects that need to be stored in memory are allocated on an external memory
    EXT_PIPELINED_BRAM, /// all objects that need to be stored in memory are allocated on an external pipelined memory
-   INTERN_UNALIGNED,   /// all objects with an unaligned access are clustered on a single STD_BRAM
    NONE                /// no policy
 };
 
