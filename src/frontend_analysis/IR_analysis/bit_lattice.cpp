@@ -511,21 +511,19 @@ bool BitLatticeManipulator::mix()
    return updated;
 }
 
-bool BitLatticeManipulator::update_current(std::deque<bit_lattice> res, unsigned int output_uid)
+bool BitLatticeManipulator::update_current(std::deque<bit_lattice>& res, unsigned int output_uid)
 {
-   bool out_is_signed = signed_var.find(output_uid) != signed_var.end() or tree_helper::is_int(TM, output_uid);
-   if(!res.empty())
+   if(not res.empty())
    {
+      const auto out_is_signed = signed_var.find(output_uid) != signed_var.end() or tree_helper::is_int(TM, output_uid);
       sign_reduce_bitstring(res, out_is_signed);
-   }
-   if(!res.empty())
-   {
-      auto cur_lattice = current.at(output_uid);
-      auto best_lattice = best.at(output_uid);
+
+      auto& cur_lattice = current.at(output_uid);
+      const auto best_lattice = best.at(output_uid);
       auto sup_lattice = sup(res, best_lattice, output_uid);
       if(cur_lattice != sup_lattice)
       {
-         current[output_uid] = sup_lattice;
+         cur_lattice = sup_lattice;
          return true;
       }
    }

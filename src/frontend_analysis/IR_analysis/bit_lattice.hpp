@@ -143,7 +143,7 @@ class BitLatticeManipulator
     * functions checks if it is necessary to update the bistring stored in
     * the current map used by the bitvalue analysis algorithm.
     */
-   bool update_current(std::deque<bit_lattice> res, unsigned int output_uid);
+   bool update_current(std::deque<bit_lattice>& res, unsigned int output_uid);
 
    /**
     * Clean up the internal data structures

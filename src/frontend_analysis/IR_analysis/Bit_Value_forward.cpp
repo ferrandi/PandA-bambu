@@ -2253,9 +2253,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
              * necessarily the same of both the inputs.
              */
             const auto inf_size = std::max(arg2_bitstring.size(), arg3_bitstring.size());
-            if(arg2_bitstring.size() > inf_size)
+            if(arg2_bitstring.size() < inf_size)
                arg2_bitstring = sign_extend_bitstring(arg2_bitstring, tree_helper::is_int(TM, arg2_uid), inf_size);
-            if(arg3_bitstring.size() > inf_size)
+            if(arg3_bitstring.size() < inf_size)
                arg3_bitstring = sign_extend_bitstring(arg3_bitstring, tree_helper::is_int(TM, arg3_uid), inf_size);
             const auto out_uid = GET_INDEX_NODE(ga->op0);
             res = inf(arg2_bitstring, arg3_bitstring, out_uid);
@@ -2327,11 +2327,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       auto ae0 = [&] {
          static auto count = 0ULL;
          const auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
-         std::cout << STR(count++) << " Operating on " << ga->ToString() << std::endl;
          auto address_size = AppM->get_address_bitsize();
          auto is_pretty_print_used = parameters->isOption(OPT_pretty_print);
          auto lt0 = lsb_to_zero(ae, is_pretty_print_used);
-         std::cout << "   addr_size = " << STR(address_size) << ", pp_used = " << STR(is_pretty_print_used) << ", lt0 = " << STR(lt0) << std::endl;
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "address_size: " + STR(address_size) + " lt0: " + STR(lt0));
          if(lt0 && address_size > lt0)
          {
@@ -2423,8 +2421,8 @@ void Bit_Value::forward()
 
                      THROW_ASSERT(best.find(output_uid) != best.end(), "unexpected condition");
                      current.insert(std::make_pair(output_uid, best.at(output_uid)));
-                     std::deque<bit_lattice> res = forward_transfer(ga);
-                     current_updated = update_current(std::move(res), output_uid) or current_updated;
+                     auto res = forward_transfer(ga);
+                     current_updated = update_current(res, output_uid) or current_updated;
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(stmt));
@@ -2455,7 +2453,7 @@ void Bit_Value::forward()
                   }
 
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res id: " + STR(output_uid));
-                  std::deque<bit_lattice> res = create_x_bitstring(1);
+                  auto res = create_x_bitstring(1);
                   bool atLeastOne = false;
                   for(const auto& def_edge : pn->CGetDefEdgesList())
                   {
@@ -2484,8 +2482,8 @@ void Bit_Value::forward()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Edge " + STR(def_edge.second) + ": " + bitstring_to_string(current.at(GET_INDEX_NODE(def_edge.first))));
 
 #if HAVE_ASSERTS
-                     bool is_signed1 = tree_helper::is_int(TM, output_uid);
-                     bool is_signed2 = tree_helper::is_int(TM, GET_INDEX_NODE(def_edge.first));
+                     const auto is_signed1 = tree_helper::is_int(TM, output_uid);
+                     const auto is_signed2 = tree_helper::is_int(TM, GET_INDEX_NODE(def_edge.first));
 #endif
                      THROW_ASSERT(is_signed2 == is_signed1, STR(phi));
                      res = inf(res, current.at(GET_INDEX_NODE(def_edge.first)), output_uid);
@@ -2502,10 +2500,14 @@ void Bit_Value::forward()
                            current.insert(std::make_pair(output_uid, res));
                         }
                         else
-                           current_updated = update_current(std::move(res), output_uid) or current_updated;
+                        {
+                           current_updated = update_current(res, output_uid) or current_updated;
+                        }
                      }
                      else
-                        current_updated = update_current(std::move(res), output_uid) or current_updated;
+                     {
+                        current_updated = update_current(res, output_uid) or current_updated;
+                     }
                   }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed Phi " + STR(phi));

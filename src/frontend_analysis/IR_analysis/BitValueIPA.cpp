@@ -397,7 +397,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   break;
             }
 
-            update_current(std::move(res), fu_id);
+            update_current(res, fu_id);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Backward done");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After backward id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
@@ -523,7 +523,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed return statements in all BBs");
 
-            update_current(std::move(res), fu_id);
+            update_current(res, fu_id);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Forward done");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After forward id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
@@ -660,7 +660,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(B->number));
                }
 
-               update_current(std::move(res), pd_id);
+               update_current(res, pd_id);
 
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Backward done");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After backward id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
@@ -882,7 +882,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      break;
                }
 
-               update_current(std::move(res), pd_id);
+               update_current(res, pd_id);
 
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Forward done");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After forward id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));

@@ -46,6 +46,7 @@
 #include "Bit_Value_opt.hpp"
 
 #include "bit_lattice.hpp"
+#include "Range.hpp"
 
 /// Autoheader include
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"
@@ -159,21 +160,46 @@ static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
    {
       return;
    }
-   auto nbit = op_ssa->bit_values.size();
-   auto op0_type_id = GET_INDEX_NODE(op_ssa->type);
-   auto nbitType = BitLatticeManipulator::size(TM, op0_type_id);
+   const auto nbit = op_ssa->bit_values.size();
+   const auto op0_type_id = GET_INDEX_NODE(op_ssa->type);
+   const auto nbitType = BitLatticeManipulator::size(TM, op0_type_id);
    if(nbit != nbitType)
    {
-      // TODO: maybe check range to avoid overwriting
-      bool isSigned = tree_helper::is_int(TM, op0_type_id);
+      const bool isSigned = tree_helper::is_int(TM, op0_type_id);
       if(isSigned)
+      {
+         RangeRef constraintRange(new Range(Regular, static_cast<Range::bw_t>(nbitType), -(1ll << (nbit - 1)), (1ll << (nbit - 1)) - 1));
+         if(op_ssa->range)
+         {
+            if(op_ssa->range->getSpan() < constraintRange->getSpan())
+            {
+               return;
+            }
+         }
+         else
+         {
+            op_ssa->range = constraintRange;
+         }
          op_ssa->min = TM->CreateUniqueIntegerCst(-(1ll << (nbit - 1)), op0_type_id);
-      else
-         op_ssa->min = TM->CreateUniqueIntegerCst(0, op0_type_id);
-      if(isSigned)
          op_ssa->max = TM->CreateUniqueIntegerCst((1ll << (nbit - 1)) - 1, op0_type_id);
+      }
       else
+      {
+         RangeRef constraintRange(new Range(Regular, static_cast<Range::bw_t>(nbitType), 0, (1ll << nbit) - 1));
+         if(op_ssa->range)
+         {
+            if(op_ssa->range->getSpan() < constraintRange->getSpan())
+            {
+               return;
+            }
+         }
+         else
+         {
+            op_ssa->range = constraintRange;
+         }
+         op_ssa->min = TM->CreateUniqueIntegerCst(0, op0_type_id);
          op_ssa->max = TM->CreateUniqueIntegerCst((1ll << nbit) - 1, op0_type_id);
+      }
       // std::cerr<<"var " << op_ssa->ToString()<<" ";
       // std::cerr << "min " <<op_ssa->min->ToString() << " max " <<op_ssa->max->ToString()<<"\n";
       // std::cerr << "nbit "<< nbit << " nbitType " << nbitType <<"\n";

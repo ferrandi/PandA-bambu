@@ -1487,9 +1487,15 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
    }
    else if(interval->isFullSet())
    {
-      updateState = ut_Range;
+      updateState = ut_Range | ut_BitValue;
       SSA->max.reset();
       SSA->min.reset();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Min: reset   Max: reset");
+#ifdef BITVALUE_UPDATE
+      bit_values = interval->getBitValues(isSigned);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---BitValue updated for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text() + ": " + bitstring_to_string(bit_values) + " <= " + SSA->bit_values);
+      SSA->bit_values = bitstring_to_string(bit_values);
+#endif
    }
    else
    {
@@ -1553,11 +1559,13 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
 #endif
 
    if(const auto* gp = GetPointer<const gimple_phi>(GET_NODE(SSA->CGetDefStmt())))
+   {
       if(gp->CGetDefEdgesList().size() == 1)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Sigma defined variable not considered for invalidation loop...");
          return ut_None;
       }
+   }
    return updateState;
 }
 
@@ -2482,7 +2490,7 @@ static bool enable_load = true;
 static bool enable_float_pack = true;
 static bool enable_view_convert = true;
 static bool enable_float_unpack = true;
-static bool enable_ternary = true;
+static bool enable_ternary = false;          // TODO: disable because of problem with reduced precision fdiv/f64div operator (fix before enabling back)
 static bool enable_bit_phi = true;
 
 #define OPERATION_OPTION(opts, X)                                                                          \
@@ -3997,14 +4005,14 @@ RangeRef TernaryOpNode::eval() const
    auto op3 = this->getSource3()->getRange();
    // Instruction bitwidth
    const auto bw = getSink()->getBitWidth();
-   auto result = getRangeFor(getSink()->getValue(), Unknown);
+   auto result = getRangeFor(getSink()->getValue(), Regular);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
 
 #ifndef NDEBUG
    if(enable_ternary)
    {
-#endif
+//    #endif
       // only evaluate if all operands are Regular
       if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()) && (op3->isRegular() || op3->isAnti()))
       {
@@ -4080,11 +4088,7 @@ RangeRef TernaryOpNode::eval() const
             result = getRangeFor(getSink()->getValue(), Empty);
          }
       }
-#ifndef NDEBUG
-   }
-   else
-   {
-      result = getRangeFor(getSink()->getValue(), Regular);
+//    #ifndef NDEBUG
    }
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = " + op1->ToString() + " ? " + op2->ToString() + " : " + op3->ToString());

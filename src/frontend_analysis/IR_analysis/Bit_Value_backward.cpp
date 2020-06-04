@@ -247,8 +247,8 @@ void Bit_Value::backward()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable has been proven to be constant: " + STR(output_uid));
                      continue;
                   }
-                  std::deque<bit_lattice> res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
-                  current_updated = update_current(std::move(res), output_uid) or current_updated;
+                  auto res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
+                  current_updated = update_current(res, output_uid) or current_updated;
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + STR(stmt));
@@ -281,8 +281,8 @@ void Bit_Value::backward()
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable has been proven to be constant: " + STR(output_uid));
                   continue;
                }
-               std::deque<bit_lattice> res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
-               current_updated = update_current(std::move(res), output_uid) or current_updated;
+               auto res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
+               current_updated = update_current(res, output_uid) or current_updated;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed Phi " + STR(stmt));
          }
@@ -778,7 +778,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
@@ -834,7 +834,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
@@ -919,7 +919,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
@@ -946,7 +946,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
