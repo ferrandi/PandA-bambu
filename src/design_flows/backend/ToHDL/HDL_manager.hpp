@@ -139,6 +139,7 @@ class HDL_manager
     * @param lspf is true when the first post is written
     */
    void io_signal_fix_ith(const language_writerRef writer, const structural_objectRef po, bool& lspf) const;
+   void io_signal_fix_ith_vector(const language_writerRef writer, const structural_objectRef po, bool& lspf) const;
 
    /**
     * Returns true if the module has a FSM description associated with, false otherwise.

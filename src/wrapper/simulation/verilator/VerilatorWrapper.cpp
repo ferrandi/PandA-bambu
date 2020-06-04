@@ -47,6 +47,7 @@
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_L2_NAME.hpp"
+#include "config_HAVE_THREADS.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -64,6 +65,7 @@
 #include <fstream>
 #include <unistd.h>
 #include <utility>
+#include <thread>
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
@@ -123,6 +125,10 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
 #endif
+   unsigned int nThreads = std::thread::hardware_concurrency();
+#if HAVE_THREADS
+   script << " --threads "<< nThreads;
+#endif
    if(generate_vcd_output)
    {
       script << " --trace --trace-underscore"; // --trace-params
@@ -143,7 +149,13 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << std::endl << std::endl;
    script << "ln -s ../../../" + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j4 OPT_FAST=\"-O1 -fstrict-aliasing\" -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j"<< nThreads;
+#if HAVE_THREADS
+   script << " OPT_FAST=\"-O2\" OPT_SLOW=\"-O1 -fstrict-aliasing\" OPT=\"-march=native\"";
+#else
+   script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
+#endif
+   script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";

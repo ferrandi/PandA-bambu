@@ -279,11 +279,6 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std
             is_internal = false;
             break;
          }
-         case MemoryAllocation_Policy::INTERN_UNALIGNED:
-         {
-            is_internal = HLSMgr->Rmem->has_sds_var(var_index) && HLSMgr->Rmem->is_sds_var(var_index);
-            break;
-         }
          case MemoryAllocation_Policy::NONE:
          default:
             THROW_UNREACHABLE("not supported memory allocation policy");
@@ -942,8 +937,6 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                }
             }
-            if(memory_allocation_policy == MemoryAllocation_Policy::INTERN_UNALIGNED && (!HLSMgr->Rmem->has_sds_var(var_index) || !HLSMgr->Rmem->is_sds_var(var_index)))
-               mem_map.second = false;
          }
          else
          {

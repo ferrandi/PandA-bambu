@@ -4003,8 +4003,7 @@ RangeRef TernaryOpNode::eval() const
    const auto op1 = this->getSource1()->getRange();
    auto op2 = this->getSource2()->getRange();
    auto op3 = this->getSource3()->getRange();
-   // Instruction bitwidth
-   const auto bw = getSink()->getBitWidth();
+   
    auto result = getRangeFor(getSink()->getValue(), Regular);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
@@ -4052,12 +4051,13 @@ RangeRef TernaryOpNode::eval() const
                      if(GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K || GET_CONST_NODE(CondOp1)->get_kind() == integer_cst_K)
                      {
                         const auto& variable = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp1 : CondOp0;
-                        const auto* constant = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? GetPointer<const integer_cst>(GET_CONST_NODE(CondOp0)) : GetPointer<const integer_cst>(GET_CONST_NODE(CondOp1));
+                        const auto& constant = GET_CONST_NODE(CondOp0)->get_kind() == integer_cst_K ? CondOp0 : CondOp1;
                         const auto& opV1 = I->op1;
                         const auto& opV2 = I->op2;
                         if(GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV1) || GET_INDEX_CONST_NODE(variable) == GET_INDEX_CONST_NODE(opV2))
                         {
-                           RangeRef CR(new Range(Regular, bw, constant->value, constant->value));
+                           const auto CR = getGIMPLE_range(constant);
+                           THROW_ASSERT(CR->isConstant(), "Range from constant should be constant (" + GET_CONST_NODE(constant)->ToString() + " => " + CR->ToString() + ")");
                            kind pred = isSignedType(CondOp0) ? be->get_kind() : op_unsigned(be->get_kind());
                            kind swappred = op_swap(pred);
 

@@ -2420,8 +2420,6 @@ int BambuParameter::Exec()
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
                else if(std::string(optarg) == "EXT_PIPELINED_BRAM")
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
-               else if(std::string(optarg) == "INTERN_UNALIGNED")
-                  setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::INTERN_UNALIGNED);
                else
                   throw "BadParameters: memory allocation policy option not correctly specified";
                break;
@@ -3244,8 +3242,6 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
       THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
 
-   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::INTERN_UNALIGNED && !getOption<bool>(OPT_do_not_expose_globals))
-      THROW_ERROR("--memory-allocation-policy=INTERN_UNALIGNED implies --do-not-expose-globals");
    if(not getOption<bool>(OPT_gcc_include_sysdir))
    {
       if(not isOption(OPT_input_file))

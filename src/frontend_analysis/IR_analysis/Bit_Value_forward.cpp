@@ -2325,7 +2325,6 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    else if(op_kind == addr_expr_K)
    {
       auto ae0 = [&] {
-         static auto count = 0ULL;
          const auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
          auto address_size = AppM->get_address_bitsize();
          auto is_pretty_print_used = parameters->isOption(OPT_pretty_print);
