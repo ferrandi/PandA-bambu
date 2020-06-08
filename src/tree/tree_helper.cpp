@@ -110,7 +110,7 @@ static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_i
    {
       if(bitstring_is_signed)
       {
-         if((bitstring.at(0) != 'U' and bitstring.at(0) == bitstring.at(1)) or bitstring.at(0) == 'X')
+         if(bitstring.at(0) == 'X' or (bitstring.at(0) != 'U' and (bitstring.at(0) == bitstring.at(1) or bitstring.at(1) == 'X')))
          {
             bitstring = bitstring.substr(1);
          }
