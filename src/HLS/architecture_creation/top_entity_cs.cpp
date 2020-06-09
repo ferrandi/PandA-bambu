@@ -127,6 +127,11 @@ void top_entity_cs::add_context_switch_port()
    SM->add_connection(datapath_selector, selector_obj);
    structural_objectRef controller_selector = controller_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, controller_circuit);
    SM->add_connection(controller_selector, selector_obj);
+   auto selector_regFile_sign = circuit->find_member(STR(SELECTOR_REGISTER_FILE) + "_signal", signal_o_K, circuit);
+   if(selector_regFile_sign)
+   {
+      SM->add_connection(selector_obj, selector_regFile_sign);
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added ports");
 }
 
