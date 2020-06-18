@@ -2324,21 +2324,21 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 #endif
    else if(op_kind == addr_expr_K)
    {
-      // TODO: fix test pr30704
-      //    auto ae0 = [&] {
-      //       const auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
-      //       auto address_size = AppM->get_address_bitsize();
-      //       auto is_pretty_print_used = parameters->isOption(OPT_pretty_print);
-      //       auto lt0 = lsb_to_zero(ae, is_pretty_print_used);
-      //       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "address_size: " + STR(address_size) + " lt0: " + STR(lt0));
-      //       if(lt0 && address_size > lt0)
-      //       {
-      //          res = create_u_bitstring(address_size - lt0);
-      //          for(auto index = 0u; index < lt0; ++index)
-      //             res.push_back(bit_lattice::ZERO);
-      //       }
-      //    };
-      //    ae0();
+      auto ae0 = [&] {
+         const auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
+         auto address_size = AppM->get_address_bitsize();
+         auto is_pretty_print_used = parameters->isOption(OPT_pretty_print);
+         auto lt0 = lsb_to_zero(ae, is_pretty_print_used);
+         const auto op_name = ae->ToString();
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "address_size: " + STR(address_size) + " lt0: " + STR(lt0));
+         if(lt0 && address_size > lt0)
+         {
+            res = create_u_bitstring(address_size - lt0);
+            for(auto index = 0u; index < lt0; ++index)
+               res.push_back(bit_lattice::ZERO);
+         }
+      };
+      ae0();
    }
 #if 1
    else if(op_kind == mem_ref_K || op_kind == component_ref_K || op_kind == var_decl_K || op_kind == array_ref_K)

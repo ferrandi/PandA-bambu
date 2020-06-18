@@ -423,29 +423,28 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
       else if(el->get_kind() == real_cst_K)
       {
          auto* real_const = GetPointer<real_cst>(el);
-         const auto real_size = Size(GET_CONST_NODE(real_const->type));
          const auto val = strtof64x(real_const->valr.data(), nullptr);
-         if(real_size == 64)
+         if(elements_bitsize == 64)
          {
             union {
                double d;
                long long ll;
             } vc;
             vc.d = static_cast<double>(val);
-            cur_bitstring = create_bitstring_from_constant(vc.ll, 64, false);
+            cur_bitstring = create_bitstring_from_constant(vc.ll, 64, ssa_is_signed);
          }
-         else if(real_size == 32)
+         else if(elements_bitsize == 32)
          {
             union {
                float f;
                long l;
             } vc;
             vc.f = static_cast<float>(val);
-            cur_bitstring = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+            cur_bitstring = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, ssa_is_signed);
          }
          else
          {
-            THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+            THROW_UNREACHABLE("Unhandled real type size (" + STR(elements_bitsize) + ")");
          }
       }
       else if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))

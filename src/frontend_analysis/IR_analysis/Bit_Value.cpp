@@ -950,7 +950,7 @@ bool Bit_Value::update_IR()
 {
    bool res = false;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Updating IR");
-   for(auto b : best)
+   for(const auto& b : best)
    {
 #ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
@@ -1378,29 +1378,28 @@ void Bit_Value::initialize()
                                     {
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Real constant");
                                        const auto* cst = GetPointer<const real_cst>(cur_node);
-                                       const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(cst->type));
                                        const auto val = strtof64x(cst->valr.data(), nullptr);
-                                       if(real_size == 64)
+                                       if(source_type_size == 64)
                                        {
                                           union {
                                              double d;
                                              long long ll;
                                           } vc;
                                           vc.d = static_cast<double>(val);
-                                          cur_bitstring = create_bitstring_from_constant(vc.ll, 64, false);
+                                          cur_bitstring = create_bitstring_from_constant(vc.ll, source_type_size, loaded_is_signed);
                                        }
-                                       else if(real_size == 32)
+                                       else if(source_type_size == 32)
                                        {
                                           union {
                                              float f;
                                              long l;
                                           } vc;
                                           vc.f = static_cast<float>(val);
-                                          cur_bitstring = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                                          cur_bitstring = create_bitstring_from_constant(static_cast<long long>(vc.l), source_type_size, loaded_is_signed);
                                        }
                                        else
                                        {
-                                          THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                                          THROW_UNREACHABLE("Unhandled real type size (" + STR(source_type_size) + ")");
                                        }
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "bitstring = " + bitstring_to_string(cur_bitstring));
                                     }
