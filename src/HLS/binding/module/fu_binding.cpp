@@ -1683,7 +1683,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var0->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV - 1 - tailZeros) == '0')
+                           const auto& currBit = ssa_var0->bit_values.at(lengthBV - 1 - tailZeros);
+                           while(lengthBV > tailZeros && (currBit == '0' || currBit == 'X'))
                               ++tailZeros;
                            if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
@@ -1700,7 +1701,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var1->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV - 1 - tailZeros) == '0')
+                           const auto& currBit = ssa_var1->bit_values.at(lengthBV - 1 - tailZeros);
+                           while(lengthBV > tailZeros && (currBit == '0' || currBit == 'X'))
                               ++tailZeros;
                            if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;

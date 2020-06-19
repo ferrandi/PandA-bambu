@@ -103,6 +103,37 @@ tree_helper::tree_helper() = default;
 
 tree_helper::~tree_helper() = default;
 
+static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_is_signed)
+{
+   THROW_ASSERT(not bitstring.empty(), "");
+   while(bitstring.size() > 1)
+   {
+      if(bitstring_is_signed)
+      {
+         if(bitstring.at(0) == 'X' or (bitstring.at(0) != 'U' and (bitstring.at(0) == bitstring.at(1) or bitstring.at(1) == 'X')))
+         {
+            bitstring = bitstring.substr(1);
+         }
+         else
+         {
+            break;
+         }
+      }
+      else
+      {
+         if(bitstring.at(0) == 'X' or bitstring.at(0) == '0')
+         {
+            bitstring = bitstring.substr(1);
+         }
+         else
+         {
+            break;
+         }
+      }
+   }
+   return bitstring;
+}
+
 unsigned int tree_helper::size(const tree_managerConstRef tm, unsigned int index)
 {
    return Size(tm->get_tree_node_const(index));
@@ -143,7 +174,14 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
          THROW_ASSERT(GetPointer<const ssa_name>(t), "Expected an ssa_name");
          if(!sa->bit_values.empty())
          {
-            return_value = static_cast<unsigned int>(sa->bit_values.size());
+            const auto type = GET_NODE(sa->type);
+            if(type->get_kind() == real_type_K)
+            {
+               return Size(GET_NODE(sa->type));
+            }
+            const bool signed_p = type->get_kind() == integer_type_K ? !(GetPointer<integer_type>(type)->unsigned_flag) : (type->get_kind() == enumeral_type_K ? !(GetPointer<enumeral_type>(type)->unsigned_flag) : false);
+            const auto bv_test = sign_reduce_bitstring(sa->bit_values, signed_p);
+            return_value = static_cast<unsigned int>(bv_test.size());
             break;
          }
          else if(sa->min && sa->max && GET_NODE(sa->min)->get_kind() == integer_cst_K && GET_NODE(sa->max)->get_kind() == integer_cst_K)

@@ -1495,6 +1495,7 @@ AC_CONFIG_FILES(
                  Makefile
                  panda_regressions/Makefile
                  panda_regressions/hls/Makefile
+                 panda_unit/Makefile
                  examples/Makefile
                  documentation/Makefile
                  documentation/img/Makefile

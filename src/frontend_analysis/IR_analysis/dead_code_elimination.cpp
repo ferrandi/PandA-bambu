@@ -1115,13 +1115,25 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          auto* gn = GetPointer<gimple_node>(GET_NODE(*stmt));
 
          if(not gn->vuses.empty() && !is_single_write_memory && GET_NODE(*stmt)->get_kind() != gimple_return_K)
+         {
             fd->reading_memory = true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (1)");
+         }
          else if(gn->memuse && is_single_write_memory)
+         {
             fd->reading_memory = true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (2)");
+         }
          if(gn->vdef && !is_single_write_memory)
+         {
             fd->writing_memory = true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- writing_memory (3)");
+         }
          else if(gn->memdef && is_single_write_memory)
+         {
             fd->writing_memory = true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- writing_memory (4)");
+         }
          else if(auto ga = GetPointer<gimple_assign>(GET_NODE(*stmt)))
          {
             if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
@@ -1135,14 +1147,21 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
                   auto fdCalled = GetPointer<function_decl>(fu_decl_node);
                   if(fdCalled->writing_memory || !fdCalled->body || fdCalled->undefined_flag)
+                  {
                      fd->writing_memory = true;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- writing_memory (5)");
+                  }
                   if(fdCalled->reading_memory || !fdCalled->body || fdCalled->undefined_flag)
+                  {
                      fd->reading_memory = true;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (6)");
+                  }
                }
                else
                {
                   fd->writing_memory = true; /// conservative analysis
                   fd->reading_memory = true;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory+writing_memory (7)");
                }
             }
          }
@@ -1165,20 +1184,28 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             if(fdCalled)
             {
                if(fdCalled->writing_memory || !fdCalled->body || fdCalled->undefined_flag)
+               {
                   fd->writing_memory = true;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- writing_memory (8)");
+               }
                if(fdCalled->reading_memory || !fdCalled->body || fdCalled->undefined_flag)
+               {
                   fd->reading_memory = true;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory (9)");
+               }
             }
             else
             {
                fd->writing_memory = true;
                fd->reading_memory = true;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory+writing_memory (10)");
             }
          }
          else if(GetPointer<gimple_asm>(GET_NODE(*stmt)))
          {
             fd->writing_memory = true; /// more conservative than really needed
             fd->reading_memory = true;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- reading_memory+writing_memory (11)");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
       }

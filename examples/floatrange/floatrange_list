@@ -1,0 +1,97 @@
+src/f64div.c --top-fname=double_prec_division --benchmark-name=f64div --generate-tb="a=106.321453,b=57.21543543"
+src/f64div.c --top-fname=double_prec_division --benchmark-name=f64div-wo_nan --mask=double_prec_division*U*-1023*1023*52 --generate-tb="a=106.321453,b=57.21543543"
+src/f64div.c --top-fname=double_prec_division --benchmark-name=f64div_45 --mask=double_prec_division*U*-1023*1024*45 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=128
+src/f64div.c --top-fname=double_prec_division --benchmark-name=f64div_40 --mask=double_prec_division*U*-1023*1024*40 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=4096
+src/f64div.c --top-fname=double_prec_division --benchmark-name=f64div_35 --mask=double_prec_division*U*-1023*1024*35 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=131072
+src/f64div.c --top-fname=double_prec_division --benchmark-name=f64div_30 --mask=double_prec_division*U*-1023*1024*30 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=4194304
+src/f64div.c --top-fname=double_prec_division --benchmark-name=f64div_23 --mask=double_prec_division*U*-1023*1024*23 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=536870912
+
+src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul --generate-tb="a=106.321453,b=57.21543543"
+src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul-wo_nan --mask=double_prec_multiplication*U*-1023*1023*52 --generate-tb="a=106.321453,b=57.21543543"
+src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul_45 --mask=double_prec_multiplication*U*-1023*1024*45 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=256
+src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul_40 --mask=double_prec_multiplication*U*-1023*1024*40 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=8192
+src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul_35 --mask=double_prec_multiplication*U*-1023*1024*35 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=131072
+src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul_30 --mask=double_prec_multiplication*U*-1023*1024*30 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=4194304
+src/f64mul.c --top-fname=double_prec_multiplication --benchmark-name=f64mul_23 --mask=double_prec_multiplication*U*-1023*1024*23 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=536870912
+
+src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=f64sub --generate-tb="a=106.321453,b=57.21543543"
+src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=f64sub-wo_nan --mask=double_prec_subtraction*U*-1023*1023*52 --generate-tb="a=106.321453,b=57.21543543"
+src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=f64sub_45 --mask=double_prec_subtraction*U*-1023*1024*45 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=128
+src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=f64sub_40 --mask=double_prec_subtraction*U*-1023*1024*40 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=4096
+src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=f64sub_35 --mask=double_prec_subtraction*U*-1023*1024*35 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=131072
+src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=f64sub_30 --mask=double_prec_subtraction*U*-1023*1024*30 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=4194304
+src/f64sub.c --top-fname=double_prec_subtraction --benchmark-name=f64sub_23 --mask=double_prec_subtraction*U*-1023*1024*23 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=536870912
+
+src/f64sum.c --top-fname=double_prec_addition --benchmark-name=f64sum --generate-tb="a=106.321453,b=57.21543543"
+src/f64sum.c --top-fname=double_prec_addition --benchmark-name=f64sum-wo_nan --mask=double_prec_addition*U*-1023*1023*52 --generate-tb="a=106.321453,b=57.21543543"
+src/f64sum.c --top-fname=double_prec_addition --benchmark-name=f64sum_45 --mask=double_prec_addition*U*-1023*1024*45 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=128
+src/f64sum.c --top-fname=double_prec_addition --benchmark-name=f64sum_40 --mask=double_prec_addition*U*-1023*1024*40 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=4096
+src/f64sum.c --top-fname=double_prec_addition --benchmark-name=f64sum_35 --mask=double_prec_addition*U*-1023*1024*35 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=131072
+src/f64sum.c --top-fname=double_prec_addition --benchmark-name=f64sum_30 --mask=double_prec_addition*U*-1023*1024*30 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=4194304
+src/f64sum.c --top-fname=double_prec_addition --benchmark-name=f64sum_23 --mask=double_prec_addition*U*-1023*1024*23 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=536870912
+
+src/f64pow.c --top-fname=double_prec_pow --benchmark-name=f64pow --generate-tb="a=1.21345,b=5.32146"
+src/f64pow.c --top-fname=double_prec_pow --benchmark-name=f64pow-wo_nan --mask=double_prec_pow*U*-1023*1023*52 --generate-tb="a=1.21345,b=5.32146"
+src/f64pow.c --top-fname=double_prec_pow --benchmark-name=f64pow_45 --mask=double_prec_pow*U*-1023*1024*45 --generate-tb="a=1.21345,b=5.32146" --max-ulp=128
+src/f64pow.c --top-fname=double_prec_pow --benchmark-name=f64pow_40 --mask=double_prec_pow*U*-1023*1024*40 --generate-tb="a=1.21345,b=5.32146" --max-ulp=4096
+src/f64pow.c --top-fname=double_prec_pow --benchmark-name=f64pow_35 --mask=double_prec_pow*U*-1023*1024*35 --generate-tb="a=1.21345,b=5.32146" --max-ulp=131072
+src/f64pow.c --top-fname=double_prec_pow --benchmark-name=f64pow_30 --mask=double_prec_pow*U*-1023*1024*30 --generate-tb="a=1.21345,b=5.32146" --max-ulp=4194304
+src/f64pow.c --top-fname=double_prec_pow --benchmark-name=f64pow_23 --mask=double_prec_pow*U*-1023*1024*23 --generate-tb="a=1.21345,b=5.32146" --max-ulp=536870912
+
+src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=f64sqrt --generate-tb="a=2.346553"
+src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=f64sqrt-wo_nan --mask=double_prec_sqrt*U*-1023*1023*52 --generate-tb="a=2.346553"
+src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=f64sqrt_45 --mask=double_prec_sqrt*U*-1023*1024*45 --generate-tb="a=2.346553" --max-ulp=128
+src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=f64sqrt_40 --mask=double_prec_sqrt*U*-1023*1024*40 --generate-tb="a=2.346553" --max-ulp=4096
+src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=f64sqrt_35 --mask=double_prec_sqrt*U*-1023*1024*35 --generate-tb="a=2.346553" --max-ulp=131072
+src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=f64sqrt_30 --mask=double_prec_sqrt*U*-1023*1024*30 --generate-tb="a=2.346553" --max-ulp=4194304
+src/f64sqrt.c --top-fname=double_prec_sqrt --benchmark-name=f64sqrt_23 --mask=double_prec_sqrt*U*-1023*1024*23 --generate-tb="a=2.346553" --max-ulp=536870912
+
+src/f64exp.c --top-fname=double_prec_exp --benchmark-name=f64exp --generate-tb="a=3.72254"
+src/f64exp.c --top-fname=double_prec_exp --benchmark-name=f64exp-wo_nan --mask=double_prec_exp*U*-1023*1023*52 --generate-tb="a=3.72254"
+src/f64exp.c --top-fname=double_prec_exp --benchmark-name=f64exp_45 --mask=double_prec_exp*U*-1023*1024*45 --generate-tb="a=3.72254" --max-ulp=128
+src/f64exp.c --top-fname=double_prec_exp --benchmark-name=f64exp_40 --mask=double_prec_exp*U*-1023*1024*40 --generate-tb="a=3.72254" --max-ulp=4096
+src/f64exp.c --top-fname=double_prec_exp --benchmark-name=f64exp_35 --mask=double_prec_exp*U*-1023*1024*35 --generate-tb="a=3.72254" --max-ulp=131072
+src/f64exp.c --top-fname=double_prec_exp --benchmark-name=f64exp_30 --mask=double_prec_exp*U*-1023*1024*30 --generate-tb="a=3.72254" --max-ulp=4194304
+src/f64exp.c --top-fname=double_prec_exp --benchmark-name=f64exp_23 --mask=double_prec_exp*U*-1023*1024*23 --generate-tb="a=3.72254" --max-ulp=536870912
+
+src/fdiv.c --top-fname=single_prec_division --benchmark-name=fdiv --generate-tb="a=106.321453,b=57.21543543"
+src/fdiv.c --top-fname=single_prec_division --benchmark-name=fdiv-wo_nan --mask=single_prec_division*U*-127*127*23 --generate-tb="a=106.321453,b=57.21543543"
+src/fdiv.c --top-fname=single_prec_division --benchmark-name=fdiv_17 --mask=single_prec_division*U*-127*128*17 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=128
+src/fdiv.c --top-fname=single_prec_division --benchmark-name=fdiv_12 --mask=single_prec_division*U*-127*128*12 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=2048
+src/fdiv.c --top-fname=single_prec_division --benchmark-name=fdiv_8 --mask=single_prec_division*U*-127*128*8  --generate-tb="a=106.321453,b=57.21543543" --max-ulp=32768
+
+src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=fmul --generate-tb="a=106.321453,b=57.21543543"
+src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=fmul-wo_nan --mask=single_prec_multiplication*U*-127*127*23 --generate-tb="a=106.321453,b=57.21543543"
+src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=fmul_17 --mask=single_prec_multiplication*U*-127*128*17 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=128
+src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=fmul_12 --mask=single_prec_multiplication*U*-127*128*12 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=2048
+src/fmul.c --top-fname=single_prec_multiplication --benchmark-name=fmul_8 --mask=single_prec_multiplication*U*-127*128*8  --generate-tb="a=106.321453,b=57.21543543" --max-ulp=32768
+
+src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=fsub --generate-tb="a=106.321453,b=57.21543543"
+src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=fsub-wo_nan --mask=single_prec_subtraction*U*-127*127*23 --generate-tb="a=106.321453,b=57.21543543"
+src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=fsub_17 --mask=single_prec_subtraction*U*-127*128*17 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=128
+src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=fsub_12 --mask=single_prec_subtraction*U*-127*128*12 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=2048
+src/fsub.c --top-fname=single_prec_subtraction --benchmark-name=fsub_8 --mask=single_prec_subtraction*U*-127*128*8  --generate-tb="a=106.321453,b=57.21543543" --max-ulp=32768
+
+src/fsum.c --top-fname=single_prec_addition --benchmark-name=fsum --generate-tb="a=106.321453,b=57.21543543"
+src/fsum.c --top-fname=single_prec_addition --benchmark-name=fsum-wo_nan --mask=single_prec_addition*U*-127*127*23 --generate-tb="a=106.321453,b=57.21543543"
+src/fsum.c --top-fname=single_prec_addition --benchmark-name=fsum_17 --mask=single_prec_addition*U*-127*128*17 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=128
+src/fsum.c --top-fname=single_prec_addition --benchmark-name=fsum_12 --mask=single_prec_addition*U*-127*128*12 --generate-tb="a=106.321453,b=57.21543543" --max-ulp=2048
+src/fsum.c --top-fname=single_prec_addition --benchmark-name=fsum_8 --mask=single_prec_addition*U*-127*128*8  --generate-tb="a=106.321453,b=57.21543543" --max-ulp=32768
+
+src/fpow.c --top-fname=single_prec_pow --benchmark-name=fpow --generate-tb="a=1.21345,b=5.32146"
+src/fpow.c --top-fname=single_prec_pow --benchmark-name=fpow-wo_nan --mask=single_prec_pow*U*-127*127*23 --generate-tb="a=1.21345,b=5.32146"
+src/fpow.c --top-fname=single_prec_pow --benchmark-name=fpow_17 --mask=single_prec_pow*U*-127*128*17 --generate-tb="a=1.21345,b=5.32146" --max-ulp=256
+src/fpow.c --top-fname=single_prec_pow --benchmark-name=fpow_12 --mask=single_prec_pow*U*-127*128*12 --generate-tb="a=1.21345,b=5.32146" --max-ulp=8192
+src/fpow.c --top-fname=single_prec_pow --benchmark-name=fpow_8 --mask=single_prec_pow*U*-127*128*8  --generate-tb="a=1.21345,b=5.32146" --max-ulp=262144
+
+src/fsqrt.c --top-fname=single_prec_sqrt --benchmark-name=fsqrt --generate-tb="a=2.346553"
+src/fsqrt.c --top-fname=single_prec_sqrt --benchmark-name=fsqrt-wo_nan --mask=single_prec_sqrt*U*-127*127*23 --generate-tb="a=2.346553"
+src/fsqrt.c --top-fname=single_prec_sqrt --benchmark-name=fsqrt_17 --mask=single_prec_sqrt*U*-127*128*17 --generate-tb="a=2.346553" --max-ulp=128
+src/fsqrt.c --top-fname=single_prec_sqrt --benchmark-name=fsqrt_12 --mask=single_prec_sqrt*U*-127*128*12 --generate-tb="a=2.346553" --max-ulp=8192
+src/fsqrt.c --top-fname=single_prec_sqrt --benchmark-name=fsqrt_8 --mask=single_prec_sqrt*U*-127*128*8  --generate-tb="a=2.346553" --max-ulp=131072
+
+src/fexp.c --top-fname=single_prec_exp --benchmark-name=fexp --generate-tb="a=3.72254"
+src/fexp.c --top-fname=single_prec_exp --benchmark-name=fexp-wo_nan --mask=single_prec_exp*U*-127*127*23 --generate-tb="a=3.72254"
+src/fexp.c --top-fname=single_prec_exp --benchmark-name=fexp_17 --mask=single_prec_exp*U*-127*128*17 --generate-tb="a=3.72254" --max-ulp=128
+src/fexp.c --top-fname=single_prec_exp --benchmark-name=fexp_12 --mask=single_prec_exp*U*-127*128*12 --generate-tb="a=3.72254" --max-ulp=8192
+src/fexp.c --top-fname=single_prec_exp --benchmark-name=fexp_8 --mask=single_prec_exp*U*-127*128*8  --generate-tb="a=3.72254" --max-ulp=131072

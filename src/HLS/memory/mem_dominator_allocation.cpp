@@ -508,7 +508,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
                         for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
                         {
-                           if(*it == '0')
+                           if(*it == '0' || *it == 'X')
                               ++n_last_zerobits;
                            else
                               break;
@@ -542,7 +542,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
                         for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
                         {
-                           if(*it == '0')
+                           if(*it == '0' || *it == 'X')
                               ++n_last_zerobits;
                            else
                               break;

@@ -485,12 +485,6 @@ etc/clang_plugin/HardekopfLin_AA.hpp
 etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/bambuS2S.cpp
 etc/clang_plugin/dumpGimple.cpp
-etc/clang_plugin/llvm/RangeAnalysis.cpp
-etc/clang_plugin/llvm/RangeAnalysis.hpp
-etc/clang_plugin/llvm/eSSA.cpp
-etc/clang_plugin/llvm/eSSA.hpp
-etc/clang_plugin/llvm/my_OrderedInstructions.cpp
-etc/clang_plugin/llvm/my_OrderedInstructions.hpp
 etc/clang_plugin/plugin_ASTAnalyzer.cpp
 etc/clang_plugin/plugin_CSROA.cpp
 etc/clang_plugin/plugin_GepiCanon.cpp
@@ -2126,6 +2120,8 @@ src/design_flows/technology/technology_flow_step_factory.hpp
 src/design_flows/technology/write_technology.cpp
 src/design_flows/technology/write_technology.hpp
 src/eucalyptus.cpp
+src/frontend_analysis/IR_analysis/APInt.cpp
+src/frontend_analysis/IR_analysis/APInt.hpp
 src/frontend_analysis/IR_analysis/BitValueIPA.cpp
 src/frontend_analysis/IR_analysis/BitValueIPA.hpp
 src/frontend_analysis/IR_analysis/Bit_Value.cpp
@@ -2147,6 +2143,8 @@ src/frontend_analysis/IR_analysis/IR_lowering.hpp
 src/frontend_analysis/IR_analysis/IR_lowering_exec.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.cpp
 src/frontend_analysis/IR_analysis/NI_SSA_liveness.hpp
+src/frontend_analysis/IR_analysis/Range_Analysis.cpp
+src/frontend_analysis/IR_analysis/Range_Analysis.hpp
 src/frontend_analysis/IR_analysis/basic_blocks_cfg_computation.cpp
 src/frontend_analysis/IR_analysis/basic_blocks_cfg_computation.hpp
 src/frontend_analysis/IR_analysis/bit_lattice.cpp
@@ -2169,6 +2167,8 @@ src/frontend_analysis/IR_analysis/dead_code_elimination.cpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.hpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.cpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.hpp
+src/frontend_analysis/IR_analysis/eSSA.cpp
+src/frontend_analysis/IR_analysis/eSSA.hpp
 src/frontend_analysis/IR_analysis/extract_omp_atomic.cpp
 src/frontend_analysis/IR_analysis/extract_omp_atomic.hpp
 src/frontend_analysis/IR_analysis/extract_omp_for.cpp
@@ -2179,6 +2179,8 @@ src/frontend_analysis/IR_analysis/extract_patterns.hpp
 src/frontend_analysis/IR_analysis/extract_patterns.hpp
 src/frontend_analysis/IR_analysis/fanout_opt.cpp
 src/frontend_analysis/IR_analysis/fanout_opt.hpp
+src/frontend_analysis/IR_analysis/function_parm_mask.cpp
+src/frontend_analysis/IR_analysis/function_parm_mask.hpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp
@@ -2211,6 +2213,10 @@ src/frontend_analysis/IR_analysis/pipeline_infer.cpp
 src/frontend_analysis/IR_analysis/pipeline_infer.hpp
 src/frontend_analysis/IR_analysis/pragma_analysis.cpp
 src/frontend_analysis/IR_analysis/pragma_analysis.hpp
+src/frontend_analysis/IR_analysis/RangeAnalysis.cpp
+src/frontend_analysis/IR_analysis/RangeAnalysis.hpp
+src/frontend_analysis/IR_analysis/Range.cpp
+src/frontend_analysis/IR_analysis/Range.hpp
 src/frontend_analysis/IR_analysis/rebuild_initializations.cpp
 src/frontend_analysis/IR_analysis/rebuild_initializations.hpp
 src/frontend_analysis/IR_analysis/remove_clobber_ga.cpp

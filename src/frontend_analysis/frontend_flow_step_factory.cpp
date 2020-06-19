@@ -153,6 +153,7 @@
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
 #include "fanout_opt.hpp"
+#include "function_parm_mask.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "FunctionPointerCallGraphComputation.hpp"
@@ -233,6 +234,10 @@
 #endif
 #if HAVE_HOST_PROFILING_BUILT
 #include "host_profiling.hpp"
+#endif
+#if HAVE_BAMBU_BUILT
+#include "Range_Analysis.hpp"
+#include "eSSA.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "rebuild_initializations.hpp"
@@ -398,6 +403,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
@@ -581,6 +587,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -604,6 +611,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
 #endif
 #if HAVE_ZEBU_BUILT
       case(SOURCE_CODE_STATISTICS):
@@ -667,6 +677,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       {
          return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
       }
+      case FUNCTION_PARM_MASK:
+      {
+         return DesignFlowStepRef(new function_parm_mask(AppM, design_flow_manager.lock(), parameters));
+      }
 #endif
       case(FUNCTION_ANALYSIS):
       {
@@ -716,6 +730,12 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case(PRAGMA_SUBSTITUTION):
       {
          return DesignFlowStepRef(new PragmaSubstitution(AppM, design_flow_manager.lock(), parameters));
+      }
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
+      {
+         return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
 #if HAVE_ZEBU_BUILT
@@ -792,6 +812,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
@@ -1127,6 +1148,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new dom_post_dom_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #if HAVE_BAMBU_BUILT
+      case(ESSA):
+      {
+         return DesignFlowStepRef(new eSSA(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
       case(FANOUT_OPT):
       {
          return DesignFlowStepRef(new fanout_opt(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1539,6 +1564,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -1562,6 +1588,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
 #endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):
