@@ -1078,7 +1078,11 @@ namespace
       }
       else if(const auto* rc = GetPointer<const real_cst>(tn))
       {
-         const auto val = strtof64x(rc->valr.data(), nullptr);
+         auto val = strtof64x(rc->valr.data(), nullptr);
+         if(rc->valx[0] == '-' && val > 0)
+         {
+            val = -val;
+         }
          if(bw == 32)
          {
             auto [s, e, f] = float_view_convert(static_cast<float>(val));

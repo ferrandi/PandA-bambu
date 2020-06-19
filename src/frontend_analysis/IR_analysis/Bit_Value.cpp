@@ -1206,7 +1206,11 @@ void Bit_Value::initialize()
                                  {
                                     auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
                                     const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-                                    const auto val = strtof64x(real_const->valr.data(), nullptr);
+                                    auto val = strtof64x(real_const->valr.data(), nullptr);
+                                    if(real_const->valx[0] == '-' && val > 0)
+                                    {
+                                       val = -val;
+                                    }
                                     if(real_size == 64)
                                     {
                                        union {
@@ -1284,7 +1288,11 @@ void Bit_Value::initialize()
                                     {
                                        auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
                                        const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-                                       const auto val = strtof64x(real_const->valr.data(), nullptr);
+                                       auto val = strtof64x(real_const->valr.data(), nullptr);
+                                       if(real_const->valx[0] == '-' && val > 0)
+                                       {
+                                          val = -val;
+                                       }
                                        if(real_size == 64)
                                        {
                                           union {
@@ -1378,7 +1386,11 @@ void Bit_Value::initialize()
                                     {
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Real constant");
                                        const auto* cst = GetPointer<const real_cst>(cur_node);
-                                       const auto val = strtof64x(cst->valr.data(), nullptr);
+                                       auto val = strtof64x(cst->valr.data(), nullptr);
+                                       if(cst->valx[0] == '-' && val > 0)
+                                       {
+                                          val = -val;
+                                       }
                                        if(source_type_size == 64)
                                        {
                                           union {
@@ -1660,7 +1672,11 @@ void Bit_Value::initialize()
                auto* real_const = GetPointer<real_cst>(use_node);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(ssa_use_node_id) + " -> " + STR(real_const->valr));
                const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-               const auto val = strtof64x(real_const->valr.data(), nullptr);
+               auto val = strtof64x(real_const->valr.data(), nullptr);
+               if(real_const->valx[0] == '-' && val > 0)
+               {
+                  val = -val;
+               }
                if(real_size == 64)
                {
                   union {
@@ -1739,7 +1755,11 @@ void Bit_Value::initialize()
                   auto* real_const = GetPointer<real_cst>(GET_NODE(def_edge.first));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(GET_INDEX_NODE(def_edge.first)) + " -> " + STR(real_const->valr));
                   const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-                  const auto val = strtof64x(real_const->valr.data(), nullptr);
+                  auto val = strtof64x(real_const->valr.data(), nullptr);
+                  if(real_const->valx[0] == '-' && val > 0)
+                  {
+                     val = -val;
+                  }
                   if(real_size == 64)
                   {
                      union {

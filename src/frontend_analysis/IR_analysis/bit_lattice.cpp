@@ -423,7 +423,11 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
       else if(el->get_kind() == real_cst_K)
       {
          auto* real_const = GetPointer<real_cst>(el);
-         const auto val = strtof64x(real_const->valr.data(), nullptr);
+         auto val = strtof64x(real_const->valr.data(), nullptr);
+         if(real_const->valx[0] == '-' && val > 0)
+         {
+            val = -val;
+         }
          if(elements_bitsize == 64)
          {
             union {

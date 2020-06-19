@@ -478,7 +478,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto* rc = GetPointer<const real_cst>(returned_tn);
                            THROW_ASSERT(rc, "not a real_cst");
                            const auto ret_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
-                           const auto val = strtof64x(rc->valr.data(), nullptr);
+                           auto val = strtof64x(rc->valr.data(), nullptr);
+                           if(rc->valx[0] == '-' && val > 0)
+                           {
+                              val = -val;
+                           }
                            if(ret_size == 64)
                            {
                               union {
@@ -760,7 +764,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               const auto* rc = GetPointer<const real_cst>(ap_node);
                               THROW_ASSERT(rc, "not a real_cst");
                               const auto ap_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
-                              const auto val = strtof64x(rc->valr.data(), nullptr);
+                              auto val = strtof64x(rc->valr.data(), nullptr);
+                              if(rc->valx[0] == '-' && val > 0)
+                              {
+                                 val = -val;
+                              }
                               if(ap_size == 64)
                               {
                                  union {
@@ -828,7 +836,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto* rc = GetPointer<const real_cst>(ap_node);
                            THROW_ASSERT(rc, "not a real_cst");
                            const auto ap_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
-                           const auto val = strtof64x(rc->valr.data(), nullptr);
+                           auto val = strtof64x(rc->valr.data(), nullptr);
+                           if(rc->valx[0] == '-' && val > 0)
+                           {
+                              val = -val;
+                           }
                            if(ap_size == 64)
                            {
                               union {
