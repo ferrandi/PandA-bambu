@@ -13,7 +13,7 @@ lcmessage.m4 lib-ld.m4 lib-link.m4 lib-prefix.m4 libtool.m4 linux_distribution.m
 ltversion.m4 mppb.m4 nls.m4 panda_config_subdir.sh \
 po.m4 progtest.m4 qt3.m4 qt4.m4 rapidminer.m4 R.m4 searchfiles.m4 stdint_h.m4 treegcc.m4 tsim.m4\
 uintmax_t.m4 ulonglong.m4 verilator_compiler.m4 ax_openmp.m4 w32.m4\
-xilinx.m4
+xilinx.m4 ax_check_compile_flag.m4
 
 #do not touch the following line
 
