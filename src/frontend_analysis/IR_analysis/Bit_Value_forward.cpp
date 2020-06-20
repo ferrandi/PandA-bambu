@@ -1123,11 +1123,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       if(tree_helper::is_real(TM, arg_uid))
       {
          const auto arg_size = BitLatticeManipulator::Size(tree_helper::CGetType(GET_NODE(operation->op)));
-         if(bitstring_constant(arg_bitstring) && arg_bitstring.size() < arg_size)
+         if(arg_bitstring.size() < arg_size)
          {
             arg_bitstring = sign_extend_bitstring(arg_bitstring, false, arg_size);
          }
-         THROW_ASSERT(arg_size == arg_bitstring.size(), "Real bitstring must be exact " + bitstring_to_string(arg_bitstring));
+         THROW_ASSERT(arg_size == arg_bitstring.size(), "Real bitstring must be exact: " + bitstring_to_string(arg_bitstring) + "<" + STR(arg_bitstring.size()) + "> should be " + STR(arg_size) + " bits");
          if(arg_bitstring.front() == bit_lattice::ONE)
          {
             arg_bitstring.pop_front();
@@ -1227,7 +1227,12 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
       if(tree_helper::is_real(TM, arg_uid))
       {
-         THROW_ASSERT(BitLatticeManipulator::Size(op_type) == arg_bitstring.size(), "Real bitstring must be exact");
+         const auto arg_size = BitLatticeManipulator::Size(op_type);
+         if(arg_bitstring.size() < arg_size)
+         {
+            arg_bitstring = sign_extend_bitstring(arg_bitstring, false, arg_size);
+         }
+         THROW_ASSERT(arg_size == arg_bitstring.size(), "Real bitstring must be exact: " + bitstring_to_string(arg_bitstring) + "<" + STR(arg_bitstring.size()) + " should be " + STR(arg_size) + " bits");
          if(arg_bitstring.front() == bit_lattice::ONE)
          {
             arg_bitstring.pop_front();
