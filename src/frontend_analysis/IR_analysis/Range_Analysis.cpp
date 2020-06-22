@@ -3663,6 +3663,18 @@ RangeRef BinaryOpNode::eval() const
 
       result = evaluate(this->getOpcode(), bw, op1, op2, isSigned);
 
+      // Bitvalue may consider only lower bits for some variables, thus it is necessary to perform evaluation on truncated opernds to obtain valid results
+      if(GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue())) != nullptr)
+      {
+         const auto final_bw = static_cast<bw_t>(tree_helper::Size(GET_CONST_NODE(getSink()->getValue())));
+         const auto op_code = this->getOpcode();
+         if(final_bw < bw && (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K || op_code == minus_expr_K || op_code == pointer_plus_expr_K))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result bitwidth to " + STR(final_bw) + " bits");
+            result = isSignedType(getSink()->getValue()) ? result->truncate(final_bw)->sextOrTrunc(bw) : result->truncate(final_bw)->zextOrTrunc(bw);
+         }
+      }
+
       if(result->getBitWidth() != bw)
       {
          result = result->zextOrTrunc(bw);
