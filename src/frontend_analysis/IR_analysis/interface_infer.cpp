@@ -641,7 +641,8 @@ void interface_infer::create_resource_Read_simple(const std::vector<std::string>
    }
 }
 
-void interface_infer::create_resource_Write_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize, unsigned n_resources, bool is_real)
+void interface_infer::create_resource_Write_simple(const std::vector<std::string>& operations, const std::string& argName_string, const std::string& interfaceType, unsigned int inputBitWidth, bool IO_port, bool isDiffSize, unsigned n_resources,
+                                                   bool is_real)
 {
    const std::string ResourceName = ENCODE_FDNAME(argName_string, "_Write_", interfaceType);
    auto HLSMgr = GetPointer<HLS_manager>(AppM);

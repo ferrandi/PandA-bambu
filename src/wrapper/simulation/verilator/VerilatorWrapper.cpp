@@ -63,9 +63,9 @@
 
 #include <cerrno>
 #include <fstream>
+#include <thread>
 #include <unistd.h>
 #include <utility>
-#include <thread>
 
 #include "Parameter.hpp"
 #include "constant_strings.hpp"
@@ -127,7 +127,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    unsigned int nThreads = std::thread::hardware_concurrency();
 #if HAVE_THREADS
-   script << " --threads "<< nThreads;
+   script << " --threads " << nThreads;
 #endif
    if(generate_vcd_output)
    {
@@ -149,7 +149,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << std::endl << std::endl;
    script << "ln -s ../../../" + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j"<< nThreads;
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
 #if HAVE_THREADS
    script << " OPT_FAST=\"-O2\" OPT_SLOW=\"-O1 -fstrict-aliasing\" OPT=\"-march=native\"";
 #else

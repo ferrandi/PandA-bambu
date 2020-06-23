@@ -256,7 +256,7 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
 bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const
 {
    const auto TM = AppM->get_tree_manager();
-   
+
    Range::bw_t typeBW = 0;
    // Gather valid function parameters to mask
    std::vector<tree_nodeRef> maskParms;
@@ -282,7 +282,6 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
    const auto retType = tree_helper::GetFunctionReturnType(TM->get_tree_node_const(fd->index));
    if(retType != nullptr && tree_helper::is_real(TM, retType->index))
    {
-      
       retMask = true;
       const auto retBW = static_cast<Range::bw_t>(tree_helper::Size(retType));
       if(typeBW)
@@ -301,7 +300,7 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
       return false;
    }
    THROW_ASSERT(typeBW == 32 || typeBW == 64, "");
-   
+
    // Decode function mask
    refcount<RealRange> rr(new RealRange(RangeRef(new Range(Regular, typeBW))));
    std::deque<bit_lattice> bv;
@@ -336,13 +335,14 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point significand bitwidth set to " + STR(+fm.m_bits));
    }
-   
+
    // Skip if function mask is useless
    if(rr->isFullSet() && bv.empty())
    {
       return false;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
    const auto bv_str = bitstring_to_string(bv);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Floating-point bounds set to " + rr->ToString() + "<" + bv_str + "> on the following: ");
@@ -502,7 +502,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
       }
       funcMasks.erase(maskAll);
    }
-   
+
    for(const auto& fm : funcMasks)
    {
       const auto f = nameToFunc.find(fm.first);

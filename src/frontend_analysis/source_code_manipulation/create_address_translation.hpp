@@ -88,7 +88,7 @@ class CreateAddressTranslation : public ApplicationFrontendFlowStep
     * @param first_level is true if we are analyzing a parameter and not something inside a parameter
     * @param little_endianess tells if the parameter has little endianess
     */
-   void ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned long long &bambu_address, unsigned long long int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess);
+   void ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned long long& bambu_address, unsigned long long int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess);
 
    /**
     * Return the set of analyses in relationship with this design step

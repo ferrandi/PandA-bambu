@@ -2494,7 +2494,7 @@ static bool enable_load = true;
 static bool enable_float_pack = true;
 static bool enable_view_convert = true;
 static bool enable_float_unpack = true;
-static bool enable_ternary = false;          // TODO: disable because of problem with reduced precision fdiv/f64div operator (fix before enabling back)
+static bool enable_ternary = false; // TODO: disable because of problem with reduced precision fdiv/f64div operator (fix before enabling back)
 static bool enable_bit_phi = true;
 
 #define OPERATION_OPTION(opts, X)                                                                          \
@@ -4019,7 +4019,7 @@ RangeRef TernaryOpNode::eval() const
    const auto op1 = this->getSource1()->getRange();
    auto op2 = this->getSource2()->getRange();
    auto op3 = this->getSource3()->getRange();
-   
+
    auto result = getRangeFor(getSink()->getValue(), Regular);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
@@ -4027,7 +4027,7 @@ RangeRef TernaryOpNode::eval() const
 #ifndef NDEBUG
    if(enable_ternary)
    {
-//    #endif
+      //    #endif
       // only evaluate if all operands are Regular
       if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()) && (op3->isRegular() || op3->isAnti()))
       {
@@ -4104,7 +4104,7 @@ RangeRef TernaryOpNode::eval() const
             result = getRangeFor(getSink()->getValue(), Empty);
          }
       }
-//    #ifndef NDEBUG
+      //    #ifndef NDEBUG
    }
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = " + op1->ToString() + " ? " + op2->ToString() + " : " + op3->ToString());

@@ -1889,7 +1889,7 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
    {
       return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
    }
-   
+
    return RangeRef(new Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false), this->getSignedMax().extOrTrunc(bw, false)));
 }
 

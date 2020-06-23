@@ -580,7 +580,7 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
    // Allocate the return value on chip.
    if(function_return)
    {
-      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), function_return, "@return_"+functionName, true);
+      HLSMgr->Rmem->add_parameter(behavioral_helper->get_function_index(), function_return, "@return_" + functionName, true);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Return parameter for Function: " + functionName);
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Id: " + STR(function_return));
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Base Address: " + STR(HLSMgr->Rmem->get_parameter_base_address(functionId, function_return)));

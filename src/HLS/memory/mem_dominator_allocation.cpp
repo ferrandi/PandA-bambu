@@ -70,9 +70,9 @@
 
 /// STL includes
 #include <algorithm>
+#include <boost/filesystem/operations.hpp>
 #include <list>
 #include <utility>
-#include <boost/filesystem/operations.hpp>
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
@@ -135,7 +135,7 @@ void mem_dominator_allocation::Initialize()
          }
       }
    }
-   for(auto XMLfilename: xml_files)
+   for(auto XMLfilename : xml_files)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
       XMLDomParser parser(XMLfilename);
@@ -198,15 +198,13 @@ void mem_dominator_allocation::Initialize()
             }
          }
          /// check xml consistency
-         for(auto user_obj: user_internal_objects)
+         for(auto user_obj : user_internal_objects)
          {
-            for(auto var_obj: user_obj.second)
+            for(auto var_obj : user_obj.second)
             {
-               if(user_external_objects.find(user_obj.first) != user_external_objects.end() &&
-                  user_external_objects.find(user_obj.first)->second.find(var_obj) != user_external_objects.find(user_obj.first)->second.end())
+               if(user_external_objects.find(user_obj.first) != user_external_objects.end() && user_external_objects.find(user_obj.first)->second.find(var_obj) != user_external_objects.find(user_obj.first)->second.end())
                   THROW_ERROR("An allocated object cannot be both internal and external: " + var_obj + " in function " + user_obj.first);
-               if(user_external_objects.find("*") != user_external_objects.end() &&
-                  user_external_objects.find("*")->second.find(var_obj) != user_external_objects.find("*")->second.end())
+               if(user_external_objects.find("*") != user_external_objects.end() && user_external_objects.find("*")->second.find(var_obj) != user_external_objects.find("*")->second.end())
                   THROW_ERROR("An allocated object cannot be both internal and external: " + var_obj + " in function " + user_obj.first);
             }
          }
@@ -232,7 +230,7 @@ std::vector<unsigned int> mem_dominator_allocation::getFunctionAllocationOrder(C
    return functionAllocationOrder;
 }
 
-bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std::string &var_name, const std::string &fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM)
+bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std::string& var_name, const std::string& fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM)
 {
    bool is_internal = false;
    if(user_external_objects.find(fun_name) != user_external_objects.end() && user_external_objects.find(fun_name)->second.find(var_name) != user_external_objects.find(fun_name)->second.end())
@@ -291,8 +289,6 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std
    }
    return is_internal;
 }
-
-
 
 /// check if current_vertex is a proxied function
 static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerConstRef CG, const HLS_managerRef HLSMgr)

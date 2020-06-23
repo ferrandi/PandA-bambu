@@ -108,7 +108,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned long long int& bambu_address, unsigned long long int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess)
+void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned long long int& bambu_address, unsigned long long int& taste_address, unsigned int& registers, const bool first_level,
+                                              const bool little_endianess)
 {
    switch(asn_type->GetKind())
    {

@@ -81,9 +81,9 @@
 /// STL include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include <boost/filesystem/operations.hpp>
 #include <list>
 #include <vector>
-#include <boost/filesystem/operations.hpp>
 
 /// technology/physical_library include
 #include "technology_node.hpp"
@@ -943,14 +943,14 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   do
                   {
                      candidate_out_file_name = output_parameter_initialization_filename + param_name + "_" + std::to_string(progressive++) + ".data";
-                  } while (boost::filesystem::exists(candidate_out_file_name));
+                  } while(boost::filesystem::exists(candidate_out_file_name));
                   output_parameter_initialization_filename = candidate_out_file_name;
                   std::ofstream parameter_init_file(output_parameter_initialization_filename.c_str());
                   for(unsigned int i = 0; i < splitted.size(); i++)
                   {
                      THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
                      std::string initial_string = splitted[i];
-                     printed_bytes += WriteBinaryMemoryInitToFile(parameter_init_file,initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
+                     printed_bytes += WriteBinaryMemoryInitToFile(parameter_init_file, initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
                   }
                   indented_output_stream->Append("{\n");
                   indented_output_stream->Append("FILE * __bambu_testbench_fp_local_copy;\n");
@@ -1268,7 +1268,7 @@ size_t HLSCWriter::WriteBinaryMemoryInit(const std::string& binary_string, const
    return printed_bytes;
 }
 
-size_t HLSCWriter::WriteBinaryMemoryInitToFile(std::ofstream &parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset)
+size_t HLSCWriter::WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset)
 {
    size_t printed_bytes = 0;
    std::string local_binary_string;
@@ -1308,7 +1308,6 @@ size_t HLSCWriter::WriteBinaryMemoryInitToFile(std::ofstream &parameter_init_fil
    }
    return printed_bytes;
 }
-
 
 bool HLSCWriter::is_all_8zeros(const std::string& str)
 {

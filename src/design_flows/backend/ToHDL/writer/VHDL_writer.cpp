@@ -940,10 +940,7 @@ void VHDL_writer::write_io_signal_post_fix_vector(const structural_objectRef& po
          signal_string = "" + signal_string + "(0)";
       indented_output_stream->Append(port_string + " <= " + signal_string + ";\n");
    }
-
-
 }
-
 
 void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
 {

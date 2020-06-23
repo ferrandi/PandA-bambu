@@ -44,8 +44,8 @@
 #include "memory_initialization_writer_base.hpp"
 
 /// STD include
-#include <string>
 #include <fstream>
+#include <string>
 
 /// utility include
 #include "utility.hpp"
@@ -94,6 +94,5 @@ class MemoryInitializationCWriter : public MemoryInitializationWriterBase
     * Copy and close the file
     */
    void FinalizeFileInit() override;
-
 };
 #endif

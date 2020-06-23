@@ -665,8 +665,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          }
          else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
          {
-            auto manage_feedback1 = [&](const std::string& portS,  const std::string& portM)
-            {
+            auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
                structural_objectRef port1, port2;
                structural_objectRef sign;
                /// slave INs connections
@@ -681,8 +680,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                portsToSigConnect[port2] = sign;
                portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
             };
-            auto manage_feedback2 = [&](const std::string& portSin,  const std::string& portSout,  const std::string& portM)
-            {
+            auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM) {
                structural_objectRef port1In, port1Out, port2;
                structural_objectRef sign;
                /// slave INs connections

@@ -45,8 +45,8 @@
 // Header include
 #include "Bit_Value_opt.hpp"
 
-#include "bit_lattice.hpp"
 #include "Range.hpp"
+#include "bit_lattice.hpp"
 
 /// Autoheader include
 #include "config_HAVE_FROM_DISCREPANCY_BUILT.hpp"

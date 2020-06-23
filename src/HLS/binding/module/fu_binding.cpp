@@ -1904,8 +1904,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory,
-                                        bool is_sds)
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_doubled, bool is_memory_splitted,
+                                        bool is_sparse_memory, bool is_sds)
 {
    auto* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization

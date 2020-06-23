@@ -233,4 +233,3 @@ const std::string MemoryInitializationWriterBase::PrintStatus() const
    }
    return ret;
 }
-

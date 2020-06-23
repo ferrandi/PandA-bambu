@@ -455,7 +455,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                   xml_files.push_back(XMLfilename);
                }
             }
-            for(auto XMLfilename: xml_files)
+            for(auto XMLfilename : xml_files)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
                XMLDomParser parser(XMLfilename);
@@ -504,7 +504,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
             }
             if(!extern_symbols.empty())
             {
-               command += " -mllvm -panda-ESL="+ extern_symbols;
+               command += " -mllvm -panda-ESL=" + extern_symbols;
             }
             command += " -mllvm -panda-Internalize";
             if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
@@ -819,7 +819,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
                      xml_files.push_back(source_file);
                }
             }
-            for(auto XMLfilename: xml_files)
+            for(auto XMLfilename : xml_files)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
                XMLDomParser parser(XMLfilename);
@@ -868,7 +868,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             }
             if(!extern_symbols.empty())
             {
-               command += " -mllvm -panda-ESL="+ extern_symbols;
+               command += " -mllvm -panda-ESL=" + extern_symbols;
             }
 
             if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
