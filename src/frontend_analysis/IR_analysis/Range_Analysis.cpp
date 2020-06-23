@@ -692,6 +692,7 @@ namespace
                case plus_expr_K:
                case minus_expr_K:
                case mult_expr_K:
+               case widen_mult_expr_K:
                case trunc_div_expr_K:
                case trunc_mod_expr_K:
                case lshift_expr_K:
@@ -815,7 +816,6 @@ namespace
                case ltgt_expr_K:
                case unordered_expr_K:
                case widen_sum_expr_K:
-               case widen_mult_expr_K:
                case with_size_expr_K:
                case vec_lshift_expr_K:
                case vec_rshift_expr_K:
@@ -1085,13 +1085,13 @@ namespace
          }
          if(bw == 32)
          {
-            auto [s, e, f] = float_view_convert(static_cast<float>(val));
-            return RangeRef(new RealRange(Range(Regular, 1, s, s), Range(Regular, 8, e, e), Range(Regular, 23, f, f)));
+            const auto sem = float_view_convert(static_cast<float>(val));
+            return RangeRef(new RealRange(Range(Regular, 1, std::get<0>(sem), std::get<0>(sem)), Range(Regular, 8, std::get<1>(sem), std::get<1>(sem)), Range(Regular, 23, std::get<2>(sem), std::get<2>(sem))));
          }
          if(bw == 64)
          {
-            auto [s, e, f] = double_view_convert(static_cast<double>(val));
-            return RangeRef(new RealRange(Range(Regular, 1, s, s), Range(Regular, 11, e, e), Range(Regular, 52, f, f)));
+            const auto sem = double_view_convert(static_cast<double>(val));
+            return RangeRef(new RealRange(Range(Regular, 1, std::get<0>(sem), std::get<0>(sem)), Range(Regular, 11, std::get<1>(sem), std::get<1>(sem)), Range(Regular, 52, std::get<2>(sem), std::get<2>(sem))));
          }
          THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
       }
@@ -1134,7 +1134,8 @@ namespace
          if(!ssa->bit_values.empty())
          {
             const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bw, sign);
-            return RangeRef(new Range(Regular, bw, min, max))->intersectWith(bvRange);
+            const auto varRange = RangeRef(new Range(Regular, bw, min, max))->intersectWith(bvRange);
+            return varRange;
          }
       }
 #endif
@@ -1237,14 +1238,18 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id) : V(_V)
 void VarNode::init(bool outside)
 {
    THROW_ASSERT(getGIMPLE_BW(V), "Bitwidth not valid");
-   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K || GET_CONST_NODE(V)->get_kind() == real_cst_K)
+   THROW_ASSERT(interval, "Interval should be initialized during VarNode construction");
+   if(interval->isUnknown()) // Ranges already initialized come from user defined hints and shouldn't be overwritten
    {
+      if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr)
+      {
       interval = getGIMPLE_range(V);
    }
-   else if(interval == nullptr) // Ranges already initialized come from user defined hints and shouldn't be overwritten
+      else
    {
       interval = getRangeFor(V, outside ? Regular : Unknown);
    }
+}
 }
 
 int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
@@ -2397,9 +2402,9 @@ class NodeContainer
       auto cvrIt = _cvrMap.find(cvr.getVar());
       if(cvrIt != _cvrMap.end())
       {
-         for(const auto& [BBI, vr] : cvr.getVR())
+         for(const auto& BBIvr : cvr.getVR())
          {
-            cvrIt->second.addVR(BBI, vr);
+            cvrIt->second.addVR(BBIvr.first, BBIvr.second);
          }
       }
       else
@@ -3110,7 +3115,8 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
          const auto fromVC = NC->getVCMap().find(_source);
          if(fromVC != NC->getVCMap().end())
          {
-            const auto& [f, us] = fromVC->second;
+            const auto& f = fromVC->second.first;
+            const auto& us = fromVC->second.second;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source->getValue())->ToString() + " is view_convert from " + f->ToString() + "& (" + STR(us.mask) + " >> " + STR(+us.rshift) + ")");
             const auto curr_us = us & ((1ULL << sink->getBitWidth()) - 1ULL);
             // Detect exponent trucantion after right shift for 32 bit floating-point
@@ -3503,6 +3509,9 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case mult_expr_K:
          RETURN_DISABLED_OPTION(mul, bw);
          return op1->mul(op2);
+      case widen_mult_expr_K:
+         RETURN_DISABLED_OPTION(mul, bw);
+         return isSigned ? op1->sextOrTrunc(bw)->mul(op2->sextOrTrunc(bw)) : op1->zextOrTrunc(bw)->mul(op2->sextOrTrunc(bw));
       case trunc_div_expr_K:
          if(isSigned)
          {
@@ -3610,7 +3619,6 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case ltgt_expr_K:
       case unordered_expr_K:
       case widen_sum_expr_K:
-      case widen_mult_expr_K:
       case with_size_expr_K:
       case vec_lshift_expr_K:
       case vec_rshift_expr_K:
@@ -3664,13 +3672,25 @@ RangeRef BinaryOpNode::eval() const
       result = evaluate(this->getOpcode(), bw, op1, op2, isSigned);
 
       // Bitvalue may consider only lower bits for some variables, thus it is necessary to perform evaluation on truncated opernds to obtain valid results
-      if(GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue())) != nullptr)
+      if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue())))
       {
-         const auto final_bw = static_cast<bw_t>(tree_helper::Size(GET_CONST_NODE(getSink()->getValue())));
+         const auto final_bw = [&] () {
+            const auto min_bw = tree_helper::Size(GET_CONST_NODE(getSink()->getValue()));
+            auto safe_bw = min_bw;
+            while(safe_bw < ssa->bit_values.size() && ssa->bit_values[ssa->bit_values.size() - 1 - safe_bw] == 'X')
+            {
+               ++safe_bw;
+            }
+            if(safe_bw == ssa->bit_values.size())
+            {
+               return static_cast<bw_t>(min_bw);
+            }
+            return static_cast<bw_t>(ssa->bit_values.size() ? ssa->bit_values.size() : 1);
+         }();
          const auto op_code = this->getOpcode();
-         if(final_bw < bw && (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
+         if(final_bw < bw && (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K || op_code == minus_expr_K || op_code == pointer_plus_expr_K))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result bitwidth to " + STR(final_bw) + " bits");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result bitwidth to " + STR(final_bw) + " bits (" + ssa->bit_values + ")");
             result = isSignedType(getSink()->getValue()) ? result->truncate(final_bw)->sextOrTrunc(bw) : result->truncate(final_bw)->zextOrTrunc(bw);
          }
       }
@@ -3735,7 +3755,8 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             const auto fromVC = NC->getVCMap().find(_source1);
             if(fromVC != NC->getVCMap().end())
             {
-               const auto& [f, us] = fromVC->second;
+               const auto& f = fromVC->second.first;
+               const auto& us = fromVC->second.second;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "& (" + STR(us.mask) + " >> " + STR(+us.rshift) + ")");
                const auto cst_int = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(_source2->getValue())));
                UnpackSelector new_us;
@@ -3811,7 +3832,10 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             const auto fromVC = NC->getVCMap().find(_source1);
             if(fromVC != NC->getVCMap().end())
             {
-               auto& [f, us] = fromVC->second;
+               const auto& f = fromVC->second.first;
+#ifndef NDEBUG
+               const auto& us = fromVC->second.second;
+#endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "& (" + STR(us.mask) + " >> " + STR(+us.rshift) + ")");
                //    NC->addViewConvertMask(sink, f, f->getBitWidth() == 32 ? UnpackSelector(4294967296U,31U) : UnpackSelector(9223372036854775808ULL, 63U));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
@@ -4679,14 +4703,14 @@ Nuutila::Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMa
  */
 void Nuutila::addControlDependenceEdges(UseMap& useMap, const SymbMap& symbMap, const VarNodes& vars)
 {
-   for(const auto& [var, ops] : symbMap)
+   for(const auto& varOps : symbMap)
    {
-      for(const auto& op : ops)
+      for(const auto& op : varOps.second)
       {
-         THROW_ASSERT(static_cast<bool>(vars.count(var)), "Variable should be stored in VarNodes map");
-         auto* source = vars.at(var);
+         THROW_ASSERT(static_cast<bool>(vars.count(varOps.first)), "Variable should be stored in VarNodes map");
+         auto* source = vars.at(varOps.first);
          auto* cdedge = new ControlDepNode(op->getSink(), source);
-         useMap[var].insert(cdedge);
+         useMap[varOps.first].insert(cdedge);
       }
    }
 }
@@ -5566,34 +5590,34 @@ class ConstraintGraph : public NodeContainer
 
       // Find else branch BBI if any
       unsigned int DefaultBBI = 0;
-      for(const auto& [cond, BBI] : mwi->list_of_cond)
+      for(const auto& condBBI : mwi->list_of_cond)
       {
-         if(!cond)
+         if(!condBBI.first)
          {
-            DefaultBBI = BBI;
+            DefaultBBI = condBBI.second;
             break;
          }
       }
 
       // Analyse each if branch condition
       CustomMap<tree_nodeConstRef, std::map<unsigned int, ValueRangeRef>> switchSSAMap;
-      for(const auto& [cond, BBI] : mwi->list_of_cond)
+      for(const auto& condBBI : mwi->list_of_cond)
       {
-         if(!cond)
+         if(!condBBI.first)
          {
             // Default branch is handled at the end
             continue;
          }
 
-         if(GetPointer<const cst_node>(GET_CONST_NODE(cond)) != nullptr)
+         if(GetPointer<const cst_node>(GET_CONST_NODE(condBBI.first)) != nullptr)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable is a cst_node, dead code elimination necessary!");
             // TODO: abort and call dead code elimination to evaluate constant condition
             //    return true;
             continue;
          }
-         THROW_ASSERT(GET_CONST_NODE(cond)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(cond)->get_kind_text() + " " + GET_CONST_NODE(cond)->ToString() + ")");
-         const auto case_compare = branchOpRecurse(cond);
+         THROW_ASSERT(GET_CONST_NODE(condBBI.first)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(condBBI.first)->get_kind_text() + " " + GET_CONST_NODE(condBBI.first)->ToString() + ")");
+         const auto case_compare = branchOpRecurse(condBBI.first);
          if(const auto* cmp_op = GetPointer<const binary_expr>(case_compare))
          {
             if(!isCompare(cmp_op))
@@ -5660,7 +5684,7 @@ class ConstraintGraph : public NodeContainer
 
                // Create the interval using the intersection in the branch.
                auto BT = ValueRangeRef(new ValueRange(TValues));
-               switchSSAMap[variable].insert(std::make_pair(BBI, BT));
+               switchSSAMap[variable].insert(std::make_pair(condBBI.second, BT));
 
                // Do the same for the operand of variable (if variable is a cast
                // instruction)
@@ -5682,7 +5706,7 @@ class ConstraintGraph : public NodeContainer
 #endif
 
                      auto _BT = ValueRangeRef(new ValueRange(TValues));
-                     switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, _BT));
+                     switchSSAMap[cast_inst->op].insert(std::make_pair(condBBI.second, _BT));
                   }
                }
             }
@@ -5704,7 +5728,7 @@ class ConstraintGraph : public NodeContainer
 
                // Symbolic intervals for op0
                const auto STOp0 = ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
-               switchSSAMap[cmp_op->op0].insert(std::make_pair(BBI, STOp0));
+               switchSSAMap[cmp_op->op0].insert(std::make_pair(condBBI.second, STOp0));
 
                // Symbolic intervals for operand of op0 (if op0 is a cast instruction)
                if(const auto* Var = GetPointer<const ssa_name>(Op0))
@@ -5716,13 +5740,13 @@ class ConstraintGraph : public NodeContainer
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression" + cast_inst->ToString());
 
                      const auto STOp0_0 = ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
-                     switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, STOp0_0));
+                     switchSSAMap[cast_inst->op].insert(std::make_pair(condBBI.second, STOp0_0));
                   }
                }
 
                // Symbolic intervals for op1
                const auto STOp1 = ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
-               switchSSAMap[cmp_op->op1].insert(std::make_pair(BBI, STOp1));
+               switchSSAMap[cmp_op->op1].insert(std::make_pair(condBBI.second, STOp1));
 
                // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
                if(const auto* Var = GetPointer<const ssa_name>(Op1))
@@ -5734,7 +5758,7 @@ class ConstraintGraph : public NodeContainer
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
                      const auto STOp1_1 = ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
-                     switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, STOp1_1));
+                     switchSSAMap[cast_inst->op].insert(std::make_pair(condBBI.second, STOp1_1));
                   }
                }
             }
@@ -5751,21 +5775,21 @@ class ConstraintGraph : public NodeContainer
       //       could still be valid values
       if(static_cast<bool>(DefaultBBI))
       {
-         for(auto& [var, VSM] : switchSSAMap)
+         for(auto& varVSM : switchSSAMap)
          {
-            auto elseRange = getRangeFor(var, Empty);
-            for(const auto& BBIinterval : VSM)
+            auto elseRange = getRangeFor(varVSM.first, Empty);
+            for(const auto& BBIinterval : varVSM.second)
             {
                elseRange = elseRange->unionWith(BBIinterval.second->getRange());
             }
             elseRange = elseRange->getAnti();
-            VSM.insert(std::make_pair(DefaultBBI, ValueRangeRef(new ValueRange(elseRange))));
+            varVSM.second.insert(std::make_pair(DefaultBBI, ValueRangeRef(new ValueRange(elseRange))));
          }
       }
 
-      for(const auto& [var, VSM] : switchSSAMap)
+      for(const auto& varVSM : switchSSAMap)
       {
-         addConditionalValueRange(ConditionalValueRange(var, VSM));
+         addConditionalValueRange(ConditionalValueRange(varVSM.first, varVSM.second));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return false;
@@ -6128,13 +6152,14 @@ class ConstraintGraph : public NodeContainer
       {
          parmMapIt = parmMap.insert(std::make_pair(FD->index, std::make_pair(false, std::vector<tree_nodeConstRef>(args.size(), nullptr)))).first;
       }
-      auto& [foundAll, parmBind] = parmMapIt->second;
+      auto& foundAll = parmMapIt->second.first;
       // Skip ssa uses computation when all parameters have already been associated with a variable
       if(foundAll)
       {
          return;
       }
 
+      auto& parmBind = parmMapIt->second.second;
       const auto ssa_uses = tree_helper::ComputeSsaUses(stmt);
       for(const auto& ssa_use_counter : ssa_uses)
       {
@@ -6511,19 +6536,19 @@ class ConstraintGraph : public NodeContainer
       OS << "node [shape=record,fontname=\"Times-Roman\",fontsize=14];\n";
 
       // Print the body of the .dot file.
-      for(const auto& [var, node] : getVarNodes())
+      for(const auto& varNode : getVarNodes())
       {
-         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(var)))
+         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(varNode.first)))
          {
             OS << " " << C->value;
          }
          else
          {
             OS << quot;
-            printVarName(var, OS);
+            printVarName(varNode.first, OS);
             OS << quot;
          }
-         OS << R"( [label=")" << node << "\"]\n";
+         OS << R"( [label=")" << varNode.second << "\"]\n";
       }
 
       for(auto* op : getOpNodes())
@@ -7203,9 +7228,9 @@ bool RangeAnalysis::finalize()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(const auto& [var, node] : vars)
+      for(const auto& varNode : vars)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range " + node->getRange()->ToString() + " for " + GET_CONST_NODE(var)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range " + varNode.second->getRange()->ToString() + " for " + GET_CONST_NODE(varNode.first)->ToString());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "IR update not applied in read-only mode");
@@ -7254,14 +7279,14 @@ bool RangeAnalysis::finalize()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Modified " + STR(modifiedFunctions.size()) + " functions:");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Previous steps must be invalidated for caller functions too
-   for(const auto [f, ut] : modifiedFunctions)
+   for(const auto fUT : modifiedFunctions)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, f, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(f)->CGetBehavioralHelper()))));
-      fun_id_to_restart.insert(f);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, fUT.first, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fUT.first)->CGetBehavioralHelper()))));
+      fun_id_to_restart.insert(fUT.first);
       // Restart necessary steps on caller functions only for constant propagation
-      if(ut & ut_Constant)
+      if(fUT.second & ut_Constant)
       {
-         const auto f_v = cgm->GetVertex(f);
+         const auto f_v = cgm->GetVertex(fUT.first);
          for(const auto& caller : boost::make_iterator_range(boost::in_edges(f_v, *cg)))
          {
             const auto caller_id = cgm->get_function(boost::source(caller, *cg));

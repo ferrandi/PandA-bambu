@@ -1110,7 +1110,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             arg_bitstring = sign_extend_bitstring(arg_bitstring, tree_helper::is_int(TM, output_uid), max_bitsize);
          }
-         std::deque<bit_lattice>::const_reverse_iterator arg_it = arg_bitstring.rbegin();
+         auto arg_it = arg_bitstring.rbegin();
          for(unsigned bit_index = 0; bit_index < max_bitsize && arg_it != arg_bitstring.rend(); ++arg_it, ++bit_index)
          {
             res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(*arg_it).at(borrow).back());
