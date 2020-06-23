@@ -226,9 +226,9 @@ static_assert(((kMinNSBetweenSamples << (kScale + 1)) >> (kScale + 1)) ==
 
 // A reader-writer lock protecting the static locations below.
 // See SeqAcquire() and SeqRelease() above.
-static absl::base_internal::SpinLock lock(
-    absl::base_internal::kLinkerInitialized);
-static std::atomic<uint64_t> seq(0);
+ABSL_CONST_INIT static absl::base_internal::SpinLock lock(
+    absl::kConstInit, base_internal::SCHEDULE_KERNEL_ONLY);
+ABSL_CONST_INIT static std::atomic<uint64_t> seq(0);
 
 // data from a sample of the kernel's time value
 struct TimeSampleAtomic {
@@ -390,7 +390,7 @@ static uint64_t UpdateLastSample(
 // TODO(absl-team): Remove this attribute when our compiler is smart enough
 // to do the right thing.
 ABSL_ATTRIBUTE_NOINLINE
-static int64_t GetCurrentTimeNanosSlowPath() LOCKS_EXCLUDED(lock) {
+static int64_t GetCurrentTimeNanosSlowPath() ABSL_LOCKS_EXCLUDED(lock) {
   // Serialize access to slow-path.  Fast-path readers are not blocked yet, and
   // code below must not modify last_sample until the seqlock is acquired.
   lock.Lock();
@@ -435,7 +435,7 @@ static int64_t GetCurrentTimeNanosSlowPath() LOCKS_EXCLUDED(lock) {
 static uint64_t UpdateLastSample(uint64_t now_cycles, uint64_t now_ns,
                                  uint64_t delta_cycles,
                                  const struct TimeSample *sample)
-    EXCLUSIVE_LOCKS_REQUIRED(lock) {
+    ABSL_EXCLUSIVE_LOCKS_REQUIRED(lock) {
   uint64_t estimated_base_ns = now_ns;
   uint64_t lock_value = SeqAcquire(&seq);  // acquire seqlock to block readers
 

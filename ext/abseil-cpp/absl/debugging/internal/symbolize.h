@@ -22,6 +22,7 @@
 #include <cstdint>
 
 #include "absl/base/config.h"
+#include "absl/strings/string_view.h"
 
 #ifdef ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE
 #error ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE cannot be directly set
@@ -45,7 +46,7 @@ namespace debugging_internal {
 //
 // This is not async-signal-safe.
 bool ForEachSection(int fd,
-                    const std::function<bool(const std::string& name,
+                    const std::function<bool(absl::string_view name,
                                              const ElfW(Shdr) &)>& callback);
 
 // Gets the section header for the given name, if it exists. Returns true on
@@ -58,6 +59,12 @@ ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE
+
+#ifdef ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE
+#error ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE cannot be directly set
+#elif defined(__APPLE__)
+#define ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE 1
+#endif
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN

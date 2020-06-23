@@ -1,5 +1,5 @@
 //
-// Copyright 2018 The Abseil Authors.
+// Copyright 2020 The Abseil Authors.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -12,19 +12,27 @@
 // WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 // See the License for the specific language governing permissions and
 // limitations under the License.
-//
-#include "absl/random/mocking_bit_gen.h"
+
+#include "absl/flags/commandlineflag.h"
 
 #include <string>
 
+#include "absl/base/config.h"
+#include "absl/flags/internal/commandlineflag.h"
+#include "absl/strings/string_view.h"
+
 namespace absl {
 ABSL_NAMESPACE_BEGIN
-MockingBitGen::~MockingBitGen() {
 
-  for (const auto& del : deleters_) {
-    del();
-  }
+bool CommandLineFlag::IsRetired() const { return false; }
+bool CommandLineFlag::ParseFrom(absl::string_view value, std::string* error) {
+  return ParseFrom(value, flags_internal::SET_FLAGS_VALUE,
+                   flags_internal::kProgrammaticChange, *error);
 }
 
+namespace flags_internal {
+FlagStateInterface::~FlagStateInterface() {}
+}  // namespace flags_internal
 ABSL_NAMESPACE_END
 }  // namespace absl
+
