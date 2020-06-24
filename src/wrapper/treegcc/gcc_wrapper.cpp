@@ -2628,14 +2628,14 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    return 0;
 }
 
-void GccWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
+void GccWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters) const
 {
    std::list<std::string> sorted_file_names;
    for(const auto& file_name : file_names)
       sorted_file_names.push_back(file_name);
-   CreateExecutable(sorted_file_names, executable_name, extra_gcc_options);
+   CreateExecutable(sorted_file_names, executable_name, extra_gcc_options, no_gcc_compiling_parameters);
 }
-void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
+void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters) const
 {
    std::string file_names_string;
    bool has_cpp_file = false;
@@ -2653,13 +2653,13 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
 
    command += file_names_string + " ";
 
-   command += gcc_compiling_parameters + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
+   command += (no_gcc_compiling_parameters ? "" : gcc_compiling_parameters) + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
    if(!has_cpp_file && command.find("--std=c++14") != std::string::npos)
       boost::replace_all(command, "--std=c++14", "");
 
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
-   std::string local_compiler_extra_options = compiler.extra_options;
+   std::string local_compiler_extra_options = no_gcc_compiling_parameters ? "" : compiler.extra_options;
    if(extra_gcc_options.find("-m32") != std::string::npos)
       boost::replace_all(local_compiler_extra_options, "-mx32", "");
 
