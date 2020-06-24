@@ -956,7 +956,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    if(pipeline_id == "")
    {
       if(curr_op->time_m->get_cycles() == 0 && allocation_information->time_m_execution_time(curr_op) > clock_period)
-         THROW_WARNING("No functional unit exists for the given clock period: the fastest unit will be used as multy-cycle unit (" + GetPointer<functional_unit>(current_fu)->fu_template_name +
+         THROW_WARNING("No functional unit exists for the given clock period: the fastest unit will be used as multi-cycle unit (" + GetPointer<functional_unit>(current_fu)->fu_template_name +
                        "): " + STR(allocation_information->time_m_execution_time(curr_op)));
    }
    return false;
