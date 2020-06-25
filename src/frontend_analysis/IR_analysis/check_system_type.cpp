@@ -881,6 +881,12 @@ void CheckSystemType::build_include_structures()
             temp = FILENAME_NORM(temp);
             systemIncPath.push_back(temp);
          }
+         else if(getenv("APPDIR"))
+         {
+            std::string app_prefix = getenv("APPDIR");
+            temp = app_prefix+"/"+FILENAME_NORM(tok_iter);
+            systemIncPath.push_back(temp);
+         }
          else
          {
             temp = FILENAME_NORM(tok_iter);

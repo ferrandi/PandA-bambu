@@ -3515,15 +3515,17 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   std::string mingw_prefix;
+   std::string app_prefix;
    if(getenv("MINGW_INST_DIR"))
-      mingw_prefix = getenv("MINGW_INST_DIR");
+      app_prefix = getenv("MINGW_INST_DIR");
+   else if(getenv("APPDIR"))
+      app_prefix = getenv("APPDIR");
 #ifdef _WIN32
    else
-      mingw_prefix = "c:/msys64/";
+      app_prefix = "c:/msys64/";
 #endif
 
-   setOption("dynamic_generators_dir", mingw_prefix + PANDA_DATA_INSTALLDIR "/panda");
+   setOption("dynamic_generators_dir", app_prefix + PANDA_DATA_INSTALLDIR "/panda");
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);
@@ -3880,49 +3882,51 @@ void BambuParameter::add_bambu_library(std::string lib)
    }
    if(isOption(OPT_archive_files))
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
-   std::string mingw_prefix;
+   std::string app_prefix;
    if(getenv("MINGW_INST_DIR"))
-      mingw_prefix = getenv("MINGW_INST_DIR");
+      app_prefix = getenv("MINGW_INST_DIR");
+   else if(getenv("APPDIR"))
+      app_prefix = getenv("APPDIR");
 #ifdef _WIN32
    else
-      mingw_prefix = "c:/msys64/";
+      app_prefix = "c:/msys64/";
 #endif
 #endif
 
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc45" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc45" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc46" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc46" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc47" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc47" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc48" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc48" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc49" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc49" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC6_COMPILER
@@ -3934,49 +3938,49 @@ void BambuParameter::add_bambu_library(std::string lib)
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang4" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang4" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang9" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang9" + VSuffix + ".a");
    }
 #endif
 }
