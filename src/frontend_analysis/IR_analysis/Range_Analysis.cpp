@@ -1094,9 +1094,10 @@ namespace
       {
          if(!ssa->bit_values.empty())
          {
-            const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bw, sign);
-            const auto varRange = RangeRef(new Range(Regular, bw, min, max))->intersectWith(bvRange);
-            return varRange;
+            const auto bvSize = static_cast<bw_t>(ssa->bit_values.size());
+            const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bvSize, sign);
+            const auto varRange = RangeRef(new Range(Regular, bw, min, max))->truncate(bvSize)->intersectWith(bvRange);
+            return sign ? varRange->sextOrTrunc(bw) : varRange->zextOrTrunc(bw);
          }
       }
 #endif
@@ -1202,15 +1203,15 @@ void VarNode::init(bool outside)
    THROW_ASSERT(interval, "Interval should be initialized during VarNode construction");
    if(interval->isUnknown()) // Ranges already initialized come from user defined hints and shouldn't be overwritten
    {
-      if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr)
+      if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr || outside)
       {
-      interval = getGIMPLE_range(V);
-   }
+         interval = getGIMPLE_range(V);
+      }
       else
-   {
-      interval = getRangeFor(V, outside ? Regular : Unknown);
+      {
+         interval = getRangeFor(V, Unknown);
+      }
    }
-}
 }
 
 int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
@@ -3635,24 +3636,35 @@ RangeRef BinaryOpNode::eval() const
       // Bitvalue may consider only lower bits for some variables, thus it is necessary to perform evaluation on truncated opernds to obtain valid results
       if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue())))
       {
-         const auto final_bw = [&] () {
-            const auto min_bw = tree_helper::Size(GET_CONST_NODE(getSink()->getValue()));
-            auto safe_bw = min_bw;
-            while(safe_bw < ssa->bit_values.size() && ssa->bit_values[ssa->bit_values.size() - 1 - safe_bw] == 'X')
+         const auto sinkSigned = isSignedType(getSink()->getValue());
+         const auto bvRange = [&] () {
+            const auto sinkBW = getSink()->getBitWidth();
+            if(ssa->bit_values.empty() || ssa->bit_values.front() == 'X')
             {
-               ++safe_bw;
+               return RangeRef(new Range(Regular, sinkBW));
             }
-            if(safe_bw == ssa->bit_values.size())
-            {
-               return static_cast<bw_t>(min_bw);
-            }
-            return static_cast<bw_t>(ssa->bit_values.size() ? ssa->bit_values.size() : 1);
+            return Range::fromBitValues(string_to_bitstring(ssa->bit_values), static_cast<bw_t>(ssa->bit_values.size()), sinkSigned);
          }();
          const auto op_code = this->getOpcode();
-         if(final_bw < bw && (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K || op_code == minus_expr_K || op_code == pointer_plus_expr_K))
+         if((!bvRange->isFullSet() || bvRange->getBitWidth() < result->getBitWidth()) && 
+            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result bitwidth to " + STR(final_bw) + " bits (" + ssa->bit_values + ")");
-            result = isSignedType(getSink()->getValue()) ? result->truncate(final_bw)->sextOrTrunc(bw) : result->truncate(final_bw)->zextOrTrunc(bw);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result range to " + bvRange->ToString() + "<" + (sinkSigned ? "signed " : "unsigned ") + ssa->bit_values + "> over result " + result->ToString());
+#if HAVE_ASSERTS
+            const auto resEmpty = result->isEmpty();
+#endif
+            result = [&]() {
+               if(bvRange->getBitWidth() < result->getBitWidth())
+               {
+                  const auto reducedResult = result->truncate(bvRange->getBitWidth())->intersectWith(bvRange);
+                  return sinkSigned ? reducedResult->sextOrTrunc(result->getBitWidth()) : reducedResult->zextOrTrunc(result->getBitWidth());
+               }
+               else
+               {
+                  return result->intersectWith(bvRange);
+               }
+            }();
+            THROW_ASSERT(result->isEmpty() == resEmpty, "");
          }
       }
 
