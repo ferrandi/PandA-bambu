@@ -163,38 +163,6 @@ namespace
    std::string pestring;
    std::stringstream pseudoEdgesString(pestring);
 
-   std::tuple<bool, uint8_t, uint32_t> float_view_convert(float fp)
-   {
-      union vcFloat _flo;
-      _flo.flt = (fp);
-#if __BYTE_ORDER == __BIG_ENDIAN
-      uint32_t f = _flo.bits.frac;
-      uint8_t e = _flo.bits.exp;
-      bool s = _flo.bits.sign;
-#else
-      uint32_t f = (_flo.bits.coded) & 0b00000000011111111111111111111111;
-      uint8_t e = static_cast<uint8_t>(((_flo.bits.coded) << 1) >> 24);
-      bool s = (_flo.bits.coded) & 0x80000000;
-#endif
-      return {s, e, f};
-   }
-
-   std::tuple<bool, uint16_t, uint64_t> double_view_convert(double d)
-   {
-      union vcDouble _d;
-      _d.dub = (d);
-#if __BYTE_ORDER == __BIG_ENDIAN
-      uint64_t f = _d.bits.frac;
-      uint16_t e = _d.bits.exp;
-      bool s = _d.bits.sign;
-#else
-      uint64_t f = (_d.bits.coded) & 0b0000000000001111111111111111111111111111111111111111111111111111;
-      uint16_t e = static_cast<uint16_t>(((_d.bits.coded) << 1) >> 53);
-      bool s = (_d.bits.coded) & 0x8000000000000000;
-#endif
-      return {s, e, f};
-   }
-
    kind op_unsigned(kind op)
    {
       switch(op)
@@ -1078,22 +1046,15 @@ namespace
       }
       else if(const auto* rc = GetPointer<const real_cst>(tn))
       {
-         auto val = strtof64x(rc->valr.data(), nullptr);
-         if(rc->valx[0] == '-' && val > 0)
+         THROW_ASSERT(bw == 64 || bw == 32, "Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
+         if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
          {
-            val = -val;
+            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string("-" + rc->valr, bw)));
          }
-         if(bw == 32)
+         else
          {
-            const auto sem = float_view_convert(static_cast<float>(val));
-            return RangeRef(new RealRange(Range(Regular, 1, std::get<0>(sem), std::get<0>(sem)), Range(Regular, 8, std::get<1>(sem), std::get<1>(sem)), Range(Regular, 23, std::get<2>(sem), std::get<2>(sem))));
+            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string(rc->valr, bw)));
          }
-         if(bw == 64)
-         {
-            const auto sem = double_view_convert(static_cast<double>(val));
-            return RangeRef(new RealRange(Range(Regular, 1, std::get<0>(sem), std::get<0>(sem)), Range(Regular, 11, std::get<1>(sem), std::get<1>(sem)), Range(Regular, 52, std::get<2>(sem), std::get<2>(sem))));
-         }
-         THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
       }
       else if(GetPointer<const real_type>(type) != nullptr)
       {
