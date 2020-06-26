@@ -319,7 +319,9 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
    const auto c = manip(y, bit_lattice::X, bit_lattice::ZERO);
    const auto d = manip(y, bit_lattice::X, bit_lattice::ONE);
 
-   const auto [min, max] = std::minmax({a, b, c, d});
+   const auto min_max = std::minmax({a, b, c, d});
+   auto min = min_max.first;
+   auto max = min_max.second;
 
    return RangeRef(new Range(Regular, bitwidth, min, max));
 }
