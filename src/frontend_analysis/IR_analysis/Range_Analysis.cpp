@@ -62,6 +62,13 @@
 #include "design_flow_manager.hpp"
 #include "function_frontend_flow_step.hpp"
 
+/// HLS include
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
+
+/// HLS/memory include
+#include "memory.hpp"
+
 /// stl
 #include "custom_map.hpp"
 #include <map>
@@ -1084,6 +1091,13 @@ namespace
          max = APInt::getMaxValue(bw);
       }
 #endif
+      else if(const auto* rt = GetPointer<const record_type>(type))
+      {
+         THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size)), "record_type has no size");
+         bw = static_cast<bw_t>(tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size))));
+         THROW_ASSERT(bw, "Invalid bitwidth");
+         return RangeRef(new Range(Regular, bw));
+      }
       else
       {
          THROW_UNREACHABLE("Unable to define range for type " + type->get_kind_text() + " of " + tn->ToString());
@@ -2293,7 +2307,7 @@ using VCMap = CustomMap<VarNode*, std::pair<VarNode*, UnpackSelector>>;
 class NodeContainer
 {
  private:
-   static const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&)>> _opCtorGenerators;
+   static const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)>> _opCtorGenerators;
 
    VarNodes _varNodes;
 
@@ -2405,11 +2419,11 @@ class NodeContainer
       return op;
    }
 
-   OpNode* addOperation(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM)
+   OpNode* addOperation(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM)
    {
       for(const auto& generateCtorFor : _opCtorGenerators)
       {
-         if(auto generateOpFor = generateCtorFor(stmt, function_id, FB, TM))
+         if(auto generateOpFor = generateCtorFor(stmt, function_id, FB, TM, AppM))
          {
             return pushOperation(generateOpFor(this));
          }
@@ -2545,7 +2559,7 @@ class PhiOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 // The ctor.
@@ -2587,7 +2601,7 @@ RangeRef PhiOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> PhiOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> PhiOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
    if(!phi || phi->CGetDefEdgesList().size() <= 1)
@@ -2713,7 +2727,7 @@ class UnaryOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 UnaryOpNode::UnaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst, VarNode* _source, kind _opcode) : OpNode(_intersect, _sink, _inst), source(_source), opcode(_opcode)
@@ -3034,7 +3048,7 @@ RangeRef UnaryOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(assign == nullptr)
@@ -3255,7 +3269,7 @@ class SigmaOpNode : public UnaryOpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 SigmaOpNode::SigmaOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst, VarNode* _source, VarNode* _SymbolicSource, kind _opcode)
@@ -3294,7 +3308,7 @@ RangeRef SigmaOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> SigmaOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> SigmaOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
    if(!phi || phi->CGetDefEdgesList().size() != 1)
@@ -3446,7 +3460,7 @@ class BinaryOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 // The ctor.
@@ -3694,7 +3708,7 @@ RangeRef BinaryOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(assign == nullptr)
@@ -3994,7 +4008,7 @@ class TernaryOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&);
 };
 
 // The ctor.
@@ -4121,7 +4135,7 @@ RangeRef TernaryOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> TernaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> TernaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(assign == nullptr)
@@ -4261,7 +4275,7 @@ class LoadOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 LoadOpNode::LoadOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst) : OpNode(_intersect, _sink, _inst)
@@ -4309,7 +4323,55 @@ RangeRef LoadOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM)
+static RangeRef constructor_range(const tree_managerConstRef TM, const tree_nodeConstRef tn, const RangeConstRef init)
+{
+   THROW_ASSERT(tn->get_kind() == constructor_K, "tn is not constructor node");
+   const auto* c = GetPointer<const constructor>(tn);
+   std::vector<unsigned int> array_dims;
+   unsigned int elements_bitsize;
+   tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
+   unsigned int initialized_elements = 0;
+   auto ctor_range = RangeRef(init->clone());
+   for(const auto& i : c->list_of_idx_valu)
+   {
+      const auto el = GET_CONST_NODE(i.second);
+      THROW_ASSERT(el, "unexpected condition");
+
+      if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))
+      {
+         THROW_ASSERT(array_dims.size() > 1 || GET_CONST_NODE(c->type)->get_kind() == record_type_K, "invalid nested constructors:" + tn->ToString() + " " + STR(array_dims.size()));
+         ctor_range = ctor_range->unionWith(constructor_range(TM, el, ctor_range));
+      }
+      else
+      {
+         const auto init_range = getGIMPLE_range(el);
+         if(init_range->getBitWidth() > static_cast<Range::bw_t>(elements_bitsize) || init_range->isReal() != ctor_range->isReal())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + el->ToString());
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + el->ToString());
+            ctor_range = ctor_range->unionWith(init_range);
+         }
+      }
+      initialized_elements++;
+   }
+   if(initialized_elements < array_dims.front())
+   {
+      if(ctor_range->isReal())
+      {
+         ctor_range = ctor_range->unionWith(RangeRef(new RealRange(RangeRef(new Range(Regular, static_cast<Range::bw_t>(elements_bitsize), 0, 0)))));
+      }
+      else
+      {
+         ctor_range = ctor_range->unionWith(RangeRef(new Range(Regular, static_cast<Range::bw_t>(elements_bitsize), 0, 0)));
+      }
+   }
+   return ctor_range;
+}
+
+std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM)
 {
    const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(ga == nullptr)
@@ -4320,7 +4382,7 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
    {
       return nullptr;
    }
-   return [stmt, ga, function_id, TM](NodeContainer* NC) {
+   return [stmt, ga, function_id, FB, TM, AppM](NodeContainer* NC) {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Analysing load operation " + ga->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
       const auto bw = getGIMPLE_BW(ga->op0);
@@ -4328,105 +4390,88 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
       auto intersection = getRangeFor(sink->getValue(), Empty);
-      CustomOrderedSet<unsigned int> res_set;
-      bool pointToConstants = tree_helper::is_fully_resolved(TM, GET_INDEX_CONST_NODE(ga->op1), res_set);
-      if(pointToConstants && !res_set.empty())
+      if(GET_NODE(ga->op1)->get_kind() == array_ref_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || 
+         GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K || GET_NODE(ga->op1)->get_kind() == var_decl_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Pointer is fully resolved");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-         for(auto indexIt = res_set.begin(); indexIt != res_set.end() && pointToConstants; ++indexIt)
+         unsigned int base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
+         const auto* hm = GetPointer<HLS_manager>(AppM);
+         if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && 
+            FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto TN = TM->CGetTreeNode(*indexIt);
-            if(const auto* vd = GetPointer<const var_decl>(TN))
+            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            if(vd && vd->init)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                              "Points to " + TN->ToString() + " (readonly = " + STR(vd->readonly_flag) + ", defs = " + STR(vd->defs.size()) + ", full-size = " + STR(GetPointer<const integer_cst>(GET_CONST_NODE(vd->size))->value) + ")");
-               if(!vd->readonly_flag || vd->init == nullptr)
+               if(GET_NODE(vd->init)->get_kind() == constructor_K)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Pointed variable is not constant " + TN->ToString());
-                  pointToConstants = false;
-                  break;
+                  intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
                }
-               if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
+               else if(GET_NODE(vd->init)->get_kind() == integer_cst_K || GET_NODE(vd->init)->get_kind() == real_cst_K || GET_NODE(vd->init)->get_kind() == string_cst_K)
                {
-                  if(!tree_helper::is_a_struct(TM, GET_INDEX_CONST_NODE(constr->type)) && !tree_helper::is_an_array(TM, GET_INDEX_CONST_NODE(constr->type)))
+                  const auto init_range = getGIMPLE_range(GET_NODE(vd->init));
+                  if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->Initializer has " + STR(constr->list_of_idx_valu.size()) + " values:");
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-                     THROW_ASSERT(static_cast<bool>(constr->list_of_idx_valu.size()), "At least one initializer should be there");
-                     for(const auto& idxValue : constr->list_of_idx_valu)
-                     {
-                        const auto& value = idxValue.second;
-                        if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(value)) && isValidType(value))
-                        {
-#ifndef NDEBUG
-                           const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(value));
-                           if(ic && bw == 8)
-                           {
-                              auto asciiChar = tree_helper::get_integer_cst_value(ic);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString() + " '" + static_cast<char>(asciiChar) + "'");
-                           }
-                           else
-                           {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString());
-                           }
-#endif
-                           intersection = intersection->unionWith(getGIMPLE_range(value));
-                        }
-                        else
-                        {
-                           pointToConstants = false;
-                           break;
-                        }
-                     }
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Array/struct initialization currently not supported");
-                     pointToConstants = false;
-                     break;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                     intersection = init_range;
                   }
                }
-#ifndef NDEBUG
-               else if(const auto* cst_val = GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
-#else
-               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)) != nullptr)
-#endif
+            }
+         }
+         if(base_index && AppM->get_written_objects().find(base_index) != AppM->get_written_objects().end() && hm && hm->Rmem && 
+            FB->is_variable_mem(base_index) && hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
+         {
+            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            if(vd && vd->init)
+            {
+               if(GET_NODE(vd->init)->get_kind() == constructor_K)
                {
-                  const auto init_range = getGIMPLE_range(vd->init);
+                  intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
+               }
+               else if(GET_NODE(vd->init)->get_kind() == integer_cst_K || GET_NODE(vd->init)->get_kind() == real_cst_K || GET_NODE(vd->init)->get_kind() == string_cst_K)
+               {
+                  const auto init_range = getGIMPLE_range(GET_NODE(vd->init));
                   if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + cst_val->ToString());
-                     pointToConstants = false;
-                     break;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
                   }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + cst_val->ToString());
-                  intersection = init_range;
-               }
-               else if(GetPointer<const addr_expr>(GET_CONST_NODE(vd->init)) != nullptr)
-               {
-                  pointToConstants = false; // TODO: put all in the else branch and remove throw_unreachable
-                  break;
-               }
-               else
-               {
-                  THROW_UNREACHABLE("Unhandled initializer " + GET_CONST_NODE(vd->init)->get_kind_text() + " " + GET_CONST_NODE(vd->init)->ToString());
-                  pointToConstants = false;
-                  break;
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                     intersection = init_range;
+                  }
                }
             }
             else
             {
-               THROW_UNREACHABLE("Unknown tree node " + TN->get_kind_text() + " " + TN->ToString());
-               pointToConstants = false;
-               break;
+               if(intersection->isReal())
+               {
+                  intersection = RangeRef(new RealRange(RangeRef(new Range(Regular, bw, 0, 0))));
+               }
+               else
+               {
+                  intersection = RangeRef(new Range(Regular, bw, 0, 0));
+               }
+            }
+            for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
+            {
+               const auto cur_node = TM->get_tree_node_const(cur_var);
+               const auto init_range = getGIMPLE_range(cur_node);
+               if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
+               }
+               else
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                  intersection = intersection->unionWith(init_range);
+               }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
       }
-      if(!pointToConstants)
+      if(intersection->isEmpty())
       {
          intersection = getGIMPLE_range(stmt);
       }
@@ -4480,7 +4525,7 @@ void LoadOpNode::printDot(std::ostream& OS) const
    OS << quot << "\n";
 }
 
-const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&)>> NodeContainer::_opCtorGenerators = {
+const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)>> NodeContainer::_opCtorGenerators = {
     LoadOpNode::opCtorGenerator, UnaryOpNode::opCtorGenerator, BinaryOpNode::opCtorGenerator, PhiOpNode::opCtorGenerator, SigmaOpNode::opCtorGenerator, TernaryOpNode::opCtorGenerator};
 
 // ========================================================================== //
@@ -6292,7 +6337,7 @@ class ConstraintGraph : public NodeContainer
                parametersBinding(stmt, FD);
                if(isValidInstruction(stmt, FB, TM))
                {
-                  addOperation(stmt, function_id, FB, TM);
+                  addOperation(stmt, function_id, FB, TM, AppM);
                }
             }
          }
@@ -6311,7 +6356,7 @@ class ConstraintGraph : public NodeContainer
                   }
                   continue;
                }
-               addOperation(stmt, function_id, FB, TM);
+               addOperation(stmt, function_id, FB, TM, AppM);
                parametersBinding(stmt, FD);
             }
          }
