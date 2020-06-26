@@ -163,13 +163,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
          temporary_directory_pattern = parameters->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
          // The %s are required by the mkdtemp function
          boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-
          boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
          boost::filesystem::create_directories(temp_path_obtained);
-
-         boost::filesystem::path local_archive_file = archive_file;
-         if(local_archive_file.is_relative())
-            local_archive_file = boost::filesystem::current_path() / local_archive_file;
+         boost::filesystem::path local_archive_file = GetPath(archive_file);
 
          std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
          int ret = PandaSystem(parameters, command);

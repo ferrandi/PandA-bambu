@@ -148,7 +148,7 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
    std::string trimmed_value;
    if(tree_helper::is_real(TM, tree_helper::get_type_index(TM, node)))
    {
-      THROW_ASSERT(tree_helper::size(TM, tree_helper::get_type_index(TM, node)) == precision, "real precision mistmatch");
+      THROW_ASSERT(tree_helper::size(TM, tree_helper::get_type_index(TM, node)) == precision, "real precision mismatch");
       tree_nodeRef rc_node = TM->get_tree_node_const(node);
       auto* rc = GetPointer<real_cst>(rc_node);
       std::string C_value = rc->valr;

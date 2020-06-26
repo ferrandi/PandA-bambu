@@ -3651,7 +3651,7 @@ RangeRef BinaryOpNode::eval() const
       if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue())))
       {
          const auto sinkSigned = isSignedType(getSink()->getValue());
-         const auto bvRange = [&] () {
+         const auto bvRange = [&]() {
             const auto sinkBW = getSink()->getBitWidth();
             if(ssa->bit_values.empty() || ssa->bit_values.front() == 'X')
             {
@@ -3660,8 +3660,7 @@ RangeRef BinaryOpNode::eval() const
             return Range::fromBitValues(string_to_bitstring(ssa->bit_values), static_cast<bw_t>(ssa->bit_values.size()), sinkSigned);
          }();
          const auto op_code = this->getOpcode();
-         if((!bvRange->isFullSet() || bvRange->getBitWidth() < result->getBitWidth()) && 
-            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
+         if((!bvRange->isFullSet() || bvRange->getBitWidth() < result->getBitWidth()) && (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result range to " + bvRange->ToString() + "<" + (sinkSigned ? "signed " : "unsigned ") + ssa->bit_values + "> over result " + result->ToString());
 #if HAVE_ASSERTS
@@ -4390,13 +4389,11 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
       auto intersection = getRangeFor(sink->getValue(), Empty);
-      if(GET_NODE(ga->op1)->get_kind() == array_ref_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || 
-         GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K || GET_NODE(ga->op1)->get_kind() == var_decl_K)
+      if(GET_NODE(ga->op1)->get_kind() == array_ref_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K || GET_NODE(ga->op1)->get_kind() == var_decl_K)
       {
          unsigned int base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
          const auto* hm = GetPointer<HLS_manager>(AppM);
-         if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && 
-            FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
+         if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
          {
             const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
             if(vd && vd->init)
@@ -4420,8 +4417,7 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
                }
             }
          }
-         if(base_index && AppM->get_written_objects().find(base_index) != AppM->get_written_objects().end() && hm && hm->Rmem && 
-            FB->is_variable_mem(base_index) && hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
+         if(base_index && AppM->get_written_objects().find(base_index) != AppM->get_written_objects().end() && hm && hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
          {
             const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
             if(vd && vd->init)

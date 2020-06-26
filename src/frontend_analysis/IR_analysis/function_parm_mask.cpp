@@ -451,7 +451,9 @@ DesignFlowStep_Status function_parm_mask::Exec()
                         THROW_ASSERT(parm->range == nullptr, "Parameter range should be unset (" + parm->range->ToString() + ")");
 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + GET_CONST_NODE(parm->type)->get_kind_text() + "<" + STR(bw) + "> " + argName);
-                        const auto [bit_values, range] = tagDecode(EnodeArg->get_attributes(), static_cast<Range::bw_t>(bw));
+                        const auto bit_values_range = tagDecode(EnodeArg->get_attributes(), static_cast<Range::bw_t>(bw));
+                        auto bit_values = bit_values_range.first;
+                        auto range = bit_values_range.second;
                         if(range == nullptr)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -467,7 +469,9 @@ DesignFlowStep_Status function_parm_mask::Exec()
                   const auto retType = tree_helper::GetFunctionReturnType(TM->get_tree_node_const(fd->index));
                   const auto retBW = tree_helper::Size(retType);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + retType->get_kind_text() + "<" + STR(retBW) + "> return value");
-                  auto [bit_values, range] = tagDecode(Enode->get_attributes(), static_cast<Range::bw_t>(retBW));
+                  auto bit_values_range = tagDecode(Enode->get_attributes(), static_cast<Range::bw_t>(retBW));
+                  auto bit_values = bit_values_range.first;
+                  auto range = bit_values_range.second;
                   if(range != nullptr)
                   {
                      THROW_ASSERT(fd->bit_values.empty(), "Return value bitmask should be empty (" + fd->bit_values + ")");

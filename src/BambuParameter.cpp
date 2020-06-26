@@ -1295,7 +1295,7 @@ int BambuParameter::Exec()
             break;
          }
          case 'o':
-            setOption(OPT_output_file, optarg);
+            setOption(OPT_output_file, GetPath(optarg));
             break;
          case 'S':
          {
@@ -2113,7 +2113,7 @@ int BambuParameter::Exec()
          }
          case OPT_PRETTY_PRINT:
          {
-            setOption(OPT_pretty_print, optarg);
+            setOption(OPT_pretty_print, GetPath(optarg));
             break;
          }
          case OPT_PRAGMA_PARSE:
@@ -2127,7 +2127,7 @@ int BambuParameter::Exec()
             const std::string arg = TrimSpaces(std::string(optarg));
             if(arg.size() >= 4 and arg.substr(arg.size() - 4) == ".xml")
             {
-               setOption(OPT_testbench_input_xml, optarg);
+               setOption(OPT_testbench_input_xml, GetPath(optarg));
             }
             else
             {
@@ -2298,7 +2298,7 @@ int BambuParameter::Exec()
             for(auto& i : Splitted)
             {
                boost::trim(i);
-               no_parse_files += i + " ";
+               no_parse_files += GetPath(i) + " ";
             }
             setOption(OPT_no_parse_files, no_parse_files);
             break;
@@ -2310,7 +2310,7 @@ int BambuParameter::Exec()
             for(auto& i : Splitted)
             {
                boost::trim(i);
-               no_parse_c_python_files += i + " ";
+               no_parse_c_python_files += GetPath(i) + " ";
             }
             setOption(OPT_no_parse_c_python, no_parse_c_python_files);
             break;
@@ -2405,7 +2405,7 @@ int BambuParameter::Exec()
             }
             if(strcmp(long_options[option_index].name, "xml-memory-allocation") == 0)
             {
-               setOption(OPT_xml_memory_allocation, optarg);
+               setOption(OPT_xml_memory_allocation, GetPath(optarg));
                break;
             }
             if(strcmp(long_options[option_index].name, "memory-allocation-policy") == 0)
@@ -2517,11 +2517,6 @@ int BambuParameter::Exec()
                setOption(OPT_assert_debug, true);
                break;
             }
-            if(strcmp(long_options[option_index].name, "circuit-dbg") == 0)
-            {
-               setOption(OPT_circuit_debug_level, optarg);
-               break;
-            }
             /// scheduling options
             if(strcmp(long_options[option_index].name, "no-chaining") == 0)
             {
@@ -2542,6 +2537,9 @@ int BambuParameter::Exec()
                else if(std::string(optarg) == "WB4")
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
+                  setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
+                  setOption(OPT_channels_number, 1);
+                  setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
                }
 #if HAVE_EXPERIMENTAL
                else if(std::string(optarg) == "AXI4LITE")
@@ -2626,7 +2624,7 @@ int BambuParameter::Exec()
    if(isOption(OPT_gcc_write_xml))
    {
       const std::string filenameXML = getOption<std::string>(OPT_gcc_write_xml);
-      write_xml_configuration_file(filenameXML);
+      write_xml_configuration_file(GetPath(filenameXML));
       PRINT_MSG("Configuration saved into file \"" + filenameXML + "\"");
       return EXIT_SUCCESS;
    }
@@ -2658,7 +2656,7 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_AADL)
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_AADL));
       }
 #endif
@@ -2669,13 +2667,13 @@ int BambuParameter::Exec()
       )
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
          setOption(OPT_input_format, static_cast<int>(file_type));
       }
       else if(file_type == Parameters_FileFormat::FF_RAW or (isOption(OPT_input_format) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW))
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
          if(!isOption(OPT_pretty_print))
             setOption(OPT_pretty_print, "_a.c");
@@ -2743,7 +2741,7 @@ void BambuParameter::CheckParameters()
       setOption("device_synthesis_tool", "");
       if(getOption<std::string>(OPT_bram_high_latency) != "")
       {
-         THROW_ERROR("High latency bram cannot be used in taste architecture");
+         THROW_ERROR("High latency BRAM cannot be used in taste architecture");
       }
    }
 #endif
@@ -3331,7 +3329,7 @@ void BambuParameter::CheckParameters()
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)
       {
-         std::string command = "cp " + splitted[i] + " .";
+         std::string command = "cp " + GetPath(splitted[i]) + " " + GetCurrentPath();
          int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
          if(IsError(ret))
          {
@@ -3383,19 +3381,13 @@ void BambuParameter::SetDefaults()
 {
    // ---------- general options ----------- //
    /// Revision
-#ifdef _WIN32
    setOption(OPT_dot_directory, GetCurrentPath() + "/HLS_output/dot/");
    setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
-#else
-   setOption(OPT_dot_directory, "HLS_output/dot/");
-   setOption(OPT_output_directory, "HLS_output/");
-#endif
-   setOption(OPT_simulation_output, "results.txt");
-   setOption(OPT_profiling_output, "profiling_results.txt");
+   setOption(OPT_simulation_output, GetPath("results.txt"));
+   setOption(OPT_profiling_output, GetPath("profiling_results.txt"));
    /// Debugging level
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_NONE);
-   setOption(OPT_circuit_debug_level, DEBUG_LEVEL_NONE);
    setOption(OPT_print_dot, false);
    /// maximum execution time: 0 means no time limit
    setOption(OPT_ilp_max_time, 0);
@@ -3515,17 +3507,8 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   std::string app_prefix;
-   if(getenv("MINGW_INST_DIR"))
-      app_prefix = getenv("MINGW_INST_DIR");
-   else if(getenv("APPDIR"))
-      app_prefix = getenv("APPDIR");
-#ifdef _WIN32
-   else
-      app_prefix = "c:/msys64/";
-#endif
 
-   setOption("dynamic_generators_dir", app_prefix + PANDA_DATA_INSTALLDIR "/panda");
+   setOption("dynamic_generators_dir", relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda"));
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);
@@ -3882,105 +3865,97 @@ void BambuParameter::add_bambu_library(std::string lib)
    }
    if(isOption(OPT_archive_files))
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
-   std::string app_prefix;
-   if(getenv("MINGW_INST_DIR"))
-      app_prefix = getenv("MINGW_INST_DIR");
-   else if(getenv("APPDIR"))
-      app_prefix = getenv("APPDIR");
-#ifdef _WIN32
-   else
-      app_prefix = "c:/msys64/";
-#endif
+
 #endif
 
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc45" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc45" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc46" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc46" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc47" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc47" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc48" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc48" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc49" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc49" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6))
    {
-      setOption(OPT_archive_files, archive_files + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang4" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang4" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9))
    {
-      setOption(OPT_archive_files, archive_files + app_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang9" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang9" + VSuffix + ".a");
    }
 #endif
 }

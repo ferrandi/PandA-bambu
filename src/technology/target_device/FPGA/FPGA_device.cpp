@@ -168,7 +168,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
             for(const auto& file_device : file_devices)
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Imported user data from file " + file_device);
-               ret.insert(XMLDomParserRef(new XMLDomParser(file_device)));
+               ret.insert(XMLDomParserRef(new XMLDomParser(GetPath(file_device))));
             }
          }
          else

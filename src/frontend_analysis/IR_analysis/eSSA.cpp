@@ -74,6 +74,8 @@
 
 #include "Range.hpp"
 
+#include "absl/memory/memory.h"
+
 class OrderedBasicBlock
 {
    /// Map a instruction to its position in a BasicBlock.
@@ -258,7 +260,7 @@ class OrderedInstructions
 
             const auto BB = DT->CGetBBNodeInfo(BBvertex->second)->block;
             THROW_ASSERT(BB->number == BBIA, "Intermediate BB not allowed here"); // Intermediate BB shadows its incoming BB, thus its index is different from associated vertex
-            OBB = OBBMap.insert({BBIA, std::make_unique<OrderedBasicBlock>(BB)}).first;
+            OBB = OBBMap.insert({BBIA, absl::make_unique<OrderedBasicBlock>(BB)}).first;
          }
          return OBB->second->dominates(InstA, InstB);
       }
@@ -611,8 +613,10 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
       }
    };
 
-   for(const auto& [case_var, BBI] : MWII->list_of_cond)
+   for(const auto& var_pair : MWII->list_of_cond)
    {
+      auto case_var = var_pair.first;
+      auto BBI = var_pair.second;
       if(case_var == nullptr)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition: else branch");
@@ -987,7 +991,9 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          {
             blocRef interBB;
             // Check if intermediate BB has already been created by previous renaming operation
-            if(auto interBBIt = interBranchBBs.find({pwe->From, ToBB->number}); interBBIt != interBranchBBs.end())
+            auto from_number = std::make_pair(pwe->From, ToBB->number);
+            auto interBBIt = interBranchBBs.find(from_number);
+            if(interBBIt != interBranchBBs.end())
             {
                interBB = interBBIt->second;
             }

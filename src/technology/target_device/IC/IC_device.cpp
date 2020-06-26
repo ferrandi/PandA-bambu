@@ -156,7 +156,7 @@ void IC_device::load_devices(const target_deviceRef device)
       /// update with specified device information
       if(Param->isOption(OPT_target_device_file))
       {
-         const auto file_name = Param->getOption<std::string>(OPT_target_device_file);
+         const auto file_name = GetPath(Param->getOption<std::string>(OPT_target_device_file));
          if(!boost::filesystem::exists(file_name))
          {
             THROW_ERROR("Device information file " + file_name + " does not exist!");

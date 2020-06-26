@@ -106,7 +106,8 @@
 
 #include "gcc_wrapper.hpp"
 
-moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters) : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/module-generation/")
+moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters)
+    : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/module-generation/")
 {
    if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
@@ -294,7 +295,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    File.close();
 
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
-   std::string compiler_flags = " -lstdc++ ";
+   std::string compiler_flags = " -lstdc++ -lm ";
    // setup source files
    std::list<std::string> file_sources;
    file_sources.push_front(temp_generator_filename);

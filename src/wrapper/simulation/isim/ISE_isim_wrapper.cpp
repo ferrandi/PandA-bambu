@@ -113,7 +113,7 @@ std::string ISE_isim_wrapper::create_project_script(const std::string& top_filen
       {
          prj_file << language << " "
                   << "work"
-                  << " " << boost::filesystem::current_path().string() << "/" << filename << std::endl;
+                  << " " << boost::filesystem::path(GetCurrentPath()).string() << "/" << filename << std::endl;
       }
    }
    prj_file.close();

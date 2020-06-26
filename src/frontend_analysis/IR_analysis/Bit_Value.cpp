@@ -1209,11 +1209,11 @@ void Bit_Value::initialize()
                                     THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
                                     if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
                                     {
-                                        current_inf = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
+                                       current_inf = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
                                     }
                                     else
                                     {
-                                        current_inf = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
+                                       current_inf = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
                                     }
                                     sign_reduce_bitstring(current_inf, false);
                                  }
@@ -1274,11 +1274,11 @@ void Bit_Value::initialize()
                                        THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
                                        if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
                                        {
-                                           current_inf = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
+                                          current_inf = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
                                        }
                                        else
                                        {
-                                           current_inf = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
+                                          current_inf = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
                                        }
                                        sign_reduce_bitstring(current_inf, false);
                                     }
@@ -1355,11 +1355,11 @@ void Bit_Value::initialize()
                                        const auto* cst = GetPointer<const real_cst>(cur_node);
                                        if(cst->valx.front() == '-' && cst->valr.front() != cst->valx.front())
                                        {
-                                           cur_bitstring = string_to_bitstring(convert_fp_to_string("-" + cst->valr, source_type_size));
+                                          cur_bitstring = string_to_bitstring(convert_fp_to_string("-" + cst->valr, source_type_size));
                                        }
                                        else
                                        {
-                                           cur_bitstring = string_to_bitstring(convert_fp_to_string(cst->valr, source_type_size));
+                                          cur_bitstring = string_to_bitstring(convert_fp_to_string(cst->valr, source_type_size));
                                        }
                                        sign_reduce_bitstring(cur_bitstring, loaded_is_signed);
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "bitstring = " + bitstring_to_string(cur_bitstring));

@@ -70,8 +70,10 @@
 
 /// Utility include
 #include "dbgPrintHelper.hpp" // for DEBUG_LEVEL_
+#include "fileIO.hpp"
 #include "string_manipulation.hpp"
 #include "utility.hpp"
+
 #include <boost/algorithm/string/replace.hpp>
 
 /// PARAMETERS STUFF ***********************///
@@ -322,10 +324,10 @@ int SpiderParameter::Exec()
       {
          input_file = getOption<std::string>(OPT_input_file) + STR_CST_string_separator;
       }
-      setOption(OPT_input_file, input_file + argv[optind]);
+      setOption(OPT_input_file, input_file + GetPath(argv[optind]));
       optind++;
    }
-   setOption(OPT_output_file, argv[optind]);
+   setOption(OPT_output_file, GetPath(argv[optind]));
 
    CheckParameters();
 
@@ -336,7 +338,6 @@ void SpiderParameter::SetDefaults()
 {
    setOption(OPT_accuracy, 0);
 #if HAVE_TECHNOLOGY_BUILT
-   setOption(OPT_circuit_debug_level, DEBUG_LEVEL_NONE);
    setOption(OPT_component_name, "all");
 #endif
    setOption(OPT_cross_validation, 1);
@@ -494,7 +495,6 @@ void SpiderParameter::CheckParameters()
       if(not(input_files.size() == 1 or (input_files.size() == 2 and isOption(OPT_aggregated_features))))
          THROW_ERROR("Only a liberty file required");
    }
-   setOption(OPT_circuit_debug_level, getOption<int>(OPT_debug_level));
 #endif
 #if HAVE_TECHNOLOGY_BUILT
    for(const auto& input_file : getOption<const CustomSet<std::string>>(OPT_input_file))

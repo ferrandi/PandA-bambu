@@ -155,7 +155,7 @@ int tree_panda_gcc_parameter::Exec()
       switch(next_option)
       {
          case 'o':
-            setOption(OPT_output_file, optarg);
+            setOption(OPT_output_file, GetPath(optarg));
             break;
          case 'S':
          {
@@ -332,7 +332,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             object_files = getOption<std::string>(OPT_obj_files) + STR_CST_string_separator;
          }
-         setOption(OPT_obj_files, object_files + argv[optind]);
+         setOption(OPT_obj_files, object_files + GetPath(argv[optind]));
       }
       else if(GetExtension(argv[optind]) == "a")
       {
@@ -341,7 +341,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
          }
-         setOption(OPT_archive_files, archive_files + argv[optind]);
+         setOption(OPT_archive_files, archive_files + GetPath(argv[optind]));
       }
       else
       {
@@ -350,7 +350,7 @@ int tree_panda_gcc_parameter::Exec()
          {
             input_file = getOption<std::string>(OPT_input_file) + STR_CST_string_separator;
          }
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
       }
       optind++;
    }

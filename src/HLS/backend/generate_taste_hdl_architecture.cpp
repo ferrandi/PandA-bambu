@@ -72,6 +72,7 @@
 
 /// tree includes
 #include "behavioral_helper.hpp"
+#include "fileIO.hpp"
 #include "tree_manager.hpp"
 
 GenerateTasteHDLArchitecture::GenerateTasteHDLArchitecture(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager)
@@ -255,8 +256,8 @@ DesignFlowStep_Status GenerateTasteHDLArchitecture::Exec()
    }
    writer->write("end;\n");
    writer->WriteFile("architecture_top.vhd");
-   HLSMgr->hdl_files.push_back("top.vhd");
-   HLSMgr->hdl_files.push_back("architecture_top.vhd");
+   HLSMgr->hdl_files.push_back(GetPath("top.vhd"));
+   HLSMgr->hdl_files.push_back(GetPath("architecture_top.vhd"));
 
    /// Write configuration file
    language_writerRef config_writer = language_writer::create_writer(HDLWriter_Language::VHDL, TM, parameters);

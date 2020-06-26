@@ -206,6 +206,8 @@
 #include "design_analysis_xml.hpp"
 #endif
 
+#include "fileIO.hpp"
+
 const std::string branch_name = {
 #include "branch_name.hpp"
 };
@@ -662,15 +664,13 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          /// If the path is not absolute, make it into absolute
          std::string path(optarg_param);
          std::string temporary_directory_pattern;
-         temporary_directory_pattern = path + "/" + std::string(STR_CST_temporary_directory);
+         temporary_directory_pattern = GetPath(path) + "/" + std::string(STR_CST_temporary_directory);
          // The %s are required by the mkdtemp function
          boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
 
          boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
-         boost::filesystem::create_directories(temp_path_obtained);
+         boost::filesystem::create_directories(temp_path_obtained.string());
 
-         if(temp_path_obtained.is_relative())
-            temp_path_obtained = boost::filesystem::current_path() / temp_path_obtained;
          path = temp_path_obtained.string();
          path = path + "/";
          setOption(OPT_output_temporary_directory, path);

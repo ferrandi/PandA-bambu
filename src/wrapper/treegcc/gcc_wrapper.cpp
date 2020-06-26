@@ -231,7 +231,6 @@
 #include "config_I386_LLVM9_LINK_EXE.hpp"
 #include "config_I386_LLVM9_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
-#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
 #include "config_SPARC_ELF_CPP.hpp"
 #include "config_SPARC_ELF_GCC.hpp"
@@ -290,18 +289,6 @@
 #include "polixml.hpp"
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
-
-
-static std::string relocate_compiler_path(const std::string & path)
-{
-   if(getenv("APPDIR"))
-   {
-      std::string app_prefix = getenv("APPDIR");
-      return app_prefix + path;
-   }
-   else
-      return path;
-}
 
 std::string GccWrapper::current_gcc_version;
 
@@ -566,7 +553,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
       else
       {
-         temporary_file_run_o = boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string();
+         temporary_file_run_o = boost::filesystem::unique_path(GetCurrentPath() + std::string(STR_CST_gcc_obj_file)).string();
          command += " -o " + temporary_file_run_o;
       }
    }
@@ -2560,7 +2547,7 @@ void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 
    std::string list_of_dirs;
 
-   std::ifstream includefile(STR_CST_gcc_include);
+   std::ifstream includefile(GetPath(STR_CST_gcc_include));
    if(includefile.is_open())
    {
       std::string line;
@@ -2576,7 +2563,7 @@ void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
    else
       THROW_ERROR("Error in retrieving gcc system include");
 
-   std::remove(STR_CST_gcc_include);
+   std::remove(GetPath(STR_CST_gcc_include).c_str());
 
    // Ok, now here there are the list of the system paths in which
    // the system includes are found

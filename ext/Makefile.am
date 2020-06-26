@@ -315,7 +315,7 @@ documentation-tag:
 
 if USE_GRLIB
 install-exec-hook:
-	cp -r $(top_srcdir)/ext/GRLIB  $(libdir)
+	mkdir -p $(DESTDIR)$(libdir); cp -r $(top_srcdir)/ext/GRLIB  $(DESTDIR)$(libdir)
 endif
 
 noinst_LTLIBRARIES =

@@ -147,7 +147,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "   exit 1;" << std::endl;
    script << "fi" << std::endl;
    script << std::endl << std::endl;
-   script << "ln -s ../../../" + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
+   script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
    script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
 #if HAVE_THREADS

@@ -105,12 +105,13 @@ void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string
    }
    script << " -g2012";
    script << " -gstrict-ca-eval";
+   script << " -o " << GetPath("a.out");
    script << " -v >& " << log_file;
    script << std::endl << std::endl;
 
    script << "#VVP" << std::endl;
    script << VVP;
-   script << " a.out 2>&1 | tee -a " << log_file << std::endl << std::endl;
+   script << " " << GetPath("a.out") << "  2>&1 | tee -a " << log_file << std::endl << std::endl;
 }
 
 #if HAVE_EXPERIMENTAL
