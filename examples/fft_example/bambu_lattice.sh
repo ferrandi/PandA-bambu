@@ -3,7 +3,7 @@ script=$(readlink -e $0)
 root_dir=$(dirname $script)
 export PATH=../../src:../../../src:/opt/panda/bin:$PATH
 
-timeout 2h bambu_OPTION="-v4 -lm -fsingle-precision-constant --evaluation -Os --device-name=LFE335EA8FN484C -ffast-math --libm-std-rounding --experimental-setup=BAMBU"
+bambu_OPTION="-v4 -lm -fsingle-precision-constant --evaluation -Os --device-name=LFE335EA8FN484C -ffast-math --libm-std-rounding --experimental-setup=BAMBU"
 rm -rf run_dir_lattice
 mkdir run_dir_lattice
 cd run_dir_lattice
