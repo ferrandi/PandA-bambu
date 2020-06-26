@@ -1203,13 +1203,13 @@ void VarNode::init(bool outside)
    THROW_ASSERT(interval, "Interval should be initialized during VarNode construction");
    if(interval->isUnknown()) // Ranges already initialized come from user defined hints and shouldn't be overwritten
    {
-      if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr || outside)
+      if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr)
       {
          interval = getGIMPLE_range(V);
       }
       else
       {
-         interval = getRangeFor(V, Unknown);
+         interval = getRangeFor(V, outside ? Regular : Unknown);
       }
    }
 }

@@ -17,7 +17,7 @@ printer2.c: C stub used to emulate the printer2 IP in C.
 main_test.c: C testbench
 constraints_STD.xml: resource constraint file passed to bambu to generate a Verilog design with just 1 my_ip module.
 test.xml: XML file describing the testbench inputs. It is empty since we use the main_test.c as testbench generator.
-timeout 2h bambu.sh: synthesis and simulation script. It requires Vivado RTL and Verilator to properly work.
+bambu.sh: synthesis and simulation script. It requires Vivado RTL and Verilator to properly work.
 
 All C/H files were validated using the "gcc -c" command.
 A C executable can be created with this command: "gcc -o ip_test main_test.c top.c module1.c module2.c printer1.c printer2.c
