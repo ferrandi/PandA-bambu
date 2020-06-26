@@ -94,6 +94,18 @@ BOOST_AUTO_TEST_CASE( range_bitvalues )
     BOOST_REQUIRE(bv1->isConstant());
     BOOST_REQUIRE_EQUAL(bv1->getBitWidth(), 11);
     BOOST_REQUIRE_EQUAL(bv1->getUnsignedMax(), 0b10000000010);
+
+    const auto bv2 = Range::fromBitValues(string_to_bitstring("10XXX"), 5, true);
+    BOOST_REQUIRE_EQUAL(5, bv2->getBitWidth());
+    BOOST_REQUIRE_EQUAL(16, bv2->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(23, bv2->getUnsignedMax());
+
+    const auto bv3 = Range::fromBitValues(string_to_bitstring("UUUUXX"), 8, true);
+    BOOST_REQUIRE_EQUAL(8, bv3->getBitWidth());
+    BOOST_REQUIRE_EQUAL(-32, bv3->getSignedMin());
+    BOOST_REQUIRE_EQUAL(31, bv3->getSignedMax());
+    BOOST_REQUIRE_EQUAL(0, bv3->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(255, bv3->getUnsignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_addition )

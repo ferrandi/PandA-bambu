@@ -276,14 +276,6 @@ bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
 RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned)
 {
    THROW_ASSERT(bv.size() <= bitwidth, "BitValues size not appropriate");
-   auto bitReplace = [](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest) {
-      std::deque<bit_lattice> bv_out;
-      for(const auto& b : bv_in)
-      {
-         bv_out.push_back(b == src ? dest : b);
-      }
-      return bv_out;
-   };
    auto bitstring_to_int = [&](const std::deque<bit_lattice>& bv_in) {
       long long out = isSigned && bv_in.front() == bit_lattice::ONE ? std::numeric_limits<long long>::min() : 0LL;
       auto bv_it = bv_in.crbegin();
@@ -301,28 +293,33 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
       }
       return out;
    };
-   auto manip = [&](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest) {
-      auto bv_ext = bitReplace(bv_in, src, dest);
-      if(bv_ext.size() < bitwidth)
+   auto manip = [&](const std::deque<bit_lattice>& bv_in) {
+      if(bv_in.size() < bitwidth)
       {
-         bv_ext = BitLatticeManipulator::sign_extend_bitstring(bv_ext, isSigned, bitwidth);
+         return APInt(bitstring_to_int(BitLatticeManipulator::sign_extend_bitstring(bv_in, isSigned, bitwidth))).extOrTrunc(bitwidth, isSigned);
       }
-      return bitstring_to_int(bv_ext);
+      return APInt(bitstring_to_int(bv_in)).extOrTrunc(bitwidth, isSigned);
    };
+   const auto max = [&]() {
+      std::deque<bit_lattice> bv_out;
+      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ? (isSigned ? bit_lattice::ZERO : bit_lattice::ONE) : bv.front());
+      for(auto it = ++(bv.begin()); it != bv.end(); ++it)
+      {
+         bv_out.push_back((*it == bit_lattice::U || *it == bit_lattice::X) ? bit_lattice::ONE : *it);
+      }
+      return manip(bv_out);
+   }();
+   const auto min = [&]() {
+      std::deque<bit_lattice> bv_out;
+      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ? (isSigned ? bit_lattice::ONE : bit_lattice::ZERO) : bv.front());
+      for(auto it = ++(bv.begin()); it != bv.end(); ++it)
+      {
+         bv_out.push_back((*it == bit_lattice::U || *it == bit_lattice::X) ? bit_lattice::ZERO : *it);
+      }
+      return manip(bv_out);
+   }();
 
-   const auto x = bitReplace(bv, bit_lattice::U, bit_lattice::ZERO);
-   const auto y = bitReplace(bv, bit_lattice::U, bit_lattice::ONE);
-
-   // TODO: could be less conservative on X values, but it may interfere with BitValue oeprations
-   const auto a = manip(x, bit_lattice::X, bit_lattice::ZERO);
-   const auto b = manip(x, bit_lattice::X, bit_lattice::ONE);
-   const auto c = manip(y, bit_lattice::X, bit_lattice::ZERO);
-   const auto d = manip(y, bit_lattice::X, bit_lattice::ONE);
-
-   const auto min_max = std::minmax({a, b, c, d});
-   auto min = min_max.first;
-   auto max = min_max.second;
-
+   THROW_ASSERT(min <= max, "");
    return RangeRef(new Range(Regular, bitwidth, min, max));
 }
 

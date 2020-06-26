@@ -478,33 +478,16 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto* rc = GetPointer<const real_cst>(returned_tn);
                            THROW_ASSERT(rc, "not a real_cst");
                            const auto ret_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
-                           auto val = strtof64x(rc->valr.data(), nullptr);
-                           if(rc->valx[0] == '-' && val > 0)
+                           THROW_ASSERT(ret_size == 64 || ret_size == 32, "Unhandled real type size (" + STR(ret_size) + ")");
+                           if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
                            {
-                              val = -val;
-                           }
-                           if(ret_size == 64)
-                           {
-                              union {
-                                 double d;
-                                 long long ll;
-                              } vc;
-                              vc.d = static_cast<double>(val);
-                              res_tmp = create_bitstring_from_constant(vc.ll, 64, false);
-                           }
-                           else if(ret_size == 32)
-                           {
-                              union {
-                                 float f;
-                                 long l;
-                              } vc;
-                              vc.f = static_cast<float>(val);
-                              res_tmp = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                              res_tmp = string_to_bitstring(convert_fp_to_string("-" + rc->valr, ret_size));
                            }
                            else
                            {
-                              THROW_UNREACHABLE("Unhandled real type size (" + STR(ret_size) + ")");
+                              res_tmp = string_to_bitstring(convert_fp_to_string(rc->valr, ret_size));
                            }
+                           sign_reduce_bitstring(res_tmp, false);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "constant return value: " + bitstring_to_string(res_tmp));
                         }
                         else
@@ -764,33 +747,16 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               const auto* rc = GetPointer<const real_cst>(ap_node);
                               THROW_ASSERT(rc, "not a real_cst");
                               const auto ap_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
-                              auto val = strtof64x(rc->valr.data(), nullptr);
-                              if(rc->valx[0] == '-' && val > 0)
+                              THROW_ASSERT(ap_size == 64 || ap_size == 32, "Unhandled real type size (" + STR(ap_size) + ")");
+                              if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
                               {
-                                 val = -val;
-                              }
-                              if(ap_size == 64)
-                              {
-                                 union {
-                                    double d;
-                                    long long ll;
-                                 } vc;
-                                 vc.d = static_cast<double>(val);
-                                 res_tmp = create_bitstring_from_constant(vc.ll, 64, false);
-                              }
-                              else if(ap_size == 32)
-                              {
-                                 union {
-                                    float f;
-                                    long l;
-                                 } vc;
-                                 vc.f = static_cast<float>(val);
-                                 res_tmp = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                                 res_tmp = string_to_bitstring(convert_fp_to_string("-" + rc->valr, ap_size));
                               }
                               else
                               {
-                                 THROW_UNREACHABLE("Unhandled real type size (" + STR(ap_size) + ")");
+                                 res_tmp = string_to_bitstring(convert_fp_to_string(rc->valr, ap_size));
                               }
+                              sign_reduce_bitstring(res_tmp, false);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else if(ap_kind == var_decl_K)
@@ -836,33 +802,16 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto* rc = GetPointer<const real_cst>(ap_node);
                            THROW_ASSERT(rc, "not a real_cst");
                            const auto ap_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
-                           auto val = strtof64x(rc->valr.data(), nullptr);
-                           if(rc->valx[0] == '-' && val > 0)
+                           THROW_ASSERT(ap_size == 64 || ap_size == 32, "Unhandled real type size (" + STR(ap_size) + ")");
+                           if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
                            {
-                              val = -val;
-                           }
-                           if(ap_size == 64)
-                           {
-                              union {
-                                 double d;
-                                 long long ll;
-                              } vc;
-                              vc.d = static_cast<double>(val);
-                              res_tmp = create_bitstring_from_constant(vc.ll, 64, false);
-                           }
-                           else if(ap_size == 32)
-                           {
-                              union {
-                                 float f;
-                                 long l;
-                              } vc;
-                              vc.f = static_cast<float>(val);
-                              res_tmp = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                              res_tmp = string_to_bitstring(convert_fp_to_string("-" + rc->valr, ap_size));
                            }
                            else
                            {
-                              THROW_UNREACHABLE("Unhandled real type size (" + STR(ap_size) + ")");
+                              res_tmp = string_to_bitstring(convert_fp_to_string(rc->valr, ap_size));
                            }
+                           sign_reduce_bitstring(res_tmp, false);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
                         }
                         else if(ap_kind == var_decl_K)
