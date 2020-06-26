@@ -136,6 +136,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
       script << " --l2-name v";
 #endif
    }
+   script << " --x-assign unique"; // randomize assigned x values
    for(const auto& file : file_list)
    {
       script << " " << file;
