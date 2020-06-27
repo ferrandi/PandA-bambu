@@ -1053,7 +1053,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
             }
          }
-         std::cerr << "add interconnection " << port_out->get_path() << " to " << portsToSigConnect.find(port_out)->second->get_path() << "\n";
          port_o::fix_port_properties(port_out, ext_port);
          SM_minimal_interface->add_connection(portsToSigConnect.find(port_out)->second, ext_port);
       }

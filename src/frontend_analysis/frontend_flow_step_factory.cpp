@@ -117,7 +117,6 @@
 #include "commutative_expr_restructuring.hpp"
 #include "compute_implicit_calls.hpp"
 #include "cond_expr_restructuring.hpp"
-#include "constant_flop_wrapper.hpp"
 #endif
 #if HAVE_TASTE
 #include "create_address_translation.hpp"
@@ -392,7 +391,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case COMPUTE_IMPLICIT_CALLS:
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
-      case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:
 #endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
@@ -801,7 +799,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case COMPUTE_IMPLICIT_CALLS:
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
-      case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:
 #endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
@@ -1121,10 +1118,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       case COND_EXPR_RESTRUCTURING:
       {
          return DesignFlowStepRef(new CondExprRestructuring(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
-      case CONSTANT_FLOP_WRAPPER:
-      {
-         return DesignFlowStepRef(new constant_flop_wrapper(parameters, AppM, function_id, design_flow_manager.lock()));
       }
       case CSE_STEP:
       {

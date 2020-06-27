@@ -206,7 +206,7 @@ static void constrainSSA(ssa_name* op_ssa, tree_managerRef TM)
    }
 }
 
-void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
+void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipulationRef IRman)
 {
    for(auto bb_pair : sl->list_of_bloc)
    {
@@ -220,7 +220,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM)
 #ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of CFG transformations");
             continue;
          }
 #endif
@@ -2710,6 +2710,7 @@ DesignFlowStep_Status Bit_Value_opt::InternalExec()
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " --------- BIT_VALUE_OPT ----------");
    tree_managerRef TM = AppM->get_tree_manager();
+   tree_manipulationRef IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
 
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
    // tree_nodeRef Scpe = TM->GetTreeReindex(function_id);
@@ -2720,7 +2721,7 @@ DesignFlowStep_Status Bit_Value_opt::InternalExec()
    /// for each basic block B in CFG do > Consider all blocks successively
    restart_dead_code = false;
    modified = false;
-   optimize(sl, TM);
+   optimize(sl, TM, IRman);
    modified ? function_behavior->UpdateBBVersion() : 0;
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
@@ -2732,6 +2733,4 @@ bool Bit_Value_opt::HasToBeExecuted() const
 
 void Bit_Value_opt::Initialize()
 {
-   tree_managerRef TM = AppM->get_tree_manager();
-   IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
 }

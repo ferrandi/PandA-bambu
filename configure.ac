@@ -2817,7 +2817,7 @@ fi
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
   AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic "
+  CXXFLAGS+=" -g3 "
   AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
 fi
 

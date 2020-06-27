@@ -61,8 +61,6 @@ class function_parm_mask : public ApplicationFrontendFlowStep
       uint8_t m_bits;
    };
 
-   CustomMap<std::string, funcMask> funcMasks;
-
    std::pair<std::string, RangeRef> tagDecode(const attribute_sequence::attribute_list& attributes, Range::bw_t bw) const;
 
    bool fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const;

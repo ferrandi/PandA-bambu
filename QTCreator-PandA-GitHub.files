@@ -2161,8 +2161,6 @@ src/frontend_analysis/IR_analysis/check_system_type.cpp
 src/frontend_analysis/IR_analysis/check_system_type.hpp
 src/frontend_analysis/IR_analysis/compute_implicit_calls.cpp
 src/frontend_analysis/IR_analysis/compute_implicit_calls.hpp
-src/frontend_analysis/IR_analysis/constant_flop_wrapper.cpp
-src/frontend_analysis/IR_analysis/constant_flop_wrapper.hpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.cpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.hpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.cpp

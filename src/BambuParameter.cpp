@@ -2824,7 +2824,7 @@ void BambuParameter::CheckParameters()
             if(not getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
-               setOption(OPT_testbench_input_xml, "test.xml");
+               setOption(OPT_testbench_input_xml, GetPath("test.xml"));
             }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
@@ -3064,7 +3064,7 @@ void BambuParameter::CheckParameters()
             std::ofstream filestream(concat_filename.c_str());
             for(const auto& source_file : source_files)
             {
-               filestream << "#include \"../" << source_file << "\"\n";
+               filestream << "#include \"" << source_file << "\"\n";
             }
             filestream.close();
             setOption(OPT_input_file, concat_filename);

@@ -106,36 +106,6 @@ bit_lattice function_parm_mask::dc = bit_lattice::ZERO;
 function_parm_mask::function_parm_mask(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par) : ApplicationFrontendFlowStep(AM, FUNCTION_PARM_MASK, dfm, par)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
-
-   if(opts.size() && opts.front().front() == 'X')
-   {
-      dc = bit_lattice::X;
-      opts[0] = std::string();
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bit value mask don't care symbol: " + std::string(dc == bit_lattice::X ? "X" : "0"));
-
-   for(const auto& fMask : opts)
-   {
-      if(fMask.empty())
-      {
-         continue;
-      }
-      const auto mask = SplitString(fMask, "*");
-      if(mask.size() < 5 || mask[0].empty())
-      {
-         THROW_ERROR("Incorrect mask parameter format: <func_name>*<sign>*<exp_l>*<exp_u>*<m_bits>");
-      }
-
-      funcMask m;
-      m.sign = mask[1] == "0" ? bit_lattice::ZERO : (mask[1] == "1" ? bit_lattice::ONE : bit_lattice::U);
-      m.exp_l = static_cast<int16_t>(strtol(mask[2].data(), nullptr, 10));
-      m.exp_u = static_cast<int16_t>(strtol(mask[3].data(), nullptr, 10));
-      m.m_bits = static_cast<uint8_t>(strtoul(mask[4].data(), nullptr, 10));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask required for function " + mask[0] + ": sign<" + bitstring_to_string({m.sign}) + ">, exp[" + STR(m.exp_l) + "," + STR(m.exp_u) + "], significand<" + STR(+m.m_bits) + ">");
-
-      funcMasks.insert(std::make_pair<>(mask[0], std::move(m)));
-   }
 }
 
 function_parm_mask::~function_parm_mask() = default;
@@ -368,6 +338,38 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
 DesignFlowStep_Status function_parm_mask::Exec()
 {
    const auto TM = AppM->get_tree_manager();
+   CustomMap<std::string, funcMask> funcMasks;
+   auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
+
+   if(opts.size() && opts.front().front() == 'X')
+   {
+      dc = bit_lattice::X;
+      opts[0] = std::string();
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bit value mask don't care symbol: " + std::string(dc == bit_lattice::X ? "X" : "0"));
+
+   for(const auto& fMask : opts)
+   {
+      if(fMask.empty())
+      {
+         continue;
+      }
+      const auto mask = SplitString(fMask, "*");
+      if(mask.size() < 5 || mask[0].empty())
+      {
+         THROW_ERROR("Incorrect mask parameter format: <func_name>*<sign>*<exp_l>*<exp_u>*<m_bits>");
+      }
+
+      funcMask m;
+      m.sign = mask[1] == "0" ? bit_lattice::ZERO : (mask[1] == "1" ? bit_lattice::ONE : bit_lattice::U);
+      m.exp_l = static_cast<int16_t>(strtol(mask[2].data(), nullptr, 10));
+      m.exp_u = static_cast<int16_t>(strtol(mask[3].data(), nullptr, 10));
+      m.m_bits = static_cast<uint8_t>(strtoul(mask[4].data(), nullptr, 10));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask required for function " + mask[0] + ": sign<" + bitstring_to_string({m.sign}) + ">, exp[" + STR(m.exp_l) + "," + STR(m.exp_u) + "], significand<" + STR(+m.m_bits) + ">");
+
+      funcMasks.insert(std::make_pair<>(mask[0], std::move(m)));
+   }
+
    CustomMap<std::string, function_decl*> nameToFunc;
    for(const auto f : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
    {

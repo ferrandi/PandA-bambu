@@ -469,8 +469,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "SimpleCodeMotion";
       case(SOFT_FLOAT_CG_EXT):
          return "SoftFloatCgExt";
-      case(CONSTANT_FLOP_WRAPPER):
-         return "ConstantFlopWrapper";
 #endif
 #if HAVE_ZEBU_BUILT
       case(SOURCE_CODE_STATISTICS):
