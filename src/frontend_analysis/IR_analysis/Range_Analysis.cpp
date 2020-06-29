@@ -2322,20 +2322,6 @@ class NodeContainer
    VCMap _vcMap;
 
  protected:
-   VarNodes& getVarNodes()
-   {
-      return _varNodes;
-   }
-
-   OpNodes& getOpNodes()
-   {
-      return _opNodes;
-   }
-
-   DefMap& getDefs()
-   {
-      return _defMap;
-   }
 
    UseMap& getUses()
    {
@@ -2343,7 +2329,17 @@ class NodeContainer
    }
 
  public:
-   virtual ~NodeContainer() = default;
+   virtual ~NodeContainer()
+   {
+      for(auto varNode : _varNodes)
+      {
+         delete varNode.second;
+      }
+      for(auto op : _opNodes)
+      {
+         delete op;
+      }
+   }
 
    const VarNodes& getVarNodes() const
    {
@@ -4793,6 +4789,7 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
 #endif
          // Remove pseudo edge from the map
          varOps.second.erase(cd);
+         delete cd;
       }
    }
 }
@@ -6443,16 +6440,12 @@ class ConstraintGraph : public NodeContainer
          }
          else
          {
-            UseMap compUseMap = buildUseMap(component);
-
-            // Get the entry points of the SCC
-            std::set<tree_nodeConstRef, tree_reindexCompare> entryPoints;
+            const auto compUseMap = buildUseMap(component);
 
 #ifdef RA_JUMPSET
             // Create vector of constants inside component
             // Comment this line below to deactivate jump-set
             buildConstantVector(component, compUseMap);
-#endif
 #ifndef NDEBUG
             if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
             {
@@ -6467,6 +6460,10 @@ class ConstraintGraph : public NodeContainer
                }
             }
 #endif
+#endif
+
+            // Get the entry points of the SCC
+            std::set<tree_nodeConstRef, tree_reindexCompare> entryPoints;
 #ifndef NDEBUG
             auto printEntryFor = [&](const std::string& mType) {
                if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
@@ -6526,30 +6523,7 @@ class ConstraintGraph : public NodeContainer
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed final constraint graph to " + printToFile(step_name + ".constraints.dot", parameters));
    }
 
-   RangeConstRef getRange(const tree_nodeConstRef v)
-   {
-      auto vit = getVarNodes().find(v);
-      if(vit == getVarNodes().end())
-      {
-         // If the value doesn't have a range,
-         // it wasn't considered by the range analysis
-         // for some reason.
-         // It gets an unknown range if it's a variable,
-         // or the tight range if it's a constant
-         //
-         // I decided NOT to insert these uncovered
-         // values to the node set after their range
-         // is created here.
-         THROW_ASSERT(static_cast<bool>(getGIMPLE_BW(v)), "Invalid bitwidth");
-         if(GetPointer<const cst_node>(GET_CONST_NODE(v)))
-         {
-            return getGIMPLE_range(v);
-         }
-         return getRangeFor(v, Unknown);
-      }
-      return vit->second->getRange();
-   }
-
+#ifndef NDEBUG
    std::string printToFile(const std::string& file_name, const ParameterConstRef parameters) const
    {
       std::string output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "RangeAnalysis/";
@@ -6599,6 +6573,7 @@ class ConstraintGraph : public NodeContainer
       // Print the footer of the .dot file.
       OS << "}\n";
    }
+#endif
 };
 
 // ========================================================================== //
@@ -7140,6 +7115,24 @@ bool RangeAnalysis::HasToBeExecuted() const
 void RangeAnalysis::Initialize()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
+   fun_id_to_restart.clear();
+}
+
+DesignFlowStep_Status RangeAnalysis::Exec()
+{
+#ifndef NDEBUG
+   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
+#else
+   if(execution_mode == RA_EXEC_SKIP)
+#endif
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
+      return DesignFlowStep_Status::SKIPPED;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   
+   // Initialize constraint graph
+   ConstraintGraphRef CG;
    switch(solverType)
    {
       case st_Cousot:
@@ -7164,23 +7157,11 @@ void RangeAnalysis::Initialize()
          THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
          break;
    }
-   fun_id_to_restart.clear();
-}
-
-DesignFlowStep_Status RangeAnalysis::Exec()
-{
-#ifndef NDEBUG
-   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
-#else
-   if(execution_mode == RA_EXEC_SKIP)
-#endif
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
-      return DesignFlowStep_Status::SKIPPED;
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   // Analyze only reached functions
+   
+   // Analyse only reached functions
+#if defined(EARLY_DEAD_CODE_RESTART) || !defined(NDEBUG)
    const auto TM = AppM->get_tree_manager();
+#endif
    auto rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
 
 #ifdef EARLY_DEAD_CODE_RESTART
@@ -7207,7 +7188,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
       return DesignFlowStep_Status::ABORTED;
    }
 #else
-   for(const auto f : rb_funcs)
+   for(const auto& f : rb_funcs)
    {
       CG->buildGraph(f);
    }
@@ -7215,7 +7196,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 
    // Top functions are not called by any other functions, so they do not have any call statement to analyse
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters and return value propagation...");
-   for(const auto top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
+   for(const auto& top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, top_fn, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(top_fn)->CGetBehavioralHelper()))) + " is top function");
       TopFunctionUserHits(top_fn, AppM, CG, debug_level);
@@ -7239,7 +7220,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 #ifndef NDEBUG
-   const auto modified = finalize();
+   const auto modified = finalize(CG);
    if(stop_iteration != std::numeric_limits<decltype(stop_iteration)>::max())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Iteration " + STR(iteration) + "/" + STR(stop_iteration) + "completed (" + STR(stop_iteration - iteration) + " to go)");
@@ -7254,12 +7235,13 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    }
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 #else
-   return finalize() ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   return finalize(CG) ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 #endif
 }
 
-bool RangeAnalysis::finalize()
+bool RangeAnalysis::finalize(ConstraintGraphRef CG)
 {
+   THROW_ASSERT(CG, "");
    const auto& vars = std::static_pointer_cast<const ConstraintGraph>(CG)->getVarNodes();
    CustomMap<unsigned int, int> modifiedFunctions;
 #ifndef NDEBUG
@@ -7306,7 +7288,6 @@ bool RangeAnalysis::finalize()
 #ifndef NDEBUG
    }
 #endif
-   CG.reset();
 
    const auto rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
    const auto cgm = AppM->CGetCallGraphManager();
