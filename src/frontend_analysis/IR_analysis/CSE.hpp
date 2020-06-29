@@ -107,7 +107,7 @@ class CSE : public FunctionFrontendFlowStep
    typedef std::pair<enum kind, std::vector<unsigned int>> CSE_tuple_key_type;
 
    /// check if the statement has an equivalent in the unique table
-   tree_nodeRef hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef> > &unique_table);
+   tree_nodeRef hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table);
 
    /// check if the gimple assignment is a load, store or a memcpy/memset
    bool check_loads(const gimple_assign* ga, unsigned int right_part_index, tree_nodeRef right_part);

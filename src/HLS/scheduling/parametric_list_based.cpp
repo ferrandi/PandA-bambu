@@ -1509,8 +1509,9 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues& priority_queu
 DesignFlowStep_Status parametric_list_based::InternalExec()
 {
    executions_number++;
-   long int step_time;
-   START_TIME(step_time);
+   long int step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BBGraphConstRef bbg = FB->CGetBBGraph();
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
@@ -1573,7 +1574,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Estimated max frequency (MHz): " + STR(maxFrequency));
 
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time to perform scheduling: " + print_cpu_time(step_time) + " seconds");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

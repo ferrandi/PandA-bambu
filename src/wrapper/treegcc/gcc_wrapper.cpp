@@ -588,13 +588,16 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Invoke: " + command);
 #if !NPROFILE
    long int gcc_compilation_time = 0;
-   START_TIME(gcc_compilation_time);
+   if(output_level >= OUTPUT_LEVEL_VERBOSE)
+   {
+      START_TIME(gcc_compilation_time);
+   }
 #endif
    int ret = PandaSystem(Param, command, gcc_output_file_name);
 #if !NPROFILE
-   STOP_TIME(gcc_compilation_time);
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
    {
+      STOP_TIME(gcc_compilation_time);
       dump_exec_time("Compilation time", gcc_compilation_time);
    }
 #endif

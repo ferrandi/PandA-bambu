@@ -151,7 +151,7 @@ DesignFlowStep_Status parm2ssa::Exec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, CustomUnorderedSet<unsigned int> &already_visited_ae)
+void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, CustomUnorderedSet<unsigned int>& already_visited_ae)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_managerRef TM = AppM->get_tree_manager();

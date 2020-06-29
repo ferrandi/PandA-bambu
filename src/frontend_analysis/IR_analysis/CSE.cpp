@@ -205,7 +205,7 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
    return skip_check;
 }
 
-tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> &unique_table)
+tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking: " + tn->ToString());
    if(GetPointer<gimple_node>(tn)->keep)

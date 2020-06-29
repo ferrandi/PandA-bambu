@@ -330,7 +330,7 @@ class tree_manager
    /**
     * Friend definition of the << operator.
     */
-   friend std::ostream& operator<<(std::ostream& os, tree_manager& s)
+   friend std::ostream& operator<<(std::ostream& os, const tree_manager& s)
    {
       s.print(os);
       return os;

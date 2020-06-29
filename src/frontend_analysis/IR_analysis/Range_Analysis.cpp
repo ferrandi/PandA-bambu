@@ -5400,7 +5400,7 @@ class ConstraintGraph : public NodeContainer
    std::vector<APInt> constantvector;
 
    /**
-    * @brief Analyse branch instruction and build conditional value range
+    * @brief Analyze branch instruction and build conditional value range
     *
     * @param br Branch instruction
     * @param branchBB Branch basic block
@@ -5613,7 +5613,7 @@ class ConstraintGraph : public NodeContainer
          }
       }
 
-      // Analyse each if branch condition
+      // Analyze each if branch condition
       CustomMap<tree_nodeConstRef, std::map<unsigned int, ValueRangeRef>> switchSSAMap;
       for(const auto& condBBI : mwi->list_of_cond)
       {
@@ -7154,7 +7154,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
       return DesignFlowStep_Status::SKIPPED;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   // Analyse only reached functions
+   // Analyze only reached functions
    const auto TM = AppM->get_tree_manager();
    auto rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
 

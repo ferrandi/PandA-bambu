@@ -134,8 +134,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status easy_module_binding::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    const auto TM = HLSMgr->get_tree_manager();
    // resource binding and allocation  info
    fu_binding& fu = *(HLS->Rfu);
@@ -245,9 +246,11 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
    }
-   STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
+      STOP_TIME(step_time);
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform easy binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");

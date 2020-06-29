@@ -1147,8 +1147,9 @@ DesignFlowStep_Status allocation::InternalExec()
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const std::map<unsigned int, memory_symbolRef>& function_vars = HLSMgr->Rmem->get_function_vars(funId);
    double clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Module allocation information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
@@ -1949,7 +1950,8 @@ DesignFlowStep_Status allocation::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "<--");
    }
 #endif
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform module allocation: " + print_cpu_time(step_time) + " seconds");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");

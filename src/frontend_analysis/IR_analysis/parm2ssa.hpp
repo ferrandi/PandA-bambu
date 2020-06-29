@@ -67,11 +67,10 @@ REF_FORWARD_DECL(tree_node);
 class parm2ssa : public ApplicationFrontendFlowStep
 {
  protected:
-
    /**
     * Recursive tree node analysis
     */
-   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp, CustomUnorderedSet<unsigned int> &already_visited_ae);
+   void recursive_analysis(tree_nodeRef& tn, const std::string& srcp, CustomUnorderedSet<unsigned int>& already_visited_ae);
 
    /**
     * Return the set of analyses in relationship with this design step

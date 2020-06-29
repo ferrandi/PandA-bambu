@@ -304,8 +304,9 @@ static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerC
 
 DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 {
-   long int step_time;
-   START_TIME(step_time);
+   long int step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Memory allocation information:");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
@@ -1127,7 +1128,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       }
    }
 
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    finalize_memory_allocation();
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)

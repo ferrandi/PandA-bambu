@@ -412,8 +412,9 @@ void DesignFlowManager::Exec()
    {
       const size_t initial_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
       const size_t initial_number_edges = boost::num_vertices(*feedback_design_flow_graph);
-      long before_time;
-      START_TIME(before_time);
+      long before_time = 0;
+      if(parameters->IsParameter("dfm_statistics"))
+         START_TIME(before_time);
       step_counter++;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Ready steps are");
 #ifndef NDEBUG
@@ -567,8 +568,11 @@ void DesignFlowManager::Exec()
          }
          continue;
       }
-      STOP_TIME(before_time);
-      design_flow_manager_time += before_time;
+      if(parameters->IsParameter("dfm_statistics"))
+      {
+         STOP_TIME(before_time);
+         design_flow_manager_time += before_time;
+      }
       if(design_flow_step_info->status == DesignFlowStep_Status::UNNECESSARY)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping execution of " + step->GetName() + " since unnecessary");
@@ -580,8 +584,9 @@ void DesignFlowManager::Exec()
          size_t indentation_before = indentation;
 #endif
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "-->Starting execution of " + step->GetName());
-         long step_execution_time;
-         START_TIME(step_execution_time);
+         long step_execution_time = 0;
+         if(OUTPUT_LEVEL_VERY_PEDANTIC <= output_level || parameters->IsParameter("profile_steps"))
+            START_TIME(step_execution_time);
          step->Initialize();
          if(step->CGetDebugLevel() >= DEBUG_LEVEL_VERY_PEDANTIC)
          {
@@ -593,7 +598,10 @@ void DesignFlowManager::Exec()
          {
             step->PrintFinalIR();
          }
-         STOP_TIME(step_execution_time);
+         if(OUTPUT_LEVEL_VERY_PEDANTIC <= output_level || parameters->IsParameter("profile_steps"))
+         {
+            STOP_TIME(step_execution_time);
+         }
          const std::string memory_usage =
 #ifndef NDEBUG
              std::string(" - Virtual Memory: ") + PrintVirtualDataMemoryUsage()
@@ -632,8 +640,9 @@ void DesignFlowManager::Exec()
          }
 #endif
       }
-      long after_time;
-      START_TIME(after_time);
+      long after_time = 0;
+      if(parameters->IsParameter("dfm_statistics"))
+         START_TIME(after_time);
       bool invalidations = false;
       if(not parameters->IsParameter("disable-invalidations"))
       {
@@ -778,8 +787,11 @@ void DesignFlowManager::Exec()
          }
 #endif
       }
-      STOP_TIME(after_time);
-      design_flow_manager_time += after_time;
+      if(parameters->IsParameter("dfm_statistics"))
+      {
+         STOP_TIME(after_time);
+         design_flow_manager_time += after_time;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended iteration number " + boost::lexical_cast<std::string>(step_counter) + " - Step " + step->GetName());
       const size_t final_number_vertices = boost::num_vertices(*feedback_design_flow_graph);
       const size_t final_number_edges = boost::num_vertices(*feedback_design_flow_graph);

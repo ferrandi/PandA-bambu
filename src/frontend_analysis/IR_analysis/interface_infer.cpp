@@ -196,7 +196,7 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
       if(Visited.find(GET_INDEX_NODE(par_use.first)) != Visited.end())
          continue;
       Visited.insert(GET_INDEX_NODE(par_use.first));
-      std::cerr << "STMT: " << use_stmt->ToString() << std::endl;
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---STMT: " + use_stmt->ToString());
       auto gn = GetPointer<gimple_node>(use_stmt);
       if(auto ga = GetPointer<gimple_assign>(use_stmt))
       {
@@ -330,8 +330,8 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
                   {
                      std::string fname2;
                      tree_helper::get_mangled_fname(fd2, fname2);
-                     std::cerr << "fname2=" << fname2 << " pdName_string2=" << pdName_string2 << "\n";
-                     std::cerr << "fname=" << fname << " pdName_string=" << pdName_string << "\n";
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---fname2=" + fname2 + " pdName_string2=" + pdName_string2 + "\n");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---fname=" + fname + " pdName_string=" + pdName_string + "\n");
                      HLSMgr->design_interface_arraysize[fname2][pdName_string2] = HLSMgr->design_interface_arraysize.find(fname)->second.find(pdName_string)->second;
                   }
                   const auto TM = AppM->get_tree_manager();
@@ -339,7 +339,7 @@ void interface_infer::classifyArgRecurse(CustomOrderedSet<unsigned>& Visited, ss
                   auto argSSA2 = GetPointer<ssa_name>(GET_NODE(argSSANode));
                   THROW_ASSERT(argSSA, "unexpected condition");
                   classifyArgRecurse(Visited, argSSA2, destBB, sl2, canBeMovedToBB2, isRead, isWrite, unkwown_pattern, writeStmt, readStmt);
-                  std::cerr << "Sub-function done\n";
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Sub-function done\n");
                }
             }
             else
@@ -1116,7 +1116,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                  THROW_ERROR("malformed interface file");
                               if(interfaceType == "")
                                  THROW_ERROR("malformed interface file");
-                              std::cerr << "|" << argName << "|" << interfaceType << "|\n";
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---|" + argName + "|" + interfaceType + "|\n");
                               HLSMgr->design_interface[fname][argName] = interfaceType;
                               if(interfaceType == "array")
                                  HLSMgr->design_interface_arraysize[fname][argName] = interfaceSize;
@@ -1186,8 +1186,8 @@ DesignFlowStep_Status interface_infer::InternalExec()
                   }
                   if(tree_helper::is_a_pointer(TM, GET_INDEX_NODE(aType)))
                   {
-                     std::cerr << "is a pointer\n";
-                     std::cerr << "list of statement that use this parameter\n";
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is a pointer\n");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---list of statement that use this parameter\n");
                      auto inputBitWidth = tree_helper::size(TM, tree_helper::get_pointed_type(TM, GET_INDEX_NODE(aType)));
                      bool is_signed;
                      bool is_fixed;
@@ -1220,10 +1220,10 @@ DesignFlowStep_Status interface_infer::InternalExec()
                         THROW_ERROR("parameter " + argName_string + " cannot have interface " + interfaceType + " (no load or write is associated with it)");
 
                      if(canBeMovedToBB2 && isRead)
-                        std::cerr << "YES can be moved\n";
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---YES can be moved\n");
                      if(isRead && isWrite)
                      {
-                        std::cerr << "IO arg\n";
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---IO arg\n");
                         if(interfaceType == "ptrdefault")
                         {
                            if(parameters->IsParameter("none-ptrdefault") && parameters->GetParameter<int>("none-ptrdefault") == 1)
@@ -1249,7 +1249,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      }
                      else if(isRead)
                      {
-                        std::cerr << "I arg\n";
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---I arg\n");
                         if(interfaceType == "ptrdefault")
                         {
                            DesignInterfaceArgs[argName_string] = "none";
@@ -1262,7 +1262,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      }
                      else if(isWrite)
                      {
-                        std::cerr << "O arg\n";
+                        INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---O arg\n");
                         if(interfaceType == "ptrdefault")
                         {
                            if(parameters->IsParameter("none-ptrdefault") && parameters->GetParameter<int>("none-ptrdefault") == 1)

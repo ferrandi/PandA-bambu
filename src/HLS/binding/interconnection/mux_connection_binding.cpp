@@ -164,14 +164,16 @@ void mux_connection_binding::Initialize()
 DesignFlowStep_Status mux_connection_binding::InternalExec()
 {
    connCache.clear();
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    create_connections();
 
    unsigned int mux = mux_interconnection();
    if(mux)
    {
-      STOP_TIME(step_time);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+         STOP_TIME(step_time);
       if(output_level <= OUTPUT_LEVEL_PEDANTIC)
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Connection Binding Information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
