@@ -32,6 +32,7 @@ CXXFLAGS=
 CFLAGS_EXT=-O2
 CXXFLAGS_EXT=-O2
 CXXFLAGS_EXTFPLL=-O2
+CXXFLAGS_STD=-O2
 
 # Check if compiler support c++17
 AC_COMPILE_STDCXX_17
@@ -48,25 +49,37 @@ if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes; then
       CXXFLAGS+=" --std=c++17 "
       CXXFLAGS_EXT+=" --std=c++17 "
-   else
-if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
-   if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
+      CXXFLAGS_STD+=" --std=c++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++17 "
+      CXXFLAGS_EXT+=" --std=g++17 "
+      CXXFLAGS_STD+=" --std=g++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes; then
+      CXXFLAGS+=" --std=c++1z "
+      CXXFLAGS_EXT+=" --std=c++1z "
+      CXXFLAGS_STD+=" --std=c++1z "
+   elif test "x$ac_cv_cxx_compile_cxx11_native" = xyes; then
+      CXXFLAGS+=" "
+      CXXFLAGS_EXT+=" "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
       CXXFLAGS_EXT+=" --std=c++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++11 "
+      CXXFLAGS_EXT+=" --std=g++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx1x" = xyes; then
+      CXXFLAGS+=" --std=c++1x "
+      CXXFLAGS_EXT+=" --std=c++1x "
+   elif test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
+      CXXFLAGS+=" --std=c++0x "
+      CXXFLAGS_EXT+=" --std=c++0x "
    else
-      if test "x$ac_cv_cxx_compile_cxx0x_native" != xyes; then
-         if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
-            CXXFLAGS+=" --std=c++0x "
-            CXXFLAGS_EXT+=" --std=c++0x "
-         else
-                  AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
-               fi
-            fi
-         fi
-      fi
+      AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
    fi
 fi
-AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes)
+AC_SUBST(CXXFLAGS_STD)
+AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes)
+
 
 AM_PO_SUBDIRS
 

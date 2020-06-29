@@ -184,6 +184,6 @@ libabseil_la_SOURCES = \
                        absl/types/bad_any_cast.cc absl/types/bad_optional_access.cc absl/types/bad_variant_access.cc
  
 
-libabseil_la_CPPFLAGS = -D__CLANG_SUPPORT_DYN_ANNOTATION__
+libabseil_la_CPPFLAGS = -D__CLANG_SUPPORT_DYN_ANNOTATION__  $(CXXFLAGS_EXT)
 
 
