@@ -177,7 +177,8 @@ namespace clang
             {
                continue;
             }
-            if(auto maskInfoIT = HLS_maskMap.find(funArgPair.first); maskInfoIT != HLS_maskMap.end())
+            auto maskInfoIT = HLS_maskMap.find(funArgPair.first);
+            if(maskInfoIT != HLS_maskMap.end())
             {
                auto pushMaskInfoAttributes = [] (const MaskInfo& maskInfo, llvm::raw_fd_ostream& str)
                {
@@ -496,7 +497,8 @@ namespace clang
                {
                   MaskInfo userMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
                   auto parName = ND->getNameAsString();
-                  if(auto maskInfoIT = mask_PragmaMap.find(parName); maskInfoIT != mask_PragmaMap.end())
+                  auto maskInfoIT = mask_PragmaMap.find(parName);
+                  if(maskInfoIT != mask_PragmaMap.end())
                   {
                      userMaskInfo = maskInfoIT->second;
                      maskInfoParser(userMaskInfo, ND->getType());
@@ -506,7 +508,8 @@ namespace clang
                }
             }
             MaskInfo returnMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
-            if(const auto returnUI = mask_PragmaMap.find("@"); returnUI != mask_PragmaMap.end())
+            const auto returnUI = mask_PragmaMap.find("@");
+            if(returnUI != mask_PragmaMap.end())
             {
                returnMaskInfo = returnUI->second;
                maskInfoParser(returnMaskInfo, FD->getReturnType());
