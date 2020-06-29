@@ -1009,7 +1009,7 @@ namespace
 
       const auto type = getGIMPLE_Type(tn);
       bw_t bw = static_cast<bw_t>(BitLatticeManipulator::Size(type));
-      THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
+      THROW_ASSERT(static_cast<bool>(bw) || tn->get_kind() == string_cst_K, "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
 #ifdef BITVALUE_UPDATE
       bool sign = false;
 #endif
@@ -1018,6 +1018,18 @@ namespace
       {
          min = max = tree_helper::get_integer_cst_value(ic);
          return RangeRef(new Range(Regular, bw, min, max));
+      }
+      else if(const auto* rc = GetPointer<const real_cst>(tn))
+      {
+         THROW_ASSERT(bw == 64 || bw == 32, "Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
+         if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
+         {
+            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string("-" + rc->valr, bw)));
+         }
+         else
+         {
+            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string(rc->valr, bw)));
+         }
       }
       else if(const auto* sc = GetPointer<const string_cst>(tn))
       {
@@ -1050,18 +1062,6 @@ namespace
          min = 0;
          max = 1;
          bw = 1;
-      }
-      else if(const auto* rc = GetPointer<const real_cst>(tn))
-      {
-         THROW_ASSERT(bw == 64 || bw == 32, "Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
-         if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
-         {
-            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string("-" + rc->valr, bw)));
-         }
-         else
-         {
-            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string(rc->valr, bw)));
-         }
       }
       else if(GetPointer<const real_type>(type) != nullptr)
       {
@@ -4402,10 +4402,18 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
                {
                   intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
                }
-               else if(GET_NODE(vd->init)->get_kind() == integer_cst_K || GET_NODE(vd->init)->get_kind() == real_cst_K || GET_NODE(vd->init)->get_kind() == string_cst_K)
+               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
                {
-                  const auto init_range = getGIMPLE_range(GET_NODE(vd->init));
-                  if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
+                  auto init_range = getGIMPLE_range(GET_NODE(vd->init));
+                  if(intersection->isReal() && !init_range->isReal())
+                  {
+                     init_range.reset(new RealRange(init_range));
+                  }
+                  else if(!intersection->isReal() && init_range->isReal())
+                  {
+                     init_range = std::static_pointer_cast<RealRange>(init_range)->getRange();
+                  }
+                  if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
                   }
@@ -4426,10 +4434,18 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
                {
                   intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
                }
-               else if(GET_NODE(vd->init)->get_kind() == integer_cst_K || GET_NODE(vd->init)->get_kind() == real_cst_K || GET_NODE(vd->init)->get_kind() == string_cst_K)
+               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
                {
-                  const auto init_range = getGIMPLE_range(GET_NODE(vd->init));
-                  if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
+                  auto init_range = getGIMPLE_range(GET_CONST_NODE(vd->init));
+                  if(intersection->isReal() && !init_range->isReal())
+                  {
+                     init_range.reset(new RealRange(init_range));
+                  }
+                  else if(!intersection->isReal() && init_range->isReal())
+                  {
+                     init_range = std::static_pointer_cast<RealRange>(init_range)->getRange();
+                  }
+                  if(init_range->getBitWidth() != bw)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
                   }
@@ -4454,14 +4470,23 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
             for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
             {
                const auto cur_node = TM->get_tree_node_const(cur_var);
-               const auto init_range = getGIMPLE_range(cur_node);
-               if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
+               THROW_ASSERT(cur_node, "");
+               auto init_range = getGIMPLE_range(cur_node);
+               if(intersection->isReal() && !init_range->isReal())
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
+                  init_range.reset(new RealRange(init_range));
+               }
+               else if(!intersection->isReal() && init_range->isReal())
+               {
+                  init_range = std::static_pointer_cast<RealRange>(init_range)->getRange();
+               }
+               if(init_range->getBitWidth() != bw)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + cur_node->ToString());
                }
                else
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + cur_node->ToString());
                   intersection = intersection->unionWith(init_range);
                }
             }
