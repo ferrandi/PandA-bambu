@@ -104,6 +104,7 @@
 
 /// utility include
 #include "string_manipulation.hpp" // for GET_CLASS
+#include "fileIO.hpp"
 
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
 
@@ -1760,7 +1761,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   {
                      unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      std::string parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
-                     std::ofstream parameterAddressFile(parameterAddressFileName);
+                     std::ofstream parameterAddressFile(GetPath(parameterAddressFileName));
 
                      const tree_nodeRef call = TreeM->GetTreeNode(index);
                      tree_nodeRef calledFunction = GetPointer<gimple_call>(call)->args[0];
@@ -1921,10 +1922,10 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
    std::string init_filename = "array_ref_" + std::to_string(ar) + ".mem";
-   std::ofstream init_file_a((init_filename).c_str());
+   std::ofstream init_file_a(GetPath((init_filename).c_str()));
    std::ofstream init_file_b;
    if(is_memory_splitted)
-      init_file_b.open(("0_" + init_filename).c_str());
+      init_file_b.open(GetPath(("0_" + init_filename).c_str()));
    unsigned int elts_size;
    fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, ((is_doubled ? 2 : 1) * boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"))), is_memory_splitted, is_sds, fu_module);
    THROW_ASSERT(vec_size, "at least one element is expected");
