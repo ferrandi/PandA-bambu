@@ -653,7 +653,6 @@ gimplePssa (void)
          last_slash = nc_index+1;
       ++nc_index;
    }
-   printf("out %zd", nc);
    strcpy(dump_base_name_trimmed, dump_base_name+last_slash);
 
    /* dummy pass */
@@ -3550,6 +3549,17 @@ build_custom_function_call_expr_internal_fn (location_t loc, internal_fn fn, tre
  */
 void serialize_global_variable(void * gcc_data, void * user_data)
 {
+   size_t nc = strlen(dump_base_name);
+   size_t nc_index=0;
+   size_t last_slash=0;
+   while (nc_index<nc)
+   {
+      if(dump_base_name[nc_index] == '/')
+         last_slash = nc_index+1;
+      ++nc_index;
+   }
+   strcpy(dump_base_name_trimmed, dump_base_name+last_slash);
+
    char * name = concat ((char *)user_data, "/", dump_base_name_trimmed, ".001t.tu", NULL);
    SerializeGimpleBegin(name);
    serialize_globals();
