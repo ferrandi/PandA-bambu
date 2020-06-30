@@ -98,13 +98,11 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// utility include
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
+#include "gcc_wrapper.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
-
-#include "gcc_wrapper.hpp"
 
 moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters)
     : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/module-generation/")

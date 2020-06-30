@@ -73,7 +73,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    bool modified;
 
    /**
-    * Recursive examinate tree node
+    * Recursive examine tree node
     * @param current_statement is the current analyzed statement
     * @param current_tree_node is the current tree node
     */

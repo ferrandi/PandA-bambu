@@ -291,7 +291,7 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
    auto* functionDecl = GetPointer<function_decl>(currentTreeNode);
    auto* stmtList = GetPointer<statement_list>(GET_NODE(functionDecl->body));
 
-   if(parameters->getOption<bool>(OPT_print_dot))
+   if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_PEDANTIC <= debug_level)
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-pre" + STR(function_id) + ".dot");
    }
@@ -329,7 +329,7 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       }
    }
 
-   if(parameters->getOption<bool>(OPT_print_dot))
+   if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_PEDANTIC <= debug_level)
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("builtin-graph-post" + STR(function_id) + ".dot");
    }

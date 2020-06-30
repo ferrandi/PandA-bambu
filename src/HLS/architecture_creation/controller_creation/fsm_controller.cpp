@@ -121,9 +121,10 @@ DesignFlowStep_Status fsm_controller::InternalExec()
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
    /// main circuit type
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor("controller_" + function_name));
+   structural_managerRef SM = this->HLS->controller;
 
    SM->set_top_info("Controller_i", module_type);
-   structural_objectRef circuit = this->SM->get_circ();
+   structural_objectRef circuit = SM->get_circ();
    // Now the top circuit is created, just as an empty box. <circuit> is a reference to the structural object that
    // will contain all the circuit components
 
@@ -136,18 +137,21 @@ DesignFlowStep_Status fsm_controller::InternalExec()
    GetPointer<module>(circuit)->set_license(GENERATED_LICENSE);
 
    // Add clock, reset, done and command ports
-   this->add_common_ports(circuit);
+   this->add_common_ports(circuit, SM);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Creating state machine representations...");
    std::string state_representation;
    this->create_state_machine(state_representation);
-   add_correct_transition_memory(state_representation); // if CS is activated some register are memory
+   add_correct_transition_memory(state_representation, SM); // if CS is activated some register are memory
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Machine encoding");
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, state_representation);
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "****");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Circuit created without errors!");
+   out_ports.clear();
+   mu_ports.clear();
+   cond_ports.clear();
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -693,8 +697,8 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
    }
 }
 
-void fsm_controller::add_correct_transition_memory(std::string state_representation)
+void fsm_controller::add_correct_transition_memory(std::string state_representation, structural_managerRef SM)
 {
-   structural_objectRef circuit = this->SM->get_circ();
+   structural_objectRef circuit = SM->get_circ();
    SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
 }

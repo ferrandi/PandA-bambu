@@ -887,20 +887,6 @@ void structural_manager::WriteDot(const std::string& file_name, circuit_graph_ty
    boost::write_graphviz(f, *g, cg_label_writer(g), cg_edge_writer(g));
 }
 
-const graph* structural_manager::CGetCircuitGraph(circuit_graph_type gt) const
-{
-   switch(gt)
-   {
-      case DATA_G:
-         return data_graph;
-      case COMPLETE_G:
-         return circuit_graph;
-      default:
-         THROW_ERROR(std::string("Not supported graph type"));
-         return nullptr;
-   }
-}
-
 void structural_manager::print(std::ostream& os) const
 {
    if(circuit && circuit->get_id() != "")

@@ -373,11 +373,6 @@ class structural_manager
    {
       return circuit;
    }
-   /**
-    * This method returns the graph.
-    * @return the pointer to the graph.
-    */
-   const graph* CGetCircuitGraph(circuit_graph_type gt = COMPLETE_G) const;
 
    /**
     * @name XML functions.

@@ -1766,7 +1766,7 @@ class signal_o : public structural_object
 
  private:
    /// List of ports bound to the signal object.
-   std::vector<structural_objectRef> connected_objects;
+   std::vector<Wrefcount<structural_object>> connected_objects;
 
    /// when true the signal is involved into the critical path of the netlist
    bool is_critical;
@@ -2347,7 +2347,7 @@ class channel_o : public module
    std::map<unsigned int, std::string> impl_interfaces;
 
    /// List of ports bounded by the channel object.
-   std::vector<structural_objectRef> connected_objects;
+   std::vector<Wrefcount<structural_object>> connected_objects;
 
  public:
    /**
@@ -2452,7 +2452,7 @@ class channel_o : public module
 class bus_connection_o : public structural_object
 {
    /// List of connections associated with the bus.
-   std::vector<structural_objectRef> connections;
+   std::vector<Wrefcount<structural_object>> connections;
 
  public:
    /**

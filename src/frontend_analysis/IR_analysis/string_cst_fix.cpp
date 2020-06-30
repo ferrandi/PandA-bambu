@@ -140,6 +140,8 @@ DesignFlowStep_Status string_cst_fix::Exec()
          }
       }
    }
+   already_visited_ae.clear();
+   string_cst_map.clear();
    return DesignFlowStep_Status::SUCCESS;
 }
 

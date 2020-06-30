@@ -108,32 +108,29 @@ void ControllerCreatorBaseStep::Initialize()
 
    // reference to the HLS controller circuit
    HLS->controller = structural_managerRef(new structural_manager(HLS->Param));
-   this->SM = this->HLS->controller;
    out_ports.clear();
-   in_ports.clear();
    cond_ports.clear();
-   cond_obj.clear();
    out_num = 0;
    in_num = 0;
 }
 
-void ControllerCreatorBaseStep::add_common_ports(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_common_ports(structural_objectRef circuit, structural_managerRef SM)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the done port...");
-   this->add_done_port(circuit);
+   this->add_done_port(circuit, SM);
 
-   this->add_command_ports(circuit);
+   this->add_command_ports(circuit, SM);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding clock and reset ports...");
-   this->add_clock_reset(circuit);
+   this->add_clock_reset(circuit, SM);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the start port...");
-   this->add_start_port(circuit);
+   this->add_start_port(circuit, SM);
 }
 
-void ControllerCreatorBaseStep::add_clock_reset(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_clock_reset(structural_objectRef circuit, structural_managerRef SM)
 {
-   /// define boolean type for the clock and reset signals
+   /// define Boolean type for the clock and reset signals
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding clock signal...");
@@ -149,9 +146,9 @@ void ControllerCreatorBaseStep::add_clock_reset(structural_objectRef circuit)
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Reset signal added!");
 }
 
-void ControllerCreatorBaseStep::add_done_port(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_done_port(structural_objectRef circuit, structural_managerRef SM)
 {
-   /// define boolean type for the done port
+   /// define Boolean type for the done port
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Done signal...");
    /// add done port
@@ -159,9 +156,9 @@ void ControllerCreatorBaseStep::add_done_port(structural_objectRef circuit)
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Done signal added!");
 }
 
-void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit, structural_managerRef SM)
 {
-   /// define boolean type for the start port
+   /// define Boolean type for the start port
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding start signal...");
    /// add the start port
@@ -169,11 +166,11 @@ void ControllerCreatorBaseStep::add_start_port(structural_objectRef circuit)
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Start signal added!");
 }
 
-void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
+void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, structural_managerRef SM)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding command ports");
 
-   /// define boolean type for command signals
+   /// define Boolean type for command signals
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
 
@@ -232,10 +229,8 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit)
                   sel_obj = SM->add_port(GetPointer<commandport_obj>(j.second)->get_string(), port_o::IN, circuit, bool_type);
                }
                cond_ports[cond_v] = in_num;
-               cond_obj[cond_v] = j.second;
             }
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);
-            in_ports[j.second] = in_num;
             in_num++;
          }
       }
