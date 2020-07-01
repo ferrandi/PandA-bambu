@@ -38,12 +38,11 @@
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  *
  */
+#include "load_default_technology.hpp"
 
 /// Autoheader include
 #include "config_HAVE_KOALA_BUILT.hpp"
-
-/// Header include
-#include "load_default_technology.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 /// parser/polixml include
 #include "xml_dom_parser.hpp"
@@ -82,46 +81,30 @@ DesignFlowStep_Status LoadDefaultTechnology::Exec()
    {
       /// Load default resources
       const char* builtin_resources_data[] = {
-#include "C_COMPLEX_IPs.data"
-         ,
-#include "C_FP_IPs.data"
-         ,
-#include "C_HLS_IPs.data"
-         ,
-#include "C_IO_IPs.data"
-         ,
-#include "C_MEM_IPs.data"
+         "C_COMPLEX_IPs.data",
+         "C_FP_IPs.data",
+         "C_HLS_IPs.data",
+         "C_IO_IPs.data",
+         "C_MEM_IPs.data",
 #if HAVE_EXPERIMENTAL
-         ,
-#include "C_PC_IPs.data"
+         "C_PC_IPs.data",
 #endif
-         ,
-#include "CS_COMPONENT.data"
-         ,
-#include "C_PROFILING_IPs.data"
-         ,
-#include "C_STD_IPs.data"
-         ,
-#include "C_VEC_IPs.data"
-         ,
-#include "NC_HLS_IPs.data"
-         ,
-#include "NC_MEM_IPs.data"
-         ,
-#include "NC_PC_IPs.data"
-         ,
-#include "NC_SF_IPs.data"
-         ,
-#include "NC_STD_IPs.data"
-         ,
-#include "NC_VEC_IPs.data"
-         ,
-#include "NC_wishbone_IPs.data"
+         "CS_COMPONENT.data",
+         "C_PROFILING_IPs.data",
+         "C_STD_IPs.data",
+         "C_VEC_IPs.data",
+         "NC_HLS_IPs.data",
+         "NC_MEM_IPs.data",
+         "NC_PC_IPs.data",
+         "NC_SF_IPs.data",
+         "NC_STD_IPs.data",
+         "NC_VEC_IPs.data",
+         "NC_wishbone_IPs.data"
       };
 
       for(i = 0; i < sizeof(builtin_resources_data) / sizeof(char*); ++i)
       {
-         XMLDomParser parser("builtin_resource_data[" + STR(i) + "]", builtin_resources_data[i]);
+         XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/design_flows/technology/") + builtin_resources_data[i]);
          parser.Exec();
          if(parser)
          {

@@ -81,8 +81,8 @@
 
 /// utility include
 #include "copyrights_strings.hpp"
-#include "string_manipulation.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
     : module_interface(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type)

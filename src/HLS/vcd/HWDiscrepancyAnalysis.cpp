@@ -79,11 +79,11 @@
 
 // include from tree/
 #include "behavioral_helper.hpp"
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_manager.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
-#include "fileIO.hpp"
 
 #include <boost/algorithm/string/case_conv.hpp>
 #include <boost/tokenizer.hpp>

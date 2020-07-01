@@ -7,7 +7,7 @@
       <step id="bash_flow" config="bash_flowC"/>
    </flow>
    <bash config="bash_flowC">
-      <cmd name="export OBJECTS_DIR=OpenROAD_objects"/>
+      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects"/>
       <cmd name="rm -rf ${OBJECTS_DIR}"/>
       <cmd name="mkdir -p ${OBJECTS_DIR}"/>
       <!-- Pre-process Lefs -->
@@ -111,8 +111,8 @@
    <bash config="bash_flow">
       <cmd name=": ${NPROC:=1}"/>
       <cmd name="export NPROC"/>
-      <cmd name="export RESULTS_DIR=OpenROAD_results"/>
-      <cmd name="export OBJECTS_DIR=OpenROAD_objects"/>
+      <cmd name="export RESULTS_DIR=${CURR_WORKDIR}/OpenROAD_results"/>
+      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects"/>
       <cmd name="rm -rf ${RESULTS_DIR}"/>
       <cmd name="mkdir -p ${RESULTS_DIR}"/>
       <cmd name="rm -rf ${OBJECTS_DIR}"/>

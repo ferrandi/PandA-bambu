@@ -118,7 +118,7 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
 {
    const tree_managerRef TM = AppM->get_tree_manager();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Asking parameter " + boost::lexical_cast<std::string>(idx) + " " + STR(tree_node));
-   auto tn= TM->get_tree_node_const(tree_node);
+   auto tn = TM->get_tree_node_const(tree_node);
    const gimple_call* ce = GetPointer<gimple_call>(tn);
    if(idx >= ce->args.size())
    {
@@ -139,7 +139,7 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
       if(vd_init->get_kind() == constructor_K)
       {
          const constructor* co = GetPointer<const constructor>(vd_init);
-         for(auto  idx_valu : co->list_of_idx_valu)
+         for(auto idx_valu : co->list_of_idx_valu)
          {
             auto valu = GET_NODE(idx_valu.second);
             THROW_ASSERT(valu->get_kind() == integer_cst_K, "unexpected condition");

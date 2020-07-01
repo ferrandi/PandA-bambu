@@ -41,6 +41,7 @@
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "copyrights_strings.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -51,7 +52,6 @@
 #include "technology_manager.hpp"
 #include "technology_wishbone.hpp"
 #include "tree_helper.hpp"
-#include "fileIO.hpp"
 
 WB4Intercon_interface::WB4Intercon_interface(const ParameterConstRef P, const HLS_managerRef HLSManager, unsigned int functionId, const DesignFlowManagerConstRef _design_flow_manager)
     : WB4_interface(P, HLSManager, functionId, _design_flow_manager, HLSFlowStep_Type::WB4_INTERCON_INTERFACE_GENERATION)

@@ -91,10 +91,10 @@
 #include "language_writer.hpp"
 
 #include "Parameter.hpp"
+#include "fileIO.hpp"
 #include "op_graph.hpp"
 #include "polixml.hpp"
 #include "xml_helper.hpp"
-#include "fileIO.hpp"
 
 #if HAVE_FLOPOCO
 #include "flopoco_wrapper.hpp"

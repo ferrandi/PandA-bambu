@@ -939,7 +939,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       case 'I':
       {
-         std::string includes = "-I " + std::string(optarg);
+         std::string includes = "-I " + GetPath(std::string(optarg));
          if(isOption(OPT_gcc_includes))
             includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
          setOption(OPT_gcc_includes, includes);
@@ -958,7 +958,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          std::string library_directories;
          if(isOption(OPT_gcc_library_directories))
             library_directories = getOption<std::string>(OPT_gcc_library_directories) + STR_CST_string_separator;
-         setOption(OPT_gcc_library_directories, library_directories + optarg_param);
+         setOption(OPT_gcc_library_directories, library_directories + GetPath(optarg_param));
          break;
       }
       case 'O':

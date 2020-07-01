@@ -2888,7 +2888,7 @@ void BambuParameter::CheckParameters()
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
-      std::string includes = "-I " + std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include") + " -I " + std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include");
+      std::string includes = "-I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) + " -I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
       if(isOption(OPT_gcc_includes))
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
       setOption(OPT_gcc_includes, includes);

@@ -1025,7 +1025,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                   THROW_ASSERT(start, fu_obj->get_path());
                   calls[start].push_back(sel_obj);
                   start_to_vertex[start].push_back(op);
-               } 
+               }
                break;
             }
             default:

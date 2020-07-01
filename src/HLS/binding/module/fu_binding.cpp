@@ -103,8 +103,8 @@
 #include <vector>
 
 /// utility include
-#include "string_manipulation.hpp" // for GET_CLASS
 #include "fileIO.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
 

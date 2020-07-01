@@ -2322,7 +2322,6 @@ class NodeContainer
    VCMap _vcMap;
 
  protected:
-
    UseMap& getUses()
    {
       return _useMap;
@@ -7130,7 +7129,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
       return DesignFlowStep_Status::SKIPPED;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   
+
    // Initialize constraint graph
    ConstraintGraphRef CG;
    switch(solverType)
@@ -7157,8 +7156,8 @@ DesignFlowStep_Status RangeAnalysis::Exec()
          THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
          break;
    }
-   
-   // Analyse only reached functions
+
+      // Analyse only reached functions
 #if defined(EARLY_DEAD_CODE_RESTART) || !defined(NDEBUG)
    const auto TM = AppM->get_tree_manager();
 #endif
