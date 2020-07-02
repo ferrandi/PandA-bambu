@@ -123,12 +123,12 @@ constexpr auto range( T begin, T end )
     auto end() { return iterator{end_}; }
   };
   return iterable_wrapper{begin, end};
-};
+}
 
 template<class T, typename = std::enable_if_t<std::is_integral_v<T>>>
 constexpr auto range( T end )
 {
   return range<T>( {}, end );
-};
+}
 
 } /* namespace mockturtle */
