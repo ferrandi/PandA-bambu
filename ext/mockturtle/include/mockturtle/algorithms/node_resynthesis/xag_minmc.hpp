@@ -135,7 +135,7 @@ struct xag_minmc_resynthesis_stats
 
       const xag_network xag = ...;
       xag_minmc_resynthesis resyn;
-      cut_rewriting( xag, resyn );
+      xag = cut_rewriting( xag, resyn );
    \endverbatim
  */
 class xag_minmc_resynthesis
@@ -224,9 +224,9 @@ public:
   {
     stopwatch t1( st.time_total );
 
-    const auto func_ext = kitty::extend_to<6>( function );
+    const auto func_ext = kitty::extend_to<6u>( function );
     std::vector<kitty::detail::spectral_operation> trans;
-    kitty::static_truth_table<6> tt_ext;
+    kitty::static_truth_table<6u> tt_ext;
 
     const auto cache_it = classify_cache->find( func_ext );
 
@@ -268,7 +268,7 @@ public:
 
       std::tie( original_f, mc, circuit ) = search->second;
 
-      kitty::static_truth_table<6> db_repr;
+      kitty::static_truth_table<6u> db_repr;
       kitty::create_from_hex_string( db_repr, original_f );
 
       call_with_stopwatch( st.time_classify, [&]() { return kitty::exact_spectral_canonization(
@@ -368,7 +368,7 @@ private:
 
     while ( std::getline( file1, line ) )
     {
-      pos = line.find( '\t' );
+      pos = static_cast<unsigned>( line.find( '\t' ) );
       const auto name = line.substr( 0, pos++ );
       auto original = line.substr( pos, 16u );
       pos += 17u;
@@ -430,10 +430,10 @@ private:
       if (ps.verify_database)
       {
         cut_view<xag_network> view{*db, *db_pis, f};
-        kitty::static_truth_table<6> tt, tt_repr;
+        kitty::static_truth_table<6u> tt, tt_repr;
         kitty::create_from_hex_string( tt, original );
         kitty::create_from_hex_string( tt_repr, token_f );
-        auto result = simulate<kitty::static_truth_table<6>>( view )[0];
+        auto result = simulate<kitty::static_truth_table<6u>>( view )[0];
         if ( tt != result )
         {
           std::cerr << "[w] invalid circuit for " << original << ", got " << kitty::to_hex( result ) << "\n";
@@ -463,7 +463,7 @@ private:
   std::shared_ptr<xag_network> db;
   std::shared_ptr<std::vector<xag_network::signal>> db_pis;
   std::shared_ptr<std::unordered_map<std::string, std::tuple<std::string, unsigned, xag_network::signal>>> func_mc;
-  std::shared_ptr<std::unordered_map<kitty::static_truth_table<6>, std::tuple<bool, kitty::static_truth_table<6>, std::vector<kitty::detail::spectral_operation>>, kitty::hash<kitty::static_truth_table<6>>>> classify_cache;
+  std::shared_ptr<std::unordered_map<kitty::static_truth_table<6u>, std::tuple<bool, kitty::static_truth_table<6u>, std::vector<kitty::detail::spectral_operation>>, kitty::hash<kitty::static_truth_table<6u>>>> classify_cache;
 };
 
 } // namespace mockturtle

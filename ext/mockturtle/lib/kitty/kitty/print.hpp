@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -128,8 +128,9 @@ inline void print_xmas_tree( std::ostream& os, uint32_t num_vars,
 template<typename TT>
 void print_binary( const TT& tt, std::ostream& os = std::cout )
 {
-  for_each_block_reversed( tt, [&tt, &os]( auto word ) {
-    std::string chunk( std::min<uint64_t>( tt.num_bits(), 64 ), '0' );
+  auto const chunk_size = std::min<uint64_t>( tt.num_bits(), 64 );
+  for_each_block_reversed( tt, [&os, chunk_size]( auto word ) {
+    std::string chunk( chunk_size, '0' );
     auto it = chunk.rbegin();
     while ( word && it != chunk.rend() )
     {
@@ -144,6 +145,37 @@ void print_binary( const TT& tt, std::ostream& os = std::cout )
   } );
 }
 
+/*! \cond PRIVATE */
+inline void print_binary( const partial_truth_table& tt, std::ostream& os )
+{
+  auto const chunk_size = std::min<uint64_t>( tt.num_bits(), 64 );
+  bool first = true;
+  for_each_block_reversed( tt, [&tt, &os, chunk_size, &first]( auto word ) {
+    std::string chunk( chunk_size, '0' );
+    auto it = chunk.rbegin();
+    while ( word && it != chunk.rend() )
+    {
+      if ( word & 1 )
+      {
+        *it = '1';
+      }
+      ++it;
+      word >>= 1;
+    }
+
+    if ( first && ( chunk_size == 64 ) && ( tt.num_bits() % 64 ) )
+    {
+      first = false;
+      os << chunk.substr( 64 - ( tt.num_bits() % 64 ) );
+    }
+    else
+    {
+      os << chunk;
+    }
+  } );
+}
+/*! \endcond */
+
 /*! \brief Prints truth table in hexadecimal representation
 
   The most-significant bit will be the first character of the string.
@@ -154,7 +186,8 @@ void print_binary( const TT& tt, std::ostream& os = std::cout )
 template<typename TT>
 void print_hex( const TT& tt, std::ostream& os = std::cout )
 {
-  const auto chunk_size = std::min<uint64_t>( tt.num_vars() <= 1 ? 1 : ( tt.num_bits() >> 2 ), 16 );
+  auto const chunk_size = std::min<uint64_t>( tt.num_vars() <= 1 ? 1 : ( tt.num_bits() >> 2 ), 16 );
+
   for_each_block_reversed( tt, [&os, chunk_size]( auto word ) {
     std::string chunk( chunk_size, '0' );
     auto it = chunk.rbegin();
@@ -163,11 +196,11 @@ void print_hex( const TT& tt, std::ostream& os = std::cout )
       auto hex = word & 0xf;
       if ( hex < 10 )
       {
-        *it = '0' + hex;
+        *it = '0' + static_cast<char>( hex );
       }
       else
       {
-        *it = 'a' + ( hex - 10 );
+        *it = 'a' + static_cast<char>( hex - 10 );
       }
       ++it;
       word >>= 4;
@@ -175,6 +208,41 @@ void print_hex( const TT& tt, std::ostream& os = std::cout )
     os << chunk;
   } );
 }
+
+/*! \cond PRIVATE */
+inline void print_hex( const partial_truth_table& tt, std::ostream& os )
+{
+  bool first = true;
+  for_each_block_reversed( tt, [&tt, &os, &first]( auto word ) {
+    std::string chunk( 16, '0' );
+    auto it = chunk.rbegin();
+    while ( word && it != chunk.rend() )
+    {
+      auto hex = word & 0xf;
+      if ( hex < 10 )
+      {
+        *it = '0' + static_cast<char>( hex );
+      }
+      else
+      {
+        *it = 'a' + static_cast<char>( hex - 10 );
+      }
+      ++it;
+      word >>= 4;
+    }
+
+    if ( first && ( tt.num_bits() % 64 ) )
+    {
+      first = false;
+      os << chunk.substr( ( tt.num_bits() % 4 ) ? ( 15 - ( ( tt.num_bits() >> 2 ) % 16 ) ) : ( 16 - ( ( tt.num_bits() >> 2 ) % 16 ) ) );
+    }
+    else
+    {
+      os << chunk;
+    }
+  } );
+}
+/*! \endcond */
 
 /*! \brief Prints truth table in raw binary presentation (for file I/O)
 
@@ -230,7 +298,7 @@ inline std::string to_hex( const TT& tt )
   \param tt Truth table
   \param os Output stream
 */
-template<class TT>
+template<typename TT, typename = std::enable_if_t<!std::is_same<TT, partial_truth_table>::value>>
 void print_xmas_tree_for_function( const TT& tt, std::ostream& os = std::cout )
 {
   detail::print_xmas_tree( os, tt.num_vars(),
@@ -268,6 +336,49 @@ void print_xmas_tree_for_functions( uint32_t num_vars,
                                          },
                                                                 p.second ); } );
   detail::print_xmas_tree( os, 1 << num_vars, _preds );
+}
+
+/*! \brief Creates an expression for an ANF form
+ *
+ * \param anf Truth table in ANF encoding
+ */
+template<typename TT, typename = std::enable_if_t<!std::is_same<TT, partial_truth_table>::value>>
+std::string anf_to_expression( const TT& anf )
+{
+  const auto terms = count_ones( anf );
+
+  if ( terms == 0u )
+  {
+    return "0";
+  }
+
+  std::string expr;
+
+  for_each_one_bit( anf, [&]( auto bit ) {
+    if ( bit == 0 )
+    {
+      expr += "1";
+      return;
+    }
+    auto weight = __builtin_popcount( static_cast<uint32_t>( bit ) );
+    if ( weight != 1 )
+    {
+      expr += "(";
+    }
+    for ( auto i = 0u; i < anf.num_vars(); ++i )
+    {
+      if ( ( bit >> i ) & 1 )
+      {
+        expr += std::string( 1, 'a' + i );
+      }
+    }
+    if ( weight != 1 )
+    {
+      expr += ")";
+    }
+  } );
+
+  return terms == 1 ? expr : "[" + expr + "]";
 }
 
 } /* namespace kitty */

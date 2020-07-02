@@ -66,13 +66,13 @@ class bidecomposition_resynthesis
 {
 public:
   template<typename LeavesIterator, typename Fn>
-  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, kitty::dynamic_truth_table const& dc, LeavesIterator begin, LeavesIterator end, Fn&& fn )
+  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, kitty::dynamic_truth_table const& dc, LeavesIterator begin, LeavesIterator end, Fn&& fn ) const
   {
     fn( bi_decomposition<Ntk>( ntk, function, ~dc, {begin, end} ) );
   }
 
   template<typename LeavesIterator, typename Fn>
-  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn )
+  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn ) const
   {
     operator()( ntk, function, function.construct(), begin, end, fn );
   }

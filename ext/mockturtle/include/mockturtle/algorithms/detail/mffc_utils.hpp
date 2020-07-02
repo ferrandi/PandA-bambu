@@ -38,75 +38,95 @@
 #include <cstdint>
 
 #include "../../traits.hpp"
+#include "../../utils/cost_functions.hpp"
 
 namespace mockturtle::detail
 {
 
-template<typename Ntk, typename TermCond>
-uint32_t recursive_deref( Ntk const& ntk, node<Ntk> const& n, TermCond&& terminate )
+template<class Ntk>
+void initialize_values_with_fanout( Ntk& ntk )
+{
+  static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
+  static_assert( has_clear_values_v<Ntk>, "Ntk does not implement the clear_values method" );
+  static_assert( has_set_value_v<Ntk>, "Ntk does not implement the set_value method" );
+  static_assert( has_fanout_size_v<Ntk>, "Ntk does not implement the fanout_size method" );
+  static_assert( has_foreach_node_v<Ntk>, "Ntk does not implement the foreach_node method" );
+
+  ntk.clear_values();
+  ntk.foreach_node( [&]( auto const& n ) {
+    ntk.set_value( n, ntk.fanout_size( n ) );
+  } );
+}
+
+template<typename Ntk, typename TermCond, class NodeCostFn = unit_cost<Ntk>>
+uint32_t recursive_deref( Ntk const& ntk, node<Ntk> const& n, TermCond const& terminate )
 {
   /* terminate? */
   if ( terminate( n ) )
     return 0;
 
   /* recursively collect nodes */
-  uint32_t value{1};
+  uint32_t value = NodeCostFn{}( ntk, n );
   ntk.foreach_fanin( n, [&]( auto const& s ) {
     if ( ntk.decr_value( ntk.get_node( s ) ) == 0 )
     {
-      value += recursive_deref( ntk, ntk.get_node( s ), terminate );
+      value += recursive_deref<Ntk, TermCond, NodeCostFn>( ntk, ntk.get_node( s ), terminate );
     }
   } );
   return value;
 }
 
-template<typename Ntk, typename TermCond>
-uint32_t recursive_ref( Ntk const& ntk, node<Ntk> const& n, TermCond&& terminate )
+template<typename Ntk, typename TermCond, class NodeCostFn = unit_cost<Ntk>>
+uint32_t recursive_ref( Ntk const& ntk, node<Ntk> const& n, TermCond const& terminate )
 {
   /* terminate? */
   if ( terminate( n ) )
     return 0;
 
   /* recursively collect nodes */
-  uint32_t value{1};
+  uint32_t value = NodeCostFn{}( ntk, n );
   ntk.foreach_fanin( n, [&]( auto const& s ) {
     if ( ntk.incr_value( ntk.get_node( s ) ) == 0 )
     {
-      value += recursive_ref( ntk, ntk.get_node( s ), terminate );
+      value += recursive_ref<Ntk, TermCond, NodeCostFn>( ntk, ntk.get_node( s ), terminate );
     }
   } );
   return value;
 }
 
-template<typename Ntk, typename LeavesIterator>
+template<typename Ntk, typename LeavesIterator, class NodeCostFn = unit_cost<Ntk>>
 uint32_t recursive_deref( Ntk const& ntk, node<Ntk> const& n, LeavesIterator begin, LeavesIterator end )
 {
-  return recursive_deref( ntk, n, [&]( auto const& n ) { return std::find( begin, end, n ) != end; } );
+  const auto terminate = [&]( auto const& n ) { return std::find( begin, end, n ) != end; };
+  return recursive_deref<Ntk, decltype( terminate ), NodeCostFn>( ntk, n, terminate );
 }
 
-template<typename Ntk, typename LeavesIterator>
+template<typename Ntk, typename LeavesIterator, class NodeCostFn = unit_cost<Ntk>>
 uint32_t recursive_ref( Ntk const& ntk, node<Ntk> const& n, LeavesIterator begin, LeavesIterator end )
 {
-  return recursive_ref( ntk, n, [&]( auto const& n ) { return std::find( begin, end, n ) != end; } );
+  const auto terminate = [&]( auto const& n ) { return std::find( begin, end, n ) != end; };
+  return recursive_ref<Ntk, decltype( terminate ), NodeCostFn>( ntk, n, terminate );
 }
 
-template<typename Ntk>
+template<typename Ntk, class NodeCostFn = unit_cost<Ntk>>
 uint32_t recursive_deref( Ntk const& ntk, node<Ntk> const& n )
 {
-  return recursive_deref( ntk, n, [&]( auto const& n ) { return ntk.is_constant( n ) || ntk.is_pi( n ); } );
+  const auto terminate = [&]( auto const& n ) { return ntk.is_constant( n ) || ntk.is_pi( n ); };
+  return recursive_deref<Ntk, decltype( terminate ), NodeCostFn>( ntk, n, terminate );
 }
 
-template<typename Ntk>
+template<typename Ntk, class NodeCostFn = unit_cost<Ntk>>
 uint32_t recursive_ref( Ntk const& ntk, node<Ntk> const& n )
 {
-  return recursive_ref( ntk, n, [&]( auto const& n ) { return ntk.is_constant( n ) || ntk.is_pi( n ); } );
+  const auto terminate = [&]( auto const& n ) { return ntk.is_constant( n ) || ntk.is_pi( n ); };
+  return recursive_ref<Ntk, decltype( terminate ), NodeCostFn>( ntk, n, terminate );
 }
 
-template<typename Ntk>
+template<typename Ntk, class NodeCostFn = unit_cost<Ntk>>
 uint32_t mffc_size( Ntk const& ntk, node<Ntk> const& n )
 {
-  auto v1 = recursive_deref( ntk, n );
-  auto v2 = recursive_ref( ntk, n );
+  auto v1 = recursive_deref<Ntk, NodeCostFn>( ntk, n );
+  auto v2 = recursive_ref<Ntk, NodeCostFn>( ntk, n );
   assert( v1 == v2 );
   (void)v2;
   return v1;

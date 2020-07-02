@@ -26,7 +26,6 @@
 /*!
   \file blif_reader.hpp
   \brief Lorina reader for BLIF files
-
   \author Heinz Riener
 */
 
@@ -34,8 +33,7 @@
 
 #include <mockturtle/networks/aig.hpp>
 
-#include <kitty/constructors.hpp>
-#include <kitty/dynamic_truth_table.hpp>
+#include <kitty/kitty.hpp>
 #include <lorina/blif.hpp>
 
 #include <map>
@@ -56,11 +54,8 @@ namespace mockturtle
  * - `get_constant`
  *
    \verbatim embed:rst
-
    Example
-
    .. code-block:: c++
-
       klut_network klut;
       lorina::read_blif( "file.blif", blif_reader( klut ) );
    \endverbatim
@@ -84,6 +79,15 @@ public:
     for ( auto const& o : outputs )
     {
       ntk_.create_po( signals[o], o );
+    }
+
+    for ( auto const& latch : latches )
+    {
+      auto const lit = std::get<0>( latch );
+      auto const reset = std::get<1>( latch );
+
+      auto signal = signals[lit];
+      ntk_.create_ri( signal, reset );
     }
   }
 
@@ -110,6 +114,91 @@ public:
     outputs.emplace_back( name );
   }
 
+  virtual void on_latch( const std::string& input, const std::string& output, const std::optional<latch_type>& l_type, const std::optional<std::string>& control, const std::optional<latch_init_value>& reset ) const override
+  {
+    signals[output] = ntk_.create_ro( output );
+    if constexpr ( has_set_name_v<Ntk> && has_set_output_name_v<Ntk> )
+    {
+      ntk_.set_name( signals[output], output );
+      ntk_.set_output_name( outputs.size() + latches.size(), input );
+    }
+
+    std::string type = "re";
+    if( l_type )
+    {
+      switch ( *l_type )
+      {
+      case latch_type::FALLING:
+        {
+          type = "fe";
+        }
+        break;
+      case latch_type::RISING:
+        {
+          type = "re";
+        }
+        break;
+      case latch_type::ACTIVE_HIGH:
+        {
+          type = "ah";
+        }
+        break;
+      case latch_type::ACTIVE_LOW:
+        {
+          type = "al";
+        }
+        break;
+      case latch_type::ASYNC:
+        {
+          type = "as";
+        }
+        break;
+      default:
+        {
+          type = "";
+        }
+        break;
+      }
+    }
+
+    uint32_t r = 3;
+    if ( reset )
+    {
+      switch ( *reset )
+      {
+      case latch_init_value::NONDETERMINISTIC:
+        {
+          r = 2;
+        }
+        break;
+      case latch_init_value::ONE:
+        {
+          r = 1;
+        }
+        break;
+      case latch_init_value::ZERO:
+        {
+          r = 0;
+        }
+        break;
+      default:
+        break;
+      }
+    }
+
+    latch_info l_info;
+    l_info.init = r;
+    l_info.type = type;
+
+    if ( control.has_value() )
+      l_info.control = control.value();
+    else
+      l_info.control = "clock";
+
+    ntk_._storage->latch_information[ntk_.get_node( signals[output] )] = l_info;
+    latches.emplace_back( std::make_tuple( input, r, type, l_info.control, "" ) );
+  }
+
   virtual void on_gate( const std::vector<std::string>& inputs, const std::string& output, const output_cover_t& cover ) const override
   {
     if ( inputs.size() == 0u )
@@ -130,31 +219,42 @@ public:
       return;
     }
 
-    auto const len = 1u << inputs.size();
-
     assert( cover.size() > 0u );
     assert( cover.at( 0u ).second.size() == 1 );
     auto const first_output_value = cover.at( 0u ).second.at( 0u );
-    auto const default_value = first_output_value == '0' ? '1' : '0';
 
-    std::string func( len, default_value );
+    std::vector<kitty::cube> minterms;
+    std::vector<kitty::cube> maxterms;
     for ( const auto& c : cover )
     {
       assert( c.second.size() == 1 );
 
-      uint32_t pos = 0u;
-      for ( auto i = 0u; i < c.first.size(); ++i )
-      {
-        if ( c.first.at( i ) == '1' )
-          pos += 1u << i;
-      }
+      auto const output = c.second[0u];
+      assert( output == '0' || output == '1' );
+      assert( output == first_output_value );
+      (void)first_output_value;
 
-      func[pos] = c.second.at( 0u );
+      if ( output == '1' )
+      {
+        minterms.emplace_back( kitty::cube( c.first ) );
+      }
+      else if ( output == '0' )
+      {
+        maxterms.emplace_back( ~kitty::cube( c.first ) );
+      }
     }
 
-    kitty::dynamic_truth_table tt( static_cast<int>( inputs.size() ) );
-    std::reverse( std::begin( func ), std::end( func ) );
-    kitty::create_from_binary_string( tt, func );
+    assert( minterms.size() == 0u || maxterms.size() == 0u );
+
+    kitty::dynamic_truth_table tt( int( inputs.size() ) );
+    if ( minterms.size() != 0 )
+    {
+      kitty::create_from_cubes( tt, minterms, false );
+    }
+    else if ( maxterms.size() != 0 )
+    {
+      kitty::create_from_clauses( tt, maxterms, false );
+    }
 
     std::vector<signal<Ntk>> input_signals;
     for ( const auto& i : inputs )
@@ -162,6 +262,7 @@ public:
       assert( signals.find( i ) != signals.end() );
       input_signals.push_back( signals.at( i ) );
     }
+
     signals[output] = ntk_.create_node( input_signals, tt );
   }
 
@@ -177,6 +278,7 @@ private:
 
   mutable std::map<std::string, signal<Ntk>> signals;
   mutable std::vector<std::string> outputs;
+  mutable std::vector<std::tuple<std::string, int8_t, std::string, std::string, std::string>> latches;
 }; /* blif_reader */
 
 } /* namespace mockturtle */

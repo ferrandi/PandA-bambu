@@ -215,8 +215,8 @@ inline std::vector<signal<Ntk>> carry_ripple_multiplier( Ntk& ntk, std::vector<s
   static_assert( has_create_and_v<Ntk>, "Ntk does not implement the create_and method" );
   static_assert( has_get_constant_v<Ntk>, "Ntk does not implement the get_constant method" );
 
-  auto res = constant_word( ntk, 0, a.size() + b.size() );
-  auto tmp = constant_word( ntk, 0, a.size() * 2 );
+  auto res = constant_word( ntk, 0, static_cast<uint32_t>( a.size() + b.size() ) );
+  auto tmp = constant_word( ntk, 0, static_cast<uint32_t>( a.size() * 2 ) );
 
   for ( auto j = 0u; j < b.size(); ++j )
   {
@@ -315,9 +315,9 @@ inline void carry_lookahead_adder_inplace( Ntk& ntk, std::vector<signal<Ntk>>& a
   const auto log2 = static_cast<uint32_t>( std::ceil( std::log2( static_cast<double>( a.size() + 1 ) ) ) );
 
   std::vector<signal<Ntk>> a_ext( a.begin(), a.end() );
-  a_ext.resize( 1 << log2, ntk.get_constant( false ) );
+  a_ext.resize( static_cast<uint64_t>( 1 ) << log2, ntk.get_constant( false ) );
   std::vector<signal<Ntk>> b_ext( b.begin(), b.end() );
-  b_ext.resize( 1 << log2, ntk.get_constant( false ) );
+  b_ext.resize( static_cast<uint64_t>( 1 ) << log2, ntk.get_constant( false ) );
 
   detail::carry_lookahead_adder_inplace_pow2( ntk, a_ext, b_ext, carry );
 
@@ -338,7 +338,7 @@ inline std::vector<signal<Ntk>> sideways_sum_adder( Ntk& ntk, std::vector<signal
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
 
-  int n = a.size();
+  int n = static_cast<int>( a.size() );
 
   int out_n = 1; // floor(log2(n) + 1)
   int tmpn = n;

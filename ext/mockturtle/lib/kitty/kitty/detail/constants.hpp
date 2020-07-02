@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -106,6 +106,21 @@ static constexpr uint64_t ppermutation_masks[][6][3] = {
      {UINT64_C( 0x0000000000000000 ), UINT64_C( 0x0000000000000000 ), UINT64_C( 0x0000000000000000 )},
      {UINT64_C( 0xffff00000000ffff ), UINT64_C( 0x00000000ffff0000 ), UINT64_C( 0x0000ffff00000000 )}}};
 
+static std::vector<uint64_t> onehots[] = {
+    {UINT64_C( 0x1 )},
+    {UINT64_C( 0x1 ), UINT64_C( 0x2 )},
+    {UINT64_C( 0x1 ), UINT64_C( 0x6 ), UINT64_C( 0x8 )},
+    {UINT64_C( 0x01 ), UINT64_C( 0x16 ), UINT64_C( 0x68 ), UINT64_C( 0x80 )},
+    {UINT64_C( 0x0001 ), UINT64_C( 0x0116 ), UINT64_C( 0x1668 ), UINT64_C( 0x6880 ), UINT64_C( 0x8000 )},
+    {UINT64_C( 0x00000001 ), UINT64_C( 0x00010116 ), UINT64_C( 0x01161668 ), UINT64_C( 0x16686880 ), UINT64_C( 0x68808000 ), UINT64_C( 0x80000000 )},
+    {UINT64_C( 0x0000000000000001 ),
+     UINT64_C( 0x0000000100010116 ),
+     UINT64_C( 0x0001011601161668 ),
+     UINT64_C( 0x0116166816686880 ),
+     UINT64_C( 0x1668688068808000 ),
+     UINT64_C( 0x6880800080000000 ),
+     UINT64_C( 0x8000000000000000 )}};
+
 static constexpr int32_t hex_to_int[] = {-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                                          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
                                          -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
@@ -167,6 +182,14 @@ static constexpr uint16_t primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31,
                                       877, 881, 883, 887, 907, 911, 919, 929,
                                       937, 941, 947, 953, 967, 971, 977, 983,
                                       991, 997, 1009, 1013, 1019, 1021, 1031};
+
+static constexpr int8_t log2[] = {-1, 0, 1, -1, 2, -1, -1, -1, 3, -1,
+                                  -1, -1, -1, -1, -1, -1, 4, -1, -1, -1,
+                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                  -1, -1, 5, -1, -1, -1, -1, -1, -1, -1,
+                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                  -1, -1, -1, -1, -1, -1, -1, -1, -1, -1,
+                                  -1, -1, -1, -1, 6};
 
 } // namespace detail
 } // namespace kitty

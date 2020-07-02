@@ -46,7 +46,7 @@ void simulate_modular_adder( uint32_t op1, uint32_t op2 )
   const auto result = ( op1 + op2 ) % ( 1 << 8 );
   for ( auto i = 0; i < 8; ++i )
   {
-    CHECK( ( ( result >> i ) & 1 ) == simm[i] );
+    CHECK( static_cast<bool>( ( ( result >> i ) & 1 ) ) == simm[i] );
   }
 }
 
@@ -119,7 +119,7 @@ void test_unary_modular_arithmetic( ArithFn&& operation, EvaluateFn&& evaluate, 
   {
     auto k = std::uniform_int_distribution<uint32_t>( 5, 16 )( gen );
     auto c = std::uniform_int_distribution<uint64_t>( 2, ( 1 << k ) - 2 )( gen );
-    auto a = std::uniform_int_distribution<uint32_t>( 0, c - 1 )( gen );
+    auto a = std::uniform_int_distribution<uint32_t>( 0, static_cast<uint32_t>( c ) - 1 )( gen );
 
     simulate_modular_arithmetic<Ntk>( k, c, operation, evaluate, a );
   }
@@ -134,8 +134,8 @@ void test_binary_modular_arithmetic( ArithFn&& operation, EvaluateFn&& evaluate,
   {
     auto k = std::uniform_int_distribution<uint32_t>( 5, 16 )( gen );
     auto c = std::uniform_int_distribution<uint64_t>( 2, ( 1 << k ) - 2 )( gen );
-    auto a = std::uniform_int_distribution<uint32_t>( 0, c - 1 )( gen );
-    auto b = std::uniform_int_distribution<uint32_t>( 0, c - 1 )( gen );
+    auto a = std::uniform_int_distribution<uint32_t>( 0, static_cast<uint32_t>( c ) - 1 )( gen );
+    auto b = std::uniform_int_distribution<uint32_t>( 0, static_cast<uint32_t>( c ) - 1 )( gen );
 
     simulate_modular_arithmetic<Ntk>( k, c, operation, evaluate, a, b );
   }
@@ -176,7 +176,7 @@ TEST_CASE( "build default modular halving", "[modular_arithmetic]" )
   {
     auto k = std::uniform_int_distribution<uint32_t>( 5, 16 )( gen );
     auto c = std::uniform_int_distribution<uint64_t>( 2, ( 1 << ( k - 1 ) ) - 2 )( gen ) * 2 + 1;
-    auto a = std::uniform_int_distribution<uint32_t>( 0, c - 1 )( gen );
+    auto a = std::uniform_int_distribution<uint32_t>( 0, static_cast<uint32_t>( c ) - 1 )( gen );
 
     simulate_modular_arithmetic<aig_network>( k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );
     simulate_modular_arithmetic<mig_network>( k, c, []( auto& ntk, auto& a, uint64_t c ) { modular_halving_inplace( ntk, a, c ); }, []( auto a, auto c ) { return a % 2 ? ( a + c ) / 2 : a / 2; }, a );

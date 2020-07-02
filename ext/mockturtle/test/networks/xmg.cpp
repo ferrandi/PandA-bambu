@@ -597,7 +597,7 @@ TEST_CASE( "custom node values in xmgs", "[xmg]" )
   xmg.clear_values();
   xmg.foreach_node( [&]( auto n ) {
     CHECK( xmg.value( n ) == 0 );
-    xmg.set_value( n, n );
+    xmg.set_value( n, static_cast<uint32_t>( n ) );
     CHECK( xmg.value( n ) == n );
     CHECK( xmg.incr_value( n ) == n );
     CHECK( xmg.value( n ) == n + 1 );
@@ -631,7 +631,7 @@ TEST_CASE( "visited values in xmgs", "[xmg]" )
   xmg.clear_visited();
   xmg.foreach_node( [&]( auto n ) {
     CHECK( xmg.visited( n ) == 0 );
-    xmg.set_visited( n, n );
+    xmg.set_visited( n, static_cast<uint32_t>( n ) );
     CHECK( xmg.visited( n ) == n );
   } );
   xmg.clear_visited();

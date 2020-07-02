@@ -2,9 +2,6 @@
 
 #include "solver_wrapper.hpp"
 
-#include <cstdint>
-#include <vector>
-
 namespace percy
 {
     class bsat_wrapper : public solver_wrapper

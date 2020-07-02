@@ -72,3 +72,26 @@ The following simulators are implemented:
   simulates truth tables.  Each primary input is assigned the projection
   function according to the index.  The number of variables be passed to the
   constructor of the simulator.
+* ``mockturtle::partial_simulator``: This simulator simulates partial truth tables,
+  whose length is flexible and new simulation patterns can be added.
+
+Partial simulation
+~~~~~~~~~~~~~~~~~~
+
+With ``partial_simulator``, adding new simulation patterns and re-simulation can be done.
+Incremental simulation is adopted, which speeds up simulation time by only re-simulating needed nodes and only re-computing the last block of ``partial_truth_table``.
+Note that currently only AIG and XAG are supported.
+
+.. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( unsigned, unsigned, std::default_random_engine::result_type )
+
+.. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( std::vector<kitty::partial_truth_table> const& )
+
+.. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( const std::string&, uint32_t )
+
+.. doxygenfunction:: mockturtle::partial_simulator::num_bits()
+
+.. doxygenfunction:: mockturtle::partial_simulator::write_patterns( const std::string& )
+
+.. doxygenfunction:: mockturtle::simulate_nodes( Ntk const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, partial_simulator const&, bool )
+
+.. doxygenfunction:: mockturtle::simulate_node( Ntk const&, typename Ntk::node const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, partial_simulator const& )

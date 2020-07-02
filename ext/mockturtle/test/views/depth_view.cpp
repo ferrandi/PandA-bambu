@@ -4,6 +4,7 @@
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/networks/klut.hpp>
+#include <mockturtle/networks/xag.hpp>
 #include <mockturtle/views/depth_view.hpp>
 
 using namespace mockturtle;
@@ -69,7 +70,7 @@ TEST_CASE( "compute depth and levels for AIG with inverter costs", "[depth_view]
 
   depth_view_params ps;
   ps.count_complements = true;
-  depth_view depth_aig{aig, ps};
+  depth_view depth_aig{aig, {}, ps};
   CHECK( depth_aig.depth() == 6 );
   CHECK( depth_aig.level( aig.get_node( a ) ) == 0 );
   CHECK( depth_aig.level( aig.get_node( b ) ) == 0 );
@@ -107,3 +108,31 @@ TEST_CASE( "compute critical path information", "[depth_view]" )
   CHECK( !depth_aig.is_on_critical_path( aig.get_node( f3 ) ) );
   CHECK( depth_aig.is_on_critical_path( aig.get_node( f ) ) );
 }
+
+TEST_CASE( "compute levels during node construction", "[depth_view]" )
+{
+  depth_view<xag_network> dxag;
+
+  const auto a = dxag.create_pi();
+  const auto b = dxag.create_pi();
+  const auto c = dxag.create_pi();
+
+  dxag.create_po( dxag.create_xor( b, dxag.create_and( dxag.create_xor( a, b ), dxag.create_xor( b, c ) ) ) );
+
+  CHECK( dxag.depth() == 3u );
+}
+
+TEST_CASE( "compute levels during node construction with cost function", "[depth_view]" )
+{
+  xag_network xag;
+  depth_view<xag_network, mc_cost<xag_network>> dxag{xag};
+
+  const auto a = dxag.create_pi();
+  const auto b = dxag.create_pi();
+  const auto c = dxag.create_pi();
+
+  dxag.create_po( dxag.create_xor( b, dxag.create_and( dxag.create_xor( a, b ), dxag.create_xor( b, c ) ) ) );
+
+  CHECK( dxag.depth() == 1u );
+}
+
