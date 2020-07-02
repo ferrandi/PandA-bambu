@@ -78,7 +78,7 @@ if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
    fi
 fi
 AC_SUBST(CXXFLAGS_STD)
-AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes)
+AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes)
 
 
 AM_PO_SUBDIRS
@@ -284,6 +284,7 @@ AC_ARG_ENABLE(opt,                 [  --enable-opt                 compile the s
 AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static binaries ],                                                                [panda_ALLSTATIC="$enableval"], [panda_ALLSTATIC="yes"])
 AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits binaries ],                                                                [panda_32BITS="$enableval"])
 AC_ARG_ENABLE(oldclangabi,         [  --enable-oldclangabi         Clang plugins are compiled with the old abi ],                                           [panda_clangoldabi="$enableval"], [panda_clangoldabi="no"])
+AC_ARG_ENABLE(clanglibcpp,         [  --enable-clanglibcpp         Clang is going to use libc++ ],                                                          [panda_clanglibcpp="$enableval"], [panda_clanglibcpp="no"])
 
 
 #etc/ext stuff
@@ -982,6 +983,16 @@ fi
 
 if test "x$panda_USE_TASTE" = xyes; then
    panda_USE_LIB_FROM_AADL_ASN=yes;
+fi
+
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  CXXFLAGS+=" -stdlib=libc++ "
+  CXXFLAGS_EXT+=" -stdlib=libc++ "
+  CXXFLAGS_STD+=" -stdlib=libc++ "
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, " -stdlib=libc++ ", "Define extra compiler options")
+else
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, "", "Define extra compiler options")
 fi
 
 ###################### Release and experimental checking #######################

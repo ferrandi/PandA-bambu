@@ -52,6 +52,7 @@
 #include "config_ARM_SSA_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGINCPP.hpp"
 #include "config_CLANG_PLUGIN_DIR.hpp"
+#include "config_EXTRA_CLANGPP_COMPILER_OPTION.hpp"
 #include "config_GCC_PLUGIN_DIR.hpp"
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
@@ -239,7 +240,6 @@
 #include "config_SPARC_RTL_PLUGIN.hpp"
 #include "config_SPARC_SSA_PLUGIN.hpp"
 #include "config_SPARC_SSA_PLUGINCPP.hpp"
-
 /// Header include
 #include "gcc_wrapper.hpp"
 
@@ -2332,7 +2332,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP4_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG4_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG4_EMPTY_PLUGIN;
@@ -2359,7 +2359,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP5_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG5_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG5_EMPTY_PLUGIN;
@@ -2386,7 +2386,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP6_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG6_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG6_EMPTY_PLUGIN;
@@ -2413,7 +2413,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP7_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG7_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG7_EMPTY_PLUGIN;
@@ -2440,7 +2440,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP8_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG8_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG8_EMPTY_PLUGIN;
@@ -2467,7 +2467,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPP9_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG9_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG9_EMPTY_PLUGIN;
