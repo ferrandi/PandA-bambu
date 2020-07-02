@@ -47,9 +47,9 @@
 #include "AlteraBackendFlow.hpp"
 
 /// Autoheader includes
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_QUARTUS_13_SETTINGS.hpp"
 #include "config_QUARTUS_SETTINGS.hpp"
-#include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
@@ -88,23 +88,13 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Altera Backend Flow ::.");
 
-   default_data["CycloneII"] =
-"CycloneII.data"
-       ;
+   default_data["CycloneII"] = "CycloneII.data";
 
-   default_data["CycloneII-R"] =
-"CycloneII-R.data"
-       ;
+   default_data["CycloneII-R"] = "CycloneII-R.data";
 
-   default_data["CycloneV"] =
-"CycloneV.data"
-       ;
-   default_data["StratixV"] =
-"StratixV.data"
-       ;
-   default_data["StratixIV"] =
-"StratixIV.data"
-       ;
+   default_data["CycloneV"] = "CycloneV.data";
+   default_data["StratixV"] = "StratixV.data";
+   default_data["StratixIV"] = "StratixIV.data";
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {

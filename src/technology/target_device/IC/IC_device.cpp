@@ -135,7 +135,7 @@ void IC_device::initialize()
 void IC_device::load_devices(const target_deviceRef device)
 {
    /// Load default resources
-   const char* builtin_technology = { "Nangate.data"  };
+   const char* builtin_technology = {"Nangate.data"};
 
    auto output_level = Param->getOption<int>(OPT_output_level);
 

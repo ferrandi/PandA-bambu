@@ -91,7 +91,7 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
       if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") +  default_data[device_string]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data[device_string]));
    }
    parse_flow(parser);
 }

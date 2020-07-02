@@ -77,9 +77,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
 
-   default_data["LatticeECP3"] =
-"LatticeECP3.data"
-       ;
+   default_data["LatticeECP3"] = "LatticeECP3.data";
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
