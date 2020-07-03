@@ -1544,6 +1544,7 @@ AC_CONFIG_FILES(
                  style/img/Makefile
                  style/img/panda.png
                  style/img/logoPoli.gif
+                 Appimage/Makefile
                )
 
 ################################################################################
