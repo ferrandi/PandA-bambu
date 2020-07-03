@@ -34,6 +34,25 @@ CXXFLAGS_EXT=-O2
 CXXFLAGS_EXTFPLL=-O2
 CXXFLAGS_STD=-O2
 
+AC_ARG_ENABLE(clanglibcpp,         [  --enable-clanglibcpp         Clang is going to use libc++ ],                                                          [panda_clanglibcpp="$enableval"], [panda_clanglibcpp="no"])
+AC_ARG_ENABLE(oldclangabi,         [  --enable-oldclangabi         Clang plugins are compiled with the old abi ],                                           [panda_clangoldabi="$enableval"], [panda_clangoldabi="no"])
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  CXXFLAGS+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_EXT+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_EXT+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_STD+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_STD+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+fi
+
+
 # Check if compiler support c++17
 AC_COMPILE_STDCXX_17
 # Check if compiler support c++11
@@ -283,8 +302,6 @@ AC_ARG_ENABLE(debug,               [  --enable-debug               compile the s
 AC_ARG_ENABLE(opt,                 [  --enable-opt                 compile the source code with -O2 (default enabled) ],                                    [panda_OPT="$enableval"], [panda_OPT="yes"])
 AC_ARG_ENABLE(allstatic,           [  --enable-allstatic           create static binaries ],                                                                [panda_ALLSTATIC="$enableval"], [panda_ALLSTATIC="yes"])
 AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits binaries ],                                                                [panda_32BITS="$enableval"])
-AC_ARG_ENABLE(oldclangabi,         [  --enable-oldclangabi         Clang plugins are compiled with the old abi ],                                           [panda_clangoldabi="$enableval"], [panda_clangoldabi="no"])
-AC_ARG_ENABLE(clanglibcpp,         [  --enable-clanglibcpp         Clang is going to use libc++ ],                                                          [panda_clanglibcpp="$enableval"], [panda_clanglibcpp="no"])
 
 
 #etc/ext stuff
@@ -987,9 +1004,6 @@ fi
 
 ###################### libc++ support #######################
 if test "x$panda_clanglibcpp" = xyes; then
-  CXXFLAGS+=" -stdlib=libc++ "
-  CXXFLAGS_EXT+=" -stdlib=libc++ "
-  CXXFLAGS_STD+=" -stdlib=libc++ "
   AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, " -stdlib=libc++ ", "Define extra compiler options")
 else
   AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, "", "Define extra compiler options")
