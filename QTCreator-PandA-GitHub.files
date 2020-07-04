@@ -1407,7 +1407,6 @@ ext/mockturtle/lib/abcsat/abc/vecInt.h
 ext/mockturtle/lib/abcsat/abc/vecWec.h
 ext/mockturtle/lib/abcsat/satSolver.cpp
 ext/mockturtle/lib/abcsat/satStore.cpp
-ext/mockturtle/lib/ez/ez/direct_iterator.hpp
 ext/mockturtle/lib/fmt/fmt/chrono.h
 ext/mockturtle/lib/fmt/fmt/color.h
 ext/mockturtle/lib/fmt/fmt/core.h
