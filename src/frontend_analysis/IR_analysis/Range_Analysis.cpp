@@ -3658,9 +3658,9 @@ RangeRef BinaryOpNode::eval() const
          if((!bvRange->isFullSet() || bvRange->getBitWidth() < result->getBitWidth()) && (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result range to " + bvRange->ToString() + "<" + (sinkSigned ? "signed " : "unsigned ") + ssa->bit_values + "> over result " + result->ToString());
-#if HAVE_ASSERTS
-            const auto resEmpty = result->isEmpty();
-#endif
+// #if HAVE_ASSERTS
+//             const auto resEmpty = result->isEmpty();
+// #endif
             result = [&]() {
                if(bvRange->getBitWidth() < result->getBitWidth())
                {
@@ -3672,7 +3672,7 @@ RangeRef BinaryOpNode::eval() const
                   return result->intersectWith(bvRange);
                }
             }();
-            THROW_ASSERT(result->isEmpty() == resEmpty, "");
+            // THROW_ASSERT(result->isEmpty() == resEmpty, "");
          }
       }
 
