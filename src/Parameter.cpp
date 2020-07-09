@@ -259,6 +259,8 @@ void Parameter::CheckParameters()
    {
       boost::filesystem::create_directory(output_directory);
    }
+   if(!boost::filesystem::exists(output_directory))
+      THROW_ERROR("not able to create directory " + output_directory);
    if(getOption<bool>(OPT_print_dot))
    {
       const std::string dot_directory = getOption<std::string>(OPT_dot_directory);
@@ -267,6 +269,8 @@ void Parameter::CheckParameters()
          boost::filesystem::remove_all(dot_directory);
       }
       boost::filesystem::create_directory(dot_directory);
+      if(!boost::filesystem::exists(dot_directory))
+         THROW_ERROR("not able to create directory " + dot_directory);
    }
 }
 
