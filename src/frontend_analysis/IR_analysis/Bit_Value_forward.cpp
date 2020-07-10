@@ -152,9 +152,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    }
    else if(op_kind == integer_cst_K
 #ifndef NO_REAL
-            or op_kind == real_cst_K
+           or op_kind == real_cst_K
 #endif
-         )
+   )
    {
       unsigned int arg2_uid;
       arg2_uid = GET_INDEX_NODE(ga->op1);
@@ -1102,9 +1102,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
       else if(GET_NODE(operation->op)->get_kind() == integer_cst_K
 #ifndef NO_REAL
-             or GET_NODE(operation->op)->get_kind() == real_cst_K
+              or GET_NODE(operation->op)->get_kind() == real_cst_K
 #endif
-             )
+      )
       {
          arg_uid = GET_INDEX_NODE(operation->op);
          THROW_ASSERT(best.find(arg_uid) != best.end(), "unexpected condition");
@@ -1183,11 +1183,11 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          else
             arg_bitstring = current.at(arg_uid);
       }
-      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K 
+      else if(GET_NODE(operation->op)->get_kind() == integer_cst_K
 #ifndef NO_REAL
-               or GET_NODE(operation->op)->get_kind() == real_cst_K
+              or GET_NODE(operation->op)->get_kind() == real_cst_K
 #endif
-               )
+      )
       {
          THROW_ASSERT(best.find(arg_uid) != best.end(), "unexpected condition");
          arg_bitstring = best.at(arg_uid);

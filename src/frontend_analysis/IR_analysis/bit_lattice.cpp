@@ -215,7 +215,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
 #ifndef NO_REAL
       or kind == real_cst_K
 #endif
-      )
+   )
    {
       out_type_size = size(TM, tree_helper::get_type_index(TM, output_uid));
    }
@@ -331,11 +331,11 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    const tree_nodeConstRef node = TM->get_tree_node_const(output_uid);
    const auto kind = node->get_kind();
    unsigned int out_type_size = 0;
-   if(kind == ssa_name_K or kind == integer_cst_K 
+   if(kind == ssa_name_K or kind == integer_cst_K
 #ifndef NO_REAL
       or kind == real_cst_K
 #endif
-      )
+   )
    {
       out_type_size = size(TM, tree_helper::get_type_index(TM, output_uid));
    }
@@ -483,11 +483,11 @@ std::deque<bit_lattice> BitLatticeManipulator::string_cst_bitstring(const tree_n
 
 bool BitLatticeManipulator::is_handled_by_bitvalue(unsigned int type_id) const
 {
-   return 
+   return
 #ifdef NO_REAL
-   not tree_helper::is_real(TM, type_id) and 
+       not tree_helper::is_real(TM, type_id) and
 #endif
-   not tree_helper::is_a_complex(TM, type_id) and not tree_helper::is_a_vector(TM, type_id) and not tree_helper::is_a_struct(TM, type_id);
+       not tree_helper::is_a_complex(TM, type_id) and not tree_helper::is_a_vector(TM, type_id) and not tree_helper::is_a_struct(TM, type_id);
 }
 
 bool BitLatticeManipulator::mix()

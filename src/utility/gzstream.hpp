@@ -80,10 +80,10 @@ class gzstreambuf : public std::streambuf
    static const int bufferSize = 47 + 256; // size of data buff
    // totals 512 bytes under g++ for igzstream at the end.
 
-   gzFile file;             // file handle for compressed file
-   char buffer[bufferSize]; // data buffer
-   char opened;             // open/close state of stream
-   std::ios_base::openmode mode;                // I/O mode
+   gzFile file;                  // file handle for compressed file
+   char buffer[bufferSize];      // data buffer
+   char opened;                  // open/close state of stream
+   std::ios_base::openmode mode; // I/O mode
 
    int flush_buffer();
 

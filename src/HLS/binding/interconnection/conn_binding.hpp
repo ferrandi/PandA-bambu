@@ -333,7 +333,7 @@ class conn_binding
 
    generic_objRef get_constant_obj(const std::string& value, const std::string& param, unsigned int precision);
 
-   const std::map<const_param, generic_objRef> &get_constant_objs() const;
+   const std::map<const_param, generic_objRef>& get_constant_objs() const;
 
    /**
     * @brief factory method to create the right conn_binding depending on the flow
