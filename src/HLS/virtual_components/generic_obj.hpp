@@ -95,11 +95,11 @@ class generic_obj
    const resource_type type;
 
    /// structural_object associated to element
-   structural_objectRef SM;
+   Wrefcount<structural_object> SM;
 
    /// output signal associated to element. It allows to connect multiple elements to output of this object.
    /// So broadcast communication is possible
-   structural_objectRef out_sign;
+   Wrefcount<structural_object> out_sign;
 
    /// connection obj id
    std::string name;
@@ -181,18 +181,18 @@ class generic_obj
     * Gets structural_object associated to this object
     * @return a reference to structural_object associated
     */
-   const structural_objectRef& get_structural_obj() const
+   const structural_objectRef get_structural_obj() const
    {
-      return SM;
+      return SM.lock();
    }
 
    /**
     * Gets structural_object of output signal associated to this object
     * @return a reference to structural_object of signal associated
     */
-   const structural_objectRef& get_out_sign() const
+   const structural_objectRef get_out_sign() const
    {
-      return out_sign;
+      return out_sign.lock();
    }
 
    /**
