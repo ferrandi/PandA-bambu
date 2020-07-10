@@ -245,9 +245,8 @@ void classic_datapath::add_ports()
    }
    if(HLS->Rconn)
    {
-      std::map<conn_binding::const_param, generic_objRef> const_objs = HLS->Rconn->get_constant_objs();
       unsigned int num = 0;
-      for(auto& c : const_objs)
+      for(auto& c : HLS->Rconn->get_constant_objs())
       {
          generic_objRef constant_obj = c.second;
          structural_objectRef const_obj = SM->add_module_from_technology_library("const_" + STR(num), CONSTANT_STD, LIBRARY_STD, circuit, HLS->HLS_T->get_technology_manager());
