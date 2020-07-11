@@ -454,8 +454,6 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Creating MUX TREE");
             mux_allocation(HLS, SM, sign, port_tgt, i->second);
-            /// internal data structure cleanup
-            converters.clear();
             break;
          }
          default:
