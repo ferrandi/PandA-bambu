@@ -19,9 +19,9 @@ Vagrant.configure(2) do |config|
      apt-get autoremove -y
      wget https://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-linux-gnu-debian8.tar.xz
      tar xvf clang+llvm-6.0.0-x86_64-linux-gnu-debian8.tar.xz -C /
-     wget https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage
+     wget https://github.com/AppImage/AppImageKit/releases/download/12/appimagetool-x86_64.AppImage
      chmod +x appimagetool-x86_64.AppImage
-     wget https://github.com/AppImage/AppImageKit/releases/download/continuous/AppRun-x86_64 
+     wget https://github.com/AppImage/AppImageKit/releases/download/12/AppRun-x86_64 
      chmod +x AppRun-x86_64
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu     
@@ -34,6 +34,13 @@ Vagrant.configure(2) do |config|
      cd /home/vagrant/PandA-bambu/build/dist
      rm -f usr/bin/eucalyptus  usr/bin/spider  usr/bin/tree-panda-gcc
      tar xvf ../../../clang+llvm-6.0.0-x86_64-linux-gnu-debian8.tar.xz
+     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-check clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/bugpoint clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-tidy
+     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-import-test clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/c-index-test clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-query
+     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clangd clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-refactor clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-change-namespace
+     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/find-all-symbols clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-include-fixer clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-reorder-fields
+     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-rename clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/modularize clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-func-mapping
+     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-offload-bundler clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/sancov
+     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/lib/*.a
      mkdir lib
      mkdir lib/x86_64-linux-gnu/
      cp /lib/x86_64-linux-gnu/libtinfo.so.5 lib/x86_64-linux-gnu/libtinfo.so.5
@@ -55,7 +62,7 @@ Vagrant.configure(2) do |config|
      echo "if [ \\\"\\\$#\\\" -eq 0 ]; then" >> usr/bin/bambu_wrapper.sh
      echo "    \\\$APPDIR/usr/bin/bambu" >> usr/bin/bambu_wrapper.sh
      echo "else" >> usr/bin/bambu_wrapper.sh
-     echo "   \\\$APPDIR/usr/bin/bambu \\\$@ --range-analysis-mode=skip" >> usr/bin/bambu_wrapper.sh
+     echo "   \\\$APPDIR/usr/bin/bambu \\\$@ --range-analysis-mode=skip --compiler=I386_CLANG6" >> usr/bin/bambu_wrapper.sh
      echo "   return_value=\\\$?" >> usr/bin/bambu_wrapper.sh
      echo "   if test \\\$return_value != 0; then" >> usr/bin/bambu_wrapper.sh
      echo "      exit \\\$return_value" >> usr/bin/bambu_wrapper.sh
