@@ -295,13 +295,13 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM9_CXXFLAGS -c plugin_test.cpp -o plugin_test.o"
+         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM9_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
          case $host_os in
            mingw*) 
              I386_CLANG9_PLUGIN_COMPILER=$plugin_compiler
              ;;
            *)
-             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM9_CXXFLAGS -c plugin_test.cpp -o plugin_test.o 2> /dev/null
+             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM9_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
              $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
              if test ! -f plugin_test.so; then
                echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-9.0-dev missing?"
