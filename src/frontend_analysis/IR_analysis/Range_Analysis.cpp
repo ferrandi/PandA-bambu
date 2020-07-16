@@ -1324,7 +1324,26 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          return ut_None;
       }
 #endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+      const auto hasBetterSuper = [&]() {
+         if(SSA->min && SSA->max)
+         {
+            RangeRef superRange(new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
+            if(superRange->isRegular() && superRange->getSpan() < interval->getSpan())
+            {
+               const auto superBW = isSigned ? Range::neededBits(superRange->getSignedMin(), superRange->getSignedMax(), true) : Range::neededBits(superRange->getUnsignedMin(), superRange->getUnsignedMax(), false);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+               interval = superRange;
+               newBW = superBW;
+               return true;
+            }
+         }
+         return false;
+      }();
+      
+      if(!hasBetterSuper)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+      }
    }
 
    auto getConstNode = [&](const RangeConstRef& range) {
@@ -3652,24 +3671,37 @@ RangeRef BinaryOpNode::eval() const
             {
                return RangeRef(new Range(Regular, sinkBW));
             }
-            return Range::fromBitValues(string_to_bitstring(ssa->bit_values), static_cast<bw_t>(ssa->bit_values.size()), sinkSigned);
+            std::string bits;
+            for(size_t i = 0ULL; i < ssa->bit_values.size(); ++i)
+            {
+               bits += (ssa->bit_values[i] == 'X' || ssa->bit_values[i] == 'U') ? '1' : ssa->bit_values[i];
+            }
+            const auto r = Range::fromBitValues(string_to_bitstring(bits), static_cast<bw_t>(bits.size()), sinkSigned);
+            THROW_ASSERT(r->isConstant(), "Range derived from <" + bits + "> should be constant");
+            return r;
          }();
          const auto op_code = this->getOpcode();
-         if((!bvRange->isFullSet() || bvRange->getBitWidth() < result->getBitWidth()) && (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
+         if((bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) && 
+            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reduced result range to " + bvRange->ToString() + "<" + (sinkSigned ? "signed " : "unsigned ") + ssa->bit_values + "> over result " + result->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mask result range with " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> over range " + result->ToString());
             // #if HAVE_ASSERTS
             //             const auto resEmpty = result->isEmpty();
             // #endif
             result = [&]() {
                if(bvRange->getBitWidth() < result->getBitWidth())
                {
-                  const auto reducedResult = result->truncate(bvRange->getBitWidth())->intersectWith(bvRange);
+                  auto reducedResult = result->truncate(bvRange->getBitWidth());
+                  // Mask application useful only when some bit is zero
+                  if(bvRange->getSignedMax() != -1)
+                  {
+                     reducedResult = reducedResult->And(bvRange);
+                  }
                   return sinkSigned ? reducedResult->sextOrTrunc(result->getBitWidth()) : reducedResult->zextOrTrunc(result->getBitWidth());
                }
                else
                {
-                  return result->intersectWith(bvRange);
+                  return result->And(bvRange);
                }
             }();
             // THROW_ASSERT(result->isEmpty() == resEmpty, "");
