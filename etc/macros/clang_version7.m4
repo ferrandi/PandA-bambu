@@ -44,12 +44,13 @@ for compiler in $CLANG_TO_BE_CHECKED; do
 
       llvm_config=`echo $clang_file | sed s/clang/llvm-config/`
       I386_LLVM_CONFIG7_EXE=$clang_dir/$llvm_config
-      I386_LLVM7_HEADER_DIR=`$I386_LLVM_CONFIG7_EXE --includedir`
-      if test "x$I386_LLVM7_HEADER_DIR" = "x"; then
+      LLVM7_CXXFLAGS=`$I386_LLVM_CONFIG7_EXE --cxxflags`
+      I386_LLVM7_CXXFLAGS="$LLVM7_CXXFLAGS -std=c++11 $3"
+      if test "x$I386_LLVM7_CXXFLAGS" = "x"; then
          echo "checking CLANG/LLVM plugin support... no. Package llvm-7.0 missing?"
          break;
       fi
-      echo "checking plugin directory...$I386_LLVM7_HEADER_DIR"
+      echo "llvm cxxflags...$I386_LLVM7_CXXFLAGS"
       cpp=`echo $clang_file | sed s/clang/clang-cpp/`
       I386_CLANG_CPP7_EXE=$clang_dir/$cpp
       if test -f $I386_CLANG_CPP7_EXE; then
@@ -294,12 +295,13 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
+         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM7_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
          case $host_os in
            mingw*) 
              I386_CLANG7_PLUGIN_COMPILER=$plugin_compiler
              ;;
            *)
-             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG7_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
+             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM7_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
              $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
              if test ! -f plugin_test.so; then
                echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-7.0-dev missing?"
@@ -362,7 +364,7 @@ if test x$I386_CLANG7_PLUGIN_COMPILER != x; then
   AC_SUBST(I386_CLANG7_CSROA_PLUGIN)
   AC_SUBST(I386_CLANG7_TOPFNAME_PLUGIN)
   AC_SUBST(I386_CLANG7_ASTANALYZER_PLUGIN)
-  AC_SUBST(I386_LLVM7_HEADER_DIR)
+  AC_SUBST(I386_LLVM7_CXXFLAGS)
   AC_SUBST(I386_CLANG7_EXE)
   AC_SUBST(I386_CLANG7_VERSION)
   AC_SUBST(I386_CLANG7_PLUGIN_COMPILER)

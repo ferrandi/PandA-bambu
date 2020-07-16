@@ -292,8 +292,8 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM5_CXXFLAGS -c plugin_test.cpp -o plugin_test.o"
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM5_CXXFLAGS -c plugin_test.cpp -o plugin_test.o 2> /dev/null
+         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM5_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM5_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
          $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
          if test ! -f plugin_test.so; then
             echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-5.0-dev missing?"
