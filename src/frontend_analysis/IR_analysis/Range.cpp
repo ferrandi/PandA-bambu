@@ -1284,6 +1284,14 @@ RangeRef Range::Or(const RangeConstRef& other) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isConstant() && this->getSignedMax() == 0)
+   {
+      return RangeRef(other->clone());
+   }
+   if(other->isConstant() && other->getSignedMax() == 0)
+   {
+      return RangeRef(this->clone());
+   }
 
    const auto& a = this->isAnti() ? Min : this->getLower();
    const auto& b = this->isAnti() ? Max : this->getUpper();
@@ -1299,6 +1307,14 @@ RangeRef Range::And(const RangeConstRef& other) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isConstant() && this->getSignedMax() == -1)
+   {
+      return RangeRef(other->clone());
+   }
+   if(other->isConstant() && other->getSignedMax() == -1)
+   {
+      return RangeRef(this->clone());
+   }
 
    const auto& a = this->isAnti() ? Min : this->getLower();
    const auto& b = this->isAnti() ? Max : this->getUpper();
