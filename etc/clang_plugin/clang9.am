@@ -213,10 +213,10 @@ $(I386_CLANG9_ASTANALYZER_PLUGIN) : clang9_plugin_ASTAnalyzer.o
 clang9_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG9_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp -o opt_clang9_plugin_dumpGimpleEmpty.o; \
@@ -226,10 +226,10 @@ clang9_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimp
 clang9_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang9_plugin_dumpGimpleSSA.o;\
@@ -239,10 +239,10 @@ clang9_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang9_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp -o opt_clang9_plugin_dumpGimpleSSACpp.o;\
@@ -252,10 +252,10 @@ clang9_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 clang9_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp -o opt_clang9_plugin_expandMemOps.o; \
@@ -265,10 +265,10 @@ clang9_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOp
 clang9_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp -o opt_clang9_plugin_GepiCanon.o; \
@@ -278,10 +278,10 @@ clang9_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp 
 clang9_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp -o opt_clang9_plugin_CSROA.o; \
@@ -291,10 +291,10 @@ clang9_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_sr
 clang9_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp -o opt_clang9_plugin_topfname.o; \
@@ -304,10 +304,10 @@ clang9_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(
 clang9_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp -o clang9_plugin_ASTAnalyzer.o;\
@@ -316,10 +316,10 @@ clang9_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.
 clang9_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp -o clang9_dumpGimple.o;\
@@ -329,10 +329,10 @@ if BUILD_PTAA
 clang9_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp -o clang9_HardekopfLin_AA.o ; \
@@ -342,10 +342,10 @@ endif
 clang9_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp -o clang9_RangeAnalysis.o; \
@@ -354,10 +354,10 @@ clang9_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $
 clang9_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp -o clang9_eSSA.o; \
@@ -366,10 +366,10 @@ clang9_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 clang9_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp -o clang9_GepiCanon.o; \
@@ -379,10 +379,10 @@ clang9_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp
 clang9_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM9_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' $(I386_LLVM9_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG9_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp -o clang9_CSROA.o; \
