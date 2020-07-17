@@ -3682,28 +3682,18 @@ RangeRef BinaryOpNode::eval() const
          }();
          const auto op_code = this->getOpcode();
          if((bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) && 
-            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /*|| op_code == minus_expr_K*/ || op_code == pointer_plus_expr_K))
+            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /* || op_code == minus_expr_K */ || op_code == pointer_plus_expr_K))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mask result range with " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> over range " + result->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mask result range with " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" + (sinkSigned ? "signed" : "unsigned") + "> over range " + result->ToString());
             // #if HAVE_ASSERTS
             //             const auto resEmpty = result->isEmpty();
             // #endif
-            result = [&]() {
-               if(bvRange->getBitWidth() < result->getBitWidth())
-               {
-                  auto reducedResult = result->truncate(bvRange->getBitWidth());
-                  // Mask application useful only when some bit is zero
-                  if(bvRange->getSignedMax() != -1)
-                  {
-                     reducedResult = reducedResult->And(bvRange);
-                  }
-                  return sinkSigned ? reducedResult->sextOrTrunc(result->getBitWidth()) : reducedResult->zextOrTrunc(result->getBitWidth());
-               }
-               else
-               {
-                  return result->And(bvRange);
-               }
-            }();
+            const auto restrictedResult = result->And(sinkSigned ? bvRange->sextOrTrunc(result->getBitWidth()) : bvRange->zextOrTrunc(result->getBitWidth()));
+            // Result mask not always result in smaller range
+            if(result->getSpan() > restrictedResult->getSpan())
+            {
+               result = restrictedResult;
+            }
             // THROW_ASSERT(result->isEmpty() == resEmpty, "");
          }
       }
