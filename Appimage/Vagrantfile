@@ -23,6 +23,15 @@ Vagrant.configure(2) do |config|
      chmod +x appimagetool-x86_64.AppImage
      wget https://github.com/AppImage/AppImageKit/releases/download/12/AppRun-x86_64 
      chmod +x AppRun-x86_64
+     wget https://github.com/niess/python-appimage/releases/download/python3.8/python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage
+     chmod +x python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage
+     ./python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage --appimage-extract
+     mv squashfs-root python3.8
+     rm -f python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage
+     cd python3.8
+     tar cvJf ../python3.8.tar.xz *
+     cd ..
+     rm -rf python3.8
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu     
      make -f Makefile.init
@@ -59,6 +68,8 @@ Vagrant.configure(2) do |config|
      echo "Categories=Development;" >> bambu.desktop
      echo "#!/bin/bash" > usr/bin/bambu_wrapper.sh
      echo "export LC_ALL=\\\"C\\\"" >> usr/bin/bambu_wrapper.sh
+     echo "export PYTHONHOME=" >> usr/bin/bambu_wrapper.sh
+     echo "export PYTHONPATH=" >> usr/bin/bambu_wrapper.sh
      echo "if [ \\\"\\\$#\\\" -eq 0 ]; then" >> usr/bin/bambu_wrapper.sh
      echo "    \\\$APPDIR/usr/bin/bambu" >> usr/bin/bambu_wrapper.sh
      echo "else" >> usr/bin/bambu_wrapper.sh
@@ -70,6 +81,7 @@ Vagrant.configure(2) do |config|
      echo "   exit 0" >> usr/bin/bambu_wrapper.sh
      echo "fi" >> usr/bin/bambu_wrapper.sh
      chmod +x usr/bin/bambu_wrapper.sh
+     tar xvf ../../python3.8.tar.xz
      cd ..
      ../../appimagetool-x86_64.AppImage dist
      dd if=/dev/zero of=/EMPTY bs=1M
