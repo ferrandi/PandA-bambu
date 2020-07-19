@@ -1328,10 +1328,12 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          if(SSA->min && SSA->max)
          {
             RangeRef superRange(new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
+            // Intersect with computed range, because range computed from LLVM range analysis may not be valid any more
+            superRange = superRange->intersectWith(interval);
             if(superRange->isRegular() && superRange->getSpan() < interval->getSpan())
             {
                const auto superBW = isSigned ? Range::neededBits(superRange->getSignedMin(), superRange->getSignedMax(), true) : Range::neededBits(superRange->getUnsignedMin(), superRange->getUnsignedMax(), false);
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
                interval = superRange;
                newBW = superBW;
                return true;
