@@ -86,8 +86,6 @@
 #include "tree_reindex.hpp"
 #include "utility.hpp"
 
-#define NO_REAL
-
 Bit_Value_opt::Bit_Value_opt(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, BIT_VALUE_OPT, _design_flow_manager, _parameters), modified(false), restart_dead_code(false)
 {

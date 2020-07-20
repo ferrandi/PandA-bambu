@@ -76,8 +76,6 @@
 #include <string>
 #include <utility>
 
-#define NO_REAL
-
 BitValueIPA::BitValueIPA(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par)
     : ApplicationFrontendFlowStep(AM, BIT_VALUE_IPA, dfm, par), BitLatticeManipulator(AM->get_tree_manager(), parameters->get_class_debug_level(GET_CLASS(*this)))
 {
@@ -475,7 +473,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(returned_tn), fu_signed);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "constant return value: " + bitstring_to_string(res_tmp));
                         }
-#ifndef NO_REAL
                         else if(ret_kind == real_cst_K)
                         {
                            const auto* rc = GetPointer<const real_cst>(returned_tn);
@@ -493,7 +490,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            sign_reduce_bitstring(res_tmp, false);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "constant return value: " + bitstring_to_string(res_tmp));
                         }
-#endif
                         else
                         {
                            res_tmp = create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
@@ -746,7 +742,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
-#ifndef NO_REAL
                            else if(ap_kind == real_cst_K)
                            {
                               const auto* rc = GetPointer<const real_cst>(ap_node);
@@ -764,7 +759,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               sign_reduce_bitstring(res_tmp, false);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
-#endif
                            else if(ap_kind == var_decl_K)
                            {
                               res_tmp = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(pd)));
@@ -803,7 +797,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node), parm_signed);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
                         }
-#ifndef NO_REAL
                         else if(ap_kind == real_cst_K)
                         {
                            const auto* rc = GetPointer<const real_cst>(ap_node);
@@ -821,7 +814,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            sign_reduce_bitstring(res_tmp, false);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
                         }
-#endif
                         else if(ap_kind == var_decl_K)
                         {
                            res_tmp = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(pd)));

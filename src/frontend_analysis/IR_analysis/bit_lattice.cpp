@@ -62,8 +62,6 @@
 #include "string_manipulation.hpp"
 #include "utility.hpp"
 
-#define NO_REAL
-
 BitLatticeManipulator::BitLatticeManipulator(const tree_managerConstRef _TM, const int _bl_debug_level) : TM(_TM), bl_debug_level(_bl_debug_level)
 {
 }
@@ -211,11 +209,7 @@ std::deque<bit_lattice> BitLatticeManipulator::sup(const std::deque<bit_lattice>
    const tree_nodeConstRef node = TM->get_tree_node_const(output_uid);
    const auto kind = node->get_kind();
    size_t out_type_size = 0;
-   if(kind == ssa_name_K or kind == integer_cst_K
-#ifndef NO_REAL
-      or kind == real_cst_K
-#endif
-   )
+   if(kind == ssa_name_K or kind == integer_cst_K or kind == real_cst_K)
    {
       out_type_size = size(TM, tree_helper::get_type_index(TM, output_uid));
    }
@@ -331,11 +325,7 @@ std::deque<bit_lattice> BitLatticeManipulator::inf(const std::deque<bit_lattice>
    const tree_nodeConstRef node = TM->get_tree_node_const(output_uid);
    const auto kind = node->get_kind();
    unsigned int out_type_size = 0;
-   if(kind == ssa_name_K or kind == integer_cst_K
-#ifndef NO_REAL
-      or kind == real_cst_K
-#endif
-   )
+   if(kind == ssa_name_K or kind == integer_cst_K or kind == real_cst_K)
    {
       out_type_size = size(TM, tree_helper::get_type_index(TM, output_uid));
    }
@@ -430,7 +420,6 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
       {
          cur_bitstring = create_bitstring_from_constant(GetPointer<integer_cst>(el)->value, elements_bitsize, ssa_is_signed);
       }
-#ifndef NO_REAL
       else if(el->get_kind() == real_cst_K)
       {
          THROW_ASSERT(elements_bitsize == 64 || elements_bitsize == 32, "Unhandled real type size (" + STR(elements_bitsize) + ")");
@@ -445,7 +434,6 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
          }
          sign_reduce_bitstring(cur_bitstring, ssa_is_signed);
       }
-#endif
       else if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))
       {
          THROW_ASSERT(array_dims.size() > 1 || GET_NODE(c->type)->get_kind() == record_type_K, "invalid nested constructors:" + ctor_tn->ToString() + " " + STR(array_dims.size()));
@@ -483,11 +471,7 @@ std::deque<bit_lattice> BitLatticeManipulator::string_cst_bitstring(const tree_n
 
 bool BitLatticeManipulator::is_handled_by_bitvalue(unsigned int type_id) const
 {
-   return
-#ifdef NO_REAL
-       not tree_helper::is_real(TM, type_id) and
-#endif
-       not tree_helper::is_a_complex(TM, type_id) and not tree_helper::is_a_vector(TM, type_id) and not tree_helper::is_a_struct(TM, type_id);
+   return not tree_helper::is_a_complex(TM, type_id) and not tree_helper::is_a_vector(TM, type_id) and not tree_helper::is_a_struct(TM, type_id);
 }
 
 bool BitLatticeManipulator::mix()

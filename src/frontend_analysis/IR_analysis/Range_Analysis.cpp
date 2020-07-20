@@ -3708,6 +3708,11 @@ RangeRef BinaryOpNode::eval() const
          result = result->zextOrTrunc(bw);
       }
    }
+   else if(op1->isReal() && op2->isReal())
+   {
+      THROW_ASSERT(this->getOpcode() == eq_expr_K || this->getOpcode() == ne_expr_K, tree_node::GetString(this->getOpcode()) + " with real operands not supported");
+      result = evaluate(this->getOpcode(), bw, op1, op2, false);
+   }
    else if(op1->isEmpty() || op2->isEmpty())
    {
       result = getRangeFor(getSink()->getValue(), Empty);

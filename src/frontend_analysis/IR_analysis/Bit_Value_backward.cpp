@@ -56,8 +56,6 @@
 #include "string_manipulation.hpp"
 #include <boost/range/adaptors.hpp>
 
-#define NO_REAL
-
 std::deque<bit_lattice> Bit_Value::backward_compute_result_from_uses(const ssa_name& ssa, const statement_list& sl, unsigned int bb_loop_id) const
 {
    const unsigned int output_uid = ssa.index;

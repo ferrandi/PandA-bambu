@@ -824,3 +824,46 @@ BOOST_AUTO_TEST_CASE( real_range )
     BOOST_REQUIRE(floatOne.isConstant());
     BOOST_REQUIRE_EQUAL(floatOne.getSign()->getUnsignedMax(), 0);
 }
+
+BOOST_AUTO_TEST_CASE( real_eq )
+{
+    RangeRef stdFullRange(new Range(Regular, 32));
+    RangeRef stdFullRange64(new Range(Regular, 64));
+    RangeRef pzerod(new RealRange(Range(Regular, 1, 0, 0), Range(Regular, 11, 0, 0), Range(Regular, 52, 0, 0)));
+    RangeRef nzerod(new RealRange(Range(Regular, 1, 1, 1), Range(Regular, 11, 0, 0), Range(Regular, 52, 0, 0)));
+    RangeRef negWithZero(new RealRange(Range(Regular, 1, 1, 1), Range(Regular, 11, 0, 1035), Range(Regular, 52)));
+    RangeRef noZero(new RealRange(Range(Regular, 1, 0, 1), Range(Regular, 11, 997, 1035), Range(Regular, 52)));
+
+    auto eq1 = pzerod->Eq(nzerod, 1);
+    auto ne1 = pzerod->Ne(nzerod, 1);
+    BOOST_REQUIRE(eq1->isConstant());
+    BOOST_REQUIRE_EQUAL(eq1->getUnsignedMin(), 1);
+    BOOST_REQUIRE(ne1->isConstant());
+    BOOST_REQUIRE_EQUAL(ne1->getUnsignedMin(), 0);
+
+    auto eq2 = negWithZero->Eq(nzerod, 1);
+    auto ne2 = negWithZero->Ne(nzerod, 1);
+    BOOST_REQUIRE(eq2->isSameRange(ne2));
+    BOOST_REQUIRE_EQUAL(eq2->getUnsignedMin(), 0);
+    BOOST_REQUIRE_EQUAL(eq2->getUnsignedMax(), 1);
+
+    auto eq3 = negWithZero->Eq(pzerod, 1);
+    auto ne3 = negWithZero->Ne(pzerod, 1);
+    BOOST_REQUIRE(eq3->isSameRange(ne3));
+    BOOST_REQUIRE_EQUAL(eq3->getUnsignedMin(), 0);
+    BOOST_REQUIRE_EQUAL(eq3->getUnsignedMax(), 1);
+
+    auto eq4 = noZero->Eq(pzerod, 1);
+    auto ne4 = noZero->Ne(pzerod, 1);
+    BOOST_REQUIRE(eq4->isConstant());
+    BOOST_REQUIRE_EQUAL(eq4->getUnsignedMax(), 0);
+    BOOST_REQUIRE(ne4->isConstant());
+    BOOST_REQUIRE_EQUAL(ne4->getUnsignedMin(), 1);
+
+    auto eq5 = noZero->Eq(nzerod, 1);
+    auto ne5 = noZero->Ne(nzerod, 1);
+    BOOST_REQUIRE(eq5->isConstant());
+    BOOST_REQUIRE_EQUAL(eq5->getUnsignedMax(), 0);
+    BOOST_REQUIRE(ne5->isConstant());
+    BOOST_REQUIRE_EQUAL(ne5->getUnsignedMin(), 1);
+}
