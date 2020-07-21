@@ -7,7 +7,7 @@ rm -rf constrained_synth_xilinx_vx7330_ise
 mkdir -p constrained_synth_xilinx_vx7330_ise
 cd constrained_synth_xilinx_vx7330_ise
 echo "# ISE synthesis and ICARUS simulation"
-bambu -v4 $root_dir/module.c --generate-tb=$root_dir/test.xml --simulator=ICARUS --device-name=xc7vx330t,-1,ffg1157 --evaluation --experimental-setup=BAMBU --generate-interface=WB4 $root_dir/constraints_STD.xml --clock-period=5  --cprf=0.9 --skip-pipe-parameter=1
+timeout 2h bambu -v4 $root_dir/module.c --generate-tb=$root_dir/test.xml --simulator=ICARUS --device-name=xc7vx330t,-1,ffg1157 --evaluation --experimental-setup=BAMBU --generate-interface=WB4 $root_dir/constraints_STD.xml --clock-period=5  --cprf=0.9 --skip-pipe-parameter=1
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

@@ -176,9 +176,14 @@ if BUILD_SYNTHESIS
 wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.cpp : wrapper/synthesis/nanoxplore/NG-medium.data wrapper/synthesis/nanoxplore/NG-large.data
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/nanoxplore/NG-medium.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG-medium.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/NG-medium.xml wrapper/synthesis/nanoxplore/NG-medium.data
+	gzip -c $(top_srcdir)/etc/devices/NanoXplore_devices/NG-medium.xml > wrapper/synthesis/nanoxplore/NG-medium.data
 wrapper/synthesis/nanoxplore/NG-large.data: $(top_srcdir)/etc/devices/NanoXplore_devices/NG-large.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/NG-large.xml wrapper/synthesis/nanoxplore/NG-large.data
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/NG-large.xml > wrapper/synthesis/nanoxplore/NG-large.data
+
+wrapper_dir = $(pkgdatadir)/wrapper
+wrapper_synthesis_dir = $(wrapper_dir)/synthesis
+wrapper_synthesis_nanoxplore_dir = $(wrapper_synthesis_dir)/nanoxplore
+wrapper_synthesis_nanoxplore__DATA = wrapper/synthesis/nanoxplore/NG-medium.data wrapper/synthesis/nanoxplore/NG-large.data
 
   noinst_HEADERS += \
    wrapper/synthesis/nanoxplore/NanoXploreBackendFlow.hpp \
@@ -220,19 +225,23 @@ lib_Alterawrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 wrapper/synthesis/altera/AlteraBackendFlow.cpp : wrapper/synthesis/altera/CycloneII.data wrapper/synthesis/altera/CycloneII-R.data wrapper/synthesis/altera/CycloneV.data wrapper/synthesis/altera/StratixIV.data wrapper/synthesis/altera/StratixV.data
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/altera/CycloneII.data: $(top_srcdir)/etc/devices/Altera_devices/CycloneII.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/CycloneII.xml wrapper/synthesis/altera/CycloneII.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/CycloneII.xml > wrapper/synthesis/altera/CycloneII.data
 
 wrapper/synthesis/altera/CycloneII-R.data: $(top_srcdir)/etc/devices/Altera_devices/CycloneII-R.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/CycloneII-R.xml wrapper/synthesis/altera/CycloneII-R.data
-
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/CycloneII-R.xml > wrapper/synthesis/altera/CycloneII-R.data
+ 
 wrapper/synthesis/altera/CycloneV.data: $(top_srcdir)/etc/devices/Altera_devices/CycloneV.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/CycloneV.xml wrapper/synthesis/altera/CycloneV.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/CycloneV.xml > wrapper/synthesis/altera/CycloneV.data
 
 wrapper/synthesis/altera/StratixIV.data: $(top_srcdir)/etc/devices/Altera_devices/StratixIV.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/StratixIV.xml wrapper/synthesis/altera/StratixIV.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/StratixIV.xml > wrapper/synthesis/altera/StratixIV.data
 
 wrapper/synthesis/altera/StratixV.data: $(top_srcdir)/etc/devices/Altera_devices/StratixV.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/StratixV.xml wrapper/synthesis/altera/StratixV.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/StratixV.xml > wrapper/synthesis/altera/StratixV.data
+
+wrapper_synthesis_altera_dir = $(wrapper_synthesis_dir)/altera
+wrapper_synthesis_altera__DATA = wrapper/synthesis/altera/CycloneII.data wrapper/synthesis/altera/CycloneII-R.data wrapper/synthesis/altera/CycloneV.data wrapper/synthesis/altera/StratixIV.data wrapper/synthesis/altera/StratixV.data
+
 
 noinst_HEADERS += \
    wrapper/synthesis/altera/AlteraBackendFlow.hpp \
@@ -318,36 +327,42 @@ endif
 
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/xilinx/Virtex-4.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4.xml wrapper/synthesis/xilinx/Virtex-4.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4.xml > wrapper/synthesis/xilinx/Virtex-4.data
 
 if BUILD_TASTE
 wrapper/synthesis/xilinx/Virtex-4-Taste.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4-Taste.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4-Taste.xml wrapper/synthesis/xilinx/Virtex-4-Taste.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-4-Taste.xml > wrapper/synthesis/xilinx/Virtex-4-Taste.data
 endif
 
 wrapper/synthesis/xilinx/Virtex-5.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-5.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-5.xml wrapper/synthesis/xilinx/Virtex-5.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-5.xml > wrapper/synthesis/xilinx/Virtex-5.data
 
 wrapper/synthesis/xilinx/Virtex-6.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-6.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-6.xml wrapper/synthesis/xilinx/Virtex-6.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-6.xml > wrapper/synthesis/xilinx/Virtex-6.data
 
 wrapper/synthesis/xilinx/Virtex-7.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-7.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-7.xml wrapper/synthesis/xilinx/Virtex-7.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-7.xml > wrapper/synthesis/xilinx/Virtex-7.data
 
 wrapper/synthesis/xilinx/Virtex-7-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-7-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-7-VVD.xml wrapper/synthesis/xilinx/Virtex-7-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Virtex-7-VVD.xml > wrapper/synthesis/xilinx/Virtex-7-VVD.data
 
 wrapper/synthesis/xilinx/Artix-7-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Artix-7-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Artix-7-VVD.xml wrapper/synthesis/xilinx/Artix-7-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Artix-7-VVD.xml > wrapper/synthesis/xilinx/Artix-7-VVD.data
 
 wrapper/synthesis/xilinx/Zynq.data: $(top_srcdir)/etc/devices/Xilinx_devices/Zynq.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Zynq.xml wrapper/synthesis/xilinx/Zynq.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Zynq.xml > wrapper/synthesis/xilinx/Zynq.data
 
 wrapper/synthesis/xilinx/Zynq-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-VVD.xml wrapper/synthesis/xilinx/Zynq-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-VVD.xml > wrapper/synthesis/xilinx/Zynq-VVD.data
 
 wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-YOSYS-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-YOSYS-VVD.xml wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Zynq-YOSYS-VVD.xml > wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data
+
+
+wrapper_synthesis_xilinx_dir = $(wrapper_synthesis_dir)/xilinx
+wrapper_synthesis_xilinx__DATA = wrapper/synthesis/xilinx/Virtex-4.data wrapper/synthesis/xilinx/Virtex-4-Taste.data wrapper/synthesis/xilinx/Virtex-5.data wrapper/synthesis/xilinx/Virtex-6.data wrapper/synthesis/xilinx/Virtex-7.data wrapper/synthesis/xilinx/Virtex-7-VVD.data wrapper/synthesis/xilinx/Artix-7-VVD.data wrapper/synthesis/xilinx/Zynq.data wrapper/synthesis/xilinx/Zynq-VVD.data wrapper/synthesis/xilinx/Zynq-YOSYS-VVD.data
+
+
   noinst_HEADERS += wrapper/synthesis/xilinx/XilinxBackendFlow.hpp wrapper/synthesis/xilinx/XilinxWrapper.hpp wrapper/synthesis/xilinx/vivado_flow_wrapper.hpp
   lib_Xilinxwrapper_la_SOURCES = wrapper/synthesis/xilinx/XilinxBackendFlow.cpp wrapper/synthesis/xilinx/XilinxWrapper.cpp wrapper/synthesis/xilinx/vivado_flow_wrapper.cpp
 if BUILD_TASTE
@@ -386,7 +401,11 @@ endif
 wrapper/synthesis/lattice/LatticeBackendFlow.cpp : wrapper/synthesis/lattice/LatticeECP3.data
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/lattice/LatticeECP3.data: $(top_srcdir)/etc/devices/Lattice_devices/LatticeECP3.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Lattice_devices/LatticeECP3.xml wrapper/synthesis/lattice/LatticeECP3.data
+	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LatticeECP3.xml > wrapper/synthesis/lattice/LatticeECP3.data
+
+
+wrapper_synthesis_lattice_dir = $(wrapper_synthesis_dir)/lattice
+wrapper_synthesis_lattice__DATA = wrapper/synthesis/lattice/LatticeECP3.data
 
   noinst_HEADERS += wrapper/synthesis/lattice/LatticeBackendFlow.hpp wrapper/synthesis/lattice/LatticeWrapper.hpp wrapper/synthesis/lattice/lattice_flow_wrapper.hpp 
   lib_Latticewrapper_la_SOURCES = wrapper/synthesis/lattice/LatticeBackendFlow.cpp wrapper/synthesis/lattice/LatticeWrapper.cpp wrapper/synthesis/lattice/lattice_flow_wrapper.cpp 
@@ -489,12 +508,16 @@ endif
 wrapper/synthesis/ASICBackendFlow.cpp : wrapper/synthesis/Nangate.data
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml wrapper/synthesis/Nangate.data
+	gzip -c  $(top_srcdir)/etc/devices/ASIC_devices/Nangate.xml > wrapper/synthesis/Nangate.data
+
+
 
 wrapper/synthesis/BashBackendFlow.cpp : wrapper/synthesis/Generic-yosysOpenROAD.data
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/Generic-yosysOpenROAD.data: $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml wrapper/synthesis/Generic-yosysOpenROAD.data
+	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/Generic-yosysOpenROAD.xml > wrapper/synthesis/Generic-yosysOpenROAD.data
+
+wrapper_synthesis__DATA = wrapper/synthesis/Nangate.data wrapper/synthesis/Generic-yosysOpenROAD.data
 
   lib_synthesis_la_LIBADD = \
                         lib_Xilinxwrapper.la \

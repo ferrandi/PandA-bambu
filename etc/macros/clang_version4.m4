@@ -44,12 +44,13 @@ for compiler in $CLANG_TO_BE_CHECKED; do
 
       llvm_config=`echo $clang_file | sed s/clang/llvm-config/`
       I386_LLVM_CONFIG4_EXE=$clang_dir/$llvm_config
-      I386_LLVM4_HEADER_DIR=`$I386_LLVM_CONFIG4_EXE --includedir`
-      if test "x$I386_LLVM4_HEADER_DIR" = "x"; then
+      LLVM4_CXXFLAGS=`$I386_LLVM_CONFIG4_EXE --cxxflags`
+      I386_LLVM4_CXXFLAGS="$LLVM4_CXXFLAGS -std=c++11 $3"
+      if test "x$I386_LLVM4_CXXFLAGS" = "x"; then
          echo "checking CLANG/LLVM plugin support... no. Package llvm-4.0 missing?"
          break;
       fi
-      echo "checking plugin directory...$I386_LLVM4_HEADER_DIR"
+      echo "llvm cxxflags...$I386_LLVM4_CXXFLAGS"
       cpp=`echo $clang_file | sed s/clang/clang-cpp/`
       I386_CLANG_CPP4_EXE=$clang_dir/$cpp
       if test -f $I386_CLANG_CPP4_EXE; then
@@ -282,17 +283,18 @@ PLUGIN_TEST
              plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG4_EXE --ldflags --libs --system-libs`"
            ;;
            darwin*)
-             plugin_option='-fPIC -shared -undefined dynamic_lookup '
+             plugin_option='-fPIC -shared -undefined dynamic_lookup -fno-rtti '
            ;;
            *)
-             plugin_option='-fPIC -shared'
+             plugin_option='-fPIC -shared -fno-rtti -Wl,-znodelete'
            ;;
          esac
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG4_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
-         $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so  2> /dev/null
+         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM4_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM4_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
+         $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
          if test ! -f plugin_test.so; then
             echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-4.0-dev missing?"
             continue
@@ -350,11 +352,10 @@ if test x$I386_CLANG4_PLUGIN_COMPILER != x; then
   AC_SUBST(I386_CLANG4_SSA_PLUGINCPP)
   AC_SUBST(I386_CLANG4_EXPANDMEMOPS_PLUGIN)
   AC_SUBST(I386_CLANG4_GEPICANON_PLUGIN)
-  AC_SUBST(I386_CLANG4_GEPICANON_PLUGIN)
   AC_SUBST(I386_CLANG4_CSROA_PLUGIN)
   AC_SUBST(I386_CLANG4_TOPFNAME_PLUGIN)
   AC_SUBST(I386_CLANG4_ASTANALYZER_PLUGIN)
-  AC_SUBST(I386_LLVM4_HEADER_DIR)
+  AC_SUBST(I386_LLVM4_CXXFLAGS)
   AC_SUBST(I386_CLANG4_EXE)
   AC_SUBST(I386_CLANG4_VERSION)
   AC_SUBST(I386_CLANG4_PLUGIN_COMPILER)
@@ -381,4 +382,3 @@ dnl switch back to old language
 AC_LANG_POP([C])
 
 ])
-

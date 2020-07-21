@@ -35,6 +35,6 @@ TEST_CASE( "Extract linear part from MAJ XAG", "[extract_linear]" )
   CHECK( 1u == xag2.num_pos() );
   CHECK( 4u == xag2.num_gates() );
 
-  const auto func = simulate<kitty::static_truth_table<3>>( xag2 )[0u];
+  const auto func = simulate<kitty::static_truth_table<3u>>( xag2 )[0u];
   CHECK( 0xe8u == func._bits );
 }

@@ -75,7 +75,6 @@ public:
     static_assert( has_create_po_v<Ntk>, "Ntk does not implement the create_po function" );
     static_assert( has_get_constant_v<Ntk>, "Ntk does not implement the get_constant function" );
     static_assert( has_create_node_v<Ntk>, "Ntk does not implement the create_node function" );
-
     signals["gnd"] = _ntk.get_constant( false );
     signals["vdd"] = _ntk.get_constant( true );
   }

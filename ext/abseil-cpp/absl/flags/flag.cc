@@ -16,13 +16,11 @@
 #include "absl/flags/flag.h"
 
 #include "absl/base/config.h"
-#include "absl/flags/internal/commandlineflag.h"
-#include "absl/flags/internal/flag.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
 
-// This global nutex protects on-demand construction of flag objects in MSVC
+// This global mutex protects on-demand construction of flag objects in MSVC
 // builds.
 #if defined(_MSC_VER) && !defined(__clang__)
 

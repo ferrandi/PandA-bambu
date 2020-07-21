@@ -405,6 +405,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       std::deque<bit_lattice> arg1_bitstring = best.at(arg1_uid);
       if(tree_helper::is_real(TM, arg1_uid))
       {
+         // TODO: implement back propagation for real variables
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer Error: operation unhandled yet with real type operand -> " + GET_NODE(ga->op1)->get_kind_text());
          return std::deque<bit_lattice>();
       }

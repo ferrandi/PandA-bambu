@@ -310,6 +310,12 @@ static inline int sat_solver_set_random(sat_solver* s, int fNotUseRandom)
 
 static inline void sat_solver_bookmark(sat_solver* s)
 {
+    if (s->qtail != s->qhead)
+    {
+        int status = sat_solver_simplify(s);
+        assert(status!=0);
+        assert(s->qtail == s->qhead);
+    }
     assert( s->qhead == s->qtail );
     s->iVarPivot    = s->size;
     s->iTrailPivot  = s->qhead;

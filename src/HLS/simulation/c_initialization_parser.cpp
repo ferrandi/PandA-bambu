@@ -73,7 +73,7 @@ void CInitializationParser::Parse(CInitializationParserFunctorRef c_initializati
       do
       {
          candidate_out_file_name = output_parameter_initialization_filename + seed_name + "_" + std::to_string(progressive++) + ".data";
-      } while (boost::filesystem::exists(candidate_out_file_name));
+      } while(boost::filesystem::exists(candidate_out_file_name));
       c_initialization_parser_functor->ActivateFileInit(candidate_out_file_name);
    }
    const auto parsed_stream = fileIO_istream_open_from_string(initialization_string);

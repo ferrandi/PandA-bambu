@@ -263,7 +263,6 @@ void MemoryInitializationCWriter::Process(const std::string& content)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added code to write " + content + " (" + STR(binary_value.size() / 8) + " bytes) in binary form to initialize memory");
 }
 
-
 void MemoryInitializationCWriter::ActivateFileInit(const std::string& filename)
 {
    write_in_a_file = true;

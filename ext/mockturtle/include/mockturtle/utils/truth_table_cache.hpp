@@ -142,7 +142,7 @@ uint32_t truth_table_cache<TT>::insert( TT tt )
   const auto size = _data.size();
   const auto index = static_cast<uint32_t>( 2 * size + is_compl );
   _data.push_back( tt );
-  _indexes[tt] = size;
+  _indexes[tt] = static_cast<unsigned int>( size );
   return index;
 }
 

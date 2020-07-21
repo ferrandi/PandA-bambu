@@ -75,9 +75,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    bool requireESSA;
    int execution_mode;
 
-   ConstraintGraphRef CG;
-
-   bool finalize();
+   bool finalize(ConstraintGraphRef);
 
  protected:
    /// stores the function ids of the functions whose Dead Code need to be restarted

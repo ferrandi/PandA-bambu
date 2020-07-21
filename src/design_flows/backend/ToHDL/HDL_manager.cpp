@@ -91,6 +91,7 @@
 #include <utility>
 
 /// technology includes
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
@@ -153,25 +154,25 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
       {
          if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" && language == HDLWriter_Language::VERILOG)
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
          else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "" && language == HDLWriter_Language::VHDL)
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
          else if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "")
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
          else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "")
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
@@ -204,9 +205,10 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written components");
    /// write the tail of the file
    writer->write_tail(structural_objectRef());
-   writer->WriteFile(filename + writer->get_extension());
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename + writer->get_extension());
-   return filename + writer->get_extension();
+   auto filename_ext = GetPath(filename + writer->get_extension());
+   writer->WriteFile(filename_ext);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename_ext);
+   return filename_ext;
 }
 
 void HDL_manager::write_components(const std::string& filename, const std::list<structural_objectRef>& components, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files)

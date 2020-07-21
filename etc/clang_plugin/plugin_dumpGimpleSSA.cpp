@@ -44,6 +44,7 @@
 #include "llvm/Analysis/AssumptionCache.h"
 #include "llvm/Analysis/DominanceFrontier.h"
 #include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/Analysis/LoopInfo.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/PassManager.h"
@@ -51,8 +52,8 @@
 #include "llvm/PassRegistry.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
-//#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
-//#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
+#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
+#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/MemoryDependenceAnalysis.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #if __clang_major__ != 4
@@ -62,9 +63,7 @@
 #endif
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
-#ifdef UNIFYFUNCTIONEXITNODES
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
-#endif
 #include "llvm-c/Transforms/Scalar.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/InitializePasses.h"
@@ -77,7 +76,6 @@
 #include <boost/tokenizer.hpp>
 
 #define PRINT_DBG_MSG 0
-//#define UNIFYFUNCTIONEXITNODES
 
 namespace llvm
 {
@@ -98,13 +96,14 @@ namespace llvm
          initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());
          // initializeMemorySSAPrinterLegacyPassPass(*PassRegistry::getPassRegistry());
          initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
-         // initializeCFLSteensAAWrapperPassPass(*PassRegistry::getPassRegistry());
-         // initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeCFLSteensAAWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
          initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
          initializeDominanceFrontierWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeUnifyFunctionExitNodesPass(*PassRegistry::getPassRegistry());
       }
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
@@ -178,14 +177,16 @@ namespace llvm
       }
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
+         AU.addRequired<UnifyFunctionExitNodes>();
+         AU.addRequired<CFLSteensAAWrapperPass>();
+         AU.addRequired<TypeBasedAAWrapperPass>();
          getLoopAnalysisUsage(AU);
+
          AU.addRequired<MemoryDependenceWrapperPass>();
          AU.addRequired<MemorySSAWrapperPass>();
          //           AU.addRequired<MemorySSAPrinterLegacyPass>();
          AU.addRequired<LazyValueInfoWrapperPass>();
          AU.addRequired<AAResultsWrapperPass>();
-         //           AU.addRequired<CFLSteensAAWrapperPass>();
-         //           AU.addRequired<TypeBasedAAWrapperPass>();
 
          AU.addPreserved<MemorySSAWrapperPass>();
          // AU.addPreserved<MemorySSAPrinterLegacyPass>();
@@ -194,6 +195,7 @@ namespace llvm
          AU.addRequired<AssumptionCacheTracker>();
          AU.addRequired<DominatorTreeWrapperPass>();
          AU.addRequired<DominanceFrontierWrapperPass>();
+
       }
    };
    template <>

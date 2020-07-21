@@ -113,8 +113,8 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
 
 memory::~memory() = default;
 
-memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned long long _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
-                                const unsigned int& _address_bitsize)
+memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned long long _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p,
+                                unsigned int initial_internal_address, const unsigned int& _address_bitsize)
 {
    if(_parameters->isOption(OPT_context_switch))
       return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
@@ -148,7 +148,7 @@ void memory::compute_next_base_address(unsigned long long int& address, unsigned
    align(address, alignment);
 }
 
-void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string &var_name)
+void memory::add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name)
 {
    memory_symbolRef m_sym;
    if(in_vars.find(var) != in_vars.end())
@@ -248,7 +248,7 @@ unsigned int memory::count_non_private_internal_symbols() const
    return n_non_private;
 }
 
-void memory::add_external_variable(unsigned int var, const std::string &var_name)
+void memory::add_external_variable(unsigned int var, const std::string& var_name)
 {
    align(next_off_base_address, tree_helper::get_var_alignment(TreeM, var));
    memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_off_base_address, 0));
@@ -282,7 +282,7 @@ void memory::add_source_value(unsigned int var, unsigned int value)
    source_values[var].insert(value);
 }
 
-void memory::add_parameter(unsigned int funID_scope, unsigned int var, const std::string &var_name, bool is_last)
+void memory::add_parameter(unsigned int funID_scope, unsigned int var, const std::string& var_name, bool is_last)
 {
    memory_symbolRef m_sym = memory_symbolRef(new memory_symbol(var, var_name, next_base_address, funID_scope));
    add_parameter_symbol(funID_scope, var, m_sym);
@@ -862,7 +862,6 @@ bool memory::notEQ(refcount<memory> ref) const
    return false;
 }
 
-
 void memory::xwrite2(xml_element* node)
 {
    xml_element* Enode = node->add_child_element("memory_allocation");
@@ -882,13 +881,12 @@ void memory::xwrite2(xml_element* node)
    }
    for(auto ext_obj : external)
    {
-         xml_element* ObjNode = Enode->add_child_element("object");
-         std::string name = ext_obj.second->get_name();
-         WRITE_XVM(name, ObjNode);
-         WRITE_XNVM(is_internal, "F", ObjNode);
+      xml_element* ObjNode = Enode->add_child_element("object");
+      std::string name = ext_obj.second->get_name();
+      WRITE_XVM(name, ObjNode);
+      WRITE_XNVM(is_internal, "F", ObjNode);
    }
 }
-
 
 void memory::xwrite(const std::string& filename)
 {

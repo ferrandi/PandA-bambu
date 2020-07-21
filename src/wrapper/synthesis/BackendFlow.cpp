@@ -397,7 +397,7 @@ void BackendFlow::ExecuteSynthesis()
    }
 
    ToolManagerRef tool(new ToolManager(Param));
-   tool->configure("./" + generated_synthesis_script, "");
+   tool->configure(generated_synthesis_script, "");
    std::vector<std::string> parameters, input_files, output_files;
    const std::string synthesis_file_output = Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_output";
    tool->execute(parameters, input_files, output_files, synthesis_file_output, false);
@@ -657,6 +657,8 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
          THROW_ERROR("Output directory \"" + step->out_dir + "\" has not been created!");
       boost::filesystem::create_directory(step->out_dir);
 
+      script << "cd " << GetCurrentPath() << std::endl;
+
       /// script file
       std::string script_path;
       if(step->script_name.size())
@@ -667,12 +669,13 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    }
 
    // Write the synthesis script
-   generated_synthesis_script = std::string("synthesize");
+   generated_synthesis_script = std::string("./synthesize");
    if(exec_params->chain_name.size())
       generated_synthesis_script += std::string("_") + exec_params->chain_name;
    if(exec_params->component_name.size())
       generated_synthesis_script += std::string("_") + exec_params->component_name;
    generated_synthesis_script += std::string(".sh");
+   generated_synthesis_script = GetPath(generated_synthesis_script);
 
    std::ofstream file_stream;
    file_stream.open(generated_synthesis_script.c_str());

@@ -276,7 +276,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "#endif\n");
    PP(os, "\n");
    PP(os, "\n");
-   PP(os, "#define SIMULATION_MAX " + STR(2*parameters->getOption<int>(OPT_max_sim_cycles)) + "ULL\n\n");
+   PP(os, "#define SIMULATION_MAX " + STR(2 * parameters->getOption<int>(OPT_max_sim_cycles)) + "ULL\n\n");
    PP(os, "static vluint64_t CLOCK_PERIOD = 1000*" + boost::lexical_cast<std::string>(target_period) + ";\n");
    PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");

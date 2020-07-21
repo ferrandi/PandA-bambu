@@ -31,6 +31,6 @@ TEST_CASE( "read a PLA file into an XAG", "[pla_reader]" )
   CHECK( xag.num_pos() == 2 );
   CHECK( xag.num_gates() == 5 );
 
-  CHECK( simulate<kitty::static_truth_table<3>>( xag )[0]._bits == 0xb1u );
-  CHECK( simulate<kitty::static_truth_table<3>>( xag )[1]._bits == 0xe0u );
+  CHECK( simulate<kitty::static_truth_table<3u>>( xag )[0]._bits == 0xb1u );
+  CHECK( simulate<kitty::static_truth_table<3u>>( xag )[1]._bits == 0xe0u );
 }

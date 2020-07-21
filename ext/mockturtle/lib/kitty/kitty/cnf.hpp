@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -37,6 +37,7 @@
 #include "cube.hpp"
 #include "isop.hpp"
 #include "operators.hpp"
+#include "traits.hpp"
 
 namespace kitty
 {
@@ -49,7 +50,7 @@ namespace kitty
 
   \param tt Truth table
 */
-template<typename TT>
+template<typename TT, typename = std::enable_if_t<is_complete_truth_table<TT>::value>>
 std::vector<cube> cnf_characteristic( const TT& tt )
 {
   std::vector<cube> cubes;

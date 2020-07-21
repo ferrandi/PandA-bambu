@@ -51,7 +51,7 @@ CMPtype __gedf2(DFtype a, DFtype b)
 
 strong_alias(__gedf2, __gtdf2);
 
-inline CMPtype __float64_geif(DFtype a, DFtype b)
+CMPtype __float64_geif(DFtype a, DFtype b)
 {
    return __gedf2(a, b);
 }

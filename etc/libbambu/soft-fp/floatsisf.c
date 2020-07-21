@@ -45,7 +45,7 @@ SFtype __floatsisf(SItype i)
    return a;
 }
 
-inline SFtype __int32_to_float32if(SItype i)
+SFtype __int32_to_float32if(SItype i)
 {
    return __floatsisf(i);
 }

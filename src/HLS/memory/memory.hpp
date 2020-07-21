@@ -214,8 +214,8 @@ class memory
     */
    virtual ~memory();
 
-   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p, unsigned int initial_internal_address,
-                                  const unsigned int& _address_bitsize);
+   static memoryRef create_memory(const ParameterConstRef _parameters, const tree_managerRef _TreeM, unsigned long long int _off_base_address, unsigned int max_bram, bool _null_pointer_check, bool initial_internal_address_p,
+                                  unsigned int initial_internal_address, const unsigned int& _address_bitsize);
 
    /**
     * Return variables allocated out of the top module
@@ -225,7 +225,7 @@ class memory
    /**
     * Allocates a variable to the set of variables allocated outside to outermost function
     */
-   void add_external_variable(unsigned int var, const std::string &var_name);
+   void add_external_variable(unsigned int var, const std::string& var_name);
 
    /**
     * Allocates a variable to the set of variables allocated outside to outermost function. The corresponding symbol is already provided
@@ -235,7 +235,7 @@ class memory
    /**
     * Allocates a variable to the set of variables allocated internally to the given function
     */
-   void add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string &var_name);
+   void add_internal_variable(unsigned int funID_scope, unsigned int var, const std::string& var_name);
 
    /**
     * allocate a proxy for the variable for the specified function
@@ -250,7 +250,7 @@ class memory
     * @param var is the variable that has to be reserved
     * @param alignment is the address alignment
     */
-   void compute_next_base_address(unsigned long long &address, unsigned int var, unsigned int alignment);
+   void compute_next_base_address(unsigned long long& address, unsigned int var, unsigned int alignment);
 
    /**
     * return the proxied internal variables associated with the function
@@ -324,7 +324,7 @@ class memory
    /**
     * Allocates a parameter to the set of the interface registers
     */
-   void add_parameter(unsigned int funID_scope, unsigned int var, const std::string &var_name, bool is_last);
+   void add_parameter(unsigned int funID_scope, unsigned int var, const std::string& var_name, bool is_last);
 
    /**
     * Allocates a parameter to the set of the interface registers

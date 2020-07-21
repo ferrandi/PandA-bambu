@@ -174,6 +174,7 @@ using CustomSet = CustomOrderedSet<T>;
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Woverflow"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 #else
 #pragma GCC diagnostic warning "-Wsign-conversion"
 #pragma GCC diagnostic warning "-Wconversion"

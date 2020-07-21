@@ -558,8 +558,7 @@ void top_entity::add_command_signals(structural_objectRef circuit)
    structural_objectRef Datapath = HLS->datapath->get_circ();
    structural_objectRef Controller = HLS->controller->get_circ();
 
-   const auto& selectors = HLS->Rconn->GetSelectors();
-   for(const auto& selector : selectors)
+   for(const auto& selector : HLS->Rconn->GetSelectors())
    {
       for(const auto& l : selector.second)
       {

@@ -94,6 +94,18 @@ BOOST_AUTO_TEST_CASE( range_bitvalues )
     BOOST_REQUIRE(bv1->isConstant());
     BOOST_REQUIRE_EQUAL(bv1->getBitWidth(), 11);
     BOOST_REQUIRE_EQUAL(bv1->getUnsignedMax(), 0b10000000010);
+
+    const auto bv2 = Range::fromBitValues(string_to_bitstring("10XXX"), 5, true);
+    BOOST_REQUIRE_EQUAL(5, bv2->getBitWidth());
+    BOOST_REQUIRE_EQUAL(16, bv2->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(23, bv2->getUnsignedMax());
+
+    const auto bv3 = Range::fromBitValues(string_to_bitstring("UUUUXX"), 8, true);
+    BOOST_REQUIRE_EQUAL(8, bv3->getBitWidth());
+    BOOST_REQUIRE_EQUAL(-32, bv3->getSignedMin());
+    BOOST_REQUIRE_EQUAL(31, bv3->getSignedMax());
+    BOOST_REQUIRE_EQUAL(0, bv3->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(255, bv3->getUnsignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_addition )
@@ -670,6 +682,18 @@ BOOST_AUTO_TEST_CASE( range_truncate )
 
     auto truncMultiwrap = multiwrap->truncate(8);
     BOOST_REQUIRE(truncMultiwrap->isFullSet());
+
+    RangeRef strangeTest1(new Range(Regular, 32, 122, 124));
+    auto strangeRes1 = strangeTest1->truncate(7);
+    BOOST_REQUIRE_EQUAL(122, strangeRes1->getUnsignedMin());
+    BOOST_REQUIRE_EQUAL(-6, strangeRes1->getSignedMin());
+    BOOST_REQUIRE_EQUAL(124, strangeRes1->getUnsignedMax());
+    BOOST_REQUIRE_EQUAL(-4, strangeRes1->getSignedMax());
+    strangeRes1 = strangeRes1->zextOrTrunc(32);
+    BOOST_REQUIRE_EQUAL(122, strangeRes1->getSignedMin());
+    BOOST_REQUIRE_EQUAL(124, strangeRes1->getSignedMax());
+    BOOST_REQUIRE_EQUAL(strangeRes1->getUnsignedMin(), strangeRes1->getSignedMin());
+    BOOST_REQUIRE_EQUAL(strangeRes1->getUnsignedMax(), strangeRes1->getSignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_zext )
@@ -799,4 +823,47 @@ BOOST_AUTO_TEST_CASE( real_range )
     auto floatOne = RealRange(RangeRef(new Range(Regular, 64, 4607182418800017408ULL, 4607182418800017408ULL)));
     BOOST_REQUIRE(floatOne.isConstant());
     BOOST_REQUIRE_EQUAL(floatOne.getSign()->getUnsignedMax(), 0);
+}
+
+BOOST_AUTO_TEST_CASE( real_eq )
+{
+    RangeRef stdFullRange(new Range(Regular, 32));
+    RangeRef stdFullRange64(new Range(Regular, 64));
+    RangeRef pzerod(new RealRange(Range(Regular, 1, 0, 0), Range(Regular, 11, 0, 0), Range(Regular, 52, 0, 0)));
+    RangeRef nzerod(new RealRange(Range(Regular, 1, 1, 1), Range(Regular, 11, 0, 0), Range(Regular, 52, 0, 0)));
+    RangeRef negWithZero(new RealRange(Range(Regular, 1, 1, 1), Range(Regular, 11, 0, 1035), Range(Regular, 52)));
+    RangeRef noZero(new RealRange(Range(Regular, 1, 0, 1), Range(Regular, 11, 997, 1035), Range(Regular, 52)));
+
+    auto eq1 = pzerod->Eq(nzerod, 1);
+    auto ne1 = pzerod->Ne(nzerod, 1);
+    BOOST_REQUIRE(eq1->isConstant());
+    BOOST_REQUIRE_EQUAL(eq1->getUnsignedMin(), 1);
+    BOOST_REQUIRE(ne1->isConstant());
+    BOOST_REQUIRE_EQUAL(ne1->getUnsignedMin(), 0);
+
+    auto eq2 = negWithZero->Eq(nzerod, 1);
+    auto ne2 = negWithZero->Ne(nzerod, 1);
+    BOOST_REQUIRE(eq2->isSameRange(ne2));
+    BOOST_REQUIRE_EQUAL(eq2->getUnsignedMin(), 0);
+    BOOST_REQUIRE_EQUAL(eq2->getUnsignedMax(), 1);
+
+    auto eq3 = negWithZero->Eq(pzerod, 1);
+    auto ne3 = negWithZero->Ne(pzerod, 1);
+    BOOST_REQUIRE(eq3->isSameRange(ne3));
+    BOOST_REQUIRE_EQUAL(eq3->getUnsignedMin(), 0);
+    BOOST_REQUIRE_EQUAL(eq3->getUnsignedMax(), 1);
+
+    auto eq4 = noZero->Eq(pzerod, 1);
+    auto ne4 = noZero->Ne(pzerod, 1);
+    BOOST_REQUIRE(eq4->isConstant());
+    BOOST_REQUIRE_EQUAL(eq4->getUnsignedMax(), 0);
+    BOOST_REQUIRE(ne4->isConstant());
+    BOOST_REQUIRE_EQUAL(ne4->getUnsignedMin(), 1);
+
+    auto eq5 = noZero->Eq(nzerod, 1);
+    auto ne5 = noZero->Ne(nzerod, 1);
+    BOOST_REQUIRE(eq5->isConstant());
+    BOOST_REQUIRE_EQUAL(eq5->getUnsignedMax(), 0);
+    BOOST_REQUIRE(ne5->isConstant());
+    BOOST_REQUIRE_EQUAL(ne5->getUnsignedMin(), 1);
 }

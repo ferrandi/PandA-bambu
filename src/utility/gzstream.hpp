@@ -80,10 +80,10 @@ class gzstreambuf : public std::streambuf
    static const int bufferSize = 47 + 256; // size of data buff
    // totals 512 bytes under g++ for igzstream at the end.
 
-   gzFile file;             // file handle for compressed file
-   char buffer[bufferSize]; // data buffer
-   char opened;             // open/close state of stream
-   int mode;                // I/O mode
+   gzFile file;                  // file handle for compressed file
+   char buffer[bufferSize];      // data buffer
+   char opened;                  // open/close state of stream
+   std::ios_base::openmode mode; // I/O mode
 
    int flush_buffer();
 
@@ -100,7 +100,7 @@ class gzstreambuf : public std::streambuf
    {
       return opened;
    }
-   inline gzstreambuf* open(const char* name, int open_mode);
+   inline gzstreambuf* open(const char* name, std::ios_base::openmode open_mode);
    inline gzstreambuf* close();
    inline ~gzstreambuf() override
    {
@@ -122,9 +122,9 @@ class gzstreambase : virtual public std::ios
    {
       init(&buf);
    }
-   inline gzstreambase(const char* name, int open_mode);
+   inline gzstreambase(const char* name, std::ios_base::openmode open_mode);
    inline ~gzstreambase() override;
-   inline void open(const char* name, int open_mode);
+   inline void open(const char* name, std::ios_base::openmode open_mode);
    inline void close();
    inline gzstreambuf* rdbuf()
    {
@@ -145,14 +145,14 @@ class igzstream : public std::istream, public gzstreambase
    inline igzstream() : std::istream(&buf)
    {
    }
-   inline igzstream(const char* name, int _open_mode = std::ios::in) : std::istream(&buf), gzstreambase(name, _open_mode)
+   inline igzstream(const char* name, std::ios_base::openmode _open_mode = std::ios::in) : std::istream(&buf), gzstreambase(name, _open_mode)
    {
    }
    inline gzstreambuf* rdbuf()
    {
       return gzstreambase::rdbuf();
    }
-   inline void open(const char* name, int _open_mode = std::ios::in)
+   inline void open(const char* name, std::ios_base::openmode _open_mode = std::ios::in)
    {
       gzstreambase::open(name, _open_mode);
    }
@@ -164,20 +164,20 @@ class ogzstream : public std::ostream, public gzstreambase
    inline ogzstream() : std::ostream(&buf)
    {
    }
-   inline ogzstream(const char* name, int mode = std::ios::out) : std::ostream(&buf), gzstreambase(name, mode)
+   inline ogzstream(const char* name, std::ios_base::openmode mode = std::ios::out) : std::ostream(&buf), gzstreambase(name, mode)
    {
    }
    inline gzstreambuf* rdbuf()
    {
       return gzstreambase::rdbuf();
    }
-   inline void open(const char* name, int _open_mode = std::ios::out)
+   inline void open(const char* name, std::ios_base::openmode _open_mode = std::ios::out)
    {
       gzstreambase::open(name, _open_mode);
    }
 };
 
-inline gzstreambuf* gzstreambuf::open(const char* name, int open_mode)
+inline gzstreambuf* gzstreambuf::open(const char* name, std::ios_base::openmode open_mode)
 {
    if(is_open())
       return nullptr;
@@ -281,7 +281,7 @@ inline int gzstreambuf::sync()
  * class gzstreambase:
  *--------------------------------------
  */
-inline gzstreambase::gzstreambase(const char* name, int mode)
+inline gzstreambase::gzstreambase(const char* name, std::ios_base::openmode mode)
 {
    init(&buf);
    open(name, mode);
@@ -292,7 +292,7 @@ inline gzstreambase::~gzstreambase()
    buf.close();
 }
 
-inline void gzstreambase::open(const char* name, int _open_mode)
+inline void gzstreambase::open(const char* name, std::ios_base::openmode _open_mode)
 {
    if(!buf.open(name, _open_mode))
       clear(rdstate() | std::ios::badbit);

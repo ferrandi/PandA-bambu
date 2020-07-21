@@ -5,3 +5,5 @@ Various XAG optimization algorithms
 
 .. doxygenfunction:: mockturtle::xag_constant_fanin_optimization
 .. doxygenfunction:: mockturtle::xag_dont_cares_optimization
+.. doxygenfunction:: mockturtle::linear_resynthesis_optimization
+.. doxygenfunction:: mockturtle::exact_linear_resynthesis_optimization

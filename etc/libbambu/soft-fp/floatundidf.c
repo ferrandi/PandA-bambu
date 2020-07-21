@@ -45,7 +45,7 @@ DFtype __floatundidf(UDItype i)
    return a;
 }
 
-inline DFtype __uint64_to_float64if(UDItype i)
+DFtype __uint64_to_float64if(UDItype i)
 {
    return __floatundidf(i);
 }

@@ -74,10 +74,7 @@ class CheckSystemType : public FunctionFrontendFlowStep
    /// The tree manager
    const tree_managerRef TM;
 
-   /// Already visited tree node (used to avoid infinite recursion)
-   CustomUnorderedSet<unsigned int> already_visited;
-
-   /// Contains the list of the folders containining the system header files
+   /// Contains the list of the folders containing the system header files
    static std::vector<std::string> systemIncPath;
 
    /// Associates to each system header file its full path
@@ -110,14 +107,14 @@ class CheckSystemType : public FunctionFrontendFlowStep
     * Examinate recursively the tree to detect system types and system variables
     * @param tn is the root of the subtree to be examinated; it must be a tree_reindex
     */
-   void recursive_examinate(const tree_nodeRef& tn);
+   void recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_visited);
 
    /**
     * Examinate recursively the tree to detect system types and system variables
     * @param curr_tn is the root of the subtree to be examinated; it must not be a tree_reindex
     * @param index is the index of the tree_node
     */
-   void recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index);
+   void recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index, CustomUnorderedSet<unsigned int>& already_visited);
 
    /**
     * Check if an header is a system header

@@ -422,34 +422,17 @@ std::deque<bit_lattice> BitLatticeManipulator::constructor_bitstring(const tree_
       }
       else if(el->get_kind() == real_cst_K)
       {
+         THROW_ASSERT(elements_bitsize == 64 || elements_bitsize == 32, "Unhandled real type size (" + STR(elements_bitsize) + ")");
          auto* real_const = GetPointer<real_cst>(el);
-         auto val = strtof64x(real_const->valr.data(), nullptr);
-         if(real_const->valx[0] == '-' && val > 0)
+         if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
          {
-            val = -val;
-         }
-         if(elements_bitsize == 64)
-         {
-            union {
-               double d;
-               long long ll;
-            } vc;
-            vc.d = static_cast<double>(val);
-            cur_bitstring = create_bitstring_from_constant(vc.ll, 64, ssa_is_signed);
-         }
-         else if(elements_bitsize == 32)
-         {
-            union {
-               float f;
-               long l;
-            } vc;
-            vc.f = static_cast<float>(val);
-            cur_bitstring = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, ssa_is_signed);
+            cur_bitstring = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, elements_bitsize));
          }
          else
          {
-            THROW_UNREACHABLE("Unhandled real type size (" + STR(elements_bitsize) + ")");
+            cur_bitstring = string_to_bitstring(convert_fp_to_string(real_const->valr, elements_bitsize));
          }
+         sign_reduce_bitstring(cur_bitstring, ssa_is_signed);
       }
       else if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))
       {
@@ -488,7 +471,7 @@ std::deque<bit_lattice> BitLatticeManipulator::string_cst_bitstring(const tree_n
 
 bool BitLatticeManipulator::is_handled_by_bitvalue(unsigned int type_id) const
 {
-   return /*not tree_helper::is_real(TM, type_id) and*/ not tree_helper::is_a_complex(TM, type_id) and not tree_helper::is_a_vector(TM, type_id) and not tree_helper::is_a_struct(TM, type_id);
+   return not tree_helper::is_a_complex(TM, type_id) and not tree_helper::is_a_vector(TM, type_id) and not tree_helper::is_a_struct(TM, type_id);
 }
 
 bool BitLatticeManipulator::mix()

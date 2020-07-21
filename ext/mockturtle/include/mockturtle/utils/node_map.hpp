@@ -232,6 +232,12 @@ public:
     return data->find( ntk.node_to_index( n ) ) != data->end();
   }
 
+  /*! \brief Check if a key is already defined. */
+  bool has( signal const& f ) const
+  {
+    return data->find( ntk.node_to_index( ntk.get_node( f ) ) ) != data->end();
+  }
+
   /*! \brief Mutable access to value by node. */
   reference operator[]( node const& n )
   {
@@ -241,7 +247,7 @@ public:
   /*! \brief Constant access to value by node. */
   const_reference operator[]( node const& n ) const
   {
-    assert( !has( n ) && "index out of bounds" );
+    assert( has( n ) && "index out of bounds" );
     return (*data)[ntk.node_to_index( n )];
   }
 
@@ -264,7 +270,7 @@ public:
   template<typename _Ntk = Ntk, typename = std::enable_if_t<!std::is_same_v<typename _Ntk::signal, typename _Ntk::node>>>
   const_reference operator[]( signal const& f ) const
   {
-    assert( !has( ntk.get_node( f ) ) && "index out of bounds" );
+    assert( has( ntk.get_node( f ) ) && "index out of bounds" );
     return (*data)[ntk.node_to_index( ntk.get_node( f ) )];
   }
 
@@ -286,5 +292,38 @@ protected:
 /*! \brief Template alias `unordered_node_map` */
 template<class T, class Ntk>
 using unordered_node_map = node_map<T, Ntk, std::unordered_map<typename Ntk::node, T>>;
+
+/*! \brief Initializes a network for copying together with node map.
+ *
+ * This utility function is helpful when creating a network from another one,
+ * a very common task.  It creates the network of type `NtkDest` and already
+ * creates a node map to map nodes from the source network, of type `NtkSrc` to
+ * nodes of the new network.  The function map constant inputs and creates and
+ * maps primary inputs.
+ */
+template<class NtkDest, class NtkSrc>
+std::pair<NtkDest, node_map<signal<NtkDest>, NtkSrc>> initialize_copy_network( NtkSrc const& src )
+{
+  static_assert( is_network_type_v<NtkDest>, "NtkDest is not a network type" );
+  static_assert( is_network_type_v<NtkSrc>, "NtkSrc is not a network type" );
+
+  static_assert( has_get_constant_v<NtkDest>, "NtkDest does not implement the get_constant method" );
+  static_assert( has_create_pi_v<NtkDest>, "NtkDest does not implement the create_pi method" );
+  static_assert( has_get_constant_v<NtkSrc>, "NtkSrc does not implement the get_constant method" );
+  static_assert( has_get_node_v<NtkSrc>, "NtkSrc does not implement the get_node method" );
+  static_assert( has_foreach_pi_v<NtkSrc>, "NtkSrc does not implement the foreach_pi method" );
+
+  node_map<signal<NtkDest>, NtkSrc> old2new( src );
+  NtkDest dest;
+  old2new[src.get_constant( false )] = dest.get_constant( false );
+  if ( src.get_node( src.get_constant( true ) ) != src.get_node( src.get_constant( false ) ) )
+  {
+    old2new[src.get_constant( true )] = dest.get_constant( true );
+  }
+  src.foreach_pi( [&]( auto const& n ) {
+    old2new[n] = dest.create_pi();
+  } );
+  return {dest, old2new};
+}
 
 } /* namespace mockturtle */

@@ -326,54 +326,61 @@ design_flows/technology/load_default_technology.cpp : design_flows/technology/C_
 
 #The tab in this rule can't be replaced by blanks
 design_flows/technology/C_COMPLEX_IPs.data: $(top_srcdir)/etc/lib/technology/C_COMPLEX_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_COMPLEX_IPs.xml design_flows/technology/C_COMPLEX_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_COMPLEX_IPs.xml > design_flows/technology/C_COMPLEX_IPs.data
 
 design_flows/technology/CS_COMPONENT.data: $(top_srcdir)/etc/lib/technology/CS_COMPONENT.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/CS_COMPONENT.xml design_flows/technology/CS_COMPONENT.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/CS_COMPONENT.xml > design_flows/technology/CS_COMPONENT.data
 
 design_flows/technology/C_FP_IPs.data: $(top_srcdir)/etc/lib/technology/C_FP_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_FP_IPs.xml design_flows/technology/C_FP_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_FP_IPs.xml > design_flows/technology/C_FP_IPs.data
 
 design_flows/technology/C_HLS_IPs.data: $(top_srcdir)/etc/lib/technology/C_HLS_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_HLS_IPs.xml design_flows/technology/C_HLS_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_HLS_IPs.xml > design_flows/technology/C_HLS_IPs.data
 
 design_flows/technology/C_IO_IPs.data: $(top_srcdir)/etc/lib/technology/C_IO_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_IO_IPs.xml design_flows/technology/C_IO_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_IO_IPs.xml > design_flows/technology/C_IO_IPs.data
 
 design_flows/technology/C_MEM_IPs.data: $(top_srcdir)/etc/lib/technology/C_MEM_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_MEM_IPs.xml design_flows/technology/C_MEM_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_MEM_IPs.xml > design_flows/technology/C_MEM_IPs.data
 
 design_flows/technology/C_PROFILING_IPs.data: $(top_srcdir)/etc/lib/technology/C_PROFILING_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_PROFILING_IPs.xml design_flows/technology/C_PROFILING_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_PROFILING_IPs.xml > design_flows/technology/C_PROFILING_IPs.data
 
 design_flows/technology/C_STD_IPs.data: $(top_srcdir)/etc/lib/technology/C_STD_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_STD_IPs.xml design_flows/technology/C_STD_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_STD_IPs.xml > design_flows/technology/C_STD_IPs.data
 
 design_flows/technology/C_VEC_IPs.data: $(top_srcdir)/etc/lib/technology/C_VEC_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/C_VEC_IPs.xml design_flows/technology/C_VEC_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/C_VEC_IPs.xml > design_flows/technology/C_VEC_IPs.data
 
 design_flows/technology/NC_HLS_IPs.data: $(top_srcdir)/etc/lib/technology/NC_HLS_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_HLS_IPs.xml design_flows/technology/NC_HLS_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/NC_HLS_IPs.xml > design_flows/technology/NC_HLS_IPs.data
 
 design_flows/technology/NC_MEM_IPs.data: $(top_srcdir)/etc/lib/technology/NC_MEM_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_MEM_IPs.xml design_flows/technology/NC_MEM_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/NC_MEM_IPs.xml > design_flows/technology/NC_MEM_IPs.data
 
 design_flows/technology/NC_PC_IPs.data: $(top_srcdir)/etc/lib/technology/NC_PC_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_PC_IPs.xml design_flows/technology/NC_PC_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/NC_PC_IPs.xml > design_flows/technology/NC_PC_IPs.data
 
 design_flows/technology/NC_SF_IPs.data: $(top_srcdir)/etc/lib/technology/NC_SF_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_SF_IPs.xml design_flows/technology/NC_SF_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/NC_SF_IPs.xml > design_flows/technology/NC_SF_IPs.data
 
 design_flows/technology/NC_STD_IPs.data: $(top_srcdir)/etc/lib/technology/NC_STD_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_STD_IPs.xml design_flows/technology/NC_STD_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/NC_STD_IPs.xml > design_flows/technology/NC_STD_IPs.data
 
 design_flows/technology/NC_VEC_IPs.data: $(top_srcdir)/etc/lib/technology/NC_VEC_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_VEC_IPs.xml design_flows/technology/NC_VEC_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/NC_VEC_IPs.xml > design_flows/technology/NC_VEC_IPs.data
 
 design_flows/technology/NC_wishbone_IPs.data: $(top_srcdir)/etc/lib/technology/NC_wishbone_IPs.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/lib/technology/NC_wishbone_IPs.xml design_flows/technology/NC_wishbone_IPs.data
+	gzip -c  $(top_srcdir)/etc/lib/technology/NC_wishbone_IPs.xml > design_flows/technology/NC_wishbone_IPs.data
 
    lib_design_flows_la_LIBADD += lib_technology_df.la
+
+design_flows_dir = $(pkgdatadir)/design_flows
+design_flows_technology_dir = $(design_flows_dir)/technology
+design_flows_technology__DATA =  design_flows/technology/C_COMPLEX_IPs.data design_flows/technology/CS_COMPONENT.data design_flows/technology/C_FP_IPs.data design_flows/technology/C_HLS_IPs.data design_flows/technology/C_IO_IPs.data design_flows/technology/C_MEM_IPs.data \
+                                 design_flows/technology/C_PROFILING_IPs.data design_flows/technology/C_STD_IPs.data design_flows/technology/C_VEC_IPs.data design_flows/technology/NC_HLS_IPs.data design_flows/technology/NC_MEM_IPs.data design_flows/technology/NC_PC_IPs.data \
+                                 design_flows/technology/NC_SF_IPs.data design_flows/technology/NC_STD_IPs.data design_flows/technology/NC_VEC_IPs.data design_flows/technology/NC_wishbone_IPs.data
+
 endif
 
 

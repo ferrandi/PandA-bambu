@@ -121,73 +121,88 @@ technology/target_device/FPGA/nangate45.data
 
 #The tab in this rule can't be replaced by blanks
 technology/target_device/FPGA/xc4vlx100-10ff1513.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc4vlx100-10ff1513.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc4vlx100-10ff1513.xml technology/target_device/FPGA/xc4vlx100-10ff1513.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc4vlx100-10ff1513.xml > technology/target_device/FPGA/xc4vlx100-10ff1513.data
 
 technology/target_device/FPGA/xc5vlx50-3ff1153.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx50-3ff1153.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx50-3ff1153.xml technology/target_device/FPGA/xc5vlx50-3ff1153.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx50-3ff1153.xml > technology/target_device/FPGA/xc5vlx50-3ff1153.data
 
 technology/target_device/FPGA/xc5vlx330t-2ff1738.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx330t-2ff1738.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx330t-2ff1738.xml technology/target_device/FPGA/xc5vlx330t-2ff1738.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx330t-2ff1738.xml > technology/target_device/FPGA/xc5vlx330t-2ff1738.data
 
 technology/target_device/FPGA/xc5vlx110t-1ff1136.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx110t-1ff1136.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx110t-1ff1136.xml technology/target_device/FPGA/xc5vlx110t-1ff1136.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc5vlx110t-1ff1136.xml > technology/target_device/FPGA/xc5vlx110t-1ff1136.data
 
 technology/target_device/FPGA/xc6vlx240t-1ff1156.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc6vlx240t-1ff1156.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc6vlx240t-1ff1156.xml technology/target_device/FPGA/xc6vlx240t-1ff1156.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc6vlx240t-1ff1156.xml > technology/target_device/FPGA/xc6vlx240t-1ff1156.data
 
 technology/target_device/FPGA/xc7vx330t-1ffg1157.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx330t-1ffg1157.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx330t-1ffg1157.xml technology/target_device/FPGA/xc7vx330t-1ffg1157.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx330t-1ffg1157.xml > technology/target_device/FPGA/xc7vx330t-1ffg1157.data
 
 technology/target_device/FPGA/xc7z020-1clg484.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484.xml technology/target_device/FPGA/xc7z020-1clg484.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484.xml > technology/target_device/FPGA/xc7z020-1clg484.data
 
 technology/target_device/FPGA/xc7z020-1clg484-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml technology/target_device/FPGA/xc7z020-1clg484-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-VVD.xml > technology/target_device/FPGA/xc7z020-1clg484-VVD.data
 
 technology/target_device/FPGA/xc7z045-2ffg900-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml technology/target_device/FPGA/xc7z045-2ffg900-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z045-2ffg900-VVD.xml > technology/target_device/FPGA/xc7z045-2ffg900-VVD.data
 
 technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7z020-1clg484-YOSYS-VVD.xml > technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data
 
 technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx485t-2ffg1761-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx485t-2ffg1761-VVD.xml technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx485t-2ffg1761-VVD.xml > technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data
 
 technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7vx690t-3ffg1930-VVD.xml > technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data
 
 technology/target_device/FPGA/xc7a100t-1csg324-VVD.data: $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml technology/target_device/FPGA/xc7a100t-1csg324-VVD.data
+	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/xc7a100t-1csg324-VVD.xml > technology/target_device/FPGA/xc7a100t-1csg324-VVD.data
 
 #technology/target_device/FPGA/Spartan-3-xc3s1500l-4fg676.data: $(top_srcdir)/etc/devices/Xilinx_devices/Spartan-3-xc3s1500l-4fg676.xml
-#	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Xilinx_devices/Spartan-3-xc3s1500l-4fg676.xml technology/target_device/FPGA/Spartan-3-xc3s1500l-4fg676.data
+#	gzip -c  $(top_srcdir)/etc/devices/Xilinx_devices/Spartan-3-xc3s1500l-4fg676.xml > technology/target_device/FPGA/Spartan-3-xc3s1500l-4fg676.data
 
 technology/target_device/FPGA/EP2C70F896C6.data: $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6.xml technology/target_device/FPGA/EP2C70F896C6.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6.xml > technology/target_device/FPGA/EP2C70F896C6.data
 
 technology/target_device/FPGA/EP2C70F896C6-R.data: $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6-R.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6-R.xml technology/target_device/FPGA/EP2C70F896C6-R.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP2C70F896C6-R.xml > technology/target_device/FPGA/EP2C70F896C6-R.data
 
 technology/target_device/FPGA/5CSEMA5F31C6.data: $(top_srcdir)/etc/devices/Altera_devices/5CSEMA5F31C6.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/5CSEMA5F31C6.xml technology/target_device/FPGA/5CSEMA5F31C6.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/5CSEMA5F31C6.xml > technology/target_device/FPGA/5CSEMA5F31C6.data
 
 technology/target_device/FPGA/5SGXEA7N2F45C1.data: $(top_srcdir)/etc/devices/Altera_devices/5SGXEA7N2F45C1.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/5SGXEA7N2F45C1.xml technology/target_device/FPGA/5SGXEA7N2F45C1.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/5SGXEA7N2F45C1.xml > technology/target_device/FPGA/5SGXEA7N2F45C1.data
 
 technology/target_device/FPGA/EP4SGX530KH40C2.data: $(top_srcdir)/etc/devices/Altera_devices/EP4SGX530KH40C2.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Altera_devices/EP4SGX530KH40C2.xml technology/target_device/FPGA/EP4SGX530KH40C2.data
+	gzip -c  $(top_srcdir)/etc/devices/Altera_devices/EP4SGX530KH40C2.xml > technology/target_device/FPGA/EP4SGX530KH40C2.data
 
 technology/target_device/FPGA/LFE335EA8FN484C.data: $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.xml technology/target_device/FPGA/LFE335EA8FN484C.data
+	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LFE335EA8FN484C.xml > technology/target_device/FPGA/LFE335EA8FN484C.data
 
 technology/target_device/FPGA/nx1h35S.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml technology/target_device/FPGA/nx1h35S.data
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h35S.xml > technology/target_device/FPGA/nx1h35S.data
 
 technology/target_device/FPGA/nx1h140tsp.data: $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml technology/target_device/FPGA/nx1h140tsp.data
+	gzip -c  $(top_srcdir)/etc/devices/NanoXplore_devices/nx1h140tsp.xml > technology/target_device/FPGA/nx1h140tsp.data
 
 technology/target_device/FPGA/nangate45.data: $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml technology/target_device/FPGA/nangate45.data
+	gzip -c  $(top_srcdir)/etc/devices/Generic_devices/nangate45.xml > technology/target_device/FPGA/nangate45.data
+
+technology_dir = $(pkgdatadir)/technology
+technology_target_device_dir = $(technology_dir)/target_device
+technology_target_device_FPGA_dir = $(technology_target_device_dir)/FPGA
+technology_target_device_FPGA__DATA = technology/target_device/FPGA/xc4vlx100-10ff1513.data technology/target_device/FPGA/xc5vlx110t-1ff1136.data technology/target_device/FPGA/xc5vlx330t-2ff1738.data technology/target_device/FPGA/xc5vlx50-3ff1153.data \
+                                      technology/target_device/FPGA/xc6vlx240t-1ff1156.data technology/target_device/FPGA/xc7vx330t-1ffg1157.data technology/target_device/FPGA/xc7z020-1clg484.data \
+                                      technology/target_device/FPGA/EP2C70F896C6.data technology/target_device/FPGA/EP2C70F896C6-R.data \
+                                      technology/target_device/FPGA/EP4SGX530KH40C2.data \
+                                      technology/target_device/FPGA/5CSEMA5F31C6.data technology/target_device/FPGA/5SGXEA7N2F45C1.data\
+                                      technology/target_device/FPGA/xc7z020-1clg484-VVD.data technology/target_device/FPGA/xc7z045-2ffg900-VVD.data technology/target_device/FPGA/xc7vx485t-2ffg1761-VVD.data technology/target_device/FPGA/xc7vx690t-3ffg1930-VVD.data\
+                                      technology/target_device/FPGA/xc7a100t-1csg324-VVD.data\
+                                      technology/target_device/FPGA/xc7z020-1clg484-YOSYS-VVD.data \
+                                      technology/target_device/FPGA/LFE335EA8FN484C.data \
+                                      technology/target_device/FPGA/nx1h35S.data technology/target_device/FPGA/nx1h140tsp.data \
+                                      technology/target_device/FPGA/nangate45.data
 
   noinst_LTLIBRARIES += lib_target_device.la
   lib_target_device_la_CPPFLAGS = \
@@ -232,7 +247,10 @@ if BUILD_LIB_CMOS
 technology/target_device/IC/IC_device.cpp : technology/target_device/IC/Nangate.data
 #The tab in this rule can't be replaced by blanks
 technology/target_device/IC/Nangate.data: $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml
-	$(top_srcdir)/etc/scripts/add_escape.sh $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml technology/target_device/IC/Nangate.data
+	gzip -c $(top_srcdir)/etc/devices/ASIC_devices/Nangate_device.xml > technology/target_device/IC/Nangate.data
+
+technology_target_device_IC_dir = $(technology_target_device_dir)/IC
+technology_target_device_IC__DATA = technology/target_device/IC/Nangate.data
 
   lib_target_device_la_LIBADD += lib_IC_device.la
 endif

@@ -753,7 +753,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   {
                      cg_man->RemoveCallPoint(e, call_id);
                   }
-                  if(parameters->getOption<bool>(OPT_print_dot) or debug_level > DEBUG_LEVEL_PEDANTIC)
+                  if(parameters->getOption<bool>(OPT_print_dot) && debug_level >= DEBUG_LEVEL_PEDANTIC)
                   {
                      AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph" + GetSignature() + ".dot");
                   }
@@ -934,7 +934,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         {
                            cg_man->RemoveCallPoint(e, call_id);
                         }
-                        if(parameters->getOption<bool>(OPT_print_dot) or debug_level > DEBUG_LEVEL_PEDANTIC)
+                        if(parameters->getOption<bool>(OPT_print_dot) && debug_level >= DEBUG_LEVEL_PEDANTIC)
                         {
                            AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph" + GetSignature() + ".dot");
                         }

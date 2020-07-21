@@ -62,6 +62,13 @@
 #include "design_flow_manager.hpp"
 #include "function_frontend_flow_step.hpp"
 
+/// HLS include
+#include "hls_manager.hpp"
+#include "hls_target.hpp"
+
+/// HLS/memory include
+#include "memory.hpp"
+
 /// stl
 #include "custom_map.hpp"
 #include <map>
@@ -162,38 +169,6 @@ namespace
    // Used to print pseudo-edges in the Constraint Graph dot
    std::string pestring;
    std::stringstream pseudoEdgesString(pestring);
-
-   std::tuple<bool, uint8_t, uint32_t> float_view_convert(float fp)
-   {
-      union vcFloat _flo;
-      _flo.flt = (fp);
-#if __BYTE_ORDER == __BIG_ENDIAN
-      uint32_t f = _flo.bits.frac;
-      uint8_t e = _flo.bits.exp;
-      bool s = _flo.bits.sign;
-#else
-      uint32_t f = (_flo.bits.coded) & 0b00000000011111111111111111111111;
-      uint8_t e = static_cast<uint8_t>(((_flo.bits.coded) << 1) >> 24);
-      bool s = (_flo.bits.coded) & 0x80000000;
-#endif
-      return {s, e, f};
-   }
-
-   std::tuple<bool, uint16_t, uint64_t> double_view_convert(double d)
-   {
-      union vcDouble _d;
-      _d.dub = (d);
-#if __BYTE_ORDER == __BIG_ENDIAN
-      uint64_t f = _d.bits.frac;
-      uint16_t e = _d.bits.exp;
-      bool s = _d.bits.sign;
-#else
-      uint64_t f = (_d.bits.coded) & 0b0000000000001111111111111111111111111111111111111111111111111111;
-      uint16_t e = static_cast<uint16_t>(((_d.bits.coded) << 1) >> 53);
-      bool s = (_d.bits.coded) & 0x8000000000000000;
-#endif
-      return {s, e, f};
-   }
 
    kind op_unsigned(kind op)
    {
@@ -692,6 +667,7 @@ namespace
                case plus_expr_K:
                case minus_expr_K:
                case mult_expr_K:
+               case widen_mult_expr_K:
                case trunc_div_expr_K:
                case trunc_mod_expr_K:
                case lshift_expr_K:
@@ -815,7 +791,6 @@ namespace
                case ltgt_expr_K:
                case unordered_expr_K:
                case widen_sum_expr_K:
-               case widen_mult_expr_K:
                case with_size_expr_K:
                case vec_lshift_expr_K:
                case vec_rshift_expr_K:
@@ -1034,7 +1009,7 @@ namespace
 
       const auto type = getGIMPLE_Type(tn);
       bw_t bw = static_cast<bw_t>(BitLatticeManipulator::Size(type));
-      THROW_ASSERT(static_cast<bool>(bw), "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
+      THROW_ASSERT(static_cast<bool>(bw) || tn->get_kind() == string_cst_K, "Unhandled type (" + type->get_kind_text() + ") for " + tn->get_kind_text() + " " + tn->ToString());
 #ifdef BITVALUE_UPDATE
       bool sign = false;
 #endif
@@ -1043,6 +1018,18 @@ namespace
       {
          min = max = tree_helper::get_integer_cst_value(ic);
          return RangeRef(new Range(Regular, bw, min, max));
+      }
+      else if(const auto* rc = GetPointer<const real_cst>(tn))
+      {
+         THROW_ASSERT(bw == 64 || bw == 32, "Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
+         if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
+         {
+            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string("-" + rc->valr, bw)));
+         }
+         else
+         {
+            return RealRange::fromBitValues(string_to_bitstring(convert_fp_to_string(rc->valr, bw)));
+         }
       }
       else if(const auto* sc = GetPointer<const string_cst>(tn))
       {
@@ -1076,25 +1063,6 @@ namespace
          max = 1;
          bw = 1;
       }
-      else if(const auto* rc = GetPointer<const real_cst>(tn))
-      {
-         auto val = strtof64x(rc->valr.data(), nullptr);
-         if(rc->valx[0] == '-' && val > 0)
-         {
-            val = -val;
-         }
-         if(bw == 32)
-         {
-            auto [s, e, f] = float_view_convert(static_cast<float>(val));
-            return RangeRef(new RealRange(Range(Regular, 1, s, s), Range(Regular, 8, e, e), Range(Regular, 23, f, f)));
-         }
-         if(bw == 64)
-         {
-            auto [s, e, f] = double_view_convert(static_cast<double>(val));
-            return RangeRef(new RealRange(Range(Regular, 1, s, s), Range(Regular, 11, e, e), Range(Regular, 52, f, f)));
-         }
-         THROW_UNREACHABLE("Floating point variable with unhandled bitwidth (" + STR(bw) + ")");
-      }
       else if(GetPointer<const real_type>(type) != nullptr)
       {
          if(const auto* ssa = GetPointer<const ssa_name>(tn))
@@ -1123,6 +1091,13 @@ namespace
          max = APInt::getMaxValue(bw);
       }
 #endif
+      else if(const auto* rt = GetPointer<const record_type>(type))
+      {
+         THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size)), "record_type has no size");
+         bw = static_cast<bw_t>(tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size))));
+         THROW_ASSERT(bw, "Invalid bitwidth");
+         return RangeRef(new Range(Regular, bw));
+      }
       else
       {
          THROW_UNREACHABLE("Unable to define range for type " + type->get_kind_text() + " of " + tn->ToString());
@@ -1133,8 +1108,10 @@ namespace
       {
          if(!ssa->bit_values.empty())
          {
-            const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bw, sign);
-            return RangeRef(new Range(Regular, bw, min, max))->intersectWith(bvRange);
+            const auto bvSize = static_cast<bw_t>(ssa->bit_values.size());
+            const auto bvRange = Range::fromBitValues(string_to_bitstring(ssa->bit_values), bvSize, sign);
+            const auto varRange = RangeRef(new Range(Regular, bw, min, max))->truncate(bvSize)->intersectWith(bvRange);
+            return sign ? varRange->sextOrTrunc(bw) : varRange->zextOrTrunc(bw);
          }
       }
 #endif
@@ -1237,13 +1214,17 @@ VarNode::VarNode(const tree_nodeConstRef& _V, unsigned int _function_id) : V(_V)
 void VarNode::init(bool outside)
 {
    THROW_ASSERT(getGIMPLE_BW(V), "Bitwidth not valid");
-   if(GET_CONST_NODE(V)->get_kind() == integer_cst_K || GET_CONST_NODE(V)->get_kind() == real_cst_K)
+   THROW_ASSERT(interval, "Interval should be initialized during VarNode construction");
+   if(interval->isUnknown()) // Ranges already initialized come from user defined hints and shouldn't be overwritten
    {
-      interval = getGIMPLE_range(V);
-   }
-   else if(interval == nullptr) // Ranges already initialized come from user defined hints and shouldn't be overwritten
-   {
-      interval = getRangeFor(V, outside ? Regular : Unknown);
+      if(GetPointer<const cst_node>(GET_CONST_NODE(V)) != nullptr)
+      {
+         interval = getGIMPLE_range(V);
+      }
+      else
+      {
+         interval = getRangeFor(V, outside ? Regular : Unknown);
+      }
    }
 }
 
@@ -1343,7 +1324,31 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          return ut_None;
       }
 #endif
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+      const auto hasBetterSuper = [&]() {
+         if(SSA->min && SSA->max)
+         {
+            RangeRef superRange(new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
+            if(superRange->isRegular())
+            {
+               // Intersect with computed range, because range computed from LLVM range analysis may not be valid any more
+               superRange = superRange->intersectWith(interval);
+               if(superRange->isRegular() && superRange->getSpan() < interval->getSpan())
+               {
+                  const auto superBW = isSigned ? Range::neededBits(superRange->getSignedMin(), superRange->getSignedMax(), true) : Range::neededBits(superRange->getUnsignedMin(), superRange->getUnsignedMax(), false);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
+                  interval = superRange;
+                  newBW = superBW;
+                  return true;
+               }
+            }
+         }
+         return false;
+      }();
+      
+      if(!hasBetterSuper)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+      }
    }
 
    auto getConstNode = [&](const RangeConstRef& range) {
@@ -2326,7 +2331,7 @@ using VCMap = CustomMap<VarNode*, std::pair<VarNode*, UnpackSelector>>;
 class NodeContainer
 {
  private:
-   static const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&)>> _opCtorGenerators;
+   static const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)>> _opCtorGenerators;
 
    VarNodes _varNodes;
 
@@ -2341,28 +2346,23 @@ class NodeContainer
    VCMap _vcMap;
 
  protected:
-   VarNodes& getVarNodes()
-   {
-      return _varNodes;
-   }
-
-   OpNodes& getOpNodes()
-   {
-      return _opNodes;
-   }
-
-   DefMap& getDefs()
-   {
-      return _defMap;
-   }
-
    UseMap& getUses()
    {
       return _useMap;
    }
 
  public:
-   virtual ~NodeContainer() = default;
+   virtual ~NodeContainer()
+   {
+      for(auto varNode : _varNodes)
+      {
+         delete varNode.second;
+      }
+      for(auto op : _opNodes)
+      {
+         delete op;
+      }
+   }
 
    const VarNodes& getVarNodes() const
    {
@@ -2397,9 +2397,9 @@ class NodeContainer
       auto cvrIt = _cvrMap.find(cvr.getVar());
       if(cvrIt != _cvrMap.end())
       {
-         for(const auto& [BBI, vr] : cvr.getVR())
+         for(const auto& BBIvr : cvr.getVR())
          {
-            cvrIt->second.addVR(BBI, vr);
+            cvrIt->second.addVR(BBIvr.first, BBIvr.second);
          }
       }
       else
@@ -2438,11 +2438,11 @@ class NodeContainer
       return op;
    }
 
-   OpNode* addOperation(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM)
+   OpNode* addOperation(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM)
    {
       for(const auto& generateCtorFor : _opCtorGenerators)
       {
-         if(auto generateOpFor = generateCtorFor(stmt, function_id, FB, TM))
+         if(auto generateOpFor = generateCtorFor(stmt, function_id, FB, TM, AppM))
          {
             return pushOperation(generateOpFor(this));
          }
@@ -2494,7 +2494,7 @@ static bool enable_load = true;
 static bool enable_float_pack = true;
 static bool enable_view_convert = true;
 static bool enable_float_unpack = true;
-static bool enable_ternary = false;          // TODO: disable because of problem with reduced precision fdiv/f64div operator (fix before enabling back)
+static bool enable_ternary = false; // TODO: disable because of problem with reduced precision fdiv/f64div operator (fix before enabling back)
 static bool enable_bit_phi = true;
 
 #define OPERATION_OPTION(opts, X)                                                                          \
@@ -2578,7 +2578,7 @@ class PhiOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 // The ctor.
@@ -2620,7 +2620,7 @@ RangeRef PhiOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> PhiOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> PhiOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
    if(!phi || phi->CGetDefEdgesList().size() <= 1)
@@ -2746,7 +2746,7 @@ class UnaryOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 UnaryOpNode::UnaryOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst, VarNode* _source, kind _opcode) : OpNode(_intersect, _sink, _inst), source(_source), opcode(_opcode)
@@ -3067,7 +3067,7 @@ RangeRef UnaryOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(assign == nullptr)
@@ -3110,7 +3110,8 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
          const auto fromVC = NC->getVCMap().find(_source);
          if(fromVC != NC->getVCMap().end())
          {
-            const auto& [f, us] = fromVC->second;
+            const auto& f = fromVC->second.first;
+            const auto& us = fromVC->second.second;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source->getValue())->ToString() + " is view_convert from " + f->ToString() + "& (" + STR(us.mask) + " >> " + STR(+us.rshift) + ")");
             const auto curr_us = us & ((1ULL << sink->getBitWidth()) - 1ULL);
             // Detect exponent trucantion after right shift for 32 bit floating-point
@@ -3287,7 +3288,7 @@ class SigmaOpNode : public UnaryOpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 SigmaOpNode::SigmaOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst, VarNode* _source, VarNode* _SymbolicSource, kind _opcode)
@@ -3326,7 +3327,7 @@ RangeRef SigmaOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> SigmaOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> SigmaOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* phi = GetPointer<const gimple_phi>(GET_CONST_NODE(stmt));
    if(!phi || phi->CGetDefEdgesList().size() != 1)
@@ -3478,7 +3479,7 @@ class BinaryOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 // The ctor.
@@ -3503,6 +3504,9 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case mult_expr_K:
          RETURN_DISABLED_OPTION(mul, bw);
          return op1->mul(op2);
+      case widen_mult_expr_K:
+         RETURN_DISABLED_OPTION(mul, bw);
+         return isSigned ? op1->sextOrTrunc(bw)->mul(op2->sextOrTrunc(bw)) : op1->zextOrTrunc(bw)->mul(op2->sextOrTrunc(bw));
       case trunc_div_expr_K:
          if(isSigned)
          {
@@ -3610,7 +3614,6 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case ltgt_expr_K:
       case unordered_expr_K:
       case widen_sum_expr_K:
-      case widen_mult_expr_K:
       case with_size_expr_K:
       case vec_lshift_expr_K:
       case vec_rshift_expr_K:
@@ -3663,10 +3666,52 @@ RangeRef BinaryOpNode::eval() const
 
       result = evaluate(this->getOpcode(), bw, op1, op2, isSigned);
 
+      // Bitvalue may consider only lower bits for some variables, thus it is necessary to perform evaluation on truncated opernds to obtain valid results
+      if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(getSink()->getValue())))
+      {
+         const auto sinkSigned = isSignedType(getSink()->getValue());
+         const auto bvRange = [&]() {
+            const auto sinkBW = getSink()->getBitWidth();
+            if(ssa->bit_values.empty() || ssa->bit_values.front() == 'X')
+            {
+               return RangeRef(new Range(Regular, sinkBW));
+            }
+            std::string bits;
+            for(size_t i = 0ULL; i < ssa->bit_values.size(); ++i)
+            {
+               bits += (ssa->bit_values[i] == 'X' || ssa->bit_values[i] == 'U') ? '1' : ssa->bit_values[i];
+            }
+            const auto r = Range::fromBitValues(string_to_bitstring(bits), static_cast<bw_t>(bits.size()), sinkSigned);
+            THROW_ASSERT(r->isConstant(), "Range derived from <" + bits + "> should be constant");
+            return r;
+         }();
+         const auto op_code = this->getOpcode();
+         if((bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) && 
+            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /* || op_code == minus_expr_K */ || op_code == pointer_plus_expr_K))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mask result range with " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" + (sinkSigned ? "signed" : "unsigned") + "> over range " + result->ToString());
+            // #if HAVE_ASSERTS
+            //             const auto resEmpty = result->isEmpty();
+            // #endif
+            const auto restrictedResult = result->And(sinkSigned ? bvRange->sextOrTrunc(result->getBitWidth()) : bvRange->zextOrTrunc(result->getBitWidth()));
+            // Result mask not always result in smaller range
+            if(result->getSpan() > restrictedResult->getSpan())
+            {
+               result = restrictedResult;
+            }
+            // THROW_ASSERT(result->isEmpty() == resEmpty, "");
+         }
+      }
+
       if(result->getBitWidth() != bw)
       {
          result = result->zextOrTrunc(bw);
       }
+   }
+   else if(op1->isReal() && op2->isReal())
+   {
+      THROW_ASSERT(this->getOpcode() == eq_expr_K || this->getOpcode() == ne_expr_K, tree_node::GetString(this->getOpcode()) + " with real operands not supported");
+      result = evaluate(this->getOpcode(), bw, op1, op2, false);
    }
    else if(op1->isEmpty() || op2->isEmpty())
    {
@@ -3689,7 +3734,7 @@ RangeRef BinaryOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(assign == nullptr)
@@ -3723,7 +3768,8 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             const auto fromVC = NC->getVCMap().find(_source1);
             if(fromVC != NC->getVCMap().end())
             {
-               const auto& [f, us] = fromVC->second;
+               const auto& f = fromVC->second.first;
+               const auto& us = fromVC->second.second;
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "& (" + STR(us.mask) + " >> " + STR(+us.rshift) + ")");
                const auto cst_int = tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(_source2->getValue())));
                UnpackSelector new_us;
@@ -3799,7 +3845,10 @@ std::function<OpNode*(NodeContainer*)> BinaryOpNode::opCtorGenerator(const tree_
             const auto fromVC = NC->getVCMap().find(_source1);
             if(fromVC != NC->getVCMap().end())
             {
-               auto& [f, us] = fromVC->second;
+               const auto& f = fromVC->second.first;
+#ifndef NDEBUG
+               const auto& us = fromVC->second.second;
+#endif
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Operand " + GET_CONST_NODE(_source1->getValue())->ToString() + " is view_convert from " + f->ToString() + "& (" + STR(us.mask) + " >> " + STR(+us.rshift) + ")");
                //    NC->addViewConvertMask(sink, f, f->getBitWidth() == 32 ? UnpackSelector(4294967296U,31U) : UnpackSelector(9223372036854775808ULL, 63U));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added UnaryOp for sign view_convert");
@@ -3985,7 +4034,7 @@ class TernaryOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&);
 };
 
 // The ctor.
@@ -4007,7 +4056,7 @@ RangeRef TernaryOpNode::eval() const
    const auto op1 = this->getSource1()->getRange();
    auto op2 = this->getSource2()->getRange();
    auto op3 = this->getSource3()->getRange();
-   
+
    auto result = getRangeFor(getSink()->getValue(), Regular);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ToString());
@@ -4015,7 +4064,7 @@ RangeRef TernaryOpNode::eval() const
 #ifndef NDEBUG
    if(enable_ternary)
    {
-//    #endif
+      //    #endif
       // only evaluate if all operands are Regular
       if((op1->isRegular() || op1->isAnti()) && (op2->isRegular() || op2->isAnti()) && (op3->isRegular() || op3->isAnti()))
       {
@@ -4092,7 +4141,7 @@ RangeRef TernaryOpNode::eval() const
             result = getRangeFor(getSink()->getValue(), Empty);
          }
       }
-//    #ifndef NDEBUG
+      //    #ifndef NDEBUG
    }
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, result->ToString() + " = " + op1->ToString() + " ? " + op2->ToString() + " : " + op3->ToString());
@@ -4112,7 +4161,7 @@ RangeRef TernaryOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> TernaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&)
+std::function<OpNode*(NodeContainer*)> TernaryOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)
 {
    const auto* assign = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(assign == nullptr)
@@ -4252,7 +4301,7 @@ class LoadOpNode : public OpNode
    void print(std::ostream& OS) const override;
    void printDot(std::ostream& OS) const override;
 
-   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM);
+   static std::function<OpNode*(NodeContainer*)> opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM);
 };
 
 LoadOpNode::LoadOpNode(const ValueRangeRef& _intersect, VarNode* _sink, const tree_nodeConstRef& _inst) : OpNode(_intersect, _sink, _inst)
@@ -4300,7 +4349,55 @@ RangeRef LoadOpNode::eval() const
    return result;
 }
 
-std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM)
+static RangeRef constructor_range(const tree_managerConstRef TM, const tree_nodeConstRef tn, const RangeConstRef init)
+{
+   THROW_ASSERT(tn->get_kind() == constructor_K, "tn is not constructor node");
+   const auto* c = GetPointer<const constructor>(tn);
+   std::vector<unsigned int> array_dims;
+   unsigned int elements_bitsize;
+   tree_helper::get_array_dim_and_bitsize(TM, GET_INDEX_CONST_NODE(c->type), array_dims, elements_bitsize);
+   unsigned int initialized_elements = 0;
+   auto ctor_range = RangeRef(init->clone());
+   for(const auto& i : c->list_of_idx_valu)
+   {
+      const auto el = GET_CONST_NODE(i.second);
+      THROW_ASSERT(el, "unexpected condition");
+
+      if(el->get_kind() == constructor_K && GetPointer<array_type>(GET_CONST_NODE(GetPointer<constructor>(el)->type)))
+      {
+         THROW_ASSERT(array_dims.size() > 1 || GET_CONST_NODE(c->type)->get_kind() == record_type_K, "invalid nested constructors:" + tn->ToString() + " " + STR(array_dims.size()));
+         ctor_range = ctor_range->unionWith(constructor_range(TM, el, ctor_range));
+      }
+      else
+      {
+         const auto init_range = getGIMPLE_range(el);
+         if(init_range->getBitWidth() > static_cast<Range::bw_t>(elements_bitsize) || init_range->isReal() != ctor_range->isReal())
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + el->ToString());
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + el->ToString());
+            ctor_range = ctor_range->unionWith(init_range);
+         }
+      }
+      initialized_elements++;
+   }
+   if(initialized_elements < array_dims.front())
+   {
+      if(ctor_range->isReal())
+      {
+         ctor_range = ctor_range->unionWith(RangeRef(new RealRange(RangeRef(new Range(Regular, static_cast<Range::bw_t>(elements_bitsize), 0, 0)))));
+      }
+      else
+      {
+         ctor_range = ctor_range->unionWith(RangeRef(new Range(Regular, static_cast<Range::bw_t>(elements_bitsize), 0, 0)));
+      }
+   }
+   return ctor_range;
+}
+
+std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_nodeConstRef& stmt, unsigned int function_id, const FunctionBehaviorConstRef& FB, const tree_managerConstRef& TM, const application_managerRef& AppM)
 {
    const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
    if(ga == nullptr)
@@ -4311,7 +4408,7 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
    {
       return nullptr;
    }
-   return [stmt, ga, function_id, TM](NodeContainer* NC) {
+   return [stmt, ga, function_id, FB, TM, AppM](NodeContainer* NC) {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Analysing load operation " + ga->ToString());
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
       const auto bw = getGIMPLE_BW(ga->op0);
@@ -4319,105 +4416,110 @@ std::function<OpNode*(NodeContainer*)> LoadOpNode::opCtorGenerator(const tree_no
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Sink variable is " + GET_CONST_NODE(ga->op0)->get_kind_text() + " (size = " + STR(bw) + ")");
 
       auto intersection = getRangeFor(sink->getValue(), Empty);
-      CustomOrderedSet<unsigned int> res_set;
-      bool pointToConstants = tree_helper::is_fully_resolved(TM, GET_INDEX_CONST_NODE(ga->op1), res_set);
-      if(pointToConstants && !res_set.empty())
+      if(GET_NODE(ga->op1)->get_kind() == array_ref_K || GET_NODE(ga->op1)->get_kind() == mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref_K || GET_NODE(ga->op1)->get_kind() == target_mem_ref461_K || GET_NODE(ga->op1)->get_kind() == var_decl_K)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Pointer is fully resolved");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-         for(auto indexIt = res_set.begin(); indexIt != res_set.end() && pointToConstants; ++indexIt)
+         unsigned int base_index = tree_helper::get_base_index(TM, GET_INDEX_NODE(ga->op1));
+         const auto* hm = GetPointer<HLS_manager>(AppM);
+         if(base_index && AppM->get_written_objects().find(base_index) == AppM->get_written_objects().end() && hm && hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_sds_var(base_index))
          {
-            const auto TN = TM->CGetTreeNode(*indexIt);
-            if(const auto* vd = GetPointer<const var_decl>(TN))
+            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            if(vd && vd->init)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level,
-                              "Points to " + TN->ToString() + " (readonly = " + STR(vd->readonly_flag) + ", defs = " + STR(vd->defs.size()) + ", full-size = " + STR(GetPointer<const integer_cst>(GET_CONST_NODE(vd->size))->value) + ")");
-               if(!vd->readonly_flag || vd->init == nullptr)
+               if(GET_NODE(vd->init)->get_kind() == constructor_K)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Pointed variable is not constant " + TN->ToString());
-                  pointToConstants = false;
-                  break;
+                  intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
                }
-               if(const auto* constr = GetPointer<const constructor>(GET_CONST_NODE(vd->init)))
+               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
                {
-                  if(!tree_helper::is_a_struct(TM, GET_INDEX_CONST_NODE(constr->type)) && !tree_helper::is_an_array(TM, GET_INDEX_CONST_NODE(constr->type)))
+                  auto init_range = getGIMPLE_range(GET_NODE(vd->init));
+                  if(intersection->isReal() && !init_range->isReal())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->Initializer has " + STR(constr->list_of_idx_valu.size()) + " values:");
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "-->");
-                     THROW_ASSERT(static_cast<bool>(constr->list_of_idx_valu.size()), "At least one initializer should be there");
-                     for(const auto& idxValue : constr->list_of_idx_valu)
-                     {
-                        const auto& value = idxValue.second;
-                        if(tree_helper::is_constant(TM, GET_INDEX_CONST_NODE(value)) && isValidType(value))
-                        {
-#ifndef NDEBUG
-                           const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(value));
-                           if(ic && bw == 8)
-                           {
-                              auto asciiChar = tree_helper::get_integer_cst_value(ic);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString() + " '" + static_cast<char>(asciiChar) + "'");
-                           }
-                           else
-                           {
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, GET_CONST_NODE(value)->ToString());
-                           }
-#endif
-                           intersection = intersection->unionWith(getGIMPLE_range(value));
-                        }
-                        else
-                        {
-                           pointToConstants = false;
-                           break;
-                        }
-                     }
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
+                     init_range.reset(new RealRange(init_range));
+                  }
+                  else if(!intersection->isReal() && init_range->isReal())
+                  {
+                     init_range = std::static_pointer_cast<RealRange>(init_range)->getRange();
+                  }
+                  if(init_range->getBitWidth() != bw)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Array/struct initialization currently not supported");
-                     pointToConstants = false;
-                     break;
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                     intersection = init_range;
                   }
                }
-#ifndef NDEBUG
-               else if(const auto* cst_val = GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
-#else
-               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)) != nullptr)
-#endif
+            }
+         }
+         if(base_index && AppM->get_written_objects().find(base_index) != AppM->get_written_objects().end() && hm && hm->Rmem && FB->is_variable_mem(base_index) && hm->Rmem->is_private_memory(base_index) && hm->Rmem->is_sds_var(base_index))
+         {
+            const auto* vd = GetPointer<const var_decl>(TM->get_tree_node_const(base_index));
+            if(vd && vd->init)
+            {
+               if(GET_NODE(vd->init)->get_kind() == constructor_K)
                {
-                  const auto init_range = getGIMPLE_range(vd->init);
-                  if(init_range->getBitWidth() != bw || init_range->isReal() != intersection->isReal())
+                  intersection = constructor_range(TM, GET_CONST_NODE(vd->init), intersection);
+               }
+               else if(GetPointer<const cst_node>(GET_CONST_NODE(vd->init)))
+               {
+                  auto init_range = getGIMPLE_range(GET_CONST_NODE(vd->init));
+                  if(intersection->isReal() && !init_range->isReal())
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + cst_val->ToString());
-                     pointToConstants = false;
-                     break;
+                     init_range.reset(new RealRange(init_range));
                   }
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + cst_val->ToString());
-                  intersection = init_range;
-               }
-               else if(GetPointer<const addr_expr>(GET_CONST_NODE(vd->init)) != nullptr)
-               {
-                  pointToConstants = false; // TODO: put all in the else branch and remove throw_unreachable
-                  break;
-               }
-               else
-               {
-                  THROW_UNREACHABLE("Unhandled initializer " + GET_CONST_NODE(vd->init)->get_kind_text() + " " + GET_CONST_NODE(vd->init)->ToString());
-                  pointToConstants = false;
-                  break;
+                  else if(!intersection->isReal() && init_range->isReal())
+                  {
+                     init_range = std::static_pointer_cast<RealRange>(init_range)->getRange();
+                  }
+                  if(init_range->getBitWidth() != bw)
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + GET_NODE(vd->init)->ToString());
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + GET_NODE(vd->init)->ToString());
+                     intersection = init_range;
+                  }
                }
             }
             else
             {
-               THROW_UNREACHABLE("Unknown tree node " + TN->get_kind_text() + " " + TN->ToString());
-               pointToConstants = false;
-               break;
+               if(intersection->isReal())
+               {
+                  intersection = RangeRef(new RealRange(RangeRef(new Range(Regular, bw, 0, 0))));
+               }
+               else
+               {
+                  intersection = RangeRef(new Range(Regular, bw, 0, 0));
+               }
+            }
+            for(const auto& cur_var : hm->Rmem->get_source_values(base_index))
+            {
+               const auto cur_node = TM->get_tree_node_const(cur_var);
+               THROW_ASSERT(cur_node, "");
+               auto init_range = getGIMPLE_range(cur_node);
+               if(intersection->isReal() && !init_range->isReal())
+               {
+                  init_range.reset(new RealRange(init_range));
+               }
+               else if(!intersection->isReal() && init_range->isReal())
+               {
+                  init_range = std::static_pointer_cast<RealRange>(init_range)->getRange();
+               }
+               if(init_range->getBitWidth() != bw)
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value not compliant " + cur_node->ToString());
+               }
+               else
+               {
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Initializer value is " + cur_node->ToString());
+                  intersection = intersection->unionWith(init_range);
+               }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "<--");
       }
-      if(!pointToConstants)
+      if(intersection->isEmpty())
       {
          intersection = getGIMPLE_range(stmt);
       }
@@ -4471,7 +4573,7 @@ void LoadOpNode::printDot(std::ostream& OS) const
    OS << quot << "\n";
 }
 
-const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&)>> NodeContainer::_opCtorGenerators = {
+const std::vector<std::function<std::function<OpNode*(NodeContainer*)>(const tree_nodeConstRef&, unsigned int, const FunctionBehaviorConstRef&, const tree_managerConstRef&, const application_managerRef&)>> NodeContainer::_opCtorGenerators = {
     LoadOpNode::opCtorGenerator, UnaryOpNode::opCtorGenerator, BinaryOpNode::opCtorGenerator, PhiOpNode::opCtorGenerator, SigmaOpNode::opCtorGenerator, TernaryOpNode::opCtorGenerator};
 
 // ========================================================================== //
@@ -4667,14 +4769,14 @@ Nuutila::Nuutila(const VarNodes& varNodes, UseMap& useMap, const SymbMap& symbMa
  */
 void Nuutila::addControlDependenceEdges(UseMap& useMap, const SymbMap& symbMap, const VarNodes& vars)
 {
-   for(const auto& [var, ops] : symbMap)
+   for(const auto& varOps : symbMap)
    {
-      for(const auto& op : ops)
+      for(const auto& op : varOps.second)
       {
-         THROW_ASSERT(static_cast<bool>(vars.count(var)), "Variable should be stored in VarNodes map");
-         auto* source = vars.at(var);
+         THROW_ASSERT(static_cast<bool>(vars.count(varOps.first)), "Variable should be stored in VarNodes map");
+         auto* source = vars.at(varOps.first);
          auto* cdedge = new ControlDepNode(op->getSink(), source);
-         useMap[var].insert(cdedge);
+         useMap[varOps.first].insert(cdedge);
       }
    }
 }
@@ -4718,6 +4820,7 @@ void Nuutila::delControlDependenceEdges(UseMap& useMap)
 #endif
          // Remove pseudo edge from the map
          varOps.second.erase(cd);
+         delete cd;
       }
    }
 }
@@ -5350,7 +5453,7 @@ class ConstraintGraph : public NodeContainer
    std::vector<APInt> constantvector;
 
    /**
-    * @brief Analyse branch instruction and build conditional value range
+    * @brief Analyze branch instruction and build conditional value range
     *
     * @param br Branch instruction
     * @param branchBB Branch basic block
@@ -5554,34 +5657,34 @@ class ConstraintGraph : public NodeContainer
 
       // Find else branch BBI if any
       unsigned int DefaultBBI = 0;
-      for(const auto& [cond, BBI] : mwi->list_of_cond)
+      for(const auto& condBBI : mwi->list_of_cond)
       {
-         if(!cond)
+         if(!condBBI.first)
          {
-            DefaultBBI = BBI;
+            DefaultBBI = condBBI.second;
             break;
          }
       }
 
-      // Analyse each if branch condition
+      // Analyze each if branch condition
       CustomMap<tree_nodeConstRef, std::map<unsigned int, ValueRangeRef>> switchSSAMap;
-      for(const auto& [cond, BBI] : mwi->list_of_cond)
+      for(const auto& condBBI : mwi->list_of_cond)
       {
-         if(!cond)
+         if(!condBBI.first)
          {
             // Default branch is handled at the end
             continue;
          }
 
-         if(GetPointer<const cst_node>(GET_CONST_NODE(cond)) != nullptr)
+         if(GetPointer<const cst_node>(GET_CONST_NODE(condBBI.first)) != nullptr)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable is a cst_node, dead code elimination necessary!");
             // TODO: abort and call dead code elimination to evaluate constant condition
             //    return true;
             continue;
          }
-         THROW_ASSERT(GET_CONST_NODE(cond)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(cond)->get_kind_text() + " " + GET_CONST_NODE(cond)->ToString() + ")");
-         const auto case_compare = branchOpRecurse(cond);
+         THROW_ASSERT(GET_CONST_NODE(condBBI.first)->get_kind() == ssa_name_K, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(condBBI.first)->get_kind_text() + " " + GET_CONST_NODE(condBBI.first)->ToString() + ")");
+         const auto case_compare = branchOpRecurse(condBBI.first);
          if(const auto* cmp_op = GetPointer<const binary_expr>(case_compare))
          {
             if(!isCompare(cmp_op))
@@ -5648,7 +5751,7 @@ class ConstraintGraph : public NodeContainer
 
                // Create the interval using the intersection in the branch.
                auto BT = ValueRangeRef(new ValueRange(TValues));
-               switchSSAMap[variable].insert(std::make_pair(BBI, BT));
+               switchSSAMap[variable].insert(std::make_pair(condBBI.second, BT));
 
                // Do the same for the operand of variable (if variable is a cast
                // instruction)
@@ -5670,7 +5773,7 @@ class ConstraintGraph : public NodeContainer
 #endif
 
                      auto _BT = ValueRangeRef(new ValueRange(TValues));
-                     switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, _BT));
+                     switchSSAMap[cast_inst->op].insert(std::make_pair(condBBI.second, _BT));
                   }
                }
             }
@@ -5692,7 +5795,7 @@ class ConstraintGraph : public NodeContainer
 
                // Symbolic intervals for op0
                const auto STOp0 = ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
-               switchSSAMap[cmp_op->op0].insert(std::make_pair(BBI, STOp0));
+               switchSSAMap[cmp_op->op0].insert(std::make_pair(condBBI.second, STOp0));
 
                // Symbolic intervals for operand of op0 (if op0 is a cast instruction)
                if(const auto* Var = GetPointer<const ssa_name>(Op0))
@@ -5704,13 +5807,13 @@ class ConstraintGraph : public NodeContainer
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op0 comes from a cast expression" + cast_inst->ToString());
 
                      const auto STOp0_0 = ValueRangeRef(new SymbRange(CR, cmp_op->op1, pred));
-                     switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, STOp0_0));
+                     switchSSAMap[cast_inst->op].insert(std::make_pair(condBBI.second, STOp0_0));
                   }
                }
 
                // Symbolic intervals for op1
                const auto STOp1 = ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
-               switchSSAMap[cmp_op->op1].insert(std::make_pair(BBI, STOp1));
+               switchSSAMap[cmp_op->op1].insert(std::make_pair(condBBI.second, STOp1));
 
                // Symbolic intervals for operand of op1 (if op1 is a cast instruction)
                if(const auto* Var = GetPointer<const ssa_name>(Op1))
@@ -5722,7 +5825,7 @@ class ConstraintGraph : public NodeContainer
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Op1 comes from a cast expression" + cast_inst->ToString());
 
                      const auto STOp1_1 = ValueRangeRef(new SymbRange(CR, cmp_op->op0, swappred));
-                     switchSSAMap[cast_inst->op].insert(std::make_pair(BBI, STOp1_1));
+                     switchSSAMap[cast_inst->op].insert(std::make_pair(condBBI.second, STOp1_1));
                   }
                }
             }
@@ -5739,21 +5842,21 @@ class ConstraintGraph : public NodeContainer
       //       could still be valid values
       if(static_cast<bool>(DefaultBBI))
       {
-         for(auto& [var, VSM] : switchSSAMap)
+         for(auto& varVSM : switchSSAMap)
          {
-            auto elseRange = getRangeFor(var, Empty);
-            for(const auto& BBIinterval : VSM)
+            auto elseRange = getRangeFor(varVSM.first, Empty);
+            for(const auto& BBIinterval : varVSM.second)
             {
                elseRange = elseRange->unionWith(BBIinterval.second->getRange());
             }
             elseRange = elseRange->getAnti();
-            VSM.insert(std::make_pair(DefaultBBI, ValueRangeRef(new ValueRange(elseRange))));
+            varVSM.second.insert(std::make_pair(DefaultBBI, ValueRangeRef(new ValueRange(elseRange))));
          }
       }
 
-      for(const auto& [var, VSM] : switchSSAMap)
+      for(const auto& varVSM : switchSSAMap)
       {
-         addConditionalValueRange(ConditionalValueRange(var, VSM));
+         addConditionalValueRange(ConditionalValueRange(varVSM.first, varVSM.second));
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return false;
@@ -6116,13 +6219,14 @@ class ConstraintGraph : public NodeContainer
       {
          parmMapIt = parmMap.insert(std::make_pair(FD->index, std::make_pair(false, std::vector<tree_nodeConstRef>(args.size(), nullptr)))).first;
       }
-      auto& [foundAll, parmBind] = parmMapIt->second;
+      auto& foundAll = parmMapIt->second.first;
       // Skip ssa uses computation when all parameters have already been associated with a variable
       if(foundAll)
       {
          return;
       }
 
+      auto& parmBind = parmMapIt->second.second;
       const auto ssa_uses = tree_helper::ComputeSsaUses(stmt);
       for(const auto& ssa_use_counter : ssa_uses)
       {
@@ -6282,7 +6386,7 @@ class ConstraintGraph : public NodeContainer
                parametersBinding(stmt, FD);
                if(isValidInstruction(stmt, FB, TM))
                {
-                  addOperation(stmt, function_id, FB, TM);
+                  addOperation(stmt, function_id, FB, TM, AppM);
                }
             }
          }
@@ -6301,7 +6405,7 @@ class ConstraintGraph : public NodeContainer
                   }
                   continue;
                }
-               addOperation(stmt, function_id, FB, TM);
+               addOperation(stmt, function_id, FB, TM, AppM);
                parametersBinding(stmt, FD);
             }
          }
@@ -6367,16 +6471,12 @@ class ConstraintGraph : public NodeContainer
          }
          else
          {
-            UseMap compUseMap = buildUseMap(component);
-
-            // Get the entry points of the SCC
-            std::set<tree_nodeConstRef, tree_reindexCompare> entryPoints;
+            const auto compUseMap = buildUseMap(component);
 
 #ifdef RA_JUMPSET
             // Create vector of constants inside component
             // Comment this line below to deactivate jump-set
             buildConstantVector(component, compUseMap);
-#endif
 #ifndef NDEBUG
             if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
             {
@@ -6391,6 +6491,10 @@ class ConstraintGraph : public NodeContainer
                }
             }
 #endif
+#endif
+
+            // Get the entry points of the SCC
+            std::set<tree_nodeConstRef, tree_reindexCompare> entryPoints;
 #ifndef NDEBUG
             auto printEntryFor = [&](const std::string& mType) {
                if(DEBUG_LEVEL_VERY_PEDANTIC <= graph_debug)
@@ -6450,30 +6554,7 @@ class ConstraintGraph : public NodeContainer
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, graph_debug, "Printed final constraint graph to " + printToFile(step_name + ".constraints.dot", parameters));
    }
 
-   RangeConstRef getRange(const tree_nodeConstRef v)
-   {
-      auto vit = getVarNodes().find(v);
-      if(vit == getVarNodes().end())
-      {
-         // If the value doesn't have a range,
-         // it wasn't considered by the range analysis
-         // for some reason.
-         // It gets an unknown range if it's a variable,
-         // or the tight range if it's a constant
-         //
-         // I decided NOT to insert these uncovered
-         // values to the node set after their range
-         // is created here.
-         THROW_ASSERT(static_cast<bool>(getGIMPLE_BW(v)), "Invalid bitwidth");
-         if(GetPointer<const cst_node>(GET_CONST_NODE(v)))
-         {
-            return getGIMPLE_range(v);
-         }
-         return getRangeFor(v, Unknown);
-      }
-      return vit->second->getRange();
-   }
-
+#ifndef NDEBUG
    std::string printToFile(const std::string& file_name, const ParameterConstRef parameters) const
    {
       std::string output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "RangeAnalysis/";
@@ -6499,19 +6580,19 @@ class ConstraintGraph : public NodeContainer
       OS << "node [shape=record,fontname=\"Times-Roman\",fontsize=14];\n";
 
       // Print the body of the .dot file.
-      for(const auto& [var, node] : getVarNodes())
+      for(const auto& varNode : getVarNodes())
       {
-         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(var)))
+         if(const auto* C = GetPointer<const integer_cst>(GET_CONST_NODE(varNode.first)))
          {
             OS << " " << C->value;
          }
          else
          {
             OS << quot;
-            printVarName(var, OS);
+            printVarName(varNode.first, OS);
             OS << quot;
          }
-         OS << R"( [label=")" << node << "\"]\n";
+         OS << R"( [label=")" << varNode.second << "\"]\n";
       }
 
       for(auto* op : getOpNodes())
@@ -6523,6 +6604,7 @@ class ConstraintGraph : public NodeContainer
       // Print the footer of the .dot file.
       OS << "}\n";
    }
+#endif
 };
 
 // ========================================================================== //
@@ -7064,6 +7146,24 @@ bool RangeAnalysis::HasToBeExecuted() const
 void RangeAnalysis::Initialize()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range Analysis step");
+   fun_id_to_restart.clear();
+}
+
+DesignFlowStep_Status RangeAnalysis::Exec()
+{
+#ifndef NDEBUG
+   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
+#else
+   if(execution_mode == RA_EXEC_SKIP)
+#endif
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
+      return DesignFlowStep_Status::SKIPPED;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+
+   // Initialize constraint graph
+   ConstraintGraphRef CG;
    switch(solverType)
    {
       case st_Cousot:
@@ -7088,23 +7188,11 @@ void RangeAnalysis::Initialize()
          THROW_UNREACHABLE("Unknown solver type " + STR(solverType));
          break;
    }
-   fun_id_to_restart.clear();
-}
 
-DesignFlowStep_Status RangeAnalysis::Exec()
-{
-#ifndef NDEBUG
-   if(iteration >= stop_iteration || execution_mode == RA_EXEC_SKIP)
-#else
-   if(execution_mode == RA_EXEC_SKIP)
-#endif
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Range analysis no execution mode enabled");
-      return DesignFlowStep_Status::SKIPPED;
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   // Analyse only reached functions
+      // Analyse only reached functions
+#if defined(EARLY_DEAD_CODE_RESTART) || !defined(NDEBUG)
    const auto TM = AppM->get_tree_manager();
+#endif
    auto rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
 
 #ifdef EARLY_DEAD_CODE_RESTART
@@ -7131,7 +7219,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
       return DesignFlowStep_Status::ABORTED;
    }
 #else
-   for(const auto f : rb_funcs)
+   for(const auto& f : rb_funcs)
    {
       CG->buildGraph(f);
    }
@@ -7139,7 +7227,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 
    // Top functions are not called by any other functions, so they do not have any call statement to analyse
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters and return value propagation...");
-   for(const auto top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
+   for(const auto& top_fn : AppM->CGetCallGraphManager()->GetRootFunctions())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, top_fn, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(top_fn)->CGetBehavioralHelper()))) + " is top function");
       TopFunctionUserHits(top_fn, AppM, CG, debug_level);
@@ -7163,7 +7251,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 #ifndef NDEBUG
-   const auto modified = finalize();
+   const auto modified = finalize(CG);
    if(stop_iteration != std::numeric_limits<decltype(stop_iteration)>::max())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Iteration " + STR(iteration) + "/" + STR(stop_iteration) + "completed (" + STR(stop_iteration - iteration) + " to go)");
@@ -7178,12 +7266,13 @@ DesignFlowStep_Status RangeAnalysis::Exec()
    }
    return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 #else
-   return finalize() ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+   return finalize(CG) ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 #endif
 }
 
-bool RangeAnalysis::finalize()
+bool RangeAnalysis::finalize(ConstraintGraphRef CG)
 {
+   THROW_ASSERT(CG, "");
    const auto& vars = std::static_pointer_cast<const ConstraintGraph>(CG)->getVarNodes();
    CustomMap<unsigned int, int> modifiedFunctions;
 #ifndef NDEBUG
@@ -7191,9 +7280,9 @@ bool RangeAnalysis::finalize()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-      for(const auto& [var, node] : vars)
+      for(const auto& varNode : vars)
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range " + node->getRange()->ToString() + " for " + GET_CONST_NODE(var)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range " + varNode.second->getRange()->ToString() + " for " + GET_CONST_NODE(varNode.first)->ToString());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "IR update not applied in read-only mode");
@@ -7230,7 +7319,6 @@ bool RangeAnalysis::finalize()
 #ifndef NDEBUG
    }
 #endif
-   CG.reset();
 
    const auto rbf = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
    const auto cgm = AppM->CGetCallGraphManager();
@@ -7242,14 +7330,14 @@ bool RangeAnalysis::finalize()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Modified " + STR(modifiedFunctions.size()) + " functions:");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    // Previous steps must be invalidated for caller functions too
-   for(const auto [f, ut] : modifiedFunctions)
+   for(const auto fUT : modifiedFunctions)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, f, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(f)->CGetBehavioralHelper()))));
-      fun_id_to_restart.insert(f);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, tree_helper::print_type(TM, fUT.first, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fUT.first)->CGetBehavioralHelper()))));
+      fun_id_to_restart.insert(fUT.first);
       // Restart necessary steps on caller functions only for constant propagation
-      if(ut & ut_Constant)
+      if(fUT.second & ut_Constant)
       {
-         const auto f_v = cgm->GetVertex(f);
+         const auto f_v = cgm->GetVertex(fUT.first);
          for(const auto& caller : boost::make_iterator_range(boost::in_edges(f_v, *cg)))
          {
             const auto caller_id = cgm->get_function(boost::source(caller, *cg));

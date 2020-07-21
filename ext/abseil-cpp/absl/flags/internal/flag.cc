@@ -15,21 +15,26 @@
 
 #include "absl/flags/internal/flag.h"
 
+#include <assert.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
 
+#include <array>
 #include <atomic>
 #include <memory>
+#include <new>
 #include <string>
-#include <vector>
+#include <typeinfo>
 
-#include "absl/base/attributes.h"
+#include "absl/base/call_once.h"
+#include "absl/base/casts.h"
 #include "absl/base/config.h"
-#include "absl/base/const_init.h"
 #include "absl/base/optimization.h"
+#include "absl/flags/config.h"
 #include "absl/flags/internal/commandlineflag.h"
 #include "absl/flags/usage_config.h"
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
@@ -47,10 +52,10 @@ const char kStrippedFlagHelp[] = "\001\002\003\004 (unknown) \004\003\002\001";
 namespace {
 
 // Currently we only validate flag values for user-defined flag types.
-bool ShouldValidateFlagValue(FlagOpFn flag_type_id) {
-#define DONT_VALIDATE(T) \
-  if (flag_type_id == &flags_internal::FlagOps<T>) return false;
-  ABSL_FLAGS_INTERNAL_BUILTIN_TYPES(DONT_VALIDATE)
+bool ShouldValidateFlagValue(FlagFastTypeId flag_type_id) {
+#define DONT_VALIDATE(T, _) \
+  if (flag_type_id == base_internal::FastTypeId<T>()) return false;
+  ABSL_FLAGS_INTERNAL_SUPPORTED_TYPES(DONT_VALIDATE)
 #undef DONT_VALIDATE
 
   return true;
@@ -62,85 +67,188 @@ bool ShouldValidateFlagValue(FlagOpFn flag_type_id) {
 // need to acquire these locks themselves.
 class MutexRelock {
  public:
-  explicit MutexRelock(absl::Mutex* mu) : mu_(mu) { mu_->Unlock(); }
-  ~MutexRelock() { mu_->Lock(); }
+  explicit MutexRelock(absl::Mutex& mu) : mu_(mu) { mu_.Unlock(); }
+  ~MutexRelock() { mu_.Lock(); }
 
   MutexRelock(const MutexRelock&) = delete;
   MutexRelock& operator=(const MutexRelock&) = delete;
 
  private:
-  absl::Mutex* mu_;
+  absl::Mutex& mu_;
 };
-
-// This global lock guards the initialization and destruction of data_guard_,
-// which is used to guard the other Flag data.
-ABSL_CONST_INIT static absl::Mutex flag_mutex_lifetime_guard(absl::kConstInit);
 
 }  // namespace
 
-void FlagImpl::Init() {
-  {
-    absl::MutexLock lock(&flag_mutex_lifetime_guard);
+///////////////////////////////////////////////////////////////////////////////
+// Persistent state of the flag data.
 
-    // Must initialize data guard for this flag.
-    if (!is_data_guard_inited_) {
-      new (&data_guard_) absl::Mutex;
-      is_data_guard_inited_ = true;
-    }
+class FlagImpl;
+
+class FlagState : public flags_internal::FlagStateInterface {
+ public:
+  template <typename V>
+  FlagState(FlagImpl& flag_impl, const V& v, bool modified,
+            bool on_command_line, int64_t counter)
+      : flag_impl_(flag_impl),
+        value_(v),
+        modified_(modified),
+        on_command_line_(on_command_line),
+        counter_(counter) {}
+
+  ~FlagState() override {
+    if (flag_impl_.ValueStorageKind() != FlagValueStorageKind::kAlignedBuffer)
+      return;
+    flags_internal::Delete(flag_impl_.op_, value_.heap_allocated);
   }
 
-  absl::MutexLock lock(reinterpret_cast<absl::Mutex*>(&data_guard_));
+ private:
+  friend class FlagImpl;
 
-  if (cur_ != nullptr) {
-    inited_.store(true, std::memory_order_release);
-  } else {
-    // Need to initialize cur field.
-    cur_ = MakeInitValue().release();
-    StoreAtomic();
-    inited_.store(true, std::memory_order_release);
+  // Restores the flag to the saved state.
+  void Restore() const override {
+    if (!flag_impl_.RestoreState(*this)) return;
+
+    ABSL_INTERNAL_LOG(INFO,
+                      absl::StrCat("Restore saved value of ", flag_impl_.Name(),
+                                   " to: ", flag_impl_.CurrentValue()));
+  }
+
+  // Flag and saved flag data.
+  FlagImpl& flag_impl_;
+  union SavedValue {
+    explicit SavedValue(void* v) : heap_allocated(v) {}
+    explicit SavedValue(int64_t v) : one_word(v) {}
+    explicit SavedValue(flags_internal::AlignedTwoWords v) : two_words(v) {}
+
+    void* heap_allocated;
+    int64_t one_word;
+    flags_internal::AlignedTwoWords two_words;
+  } value_;
+  bool modified_;
+  bool on_command_line_;
+  int64_t counter_;
+};
+
+///////////////////////////////////////////////////////////////////////////////
+// Flag implementation, which does not depend on flag value type.
+
+DynValueDeleter::DynValueDeleter(FlagOpFn op_arg) : op(op_arg) {}
+
+void DynValueDeleter::operator()(void* ptr) const {
+  if (op == nullptr) return;
+
+  Delete(op, ptr);
+}
+
+void FlagImpl::Init() {
+  new (&data_guard_) absl::Mutex;
+
+  auto def_kind = static_cast<FlagDefaultKind>(def_kind_);
+
+  switch (ValueStorageKind()) {
+    case FlagValueStorageKind::kAlignedBuffer:
+      // For this storage kind the default_value_ always points to gen_func
+      // during initialization.
+      assert(def_kind == FlagDefaultKind::kGenFunc);
+      (*default_value_.gen_func)(AlignedBufferValue());
+      break;
+    case FlagValueStorageKind::kOneWordAtomic: {
+      alignas(int64_t) std::array<char, sizeof(int64_t)> buf{};
+      if (def_kind == FlagDefaultKind::kGenFunc) {
+        (*default_value_.gen_func)(buf.data());
+      } else {
+        assert(def_kind != FlagDefaultKind::kDynamicValue);
+        std::memcpy(buf.data(), &default_value_, Sizeof(op_));
+      }
+      OneWordValue().store(absl::bit_cast<int64_t>(buf),
+                           std::memory_order_release);
+      break;
+    }
+    case FlagValueStorageKind::kTwoWordsAtomic: {
+      // For this storage kind the default_value_ always points to gen_func
+      // during initialization.
+      assert(def_kind == FlagDefaultKind::kGenFunc);
+      alignas(AlignedTwoWords) std::array<char, sizeof(AlignedTwoWords)> buf{};
+      (*default_value_.gen_func)(buf.data());
+      auto atomic_value = absl::bit_cast<AlignedTwoWords>(buf);
+      TwoWordsValue().store(atomic_value, std::memory_order_release);
+      break;
+    }
   }
 }
 
-// Ensures that the lazily initialized data is initialized,
-// and returns pointer to the mutex guarding flags data.
 absl::Mutex* FlagImpl::DataGuard() const {
-  if (ABSL_PREDICT_FALSE(!inited_.load(std::memory_order_acquire))) {
-    const_cast<FlagImpl*>(this)->Init();
-  }
+  absl::call_once(const_cast<FlagImpl*>(this)->init_control_, &FlagImpl::Init,
+                  const_cast<FlagImpl*>(this));
 
-  // data_guard_ is initialized.
+  // data_guard_ is initialized inside Init.
   return reinterpret_cast<absl::Mutex*>(&data_guard_);
 }
 
-void FlagImpl::Destroy() {
-  {
-    absl::MutexLock l(DataGuard());
+void FlagImpl::AssertValidType(FlagFastTypeId rhs_type_id,
+                               const std::type_info* (*gen_rtti)()) const {
+  FlagFastTypeId lhs_type_id = flags_internal::FastTypeId(op_);
 
-    // Values are heap allocated for Abseil Flags.
-    if (cur_) Delete(op_, cur_);
+  // `rhs_type_id` is the fast type id corresponding to the declaration
+  // visibile at the call site. `lhs_type_id` is the fast type id
+  // corresponding to the type specified in flag definition. They must match
+  //  for this operation to be well-defined.
+  if (ABSL_PREDICT_TRUE(lhs_type_id == rhs_type_id)) return;
 
-    // Release the dynamically allocated default value if any.
-    if (def_kind_ == FlagDefaultSrcKind::kDynamicValue) {
-      Delete(op_, default_src_.dynamic_value);
-    }
+  const std::type_info* lhs_runtime_type_id =
+      flags_internal::RuntimeTypeId(op_);
+  const std::type_info* rhs_runtime_type_id = (*gen_rtti)();
 
-    // If this flag has an assigned callback, release callback data.
-    if (callback_data_) delete callback_data_;
-  }
+  if (lhs_runtime_type_id == rhs_runtime_type_id) return;
 
-  absl::MutexLock l(&flag_mutex_lifetime_guard);
-  DataGuard()->~Mutex();
-  is_data_guard_inited_ = false;
+#if defined(ABSL_FLAGS_INTERNAL_HAS_RTTI)
+  if (*lhs_runtime_type_id == *rhs_runtime_type_id) return;
+#endif
+
+  ABSL_INTERNAL_LOG(
+      FATAL, absl::StrCat("Flag '", Name(),
+                          "' is defined as one type and declared as another"));
 }
 
 std::unique_ptr<void, DynValueDeleter> FlagImpl::MakeInitValue() const {
   void* res = nullptr;
-  if (def_kind_ == FlagDefaultSrcKind::kDynamicValue) {
-    res = Clone(op_, default_src_.dynamic_value);
-  } else {
-    res = (*default_src_.gen_func)();
+  switch (DefaultKind()) {
+    case FlagDefaultKind::kDynamicValue:
+      res = flags_internal::Clone(op_, default_value_.dynamic_value);
+      break;
+    case FlagDefaultKind::kGenFunc:
+      res = flags_internal::Alloc(op_);
+      (*default_value_.gen_func)(res);
+      break;
+    default:
+      res = flags_internal::Clone(op_, &default_value_);
+      break;
   }
   return {res, DynValueDeleter{op_}};
+}
+
+void FlagImpl::StoreValue(const void* src) {
+  switch (ValueStorageKind()) {
+    case FlagValueStorageKind::kAlignedBuffer:
+      Copy(op_, src, AlignedBufferValue());
+      break;
+    case FlagValueStorageKind::kOneWordAtomic: {
+      int64_t one_word_val = 0;
+      std::memcpy(&one_word_val, src, Sizeof(op_));
+      OneWordValue().store(one_word_val, std::memory_order_release);
+      break;
+    }
+    case FlagValueStorageKind::kTwoWordsAtomic: {
+      AlignedTwoWords two_words_val{0, 0};
+      std::memcpy(&two_words_val, src, Sizeof(op_));
+      TwoWordsValue().store(two_words_val, std::memory_order_release);
+      break;
+    }
+  }
+
+  modified_ = true;
+  ++counter_;
+  InvokeCallback();
 }
 
 absl::string_view FlagImpl::Name() const { return name_; }
@@ -150,13 +258,12 @@ std::string FlagImpl::Filename() const {
 }
 
 std::string FlagImpl::Help() const {
-  return help_source_kind_ == FlagHelpSrcKind::kLiteral ? help_.literal
-                                                        : help_.gen_func();
+  return HelpSourceKind() == FlagHelpKind::kLiteral ? help_.literal
+                                                    : help_.gen_func();
 }
 
-bool FlagImpl::IsModified() const {
-  absl::MutexLock l(DataGuard());
-  return modified_;
+FlagFastTypeId FlagImpl::TypeId() const {
+  return flags_internal::FastTypeId(op_);
 }
 
 bool FlagImpl::IsSpecifiedOnCommandLine() const {
@@ -168,33 +275,50 @@ std::string FlagImpl::DefaultValue() const {
   absl::MutexLock l(DataGuard());
 
   auto obj = MakeInitValue();
-  return Unparse(marshalling_op_, obj.get());
+  return flags_internal::Unparse(op_, obj.get());
 }
 
 std::string FlagImpl::CurrentValue() const {
-  absl::MutexLock l(DataGuard());
+  auto* guard = DataGuard();  // Make sure flag initialized
+  switch (ValueStorageKind()) {
+    case FlagValueStorageKind::kAlignedBuffer: {
+      absl::MutexLock l(guard);
+      return flags_internal::Unparse(op_, AlignedBufferValue());
+    }
+    case FlagValueStorageKind::kOneWordAtomic: {
+      const auto one_word_val =
+          absl::bit_cast<std::array<char, sizeof(int64_t)>>(
+              OneWordValue().load(std::memory_order_acquire));
+      return flags_internal::Unparse(op_, one_word_val.data());
+    }
+    case FlagValueStorageKind::kTwoWordsAtomic: {
+      const auto two_words_val =
+          absl::bit_cast<std::array<char, sizeof(AlignedTwoWords)>>(
+              TwoWordsValue().load(std::memory_order_acquire));
+      return flags_internal::Unparse(op_, two_words_val.data());
+    }
+  }
 
-  return Unparse(marshalling_op_, cur_);
+  return "";
 }
 
-void FlagImpl::SetCallback(
-    const flags_internal::FlagCallback mutation_callback) {
+void FlagImpl::SetCallback(const FlagCallbackFunc mutation_callback) {
   absl::MutexLock l(DataGuard());
 
-  if (callback_data_ == nullptr) {
-    callback_data_ = new CallbackData;
+  if (callback_ == nullptr) {
+    callback_ = new FlagCallback;
   }
-  callback_data_->func = mutation_callback;
+  callback_->func = mutation_callback;
 
   InvokeCallback();
 }
 
 void FlagImpl::InvokeCallback() const {
-  if (!callback_data_) return;
+  if (!callback_) return;
 
   // Make a copy of the C-style function pointer that we are about to invoke
   // before we release the lock guarding it.
-  FlagCallback cb = callback_data_->func;
+  FlagCallbackFunc cb = callback_->func;
 
   // If the flag has a mutation callback this function invokes it. While the
   // callback is being invoked the primary flag's mutex is unlocked and it is
@@ -207,116 +331,142 @@ void FlagImpl::InvokeCallback() const {
   // and it also can be different by the time the callback invocation is
   // completed. Requires that *primary_lock be held in exclusive mode; it may be
   // released and reacquired by the implementation.
-  MutexRelock relock(DataGuard());
-  absl::MutexLock lock(&callback_data_->guard);
+  MutexRelock relock(*DataGuard());
+  absl::MutexLock lock(&callback_->guard);
   cb();
 }
 
-bool FlagImpl::RestoreState(const void* value, bool modified,
-                            bool on_command_line, int64_t counter) {
-  {
-    absl::MutexLock l(DataGuard());
+std::unique_ptr<FlagStateInterface> FlagImpl::SaveState() {
+  absl::MutexLock l(DataGuard());
 
-    if (counter_ == counter) return false;
+  bool modified = modified_;
+  bool on_command_line = on_command_line_;
+  switch (ValueStorageKind()) {
+    case FlagValueStorageKind::kAlignedBuffer: {
+      return absl::make_unique<FlagState>(
+          *this, flags_internal::Clone(op_, AlignedBufferValue()), modified,
+          on_command_line, counter_);
+    }
+    case FlagValueStorageKind::kOneWordAtomic: {
+      return absl::make_unique<FlagState>(
+          *this, OneWordValue().load(std::memory_order_acquire), modified,
+          on_command_line, counter_);
+    }
+    case FlagValueStorageKind::kTwoWordsAtomic: {
+      return absl::make_unique<FlagState>(
+          *this, TwoWordsValue().load(std::memory_order_acquire), modified,
+          on_command_line, counter_);
+    }
+  }
+  return nullptr;
+}
+
+bool FlagImpl::RestoreState(const FlagState& flag_state) {
+  absl::MutexLock l(DataGuard());
+
+  if (flag_state.counter_ == counter_) {
+    return false;
   }
 
-  Write(value, op_);
-
-  {
-    absl::MutexLock l(DataGuard());
-
-    modified_ = modified;
-    on_command_line_ = on_command_line;
+  switch (ValueStorageKind()) {
+    case FlagValueStorageKind::kAlignedBuffer:
+      StoreValue(flag_state.value_.heap_allocated);
+      break;
+    case FlagValueStorageKind::kOneWordAtomic:
+      StoreValue(&flag_state.value_.one_word);
+      break;
+    case FlagValueStorageKind::kTwoWordsAtomic:
+      StoreValue(&flag_state.value_.two_words);
+      break;
   }
+
+  modified_ = flag_state.modified_;
+  on_command_line_ = flag_state.on_command_line_;
 
   return true;
+}
+
+template <typename StorageT>
+StorageT* FlagImpl::OffsetValue() const {
+  char* p = reinterpret_cast<char*>(const_cast<FlagImpl*>(this));
+  // The offset is deduced via Flag value type specific op_.
+  size_t offset = flags_internal::ValueOffset(op_);
+
+  return reinterpret_cast<StorageT*>(p + offset);
+}
+
+void* FlagImpl::AlignedBufferValue() const {
+  assert(ValueStorageKind() == FlagValueStorageKind::kAlignedBuffer);
+  return OffsetValue<void>();
+}
+
+std::atomic<int64_t>& FlagImpl::OneWordValue() const {
+  assert(ValueStorageKind() == FlagValueStorageKind::kOneWordAtomic);
+  return OffsetValue<FlagOneWordValue>()->value;
+}
+
+std::atomic<AlignedTwoWords>& FlagImpl::TwoWordsValue() const {
+  assert(ValueStorageKind() == FlagValueStorageKind::kTwoWordsAtomic);
+  return OffsetValue<FlagTwoWordsValue>()->value;
 }
 
 // Attempts to parse supplied `value` string using parsing routine in the `flag`
 // argument. If parsing successful, this function replaces the dst with newly
 // parsed value. In case if any error is encountered in either step, the error
 // message is stored in 'err'
-bool FlagImpl::TryParse(void** dst, absl::string_view value,
-                        std::string* err) const {
-  auto tentative_value = MakeInitValue();
+std::unique_ptr<void, DynValueDeleter> FlagImpl::TryParse(
+    absl::string_view value, std::string& err) const {
+  std::unique_ptr<void, DynValueDeleter> tentative_value = MakeInitValue();
 
   std::string parse_err;
-  if (!Parse(marshalling_op_, value, tentative_value.get(), &parse_err)) {
+  if (!flags_internal::Parse(op_, value, tentative_value.get(), &parse_err)) {
     absl::string_view err_sep = parse_err.empty() ? "" : "; ";
-    *err = absl::StrCat("Illegal value '", value, "' specified for flag '",
-                        Name(), "'", err_sep, parse_err);
-    return false;
+    err = absl::StrCat("Illegal value '", value, "' specified for flag '",
+                       Name(), "'", err_sep, parse_err);
+    return nullptr;
   }
 
-  void* old_val = *dst;
-  *dst = tentative_value.release();
-  tentative_value.reset(old_val);
-
-  return true;
+  return tentative_value;
 }
 
-void FlagImpl::Read(void* dst, const flags_internal::FlagOpFn dst_op) const {
-  absl::ReaderMutexLock l(DataGuard());
-
-  // `dst_op` is the unmarshaling operation corresponding to the declaration
-  // visibile at the call site. `op` is the Flag's defined unmarshalling
-  // operation. They must match for this operation to be well-defined.
-  if (ABSL_PREDICT_FALSE(dst_op != op_)) {
-    ABSL_INTERNAL_LOG(
-        ERROR,
-        absl::StrCat("Flag '", Name(),
-                     "' is defined as one type and declared as another"));
+void FlagImpl::Read(void* dst) const {
+  auto* guard = DataGuard();  // Make sure flag initialized
+  switch (ValueStorageKind()) {
+    case FlagValueStorageKind::kAlignedBuffer: {
+      absl::MutexLock l(guard);
+      flags_internal::CopyConstruct(op_, AlignedBufferValue(), dst);
+      break;
+    }
+    case FlagValueStorageKind::kOneWordAtomic: {
+      const int64_t one_word_val =
+          OneWordValue().load(std::memory_order_acquire);
+      std::memcpy(dst, &one_word_val, Sizeof(op_));
+      break;
+    }
+    case FlagValueStorageKind::kTwoWordsAtomic: {
+      const AlignedTwoWords two_words_val =
+          TwoWordsValue().load(std::memory_order_acquire);
+      std::memcpy(dst, &two_words_val, Sizeof(op_));
+      break;
+    }
   }
-  CopyConstruct(op_, cur_, dst);
 }
 
-void FlagImpl::StoreAtomic() {
-  size_t data_size = Sizeof(op_);
-
-  if (data_size <= sizeof(int64_t)) {
-    int64_t t = 0;
-    std::memcpy(&t, cur_, data_size);
-    atomics_.small_atomic.store(t, std::memory_order_release);
-  }
-#if defined(ABSL_FLAGS_INTERNAL_ATOMIC_DOUBLE_WORD)
-  else if (data_size <= sizeof(FlagsInternalTwoWordsType)) {
-    FlagsInternalTwoWordsType t{0, 0};
-    std::memcpy(&t, cur_, data_size);
-    atomics_.big_atomic.store(t, std::memory_order_release);
-  }
-#endif
-}
-
-void FlagImpl::Write(const void* src, const flags_internal::FlagOpFn src_op) {
+void FlagImpl::Write(const void* src) {
   absl::MutexLock l(DataGuard());
 
-  // `src_op` is the marshalling operation corresponding to the declaration
-  // visible at the call site. `op` is the Flag's defined marshalling operation.
-  // They must match for this operation to be well-defined.
-  if (ABSL_PREDICT_FALSE(src_op != op_)) {
-    ABSL_INTERNAL_LOG(
-        ERROR,
-        absl::StrCat("Flag '", Name(),
-                     "' is defined as one type and declared as another"));
-  }
-
-  if (ShouldValidateFlagValue(op_)) {
-    void* obj = Clone(op_, src);
+  if (ShouldValidateFlagValue(flags_internal::FastTypeId(op_))) {
+    std::unique_ptr<void, DynValueDeleter> obj{flags_internal::Clone(op_, src),
+                                               DynValueDeleter{op_}};
     std::string ignored_error;
-    std::string src_as_str = Unparse(marshalling_op_, src);
-    if (!Parse(marshalling_op_, src_as_str, obj, &ignored_error)) {
+    std::string src_as_str = flags_internal::Unparse(op_, src);
+    if (!flags_internal::Parse(op_, src_as_str, obj.get(), &ignored_error)) {
       ABSL_INTERNAL_LOG(ERROR, absl::StrCat("Attempt to set flag '", Name(),
                                             "' to invalid value ", src_as_str));
     }
-    Delete(op_, obj);
   }
 
-  modified_ = true;
-  counter_++;
-  Copy(op_, src, cur_);
-
-  StoreAtomic();
-  InvokeCallback();
+  StoreValue(src);
 }
 
 // Sets the value of the flag based on specified string `value`. If the flag
@@ -327,18 +477,17 @@ void FlagImpl::Write(const void* src, const flags_internal::FlagOpFn src_op) {
 //  * Update the flag's default value
 //  * Update the current flag value if it was never set before
 // The mode is selected based on 'set_mode' parameter.
-bool FlagImpl::SetFromString(absl::string_view value, FlagSettingMode set_mode,
-                             ValueSource source, std::string* err) {
+bool FlagImpl::ParseFrom(absl::string_view value, FlagSettingMode set_mode,
+                         ValueSource source, std::string& err) {
   absl::MutexLock l(DataGuard());
 
   switch (set_mode) {
     case SET_FLAGS_VALUE: {
       // set or modify the flag's value
-      if (!TryParse(&cur_, value, err)) return false;
-      modified_ = true;
-      counter_++;
-      StoreAtomic();
-      InvokeCallback();
+      auto tentative_value = TryParse(value, err);
+      if (!tentative_value) return false;
+
+      StoreValue(tentative_value.get());
 
       if (source == kCommandLine) {
         on_command_line_ = true;
@@ -347,13 +496,7 @@ bool FlagImpl::SetFromString(absl::string_view value, FlagSettingMode set_mode,
     }
     case SET_FLAG_IF_DEFAULT: {
       // set the flag's value, but only if it hasn't been set by someone else
-      if (!modified_) {
-        if (!TryParse(&cur_, value, err)) return false;
-        modified_ = true;
-        counter_++;
-        StoreAtomic();
-        InvokeCallback();
-      } else {
+      if (modified_) {
         // TODO(rogeeff): review and fix this semantic. Currently we do not fail
         // in this case if flag is modified. This is misleading since the flag's
         // value is not updated even though we return true.
@@ -362,28 +505,29 @@ bool FlagImpl::SetFromString(absl::string_view value, FlagSettingMode set_mode,
         // return false;
         return true;
       }
+      auto tentative_value = TryParse(value, err);
+      if (!tentative_value) return false;
+
+      StoreValue(tentative_value.get());
       break;
     }
     case SET_FLAGS_DEFAULT: {
-      if (def_kind_ == FlagDefaultSrcKind::kDynamicValue) {
-        if (!TryParse(&default_src_.dynamic_value, value, err)) {
-          return false;
-        }
-      } else {
-        void* new_default_val = nullptr;
-        if (!TryParse(&new_default_val, value, err)) {
-          return false;
-        }
+      auto tentative_value = TryParse(value, err);
+      if (!tentative_value) return false;
 
-        default_src_.dynamic_value = new_default_val;
-        def_kind_ = FlagDefaultSrcKind::kDynamicValue;
+      if (DefaultKind() == FlagDefaultKind::kDynamicValue) {
+        void* old_value = default_value_.dynamic_value;
+        default_value_.dynamic_value = tentative_value.release();
+        tentative_value.reset(old_value);
+      } else {
+        default_value_.dynamic_value = tentative_value.release();
+        def_kind_ = static_cast<uint8_t>(FlagDefaultKind::kDynamicValue);
       }
 
       if (!modified_) {
-        // Need to set both default value *and* current, in this case
-        Copy(op_, default_src_.dynamic_value, cur_);
-        StoreAtomic();
-        InvokeCallback();
+        // Need to set both default value *and* current, in this case.
+        StoreValue(default_value_.dynamic_value);
+        modified_ = false;
       }
       break;
     }
@@ -399,11 +543,11 @@ void FlagImpl::CheckDefaultValueParsingRoundtrip() const {
 
   auto dst = MakeInitValue();
   std::string error;
-  if (!flags_internal::Parse(marshalling_op_, v, dst.get(), &error)) {
+  if (!flags_internal::Parse(op_, v, dst.get(), &error)) {
     ABSL_INTERNAL_LOG(
         FATAL,
         absl::StrCat("Flag ", Name(), " (from ", Filename(),
-                     "): std::string form of default value '", v,
+                     "): string form of default value '", v,
                      "' could not be parsed; error=", error));
   }
 
@@ -416,8 +560,7 @@ bool FlagImpl::ValidateInputValue(absl::string_view value) const {
 
   auto obj = MakeInitValue();
   std::string ignored_error;
-  return flags_internal::Parse(marshalling_op_, value, obj.get(),
-                               &ignored_error);
+  return flags_internal::Parse(op_, value, obj.get(), &ignored_error);
 }
 
 }  // namespace flags_internal

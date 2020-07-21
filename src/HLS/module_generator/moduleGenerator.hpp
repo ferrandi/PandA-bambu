@@ -80,6 +80,8 @@ class moduleGenerator
    /// The debug level
    const int debug_level;
 
+   const std::string output_directory;
+
  public:
    /**
     * Constructor.

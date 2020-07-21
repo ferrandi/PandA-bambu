@@ -139,12 +139,12 @@ enum class DiopsisInstrumentWriter_Type;
 
 #define GECCO_OPTIONS (algorithms)(analyses)
 
-#define KOALA_OPTIONS                                                                                                                                                                                                                                         \
-   (aig_analysis)(aig_analysis_algorithm)(apply_reduction_to_standard_library)(characterization_with_DC)(circuit_debug_level)(complete_library_post_covering)(complete_library_pre_covering)(covering)(csv_file)(design_compiler_effort)(                     \
-       drive_strength_values)(equation)(evolutionary_reduction)(explore_cell_variants)(extract_features)(generated_library_name)(group_glue)(has_complete_characterization)(hdl_backend)(icarus_debug_level)(input_libraries)(library)(library_optimization)( \
-       library_optimization_algorithm)(lib_output_format)(max_area)(max_delay)(output_libraries)(output_name)(regularity_abstraction_level)(regularity_algorithm)(regularity_coloring_type)(regularity_covering)(regularity_extraction)(regularity_fast)(     \
-       regularity_forward)(regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(                           \
-       reimplement_standard_cells)(separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(xml_library_statistics)
+#define KOALA_OPTIONS                                                                                                                                                                                                                                        \
+   (aig_analysis)(aig_analysis_algorithm)(apply_reduction_to_standard_library)(characterization_with_DC)(complete_library_post_covering)(complete_library_pre_covering)(covering)(csv_file)(design_compiler_effort)(drive_strength_values)(equation)(        \
+       evolutionary_reduction)(explore_cell_variants)(extract_features)(generated_library_name)(group_glue)(has_complete_characterization)(hdl_backend)(icarus_debug_level)(input_libraries)(library)(library_optimization)(library_optimization_algorithm)( \
+       lib_output_format)(max_area)(max_delay)(output_libraries)(output_name)(regularity_abstraction_level)(regularity_algorithm)(regularity_coloring_type)(regularity_covering)(regularity_extraction)(regularity_fast)(regularity_forward)(                \
+       regularity_hierarchical)(regularity_include_sequential)(regularity_max_inputs)(regularity_min_frequency)(regularity_min_size)(regularity_window_size)(reordering)(perform_resynthesis)(print_templates)(reimplement_standard_cells)(                  \
+       separate_templates)(set_constraint)(set_optimization_goal)(skew_values)(split_roots)(store_library_creator_db)(synthesis_tool_xml)(template_file)(xml_library_cells)(xml_library_statistics)
 
 #define SYNTHESIS_OPTIONS                                                                                                                                                                                                                           \
    (clock_period)(clock_name)(reset_name)(start_name)(done_name)(design_analysis_steps)(design_compiler_compile_log)(design_compiler_split_log)(design_parameters)(design_hierarchy)(device_string)(dump_genlib)(estimate_library)(export_ip_core)( \

@@ -164,14 +164,16 @@ void mux_connection_binding::Initialize()
 DesignFlowStep_Status mux_connection_binding::InternalExec()
 {
    connCache.clear();
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    create_connections();
 
    unsigned int mux = mux_interconnection();
    if(mux)
    {
-      STOP_TIME(step_time);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+         STOP_TIME(step_time);
       if(output_level <= OUTPUT_LEVEL_PEDANTIC)
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Connection Binding Information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
@@ -185,6 +187,8 @@ DesignFlowStep_Status mux_connection_binding::InternalExec()
       if(output_level <= OUTPUT_LEVEL_PEDANTIC)
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    }
+   connCache.clear();
+   HLS->Rconn->cleanInternals();
    return DesignFlowStep_Status::SUCCESS;
 }
 
@@ -204,7 +208,6 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(ar
       if(recursive_indexes_values.size() > 0)
       {
          adder = generic_objRef(new adder_conn_obj("adder_conn_obj_" + STR(id++)));
-         HLS->Rconn->add_component(UI_ADDER_STD);
          HLS->Rconn->add_sparse_logic(adder);
          GetPointer<adder_conn_obj>(adder)->add_bitsize(bus_addr_bitsize);
       }
@@ -212,7 +215,6 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(ar
       {
          mult = generic_objRef(new multiplier_conn_obj("multiplier_conn_obj_" + STR(id++)));
          multiplier_vector.push_back(mult);
-         HLS->Rconn->add_component(UI_CONST_MULTIPLIER_STD);
          HLS->Rconn->add_sparse_logic(mult);
       }
       /// updates indexes array and calls recursive function
@@ -260,14 +262,12 @@ generic_objRef mux_connection_binding::dynamic_multidimensional_array_handler(ar
 
       /// starts to create basic components directly linked to the offset calculator
       adder = generic_objRef(new adder_conn_obj("adder_conn_obj_" + STR(id++)));
-      HLS->Rconn->add_component(UI_ADDER_STD);
       HLS->Rconn->add_sparse_logic(adder);
       GetPointer<adder_conn_obj>(adder)->add_bitsize(bus_addr_bitsize);
       for(unsigned int i = 0; i < recursive_indexes_values.size() - 1; i++)
       {
          mult = generic_objRef(new multiplier_conn_obj("multiplier_conn_obj_" + STR(id++)));
          multiplier_vector.push_back(mult);
-         HLS->Rconn->add_component(UI_CONST_MULTIPLIER_STD);
          HLS->Rconn->add_sparse_logic(mult);
       }
       connect_array_index(tree_index, multiplier_vector[0], 0, 0, bus_addr_bitsize, data, op);
@@ -467,7 +467,6 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                generic_objRef global_adder;
                mux_connection_binding::dynamic_multidimensional_array_handler(ar, op, data, base_address_index, recursive_indexes_values, dims, global_adder, is_not_a_phi);
                generic_objRef offset_calculator_port = generic_objRef(new multiplier_conn_obj("multiplier_conn_obj_" + STR(id++)));
-               HLS->Rconn->add_component(UI_CONST_MULTIPLIER_STD);
                HLS->Rconn->add_sparse_logic(offset_calculator_port);
                unsigned int local_precision = address_precision(precision, op, data, TreeM);
                GetPointer<multiplier_conn_obj>(offset_calculator_port)->add_bitsize(local_precision);
@@ -482,10 +481,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                if(alignment)
                {
                   GetPointer<adder_conn_obj>(dynamic_port)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                  HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                }
-               else
-                  HLS->Rconn->add_component(UI_ADDER_STD);
                HLS->Rconn->add_sparse_logic(dynamic_port);
                GetPointer<adder_conn_obj>(dynamic_port)->add_bitsize(local_precision);
                // offset calculator into port 0
@@ -499,7 +495,6 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             {
                // determines address offset
                generic_objRef offset_calculator_port = generic_objRef(new multiplier_conn_obj("multiplier_conn_obj_" + STR(id++)));
-               HLS->Rconn->add_component(UI_CONST_MULTIPLIER_STD);
                HLS->Rconn->add_sparse_logic(offset_calculator_port);
                unsigned int tree_index = GET_INDEX_NODE(ar->op1);
                unsigned int ar_index = GET_INDEX_NODE(ar->op0);
@@ -517,10 +512,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                if(alignment)
                {
                   GetPointer<adder_conn_obj>(dynamic_port)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                  HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                }
-               else
-                  HLS->Rconn->add_component(UI_ADDER_STD);
                HLS->Rconn->add_sparse_logic(dynamic_port);
                create_single_conn(data, op, offset_calculator_port, dynamic_port, 0, 0, 0, local_precision, is_not_a_phi);
                determine_connection(op, HLS_manager::io_binding_type(ar_index, 0), dynamic_port, 1, 0, data, local_precision, alignment);
@@ -551,10 +543,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             if(alignment)
             {
                GetPointer<adder_conn_obj>(address_port)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-               HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
             }
-            else
-               HLS->Rconn->add_component(UI_ADDER_STD);
             HLS->Rconn->add_sparse_logic(address_port);
 
             determine_connection(op, HLS_manager::io_binding_type(base_index, 0), address_port, 0, 0, data, local_precision, alignment);
@@ -615,10 +604,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                if(alignment)
                {
                   GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                  HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                }
-               else
-                  HLS->Rconn->add_component(UI_ADDER_STD);
                HLS->Rconn->add_sparse_logic(current_operand);
                determine_connection(op, HLS_manager::io_binding_type(base_index, 0), current_operand, 0, 0, data, local_precision, alignment);
                determine_connection(op, HLS_manager::io_binding_type(offset_index, 0), current_operand, 1, 0, data, local_precision, alignment);
@@ -670,10 +656,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   determine_connection(op, HLS_manager::io_binding_type(current_index, 0), current_operand, 0, 0, data, local_precision, alignment);
                   determine_connection(op, HLS_manager::io_binding_type(previous_index, 0), current_operand, 1, 0, data, local_precision, alignment);
@@ -688,7 +671,6 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                {
                   idx_step_port = generic_objRef(new multiplier_conn_obj("multiplier_conn_obj_" + STR(id++)));
                   GetPointer<multiplier_conn_obj>(idx_step_port)->add_bitsize(local_precision);
-                  HLS->Rconn->add_component(UI_MULTIPLIER_STD);
                   HLS->Rconn->add_sparse_logic(idx_step_port);
                   determine_connection(op, HLS_manager::io_binding_type(idx_index, 0), idx_step_port, 0, 0, data, local_precision, alignment);
                   determine_connection(op, HLS_manager::io_binding_type(step_index, 0), idx_step_port, 1, 0, data, local_precision, alignment);
@@ -701,10 +683,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   if(step_index)
                   {
@@ -722,10 +701,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   if(step_index)
                   {
@@ -751,10 +727,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   determine_connection(op, HLS_manager::io_binding_type(current_index, 0), current_operand, 0, 0, data, local_precision, alignment);
                   create_single_conn(data, op, previous_operand, current_operand, 1, 0, 0, local_precision, is_not_a_phi);
@@ -767,10 +740,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   determine_connection(op, HLS_manager::io_binding_type(current_index, 0), current_operand, 0, 0, data, local_precision, alignment);
                   determine_connection(op, HLS_manager::io_binding_type(previous_index, 0), current_operand, 1, 0, data, local_precision, alignment);
@@ -851,10 +821,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   determine_connection(op, HLS_manager::io_binding_type(current_index, 0), current_operand, 0, 0, data, local_precision, alignment);
                   determine_connection(op, HLS_manager::io_binding_type(previous_index, 0), current_operand, 1, 0, data, local_precision, alignment);
@@ -869,7 +836,6 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                {
                   idx_step_port = generic_objRef(new multiplier_conn_obj("multiplier_conn_obj_" + STR(id++)));
                   GetPointer<multiplier_conn_obj>(idx_step_port)->add_bitsize(local_precision);
-                  HLS->Rconn->add_component(UI_MULTIPLIER_STD);
                   HLS->Rconn->add_sparse_logic(idx_step_port);
                   determine_connection(op, HLS_manager::io_binding_type(idx_index, 0), idx_step_port, 0, 0, data, local_precision, alignment);
                   determine_connection(op, HLS_manager::io_binding_type(step_index, 0), idx_step_port, 1, 0, data, local_precision, alignment);
@@ -882,10 +848,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   if(step_index)
                   {
@@ -903,10 +866,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   if(step_index)
                   {
@@ -932,10 +892,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   determine_connection(op, HLS_manager::io_binding_type(current_index, 0), current_operand, 0, 0, data, local_precision, alignment);
                   create_single_conn(data, op, previous_operand, current_operand, 1, 0, 0, local_precision, is_not_a_phi);
@@ -948,10 +905,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
                   if(alignment)
                   {
                      GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-                     HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
                   }
-                  else
-                     HLS->Rconn->add_component(UI_ADDER_STD);
                   HLS->Rconn->add_sparse_logic(current_operand);
                   determine_connection(op, HLS_manager::io_binding_type(current_index, 0), current_operand, 0, 0, data, local_precision, alignment);
                   determine_connection(op, HLS_manager::io_binding_type(previous_index, 0), current_operand, 1, 0, data, local_precision, alignment);
@@ -1002,10 +956,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             if(alignment)
             {
                GetPointer<adder_conn_obj>(address_port)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-               HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
             }
-            else
-               HLS->Rconn->add_component(UI_ADDER_STD);
             HLS->Rconn->add_sparse_logic(address_port);
 
             determine_connection(op, HLS_manager::io_binding_type(base_index, 0), address_port, 0, 0, data, local_precision, alignment);
@@ -1110,10 +1061,7 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
             if(alignment)
             {
                GetPointer<adder_conn_obj>(current_operand)->set_trimmed_bits(align_to_trimmed_bits(alignment));
-               HLS->Rconn->add_component(UI_ALIGN_ADDER_STD);
             }
-            else
-               HLS->Rconn->add_component(UI_ADDER_STD);
             HLS->Rconn->add_sparse_logic(current_operand);
             determine_connection(op, HLS_manager::io_binding_type(GET_INDEX_NODE(bf->op0), 0), current_operand, 0, 0, data, local_precision, alignment);
             determine_connection(op, HLS_manager::io_binding_type(0, offset), current_operand, 1, 0, data, local_precision, alignment);
@@ -1690,7 +1638,6 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned int size_
          conv_port = generic_objRef(new iu_conv_conn_obj("iu_conv_conn_obj_" + STR(id++)));
          if(isConstantObj(std::get<0>(varObj), TreeM))
             connCache[key] = conv_port;
-         HLS->Rconn->add_component(IUDATA_CONVERTER_STD);
          HLS->Rconn->add_sparse_logic(conv_port);
          GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
          determine_connection(*op, varObj, conv_port, 0, 0, data, size_tree_var);
@@ -1712,7 +1659,6 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned int size_
          conv_port = generic_objRef(new ui_conv_conn_obj("ui_conv_conn_obj_" + STR(id++)));
          if(isConstantObj(std::get<0>(varObj), TreeM))
             connCache[key] = conv_port;
-         HLS->Rconn->add_component(UIDATA_CONVERTER_STD);
          HLS->Rconn->add_sparse_logic(conv_port);
          GetPointer<ui_conv_conn_obj>(conv_port)->add_bitsize(in_bitsize);
          determine_connection(*op, varObj, conv_port, 0, 0, data, size_tree_var);
@@ -1727,10 +1673,8 @@ void mux_connection_binding::add_conversion(unsigned int num, unsigned int size_
       if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
       {
          technology_nodeRef current_fu;
-         HLS->Rconn->add_component(AllocationInformation::extract_bambu_provided_name(size_tree_var, size_form_par, HLSMgr, current_fu));
+         AllocationInformation::extract_bambu_provided_name(size_tree_var, size_form_par, HLSMgr, current_fu);
       }
-      else
-         HLS->Rconn->add_component(FFDATA_CONVERTER_STD);
       HLS->Rconn->add_sparse_logic(conv_port);
       unsigned int in_bitsize = size_form_par;
       GetPointer<ff_conv_conn_obj>(conv_port)->add_bitsize_in(size_tree_var);
@@ -1895,7 +1839,6 @@ void mux_connection_binding::create_connections()
                            conv_port = generic_objRef(new iu_conv_conn_obj("iu_conv_conn_obj_" + STR(id++)));
                            if(isConstantObj(std::get<0>(varObj), TreeM))
                               connCache[key] = conv_port;
-                           HLS->Rconn->add_component(IUDATA_CONVERTER_STD);
                            HLS->Rconn->add_sparse_logic(conv_port);
                            GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(var_bitsize);
                            determine_connection(*op, varObj, conv_port, 0, 0, data, var_bitsize);
@@ -1911,7 +1854,6 @@ void mux_connection_binding::create_connections()
                            conv_port = generic_objRef(new vb_assign_conn_obj("vb_assign_conn_obj_" + STR(id++)));
                            if(isConstantObj(std::get<0>(varObj), TreeM))
                               connCache[key] = conv_port;
-                           HLS->Rconn->add_component(ASSIGN_VECTOR_BOOL_STD);
                            HLS->Rconn->add_sparse_logic(conv_port);
                            GetPointer<vb_assign_conn_obj>(conv_port)->add_bitsize(var_bitsize);
                            determine_connection(*op, varObj, conv_port, 0, 0, data, var_bitsize);
@@ -2463,7 +2405,6 @@ void mux_connection_binding::create_connections()
                      if(tree_helper::is_unsigned(TreeM, var_written) || tree_helper::is_a_pointer(TreeM, var_written) || tree_helper::is_bool(TreeM, var_written))
                      {
                         generic_objRef conv_port = generic_objRef(new u_assign_conn_obj("u_assign_conn_obj_" + STR(id++)));
-                        HLS->Rconn->add_component(ASSIGN_UNSIGNED_STD);
                         HLS->Rconn->add_sparse_logic(conv_port);
                         GetPointer<u_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
                         if(phi_postponed)
@@ -2511,7 +2452,6 @@ void mux_connection_binding::create_connections()
                            if(HLS->Rliv->has_state_out(*e_it, *op, var_written))
                            {
                               generic_objRef conv_port = generic_objRef(new i_assign_conn_obj("i_assign_conn_obj_phi" + STR(id++)));
-                              HLS->Rconn->add_component(ASSIGN_SIGNED_STD);
                               HLS->Rconn->add_sparse_logic(conv_port);
                               GetPointer<i_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
                               generic_objRef fu_src_obj;
@@ -2555,7 +2495,6 @@ void mux_connection_binding::create_connections()
                               conv_port = generic_objRef(new i_assign_conn_obj("i_assign_conn_obj_" + STR(id++)));
                               if(isConstantObj(std::get<0>(varObj), TreeM))
                                  connCache[key] = conv_port;
-                              HLS->Rconn->add_component(ASSIGN_SIGNED_STD);
                               HLS->Rconn->add_sparse_logic(conv_port);
                               GetPointer<i_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
                               determine_connection(*op, varObj, conv_port, 0, 0, data, in_bitsize);
@@ -2568,7 +2507,6 @@ void mux_connection_binding::create_connections()
                      else if(tree_helper::is_real(TreeM, var_written))
                      {
                         generic_objRef conv_port = generic_objRef(new f_assign_conn_obj("f_assign_conn_obj_" + STR(id++)));
-                        HLS->Rconn->add_component(ASSIGN_REAL_STD);
                         HLS->Rconn->add_sparse_logic(conv_port);
                         GetPointer<f_assign_conn_obj>(conv_port)->add_bitsize(in_bitsize);
                         if(phi_postponed)
@@ -2789,8 +2727,7 @@ unsigned int mux_connection_binding::mux_interconnection()
    unsigned int allocated_mux = 0;
    unsigned int iteration = 0;
 
-   const auto& connection_to_unit = HLS->Rconn->get_data_transfers();
-   for(const auto& connection : connection_to_unit)
+   for(const auto& connection : HLS->Rconn->get_data_transfers())
    {
       const generic_objRef unit = std::get<0>(connection.first);
       unsigned int operand = std::get<1>(connection.first);
@@ -2814,7 +2751,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
       generic_objRef op1 = srcs.begin()->first;
       THROW_ASSERT(op1, "Target \"" + tgt->get_string() + "\" connected with an undefined source");
       connection_objRef conn_obj = connection_objRef(new direct_conn(srcs.begin()->second));
-      HLS->Rconn->add_connection(op1, tgt, op, port_index, conn_obj);
+      HLS->Rconn->AddConnectionCB(op1, tgt, op, port_index, conn_obj);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  - Direct connection between " + op1->get_string() + " and " + tgt->get_string() + "(" + STR(op) + ":" + STR(port_index) + ")");
       return 0;
    }
@@ -2888,7 +2825,6 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
 
          std::string mux_name = "MUX_" + STR(iteration) + "_" + tgt_string + "_" + STR(level) + "_" + STR(level_map[level]++);
          generic_objRef mux = generic_objRef(new mux_obj(first, second, level, mux_name, tgt));
-         HLS->Rconn->add_component(MUX_GATE_STD);
          ++used_mux;
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GetPointer<mux_obj>(mux)->get_string());
 
@@ -2937,7 +2873,7 @@ unsigned int mux_connection_binding::input_logic(const conn_binding::ConnectionS
       for(const auto& src : srcs)
       {
          connection_objRef conn_obj = connection_objRef(new mux_conn(src.second, src_mux_tree[src.first]));
-         HLS->Rconn->add_connection(src.first, tgt, op, port_index, conn_obj);
+         HLS->Rconn->AddConnectionCB(src.first, tgt, op, port_index, conn_obj);
       }
    }
    else
@@ -3334,7 +3270,6 @@ void mux_connection_binding::connect_array_index(unsigned int tree_index, generi
          conv_port = generic_objRef(new iu_conv_conn_obj("iu_conv_conn_obj_" + STR(id++)));
          if(isConstantObj(std::get<0>(varObj), TreeM))
             connCache[key] = conv_port;
-         HLS->Rconn->add_component(IUDATA_CONVERTER_STD);
          HLS->Rconn->add_sparse_logic(conv_port);
          GetPointer<iu_conv_conn_obj>(conv_port)->add_bitsize(bus_addr_bitsize);
          determine_connection(op, varObj, conv_port, 0, 0, data, bus_addr_bitsize);

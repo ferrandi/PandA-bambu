@@ -72,10 +72,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
          {
             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-            if(parameters->IsParameter("ConstantFloating") and parameters->GetParameter<unsigned int>("ConstantFloating"))
-            {
-               relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CONSTANT_FLOP_WRAPPER, ALL_FUNCTIONS));
-            }
          }
          if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
          {

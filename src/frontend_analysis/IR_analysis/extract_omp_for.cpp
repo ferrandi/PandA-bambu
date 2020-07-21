@@ -212,6 +212,37 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   continue;
                if(not basic_block_info->block->CGetStmtList().size())
                   continue;
+               if(boost::in_degree(*basic_block, *basic_block_graph) == 1 && boost::source(*(boost::in_edges(*basic_block, *basic_block_graph).first), *basic_block_graph) == basic_block_graph_info->entry_vertex)
+               {
+                  const auto& stm_list = basic_block_info->block->CGetStmtList();
+                  if(stm_list.size() != 3)
+                  {
+                     THROW_ERROR("unexpected pattern");
+                  }
+                  auto stmt_iter = stm_list.begin();
+                  const auto ga1 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  if(not ga1)
+                  {
+                     THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  const auto nop1 = GetPointer<const nop_expr>(GET_NODE(ga1->op1));
+                  if(not nop1)
+                  {
+                     THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  ++stmt_iter;
+                  const auto ga2 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  if(not ga2)
+                  {
+                     THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  if(GET_NODE(ga2->op1)->get_kind() == gt_expr_K)
+                     continue;
+                  else
+                  {
+                     THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+               }
                for(const auto statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));

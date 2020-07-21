@@ -93,7 +93,8 @@ TEST_CASE( "read a VERILOG file to create large Montgomery multiplier", "[verilo
     "endmodule\n"};
 
   std::istringstream in( file );
-  const auto result = lorina::read_verilog( in, verilog_reader( xag ) );
+  verilog_reader reader( xag );
+  const auto result = lorina::read_verilog( in, reader );
   xag = cleanup_dangling( xag );
 
   /* structural checks */
@@ -101,4 +102,9 @@ TEST_CASE( "read a VERILOG file to create large Montgomery multiplier", "[verilo
   CHECK( xag.num_pis() == 768u );
   CHECK( xag.num_pos() == 384u );
   CHECK( xag.num_gates() == 909459u );
+
+  /* name checks */
+  CHECK( reader.name() == "top" );
+  CHECK( reader.input_names() == std::vector<std::pair<std::string, uint32_t>>{{{"a", 384}, {"b", 384}}} );
+  CHECK( reader.output_names() == std::vector<std::pair<std::string, uint32_t>>{{{"c", 384}}} );
 }

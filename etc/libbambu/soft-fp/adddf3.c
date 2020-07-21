@@ -49,7 +49,7 @@ DFtype __adddf3(DFtype a, DFtype b)
    return r;
 }
 
-inline DFtype __float64_addif(DFtype a, DFtype b)
+DFtype __float64_addif(DFtype a, DFtype b)
 {
    return __adddf3(a, b);
 }

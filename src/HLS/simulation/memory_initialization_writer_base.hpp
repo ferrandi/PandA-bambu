@@ -89,7 +89,6 @@ class MemoryInitializationWriterBase : public CInitializationParserFunctor
    /// The type of initialization being written
    const TestbenchGeneration_MemoryType testbench_generation_memory_type;
 
-
    /**
     * Print the current status
     */
@@ -127,6 +126,5 @@ class MemoryInitializationWriterBase : public CInitializationParserFunctor
     * Ends the initialization of the current aggregated  data structure
     */
    void GoUp() override;
-
 };
 #endif

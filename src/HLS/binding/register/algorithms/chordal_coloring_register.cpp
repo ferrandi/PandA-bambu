@@ -108,8 +108,9 @@ bool chordal_coloring_register::lex_compare_gt(const std::vector<unsigned int>& 
 
 DesignFlowStep_Status chordal_coloring_register::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    create_conflict_graph();
    unsigned int cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    const unsigned int NO_ORDER = std::numeric_limits<unsigned int>::max();
@@ -183,7 +184,8 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
       }
    }
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");

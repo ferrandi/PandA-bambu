@@ -187,7 +187,7 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
       auto k = be->get_kind();
       return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
    }();
-   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || is_simple_case;
+   return (tree_helper::Size(GET_NODE((be)->op0)) <= max && tree_helper::Size(GET_NODE((be)->op1)) <= max) || (is_simple_case && !parameters->isOption(OPT_context_switch));
 }
 bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
 {
@@ -1644,7 +1644,7 @@ bool lut_transformation::HasToBeExecuted() const
    const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
    THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
    auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
-   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd) && not parameters->isOption(OPT_context_switch))
+   if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
       return FunctionFrontendFlowStep::HasToBeExecuted();
    else
       return false;

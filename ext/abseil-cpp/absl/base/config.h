@@ -66,6 +66,10 @@
 #include "absl/base/options.h"
 #include "absl/base/policy_checks.h"
 
+// Helper macro to convert a CPP variable to a string literal.
+#define ABSL_INTERNAL_DO_TOKEN_STR(x) #x
+#define ABSL_INTERNAL_TOKEN_STR(x) ABSL_INTERNAL_DO_TOKEN_STR(x)
+
 // -----------------------------------------------------------------------------
 // Abseil namespace annotations
 // -----------------------------------------------------------------------------
@@ -98,8 +102,6 @@
 // Check that ABSL_OPTION_INLINE_NAMESPACE_NAME is neither "head" nor ""
 #if defined(__cplusplus) && ABSL_OPTION_USE_INLINE_NAMESPACE == 1
 
-#define ABSL_INTERNAL_DO_TOKEN_STR(x) #x
-#define ABSL_INTERNAL_TOKEN_STR(x) ABSL_INTERNAL_DO_TOKEN_STR(x)
 #define ABSL_INTERNAL_INLINE_NAMESPACE_STR \
   ABSL_INTERNAL_TOKEN_STR(ABSL_OPTION_INLINE_NAMESPACE_NAME)
 
@@ -260,13 +262,6 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #endif
 #endif  // defined(__ANDROID__) && defined(__clang__)
 
-// Emscripten doesn't yet support `thread_local` or `__thread`.
-// https://github.com/emscripten-core/emscripten/issues/3502
-#if defined(__EMSCRIPTEN__)
-#undef ABSL_HAVE_TLS
-#undef ABSL_HAVE_THREAD_LOCAL
-#endif  // defined(__EMSCRIPTEN__)
-
 // ABSL_HAVE_INTRINSIC_INT128
 //
 // Checks whether the __int128 compiler extension for a 128-bit integral type is
@@ -314,13 +309,19 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #error ABSL_HAVE_EXCEPTIONS cannot be directly set.
 
 #elif defined(__clang__)
-// TODO(calabrese)
-// Switch to using __cpp_exceptions when we no longer support versions < 3.6.
-// For details on this check, see:
-//   http://releases.llvm.org/3.6.0/tools/clang/docs/ReleaseNotes.html#the-exceptions-macro
+
+#if __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 6)
+// Clang >= 3.6
+#if __has_feature(cxx_exceptions)
+#define ABSL_HAVE_EXCEPTIONS 1
+#endif  // __has_feature(cxx_exceptions)
+#else
+// Clang < 3.6
+// http://releases.llvm.org/3.6.0/tools/clang/docs/ReleaseNotes.html#the-exceptions-macro
 #if defined(__EXCEPTIONS) && __has_feature(cxx_exceptions)
 #define ABSL_HAVE_EXCEPTIONS 1
 #endif  // defined(__EXCEPTIONS) && __has_feature(cxx_exceptions)
+#endif  // __clang_major__ > 3 || (__clang_major__ == 3 && __clang_minor__ >= 6)
 
 // Handle remaining special cases and default to exceptions being supported.
 #elif !(defined(__GNUC__) && (__GNUC__ < 5) && !defined(__EXCEPTIONS)) &&    \
@@ -617,6 +618,47 @@ static_assert(ABSL_INTERNAL_INLINE_NAMESPACE_STR[0] != 'h' ||
 #define ABSL_INTERNAL_MSVC_2017_DBG_MODE
 #endif
 
+// ABSL_INTERNAL_MANGLED_NS
+// ABSL_INTERNAL_MANGLED_BACKREFERENCE
+//
+// Internal macros for building up mangled names in our internal fork of CCTZ.
+// This implementation detail is only needed and provided for the MSVC build.
+//
+// These macros both expand to string literals.  ABSL_INTERNAL_MANGLED_NS is
+// the mangled spelling of the `absl` namespace, and
+// ABSL_INTERNAL_MANGLED_BACKREFERENCE is a back-reference integer representing
+// the proper count to skip past the CCTZ fork namespace names.  (This number
+// is one larger when there is an inline namespace name to skip.)
+#if defined(_MSC_VER)
+#if ABSL_OPTION_USE_INLINE_NAMESPACE == 0
+#define ABSL_INTERNAL_MANGLED_NS "absl"
+#define ABSL_INTERNAL_MANGLED_BACKREFERENCE "5"
+#else
+#define ABSL_INTERNAL_MANGLED_NS \
+  ABSL_INTERNAL_TOKEN_STR(ABSL_OPTION_INLINE_NAMESPACE_NAME) "@absl"
+#define ABSL_INTERNAL_MANGLED_BACKREFERENCE "6"
+#endif
+#endif
+
 #undef ABSL_INTERNAL_HAS_KEYWORD
+
+// ABSL_DLL
+//
+// When building Abseil as a DLL, this macro expands to `__declspec(dllexport)`
+// so we can annotate symbols appropriately as being exported. When used in
+// headers consuming a DLL, this macro expands to `__declspec(dllimport)` so
+// that consumers know the symbol is defined inside the DLL. In all other cases,
+// the macro expands to nothing.
+#if defined(_MSC_VER)
+#if defined(ABSL_BUILD_DLL)
+#define ABSL_DLL __declspec(dllexport)
+#elif defined(ABSL_CONSUME_DLL)
+#define ABSL_DLL __declspec(dllimport)
+#else
+#define ABSL_DLL
+#endif
+#else
+#define ABSL_DLL
+#endif  // defined(_MSC_VER)
 
 #endif  // ABSL_BASE_CONFIG_H_

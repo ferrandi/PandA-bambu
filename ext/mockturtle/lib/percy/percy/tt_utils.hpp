@@ -8,7 +8,6 @@
 
 namespace percy
 {
-
     template<int nr_in>
     static inline std::unordered_set<kitty::static_truth_table<nr_in>, kitty::hash<kitty::static_truth_table<nr_in>>> generate_npn_classes()
     {

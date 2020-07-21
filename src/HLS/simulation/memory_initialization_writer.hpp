@@ -90,12 +90,15 @@ class MemoryInitializationWriter : public MemoryInitializationWriterBase
    /**
     * In this case the function does not activate anything
     */
-   void ActivateFileInit(const std::string& ) override {}
+   void ActivateFileInit(const std::string&) override
+   {
+   }
 
    /**
     * do nothing
     */
-   void FinalizeFileInit() override {}
-
+   void FinalizeFileInit() override
+   {
+   }
 };
 #endif

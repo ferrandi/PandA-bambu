@@ -1976,7 +1976,8 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
    }
 
    /// These are phis which were present only in the predecessor
-   for(const auto& phi : curr_block->CGetPhiList())
+   const auto curr_phis = curr_block->CGetPhiList();
+   for(const auto& phi : curr_phis)
    {
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding " + gp->ToString());
@@ -1989,6 +1990,7 @@ void PhiOpt::MergePhi(const unsigned int bb_index)
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added modified " + gp->ToString());
       gp->bb_index = succ_block->number;
+      curr_block->RemovePhi(phi);
       succ_block->AddPhi(phi);
    }
 

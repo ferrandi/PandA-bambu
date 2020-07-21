@@ -101,8 +101,9 @@ void weighted_clique_register::Initialize()
 DesignFlowStep_Status weighted_clique_register::InternalExec()
 {
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    const CliqueCovering_Algorithm clique_covering_algorithm = GetPointer<const WeightedCliqueRegisterBindingSpecialization>(hls_flow_step_specialization)->clique_covering_algorithm;
    refcount<clique_covering<CG_vertex_descriptor>> register_clique = clique_covering<CG_vertex_descriptor>::create_solver(clique_covering_algorithm);
    create_compatibility_graph();
@@ -169,7 +170,8 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       num_registers = 0;
    }
    HLS->Rreg->set_used_regs(num_registers);
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Register binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");

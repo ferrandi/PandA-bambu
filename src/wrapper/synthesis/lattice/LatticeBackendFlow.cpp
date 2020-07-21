@@ -46,6 +46,7 @@
 
 #include "config_HAVE_LATTICE.hpp"
 #include "config_LATTICE_SETTINGS.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #if HAVE_LATTICE
 #include "config_LATTICE_PMI_DEF.hpp"
 #endif
@@ -76,9 +77,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
 
-   default_data["LatticeECP3"] =
-#include "LatticeECP3.data"
-       ;
+   default_data["LatticeECP3"] = "LatticeECP3.data";
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
@@ -99,7 +98,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
       if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/lattice/") + default_data[device_string]));
    }
    parse_flow(parser);
 }

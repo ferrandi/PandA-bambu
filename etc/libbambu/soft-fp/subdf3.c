@@ -49,7 +49,7 @@ DFtype __subdf3(DFtype a, DFtype b)
    return r;
 }
 
-inline DFtype __float64_subif(DFtype a, DFtype b)
+DFtype __float64_subif(DFtype a, DFtype b)
 {
    return __subdf3(a, b);
 }

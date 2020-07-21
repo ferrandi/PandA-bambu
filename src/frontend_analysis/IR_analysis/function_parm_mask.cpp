@@ -106,36 +106,6 @@ bit_lattice function_parm_mask::dc = bit_lattice::ZERO;
 function_parm_mask::function_parm_mask(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef par) : ApplicationFrontendFlowStep(AM, FUNCTION_PARM_MASK, dfm, par)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-   auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
-
-   if(opts.size() && opts.front().front() == 'X')
-   {
-      dc = bit_lattice::X;
-      opts[0] = std::string();
-   }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bit value mask don't care symbol: " + std::string(dc == bit_lattice::X ? "X" : "0"));
-
-   for(const auto& fMask : opts)
-   {
-      if(fMask.empty())
-      {
-         continue;
-      }
-      const auto mask = SplitString(fMask, "*");
-      if(mask.size() < 5 || mask[0].empty())
-      {
-         THROW_ERROR("Incorrect mask parameter format: <func_name>*<sign>*<exp_l>*<exp_u>*<m_bits>");
-      }
-
-      funcMask m;
-      m.sign = mask[1] == "0" ? bit_lattice::ZERO : (mask[1] == "1" ? bit_lattice::ONE : bit_lattice::U);
-      m.exp_l = static_cast<int16_t>(strtol(mask[2].data(), nullptr, 10));
-      m.exp_u = static_cast<int16_t>(strtol(mask[3].data(), nullptr, 10));
-      m.m_bits = static_cast<uint8_t>(strtoul(mask[4].data(), nullptr, 10));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask required for function " + mask[0] + ": sign<" + bitstring_to_string({m.sign}) + ">, exp[" + STR(m.exp_l) + "," + STR(m.exp_u) + "], significand<" + STR(+m.m_bits) + ">");
-
-      funcMasks.insert(std::make_pair<>(mask[0], std::move(m)));
-   }
 }
 
 function_parm_mask::~function_parm_mask() = default;
@@ -256,7 +226,7 @@ std::pair<std::string, RangeRef> function_parm_mask::tagDecode(const attribute_s
 bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const
 {
    const auto TM = AppM->get_tree_manager();
-   
+
    Range::bw_t typeBW = 0;
    // Gather valid function parameters to mask
    std::vector<tree_nodeRef> maskParms;
@@ -282,7 +252,6 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
    const auto retType = tree_helper::GetFunctionReturnType(TM->get_tree_node_const(fd->index));
    if(retType != nullptr && tree_helper::is_real(TM, retType->index))
    {
-      
       retMask = true;
       const auto retBW = static_cast<Range::bw_t>(tree_helper::Size(retType));
       if(typeBW)
@@ -301,7 +270,7 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
       return false;
    }
    THROW_ASSERT(typeBW == 32 || typeBW == 64, "");
-   
+
    // Decode function mask
    refcount<RealRange> rr(new RealRange(RangeRef(new Range(Regular, typeBW))));
    std::deque<bit_lattice> bv;
@@ -336,13 +305,14 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Floating-point significand bitwidth set to " + STR(+fm.m_bits));
    }
-   
+
    // Skip if function mask is useless
    if(rr->isFullSet() && bv.empty())
    {
       return false;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
    const auto bv_str = bitstring_to_string(bv);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Floating-point bounds set to " + rr->ToString() + "<" + bv_str + "> on the following: ");
@@ -368,6 +338,38 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
 DesignFlowStep_Status function_parm_mask::Exec()
 {
    const auto TM = AppM->get_tree_manager();
+   CustomMap<std::string, funcMask> funcMasks;
+   auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
+
+   if(opts.size() && opts.front().front() == 'X')
+   {
+      dc = bit_lattice::X;
+      opts[0] = std::string();
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bit value mask don't care symbol: " + std::string(dc == bit_lattice::X ? "X" : "0"));
+
+   for(const auto& fMask : opts)
+   {
+      if(fMask.empty())
+      {
+         continue;
+      }
+      const auto mask = SplitString(fMask, "*");
+      if(mask.size() < 5 || mask[0].empty())
+      {
+         THROW_ERROR("Incorrect mask parameter format: <func_name>*<sign>*<exp_l>*<exp_u>*<m_bits>");
+      }
+
+      funcMask m;
+      m.sign = mask[1] == "0" ? bit_lattice::ZERO : (mask[1] == "1" ? bit_lattice::ONE : bit_lattice::U);
+      m.exp_l = static_cast<int16_t>(strtol(mask[2].data(), nullptr, 10));
+      m.exp_u = static_cast<int16_t>(strtol(mask[3].data(), nullptr, 10));
+      m.m_bits = static_cast<uint8_t>(strtoul(mask[4].data(), nullptr, 10));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Full mask required for function " + mask[0] + ": sign<" + bitstring_to_string({m.sign}) + ">, exp[" + STR(m.exp_l) + "," + STR(m.exp_u) + "], significand<" + STR(+m.m_bits) + ">");
+
+      funcMasks.insert(std::make_pair<>(mask[0], std::move(m)));
+   }
+
    CustomMap<std::string, function_decl*> nameToFunc;
    for(const auto f : AppM->CGetCallGraphManager()->GetReachedBodyFunctions())
    {
@@ -451,7 +453,9 @@ DesignFlowStep_Status function_parm_mask::Exec()
                         THROW_ASSERT(parm->range == nullptr, "Parameter range should be unset (" + parm->range->ToString() + ")");
 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + GET_CONST_NODE(parm->type)->get_kind_text() + "<" + STR(bw) + "> " + argName);
-                        const auto [bit_values, range] = tagDecode(EnodeArg->get_attributes(), static_cast<Range::bw_t>(bw));
+                        const auto bit_values_range = tagDecode(EnodeArg->get_attributes(), static_cast<Range::bw_t>(bw));
+                        auto bit_values = bit_values_range.first;
+                        auto range = bit_values_range.second;
                         if(range == nullptr)
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -467,7 +471,9 @@ DesignFlowStep_Status function_parm_mask::Exec()
                   const auto retType = tree_helper::GetFunctionReturnType(TM->get_tree_node_const(fd->index));
                   const auto retBW = tree_helper::Size(retType);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->" + retType->get_kind_text() + "<" + STR(retBW) + "> return value");
-                  auto [bit_values, range] = tagDecode(Enode->get_attributes(), static_cast<Range::bw_t>(retBW));
+                  auto bit_values_range = tagDecode(Enode->get_attributes(), static_cast<Range::bw_t>(retBW));
+                  auto bit_values = bit_values_range.first;
+                  auto range = bit_values_range.second;
                   if(range != nullptr)
                   {
                      THROW_ASSERT(fd->bit_values.empty(), "Return value bitmask should be empty (" + fd->bit_values + ")");
@@ -502,7 +508,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
       }
       funcMasks.erase(maskAll);
    }
-   
+
    for(const auto& fm : funcMasks)
    {
       const auto f = nameToFunc.find(fm.first);

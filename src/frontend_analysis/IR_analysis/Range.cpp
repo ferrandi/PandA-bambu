@@ -276,14 +276,6 @@ bw_t Range::neededBits(const APInt& a, const APInt& b, bool sign)
 RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, bool isSigned)
 {
    THROW_ASSERT(bv.size() <= bitwidth, "BitValues size not appropriate");
-   auto bitReplace = [](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest) {
-      std::deque<bit_lattice> bv_out;
-      for(const auto& b : bv_in)
-      {
-         bv_out.push_back(b == src ? dest : b);
-      }
-      return bv_out;
-   };
    auto bitstring_to_int = [&](const std::deque<bit_lattice>& bv_in) {
       long long out = isSigned && bv_in.front() == bit_lattice::ONE ? std::numeric_limits<long long>::min() : 0LL;
       auto bv_it = bv_in.crbegin();
@@ -301,26 +293,33 @@ RangeRef Range::fromBitValues(const std::deque<bit_lattice>& bv, bw_t bitwidth, 
       }
       return out;
    };
-   auto manip = [&](const std::deque<bit_lattice>& bv_in, bit_lattice src, bit_lattice dest) {
-      auto bv_ext = bitReplace(bv_in, src, dest);
-      if(bv_ext.size() < bitwidth)
+   auto manip = [&](const std::deque<bit_lattice>& bv_in) {
+      if(bv_in.size() < bitwidth)
       {
-         bv_ext = BitLatticeManipulator::sign_extend_bitstring(bv_ext, isSigned, bitwidth);
+         return APInt(bitstring_to_int(BitLatticeManipulator::sign_extend_bitstring(bv_in, isSigned, bitwidth))).extOrTrunc(bitwidth, isSigned);
       }
-      return bitstring_to_int(bv_ext);
+      return APInt(bitstring_to_int(bv_in)).extOrTrunc(bitwidth, isSigned);
    };
+   const auto max = [&]() {
+      std::deque<bit_lattice> bv_out;
+      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ? (isSigned ? bit_lattice::ZERO : bit_lattice::ONE) : bv.front());
+      for(auto it = ++(bv.begin()); it != bv.end(); ++it)
+      {
+         bv_out.push_back((*it == bit_lattice::U || *it == bit_lattice::X) ? bit_lattice::ONE : *it);
+      }
+      return manip(bv_out);
+   }();
+   const auto min = [&]() {
+      std::deque<bit_lattice> bv_out;
+      bv_out.push_back((bv.front() == bit_lattice::U || bv.front() == bit_lattice::X) ? (isSigned ? bit_lattice::ONE : bit_lattice::ZERO) : bv.front());
+      for(auto it = ++(bv.begin()); it != bv.end(); ++it)
+      {
+         bv_out.push_back((*it == bit_lattice::U || *it == bit_lattice::X) ? bit_lattice::ZERO : *it);
+      }
+      return manip(bv_out);
+   }();
 
-   const auto x = bitReplace(bv, bit_lattice::U, bit_lattice::ZERO);
-   const auto y = bitReplace(bv, bit_lattice::U, bit_lattice::ONE);
-
-   // TODO: could be less conservative on X values, but it may interfere with BitValue oeprations
-   const auto a = manip(x, bit_lattice::X, bit_lattice::ZERO);
-   const auto b = manip(x, bit_lattice::X, bit_lattice::ONE);
-   const auto c = manip(y, bit_lattice::X, bit_lattice::ZERO);
-   const auto d = manip(y, bit_lattice::X, bit_lattice::ONE);
-
-   const auto [min, max] = std::minmax({a, b, c, d});
-
+   THROW_ASSERT(min <= max, "");
    return RangeRef(new Range(Regular, bitwidth, min, max));
 }
 
@@ -1285,6 +1284,14 @@ RangeRef Range::Or(const RangeConstRef& other) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isConstant() && this->getSignedMax() == 0)
+   {
+      return RangeRef(other->clone());
+   }
+   if(other->isConstant() && other->getSignedMax() == 0)
+   {
+      return RangeRef(this->clone());
+   }
 
    const auto& a = this->isAnti() ? Min : this->getLower();
    const auto& b = this->isAnti() ? Max : this->getUpper();
@@ -1300,6 +1307,14 @@ RangeRef Range::And(const RangeConstRef& other) const
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(bw);
    RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isConstant() && this->getSignedMax() == -1)
+   {
+      return RangeRef(other->clone());
+   }
+   if(other->isConstant() && other->getSignedMax() == -1)
+   {
+      return RangeRef(this->clone());
+   }
 
    const auto& a = this->isAnti() ? Min : this->getLower();
    const auto& b = this->isAnti() ? Max : this->getUpper();
@@ -1356,11 +1371,11 @@ RangeRef Range::Eq(const RangeConstRef& other, bw_t _bw) const
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() && isAnti())
+   if(this->isAnti() && other->isAnti())
    {
       return RangeRef(new Range(Regular, _bw, 0, 1));
    }
-   if(!isAnti() && !other->isAnti())
+   if(!this->isAnti() && !other->isAnti())
    {
       if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
       {
@@ -1392,11 +1407,11 @@ RangeRef Range::Ne(const RangeConstRef& other, bw_t _bw) const
    THROW_ASSERT(!other->isReal(), "Real range is a storage class only");
    RETURN_EMPTY_ON_EMPTY(_bw)
    RETURN_UNKNOWN_ON_UNKNOWN(_bw)
-   if(isAnti() && isAnti())
+   if(this->isAnti() && other->isAnti())
    {
       return RangeRef(new Range(Regular, _bw, 0, 1));
    }
-   if(!isAnti() && !other->isAnti())
+   if(!this->isAnti() && !other->isAnti())
    {
       if((l == Min) || (u == Max) || (other->l == Min) || (other->u == Max))
       {
@@ -1890,10 +1905,6 @@ RangeRef Range::zextOrTrunc(bw_t bitwidth) const
       return RangeRef(new Range(Regular, bitwidth, 0, APInt::getMaxValue(bw)));
    }
 
-   if(this->getSignedMax() < 0)
-   {
-      return RangeRef(new Range(Regular, bitwidth, this->getSignedMax().extOrTrunc(bw, false), this->getSignedMin().extOrTrunc(bw, false)));
-   }
    return RangeRef(new Range(Regular, bitwidth, this->getSignedMin().extOrTrunc(bw, false), this->getSignedMax().extOrTrunc(bw, false)));
 }
 
@@ -2508,33 +2519,14 @@ RangeRef RealRange::Eq(const RangeConstRef& other, bw_t _bw) const
       {
          return zeroContained->zextOrTrunc(_bw);
       }
-
-      return sign->Eq(rOther->sign, _bw)->intersectWith(exponent->Eq(rOther->exponent, _bw))->intersectWith(significand->Eq(rOther->significand, _bw));
+      return sign->Eq(rOther->sign, 1)->And(exponent->Eq(rOther->exponent, 1))->And(significand->Eq(rOther->significand, 1))->zextOrTrunc(_bw);
    }
    return RangeRef(new Range(Regular, _bw, 0, 0));
 }
 
 RangeRef RealRange::Ne(const RangeConstRef& other, bw_t _bw) const
 {
-   if(const auto rOther = RefcountCast<const RealRange>(other))
-   {
-      const auto zeroEt = exponent->Eq(RangeRef(new Range(Regular, exponent->getBitWidth(), 0, 0)), 1);
-      const auto zeroMt = significand->Eq(RangeRef(new Range(Regular, significand->getBitWidth(), 0, 0)), 1);
-      const auto zeroContainedt = zeroEt->And(zeroMt);
-      const auto zeroEo = rOther->exponent->Eq(RangeRef(new Range(Regular, rOther->exponent->getBitWidth(), 0, 0)), 1);
-      const auto zeroMo = rOther->significand->Eq(RangeRef(new Range(Regular, rOther->significand->getBitWidth(), 0, 0)), 1);
-      const auto zeroContainedo = zeroEo->And(zeroMo);
-      const auto zeroContained = zeroContainedt->And(zeroContainedo);
-      const auto hasZero = !(zeroContained->isConstant() && zeroContained->getUnsignedMax() == 0);
-
-      const auto ne = sign->Ne(rOther->sign, _bw)->intersectWith(exponent->Ne(rOther->exponent, _bw))->intersectWith(significand->Ne(rOther->significand, _bw));
-      if(hasZero && ne->isConstant() && ne->getUnsignedMax() == 1)
-      {
-         return RangeRef(new Range(Regular, _bw, 0, 1));
-      }
-      return ne;
-   }
-   return RangeRef(new Range(Regular, _bw, 1, 1));
+   return Eq(other, 1)->Not()->zextOrTrunc(_bw);
 }
 
 RangeRef RealRange::intersectWith(const RangeConstRef& other) const

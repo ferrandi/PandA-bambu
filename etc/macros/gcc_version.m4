@@ -2133,13 +2133,7 @@ AC_DEFUN([AC_CHECK_GCC_ARM_VERSION],[
 echo "checking for arm cross compiler..."
 dnl the directory where plugins will be put
 if test "$prefix" != "NONE"; then
-   if test ! -d "$prefix"; then
-      mkdir $prefix || AC_MSG_ERROR(Can not create $prefix)
-   fi
    ARM_PLUGIN_DIR=$prefix/gcc_plugins
-   if test ! -d $prefix/gcc_plugins; then
-      mkdir $prefix/gcc_plugins || AC_MSG_ERROR(Can not create $ARM_PLUGIN_DIR)
-   fi
 else
    ARM_PLUGIN_DIR=/opt/gcc_plugins
 fi
@@ -2258,14 +2252,6 @@ AC_DEFINE_UNQUOTED(ARM_SSA_PLUGINCPP, "${ARM_SSA_PLUGINCPP}", "Define the filena
 AC_DEFINE_UNQUOTED(ARM_RTL_PLUGIN, "${ARM_RTL_PLUGIN}", "Define the filename of the GCC PandA RTL plugin")
 AC_DEFINE_UNQUOTED(ARM_GCC_VERSION, "${ARM_GCC_VERSION}", "Define the arm gcc version")
 
-dnl check if gcc plugin directory exists
-if test -d $ARM_PLUGIN_DIR; then
-  echo "checking $ARM_PLUGIN_DIR...yes"
-else
-  echo "checking $ARM_PLUGIN_DIR...no - creating"
-  mkdir $ARM_PLUGIN_DIR || AC_MSG_ERROR(Can not create $ARM_PLUGIN_DIR)
-fi
-
 ])
 
 dnl
@@ -2276,13 +2262,7 @@ AC_DEFUN([AC_CHECK_GCC_SPARC_VERSION],[
 echo "checking for sparc cross compiler..."
 dnl the directory where plugins will be put
 if test "$prefix" != "NONE"; then
-   if test ! -d "$prefix"; then
-      mkdir $prefix || AC_MSG_ERROR(Can not create $prefix)
-   fi
    SPARC_PLUGIN_DIR=$prefix/gcc_plugins
-   if test ! -d $prefix/gcc_plugins; then
-      mkdir $prefix/gcc_plugins || AC_MSG_ERROR(Can not create $SPARC_PLUGIN_DIR)
-   fi
 else
    SPARC_PLUGIN_DIR=/opt/gcc_plugins
 fi
@@ -2400,13 +2380,6 @@ AC_DEFINE_UNQUOTED(SPARC_SSA_PLUGINCPP, "${SPARC_SSA_PLUGINCPP}", "Define the fi
 AC_DEFINE_UNQUOTED(SPARC_RTL_PLUGIN, "${SPARC_RTL_PLUGIN}", "Define the filename of the GCC PandA RTL plugin")
 AC_DEFINE_UNQUOTED(SPARC_GCC_VERSION, "${SPARC_GCC_VERSION}", "Define the sparc gcc version")
 
-dnl check if gcc plugin directory exists
-if test -d $SPARC_PLUGIN_DIR; then
-  echo "checking $SPARC_PLUGIN_DIR...yes"
-else
-  echo "checking $SPARC_PLUGIN_DIR...no - creating"
-  mkdir $SPARC_PLUGIN_DIR || AC_MSG_ERROR(Can not create $SPARC_PLUGIN_DIR)
-fi
 
 ])
 
@@ -2441,23 +2414,9 @@ dnl
 AC_DEFUN([AC_CHECK_GCC_PLUGIN_DIR],[
 
 if test "$prefix" != "NONE"; then
-   if test ! -d "$prefix"; then
-      mkdir $prefix || AC_MSG_ERROR(Can not create $prefix)
-   fi
    GCC_PLUGIN_DIR=$prefix/gcc_plugins
-   if test ! -d $prefix/gcc_plugins; then
-      mkdir $prefix/gcc_plugins || AC_MSG_ERROR(Can not create $GCC_PLUGIN_DIR)
-   fi
 else
    GCC_PLUGIN_DIR=/opt/gcc_plugins
-fi
-
-dnl check if gcc plugin directory exists
-if test -d $GCC_PLUGIN_DIR; then
-  echo "checking $GCC_PLUGIN_DIR...yes"
-else
-  echo "checking $GCC_PLUGIN_DIR...no - creating"
-  mkdir $GCC_PLUGIN_DIR || AC_MSG_ERROR(Can not create $GCC_PLUGIN_DIR)
 fi
 
 AC_DEFINE_UNQUOTED(GCC_PLUGIN_DIR, "${GCC_PLUGIN_DIR}", "Define the plugin dir")
@@ -2471,23 +2430,9 @@ dnl
 AC_DEFUN([AC_CHECK_CLANG_PLUGIN_DIR],[
 
 if test "$prefix" != "NONE"; then
-   if test ! -d "$prefix"; then
-      mkdir $prefix || AC_MSG_ERROR(Can not create $prefix)
-   fi
    CLANG_PLUGIN_DIR=$prefix/gcc_plugins
-   if test ! -d $prefix/gcc_plugins; then
-      mkdir $prefix/gcc_plugins || AC_MSG_ERROR(Can not create $CLANG_PLUGIN_DIR)
-   fi
 else
    CLANG_PLUGIN_DIR=/opt/gcc_plugins
-fi
-
-dnl check if gcc plugin directory exists
-if test -d $CLANG_PLUGIN_DIR; then
-  echo "checking $CLANG_PLUGIN_DIR...yes"
-else
-  echo "checking $CLANG_PLUGIN_DIR...no - creating"
-  mkdir $CLANG_PLUGIN_DIR || AC_MSG_ERROR(Can not create $CLANG_PLUGIN_DIR)
 fi
 
 AC_DEFINE_UNQUOTED(CLANG_PLUGIN_DIR, "${CLANG_PLUGIN_DIR}", "Define the plugin dir")

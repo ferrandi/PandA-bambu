@@ -1206,33 +1206,16 @@ void Bit_Value::initialize()
                                  {
                                     auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
                                     const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-                                    auto val = strtof64x(real_const->valr.data(), nullptr);
-                                    if(real_const->valx[0] == '-' && val > 0)
+                                    THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
+                                    if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
                                     {
-                                       val = -val;
-                                    }
-                                    if(real_size == 64)
-                                    {
-                                       union {
-                                          double d;
-                                          long long ll;
-                                       } vc;
-                                       vc.d = static_cast<double>(val);
-                                       current_inf = create_bitstring_from_constant(vc.ll, 64, false);
-                                    }
-                                    else if(real_size == 32)
-                                    {
-                                       union {
-                                          float f;
-                                          long l;
-                                       } vc;
-                                       vc.f = static_cast<float>(val);
-                                       current_inf = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                                       current_inf = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
                                     }
                                     else
                                     {
-                                       THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                                       current_inf = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
                                     }
+                                    sign_reduce_bitstring(current_inf, false);
                                  }
                                  else if(GET_NODE(vd->init)->get_kind() == string_cst_K)
                                  {
@@ -1288,33 +1271,16 @@ void Bit_Value::initialize()
                                     {
                                        auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
                                        const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-                                       auto val = strtof64x(real_const->valr.data(), nullptr);
-                                       if(real_const->valx[0] == '-' && val > 0)
+                                       THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
+                                       if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
                                        {
-                                          val = -val;
-                                       }
-                                       if(real_size == 64)
-                                       {
-                                          union {
-                                             double d;
-                                             long long ll;
-                                          } vc;
-                                          vc.d = static_cast<double>(val);
-                                          current_inf = create_bitstring_from_constant(vc.ll, 64, false);
-                                       }
-                                       else if(real_size == 32)
-                                       {
-                                          union {
-                                             float f;
-                                             long l;
-                                          } vc;
-                                          vc.f = static_cast<float>(val);
-                                          current_inf = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                                          current_inf = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
                                        }
                                        else
                                        {
-                                          THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                                          current_inf = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
                                        }
+                                       sign_reduce_bitstring(current_inf, false);
                                     }
                                     else if(GET_NODE(vd->init)->get_kind() == string_cst_K)
                                     {
@@ -1384,35 +1350,18 @@ void Bit_Value::initialize()
                                     }
                                     else if(cur_node->get_kind() == real_cst_K)
                                     {
+                                       THROW_ASSERT(source_type_size == 64 || source_type_size == 32, "Unhandled real type size (" + STR(source_type_size) + ")");
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Real constant");
                                        const auto* cst = GetPointer<const real_cst>(cur_node);
-                                       auto val = strtof64x(cst->valr.data(), nullptr);
-                                       if(cst->valx[0] == '-' && val > 0)
+                                       if(cst->valx.front() == '-' && cst->valr.front() != cst->valx.front())
                                        {
-                                          val = -val;
-                                       }
-                                       if(source_type_size == 64)
-                                       {
-                                          union {
-                                             double d;
-                                             long long ll;
-                                          } vc;
-                                          vc.d = static_cast<double>(val);
-                                          cur_bitstring = create_bitstring_from_constant(vc.ll, source_type_size, loaded_is_signed);
-                                       }
-                                       else if(source_type_size == 32)
-                                       {
-                                          union {
-                                             float f;
-                                             long l;
-                                          } vc;
-                                          vc.f = static_cast<float>(val);
-                                          cur_bitstring = create_bitstring_from_constant(static_cast<long long>(vc.l), source_type_size, loaded_is_signed);
+                                          cur_bitstring = string_to_bitstring(convert_fp_to_string("-" + cst->valr, source_type_size));
                                        }
                                        else
                                        {
-                                          THROW_UNREACHABLE("Unhandled real type size (" + STR(source_type_size) + ")");
+                                          cur_bitstring = string_to_bitstring(convert_fp_to_string(cst->valr, source_type_size));
                                        }
+                                       sign_reduce_bitstring(cur_bitstring, loaded_is_signed);
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "bitstring = " + bitstring_to_string(cur_bitstring));
                                     }
                                     else
@@ -1670,35 +1619,18 @@ void Bit_Value::initialize()
             else if(GetPointer<real_cst>(use_node))
             {
                auto* real_const = GetPointer<real_cst>(use_node);
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(ssa_use_node_id) + " -> " + STR(real_const->valr));
                const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-               auto val = strtof64x(real_const->valr.data(), nullptr);
-               if(real_const->valx[0] == '-' && val > 0)
+               THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(ssa_use_node_id) + " -> " + STR(real_const->valr));
+               if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
                {
-                  val = -val;
-               }
-               if(real_size == 64)
-               {
-                  union {
-                     double d;
-                     long long ll;
-                  } vc;
-                  vc.d = static_cast<double>(val);
-                  best[ssa_use_node_id] = create_bitstring_from_constant(vc.ll, 64, false);
-               }
-               else if(real_size == 32)
-               {
-                  union {
-                     float f;
-                     long l;
-                  } vc;
-                  vc.f = static_cast<float>(val);
-                  best[ssa_use_node_id] = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                  best[ssa_use_node_id] = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
                }
                else
                {
-                  THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                  best[ssa_use_node_id] = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
                }
+               sign_reduce_bitstring(best.at(ssa_use_node_id), false);
             }
             else
             {
@@ -1753,35 +1685,18 @@ void Bit_Value::initialize()
                else if(GET_NODE(def_edge.first)->get_kind() == real_cst_K)
                {
                   auto* real_const = GetPointer<real_cst>(GET_NODE(def_edge.first));
-                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(GET_INDEX_NODE(def_edge.first)) + " -> " + STR(real_const->valr));
                   const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
-                  auto val = strtof64x(real_const->valr.data(), nullptr);
-                  if(real_const->valx[0] == '-' && val > 0)
+                  THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(GET_INDEX_NODE(def_edge.first)) + " -> " + STR(real_const->valr));
+                  if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
                   {
-                     val = -val;
-                  }
-                  if(real_size == 64)
-                  {
-                     union {
-                        double d;
-                        long long ll;
-                     } vc;
-                     vc.d = static_cast<double>(val);
-                     best[GET_INDEX_NODE(def_edge.first)] = create_bitstring_from_constant(vc.ll, 64, false);
-                  }
-                  else if(real_size == 32)
-                  {
-                     union {
-                        float f;
-                        long l;
-                     } vc;
-                     vc.f = static_cast<float>(val);
-                     best[GET_INDEX_NODE(def_edge.first)] = create_bitstring_from_constant(static_cast<long long>(vc.l), 32, false);
+                     best[GET_INDEX_NODE(def_edge.first)] = string_to_bitstring(convert_fp_to_string("-" + real_const->valr, real_size));
                   }
                   else
                   {
-                     THROW_UNREACHABLE("Unhandled real type size (" + STR(real_size) + ")");
+                     best[GET_INDEX_NODE(def_edge.first)] = string_to_bitstring(convert_fp_to_string(real_const->valr, real_size));
                   }
+                  sign_reduce_bitstring(best.at(GET_INDEX_NODE(def_edge.first)), false);
                }
                else
                {

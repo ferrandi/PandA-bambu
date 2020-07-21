@@ -69,8 +69,9 @@ unique_binding_register::~unique_binding_register() = default;
 
 DesignFlowStep_Status unique_binding_register::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
    for(unsigned int sv = 0; sv < HLS->storage_value_information->get_number_of_storage_values(); sv++)
@@ -78,7 +79,8 @@ DesignFlowStep_Status unique_binding_register::InternalExec()
       HLS->Rreg->bind(sv, sv);
    }
    HLS->Rreg->set_used_regs(HLS->storage_value_information->get_number_of_storage_values());
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");

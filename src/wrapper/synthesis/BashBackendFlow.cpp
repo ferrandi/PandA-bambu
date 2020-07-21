@@ -69,9 +69,7 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Generic Bash Backend Flow ::.");
 
-   default_data["Generic-yosysOpenROAD"] =
-#include "Generic-yosysOpenROAD.data"
-       ;
+   default_data["Generic-yosysOpenROAD"] = "Generic-yosysOpenROAD.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
@@ -93,7 +91,7 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
       if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -257,7 +255,8 @@ void BashBackendFlow::CheckSynthesisResults()
 
 void BashBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
-   script << "export PANDA_DATA_INSTALLDIR=" << std::string(PANDA_DATA_INSTALLDIR "/panda/") << "\n";
+   script << "export PANDA_DATA_INSTALLDIR=" << relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/")) << "\n";
+   script << "export CURR_WORKDIR=" << GetCurrentPath() << "\n";
 
    for(auto pair : target->get_target_device()->get_bash_vars())
    {

@@ -61,9 +61,7 @@ class CInitializationParserFunctor
    /// variable used to write in a variable
    std::string file_variable;
 
-
  public:
-
    /**
     * Constructor
     */

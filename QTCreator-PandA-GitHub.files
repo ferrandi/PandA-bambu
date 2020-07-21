@@ -1407,7 +1407,6 @@ ext/mockturtle/lib/abcsat/abc/vecInt.h
 ext/mockturtle/lib/abcsat/abc/vecWec.h
 ext/mockturtle/lib/abcsat/satSolver.cpp
 ext/mockturtle/lib/abcsat/satStore.cpp
-ext/mockturtle/lib/ez/ez/direct_iterator.hpp
 ext/mockturtle/lib/fmt/fmt/chrono.h
 ext/mockturtle/lib/fmt/fmt/color.h
 ext/mockturtle/lib/fmt/fmt/core.h
@@ -2161,8 +2160,6 @@ src/frontend_analysis/IR_analysis/check_system_type.cpp
 src/frontend_analysis/IR_analysis/check_system_type.hpp
 src/frontend_analysis/IR_analysis/compute_implicit_calls.cpp
 src/frontend_analysis/IR_analysis/compute_implicit_calls.hpp
-src/frontend_analysis/IR_analysis/constant_flop_wrapper.cpp
-src/frontend_analysis/IR_analysis/constant_flop_wrapper.hpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.cpp
 src/frontend_analysis/IR_analysis/dead_code_elimination.hpp
 src/frontend_analysis/IR_analysis/determine_memory_accesses.cpp

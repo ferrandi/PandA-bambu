@@ -120,11 +120,11 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    const std::string function_name = FB->CGetBehavioralHelper()->get_function_name();
    /// main circuit type
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor("controller_" + function_name));
-
+   structural_managerRef SM = this->HLS->controller;
    SM->set_top_info("Controller_i", module_type);
-   structural_objectRef circuit = this->SM->get_circ();
+   structural_objectRef circuit = SM->get_circ();
    circuit->set_black_box(false);
-   this->add_common_ports(circuit);
+   this->add_common_ports(circuit, SM);
    structural_objectRef clock_port = circuit->find_member(CLOCK_PORT_NAME, port_o_K, circuit);
    structural_objectRef reset_port = circuit->find_member(RESET_PORT_NAME, port_o_K, circuit);
    structural_objectRef done_port = circuit->find_member(DONE_PORT_NAME, port_o_K, circuit);
@@ -193,5 +193,9 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
    SM->add_connection(start_port, port_strt);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Created a shift register with " + std::to_string(num_states) + " bits as pipeline controller");
+
+   out_ports.clear();
+   mu_ports.clear();
+   cond_ports.clear();
    return DesignFlowStep_Status::SUCCESS;
 }

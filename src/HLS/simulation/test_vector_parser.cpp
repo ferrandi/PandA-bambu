@@ -185,8 +185,15 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                {
                   const auto test_directory = GetDirectory(input_xml_filename);
                   const auto input_file_name = BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
-                  const auto input_file = fileIO_istream_open(input_file_name);
-                  test_vector[param] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+                  if(input_file_name.size() > 4 && input_file_name.substr(input_file_name.size() - 4) == ".dat")
+                  {
+                     test_vector[param] = input_file_name;
+                  }
+                  else
+                  {
+                     const auto input_file = fileIO_istream_open(input_file_name);
+                     test_vector[param] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+                  }
                }
                else if(!behavioral_helper->is_a_pointer(function_parameter))
                {

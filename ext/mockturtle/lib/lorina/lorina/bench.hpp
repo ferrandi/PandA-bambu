@@ -141,16 +141,7 @@ public:
 
   virtual void on_gate( const std::vector<std::string>& inputs, const std::string& output, const std::string& type ) const override
   {
-    assert( type.size() >= 2u );
-    if ( type[0] == '0' && type[1] == 'x' )
-      _os << fmt::format( "{0} = LUT {1}({2})", output, type, detail::join( inputs, "," ) ) << std::endl;
-    else
-      _os << fmt::format( "{0} = {1}({2})", output, type, detail::join( inputs, "," ) ) << std::endl;
-  }
-
-  virtual void on_dff( const std::string& input, const std::string& output ) const override
-  {
-    _os << fmt::format( "{0} = DFF({1})", output, input ) << std::endl;
+    _os << fmt::format( "{0} = {1}({2})", output, type, detail::join( inputs, "," ) ) << std::endl;
   }
 
   virtual void on_assign( const std::string& input, const std::string& output ) const override
@@ -163,6 +154,8 @@ public:
 
 namespace bench_regex
 {
+static std::regex input( R"(INPUT\((.*)\))" );
+static std::regex output( R"(OUTPUT\((.*)\))" );
 static std::regex gate( R"((.*)\s+=\s+(.*)\((.*)\))" );
 static std::regex dff( R"((.*)\s+=\s+DFF\((.+)\))" );
 static std::regex lut( R"((.*)\s+=\s+LUT\s+(.*)\((.*)\))" );
@@ -210,23 +203,18 @@ inline return_code read_bench( std::istream& in, const bench_reader& reader, dia
       return true;
 
     /* INPUT(<string>) */
-    if ( line.substr( 0u, 6u ) == "INPUT(" )
+    if ( std::regex_search( line, m, bench_regex::input ) )
     {
-      auto const pos = line.find_first_of( ")", 7u );
-      assert( pos != std::string::npos );
-      auto const s = line.substr( 6u, pos - 6u );
+      const auto s = detail::trim_copy( m[1] );
       on_action.declare_known( s );
       reader.on_input( s );
       return true;
     }
 
     /* OUTPUT(<string>) */
-    if ( line.substr( 0u, 7u ) == "OUTPUT(" )
+    if ( std::regex_search( line, m, bench_regex::output ) )
     {
-      auto const pos = line.find_first_of( ")", 8u );
-      auto const s = line.substr( 7u, pos - 7u );
-      assert( pos != std::string::npos );
-      reader.on_output( detail::trim_copy( s ) );
+      reader.on_output( detail::trim_copy( m[1] ) );
       return true;
     }
 

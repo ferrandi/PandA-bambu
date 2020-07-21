@@ -72,7 +72,7 @@ public:
     }
     else
     {
-      for ( auto h = 0; h < remainder.num_vars(); h++ )
+      for ( auto h = 0u; h < remainder.num_vars(); h++ )
       {
         auto var = remainder.construct();
         kitty::create_nth_var( var, h );

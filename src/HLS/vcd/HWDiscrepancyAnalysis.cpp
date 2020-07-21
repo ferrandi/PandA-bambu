@@ -79,6 +79,7 @@
 
 // include from tree/
 #include "behavioral_helper.hpp"
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "structural_manager.hpp"
 #include "tree_basic_block.hpp"
@@ -684,7 +685,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---COMPRESSED_EPP " + STR(id.first) + ":" + STR(id.second));
 #endif
       const std::string init_filename = "epp_control_flow_trace_scope__" + STR(scope_id) + ".mem";
-      std::ofstream init_file((init_filename).c_str());
+      std::ofstream init_file(GetPath((init_filename).c_str()));
 
       for(const auto& id : i.second)
       {
