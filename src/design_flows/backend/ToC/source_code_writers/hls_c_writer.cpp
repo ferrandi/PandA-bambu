@@ -163,7 +163,7 @@ void HLSCWriter::WriteGlobalDeclarations()
 
 void HLSCWriter::WriteTestbenchGlobalVars()
 {
-   // global variables for tesbench
+   // global variables for testbench
    indented_output_stream->Append("//global variable used to store the output file\n");
    indented_output_stream->Append("FILE * __bambu_testbench_fp;\n\n");
 }
