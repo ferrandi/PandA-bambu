@@ -3700,7 +3700,7 @@ RangeRef BinaryOpNode::eval() const
             {
                if(*it != '0')
                {
-                  bits |= 1 << i;
+                  bits |= APInt(1) << i;
                }
             }
             const auto r = RangeRef(new Range(Regular, static_cast<bw_t>(ssa->bit_values.size()), bits, bits));
