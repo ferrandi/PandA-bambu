@@ -3445,7 +3445,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
        if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG9)
    {
       const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +
