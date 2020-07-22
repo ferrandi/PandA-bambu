@@ -1041,6 +1041,24 @@ namespace
          }
          return r;
       }
+      else if(const auto* vc = GetPointer<const vector_cst>(tn))
+      {
+         const auto el_bw = getGIMPLE_BW(vc->list_of_valu.front());
+         RangeRef r(new Range(Empty, bw));
+         const auto stride = static_cast<size_t>(bw / el_bw);
+         const auto strides = vc->list_of_valu.size() / stride;
+         THROW_ASSERT(strides * stride == vc->list_of_valu.size(), "");
+         for(size_t i = 0; i < strides; ++i)
+         {
+            auto curr_el = getGIMPLE_range(vc->list_of_valu.at(i*stride));
+            for(size_t j = 1; j < stride; ++j)
+            {
+               curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride + j))->zextOrTrunc(bw)->shl(RangeRef(new Range(Regular, bw, el_bw * j, el_bw * j)))->Or(curr_el);
+            }
+            r = r->unionWith(curr_el);
+         }
+         return r;
+      }
       else if(const auto* it = GetPointer<const integer_type>(type))
       {
 #ifdef BITVALUE_UPDATE
