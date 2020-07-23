@@ -640,7 +640,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
                }
             }
 
-            /// FIXME: real numbers at the moment have to be considered diffently because of computation of ulp; c++ code is still managed in the old way
+            /// FIXME: real numbers at the moment have to be considered differently because of computation of ulp; c++ code is still managed in the old way
             if(tree_helper::is_real(TreeM, pt_type_index) or flag_cpp)
             {
                long long int bitsize = tree_helper::size(TreeM, pt_type_index);

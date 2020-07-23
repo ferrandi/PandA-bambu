@@ -8,6 +8,8 @@ New features introduced:
 - Added support to multi-thread simulation when Verilator version 4 is used.
 - Improved bambu memory consumption.
 - Added support to AppImage bambu binary distribution (https://appimage.org/).
+- Added support to xc7z045-2ffg900-VVD device.
+- Improved and better integrated value range analysis.
 
 =========== PANDA 0.9.6 ===========
 Sat 11 January 2020, PandA release 0.9.6

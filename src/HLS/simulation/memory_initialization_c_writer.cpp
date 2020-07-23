@@ -80,10 +80,10 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case pointer_type_K:
       case integer_type_K:
       case real_type_K:
+      case boolean_type_K:
          base_type_index = status.back().first->index;
          break;
       case array_type_K:
-      case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
       case complex_type_K:
@@ -140,6 +140,10 @@ void MemoryInitializationCWriter::Process(const std::string& content)
    unsigned int size = 0;
    switch(base_type->get_kind())
    {
+      case boolean_type_K:
+         size = 8;
+         binary_value = ConvertInBinary(content, size, false, true);
+         break;
       case integer_type_K:
          size = tree_helper::size(TM, base_type_index);
          binary_value = ConvertInBinary(content, size, false, tree_helper::is_unsigned(TM, base_type_index));
@@ -153,7 +157,6 @@ void MemoryInitializationCWriter::Process(const std::string& content)
          binary_value = ConvertInBinary(content, size, false, true);
          break;
       case array_type_K:
-      case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
       case complex_type_K:

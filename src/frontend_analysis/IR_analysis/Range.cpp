@@ -1814,10 +1814,10 @@ RangeRef Range::truncate(bw_t bitwidth) const
       return RangeRef(this->clone());
    }
 
-   auto stmin = a.extOrTrunc(bitwidth, true);
-   auto stmax = b.extOrTrunc(bitwidth, true);
+   const auto stmin = a.extOrTrunc(bitwidth, true);
+   const auto stmax = b.extOrTrunc(bitwidth, true);
 
-   if(this->getSignedMin() < 0 && this->getSignedMax() >= 0) // Zero crossing range
+   if(a < 0 && b >= 0) // Zero crossing range
    {
       if(stmax < 0) // overflow
       {
@@ -1836,13 +1836,13 @@ RangeRef Range::truncate(bw_t bitwidth) const
          return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
       }
    }
-   else if((a.sign() != stmin.sign()) ^ (b.sign() != stmax.sign())) // Non zero crossing range
-   {
-      return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
-   }
 
    if(stmin > stmax)
    {
+      if(a.sign() == 1)
+      {
+         return RangeRef(new Range(Regular, bitwidth, stmax, stmin));
+      }
       return RangeRef(new Range(Anti, bitwidth, stmax + 1, stmin - 1));
    }
    return RangeRef(new Range(Regular, bitwidth, stmin, stmax));

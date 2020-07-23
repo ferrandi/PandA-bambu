@@ -1041,6 +1041,24 @@ namespace
          }
          return r;
       }
+      else if(const auto* vc = GetPointer<const vector_cst>(tn))
+      {
+         const auto el_bw = getGIMPLE_BW(vc->list_of_valu.front());
+         RangeRef r(new Range(Empty, bw));
+         const auto stride = static_cast<size_t>(bw / el_bw);
+         const auto strides = vc->list_of_valu.size() / stride;
+         THROW_ASSERT(strides * stride == vc->list_of_valu.size(), "");
+         for(size_t i = 0; i < strides; ++i)
+         {
+            auto curr_el = getGIMPLE_range(vc->list_of_valu.at(i*stride));
+            for(size_t j = 1; j < stride; ++j)
+            {
+               curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride + j))->zextOrTrunc(bw)->shl(RangeRef(new Range(Regular, bw, el_bw * j, el_bw * j)))->Or(curr_el);
+            }
+            r = r->unionWith(curr_el);
+         }
+         return r;
+      }
       else if(const auto* it = GetPointer<const integer_type>(type))
       {
 #ifdef BITVALUE_UPDATE
@@ -3676,29 +3694,30 @@ RangeRef BinaryOpNode::eval() const
             {
                return RangeRef(new Range(Regular, sinkBW));
             }
-            std::string bits;
-            for(size_t i = 0ULL; i < ssa->bit_values.size(); ++i)
+            APInt bits(0);
+            uint8_t i = 0;
+            for(auto it = ssa->bit_values.crbegin(); it != ssa->bit_values.crend(); ++it, ++i)
             {
-               bits += (ssa->bit_values[i] == 'X' || ssa->bit_values[i] == 'U') ? '1' : ssa->bit_values[i];
+               if(*it != '0')
+               {
+                  bits |= APInt(1) << i;
+               }
             }
-            const auto r = Range::fromBitValues(string_to_bitstring(bits), static_cast<bw_t>(bits.size()), sinkSigned);
-            THROW_ASSERT(r->isConstant(), "Range derived from <" + bits + "> should be constant");
+            const auto r = RangeRef(new Range(Regular, static_cast<bw_t>(ssa->bit_values.size()), bits, bits));
+            THROW_ASSERT(r->isConstant(), "Range derived from <" + ssa->bit_values + "> should be constant");
             return r;
          }();
          const auto op_code = this->getOpcode();
-         if((bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) && 
+         if(bvRange->isConstant() && (bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) && 
             (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /* || op_code == minus_expr_K */ || op_code == pointer_plus_expr_K))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mask result range with " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" + (sinkSigned ? "signed" : "unsigned") + "> over range " + result->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Result range " + result->ToString() + " filtered with mask " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" + (sinkSigned ? "signed" : "unsigned") + "> " + bvRange->ToString());
             // #if HAVE_ASSERTS
-            //             const auto resEmpty = result->isEmpty();
+            // const auto resEmpty = result->isEmpty();
             // #endif
-            const auto restrictedResult = result->And(sinkSigned ? bvRange->sextOrTrunc(result->getBitWidth()) : bvRange->zextOrTrunc(result->getBitWidth()));
-            // Result mask not always result in smaller range
-            if(result->getSpan() > restrictedResult->getSpan())
-            {
-               result = restrictedResult;
-            }
+            const auto truncRes = sinkSigned ? result->truncate(bvRange->getBitWidth())->sextOrTrunc(result->getBitWidth()) : result->truncate(bvRange->getBitWidth())->zextOrTrunc(result->getBitWidth());
+            const auto maskRes = sinkSigned ? result->And(bvRange->zextOrTrunc(result->getBitWidth()))->truncate(bvRange->getBitWidth())->sextOrTrunc(result->getBitWidth()) : result->And(bvRange->zextOrTrunc(result->getBitWidth()));
+            result = truncRes->getSpan() < maskRes->getSpan() ? truncRes : maskRes;
             // THROW_ASSERT(result->isEmpty() == resEmpty, "");
          }
       }

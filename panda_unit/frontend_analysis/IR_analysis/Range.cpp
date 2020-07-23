@@ -678,7 +678,8 @@ BOOST_AUTO_TEST_CASE( range_truncate )
     BOOST_REQUIRE_EQUAL(0b00001111, truncFullwrap->getSignedMax()); 
 
     auto truncFullwrap2 = fullwrap2->truncate(8);
-    BOOST_REQUIRE(truncFullwrap2->isAnti());
+    BOOST_REQUIRE_EQUAL(-119, truncFullwrap2->getSignedMin());
+    BOOST_REQUIRE_EQUAL(54, truncFullwrap2->getSignedMax());
 
     auto truncMultiwrap = multiwrap->truncate(8);
     BOOST_REQUIRE(truncMultiwrap->isFullSet());
@@ -694,6 +695,11 @@ BOOST_AUTO_TEST_CASE( range_truncate )
     BOOST_REQUIRE_EQUAL(124, strangeRes1->getSignedMax());
     BOOST_REQUIRE_EQUAL(strangeRes1->getUnsignedMin(), strangeRes1->getSignedMin());
     BOOST_REQUIRE_EQUAL(strangeRes1->getUnsignedMax(), strangeRes1->getSignedMax());
+
+    RangeRef test1(new Range(Regular, 8, -33, -30));
+    auto trunc5 = test1->truncate(5);
+    BOOST_REQUIRE_EQUAL(-1, trunc5->getSignedMin());
+    BOOST_REQUIRE_EQUAL(2, trunc5->getSignedMax());
 }
 
 BOOST_AUTO_TEST_CASE( range_zext )
