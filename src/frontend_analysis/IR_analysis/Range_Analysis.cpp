@@ -1050,7 +1050,7 @@ namespace
          THROW_ASSERT(strides * stride == vc->list_of_valu.size(), "");
          for(size_t i = 0; i < strides; ++i)
          {
-            auto curr_el = getGIMPLE_range(vc->list_of_valu.at(i*stride));
+            auto curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride));
             for(size_t j = 1; j < stride; ++j)
             {
                curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride + j))->zextOrTrunc(bw)->shl(RangeRef(new Range(Regular, bw, el_bw * j, el_bw * j)))->Or(curr_el);
@@ -1345,7 +1345,8 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       const auto hasBetterSuper = [&]() {
          if(SSA->min && SSA->max)
          {
-            RangeRef superRange(new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
+            RangeRef superRange(
+                new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
             if(superRange->isRegular())
             {
                // Intersect with computed range, because range computed from LLVM range analysis may not be valid any more
@@ -1353,7 +1354,9 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                if(superRange->isRegular() && superRange->getSpan() < interval->getSpan())
                {
                   const auto superBW = isSigned ? Range::neededBits(superRange->getSignedMin(), superRange->getSignedMax(), true) : Range::neededBits(superRange->getUnsignedMin(), superRange->getUnsignedMax(), false);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " +
+                                     GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
                   interval = superRange;
                   newBW = superBW;
                   return true;
@@ -1362,7 +1365,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          }
          return false;
       }();
-      
+
       if(!hasBetterSuper)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
@@ -3708,10 +3711,12 @@ RangeRef BinaryOpNode::eval() const
             return r;
          }();
          const auto op_code = this->getOpcode();
-         if(bvRange->isConstant() && (bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) && 
+         if(bvRange->isConstant() && (bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) &&
             (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /* || op_code == minus_expr_K */ || op_code == pointer_plus_expr_K))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Result range " + result->ToString() + " filtered with mask " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" + (sinkSigned ? "signed" : "unsigned") + "> " + bvRange->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Result range " + result->ToString() + " filtered with mask " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" +
+                               (sinkSigned ? "signed" : "unsigned") + "> " + bvRange->ToString());
             // #if HAVE_ASSERTS
             // const auto resEmpty = result->isEmpty();
             // #endif
