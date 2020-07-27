@@ -437,7 +437,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
             else
                temp_variable.insert(first_square, "_temp[]");
          }
-         
+
          if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
          {
             var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));

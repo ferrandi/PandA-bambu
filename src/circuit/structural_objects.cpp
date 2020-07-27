@@ -185,7 +185,7 @@ void structural_type_descriptor::print(std::ostream& os) const
       }
       case REAL:
       {
-         THROW_ASSERT((size > 0 && vector_size == 0) || (size == 1 && (vector_size == 32 ||vector_size == 64 || vector_size == 96 || vector_size == 128)), "real type descriptor not correctly defined " + STR(size) + " " + STR(vector_size));
+         THROW_ASSERT((size > 0 && vector_size == 0) || (size == 1 && (vector_size == 32 || vector_size == 64 || vector_size == 96 || vector_size == 128)), "real type descriptor not correctly defined " + STR(size) + " " + STR(vector_size));
          os << "Real {" << id_type << "} ";
          if(treenode > 0)
             os << "(@" << treenode << ") ";
@@ -1035,7 +1035,7 @@ port_o::port_direction port_o::get_port_direction() const
 void port_o::set_port_direction(port_direction _dir)
 {
    dir = _dir;
-   for(auto p: ports)
+   for(auto p : ports)
       GetPointer<port_o>(p)->set_port_direction(_dir);
 }
 
@@ -3009,7 +3009,6 @@ void module::copy(structural_objectRef dest) const
       else
          THROW_ERROR("Not expected object type: " + std::string(port->get_kind_text()));
       port->copy(obj);
-
 
       switch(dir)
       {
