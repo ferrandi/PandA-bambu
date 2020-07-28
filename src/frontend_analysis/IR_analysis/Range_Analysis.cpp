@@ -6990,7 +6990,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       ,
       graph_debug(DEBUG_LEVEL_NONE),
       iteration(0),
-      stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max())
+      stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max()),
+      stop_transformation(std::numeric_limits<decltype(stop_transformation)>::max())
 #endif
       ,
       solverType(st_Cousot),
@@ -7065,11 +7066,35 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
    {
-      THROW_ASSERT(ra_mode.size() == 1, "Too many options left to parse");
-      stop_iteration = std::strtoull(ra_mode.begin()->data(), nullptr, 10);
+      THROW_ASSERT(ra_mode.size() <= 2, "Too many options left to parse");
+      auto it = ra_mode.begin();
+      if(ra_mode.size() == 2)
+      {
+         auto tr = ++ra_mode.begin();
+         if(it->front() == 't')
+         {
+            it = ++ra_mode.begin();
+            tr = ra_mode.begin();
+         }
+         THROW_ASSERT(tr->front() == 't', "Invalid range analysis option: " + *tr);
+         stop_transformation = std::strtoull(tr->data() + sizeof(char), nullptr, 10);
+         if(stop_transformation == 0)
+         {
+            THROW_ERROR("Invalid range analysis option: " + *tr);
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_transformation) + " transformation" + (stop_transformation > 1 ? "s" : "") + " will run on last iteration");
+      }
+      if(it->front() == 'i')
+      {
+         stop_iteration = std::strtoull(it->data() + sizeof(char), nullptr, 10);
+      }
+      else
+      {
+         stop_iteration = std::strtoull(it->data(), nullptr, 10);
+      }
       if(stop_iteration == 0)
       {
-         THROW_ERROR("Invalid range analysis option: " + *ra_mode.begin());
+         THROW_ERROR("Invalid range analysis option: " + *it);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
    }
@@ -7319,6 +7344,13 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       for(const auto& varNode : vars)
       {
+#ifndef NDEBUG
+         if(iteration == stop_iteration && updated >= stop_transformation)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Max required transformations performed. IR update aborted.");
+            break;
+         }
+#endif
          if(const auto ut = varNode.second->updateIR(TM, tree_man
 #ifndef NDEBUG
                                                      ,
