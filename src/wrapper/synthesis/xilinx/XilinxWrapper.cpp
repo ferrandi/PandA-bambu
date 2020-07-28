@@ -75,7 +75,7 @@ void XilinxWrapper::generate_synthesis_script(const DesignParametersRef& dp, con
    for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
    {
       const xml_set_variable_tRef& var = (*it);
-      std::cerr << "setting = " << var->name << " #" << getStringValue(var, dp) << "#" << std::endl;
+      // std::cerr << "setting = " << var->name << " #" << getStringValue(var, dp) << "#" << std::endl;
       dp->assign(var->name, getStringValue(var, dp), false);
    }
 
