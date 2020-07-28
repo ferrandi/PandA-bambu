@@ -3540,6 +3540,13 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
          if(isSigned)
          {
             RETURN_DISABLED_OPTION(srem, bw);
+            const auto res = op1->srem(op2);
+            if(res->getSignedMin() == 0)
+            {
+               const auto consRes = res->unionWith(res->negate());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Being conservative on signed modulo operator: " + res->ToString() + " -> " + consRes->ToString());
+               return consRes;
+            }
             return op1->srem(op2);
          }
          else
