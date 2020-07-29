@@ -1050,7 +1050,7 @@ namespace
          THROW_ASSERT(strides * stride == vc->list_of_valu.size(), "");
          for(size_t i = 0; i < strides; ++i)
          {
-            auto curr_el = getGIMPLE_range(vc->list_of_valu.at(i*stride));
+            auto curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride));
             for(size_t j = 1; j < stride; ++j)
             {
                curr_el = getGIMPLE_range(vc->list_of_valu.at(i * stride + j))->zextOrTrunc(bw)->shl(RangeRef(new Range(Regular, bw, el_bw * j, el_bw * j)))->Or(curr_el);
@@ -1345,7 +1345,8 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       const auto hasBetterSuper = [&]() {
          if(SSA->min && SSA->max)
          {
-            RangeRef superRange(new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
+            RangeRef superRange(
+                new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
             if(superRange->isRegular())
             {
                // Intersect with computed range, because range computed from LLVM range analysis may not be valid any more
@@ -1353,7 +1354,9 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                if(superRange->isRegular() && superRange->getSpan() < interval->getSpan())
                {
                   const auto superBW = isSigned ? Range::neededBits(superRange->getSignedMin(), superRange->getSignedMax(), true) : Range::neededBits(superRange->getUnsignedMin(), superRange->getUnsignedMax(), false);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                                 "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " +
+                                     GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
                   interval = superRange;
                   newBW = superBW;
                   return true;
@@ -1362,7 +1365,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          }
          return false;
       }();
-      
+
       if(!hasBetterSuper)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
@@ -3540,6 +3543,13 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
          if(isSigned)
          {
             RETURN_DISABLED_OPTION(srem, bw);
+            const auto res = op1->srem(op2);
+            if(res->getSignedMin() == 0)
+            {
+               const auto consRes = res->unionWith(res->negate());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Being conservative on signed modulo operator: " + res->ToString() + " -> " + consRes->ToString());
+               return consRes;
+            }
             return op1->srem(op2);
          }
          else
@@ -3560,7 +3570,7 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
          RETURN_DISABLED_OPTION(or, bw);
          return op1->Or(op2);
       case bit_xor_expr_K:
-         RETURN_DISABLED_OPTION (xor, bw);
+         RETURN_DISABLED_OPTION(xor, bw);
          return op1->Xor(op2);
       case uneq_expr_K:
       case eq_expr_K:
@@ -3708,10 +3718,12 @@ RangeRef BinaryOpNode::eval() const
             return r;
          }();
          const auto op_code = this->getOpcode();
-         if(bvRange->isConstant() && (bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) && 
+         if(bvRange->isConstant() && (bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) &&
             (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /* || op_code == minus_expr_K */ || op_code == pointer_plus_expr_K))
          {
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Result range " + result->ToString() + " filtered with mask " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" + (sinkSigned ? "signed" : "unsigned") + "> " + bvRange->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                           "---Result range " + result->ToString() + " filtered with mask " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" +
+                               (sinkSigned ? "signed" : "unsigned") + "> " + bvRange->ToString());
             // #if HAVE_ASSERTS
             // const auto resEmpty = result->isEmpty();
             // #endif
@@ -6990,7 +7002,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       ,
       graph_debug(DEBUG_LEVEL_NONE),
       iteration(0),
-      stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max())
+      stop_iteration(std::numeric_limits<decltype(stop_iteration)>::max()),
+      stop_transformation(std::numeric_limits<decltype(stop_transformation)>::max())
 #endif
       ,
       solverType(st_Cousot),
@@ -7065,11 +7078,35 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
    {
-      THROW_ASSERT(ra_mode.size() == 1, "Too many options left to parse");
-      stop_iteration = std::strtoull(ra_mode.begin()->data(), nullptr, 10);
+      THROW_ASSERT(ra_mode.size() <= 2, "Too many options left to parse");
+      auto it = ra_mode.begin();
+      if(ra_mode.size() == 2)
+      {
+         auto tr = ++ra_mode.begin();
+         if(it->front() == 't')
+         {
+            it = ++ra_mode.begin();
+            tr = ra_mode.begin();
+         }
+         THROW_ASSERT(tr->front() == 't', "Invalid range analysis option: " + *tr);
+         stop_transformation = std::strtoull(tr->data() + sizeof(char), nullptr, 10);
+         if(stop_transformation == 0)
+         {
+            THROW_ERROR("Invalid range analysis option: " + *tr);
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_transformation) + " transformation" + (stop_transformation > 1 ? "s" : "") + " will run on last iteration");
+      }
+      if(it->front() == 'i')
+      {
+         stop_iteration = std::strtoull(it->data() + sizeof(char), nullptr, 10);
+      }
+      else
+      {
+         stop_iteration = std::strtoull(it->data(), nullptr, 10);
+      }
       if(stop_iteration == 0)
       {
-         THROW_ERROR("Invalid range analysis option: " + *ra_mode.begin());
+         THROW_ERROR("Invalid range analysis option: " + *it);
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
    }
@@ -7319,6 +7356,13 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       for(const auto& varNode : vars)
       {
+#ifndef NDEBUG
+         if(iteration == stop_iteration && updated >= stop_transformation)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Max required transformations performed. IR update aborted.");
+            break;
+         }
+#endif
          if(const auto ut = varNode.second->updateIR(TM, tree_man
 #ifndef NDEBUG
                                                      ,
