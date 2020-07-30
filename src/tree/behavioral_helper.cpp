@@ -725,15 +725,14 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
          if(type->get_kind() == real_type_K)
          {
             if(GetPointer<real_type>(type)->prec == 80) /// long double
-
             {
-               if(rc->valr == "Inf")
+               if(strcasecmp(rc->valr.data(), "Inf") == 0)
                {
                   if(rc->valx[0] == '-')
                      res += "-";
                   res += "__builtin_infl()";
                }
-               else if(rc->valr == "Nan")
+               else if(strcasecmp(rc->valr.data(), "Nan") == 0)
                {
                   if(rc->valx[0] == '-')
                      res += "-";
@@ -746,15 +745,14 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
                }
             }
             else if(GetPointer<real_type>(type)->prec == 64) /// double
-
             {
-               if(rc->valr == "Inf")
+               if(strcasecmp(rc->valr.data(), "Inf") == 0)
                {
                   if(rc->valx[0] == '-')
                      res += "-";
                   res += "__builtin_inf()";
                }
-               else if(rc->valr == "Nan")
+               else if(strcasecmp(rc->valr.data(), "Nan") == 0)
                {
                   if(rc->valx[0] == '-')
                      res += "-";
@@ -765,14 +763,13 @@ std::string BehavioralHelper::print_constant(unsigned int var, const var_pp_func
                   res += rc->valr;
                }
             }
-            else if(rc->valr == "Inf") /// float
-
+            else if(strcasecmp(rc->valr.data(), "Inf") == 0) /// float
             {
                if(rc->valx[0] == '-')
                   res += "-";
                res += "__builtin_inff()";
             }
-            else if(rc->valr == "Nan")
+            else if(strcasecmp(rc->valr.data(), "Nan") == 0)
             {
                if(rc->valx[0] == '-')
                   res += "-";
