@@ -69,6 +69,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
    int graph_debug;
    uint64_t iteration;
    uint64_t stop_iteration;
+   uint64_t stop_transformation;
 #endif
 
    SolverType solverType;
