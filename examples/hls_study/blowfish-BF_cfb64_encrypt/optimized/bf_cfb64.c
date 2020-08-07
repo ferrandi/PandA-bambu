@@ -79,7 +79,7 @@
  */
 
 extern void __builtin_bambu_time_start();
-extern void __builtin_bambu_time_stop();ì
+extern void __builtin_bambu_time_stop();
 
 void
 __attribute__ ((noinline))  
