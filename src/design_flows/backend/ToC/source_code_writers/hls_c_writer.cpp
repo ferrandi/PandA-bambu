@@ -128,6 +128,7 @@ void HLSCWriter::WriteHeader()
       indented_output_stream->Append("#include <stdlib.h>\n\n");
    indented_output_stream->Append("extern void exit(int status);\n");
    indented_output_stream->Append("#endif\n\n");
+   indented_output_stream->Append("#include <sys/types.h>\n");
 
    if(flag_cpp)
    {

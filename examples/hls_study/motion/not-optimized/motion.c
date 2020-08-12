@@ -45,6 +45,9 @@
  *
  */
 
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();
+
 /* private prototypes */
 static void decode_motion_vector
 _ANSI_ARGS_ ((int *pred, int r_size, int motion_code,

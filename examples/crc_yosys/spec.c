@@ -3,6 +3,9 @@
 #include <math.h>
 #include <stdio.h>
 
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();
+
 typedef unsigned char uchar;
 #define LOBYTE(x) ((uchar)((x) & 0xFF))
 #define HIBYTE(x) ((uchar)((x) >> 8))
