@@ -354,29 +354,52 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
          }
          const std::string proxy_port_name = PROXY_PREFIX + port_name;
          // insert wDataMux
-         structural_objectRef mux = wrapper_SM->add_module_from_technology_library("proxy_mux_____" + port_name, MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), wrapper_obj, HLS->HLS_T->get_technology_manager());
+         const auto addwDataMux = [&](const std::string offset) {
+            structural_objectRef wrapped_fu_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
+            if(offset != "")
+               wrapped_fu_port = wrapped_fu_port->find_member(offset, port_o_K, wrapped_fu_port);
+            structural_type_descriptorRef wrapped_port_type = wrapped_fu_port->get_typeRef();
+            auto bitwidth_size = STD_GET_SIZE(wrapped_port_type);
 
-         structural_objectRef mux_in1 = mux->find_member("in1", port_o_K, mux);
-         structural_objectRef mux_in2 = mux->find_member("in2", port_o_K, mux);
-         structural_objectRef mux_out = mux->find_member("out1", port_o_K, mux);
-         structural_objectRef mux_sel = mux->find_member("sel", port_o_K, mux);
-         structural_objectRef proxied_call_port = wrapper_obj->find_member(proxy_port_name, port_o_K, wrapper_obj);
-         structural_objectRef local_call_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
-         structural_objectRef wrapped_fu_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
-         structural_type_descriptorRef wrapped_port_type = wrapped_fu_port->get_typeRef();
-         structural_type_descriptorRef mux_out_type = mux_out->get_typeRef();
-         GetPointer<port_o>(local_call_port)->type_resize(STD_GET_SIZE(wrapped_port_type));
-         GetPointer<port_o>(proxied_call_port)->type_resize(STD_GET_SIZE(wrapped_port_type));
-         GetPointer<port_o>(mux_in1)->type_resize(STD_GET_SIZE(wrapped_port_type));
-         GetPointer<port_o>(mux_in2)->type_resize(STD_GET_SIZE(wrapped_port_type));
-         GetPointer<port_o>(mux_out)->type_resize(STD_GET_SIZE(wrapped_port_type));
-         const std::string tmp_signal_name = "muxed_in_" + port_name;
-         structural_objectRef proxied_in_signal = wrapper_SM->add_sign(tmp_signal_name, wrapper_obj, mux_out_type);
-         wrapper_SM->add_connection(mux_sel, selector_signal);
-         wrapper_SM->add_connection(mux_in1, local_call_port);
-         wrapper_SM->add_connection(mux_in2, proxied_call_port);
-         wrapper_SM->add_connection(mux_out, proxied_in_signal);
-         wrapper_SM->add_connection(proxied_in_signal, wrapped_fu_port);
+            structural_objectRef mux = wrapper_SM->add_module_from_technology_library("proxy_mux_____" + port_name + offset, MUX_GATE_STD, HLS->HLS_T->get_technology_manager()->get_library(MUX_GATE_STD), wrapper_obj, HLS->HLS_T->get_technology_manager());
+            structural_objectRef mux_in1 = mux->find_member("in1", port_o_K, mux);
+            GetPointer<port_o>(mux_in1)->type_resize(bitwidth_size);
+            structural_objectRef mux_in2 = mux->find_member("in2", port_o_K, mux);
+            GetPointer<port_o>(mux_in2)->type_resize(bitwidth_size);
+            structural_objectRef mux_out = mux->find_member("out1", port_o_K, mux);
+            GetPointer<port_o>(mux_out)->type_resize(bitwidth_size);
+            structural_objectRef mux_sel = mux->find_member("sel", port_o_K, mux);
+            structural_type_descriptorRef mux_out_type = mux_out->get_typeRef();
+            const std::string tmp_signal_name = "muxed_in_" + port_name + offset;
+            structural_objectRef proxied_in_signal = wrapper_SM->add_sign(tmp_signal_name, wrapper_obj, mux_out_type);
+
+            structural_objectRef proxied_call_port = wrapper_obj->find_member(proxy_port_name, port_o_K, wrapper_obj);
+            if(offset != "")
+               proxied_call_port = proxied_call_port->find_member(offset, port_o_K, proxied_call_port);
+            GetPointer<port_o>(proxied_call_port)->type_resize(bitwidth_size);
+            structural_objectRef local_call_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
+            if(offset != "")
+               local_call_port = local_call_port->find_member(offset, port_o_K, local_call_port);
+            GetPointer<port_o>(local_call_port)->type_resize(bitwidth_size);
+
+            wrapper_SM->add_connection(mux_sel, selector_signal);
+            wrapper_SM->add_connection(mux_in1, local_call_port);
+            wrapper_SM->add_connection(mux_in2, proxied_call_port);
+            wrapper_SM->add_connection(mux_out, proxied_in_signal);
+            wrapper_SM->add_connection(proxied_in_signal, wrapped_fu_port);
+         };
+
+         if(curr_port->get_kind() == port_o_K)
+         {
+            addwDataMux("");
+         }
+         else
+         {
+            for(unsigned int pindex = 0; pindex < GetPointer<port_o>(curr_port)->get_ports_size(); ++pindex)
+            {
+               addwDataMux(STR(pindex));
+            }
+         }
       }
    }
    auto outPortSize = static_cast<unsigned int>(orig_fu_module->get_out_port_size());
@@ -392,17 +415,37 @@ void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::strin
          continue;
       }
       const std::string proxy_port_name = PROXY_PREFIX + port_name;
-      structural_objectRef local_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
-      structural_objectRef proxied_port = wrapper_obj->find_member(proxy_port_name, port_o_K, wrapper_obj);
-      structural_objectRef wrapped_fu_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
-      structural_type_descriptorRef wrapped_port_type = wrapped_fu_port->get_typeRef();
-      GetPointer<port_o>(local_port)->type_resize(STD_GET_SIZE(wrapped_port_type));
-      GetPointer<port_o>(proxied_port)->type_resize(STD_GET_SIZE(wrapped_port_type));
-      const std::string tmp_signal_name = "tmp_out_" + port_name;
-      structural_objectRef out_signal_tmp = wrapper_SM->add_sign(tmp_signal_name, wrapper_obj, wrapped_port_type);
-      wrapper_SM->add_connection(wrapped_fu_port, out_signal_tmp);
-      wrapper_SM->add_connection(out_signal_tmp, local_port);
-      wrapper_SM->add_connection(out_signal_tmp, proxied_port);
+      const auto addwData = [&](const std::string offset) {
+         structural_objectRef local_port = wrapper_obj->find_member(port_name, port_o_K, wrapper_obj);
+         if(offset != "")
+            local_port = local_port->find_member(offset, port_o_K, local_port);
+         structural_objectRef proxied_port = wrapper_obj->find_member(proxy_port_name, port_o_K, wrapper_obj);
+         if(offset != "")
+            proxied_port = proxied_port->find_member(offset, port_o_K, proxied_port);
+         structural_objectRef wrapped_fu_port = orig_top_obj->find_member(port_name, port_o_K, orig_top_obj);
+         if(offset != "")
+            wrapped_fu_port = wrapped_fu_port->find_member(offset, port_o_K, wrapped_fu_port);
+         structural_type_descriptorRef wrapped_port_type = wrapped_fu_port->get_typeRef();
+         auto bitwidth_size = STD_GET_SIZE(wrapped_port_type);
+         GetPointer<port_o>(local_port)->type_resize(bitwidth_size);
+         GetPointer<port_o>(proxied_port)->type_resize(bitwidth_size);
+         const std::string tmp_signal_name = "tmp_out_" + port_name + offset;
+         structural_objectRef out_signal_tmp = wrapper_SM->add_sign(tmp_signal_name, wrapper_obj, wrapped_port_type);
+         wrapper_SM->add_connection(wrapped_fu_port, out_signal_tmp);
+         wrapper_SM->add_connection(out_signal_tmp, local_port);
+         wrapper_SM->add_connection(out_signal_tmp, proxied_port);
+      };
+      if(curr_port->get_kind() == port_o_K)
+      {
+         addwData("");
+      }
+      else
+      {
+         for(unsigned int pindex = 0; pindex < GetPointer<port_o>(curr_port)->get_ports_size(); ++pindex)
+         {
+            addwData(STR(pindex));
+         }
+      }
    }
 
    memory::propagate_memory_parameters(orig_top_obj, wrapper_SM);
@@ -426,6 +469,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    GetPointer<module>(wrapper_top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(wrapper_top)->set_authors(fu_module->get_authors());
    GetPointer<module>(wrapper_top)->set_license(fu_module->get_license());
+   GetPointer<module>(wrapper_top)->set_multi_unit_multiplicity(fu_module->get_multi_unit_multiplicity());
    if(fu_module->ExistsParameter(MEMORY_PARAMETER))
    {
       GetPointer<module>(wrapper_top)->AddParameter(MEMORY_PARAMETER, fu_module->GetDefaultParameter(MEMORY_PARAMETER));
@@ -539,7 +583,7 @@ void allocation::add_proxy_function_wrapper(const std::string& library_name, tec
    wrapper_fictious_op->time_m = time_model::create_model(HLS_T->get_target_device()->get_type(), parameters);
 
    /// automatically build proxy wrapper HDL description
-   BuildProxyWrapper(wrapper_fu, orig_fun_name, library_name);
+   BuildProxyWrapper(wrapper_fu, orig_fu->get_name(), library_name);
 }
 
 void allocation::BuildProxyFunctionVerilog(functional_unit* current_fu)
@@ -711,6 +755,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
    GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(top)->set_authors(fu_module->get_authors());
    GetPointer<module>(top)->set_license(fu_module->get_license());
+   GetPointer<module>(top)->set_multi_unit_multiplicity(fu_module->get_multi_unit_multiplicity());
 
    /*
     * The proxy is a module instantiated in the datapath of the caller.
@@ -783,7 +828,7 @@ void allocation::add_proxy_function_module(const HLS_constraintsRef HLS_C, techn
          generated_port = CM->add_port(port_name, port_o::OUT, top, curr_port->get_typeRef());
       curr_port->copy(generated_port);
    }
-   // analyze the input signals of the proxed function, i.e. the function called through the proxy
+   // analyze the input signals of the proxied function, i.e. the function called through the proxy
    for(unsigned int currentPort = 0; currentPort < inPortSize; ++currentPort)
    {
       structural_objectRef curr_port = fu_module->get_in_port(currentPort);
@@ -1705,28 +1750,34 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string specialized_fuName = "";
 
                varargs_fu = false;
-               if(structManager_obj && GetPointer<module>(structManager_obj->get_circ())->is_var_args())
+               if(structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
+                  not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Found a var args function");
-                  varargs_fu = true;
+                  varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
                   moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
-                  std::vector<HLS_manager::io_binding_type> required_variables = HLSMgr->get_required_values(funId, vert);
-                  std::string asm_unique_id;
-                  if(g->CGetOpNodeInfo(vert)->GetOperation() == GIMPLE_ASM)
-                     asm_unique_id = STR(g->CGetOpNodeInfo(vert)->GetNodeId());
-                  unsigned int firstIndexToSpecialize = 0;
-                  auto mod = GetPointer<module>(structManager_obj->get_circ());
-                  for(auto Pindex = 0u; Pindex < mod->get_in_port_size(); ++Pindex)
+                  if(varargs_fu)
                   {
-                     const structural_objectRef& port_obj = mod->get_in_port(Pindex);
-                     auto port_name = port_obj->get_id();
-                     if(GetPointer<port_o>(port_obj)->get_is_var_args())
-                        break;
-                     if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME && port_name != START_PORT_NAME)
-                        ++firstIndexToSpecialize;
+                     std::vector<HLS_manager::io_binding_type> required_variables = HLSMgr->get_required_values(funId, vert);
+                     std::string asm_unique_id;
+                     if(g->CGetOpNodeInfo(vert)->GetOperation() == GIMPLE_ASM)
+                        asm_unique_id = STR(g->CGetOpNodeInfo(vert)->GetNodeId());
+                     unsigned int firstIndexToSpecialize = 0;
+                     auto mod = GetPointer<module>(structManager_obj->get_circ());
+                     for(auto Pindex = 0u; Pindex < mod->get_in_port_size(); ++Pindex)
+                     {
+                        const structural_objectRef& port_obj = mod->get_in_port(Pindex);
+                        auto port_name = port_obj->get_id();
+                        if(GetPointer<port_o>(port_obj)->get_is_var_args())
+                           break;
+                        if(port_name != CLOCK_PORT_NAME && port_name != RESET_PORT_NAME && port_name != START_PORT_NAME)
+                           ++firstIndexToSpecialize;
+                     }
+                     THROW_ASSERT(required_variables.size() >= firstIndexToSpecialize, "unexpected condition:" + STR(required_variables.size()) + " " + STR(firstIndexToSpecialize));
+                     current_op = current_fu->get_name() + asm_unique_id + modGen->get_specialized_name(firstIndexToSpecialize, required_variables, function_behavior);
                   }
-                  THROW_ASSERT(required_variables.size() >= firstIndexToSpecialize, "unexpected condition:" + STR(required_variables.size()) + " " + STR(firstIndexToSpecialize));
-                  current_op = current_fu->get_name() + asm_unique_id + modGen->get_specialized_name(firstIndexToSpecialize, required_variables, function_behavior);
+                  else
+                     current_op = current_fu->get_name() + "_modgen";
                   specialized_fuName = current_op;
 
                   std::string fu_name = current_fu->get_name();
@@ -2380,9 +2431,19 @@ void allocation::IntegrateTechnologyLibraries()
             technology_nodeRef wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
             if(!wrapper_tn)
             {
+               structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
+               if(structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
+                  not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
+               {
+                  moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
+                  std::string new_shared_fu_name = shared_fu_name + "_modgen";
+                  modGen->create_generic_module(shared_fu_name, libraryManager->get_library_name(), TM, new_shared_fu_name, HLS_T->get_target_device()->get_type());
+                  techNode_obj = libraryManager->get_fu(new_shared_fu_name);
+                  THROW_ASSERT(techNode_obj, "function not yet built: " + new_shared_fu_name);
+               }
                add_proxy_function_wrapper(library_name, techNode_obj, shared_fu_name);
+               wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
             }
-            wrapper_tn = TM->get_fu(wrapped_fu_name, PROXY_LIBRARY);
             THROW_ASSERT(wrapper_tn, "Module not added");
             std::string key_new = ENCODE_FU_LIB(shared_fu_name, PROXY_LIBRARY);
             HLS_C->tech_constraints[key_new] = 1; // HLS_C->tech_constraints.find(key_old)->second;
