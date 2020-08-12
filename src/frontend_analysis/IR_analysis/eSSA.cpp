@@ -615,11 +615,16 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
 
    for(const auto& var_pair : MWII->list_of_cond)
    {
-      auto case_var = var_pair.first;
-      auto BBI = var_pair.second;
+      const auto case_var = var_pair.first;
+      const auto BBI = var_pair.second;
       if(case_var == nullptr)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition: else branch");
+         continue;
+      }
+      if(BBI == BranchBBI)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch loopback detected: variable renaming not safe, skipping...");
          continue;
       }
       if(GetPointer<const cst_node>(GET_CONST_NODE(case_var)) != nullptr)
@@ -631,8 +636,13 @@ void processMultiWayIf(tree_nodeConstRef mwii, CustomSet<OperandRef>& OpsToRenam
       const auto* case_ssa = GetPointer<const ssa_name>(GET_CONST_NODE(case_var));
       THROW_ASSERT(case_ssa, "Case conditional variable should be an ssa_name (" + GET_CONST_NODE(case_var)->ToString() + ")");
       const auto case_stmt = case_ssa->CGetDefStmt();
+      if(GET_CONST_NODE(case_stmt)->get_kind() == gimple_phi_K)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Branch variable already defined inside a phi node, skipping...");
+         continue;
+      }
       const auto* Case_stmt = GetPointer<const gimple_assign>(GET_CONST_NODE(case_stmt));
-      THROW_ASSERT(Case_stmt, "Case statement should be a gimple_assign");
+      THROW_ASSERT(Case_stmt, "Case statement should be a gimple_assign (" + GET_CONST_NODE(case_stmt)->get_kind_text() + " " + GET_CONST_NODE(case_stmt)->ToString() + ")");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Condition: " + GET_CONST_NODE(Case_stmt->op1)->get_kind_text() + " " + GET_CONST_NODE(Case_stmt->op1)->ToString());
       if(const auto* case_cmp = GetPointer<const binary_expr>(GET_CONST_NODE(Case_stmt->op1)))
       {
