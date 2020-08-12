@@ -93,7 +93,7 @@ class functions
    bool has_shared_functions(unsigned int funID_scope) const;
 
    /**
-    * return true if a given function is a shared function allocated in a givend function scope
+    * return true if a given function is a shared function allocated in a given function scope
     * @param funID_scope is the function scope
     * @param fun is the shared function
     * @return true when fun is a shared function in funID_scope, false otherwise
