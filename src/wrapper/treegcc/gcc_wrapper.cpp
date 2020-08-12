@@ -1354,6 +1354,7 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memset"] = false;
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
+      optimization_flags["builtin-bcmp"] = false;
       return;
    }
 #endif
