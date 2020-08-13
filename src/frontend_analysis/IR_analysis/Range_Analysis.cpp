@@ -62,6 +62,8 @@
 #include "design_flow_manager.hpp"
 #include "function_frontend_flow_step.hpp"
 
+#include "dead_code_elimination.hpp"
+
 /// HLS include
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -1222,7 +1224,7 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
-   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                 ,
                 int debug_level, application_managerRef AppM
@@ -1260,7 +1262,7 @@ void VarNode::init(bool outside)
    }
 }
 
-int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                       ,
                       int debug_level, application_managerRef AppM
@@ -1490,6 +1492,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                      auto bb = sl->list_of_bloc.at(ga->bb_index);
                      bb->RemoveStmt(def);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + ga->ToString());
+                     dead_code_elimination::fix_sdc_motion(design_flow_manager, function_id, def);
 #ifndef NDEBUG
                      AppM->RegisterTransformation("RangeAnalysis", def);
 #endif
@@ -7317,6 +7320,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      const auto dfm = design_flow_manager.lock();
       for(const auto& varNode : vars)
       {
 #ifndef NDEBUG
@@ -7326,7 +7330,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
             break;
          }
 #endif
-         if(const auto ut = varNode.second->updateIR(TM, tree_man
+         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm
 #ifndef NDEBUG
                                                      ,
                                                      debug_level, AppM

@@ -81,6 +81,7 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void fix_sdc_motion(tree_nodeRef removedStmt) const;
    void kill_uses(const tree_managerRef TM, tree_nodeRef op0) const;
    void kill_vdef(const tree_managerRef TM, tree_nodeRef vdef);
    unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
@@ -112,6 +113,8 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
+
+   static void fix_sdc_motion(DesignFlowManagerConstRef design_flow_manager, unsigned int function_id, tree_nodeRef removedStmt);
 };
 
 #endif
