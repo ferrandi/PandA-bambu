@@ -189,7 +189,7 @@ unsigned int tree_manager::function_index(const std::string& function_name) cons
       tree_nodeRef curr_tn = function_decl_node.second;
       auto* fd = GetPointer<function_decl>(curr_tn);
       tree_nodeRef id_name = GET_NODE(fd->name);
-      std::string simple_name;
+      std::string simple_name, mangled_name;
       if(id_name->get_kind() == identifier_node_K)
       {
          auto* in = GetPointer<identifier_node>(id_name);
@@ -198,18 +198,19 @@ unsigned int tree_manager::function_index(const std::string& function_name) cons
             simple_name = in->strg;
          }
       }
-      std::string name = tree_helper::print_function_name(TM, fd);
-      if(name == function_name || function_name == std::string("-") || (!simple_name.empty() && function_name == simple_name))
+      if(fd->mngl)
       {
-         /// We have already found a function_id corresponding to this name
-         if(function_id)
+         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
+         if(mangled_id_name->get_kind() == identifier_node_K)
          {
-            /// If this is a clone, return the index of this, otherwise do nothing so that first encountered value is returned
-            /*if(not fd->orig)
-            {
-               continue;
-            }*/
+            auto* in = GetPointer<identifier_node>(mangled_id_name);
+            if(!in->operator_flag)
+               mangled_name = in->strg;
          }
+      }
+      std::string name = tree_helper::print_function_name(TM, fd);
+      if(name == function_name || function_name == std::string("-") || (!simple_name.empty() && function_name == simple_name) || (!mangled_name.empty() && mangled_name == function_name))
+      {
          function_id = function_decl_node.first;
       }
    }
