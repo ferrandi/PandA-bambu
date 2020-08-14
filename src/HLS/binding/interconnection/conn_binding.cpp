@@ -987,18 +987,10 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             for(auto v : start_to_vertex.find(c->first)->second)
             {
                technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
-               auto index = 0u;
-               auto& ops = GetPointer<functional_unit>(tn)->get_operations();
-               for(auto o : ops)
-               {
-                  if(GetPointer<operation>(o)->get_name() == data->CGetOpNodeInfo(v)->GetOperation())
-                     break;
-                  ++index;
-               }
+               auto index = HLS->Rfu->get_index(v);
                auto multiplicity = GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity();
-               index = index % multiplicity;
                THROW_ASSERT(multiplicity == GetPointer<port_o>(c->first)->get_ports_size(), "unexpected condition");
-               THROW_ASSERT(index < ops.size(), "unexpected condition");
+               THROW_ASSERT(index < multiplicity, "unexpected condition");
                auto sp_i = GetPointer<port_o>(c->first)->get_port(index);
                toOred[sp_i].push_back(*ports_it);
 

@@ -98,6 +98,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "call_graph_manager.hpp"
+
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
 #include "gcc_wrapper.hpp"
@@ -368,7 +370,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       if(return_type && GET_NODE(return_type)->get_kind() != void_type_K && hasreturn_value)
          specializing_string = STR(tree_helper::size(TreeM, GET_INDEX_NODE(return_type)));
    }
-   else if(cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword) != std::string::npos)
+   else if(cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword) != std::string::npos && boost::algorithm::ends_with(cfg->CGetOpNodeInfo(ve)->GetOperation(), "_array"))
    {
       auto parameter_name = cfg->CGetOpNodeInfo(ve)->GetOperation().substr(0, cfg->CGetOpNodeInfo(ve)->GetOperation().find(STR_CST_interface_parameter_keyword));
       tree_managerRef TreeM = HLSMgr->get_tree_manager();
@@ -583,7 +585,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
    }
 }
 
-void moduleGenerator::create_generic_module(const std::string fuName, const std::string libraryId, const technology_managerRef TM, const std::string new_fu_name, TargetDevice_Type dv_type)
+void moduleGenerator::create_generic_module(const std::string fuName, const std::string libraryId, const technology_managerRef TM, const std::string new_fu_name, TargetDevice_Type dv_type, const application_managerRef AppM)
 {
    const library_managerRef libraryManager = TM->get_library_manager(libraryId);
    technology_nodeRef techNode_obj = libraryManager->get_fu(fuName);
@@ -597,24 +599,33 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
    if(fuName.find(STR_CST_interface_parameter_keyword) != std::string::npos)
    {
       auto parameter_name = fuName.substr(0, fuName.find(STR_CST_interface_parameter_keyword));
-      tree_managerRef TreeM = HLSMgr->get_tree_manager();
-      auto fIndex = TreeM->function_index(fuName);
-      THROW_ASSERT(fIndex, "expected a function_decl associated with " + fuName);
-      auto fnode = TreeM->get_tree_node_const(fIndex);
-      auto fd = GetPointer<function_decl>(fnode);
-      THROW_ASSERT(fd, "expected a function_decl associated with " + fuName);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
-      auto arraySize =
-          HLSMgr->design_interface_arraysize.find(fname) != HLSMgr->design_interface_arraysize.end() && HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name) != HLSMgr->design_interface_arraysize.find(fname)->second.end() ?
-              HLSMgr->design_interface_arraysize.find(fname)->second.find(parameter_name)->second :
-              "1";
-      specializing_string = arraySize;
+      bool foundParam = false;
+      std::string arraySize = "1";
+      const auto TreeM = AppM->get_tree_manager();
+      auto top_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
+      for(auto fname: HLSMgr->design_interface_arraysize)
+      {
+         auto findex = TreeM->function_index_mngl(fname.first);
+         bool is_top = top_functions.find(findex) != top_functions.end();
+         if(is_top && fname.second.find(parameter_name) != fname.second.end() && !foundParam)
+         {
+            arraySize =  fname.second.find(parameter_name)->second;
+            foundParam = true;
+         }
+         else if (foundParam)
+         {
+            THROW_ERROR("At least two top functions have the same array parameter");
+         }
+      }
+      if(foundParam)
+         specializing_string = arraySize;
    }
+   else
+      std::cerr << fuName<< "\n";
 
    std::string NP_parameters;
 
-   // std::cout<<"Start creation"<<std::endl;
+   //std::cout<<"Start creation: specializing_string="<<specializing_string << std::endl;
 
    CM = structural_managerRef(new structural_manager(parameters));
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(new_fu_name));
@@ -727,7 +738,7 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
       }
    }();
    std::string hdl_template = fu_module->get_NP_functionality()->get_NP_functionality(writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_GENERATOR : NP_functionality::VHDL_GENERATOR);
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic hdl code");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, new_fu_name + ": Generating dynamic HDL code");
    std::string hdl_code = GenerateHDL(GetPointer<module>(top), hdl_template, required_variables, specializing_string, FB, parameters->getOption<std::string>("dynamic_generators_dir"), writer);
    CM->add_NP_functionality(top, writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED : NP_functionality::VHDL_PROVIDED, hdl_code);
 

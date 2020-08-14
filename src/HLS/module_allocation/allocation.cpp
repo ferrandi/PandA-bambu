@@ -182,12 +182,13 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
    return ret;
 }
 
-technology_nodeRef allocation::extract_bambu_provided(const std::string& library_name, operation* curr_op, const std::string& bambu_provided_resource)
+technology_nodeRef allocation::extract_bambu_provided(const std::string& library_name, operation* curr_op, const std::string& bambu_provided_resource_)
 {
    technology_nodeRef current_fu;
    std::string function_name;
    bool build_proxy = false;
    bool build_wrapper = false;
+   const auto bambu_provided_resource = functions::get_function_name_cleaned(bambu_provided_resource_);
    if(HLSMgr->Rfuns->is_a_proxied_function(bambu_provided_resource))
    {
       if(HLSMgr->Rfuns->is_a_shared_function(funId, bambu_provided_resource))
@@ -268,15 +269,13 @@ static void connectClockAndReset(structural_managerRef& SM, structural_objectRef
    {
       SM->add_connection(port_ck, clock);
    }
-   else
-   {
-      THROW_UNREACHABLE("function module and wrapper are not clocked");
-   }
 
    structural_objectRef port_rst = component->find_member(RESET_PORT_NAME, port_o_K, component);
    structural_objectRef reset = interfaceObj->find_member(RESET_PORT_NAME, port_o_K, interfaceObj);
    if(port_rst and reset)
+   {
       SM->add_connection(port_rst, reset);
+   }
 }
 
 void allocation::BuildProxyWrapper(functional_unit* current_fu, const std::string& orig_fun_name, const std::string& orig_library_name)
@@ -1118,8 +1117,9 @@ bool allocation::check_type_and_precision(operation* curr_op, node_kind_prec_inf
    return false;
 }
 
-bool allocation::check_proxies(const library_managerRef library, std::string fu_name)
+bool allocation::check_proxies(const library_managerRef library, const std::string& fu_name_)
 {
+   const auto fu_name = functions::get_function_name_cleaned(fu_name_);
    if(HLSMgr->Rfuns->is_a_proxied_function(fu_name))
       return true;
    if(library->get_library_name() == PROXY_LIBRARY)
@@ -1750,10 +1750,11 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string specialized_fuName = "";
 
                varargs_fu = false;
-               if(structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
-                  not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
+               bool has_to_be_generated = structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
+                                            not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR);
+               if(has_to_be_generated)
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Found a var args function");
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized");
                   varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
                   moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
                   if(varargs_fu)
@@ -1779,8 +1780,8 @@ DesignFlowStep_Status allocation::InternalExec()
                   else
                      current_op = current_fu->get_name() + "_modgen";
                   specialized_fuName = current_op;
-
                   std::string fu_name = current_fu->get_name();
+
                   std::string check_lib = TM->get_library(specialized_fuName);
                   if(check_lib == lib_name)
                   {
@@ -1788,7 +1789,16 @@ DesignFlowStep_Status allocation::InternalExec()
                   }
                   else if(new_fu.find(specialized_fuName) == new_fu.end())
                   {
-                     modGen->specialize_fu(fu_name, vert, lib_name, TM, function_behavior, specialized_fuName, new_fu, HLS_T->get_target_device()->get_type());
+                     if(varargs_fu)
+                        modGen->specialize_fu(fu_name, vert, lib_name, TM, function_behavior, specialized_fuName, new_fu, HLS_T->get_target_device()->get_type());
+                     else
+                     {
+                        modGen->create_generic_module(fu_name, lib_name, TM, specialized_fuName, HLS_T->get_target_device()->get_type(), HLSMgr);
+                        const library_managerRef libraryManager = TM->get_library_manager(lib_name);
+                        technology_nodeRef new_techNode_obj = libraryManager->get_fu(specialized_fuName);
+                        THROW_ASSERT(new_techNode_obj, "not expected");
+                        new_fu.insert(std::make_pair(specialized_fuName, new_techNode_obj));
+                     }
                   }
                }
                else if(node_info->node_kind != "" && !isMemory)
@@ -1801,7 +1811,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string library_name = lib_name;
                if(bambu_provided_resource != "")
                {
-                  if(HLSMgr->Rfuns->is_a_proxied_function(bambu_provided_resource))
+                  if(HLSMgr->Rfuns->is_a_proxied_function(functions::get_function_name_cleaned(bambu_provided_resource)))
                      library_name = PROXY_LIBRARY;
                   else
                      library_name = WORK_LIBRARY;
@@ -1820,7 +1830,7 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string functionalUnitName = "";
                unsigned int specializedId = current_id;
                const library_managerRef libraryManager = TM->get_library_manager(library_name);
-               if(varargs_fu)
+               if(has_to_be_generated)
                {
                   functionalUnitName = specialized_fuName;
                   techMap = fu_list.find(new_fu.find(functionalUnitName)->second);
@@ -1862,7 +1872,7 @@ DesignFlowStep_Status allocation::InternalExec()
                }
                else
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not a varargs_fu");
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not generated functional unit");
                   functionalUnitName = current_fu->get_name();
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Functional unit name is " + functionalUnitName);
                   techMap = fu_list.find(libraryManager->get_fu(functionalUnitName));
@@ -2437,7 +2447,7 @@ void allocation::IntegrateTechnologyLibraries()
                {
                   moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
-                  modGen->create_generic_module(shared_fu_name, libraryManager->get_library_name(), TM, new_shared_fu_name, HLS_T->get_target_device()->get_type());
+                  modGen->create_generic_module(shared_fu_name, libraryManager->get_library_name(), TM, new_shared_fu_name, HLS_T->get_target_device()->get_type(), HLSMgr);
                   techNode_obj = libraryManager->get_fu(new_shared_fu_name);
                   THROW_ASSERT(techNode_obj, "function not yet built: " + new_shared_fu_name);
                }

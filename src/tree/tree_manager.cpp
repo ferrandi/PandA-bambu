@@ -189,6 +189,34 @@ unsigned int tree_manager::function_index(const std::string& function_name) cons
       tree_nodeRef curr_tn = function_decl_node.second;
       auto* fd = GetPointer<function_decl>(curr_tn);
       tree_nodeRef id_name = GET_NODE(fd->name);
+      std::string simple_name;
+      if(id_name->get_kind() == identifier_node_K)
+      {
+         auto* in = GetPointer<identifier_node>(id_name);
+         if(!in->operator_flag)
+         {
+            simple_name = in->strg;
+         }
+      }
+      std::string name = tree_helper::print_function_name(TM, fd);
+      if(name == function_name || function_name == std::string("-") || (!simple_name.empty() && function_name == simple_name))
+      {
+         function_id = function_decl_node.first;
+      }
+   }
+   return function_id;
+}
+
+unsigned int tree_manager::function_index_mngl(const std::string& function_name) const
+{
+   null_deleter null_del;
+   tree_managerConstRef TM(this, null_del);
+   unsigned int function_id = 0;
+   for(const auto& function_decl_node : function_decl_nodes)
+   {
+      tree_nodeRef curr_tn = function_decl_node.second;
+      auto* fd = GetPointer<function_decl>(curr_tn);
+      tree_nodeRef id_name = GET_NODE(fd->name);
       std::string simple_name, mangled_name;
       if(id_name->get_kind() == identifier_node_K)
       {
@@ -216,6 +244,7 @@ unsigned int tree_manager::function_index(const std::string& function_name) cons
    }
    return function_id;
 }
+
 
 void tree_manager::print(std::ostream& os) const
 {

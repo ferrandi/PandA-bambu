@@ -202,7 +202,7 @@ void HWCallPathCalculator::examine_edge(const EdgeDescriptor& e, const UnfoldedC
       return;
    }
 
-   const std::string called_fu_name = BH->get_function_name();
+   const std::string called_fu_name = functions::get_function_name_cleaned(BH->get_function_name());
    std::string called_scope;
    if(HLSMgr->Rfuns->is_a_proxied_function(called_fu_name))
    {
