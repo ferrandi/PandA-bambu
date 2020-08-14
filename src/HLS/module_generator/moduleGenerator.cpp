@@ -603,16 +603,16 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
       std::string arraySize = "1";
       const auto TreeM = AppM->get_tree_manager();
       auto top_functions = AppM->CGetCallGraphManager()->GetRootFunctions();
-      for(auto fname: HLSMgr->design_interface_arraysize)
+      for(auto fname : HLSMgr->design_interface_arraysize)
       {
          auto findex = TreeM->function_index_mngl(fname.first);
          bool is_top = top_functions.find(findex) != top_functions.end();
          if(is_top && fname.second.find(parameter_name) != fname.second.end() && !foundParam)
          {
-            arraySize =  fname.second.find(parameter_name)->second;
+            arraySize = fname.second.find(parameter_name)->second;
             foundParam = true;
          }
-         else if (foundParam)
+         else if(foundParam)
          {
             THROW_ERROR("At least two top functions have the same array parameter");
          }
@@ -621,11 +621,11 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
          specializing_string = arraySize;
    }
    else
-      std::cerr << fuName<< "\n";
+      std::cerr << fuName << "\n";
 
    std::string NP_parameters;
 
-   //std::cout<<"Start creation: specializing_string="<<specializing_string << std::endl;
+   // std::cout<<"Start creation: specializing_string="<<specializing_string << std::endl;
 
    CM = structural_managerRef(new structural_manager(parameters));
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(new_fu_name));
@@ -680,7 +680,6 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
          generated_port = CM->add_port(port_name, port_o::IN, top, curr_port->get_typeRef());
       add_port_parameters(generated_port, curr_port);
    }
-
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Adding output ports");
 
@@ -742,7 +741,6 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
    std::string hdl_code = GenerateHDL(GetPointer<module>(top), hdl_template, required_variables, specializing_string, FB, parameters->getOption<std::string>("dynamic_generators_dir"), writer);
    CM->add_NP_functionality(top, writer == HDLWriter_Language::VERILOG ? NP_functionality::VERILOG_PROVIDED : NP_functionality::VHDL_PROVIDED, hdl_code);
 
-
    technology_nodeRef new_techNode_obj = technology_nodeRef(new functional_unit);
    GetPointer<functional_unit>(new_techNode_obj)->functional_unit_name = new_fu_name;
    GetPointer<functional_unit>(new_techNode_obj)->CM = CM;
@@ -755,5 +753,4 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
    {
       fu->add(techNode_fu);
    }
-
 }

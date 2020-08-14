@@ -42,12 +42,12 @@
  *
  */
 #include "functions.hpp"
-#include "exceptions.hpp"
-#include "string_manipulation.hpp" //STR
-#include "hls_manager.hpp"
-#include "constant_strings.hpp"
-#include "function_behavior.hpp"
 #include "behavioral_helper.hpp"
+#include "constant_strings.hpp"
+#include "exceptions.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
+#include "string_manipulation.hpp" //STR
 
 #include <boost/algorithm/string/predicate.hpp>
 
@@ -111,14 +111,13 @@ unsigned int functions::get_proxy_mapping(const std::string& fun) const
 
 std::string functions::get_function_name_cleaned(const std::string& original_function_name)
 {
-   if(original_function_name.find(STR_CST_interface_parameter_keyword)!= std::string::npos && boost::algorithm::ends_with(original_function_name, "_array"))
+   if(original_function_name.find(STR_CST_interface_parameter_keyword) != std::string::npos && boost::algorithm::ends_with(original_function_name, "_array"))
    {
-      return  original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword)+std::string(STR_CST_interface_parameter_keyword).length());
+      return original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword) + std::string(STR_CST_interface_parameter_keyword).length());
    }
    else
       return original_function_name;
 }
-
 
 std::string functions::get_function_name_cleaned(unsigned int funID, const HLS_managerRef HLSMgr)
 {

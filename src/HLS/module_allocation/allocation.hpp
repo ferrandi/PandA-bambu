@@ -181,7 +181,7 @@ class allocation : public HLSFunctionStep
    bool check_templated_units(double clock_period, node_kind_prec_infoRef node_info, const library_managerRef library, technology_nodeRef current_fu, operation* curr_op);
    bool check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu, const std::string& memory_ctrl_type, std::string channels_type);
    bool check_type_and_precision(operation* curr_op, node_kind_prec_infoRef node_info);
-   bool check_proxies(const library_managerRef library, const std::string &fu_name_);
+   bool check_proxies(const library_managerRef library, const std::string& fu_name_);
    bool check_generated_bambu_flopoco(bool skip_softfloat_resources, structural_managerRef structManager_obj, std::string& bambu_provided_resource, bool skip_flopoco_resources, technology_nodeRef current_fu);
    bool is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, unsigned int var, technology_nodeRef current_fu);
    std::string get_synch_ram_latency(const std::string& ram_template, const std::string& latency_postfix, const HLS_constraintsRef HLS_C, unsigned int var);

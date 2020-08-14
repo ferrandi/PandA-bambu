@@ -245,7 +245,6 @@ unsigned int tree_manager::function_index_mngl(const std::string& function_name)
    return function_id;
 }
 
-
 void tree_manager::print(std::ostream& os) const
 {
 #if HAVE_MAPPING_BUILT

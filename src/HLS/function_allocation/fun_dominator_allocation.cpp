@@ -162,7 +162,6 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
 HLS_step::ComputeRelationships(relationship, relationship_type);
 }
 
-
 DesignFlowStep_Status fun_dominator_allocation::Exec()
 {
    already_executed = true;
