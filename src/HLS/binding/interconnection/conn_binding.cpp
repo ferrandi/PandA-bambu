@@ -988,7 +988,9 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             {
                technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
                auto index = HLS->Rfu->get_index(v);
+#if HAVE_ASSERTS
                auto multiplicity = GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity();
+#endif
                THROW_ASSERT(multiplicity == GetPointer<port_o>(c->first)->get_ports_size(), "unexpected condition");
                THROW_ASSERT(index < multiplicity, "unexpected condition");
                auto sp_i = GetPointer<port_o>(c->first)->get_port(index);
