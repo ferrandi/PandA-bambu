@@ -118,12 +118,12 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
          {
             type = Regular;
             l = ub + MinDelta;
-            u = Max;
+            u = APInt::getSignedMaxValue(bw);
          }
          else if(ub == Max)
          {
             type = Regular;
-            l = Min;
+            l = APInt::getSignedMinValue(bw);
             u = lb - MinDelta;
          }
          else
@@ -475,7 +475,9 @@ APInt Range::getSpan() const
    {
       return APInt::getMaxValue(bw) - (u - l);
    }
-   return 1 + u - l;
+   const auto uLimit = u == Max ? APInt::getSignedMaxValue(bw) : u;
+   const auto lLimit = l == Min ? APInt::getSignedMinValue(bw) : l;
+   return 1 + uLimit - lLimit;
 }
 
 bool Range::isUnknown() const
@@ -525,7 +527,7 @@ bool Range::isFullSet() const
    {
       return false;
    }
-   return (APInt::getSignedMaxValue(bw) <= getUpper() && APInt::getSignedMinValue(bw) >= getLower()) || (APInt::getMaxValue(bw) <= getUpper() && APInt::getMinValue(bw) >= getLower());
+   return APInt::getSignedMaxValue(bw) <= getUpper() && APInt::getSignedMinValue(bw) >= getLower();
 }
 
 bool Range::isSingleElement() const

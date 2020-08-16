@@ -1883,7 +1883,7 @@ namespace llvm
          auto bw = tI.getType()->getIntegerBitWidth();
          if(bw != 8 && bw != 16 && bw != 32 && bw != 64)
          {
-            auto mask = (1ULL << bw)-1;
+            auto mask = (1ULL << bw) - 1;
             if(uicTable.find(mask) == uicTable.end())
                uicTable[mask] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), mask, false));
             const void* maskNode = uicTable.find(mask)->second;
@@ -2969,28 +2969,28 @@ namespace llvm
    /// This assumes that, for the purposes of MemorySSA, Use comes directly after
    /// MayClobber, with no potentially clobbering operations in between them.
    /// (Where potentially clobbering ops are memory barriers, aliased stores, etc.)
-   static bool areLoadsReorderable(const llvm::LoadInst* Use, const llvm::LoadInst* MayClobber)
-   {
-      bool VolatileUse = Use->isVolatile();
-      bool VolatileClobber = MayClobber->isVolatile();
-      // Volatile operations may never be reordered with other volatile operations.
-      if(VolatileUse && VolatileClobber)
-         return false;
-      // Otherwise, volatile doesn't matter here. From the language reference:
-      // 'optimizers may change the order of volatile operations relative to
-      // non-volatile operations.'"
-
-      // If a load is seq_cst, it cannot be moved above other loads. If its ordering
-      // is weaker, it can be moved above other loads. We just need to be sure that
-      // MayClobber isn't an acquire load, because loads can't be moved above
-      // acquire loads.
-      //
-      // Note that this explicitly *does* allow the free reordering of monotonic (or
-      // weaker) loads of the same address.
-      bool SeqCstUse = Use->getOrdering() == llvm::AtomicOrdering::SequentiallyConsistent;
-      bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(), llvm::AtomicOrdering::Acquire);
-      return !(SeqCstUse || MayClobberIsAcquire);
-   }
+   //    static bool areLoadsReorderable(const llvm::LoadInst* Use, const llvm::LoadInst* MayClobber)
+   //    {
+   //       bool VolatileUse = Use->isVolatile();
+   //       bool VolatileClobber = MayClobber->isVolatile();
+   //       // Volatile operations may never be reordered with other volatile operations.
+   //       if(VolatileUse && VolatileClobber)
+   //          return false;
+   //       // Otherwise, volatile doesn't matter here. From the language reference:
+   //       // 'optimizers may change the order of volatile operations relative to
+   //       // non-volatile operations.'"
+   //
+   //       // If a load is seq_cst, it cannot be moved above other loads. If its ordering
+   //       // is weaker, it can be moved above other loads. We just need to be sure that
+   //       // MayClobber isn't an acquire load, because loads can't be moved above
+   //       // acquire loads.
+   //       //
+   //       // Note that this explicitly *does* allow the free reordering of monotonic (or
+   //       // weaker) loads of the same address.
+   //       bool SeqCstUse = Use->getOrdering() == llvm::AtomicOrdering::SequentiallyConsistent;
+   //       bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(), llvm::AtomicOrdering::Acquire);
+   //       return !(SeqCstUse || MayClobberIsAcquire);
+   //    }
 
    void DumpGimpleRaw::serialize_vops(const void* g)
    {

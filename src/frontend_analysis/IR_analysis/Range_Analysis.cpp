@@ -62,6 +62,8 @@
 #include "design_flow_manager.hpp"
 #include "function_frontend_flow_step.hpp"
 
+#include "dead_code_elimination.hpp"
+
 /// HLS include
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -1222,7 +1224,7 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
-   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                 ,
                 int debug_level, application_managerRef AppM
@@ -1260,7 +1262,7 @@ void VarNode::init(bool outside)
    }
 }
 
-int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                       ,
                       int debug_level, application_managerRef AppM
@@ -1490,6 +1492,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                      auto bb = sl->list_of_bloc.at(ga->bb_index);
                      bb->RemoveStmt(def);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + ga->ToString());
+                     dead_code_elimination::fix_sdc_motion(design_flow_manager, function_id, def);
 #ifndef NDEBUG
                      AppM->RegisterTransformation("RangeAnalysis", def);
 #endif
@@ -5240,29 +5243,57 @@ bool Meet::growth(OpNode* op)
 /// analysis expands the bounds of each variable, regardless of intersections
 /// in the constraint graph, the cropping analysis shrinks these bounds back
 /// to ranges that respect the intersections.
-bool Meet::narrow(OpNode* op, const std::vector<APInt>& /* constantvector */)
+bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
 {
    const auto oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval) {
-      RangeRef sinkInterval(oldInterval->clone());
+      if(newInterval->isConstant())
+      {
+         return RangeRef(newInterval->clone());
+      }
+      const auto bw = oldInterval->getBitWidth();
       if(oldInterval->isAnti() || newInterval->isAnti() || oldInterval->isEmpty() || newInterval->isEmpty())
       {
          if(oldInterval->isAnti() && newInterval->isAnti() && !newInterval->isSameRange(oldInterval))
          {
-            return oldInterval->intersectWith(newInterval);
+            const auto oldAnti = oldInterval->getAnti();
+            const auto newAnti = newInterval->getAnti();
+            const auto& oldLower = oldAnti->getLower();
+            const auto& oldUpper = oldAnti->getUpper();
+            const auto& newLower = newAnti->getLower();
+            const auto& newUpper = newAnti->getUpper();
+            const auto& nlconstant = getFirstLessFromVector(constantvector, newLower);
+            const auto& nuconstant = getFirstGreaterFromVector(constantvector, newUpper);
+
+            if(newLower <= oldLower && (newLower < oldLower || newUpper > oldUpper))
+            {
+               return RangeRef(new Range(Anti, bw, newLower < oldLower ? nlconstant : oldLower, newUpper > oldUpper ? nuconstant : oldUpper));
+            }
          }
          else if(newInterval->isUnknown() || !newInterval->isFullSet())
          {
-            sinkInterval = RangeRef(newInterval->clone());
+            return RangeRef(newInterval->clone());
          }
       }
       else
       {
-         return oldInterval->intersectWith(newInterval);
+         const auto& oldLower = oldInterval->getLower();
+         const auto& oldUpper = oldInterval->getUpper();
+         const auto& newLower = newInterval->getLower();
+         const auto& newUpper = newInterval->getUpper();
+
+         // Jump-set
+         const auto& nlconstant = getFirstGreaterFromVector(constantvector, newLower);
+         const auto& nuconstant = getFirstLessFromVector(constantvector, newUpper);
+
+         if(newLower <= oldLower && (newLower > oldLower || newUpper < oldUpper))
+         {
+            return RangeRef(new Range(Regular, bw, newLower > oldLower ? nlconstant : oldLower, newUpper < oldUpper ? nuconstant : oldUpper));
+         }
       }
-      return sinkInterval;
+      return RangeRef(oldInterval->clone());
    };
 
    if(oldRange->isReal())
@@ -5274,13 +5305,17 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& /* constantvector */)
       RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getSignificand()};
       for(auto i = 0; i < 3; ++i)
       {
-         newIntervals[i] = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         const auto narrow = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         THROW_ASSERT(oldIntervals[i]->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldIntervals[i]->ToString() + " < " + narrow->ToString());
+         newIntervals[i] = narrow;
       }
       op->getSink()->setRange(RangeRef(new RealRange(newIntervals[0], newIntervals[1], newIntervals[2])));
    }
    else
    {
-      op->getSink()->setRange(intervalNarrow(oldRange, newRange));
+      const auto narrow = intervalNarrow(oldRange, newRange);
+      THROW_ASSERT(oldRange->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldRange->ToString() + " < " + narrow->ToString());
+      op->getSink()->setRange(narrow);
    }
 
    const auto sinkRange = op->getSink()->getRange();
@@ -7317,6 +7352,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      const auto dfm = design_flow_manager.lock();
       for(const auto& varNode : vars)
       {
 #ifndef NDEBUG
@@ -7326,7 +7362,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
             break;
          }
 #endif
-         if(const auto ut = varNode.second->updateIR(TM, tree_man
+         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm
 #ifndef NDEBUG
                                                      ,
                                                      debug_level, AppM

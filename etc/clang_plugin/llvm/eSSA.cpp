@@ -158,11 +158,11 @@ namespace eSSAInfoClasses
 
    // Given a predicate info that is a type of branching terminator, get the
    // branching terminator.
-   static llvm::Instruction* getBranchTerminator(const PredicateBase* PB)
-   {
-      assert(llvm::isa<PredicateWithEdge>(PB) && "Not a predicate info type we know how to get a terminator from.");
-      return llvm::cast<PredicateWithEdge>(PB)->From->getTerminator();
-   }
+   //    static llvm::Instruction* getBranchTerminator(const PredicateBase* PB)
+   //    {
+   //       assert(llvm::isa<PredicateWithEdge>(PB) && "Not a predicate info type we know how to get a terminator from.");
+   //       return llvm::cast<PredicateWithEdge>(PB)->From->getTerminator();
+   //    }
 
    // Given a predicate info that is a type of branching terminator, get the
    // edge this predicate info represents

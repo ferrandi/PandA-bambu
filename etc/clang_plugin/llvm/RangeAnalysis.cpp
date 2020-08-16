@@ -6624,7 +6624,9 @@ namespace RangeAnalysis
                {
                   return false;
                }
+#ifndef NDEBUG
                auto vid = varValue->getValueID();
+#endif
                assert(vid == llvm::Value::InstructionVal + llvm::Instruction::Alloca || vid == llvm::Value::GlobalVariableVal);
                unsigned int elmtSize = ObjectBW(varValue);
                if(elmtSize == 0)
