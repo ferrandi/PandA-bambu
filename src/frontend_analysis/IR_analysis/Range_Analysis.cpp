@@ -5243,29 +5243,57 @@ bool Meet::growth(OpNode* op)
 /// analysis expands the bounds of each variable, regardless of intersections
 /// in the constraint graph, the cropping analysis shrinks these bounds back
 /// to ranges that respect the intersections.
-bool Meet::narrow(OpNode* op, const std::vector<APInt>& /* constantvector */)
+bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
 {
    const auto oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval) {
-      RangeRef sinkInterval(oldInterval->clone());
+      if(newInterval->isConstant())
+      {
+         return RangeRef(newInterval->clone());
+      }
+      const auto bw = oldInterval->getBitWidth();
       if(oldInterval->isAnti() || newInterval->isAnti() || oldInterval->isEmpty() || newInterval->isEmpty())
       {
          if(oldInterval->isAnti() && newInterval->isAnti() && !newInterval->isSameRange(oldInterval))
          {
-            return oldInterval->intersectWith(newInterval);
+            const auto oldAnti = oldInterval->getAnti();
+            const auto newAnti = newInterval->getAnti();
+            const auto& oldLower = oldAnti->getLower();
+            const auto& oldUpper = oldAnti->getUpper();
+            const auto& newLower = newAnti->getLower();
+            const auto& newUpper = newAnti->getUpper();
+            const auto& nlconstant = getFirstLessFromVector(constantvector, newLower);
+            const auto& nuconstant = getFirstGreaterFromVector(constantvector, newUpper);
+
+            if(newLower <= oldLower && (newLower < oldLower || newUpper > oldUpper))
+            {
+               return RangeRef(new Range(Anti, bw, newLower < oldLower ? nlconstant : oldLower, newUpper > oldUpper ? nuconstant : oldUpper));
+            }
          }
          else if(newInterval->isUnknown() || !newInterval->isFullSet())
          {
-            sinkInterval = RangeRef(newInterval->clone());
+            return RangeRef(newInterval->clone());
          }
       }
       else
       {
-         return oldInterval->intersectWith(newInterval);
+         const auto& oldLower = oldInterval->getLower();
+         const auto& oldUpper = oldInterval->getUpper();
+         const auto& newLower = newInterval->getLower();
+         const auto& newUpper = newInterval->getUpper();
+
+         // Jump-set
+         const auto& nlconstant = getFirstGreaterFromVector(constantvector, newLower);
+         const auto& nuconstant = getFirstLessFromVector(constantvector, newUpper);
+
+         if(newLower <= oldLower && (newLower > oldLower || newUpper < oldUpper))
+         {
+            return RangeRef(new Range(Regular, bw, newLower > oldLower ? nlconstant : oldLower, newUpper < oldUpper ? nuconstant : oldUpper));
+         }
       }
-      return sinkInterval;
+      return RangeRef(oldInterval->clone());
    };
 
    if(oldRange->isReal())
@@ -5277,13 +5305,17 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& /* constantvector */)
       RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getSignificand()};
       for(auto i = 0; i < 3; ++i)
       {
-         newIntervals[i] = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         const auto narrow = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         THROW_ASSERT(oldIntervals[i]->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldIntervals[i]->ToString() + " < " + narrow->ToString());
+         newIntervals[i] = narrow;
       }
       op->getSink()->setRange(RangeRef(new RealRange(newIntervals[0], newIntervals[1], newIntervals[2])));
    }
    else
    {
-      op->getSink()->setRange(intervalNarrow(oldRange, newRange));
+      const auto narrow = intervalNarrow(oldRange, newRange);
+      THROW_ASSERT(oldRange->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldRange->ToString() + " < " + narrow->ToString());
+      op->getSink()->setRange(narrow);
    }
 
    const auto sinkRange = op->getSink()->getRange();
