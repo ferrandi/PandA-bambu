@@ -463,7 +463,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
                   if(curr_port->get_kind() == port_vector_o_K)
                   {
                      auto ps = GetPointer<port_o>(curr_port)->get_ports_size();
-                     THROW_ASSERT(multiplicitiy == ps, "unexpected condition");
+                     THROW_ASSERT(multiplicitiy == ps, "unexpected condition " + STR(multiplicitiy) + " " + STR(ps));
                      generated_port = CM->add_port_vector(port_name, port_o::IN, ps, top, dt);
                   }
                   else
