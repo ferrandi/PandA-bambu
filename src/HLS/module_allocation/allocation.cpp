@@ -1750,8 +1750,9 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string specialized_fuName = "";
 
                varargs_fu = false;
-               bool has_to_be_generated = structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
-                                          not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR);
+               bool has_to_be_generated = structManager_obj &&
+                                          (GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+                                           GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR));
                if(has_to_be_generated)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized");
@@ -2442,8 +2443,8 @@ void allocation::IntegrateTechnologyLibraries()
             if(!wrapper_tn)
             {
                structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
-               if(structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
-                  not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
+               if(structManager_obj && (GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) or
+                                        GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR)))
                {
                   moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
