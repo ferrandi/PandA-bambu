@@ -135,7 +135,7 @@ tree_managerRef ParseTreeFile(const ParameterConstRef& Param, const std::string&
                      }
                      auto findex = TM->function_index(fname);
                      if(!findex)
-                     // the function is not present in the tree manager
+                        // the function is not present in the tree manager
                         continue;
                      auto my_node = GetPointer<function_decl>(TM->get_tree_node_const(findex));
                      THROW_ASSERT(my_node->get_kind() == function_decl_K, "Not a function_decl");

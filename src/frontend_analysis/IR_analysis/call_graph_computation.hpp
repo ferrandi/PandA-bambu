@@ -77,9 +77,6 @@ class call_graph_computation : public ApplicationFrontendFlowStep
    /// Index of current function
    unsigned int current;
 
-   /// set of already examined addr_expr used to avoid circular recursion
-   CustomOrderedSet<tree_nodeRef> already_visited;
-
    /**
     * Recursive analysis of the tree nodes looking for call expressions.
     * @param TM is the tree manager.

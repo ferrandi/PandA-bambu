@@ -14,8 +14,7 @@ Equivalence checking
    xag_npn_resynthesis<aig_network> resyn;
    cut_rewriting_params ps;
    ps.cut_enumeration_ps.cut_size = 4;
-   cut_rewriting( aig, resyn, ps );
-   aig = cleanup_dangling( aig );
+   aig = cut_rewriting( aig, resyn, ps );
 
    const auto miter = *miter<aig_network>( orig, aig );
    const auto result = equivalence_checking( miter );

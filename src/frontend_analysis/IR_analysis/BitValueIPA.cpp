@@ -148,6 +148,13 @@ bool BitValueIPA::HasToBeExecuted() const
 
 DesignFlowStep_Status BitValueIPA::Exec()
 {
+#ifndef NDEBUG
+   if(not AppM->ApplyNewTransformation())
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
+#endif
+
    BitLatticeManipulator::clear();
    fun_id_to_restart.clear();
 
@@ -215,7 +222,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          std::deque<bit_lattice> b;
          if(p->bit_values.empty())
          {
-            b = create_u_bitstring(tree_helper::Size(GET_NODE(p->type)));
+            b = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(p->type)));
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "new bitvalue: " + bitstring_to_string(b));
          }
          else
@@ -241,7 +248,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
       std::deque<bit_lattice> b;
       if(fd->bit_values.empty())
       {
-         b = create_u_bitstring(tree_helper::Size(fret_type_node));
+         b = create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "new bitvalue: " + bitstring_to_string(b));
       }
       else
@@ -301,6 +308,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
          // --- backward ----
          if(not is_root)
          {
+#ifndef NDEBUG
+            if(not AppM->ApplyNewTransformation())
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
+               break;
+            }
+#endif
+
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Backward");
 
             current.insert(std::make_pair(fu_id, best.at(fu_id)));
@@ -388,7 +404,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   break;
             }
 
-            update_current(std::move(res), fu_id);
+            update_current(res, fu_id);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Backward done");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After backward id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
@@ -396,6 +412,10 @@ DesignFlowStep_Status BitValueIPA::Exec()
             mix();
             current.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
+
+#ifndef NDEBUG
+            AppM->RegisterTransformation(GetName(), fu_node);
+#endif
          }
 
          // --- forward ---
@@ -424,7 +444,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      const auto* gr = GetPointer<const gimple_return>(stmt_node);
                      if(not gr->op)
                      {
-                        res_tmp = create_u_bitstring(tree_helper::Size(fret_type_node));
+                        res_tmp = create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "uninitialized return value: " + bitstring_to_string(res_tmp));
                         hard_break = true;
                      }
@@ -443,7 +463,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto* ssa = GetPointer<const ssa_name>(returned_tn);
                            if(ssa->CGetUseStmts().size() == 1 and ssa->CGetDefStmts().empty())
                            {
-                              res_tmp = create_u_bitstring(tree_helper::Size(returned_tn));
+                              res_tmp = create_u_bitstring(BitLatticeManipulator::Size(returned_tn));
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "return uninitialized ssa id: " + STR(ssa->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
@@ -457,12 +477,29 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         {
                            const auto* ic = GetPointer<const integer_cst>(returned_tn);
                            THROW_ASSERT(ic, "not an integer_cst");
-                           res_tmp = create_bitstring_from_constant(ic->value, tree_helper::Size(returned_tn), fu_signed);
+                           res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(returned_tn), fu_signed);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "constant return value: " + bitstring_to_string(res_tmp));
+                        }
+                        else if(ret_kind == real_cst_K)
+                        {
+                           const auto* rc = GetPointer<const real_cst>(returned_tn);
+                           THROW_ASSERT(rc, "not a real_cst");
+                           const auto ret_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
+                           THROW_ASSERT(ret_size == 64 || ret_size == 32, "Unhandled real type size (" + STR(ret_size) + ")");
+                           if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
+                           {
+                              res_tmp = string_to_bitstring(convert_fp_to_string("-" + rc->valr, ret_size));
+                           }
+                           else
+                           {
+                              res_tmp = string_to_bitstring(convert_fp_to_string(rc->valr, ret_size));
+                           }
+                           sign_reduce_bitstring(res_tmp, false);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "constant return value: " + bitstring_to_string(res_tmp));
                         }
                         else
                         {
-                           res_tmp = create_u_bitstring(tree_helper::Size(fret_type_node));
+                           res_tmp = create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "return is not an ssa nor a constant value: " + returned_tn->get_kind_text() + " bitstring: " + bitstring_to_string(res_tmp));
                            hard_break = true;
                         }
@@ -480,7 +517,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed return statements in all BBs");
 
-            update_current(std::move(res), fu_id);
+            update_current(res, fu_id);
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Forward done");
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After forward id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
@@ -502,6 +539,13 @@ DesignFlowStep_Status BitValueIPA::Exec()
       int args_n = 0;
       for(const auto& pd : fd->list_of_args)
       {
+#ifndef NDEBUG
+         if(not AppM->ApplyNewTransformation())
+         {
+            break;
+         }
+#endif
+
          args_n++;
          const unsigned int pd_id = GET_INDEX_NODE(pd);
          if(best.find(pd_id) != best.cend())
@@ -547,7 +591,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                               THROW_ASSERT(tree_helper::is_int(TM, ssa->index) == parm_signed, "param " + STR(pd) + " of function " + fu_name + " has type = " + STR(tree_helper::CGetType(GET_NODE(pd))) +
                                                                                                    " but its first version is an ssa of type = " + STR(tree_helper::CGetType(ssa_tn)) + "\ndifferent signedness!");
 
-                              std::deque<bit_lattice> res_fanout = ssa->bit_values.empty() ? create_u_bitstring(tree_helper::Size(tree_helper::CGetType(ssa_tn))) : string_to_bitstring(ssa->bit_values);
+                              std::deque<bit_lattice> res_fanout = ssa->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(tree_helper::CGetType(ssa_tn))) : string_to_bitstring(ssa->bit_values);
 #if HAVE_ASSERTS
                               prev_found = ssa->index;
 #endif
@@ -610,7 +654,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(B->number));
                }
 
-               update_current(std::move(res), pd_id);
+               update_current(res, pd_id);
 
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Backward done");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After backward id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
@@ -702,12 +746,29 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            {
                               const auto* ic = GetPointer<const integer_cst>(ap_node);
                               THROW_ASSERT(ic, "not an integer_cst");
-                              res_tmp = create_bitstring_from_constant(ic->value, tree_helper::Size(ap_node), parm_signed);
+                              res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node), parm_signed);
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                           }
+                           else if(ap_kind == real_cst_K)
+                           {
+                              const auto* rc = GetPointer<const real_cst>(ap_node);
+                              THROW_ASSERT(rc, "not a real_cst");
+                              const auto ap_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
+                              THROW_ASSERT(ap_size == 64 || ap_size == 32, "Unhandled real type size (" + STR(ap_size) + ")");
+                              if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
+                              {
+                                 res_tmp = string_to_bitstring(convert_fp_to_string("-" + rc->valr, ap_size));
+                              }
+                              else
+                              {
+                                 res_tmp = string_to_bitstring(convert_fp_to_string(rc->valr, ap_size));
+                              }
+                              sign_reduce_bitstring(res_tmp, false);
+                              INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else if(ap_kind == var_decl_K)
                            {
-                              res_tmp = create_u_bitstring(tree_helper::Size(GET_NODE(pd)));
+                              res_tmp = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(pd)));
                               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter is uninitialized, bitstring: " + bitstring_to_string(res_tmp));
                            }
                            else
@@ -733,19 +794,36 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         {
                            const auto* ssa = GetPointer<const ssa_name>(ap_node);
                            THROW_ASSERT(ssa, "not ssa");
-                           res_tmp = ssa->bit_values.empty() ? create_u_bitstring(tree_helper::Size(tree_helper::CGetType(ap_node))) : string_to_bitstring(ssa->bit_values);
+                           res_tmp = ssa->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(tree_helper::CGetType(ap_node))) : string_to_bitstring(ssa->bit_values);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ssa) + " id: " + STR(ssa->index) + " bitstring: " + bitstring_to_string(res_tmp));
                         }
                         else if(ap_kind == integer_cst_K)
                         {
                            const auto* ic = GetPointer<const integer_cst>(ap_node);
                            THROW_ASSERT(ic, "not an integer_cst");
-                           res_tmp = create_bitstring_from_constant(ic->value, tree_helper::Size(ap_node), parm_signed);
+                           res_tmp = create_bitstring_from_constant(ic->value, BitLatticeManipulator::Size(ap_node), parm_signed);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(ic) + " is a constant value id: " + STR(ic->index) + " bitstring: " + bitstring_to_string(res_tmp));
+                        }
+                        else if(ap_kind == real_cst_K)
+                        {
+                           const auto* rc = GetPointer<const real_cst>(ap_node);
+                           THROW_ASSERT(rc, "not a real_cst");
+                           const auto ap_size = BitLatticeManipulator::Size(GET_CONST_NODE(rc->type));
+                           THROW_ASSERT(ap_size == 64 || ap_size == 32, "Unhandled real type size (" + STR(ap_size) + ")");
+                           if(rc->valx.front() == '-' && rc->valr.front() != rc->valx.front())
+                           {
+                              res_tmp = string_to_bitstring(convert_fp_to_string("-" + rc->valr, ap_size));
+                           }
+                           else
+                           {
+                              res_tmp = string_to_bitstring(convert_fp_to_string(rc->valr, ap_size));
+                           }
+                           sign_reduce_bitstring(res_tmp, false);
+                           INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter " + STR(rc) + " is a constant value id: " + STR(rc->index) + " bitstring: " + bitstring_to_string(res_tmp));
                         }
                         else if(ap_kind == var_decl_K)
                         {
-                           res_tmp = create_u_bitstring(tree_helper::Size(GET_NODE(pd)));
+                           res_tmp = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(pd)));
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "actual parameter is uninitialized, bitstring: " + bitstring_to_string(res_tmp));
                         }
                         else
@@ -772,7 +850,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      break;
                }
 
-               update_current(std::move(res), pd_id);
+               update_current(res, pd_id);
 
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Forward done");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After forward id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
@@ -781,6 +859,10 @@ DesignFlowStep_Status BitValueIPA::Exec()
                current.clear();
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
             }
+
+#ifndef NDEBUG
+            AppM->RegisterTransformation(GetName(), pd);
+#endif
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Propagated bitvalue through parameter " + STR(GET_NODE(pd)) + " of function " + fu_name + " parm id: " + STR(pd_id));
          }
@@ -827,7 +909,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             fret_type_node = GET_NODE(mt->retn);
          }
 
-         size = tree_helper::Size(fret_type_node);
+         size = BitLatticeManipulator::Size(fret_type_node);
          restart_fun_id = fd->index;
       }
       else if(kind == parm_decl_K)
@@ -835,7 +917,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
          auto* pd = GetPointer<parm_decl>(tn);
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is a parm_decl: " + STR(pd) + " id: " + STR(pd->index));
          old_bitvalue = &pd->bit_values;
-         size = tree_helper::Size(GET_NODE(pd->type));
+         size = BitLatticeManipulator::Size(GET_NODE(pd->type));
          restart_fun_id = GET_INDEX_NODE(pd->scpe);
       }
       else

@@ -79,7 +79,7 @@ class Vectorize : public FunctionFrontendFlowStep
    /// The tree_manipulation
    const tree_manipulationRef tree_man;
 
-   /// THe increment of induction variables; id is the index of the ssa name defined in the init gimple
+   /// The increment of induction variables; id is the index of the ssa name defined in the init gimple
    CustomMap<unsigned int, long long int> iv_increment;
 
    /// Enum used to classify the loop according to the required transformation
@@ -89,9 +89,6 @@ class Vectorize : public FunctionFrontendFlowStep
       SIMD_INNER, /** Loop is nested in a outer simd loop */
       SIMD_OUTER  /** Loop is a outer simd */
    } SimdLoop;
-
-   /// Map gimple node index to basic block index
-   CustomMap<unsigned int, unsigned int> gimple_id_to_bb;
 
    /// Loop classification
    CustomMap<unsigned int, SimdLoop> simd_loop_type;

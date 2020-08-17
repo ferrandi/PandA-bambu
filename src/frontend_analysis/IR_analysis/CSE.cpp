@@ -205,7 +205,7 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
    return skip_check;
 }
 
-tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
+tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking: " + tn->ToString());
    if(GetPointer<gimple_node>(tn)->keep)
@@ -392,6 +392,8 @@ DesignFlowStep_Status CSE::InternalExec()
    restart_phi_opt = false;
    size_t n_equiv_stmt = 0;
    auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   /// define a map relating variables and columns
+   std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
@@ -469,7 +471,7 @@ DesignFlowStep_Status CSE::InternalExec()
             break;
          }
 #endif
-         tree_nodeRef eq_tn = hash_check(GET_NODE(stmt), bb);
+         tree_nodeRef eq_tn = hash_check(GET_NODE(stmt), bb, unique_table);
          if(eq_tn)
          {
             auto* ref_ga = GetPointer<gimple_assign>(eq_tn);

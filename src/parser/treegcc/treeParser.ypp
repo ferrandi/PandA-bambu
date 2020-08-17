@@ -2813,7 +2813,7 @@ extern tree_managerRef tree_parseY(const ParameterConstRef Param, std::string fn
 {
     fileIO_istreamRef sname = fileIO_istream_open(fn);
     if(sname->fail()) THROW_ERROR(std::string("FILE does not exist: ")+fn);
-    const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), 0));
+    const TreeFlexLexerRef lexer(new TreeFlexLexer(sname.get(), nullptr));
     const BisonParserDataRef data(new BisonParserData(Param, Param->get_class_debug_level("tree_parse")));
     data->final_TM = tree_managerRef();
     data->current_TM = tree_managerRef();

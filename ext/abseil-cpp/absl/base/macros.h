@@ -32,6 +32,7 @@
 #include <cstddef>
 
 #include "absl/base/attributes.h"
+#include "absl/base/config.h"
 #include "absl/base/optimization.h"
 #include "absl/base/port.h"
 
@@ -51,36 +52,6 @@ namespace macros_internal {
 template <typename T, size_t N>
 auto ArraySizeHelper(const T (&array)[N]) -> char (&)[N];
 }  // namespace macros_internal
-ABSL_NAMESPACE_END
-}  // namespace absl
-
-// kLinkerInitialized
-//
-// An enum used only as a constructor argument to indicate that a variable has
-// static storage duration, and that the constructor should do nothing to its
-// state. Use of this macro indicates to the reader that it is legal to
-// declare a static instance of the class, provided the constructor is given
-// the absl::base_internal::kLinkerInitialized argument.
-//
-// Normally, it is unsafe to declare a static variable that has a constructor or
-// a destructor because invocation order is undefined. However, if the type can
-// be zero-initialized (which the loader does for static variables) into a valid
-// state and the type's destructor does not affect storage, then a constructor
-// for static initialization can be declared.
-//
-// Example:
-//       // Declaration
-//       explicit MyClass(absl::base_internal:LinkerInitialized x) {}
-//
-//       // Invocation
-//       static MyClass my_global(absl::base_internal::kLinkerInitialized);
-namespace absl {
-ABSL_NAMESPACE_BEGIN
-namespace base_internal {
-enum LinkerInitialized {
-  kLinkerInitialized = 0,
-};
-}  // namespace base_internal
 ABSL_NAMESPACE_END
 }  // namespace absl
 
@@ -205,6 +176,41 @@ ABSL_NAMESPACE_END
 #define ABSL_ASSERT(expr)                           \
   (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \
                              : [] { assert(false && #expr); }())  // NOLINT
+#endif
+
+// `ABSL_INTERNAL_HARDENING_ABORT()` controls how `ABSL_HARDENING_ASSERT()`
+// aborts the program in release mode (when NDEBUG is defined). The
+// implementation should abort the program as quickly as possible and ideally it
+// should not be possible to ignore the abort request.
+#if (ABSL_HAVE_BUILTIN(__builtin_trap) &&         \
+     ABSL_HAVE_BUILTIN(__builtin_unreachable)) || \
+    (defined(__GNUC__) && !defined(__clang__))
+#define ABSL_INTERNAL_HARDENING_ABORT() \
+  do {                                  \
+    __builtin_trap();                   \
+    __builtin_unreachable();            \
+  } while (false)
+#else
+#define ABSL_INTERNAL_HARDENING_ABORT() abort()
+#endif
+
+// ABSL_HARDENING_ASSERT()
+//
+// `ABSL_HARDENING_ASSERT()` is like `ABSL_ASSERT()`, but used to implement
+// runtime assertions that should be enabled in hardened builds even when
+// `NDEBUG` is defined.
+//
+// When `NDEBUG` is not defined, `ABSL_HARDENING_ASSERT()` is identical to
+// `ABSL_ASSERT()`.
+//
+// See `ABSL_OPTION_HARDENED` in `absl/base/options.h` for more information on
+// hardened mode.
+#if ABSL_OPTION_HARDENED == 1 && defined(NDEBUG)
+#define ABSL_HARDENING_ASSERT(expr)                 \
+  (ABSL_PREDICT_TRUE((expr)) ? static_cast<void>(0) \
+                             : [] { ABSL_INTERNAL_HARDENING_ABORT(); }())
+#else
+#define ABSL_HARDENING_ASSERT(expr) ABSL_ASSERT(expr)
 #endif
 
 #ifdef ABSL_HAVE_EXCEPTIONS

@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -33,16 +33,21 @@
 
 #pragma once
 
-#warning "DEPRECATED: the functions in this file are marked as deprecated.  Most recent implementation can be found in https://github.com/hriener/easy/ in the file src/esop/constructors.hpp"
+//#ifndef _MSC_VER
+//#warning "DEPRECATED: the functions in this file are marked as deprecated.  Most recent implementation can be found in https://github.com/hriener/easy/ in the file src/esop/constructors.hpp"
+//#endif
 
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
+#include "algorithm.hpp"
+#include "constructors.hpp"
 #include "cube.hpp"
 #include "hash.hpp"
 #include "operations.hpp"
 #include "operators.hpp"
+#include "traits.hpp"
 
 namespace kitty
 {
@@ -205,6 +210,87 @@ void esop_from_pprm_rec( std::unordered_set<cube, hash<cube>>& cubes, const TT& 
   esop_from_pprm_rec( cubes, tt0, var_index + 1, c );
   esop_from_pprm_rec( cubes, tt0 ^ tt1, var_index + 1, with_literal( c, var_index, true ) );
 }
+
+static constexpr uint64_t ANF1[] = {0, 3, 2, 1};
+static constexpr uint64_t ANF2[] = {0, 15, 10, 5, 12, 3, 6, 9, 8, 7, 2, 13, 4, 11, 14, 1};
+static constexpr uint64_t ANF3[] = {0, 255, 170, 85, 204, 51, 102, 153, 136, 119, 34, 221, 68, 187, 238, 17, 240, 15, 90, 165, 60, 195, 150, 105, 120, 135, 210, 45, 180, 75, 30, 225, 160, 95, 10, 245, 108, 147, 198, 57, 40, 215, 130, 125, 228, 27, 78, 177, 80, 175, 250, 5, 156, 99, 54, 201, 216, 39, 114, 141, 20, 235, 190, 65, 192, 63, 106, 149, 12, 243, 166, 89, 72, 183, 226, 29, 132, 123, 46, 209, 48, 207, 154, 101, 252, 3, 86, 169, 184, 71, 18, 237, 116, 139, 222, 33, 96, 159, 202, 53, 172, 83, 6, 249, 232, 23, 66, 189, 36, 219, 142, 113, 144, 111, 58, 197, 92, 163, 246, 9, 24, 231, 178, 77, 212, 43, 126, 129, 128, 127, 42, 213, 76, 179, 230, 25, 8, 247, 162, 93, 196, 59, 110, 145, 112, 143, 218, 37, 188, 67, 22, 233, 248, 7, 82, 173, 52, 203, 158, 97, 32, 223, 138, 117, 236, 19, 70, 185, 168, 87, 2, 253, 100, 155, 206, 49, 208, 47, 122, 133, 28, 227, 182, 73, 88, 167, 242, 13, 148, 107, 62, 193, 64, 191, 234, 21, 140, 115, 38, 217, 200, 55, 98, 157, 4, 251, 174, 81, 176, 79, 26, 229, 124, 131, 214, 41, 56, 199, 146, 109, 244, 11, 94, 161, 224, 31, 74, 181, 44, 211, 134, 121, 104, 151, 194, 61, 164, 91, 14, 241, 16, 239, 186, 69, 220, 35, 118, 137, 152, 103, 50, 205, 84, 171, 254, 1};
+
+template<class TT>
+TT algebraic_normal_form( const TT& func )
+{
+  switch ( func.num_vars() )
+  {
+  case 0:
+    return func;
+  case 1:
+  {
+    auto r = func.construct();
+    kitty::create_from_words( r, &ANF1[*func.begin()], &ANF1[*func.begin()] + 1 );
+    return r;
+  }
+  case 2:
+  {
+    auto r = func.construct();
+    kitty::create_from_words( r, &ANF2[*func.begin()], &ANF2[*func.begin()] + 1 );
+    return r;
+  }
+  case 3:
+  {
+    auto r = func.construct();
+    kitty::create_from_words( r, &ANF3[*func.begin()], &ANF3[*func.begin()] + 1 );
+    return r;
+  }
+  case 4:
+    return unary_operation( func, []( uint64_t word ) {
+      const auto b0 = ANF3[word & 0x000000FF];
+      const auto b1 = ANF3[( word & 0x0000FF00 ) >> 8];
+
+      return b0 | ( ( b0 ^ b1 ) << 8 );
+    } );
+  case 5:
+    return unary_operation( func, []( uint64_t word ) {
+      const auto b0 = ANF3[word & 0xFF];
+      const auto b1 = ANF3[( word >> 010 ) & 0xFF];
+      const auto b2 = ANF3[( word >> 020 ) & 0xFF];
+      const auto b3 = ANF3[( word >> 030 ) & 0xFF];
+
+      return b0 | ( ( b0 ^ b1 ) << 010 ) | ( ( b0 ^ b2 ) << 020 ) | ( ( b0 ^ b1 ^ b2 ^ b3 ) << 030 );
+    } );
+  default:
+    auto r = unary_operation( func, []( uint64_t word ) {
+      const auto b0 = ANF3[word & 0xFF];
+      const auto b1 = ANF3[( word >> 010 ) & 0xFF];
+      const auto b2 = ANF3[( word >> 020 ) & 0xFF];
+      const auto b3 = ANF3[( word >> 030 ) & 0xFF];
+      const auto b4 = ANF3[( word >> 040 ) & 0xFF];
+      const auto b5 = ANF3[( word >> 050 ) & 0xFF];
+      const auto b6 = ANF3[( word >> 060 ) & 0xFF];
+      const auto b7 = ANF3[( word >> 070 ) & 0xFF];
+
+      return b0 |
+             ( ( b0 ^ b1 ) << 010 ) |
+             ( ( b0 ^ b2 ) << 020 ) |
+             ( ( b0 ^ b1 ^ b2 ^ b3 ) << 030 ) |
+             ( ( b0 ^ b4 ) << 040 ) |
+             ( ( b0 ^ b1 ^ b4 ^ b5 ) << 050 ) |
+             ( ( b0 ^ b2 ^ b4 ^ b6 ) << 060 ) |
+             ( ( b0 ^ b1 ^ b2 ^ b3 ^ b4 ^ b5 ^ b6 ^ b7 ) << 070 );
+    } );
+
+    for ( auto i = 1u; i < (uint32_t)func.num_blocks(); i = i << 1u )
+    {
+      for ( auto j = 0u; j < (uint32_t)func.num_blocks(); j += i << 1u )
+      {
+        for ( auto k = j; k < j + i; ++k )
+        {
+          *( r.begin() + k + i ) ^= *( r.begin() + k );
+        }
+      }
+    }
+
+    return r;
+  }
+}
 } // namespace detail
 /*! \endcond */
 
@@ -220,11 +306,24 @@ void esop_from_pprm_rec( std::unordered_set<cube, hash<cube>>& cubes, const TT& 
 template<typename TT>
 inline std::vector<cube> esop_from_optimum_pkrm( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   std::unordered_set<cube, hash<cube>> cubes;
   detail::expansion_cache<TT> cache;
 
   detail::find_pkrm_expansions( tt, cache, 0 );
   detail::optimum_pkrm_rec( cubes, tt, cache, 0, cube() );
+
+  return std::vector<cube>( cubes.begin(), cubes.end() );
+}
+
+template<typename TT>
+inline std::vector<cube> esop_from_pprm_slow( const TT& tt )
+{
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
+  std::unordered_set<cube, hash<cube>> cubes;
+  detail::esop_from_pprm_rec( cubes, tt, 0, cube() );
 
   return std::vector<cube>( cubes.begin(), cubes.end() );
 }
@@ -236,13 +335,16 @@ inline std::vector<cube> esop_from_optimum_pkrm( const TT& tt )
 
   \param tt Truth table
 */
-template<typename TT>
-inline std::vector<cube> esop_from_pprm( const TT& tt )
+template<class TT>
+std::vector<cube> esop_from_pprm( const TT& func )
 {
-  std::unordered_set<cube, hash<cube>> cubes;
-  detail::esop_from_pprm_rec( cubes, tt, 0, cube() );
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
 
-  return std::vector<cube>( cubes.begin(), cubes.end() );
+  std::vector<cube> cubes;
+  for_each_one_bit( detail::algebraic_normal_form( func ), [&]( auto bit ) {
+    cubes.emplace_back( (uint32_t)bit, (uint32_t)bit );
+  } );
+  return cubes;
 }
 
 } // namespace kitty

@@ -161,6 +161,33 @@ std::vector<signal<NtkDest>> cleanup_dangling( NtkSource const& ntk, NtkDest& de
             break;
           }
         }
+        if constexpr ( has_is_nary_and_v<NtkSource> )
+        {
+          static_assert( has_create_nary_and_v<NtkDest>, "NtkDest cannot create n-ary AND gates" );
+          if ( ntk.is_nary_and( node ) )
+          {
+            old_to_new[node] = dest.create_nary_and( children );
+            break;
+          }
+        }
+        if constexpr ( has_is_nary_or_v<NtkSource> )
+        {
+          static_assert( has_create_nary_or_v<NtkDest>, "NtkDest cannot create n-ary OR gates" );
+          if ( ntk.is_nary_or( node ) )
+          {
+            old_to_new[node] = dest.create_nary_or( children );
+            break;
+          }
+        }
+        if constexpr ( has_is_nary_xor_v<NtkSource> )
+        {
+          static_assert( has_create_nary_xor_v<NtkDest>, "NtkDest cannot create n-ary XOR gates" );
+          if ( ntk.is_nary_xor( node ) )
+          {
+            old_to_new[node] = dest.create_nary_xor( children );
+            break;
+          }
+        }
         if constexpr ( has_is_function_v<NtkSource> )
         {
           static_assert( has_create_node_v<NtkDest>, "NtkDest cannot create arbitrary function gates" );
@@ -217,26 +244,27 @@ std::vector<signal<NtkDest>> cleanup_dangling( NtkSource const& ntk, NtkDest& de
  * - `is_pi`
  * - `is_constant`
  */
-template<typename Ntk>
-Ntk cleanup_dangling( Ntk const& ntk )
+template<class NtkSrc, class NtkDest = NtkSrc>
+NtkDest cleanup_dangling( NtkSrc const& ntk )
 {
-  static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
-  static_assert( has_get_node_v<Ntk>, "Ntk does not implement the get_node method" );
-  static_assert( has_node_to_index_v<Ntk>, "Ntk does not implement the node_to_index method" );
-  static_assert( has_get_constant_v<Ntk>, "Ntk does not implement the get_constant method" );
-  static_assert( has_create_pi_v<Ntk>, "Ntk does not implement the create_pi method" );
-  static_assert( has_create_po_v<Ntk>, "Ntk does not implement the create_po method" );
-  static_assert( has_create_not_v<Ntk>, "Ntk does not implement the create_not method" );
-  static_assert( has_is_complemented_v<Ntk>, "Ntk does not implement the is_complemented method" );
-  static_assert( has_foreach_node_v<Ntk>, "Ntk does not implement the foreach_node method" );
-  static_assert( has_foreach_pi_v<Ntk>, "Ntk does not implement the foreach_pi method" );
-  static_assert( has_foreach_po_v<Ntk>, "Ntk does not implement the foreach_po method" );
-  static_assert( has_clone_node_v<Ntk>, "Ntk does not implement the clone_node method" );
-  static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
-  static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
+  static_assert( is_network_type_v<NtkSrc>, "NtkSrc is not a network type" );
+  static_assert( is_network_type_v<NtkDest>, "NtkDest is not a network type" );
+  static_assert( has_get_node_v<NtkSrc>, "NtkSrc does not implement the get_node method" );
+  static_assert( has_node_to_index_v<NtkSrc>, "NtkSrc does not implement the node_to_index method" );
+  static_assert( has_get_constant_v<NtkSrc>, "NtkSrc does not implement the get_constant method" );
+  static_assert( has_foreach_node_v<NtkSrc>, "NtkSrc does not implement the foreach_node method" );
+  static_assert( has_foreach_pi_v<NtkSrc>, "NtkSrc does not implement the foreach_pi method" );
+  static_assert( has_foreach_po_v<NtkSrc>, "NtkSrc does not implement the foreach_po method" );
+  static_assert( has_is_pi_v<NtkSrc>, "NtkSrc does not implement the is_pi method" );
+  static_assert( has_is_constant_v<NtkSrc>, "NtkSrc does not implement the is_constant method" );
+  static_assert( has_clone_node_v<NtkDest>, "NtkDest does not implement the clone_node method" );
+  static_assert( has_create_pi_v<NtkDest>, "NtkDest does not implement the create_pi method" );
+  static_assert( has_create_po_v<NtkDest>, "NtkDest does not implement the create_po method" );
+  static_assert( has_create_not_v<NtkDest>, "NtkDest does not implement the create_not method" );
+  static_assert( has_is_complemented_v<NtkSrc>, "NtkDest does not implement the is_complemented method" );
 
-  Ntk dest;
-  std::vector<signal<Ntk>> pis;
+  NtkDest dest;
+  std::vector<signal<NtkDest>> pis;
   ntk.foreach_pi( [&]( auto ) {
     pis.push_back( dest.create_pi() );
   } );
@@ -337,7 +365,7 @@ Ntk cleanup_luts( Ntk const& ntk )
 
 
     const auto support = kitty::min_base_inplace( func );
-    auto new_func = kitty::shrink_to( func, support.size() );
+    auto new_func = kitty::shrink_to( func, static_cast<unsigned int>( support.size() ) );
 
     std::vector<signal<Ntk>> children;
     if ( auto var = support.begin(); var != support.end() )

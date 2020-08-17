@@ -82,7 +82,7 @@ public:
   }
 
   template<typename LeavesIterator, typename Fn>
-  void operator()( xmg_network& xmg, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn )
+  void operator()( xmg_network& xmg, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn ) const
   {
     assert( function.num_vars() <= 4 );
     const auto fe = kitty::extend_to( function, 4 );

@@ -44,6 +44,7 @@
 /// Header include
 #include "XilinxBackendFlow.hpp"
 
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_XILINX_SETTINGS.hpp"
 #include "config_XILINX_VIVADO_SETTINGS.hpp"
 
@@ -93,38 +94,18 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating Xilinx Backend Flow ::.");
    boost::filesystem::create_directories(UCF_SUBDIR);
 
-   default_data["Virtex-4"] =
-#include "Virtex-4.data"
-       ;
+   default_data["Virtex-4"] = "Virtex-4.data";
 #if HAVE_TASTE
-   default_data["Virtex-4-Taste"] =
-#include "Virtex-4-Taste.data"
-       ;
+   default_data["Virtex-4-Taste"] = "Virtex-4-Taste.data";
 #endif
-   default_data["Virtex-5"] =
-#include "Virtex-5.data"
-       ;
-   default_data["Virtex-6"] =
-#include "Virtex-6.data"
-       ;
-   default_data["Virtex-7"] =
-#include "Virtex-7.data"
-       ;
-   default_data["Virtex-7-VVD"] =
-#include "Virtex-7-VVD.data"
-       ;
-   default_data["Artix-7-VVD"] =
-#include "Artix-7-VVD.data"
-       ;
-   default_data["Zynq-VVD"] =
-#include "Zynq-VVD.data"
-       ;
-   default_data["Zynq-YOSYS-VVD"] =
-#include "Zynq-YOSYS-VVD.data"
-       ;
-   default_data["Zynq"] =
-#include "Zynq.data"
-       ;
+   default_data["Virtex-5"] = "Virtex-5.data";
+   default_data["Virtex-6"] = "Virtex-6.data";
+   default_data["Virtex-7"] = "Virtex-7.data";
+   default_data["Virtex-7-VVD"] = "Virtex-7-VVD.data";
+   default_data["Artix-7-VVD"] = "Artix-7-VVD.data";
+   default_data["Zynq-VVD"] = "Zynq-VVD.data";
+   default_data["Zynq-YOSYS-VVD"] = "Zynq-YOSYS-VVD.data";
+   default_data["Zynq"] = "Zynq.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
@@ -152,7 +133,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
       if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/xilinx/") + default_data[device_string]));
    }
    parse_flow(parser);
 }

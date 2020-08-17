@@ -314,6 +314,14 @@ class tree_manager
    unsigned int function_index(const std::string& function_name) const;
 
    /**
+    * Return the index of a function given its mangled name
+    * @param tm is the tree_manager
+    * @param function_name is the mangled name of the function
+    * @return the treenode_index of the function_decl
+    */
+   unsigned int function_index_mngl(const std::string& function_name) const;
+
+   /**
     * Function that prints the class tree_manager.
     * @param Param is the set of the parameter
     * @param os is the stream where tree_manager will be printed
@@ -330,7 +338,7 @@ class tree_manager
    /**
     * Friend definition of the << operator.
     */
-   friend std::ostream& operator<<(std::ostream& os, tree_manager& s)
+   friend std::ostream& operator<<(std::ostream& os, const tree_manager& s)
    {
       s.print(os);
       return os;

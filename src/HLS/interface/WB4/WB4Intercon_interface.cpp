@@ -41,6 +41,7 @@
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "copyrights_strings.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -220,7 +221,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    slaves.push_back(wrappedObj);
 
    std::string baseAddressFileName = "intercon_" + STR(HLS->functionId) + ".mem";
-   std::ofstream baseAddressFile(baseAddressFileName);
+   std::ofstream baseAddressFile(GetPath(baseAddressFileName));
 
    std::string topFunctionBaseAddress = STR(WB_BASE_ADDRESS) + "_" + topFunctionName;
    wrappedObj->SetParameter(topFunctionBaseAddress, topModuleBaseAddress + " + " + topFunctionBaseAddress);

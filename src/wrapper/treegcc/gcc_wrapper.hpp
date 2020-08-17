@@ -408,7 +408,7 @@ class GccWrapper
     * @param executable_name is the name of the executable
     * @param extra_gcc_options is extra options to be used only for this compilation
     */
-   void CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
+   void CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters = false) const;
 
    /**
     * Create an executable starting from source code
@@ -416,7 +416,7 @@ class GccWrapper
     * @param executable_name is the name of the executable
     * @param extra_gcc_options is extra options to be used only for this compilation
     */
-   void CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const;
+   void CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters = false) const;
 
    /**
     * Read gcc configuration from file

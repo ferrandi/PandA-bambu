@@ -36,6 +36,7 @@
 
 #include <kitty/dynamic_truth_table.hpp>
 
+#include "traits.hpp"
 #include "../dsd_decomposition.hpp"
 
 namespace mockturtle
@@ -85,13 +86,12 @@ public:
   }
 
   template<typename LeavesIterator, typename Fn>
-  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn )
+  void operator()( Ntk& ntk, kitty::dynamic_truth_table const& function, LeavesIterator begin, LeavesIterator end, Fn&& fn ) const
   {
     bool success{true};
     const auto on_prime = [&]( kitty::dynamic_truth_table const& remainder, std::vector<signal<Ntk>> const& leaves ) {
       success = false;
       signal<Ntk> f = ntk.get_constant( false );
-
       if ( _ps.prime_input_limit && leaves.size() > *_ps.prime_input_limit )
       {
         return f;
@@ -106,6 +106,11 @@ public:
         return true;
       };
       auto _leaves = leaves;
+
+      if constexpr ( has_set_bounds_v<ResynthesisFn> )
+      {
+        _resyn_fn.set_bounds( static_cast<uint32_t>( _leaves.size() ), std::nullopt );
+      }
       _resyn_fn( ntk, remainder, _leaves.begin(), _leaves.end(), on_signal );
       return f;
     };
@@ -117,6 +122,22 @@ public:
     }
   }
 
+  void clear_functions()
+  {
+    if constexpr ( has_clear_functions_v<ResynthesisFn> )
+    {
+      _resyn_fn.clear_functions();
+    }
+  }
+
+  void add_function( signal<Ntk> const& s, kitty::dynamic_truth_table const& tt )
+  {
+    if constexpr ( has_add_function_v<ResynthesisFn, Ntk> )
+    {
+      _resyn_fn.add_function( s, tt );
+    }
+  }
+  
 private:
   ResynthesisFn& _resyn_fn;
   dsd_resynthesis_params _ps;

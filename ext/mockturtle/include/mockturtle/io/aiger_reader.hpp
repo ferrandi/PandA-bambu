@@ -188,7 +188,7 @@ public:
       assert( num_latches == 0 && "network type does not support the creation of latches" );
     }
 
-    _num_inputs = num_inputs;
+    _num_inputs = static_cast<uint32_t>( num_inputs );
 
     /* constant */
     signals.push_back( _ntk.get_constant( false ) );

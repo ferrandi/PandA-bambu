@@ -331,16 +331,15 @@ class ABSL_LOCKABLE Mutex {
   // Mutex::AwaitWithTimeout()
   // Mutex::AwaitWithDeadline()
   //
-  // If `cond` is initially true, do nothing, or act as though `cond` is
-  // initially false.
-  //
-  // If `cond` is initially false, unlock this `Mutex` and block until
-  // simultaneously:
+  // Unlocks this `Mutex` and blocks until simultaneously:
   //   - either `cond` is true or the {timeout has expired, deadline has passed}
   //     and
   //   - this `Mutex` can be reacquired,
   // then reacquire this `Mutex` in the same mode in which it was previously
   // held, returning `true` iff `cond` is `true` on return.
+  //
+  // If the condition is initially `true`, the implementation *may* skip the
+  // release/re-acquire step and return immediately.
   //
   // Deadlines in the past are equivalent to an immediate deadline.
   // Negative timeouts are equivalent to a zero timeout.
@@ -770,6 +769,8 @@ class Condition {
 //
 class CondVar {
  public:
+  // A `CondVar` allocated on the heap or on the stack can use the this
+  // constructor.
   CondVar();
   ~CondVar();
 
@@ -901,9 +902,11 @@ class ABSL_SCOPED_LOCKABLE ReleasableMutexLock {
 };
 
 #ifdef ABSL_INTERNAL_USE_NONPROD_MUTEX
+
 inline constexpr Mutex::Mutex(absl::ConstInitType) : impl_(absl::kConstInit) {}
 
 #else
+
 inline Mutex::Mutex() : mu_(0) {
   ABSL_TSAN_MUTEX_CREATE(this, __tsan_mutex_not_static);
 }
@@ -911,7 +914,8 @@ inline Mutex::Mutex() : mu_(0) {
 inline constexpr Mutex::Mutex(absl::ConstInitType) : mu_(0) {}
 
 inline CondVar::CondVar() : cv_(0) {}
-#endif
+
+#endif  // ABSL_INTERNAL_USE_NONPROD_MUTEX
 
 // static
 template <typename T>

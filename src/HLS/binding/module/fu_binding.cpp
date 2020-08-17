@@ -103,6 +103,7 @@
 #include <vector>
 
 /// utility include
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
@@ -958,7 +959,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
       for(const auto Itr : addressed_functions)
       {
-         std::string FUName = tree_helper::name_function(TreeM, Itr);
+         std::string FUName = functions::get_function_name_cleaned(tree_helper::name_function(TreeM, Itr));
 
          if(HLSMgr->Rfuns->is_a_proxied_function(FUName))
             continue;
@@ -971,10 +972,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering additional top: " + FUName + "@" + STR(Itr));
          if(HLSMgr->Rfuns->has_proxied_shared_functions(Itr))
          {
-            CustomOrderedSet<std::string> proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(Itr);
+            auto proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(Itr);
             for(auto name : proxied_shared_functions)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxied shared function: " + name);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxy shared function: " + name);
             }
             kill_proxy_function_units(wrapped_units, FU, fun_call_sites_rel, reverse_function_units);
          }
@@ -1683,7 +1684,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var0->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV - 1 - tailZeros) == '0')
+                           const auto& currBit = ssa_var0->bit_values.at(lengthBV - 1 - tailZeros);
+                           while(lengthBV > tailZeros && (currBit == '0' || currBit == 'X'))
                               ++tailZeros;
                            if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
@@ -1700,7 +1702,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var1->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV - 1 - tailZeros) == '0')
+                           const auto& currBit = ssa_var1->bit_values.at(lengthBV - 1 - tailZeros);
+                           while(lengthBV > tailZeros && (currBit == '0' || currBit == 'X'))
                               ++tailZeros;
                            if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
@@ -1758,7 +1761,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   {
                      unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      std::string parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
-                     std::ofstream parameterAddressFile(parameterAddressFileName);
+                     std::ofstream parameterAddressFile(GetPath(parameterAddressFileName));
 
                      const tree_nodeRef call = TreeM->GetTreeNode(index);
                      tree_nodeRef calledFunction = GetPointer<gimple_call>(call)->args[0];
@@ -1902,8 +1905,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory,
-                                        bool is_sds)
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_doubled, bool is_memory_splitted,
+                                        bool is_sparse_memory, bool is_sds)
 {
    auto* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
@@ -1919,10 +1922,10 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
    std::string init_filename = "array_ref_" + std::to_string(ar) + ".mem";
-   std::ofstream init_file_a((init_filename).c_str());
+   std::ofstream init_file_a(GetPath((init_filename).c_str()));
    std::ofstream init_file_b;
    if(is_memory_splitted)
-      init_file_b.open(("0_" + init_filename).c_str());
+      init_file_b.open(GetPath(("0_" + init_filename).c_str()));
    unsigned int elts_size;
    fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, ((is_doubled ? 2 : 1) * boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"))), is_memory_splitted, is_sds, fu_module);
    THROW_ASSERT(vec_size, "at least one element is expected");

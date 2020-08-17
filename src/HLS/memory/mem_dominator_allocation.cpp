@@ -70,9 +70,9 @@
 
 /// STL includes
 #include <algorithm>
+#include <boost/filesystem/operations.hpp>
 #include <list>
 #include <utility>
-#include <boost/filesystem/operations.hpp>
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
@@ -135,7 +135,7 @@ void mem_dominator_allocation::Initialize()
          }
       }
    }
-   for(auto XMLfilename: xml_files)
+   for(auto XMLfilename : xml_files)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
       XMLDomParser parser(XMLfilename);
@@ -198,15 +198,13 @@ void mem_dominator_allocation::Initialize()
             }
          }
          /// check xml consistency
-         for(auto user_obj: user_internal_objects)
+         for(auto user_obj : user_internal_objects)
          {
-            for(auto var_obj: user_obj.second)
+            for(auto var_obj : user_obj.second)
             {
-               if(user_external_objects.find(user_obj.first) != user_external_objects.end() &&
-                  user_external_objects.find(user_obj.first)->second.find(var_obj) != user_external_objects.find(user_obj.first)->second.end())
+               if(user_external_objects.find(user_obj.first) != user_external_objects.end() && user_external_objects.find(user_obj.first)->second.find(var_obj) != user_external_objects.find(user_obj.first)->second.end())
                   THROW_ERROR("An allocated object cannot be both internal and external: " + var_obj + " in function " + user_obj.first);
-               if(user_external_objects.find("*") != user_external_objects.end() &&
-                  user_external_objects.find("*")->second.find(var_obj) != user_external_objects.find("*")->second.end())
+               if(user_external_objects.find("*") != user_external_objects.end() && user_external_objects.find("*")->second.find(var_obj) != user_external_objects.find("*")->second.end())
                   THROW_ERROR("An allocated object cannot be both internal and external: " + var_obj + " in function " + user_obj.first);
             }
          }
@@ -232,7 +230,7 @@ std::vector<unsigned int> mem_dominator_allocation::getFunctionAllocationOrder(C
    return functionAllocationOrder;
 }
 
-bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std::string &var_name, const std::string &fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM)
+bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std::string& var_name, const std::string& fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM)
 {
    bool is_internal = false;
    if(user_external_objects.find(fun_name) != user_external_objects.end() && user_external_objects.find(fun_name)->second.find(var_name) != user_external_objects.find(fun_name)->second.end())
@@ -292,13 +290,11 @@ bool mem_dominator_allocation::is_internal_obj(unsigned int var_index, const std
    return is_internal;
 }
 
-
-
 /// check if current_vertex is a proxied function
 static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerConstRef CG, const HLS_managerRef HLSMgr)
 {
    unsigned int current_function_ID = CG->get_function(current_vertex);
-   std::string current_function_name = HLSMgr->CGetFunctionBehavior(current_function_ID)->CGetBehavioralHelper()->get_function_name();
+   std::string current_function_name = functions::get_function_name_cleaned(current_function_ID, HLSMgr);
    if(HLSMgr->Rfuns->is_a_proxied_function(current_function_name))
    {
       return CG->GetVertex(HLSMgr->Rfuns->get_proxy_mapping(current_function_name));
@@ -308,8 +304,9 @@ static vertex get_remapped_vertex(vertex current_vertex, const CallGraphManagerC
 
 DesignFlowStep_Status mem_dominator_allocation::InternalExec()
 {
-   long int step_time;
-   START_TIME(step_time);
+   long int step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Memory allocation information:");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
@@ -508,7 +505,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
                         for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
                         {
-                           if(*it == '0')
+                           if(*it == '0' || *it == 'X')
                               ++n_last_zerobits;
                            else
                               break;
@@ -542,7 +539,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
                         for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
                         {
-                           if(*it == '0')
+                           if(*it == '0' || *it == 'X')
                               ++n_last_zerobits;
                            else
                               break;
@@ -730,9 +727,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       for(boost::tie(eo, eo_end) = boost::out_edges(cur, *cg); eo != eo_end; ++eo)
       {
          vertex tgt = boost::target(*eo, *cg);
-         const FunctionBehaviorConstRef tgt_behavior = HLSMgr->CGetFunctionBehavior(CG->get_function(tgt));
-         const BehavioralHelperConstRef tgt_BH = tgt_behavior->CGetBehavioralHelper();
-         std::string tgt_fu_name = tgt_BH->get_function_name();
+         std::string tgt_fu_name = functions::get_function_name_cleaned(CG->get_function(tgt), HLSMgr);
          if(HLSMgr->Rfuns->is_a_proxied_function(tgt_fu_name) || (parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION && HLSMgr->hasToBeInterfaced(funID)))
          {
             num_instances[tgt] = 1;
@@ -1131,7 +1126,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       }
    }
 
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    finalize_memory_allocation();
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)

@@ -105,10 +105,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     * This member function adds the standard ports (clock, reset, done and command ones) to a circuit.
     * \param circuit it is the datastructure of the component where to add these ports
     */
-   virtual void add_common_ports(structural_objectRef circuit);
-
-   /// structural representation of the resulting controller circuit
-   structural_managerRef SM;
+   virtual void add_common_ports(structural_objectRef circuit, structural_managerRef SM);
 
    /// This contains all the ports that go from the controller to the datapath, used to enable the registers
    /// and to control muxes in the datapath. The first element in the map
@@ -118,12 +115,6 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    /// Initialized only after add_common_ports is called
    std::map<generic_objRef, unsigned int> out_ports;
 
-   /// These are the lines that go from the datapath to the controller containing results of conditions of
-   /// constructs such as for, if etc. The key is the object representing the port, while the value is the
-   /// integer value associated with the port.
-   /// Initialized only after add_common_ports is called
-   std::map<generic_objRef, unsigned int> in_ports;
-
    /// This is the same as in_ports except that the first element is of type vertex. Each element is obtained by
    /// calling GetPointer<commandport_obj>(j->second)->get_vertex() to the elements into in_ports. The second
    /// element is the same number of the generic_objRef into in_ports to which get_vertex() was called
@@ -131,15 +122,11 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    std::map<vertex, unsigned int> cond_ports;
    /// This map put into relation fsm states and alldone multi_unbounded ports
    std::map<vertex, unsigned int> mu_ports;
-   /// Map between the operation vertex and the corresponding control port
-   std::map<vertex, generic_objRef> cond_obj;
 
    /// Initialized after add_common_ports is called. It represents the current number of output ports
-   /// (out_num==out_ports.size())
    unsigned int out_num;
 
    /// Initialized after add_common_ports is called. It represents the current number of input ports
-   /// (in_num==in_ports.size()==cond_ports.size())
    unsigned int in_num;
 
  private:
@@ -147,20 +134,20 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     * Adds the clock and reset ports to a circuit. Called by add_common_ports
     * \param circuit the circuit where to add the clock and reset ports
     */
-   void add_clock_reset(structural_objectRef circuit);
+   void add_clock_reset(structural_objectRef circuit, structural_managerRef SM);
 
    /**
     * Adds the done port to a circuit. Called by add_common_ports
     * The done port appears to go high once all the calculation of a function are completed
     * \param circuit the circuit where to add the done port
     */
-   void add_done_port(structural_objectRef circuit);
+   void add_done_port(structural_objectRef circuit, structural_managerRef SM);
 
    /**
     * Adds the start port to a circuit. Called by add_common_ports
     * \param circuit the circuit where to add the start port
     */
-   void add_start_port(structural_objectRef circuit);
+   void add_start_port(structural_objectRef circuit, structural_managerRef SM);
 
    /**
     * Adds the command ports to a circuit. Called by add_common_ports
@@ -171,7 +158,7 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
     *   these go in the opposite direction, from the datapath to the controller
     * \param circuit the circuit where to add the command ports
     */
-   void add_command_ports(structural_objectRef circuit);
+   void add_command_ports(structural_objectRef circuit, structural_managerRef SM);
 };
 /// refcount definition for the class
 typedef refcount<ControllerCreatorBaseStep> ControllerCreatorBaseStepRef;

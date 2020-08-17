@@ -32,6 +32,26 @@ CXXFLAGS=
 CFLAGS_EXT=-O2
 CXXFLAGS_EXT=-O2
 CXXFLAGS_EXTFPLL=-O2
+CXXFLAGS_STD=-O2
+
+AC_ARG_ENABLE(clanglibcpp,         [  --enable-clanglibcpp         Clang is going to use libc++ ],                                                          [panda_clanglibcpp="$enableval"], [panda_clanglibcpp="no"])
+AC_ARG_ENABLE(oldclangabi,         [  --enable-oldclangabi         Clang plugins are compiled with the old abi ],                                           [panda_clangoldabi="$enableval"], [panda_clangoldabi="no"])
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  CXXFLAGS+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_EXT+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_EXT+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_STD+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_STD+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+fi
+
 
 # Check if compiler support c++17
 AC_COMPILE_STDCXX_17
@@ -48,25 +68,37 @@ if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes; then
       CXXFLAGS+=" --std=c++17 "
       CXXFLAGS_EXT+=" --std=c++17 "
-   else
-if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
-   if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
+      CXXFLAGS_STD+=" --std=c++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++17 "
+      CXXFLAGS_EXT+=" --std=g++17 "
+      CXXFLAGS_STD+=" --std=g++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes; then
+      CXXFLAGS+=" --std=c++1z "
+      CXXFLAGS_EXT+=" --std=c++1z "
+      CXXFLAGS_STD+=" --std=c++1z "
+   elif test "x$ac_cv_cxx_compile_cxx11_native" = xyes; then
+      CXXFLAGS+=" "
+      CXXFLAGS_EXT+=" "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
       CXXFLAGS_EXT+=" --std=c++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++11 "
+      CXXFLAGS_EXT+=" --std=g++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx1x" = xyes; then
+      CXXFLAGS+=" --std=c++1x "
+      CXXFLAGS_EXT+=" --std=c++1x "
+   elif test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
+      CXXFLAGS+=" --std=c++0x "
+      CXXFLAGS_EXT+=" --std=c++0x "
    else
-      if test "x$ac_cv_cxx_compile_cxx0x_native" != xyes; then
-         if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
-            CXXFLAGS+=" --std=c++0x "
-            CXXFLAGS_EXT+=" --std=c++0x "
-         else
-                  AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
-               fi
-            fi
-         fi
-      fi
+      AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
    fi
 fi
-AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes)
+AC_SUBST(CXXFLAGS_STD)
+AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes)
+
 
 AM_PO_SUBDIRS
 
@@ -970,6 +1002,13 @@ if test "x$panda_USE_TASTE" = xyes; then
    panda_USE_LIB_FROM_AADL_ASN=yes;
 fi
 
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, " -stdlib=libc++ ", "Define extra compiler options")
+else
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, "", "Define extra compiler options")
+fi
+
 ###################### Release and experimental checking #######################
 if test "x$panda_RELEASE" = xyes; then
   AC_DEFINE(RELEASE, 1, "Define if a release is built")
@@ -1495,6 +1534,7 @@ AC_CONFIG_FILES(
                  Makefile
                  panda_regressions/Makefile
                  panda_regressions/hls/Makefile
+                 panda_unit/Makefile
                  examples/Makefile
                  documentation/Makefile
                  documentation/img/Makefile
@@ -1504,6 +1544,7 @@ AC_CONFIG_FILES(
                  style/img/Makefile
                  style/img/panda.png
                  style/img/logoPoli.gif
+                 Appimage/Makefile
                )
 
 ################################################################################
@@ -2507,6 +2548,10 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    if test "x$MIN_GCC_VERSION" = "x"; then
       AC_MSG_ERROR("Oldest supported version of I386 gcc not set")
    fi
+   EXTRA_CLANG_OPTIONS=
+   if test "x$panda_clangoldabi" = xyes; then
+     EXTRA_CLANG_OPTIONS=-D_GLIBCXX_USE_CXX11_ABI=0
+   fi
    AC_CHECK_GCC_PLUGIN_DIR
    AC_CHECK_GCC45_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC46_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
@@ -2518,12 +2563,12 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    AC_CHECK_GCC7_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC8_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_CLANG_PLUGIN_DIR
-   AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG6_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG7_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG8_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG9_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
+   AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG6_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG7_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG8_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG9_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
 
    if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x && test "x$I386_GCC8_PLUGIN_COMPILER" = x && test "x$I386_CLANG4_PLUGIN_COMPILER" = x && test "x$I386_CLANG5_PLUGIN_COMPILER" = x && test "x$I386_CLANG6_PLUGIN_COMPILER" = x && test "x$I386_CLANG7_PLUGIN_COMPILER" = x && test "x$I386_CLANG8_PLUGIN_COMPILER" = x && test "x$I386_CLANG9_PLUGIN_COMPILER" = x; then
       AC_MSG_ERROR("gcc with support to -m32 and plugin not found")
@@ -2816,7 +2861,7 @@ fi
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
   AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic "
+  CXXFLAGS+=" -g3 "
   AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
 fi
 

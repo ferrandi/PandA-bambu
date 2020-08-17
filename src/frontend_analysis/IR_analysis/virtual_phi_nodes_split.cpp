@@ -113,6 +113,8 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
       raw_file << TM;
       raw_file.close();
    }
+   /// Basic block splitting information: if replace[source, target] exists, then between source and target replace[source, target] has been inserted
+   std::map<std::pair<unsigned int, unsigned int>, unsigned int> replace;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
@@ -125,7 +127,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
       blocRef& bb_block = iit->second;
       for(const auto& phi : bb_block->CGetPhiList())
       {
-         virtual_split_phi(phi, bb_block, list_of_bloc, TM);
+         virtual_split_phi(phi, bb_block, list_of_bloc, TM, replace);
       }
    }
 
@@ -141,7 +143,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM)
+void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM, std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + boost::lexical_cast<std::string>(GET_INDEX_NODE(tree_phi)));
    auto* phi = GetPointer<gimple_phi>(GET_NODE(tree_phi));

@@ -21,6 +21,11 @@
 #ifndef ABC__sat__bsat__satMem_h
 #define ABC__sat__bsat__satMem_h
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable: 4200)
+#endif
+
 ////////////////////////////////////////////////////////////////////////
 ///                          INCLUDES                                ///
 ////////////////////////////////////////////////////////////////////////
@@ -467,6 +472,10 @@ static inline int Sat_MemCompactLearned( Sat_Mem_t * p, int fDoMove )
 
 
 ABC_NAMESPACE_HEADER_END
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif
 

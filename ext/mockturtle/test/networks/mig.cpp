@@ -514,7 +514,7 @@ TEST_CASE( "custom node values in MIGs", "[mig]" )
   mig.clear_values();
   mig.foreach_node( [&]( auto n ) {
     CHECK( mig.value( n ) == 0 );
-    mig.set_value( n, n );
+    mig.set_value( n, static_cast<uint32_t>( n ) );
     CHECK( mig.value( n ) == n );
     CHECK( mig.incr_value( n ) == n );
     CHECK( mig.value( n ) == n + 1 );
@@ -548,7 +548,7 @@ TEST_CASE( "visited values in MIGs", "[mig]" )
   mig.clear_visited();
   mig.foreach_node( [&]( auto n ) {
     CHECK( mig.visited( n ) == 0 );
-    mig.set_visited( n, n );
+    mig.set_visited( n, static_cast<uint32_t>( n ) );
     CHECK( mig.visited( n ) == n );
   } );
   mig.clear_visited();

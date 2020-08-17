@@ -240,22 +240,26 @@ DesignFlowStep_Status vcd_utility::Exec()
 
    std::string vcd_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/test.vcd";
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing vcd file " + vcd_filename);
-   long vcd_parse_time;
-   START_TIME(vcd_parse_time);
+   long vcd_parse_time = 0;
+   if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      START_TIME(vcd_parse_time);
    /* create vcd parser obj */
    vcd_parser vcd_parser(parameters);
    /* parse the selected signals */
    vcd_parser::vcd_trace_t vcd_trace = vcd_parser.parse_vcd(vcd_filename, HLSMgr->RDiscr->selected_vcd_signals);
 
-   STOP_TIME(vcd_parse_time);
+   if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      STOP_TIME(vcd_parse_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed vcd file " + vcd_filename + " in " + print_cpu_time(vcd_parse_time) + " seconds");
    /* parse the discrepancy trace coming from C execution */
    const std::string& discrepancy_data_filename = HLSMgr->RDiscr->c_trace_filename;
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing C trace file " + discrepancy_data_filename);
-   long ctrace_parse_time;
-   START_TIME(ctrace_parse_time);
+   long ctrace_parse_time = 0;
+   if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      START_TIME(ctrace_parse_time);
    parse_discrepancy(discrepancy_data_filename, Discr);
-   STOP_TIME(ctrace_parse_time);
+   if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      STOP_TIME(ctrace_parse_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed C trace file " + discrepancy_data_filename + " in " + print_cpu_time(ctrace_parse_time) + " seconds");
 
    auto& c_op_trace = Discr->c_op_trace;
@@ -280,8 +284,9 @@ DesignFlowStep_Status vcd_utility::Exec()
    std::map<unsigned int, std::map<std::string, struct vcd_trace_head>> op_id_to_scope_to_vcd_head;
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Starting discrepancy analysis");
-   long discrepancy_time;
-   START_TIME(discrepancy_time);
+   long discrepancy_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM)
+      START_TIME(discrepancy_time);
    for(const auto& c : c_op_trace)
    {
       const DiscrepancyOpInfo& op_info = c.first;
@@ -401,7 +406,8 @@ DesignFlowStep_Status vcd_utility::Exec()
       }
    }
 
-   STOP_TIME(discrepancy_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM)
+      STOP_TIME(discrepancy_time);
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Discrepancy analysis executed in " + print_cpu_time(discrepancy_time) + " seconds");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Possibly lost address checks = " + STR(possibly_lost_address));
 

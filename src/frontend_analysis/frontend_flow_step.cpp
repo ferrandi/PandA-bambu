@@ -255,6 +255,10 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
       case(DYNAMIC_VAR_COMPUTATION):
          return "DynamicVarComputation";
 #endif
+#if HAVE_BAMBU_BUILT
+      case ESSA:
+         return "eSSA";
+#endif
 #if HAVE_BAMBU_BUILT && HAVE_EXPERIMENTAL
       case(EXTENDED_PDG_COMPUTATION):
          return "ExtendedPdgComputation";
@@ -282,6 +286,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #if HAVE_BAMBU_BUILT
       case FIX_STRUCTS_PASSED_BY_VALUE:
          return "FixStructsPassedByValue";
+      case FUNCTION_PARM_MASK:
+         return "FunctionParmMask";
       case FUNCTION_CALL_TYPE_CLEANUP:
          return "FunctionCallTypeCleanup";
 #endif
@@ -410,6 +416,8 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "ProbabilityPath";
 #endif
 #if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
+         return "RangeAnalysis";
       case(REBUILD_INITIALIZATION):
          return "RebuildInitialization";
       case(REBUILD_INITIALIZATION2):
@@ -461,8 +469,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
          return "SimpleCodeMotion";
       case(SOFT_FLOAT_CG_EXT):
          return "SoftFloatCgExt";
-      case(CONSTANT_FLOP_WRAPPER):
-         return "ConstantFlopWrapper";
 #endif
 #if HAVE_ZEBU_BUILT
       case(SOURCE_CODE_STATISTICS):

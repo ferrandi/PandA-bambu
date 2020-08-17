@@ -50,6 +50,8 @@ tree* VRP_max_array=0;
 bool* p_VRP_min=0;
 bool* p_VRP_max=0;
 
+char dump_base_name_trimmed[1024];
+
 void set_num_vr_values(unsigned int n)
 {
   num_vr_values = n;
@@ -642,6 +644,17 @@ SerializeGimpleEnd()
 unsigned int
 gimplePssa (void)
 {
+   size_t nc = strlen(dump_base_name);
+   size_t nc_index=0;
+   size_t last_slash=0;
+   while (nc_index<nc)
+   {
+      if(dump_base_name[nc_index] == '/')
+         last_slash = nc_index+1;
+      ++nc_index;
+   }
+   strcpy(dump_base_name_trimmed, dump_base_name+last_slash);
+
    /* dummy pass */
    if (!(cfun->curr_properties & PROP_cfg))
       fatal_error(INLOC "PROP_cfg marked in the pass descriptor but not found");
@@ -653,7 +666,7 @@ gimplePssa (void)
    if(cfun->cfg && basic_block_info)
 #endif
    {
-      char * name = concat (outdir_name, "/", dump_base_name, ".gimplePSSA", NULL);
+      char * name = concat (outdir_name, "/", dump_base_name_trimmed, ".gimplePSSA", NULL);
       bool has_loop = current_loops != NULL;
       if(!has_loop)
          loop_optimizer_init (AVOID_CFG_MODIFICATIONS);
@@ -3536,7 +3549,18 @@ build_custom_function_call_expr_internal_fn (location_t loc, internal_fn fn, tre
  */
 void serialize_global_variable(void * gcc_data, void * user_data)
 {
-   char * name = concat ((char *)user_data, "/", dump_base_name, ".001t.tu", NULL);
+   size_t nc = strlen(dump_base_name);
+   size_t nc_index=0;
+   size_t last_slash=0;
+   while (nc_index<nc)
+   {
+      if(dump_base_name[nc_index] == '/')
+         last_slash = nc_index+1;
+      ++nc_index;
+   }
+   strcpy(dump_base_name_trimmed, dump_base_name+last_slash);
+
+   char * name = concat ((char *)user_data, "/", dump_base_name_trimmed, ".001t.tu", NULL);
    SerializeGimpleBegin(name);
    serialize_globals();
    SerializeGimpleEnd();

@@ -239,24 +239,23 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          int initiation_time = FB->get_initiation_time();
          THROW_ASSERT(loop->num_blocks() != 1, "The loop has more than one basic block");
          auto bbs = loop->get_blocks();
-         for (auto bb : bbs)
+         for(auto bb : bbs)
          {
-            for (auto s_pair : HLS->STG->GetAstg()->GetStateTransitionGraphInfo()->vertex_to_state_id)
+            for(auto s_pair : HLS->STG->GetAstg()->GetStateTransitionGraphInfo()->vertex_to_state_id)
             {
                auto ids = HLS->STG->CGetAstg()->CGetStateInfo(std::get<0>(s_pair))->BB_ids;
-               for (auto id : ids)
+               for(auto id : ids)
                {
                   if(id == HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->get_bb_index())
                   {
-                     if(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != 0 && 
-                                 HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id)
+                     if(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != 0 && HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id)
                         THROW_ERROR("Attempting to change the loopId of state " + HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name);
                      HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId = HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id;
                   }
                }
             }
          }
-         
+
          bool cond1 = false;
          bool cond2 = false;
          if(bbs.find(bb_1) != bbs.end())

@@ -44,6 +44,8 @@
 /// Header include
 #include "ASICBackendFlow.hpp"
 
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+
 #include "DesignCompilerWrapper.hpp"
 #include "SynthesisTool.hpp"
 
@@ -61,9 +63,7 @@ ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::stri
 {
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating ASIC Backend Flow ::.");
 
-   default_data["Nangate"] =
-#include "Nangate.data"
-       ;
+   default_data["Nangate"] = "Nangate.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
@@ -77,7 +77,7 @@ ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::stri
    else
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing default scripts for target technology: \"Nangate\"");
-      parser = XMLDomParserRef(new XMLDomParser("Nangate", default_data["Nangate"]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data["Nangate"]));
    }
    parse_flow(parser);
 }

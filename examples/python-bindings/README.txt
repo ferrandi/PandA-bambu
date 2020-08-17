@@ -13,7 +13,7 @@ which internally calls the python golden reference. Once the user has
 setup the python golden reference and the C wrapper used to call it,
 then it is possible to run bambu with the following options:
 
-bambu main.c user_module.xml
+timeout 2h bambu main.c user_module.xml
   --C-python-no-parse=c_wrapper_for_golden.c
   --testbench-extra-gcc-options=" -I includedir/for/python2.7/ -lpython2.7 " --simulate
 

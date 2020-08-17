@@ -47,6 +47,7 @@
 #include "AlteraBackendFlow.hpp"
 
 /// Autoheader includes
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 #include "config_QUARTUS_13_SETTINGS.hpp"
 #include "config_QUARTUS_SETTINGS.hpp"
 
@@ -87,23 +88,13 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Altera Backend Flow ::.");
 
-   default_data["CycloneII"] =
-#include "CycloneII.data"
-       ;
+   default_data["CycloneII"] = "CycloneII.data";
 
-   default_data["CycloneII-R"] =
-#include "CycloneII-R.data"
-       ;
+   default_data["CycloneII-R"] = "CycloneII-R.data";
 
-   default_data["CycloneV"] =
-#include "CycloneV.data"
-       ;
-   default_data["StratixV"] =
-#include "StratixV.data"
-       ;
-   default_data["StratixIV"] =
-#include "StratixIV.data"
-       ;
+   default_data["CycloneV"] = "CycloneV.data";
+   default_data["StratixV"] = "StratixV.data";
+   default_data["StratixIV"] = "StratixIV.data";
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
@@ -124,7 +115,7 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
       if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/altera/") + default_data[device_string]));
    }
    parse_flow(parser);
 }

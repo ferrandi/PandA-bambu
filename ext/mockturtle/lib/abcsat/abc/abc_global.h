@@ -26,16 +26,18 @@
 ////////////////////////////////////////////////////////////////////////
 
 #include <cstdint>
-#ifdef _WIN32
-#ifndef __MINGW32__
+#ifdef _MSC_VER
 //#define inline __inline // compatible with MS VS 6.0
+#pragma warning(push)
 #pragma warning(disable : 4152) // warning C4152: nonstandard extension, function/data pointer conversion in expression
 #pragma warning(disable : 4200) // warning C4200: nonstandard extension used : zero-sized array in struct/union
 #pragma warning(disable : 4244) // warning C4244: '+=' : conversion from 'int ' to 'unsigned short ', possible loss of data
+#pragma warning(disable : 4302) // warning C4302: 'type cast': truncation from 'void *' to 'pabc::ABC_PTRINT_T'
+#pragma warning(disable : 4311) // warning C4311: 'type cast': pointer truncation from 'void *' to 'pabc::ABC_PTRINT_T'
+#pragma warning(disable : 4312) // warning C4312: 'type cast': conversion from 'pabc::ABC_PTRINT_T' to 'void *' of greater size
 #pragma warning(disable : 4514) // warning C4514: 'Vec_StrPop' : unreferenced inline function has been removed
 #pragma warning(disable : 4710) // warning C4710: function 'Vec_PtrGrow' not inlined
 //#pragma warning( disable : 4273 )
-#endif
 #endif
 
 #ifdef WIN32
@@ -244,10 +246,10 @@ static inline int      Abc_LitRegular( int Lit )              { assert(Lit >= 0)
 static inline int      Abc_Lit2LitV( int * pMap, int Lit )    { assert(Lit >= 0); return Abc_Var2Lit( pMap[Abc_Lit2Var(Lit)], Abc_LitIsCompl(Lit) );      }
 static inline int      Abc_Lit2LitL( int * pMap, int Lit )    { assert(Lit >= 0); return Abc_LitNotCond( pMap[Abc_Lit2Var(Lit)], Abc_LitIsCompl(Lit) );   }
 
-//static inline int      Abc_Ptr2Int( void * p )                { return (int)(ABC_PTRINT_T)p;      }
-//static inline void *   Abc_Int2Ptr( int i )                   { return (void *)(ABC_PTRINT_T)i;   }
-//static inline word     Abc_Ptr2Wrd( void * p )                { return (word)(ABC_PTRUINT_T)p;    }
-//static inline void *   Abc_Wrd2Ptr( word i )                  { return (void *)(ABC_PTRUINT_T)i;  }
+static inline int      Abc_Ptr2Int( void * p )                { return (int)(ABC_PTRINT_T)p;      }
+static inline void *   Abc_Int2Ptr( int i )                   { return (void *)(ABC_PTRINT_T)i;   }
+static inline word     Abc_Ptr2Wrd( void * p )                { return (word)(ABC_PTRUINT_T)p;    }
+static inline void *   Abc_Wrd2Ptr( word i )                  { return (void *)(ABC_PTRUINT_T)i;  }
 
 static inline int      Abc_Var2Lit2( int Var, int Att )       { assert(!(Att >> 2)); return (Var << 2) + Att; }
 static inline int      Abc_Lit2Var2( int Lit )                { assert(Lit >= 0);    return Lit >> 2;         }
@@ -408,6 +410,10 @@ extern int *  Abc_QuickSortCost( int * pCosts, int nSize, int fDecrease );
 
 
 ABC_NAMESPACE_HEADER_END
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif
 

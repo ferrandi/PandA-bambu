@@ -245,13 +245,45 @@ inline std::string GetExtension(const char* file)
 
 inline std::string GetCurrentPath()
 {
-   std::string current_dir = boost::filesystem::current_path().string();
+   std::string current_dir;
+   if(getenv("OWD"))
+      current_dir = getenv("OWD");
+   else
+      current_dir = boost::filesystem::current_path().string();
 #ifdef _WIN32
    boost::replace_all(current_dir, "\\", "/");
 #endif
    return current_dir;
 }
 
+inline std::string GetPath(const std::string& path)
+{
+   boost::filesystem::path local_path_file = path;
+   if(local_path_file.is_relative())
+      local_path_file = boost::filesystem::path(GetCurrentPath()) / local_path_file;
+   return local_path_file.string();
+}
+
+inline std::string relocate_compiler_path(const std::string& path)
+{
+   if(getenv("MINGW_INST_DIR"))
+   {
+      std::string app_prefix = getenv("MINGW_INST_DIR");
+      return app_prefix + path;
+   }
+   else if(getenv("APPDIR"))
+   {
+      std::string app_prefix = getenv("APPDIR");
+      return app_prefix + path;
+   }
+#ifdef _WIN32
+   else
+      return "c:/msys64/" + path;
+#else
+   else
+      return path;
+#endif
+}
 inline bool ExistFile(const std::string& file)
 {
    return boost::filesystem::exists(file);
@@ -301,7 +333,7 @@ inline std::string BuildPath(const std::string& first_part, const std::string se
 inline int PandaSystem(const ParameterConstRef Param, const std::string& system_command, const std::string& output = "", const unsigned int type = 3, const bool background = false, const size_t timeout = 0)
 {
    static size_t counter = 0;
-   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file + "_" + boost::lexical_cast<std::string>(counter) : output;
+   const std::string actual_output = output == "" ? Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file + "_" + boost::lexical_cast<std::string>(counter) : GetPath(output);
    const std::string script_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_script + "_" + boost::lexical_cast<std::string>(counter++);
    counter++;
    std::ofstream script_file(script_file_name.c_str());

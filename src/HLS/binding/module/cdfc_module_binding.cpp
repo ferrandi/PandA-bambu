@@ -831,8 +831,9 @@ static inline bool compute_condition2(bool cond1, unsigned int fu_prec, double r
 
 DesignFlowStep_Status cdfc_module_binding::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    HLS->Rliv->set_HLS(HLS);
 
@@ -940,7 +941,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       connection_relation con_rel;
       initialize_connection_relation(con_rel, all_candidate_vertices);
       boost_cdfc_graphRef cdfc_bulk_graph = boost_cdfc_graphRef(new boost_cdfc_graph());
-      START_TIME(slack_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         START_TIME(slack_cputime);
       // std::map<size_t,CustomOrderedSet<vertex> >chained_relation;
       std::list<vertex> sorted_vertices;
       sdg->TopologicalSort(sorted_vertices);
@@ -1037,7 +1039,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-      STOP_TIME(slack_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         STOP_TIME(slack_cputime);
 
       boost::graph_traits<graph>::vertices_size_type n_vert = boost::num_vertices(*fdfg);
       std::vector<boost::graph_traits<OpGraph>::vertices_size_type> rank_map(n_vert);
@@ -1229,7 +1232,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       hc.exec();
 #endif
 
-      START_TIME(weight_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         START_TIME(weight_cputime);
 
       int _w = 1;
 
@@ -1342,7 +1346,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered fu " + allocation_information->get_fu_name(fu_s1).first);
       }
-      STOP_TIME(weight_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         STOP_TIME(weight_cputime);
 
       const cdfc_graphRef CG = cdfc_graphRef(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(COMPATIBILITY_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>()));
       const cdfc_graphConstRef CD_chained_graph = cdfc_graphConstRef(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(CD_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>()));
@@ -1372,7 +1377,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// remove all cycles from the cdfc graph
       const cdfc_graphConstRef cdfc = cdfc_graphConstRef(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(CD_EDGE | COMPATIBILITY_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>()));
 
-      START_TIME(falseloop_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         START_TIME(falseloop_cputime);
 
       unsigned int k = 2;
       std::deque<cdfc_edge> candidate_edges;
@@ -1474,7 +1480,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       } while(restart);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Looked for loops in compatibility graphs");
 
-      STOP_TIME(falseloop_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         STOP_TIME(falseloop_cputime);
 
       if(parameters->getOption<bool>(OPT_print_dot))
       {
@@ -1512,7 +1519,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          }
       }
 
-      START_TIME(clique_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         START_TIME(clique_cputime);
 
       /// solve the binding problem for all the partitions
       const unsigned int number_of_iterations = 10;
@@ -1571,7 +1579,9 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             regb->Exec();
          }
 
-         START_TIME(clique_iteration_cputime[iteration]);
+         clique_iteration_cputime[iteration] = 0;
+         if(output_level >= OUTPUT_LEVEL_VERBOSE)
+            START_TIME(clique_iteration_cputime[iteration]);
          for(const auto partition : partitions)
          {
             THROW_ASSERT(partition.second.size() > 1, "bad projection");
@@ -1920,7 +1930,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
             total_area_muxes_best = total_area_muxes;
             total_DSPs_best = total_DSPs;
          }
-         STOP_TIME(clique_iteration_cputime[iteration]);
+         if(output_level >= OUTPUT_LEVEL_VERBOSE)
+            STOP_TIME(clique_iteration_cputime[iteration]);
       }
       std::swap(fu_best, fu);
       std::swap(total_modules_allocated_best, total_modules_allocated);
@@ -1928,7 +1939,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       std::swap(total_area_muxes_best, total_area_muxes);
       std::swap(total_DSPs_best, total_DSPs);
       clique_covering_executed = true;
-      STOP_TIME(clique_cputime);
+      if(output_level >= OUTPUT_LEVEL_MINIMUM)
+         STOP_TIME(clique_cputime);
    }
 
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
@@ -1960,7 +1972,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
       }
    }
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform module binding: " + print_cpu_time(step_time) + " seconds");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");

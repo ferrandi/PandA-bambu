@@ -4838,6 +4838,8 @@ namespace RangeAnalysis
          // Create the interval using the intersection in the branch.
          CmpInst::Predicate pred = ici->getPredicate();
          CmpInst::Predicate invPred = ici->getInversePredicate();
+         CmpInst::Predicate swapPred = ici->getSwappedPredicate();
+         CmpInst::Predicate invSwapPred = CmpInst::getInversePredicate(swapPred);
          assert(Op0->getType()->getPrimitiveSizeInBits() == Op1->getType()->getPrimitiveSizeInBits());
          Range CR(Unknown, Op0->getType()->getPrimitiveSizeInBits());
 
@@ -4854,16 +4856,16 @@ namespace RangeAnalysis
          {
             const Value* Op0_0 = castinst->getOperand(0);
 
-            std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op1, pred));
-            std::shared_ptr<BasicInterval> SFOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op1, invPred));
+            std::shared_ptr<BasicInterval> STOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op1, pred));
+            std::shared_ptr<BasicInterval> SFOp0_0 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op1, invPred));
 
-            ValueBranchMap VBMOp1_1(Op0_0, TBlock, FBlock, STOp1_1, SFOp1_1);
-            valuesBranchMap.insert(std::make_pair(Op0_0, VBMOp1_1));
+            ValueBranchMap VBMOp0_0(Op0_0, TBlock, FBlock, STOp0_0, SFOp0_0);
+            valuesBranchMap.insert(std::make_pair(Op0_0, VBMOp0_0));
          }
 
          // Symbolic intervals for op1
-         std::shared_ptr<BasicInterval> STOp1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, invPred));
-         std::shared_ptr<BasicInterval> SFOp1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, pred));
+         std::shared_ptr<BasicInterval> STOp1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, swapPred));
+         std::shared_ptr<BasicInterval> SFOp1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, invSwapPred));
          ValueBranchMap VBMOp1(Op1, TBlock, FBlock, STOp1, SFOp1);
          valuesBranchMap.insert(std::make_pair(Op1, VBMOp1));
 
@@ -4871,13 +4873,13 @@ namespace RangeAnalysis
          castinst = nullptr;
          if((castinst = dyn_cast<CastInst>(Op1)) != nullptr)
          {
-            const Value* Op0_0 = castinst->getOperand(0);
+            const Value* Op1_1 = castinst->getOperand(0);
 
-            std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op1, pred));
-            std::shared_ptr<BasicInterval> SFOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op1, invPred));
+            std::shared_ptr<BasicInterval> STOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, swapPred));
+            std::shared_ptr<BasicInterval> SFOp1_1 = std::shared_ptr<BasicInterval>(new SymbInterval(CR, Op0, invSwapPred));
 
-            ValueBranchMap VBMOp1_1(Op0_0, TBlock, FBlock, STOp1_1, SFOp1_1);
-            valuesBranchMap.insert(std::make_pair(Op0_0, VBMOp1_1));
+            ValueBranchMap VBMOp1_1(Op1_1, TBlock, FBlock, STOp1_1, SFOp1_1);
+            valuesBranchMap.insert(std::make_pair(Op1_1, VBMOp1_1));
          }
       }
    }

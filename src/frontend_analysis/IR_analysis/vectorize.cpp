@@ -1443,7 +1443,13 @@ DesignFlowStep_Status Vectorize::InternalExec()
       }
    }
 
+   iv_increment.clear();
+   simd_loop_type.clear();
+   loop_parallel_degree.clear();
+   basic_block_divergence.clear();
+   transformations.clear();
    function_behavior->UpdateBBVersion();
+   guards.clear();
    return DesignFlowStep_Status::SUCCESS;
 }
 

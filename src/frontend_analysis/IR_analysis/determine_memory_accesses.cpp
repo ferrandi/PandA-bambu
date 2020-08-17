@@ -153,9 +153,12 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
       }
    }
 
-   if(debug_level >= DEBUG_LEVEL_PEDANTIC or parameters->getOption<bool>(OPT_print_dot))
+   if(debug_level >= DEBUG_LEVEL_PEDANTIC && parameters->getOption<bool>(OPT_print_dot))
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_memory_analysis.dot");
    already_executed = true;
+   /// mem clean up
+   already_visited_ae.clear();
+   already_visited.clear();
    return DesignFlowStep_Status::SUCCESS;
 }
 

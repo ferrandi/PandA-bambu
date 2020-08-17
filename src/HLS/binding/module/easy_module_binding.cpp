@@ -134,8 +134,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status easy_module_binding::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    const auto TM = HLSMgr->get_tree_manager();
    // resource binding and allocation  info
    fu_binding& fu = *(HLS->Rfu);
@@ -209,45 +210,14 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
                               "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first + "(0)");
             }
          }
-         auto tn = HLS->allocation_information->get_fu(fu_unit);
-         if(GetPointer<functional_unit>(tn))
-         {
-            if(GetPointer<functional_unit>(tn)->CM)
-            {
-               auto fuUnitModule = GetPointer<functional_unit>(tn)->CM->get_circ();
-               if(GetPointer<module>(fuUnitModule))
-               {
-                  auto multiplicity = GetPointer<module>(fuUnitModule)->get_multi_unit_multiplicity();
-                  if(multiplicity)
-                  {
-                     auto& ops = GetPointer<functional_unit>(tn)->get_operations();
-                     auto index = 0u;
-                     for(auto o : ops)
-                     {
-                        if(GetPointer<operation>(o)->get_name() == sdg->CGetOpNodeInfo(op)->GetOperation())
-                           break;
-                        ++index;
-                     }
-                     index = index % multiplicity;
-                     fu.bind(op, fu_unit, index);
-                     easy_bound_vertices.insert(op);
-                     const auto node_id = sdg->CGetOpNodeInfo(op)->GetNodeId();
-                     if(node_id)
-                     {
-                        INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level,
-                                       "---" + GET_NAME(sdg, op) + "(" + (node_id == ENTRY_ID ? "ENTRY" : (node_id == EXIT_ID ? "EXIT" : TM->get_tree_node_const(node_id)->ToString())) + ") bound to " + allocation_information->get_fu_name(fu_unit).first +
-                                           "(" + STR(index) + ")");
-                     }
-                  }
-               }
-            }
-         }
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Bound operations:" + STR(easy_bound_vertices.size()) + "/" + STR(boost::num_vertices(*sdg)));
    }
-   STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
+      STOP_TIME(step_time);
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform easy binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");

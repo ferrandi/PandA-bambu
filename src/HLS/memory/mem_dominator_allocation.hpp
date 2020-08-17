@@ -56,7 +56,6 @@ REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(CallGraphManager);
 //@}
 
-
 class mem_dominator_allocation : public memory_allocation
 {
  protected:
@@ -70,7 +69,7 @@ class mem_dominator_allocation : public memory_allocation
    std::map<std::string, std::set<std::string>> user_external_objects;
 
    /// function checking if the current variable has to allocated inside the accelerator or outside
-   virtual bool is_internal_obj(unsigned int var_index, const std::string &var_name, const std::string &fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM);
+   virtual bool is_internal_obj(unsigned int var_index, const std::string& var_name, const std::string& fun_name, bool multiple_top_call_graph, const tree_managerRef TreeM);
 
  public:
    /**

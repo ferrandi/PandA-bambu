@@ -81,9 +81,9 @@
 /// STL include
 #include "custom_map.hpp"
 #include "custom_set.hpp"
+#include <boost/filesystem/operations.hpp>
 #include <list>
 #include <vector>
-#include <boost/filesystem/operations.hpp>
 
 /// technology/physical_library include
 #include "technology_node.hpp"
@@ -128,6 +128,7 @@ void HLSCWriter::WriteHeader()
       indented_output_stream->Append("#include <stdlib.h>\n\n");
    indented_output_stream->Append("extern void exit(int status);\n");
    indented_output_stream->Append("#endif\n\n");
+   indented_output_stream->Append("#include <sys/types.h>\n");
 
    if(flag_cpp)
    {
@@ -163,7 +164,7 @@ void HLSCWriter::WriteGlobalDeclarations()
 
 void HLSCWriter::WriteTestbenchGlobalVars()
 {
-   // global variables for tesbench
+   // global variables for testbench
    indented_output_stream->Append("//global variable used to store the output file\n");
    indented_output_stream->Append("FILE * __bambu_testbench_fp;\n\n");
 }
@@ -437,12 +438,33 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
             else
                temp_variable.insert(first_square, "_temp[]");
          }
-         auto temp_initialization = temp_variable + " = " + ((test_v.front() != '{' && test_v.back() != '}' && is_a_true_pointer) ? "{" + test_v + "}" : test_v) + ";\n";
 
-         unsigned int base_type = tree_helper::get_type_index(TM, p);
-         tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-         indented_output_stream->Append(temp_initialization);
-         indented_output_stream->Append(param + " = " + param + "_temp;\n");
+         if(test_v.size() > 4 && test_v.substr(test_v.size() - 4) == ".dat")
+         {
+            var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
+            std::string type_declaration = tree_helper::print_type(TM, type_id, false, false, false, p, var_functor);
+            type_declaration = type_declaration.substr(0, type_declaration.find('*') + 1);
+            const auto fp = param + "_fp";
+            indented_output_stream->Append("FILE* " + fp + " = fopen(\"" + test_v + "\", \"rb\");\n");
+            indented_output_stream->Append("fseek(" + fp + ", 0, SEEK_END);\n");
+            indented_output_stream->Append("size_t " + param + "_size = ftell(" + fp + ");\n");
+            indented_output_stream->Append("fseek(" + fp + ", 0, SEEK_SET);\n");
+            indented_output_stream->Append("unsigned char* " + param + "_buf = (unsigned char*)malloc(" + param + "_size);\n");
+            indented_output_stream->Append("if(fread(" + param + "_buf, sizeof *" + param + "_buf, " + param + "_size, " + fp + ") != " + param + "_size)\n");
+            indented_output_stream->Append("{\n");
+            indented_output_stream->Append("fclose(" + fp + ");\n");
+            indented_output_stream->Append("printf(\"Unable to read " + test_v + " to initialise parameter " + param + "\");\n");
+            indented_output_stream->Append("exit(-1);\n");
+            indented_output_stream->Append("}\n");
+            indented_output_stream->Append("fclose(" + fp + ");\n");
+            indented_output_stream->Append(param + " = (" + type_declaration + ")" + param + "_buf;\n");
+         }
+         else
+         {
+            auto temp_initialization = temp_variable + " = " + ((test_v.front() != '{' && test_v.back() != '}' && is_a_true_pointer) ? "{" + test_v + "}" : test_v) + ";\n";
+            indented_output_stream->Append(temp_initialization);
+            indented_output_stream->Append(param + " = " + param + "_temp;\n");
+         }
 
          std::string memory_addr;
          THROW_ASSERT(hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.find(p) != hls_c_backend_information->HLSMgr->RSim->param_address.find(v_idx)->second.end(), "parameter does not have an address");
@@ -943,14 +965,14 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   do
                   {
                      candidate_out_file_name = output_parameter_initialization_filename + param_name + "_" + std::to_string(progressive++) + ".data";
-                  } while (boost::filesystem::exists(candidate_out_file_name));
+                  } while(boost::filesystem::exists(candidate_out_file_name));
                   output_parameter_initialization_filename = candidate_out_file_name;
                   std::ofstream parameter_init_file(output_parameter_initialization_filename.c_str());
                   for(unsigned int i = 0; i < splitted.size(); i++)
                   {
                      THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
                      std::string initial_string = splitted[i];
-                     printed_bytes += WriteBinaryMemoryInitToFile(parameter_init_file,initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
+                     printed_bytes += WriteBinaryMemoryInitToFile(parameter_init_file, initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
                   }
                   indented_output_stream->Append("{\n");
                   indented_output_stream->Append("FILE * __bambu_testbench_fp_local_copy;\n");
@@ -1268,7 +1290,7 @@ size_t HLSCWriter::WriteBinaryMemoryInit(const std::string& binary_string, const
    return printed_bytes;
 }
 
-size_t HLSCWriter::WriteBinaryMemoryInitToFile(std::ofstream &parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset)
+size_t HLSCWriter::WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset)
 {
    size_t printed_bytes = 0;
    std::string local_binary_string;
@@ -1308,7 +1330,6 @@ size_t HLSCWriter::WriteBinaryMemoryInitToFile(std::ofstream &parameter_init_fil
    }
    return printed_bytes;
 }
-
 
 bool HLSCWriter::is_all_8zeros(const std::string& str)
 {

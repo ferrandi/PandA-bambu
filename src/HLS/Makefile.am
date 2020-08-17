@@ -278,6 +278,7 @@ lib_modulebinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/algorithms/bipartite_matching \
    -I$(top_srcdir)/src/behavior  \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants  \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/graph \
@@ -1021,6 +1022,7 @@ lib_vcd_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants  \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/graph \

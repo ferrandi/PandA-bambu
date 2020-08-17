@@ -44,6 +44,7 @@
 #include "FPGA_device.hpp"
 
 #include "config_HAVE_EXPERIMENTAL.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 #include "target_technology.hpp"
 
@@ -75,80 +76,34 @@ void FPGA_device::load_devices(const target_deviceRef device)
    /// map between the default device string and the corresponding configuration stream
    std::map<std::string, std::string> default_device_data;
    /// Load default device options
-   default_device_data["xc4vlx100-10ff1513"] =
-#include "xc4vlx100-10ff1513.data"
-       ;
-   default_device_data["xc5vlx50-3ff1153"] =
-#include "xc5vlx50-3ff1153.data"
-       ;
-   default_device_data["xc5vlx110t-1ff1136"] =
-#include "xc5vlx110t-1ff1136.data"
-       ;
-   default_device_data["xc5vlx330t-2ff1738"] =
-#include "xc5vlx330t-2ff1738.data"
-       ;
-   default_device_data["xc6vlx240t-1ff1156"] =
-#include "xc6vlx240t-1ff1156.data"
-       ;
-   default_device_data["xc7z020-1clg484"] =
-#include "xc7z020-1clg484.data"
-       ;
-   default_device_data["xc7z020-1clg484-VVD"] =
-#include "xc7z020-1clg484-VVD.data"
-       ;
-   default_device_data["xc7z045-2ffg900-VVD"] =
-#include "xc7z045-2ffg900-VVD.data"
-       ;
-   default_device_data["xc7z020-1clg484-YOSYS-VVD"] =
-#include "xc7z020-1clg484-YOSYS-VVD.data"
-       ;
-   default_device_data["xc7vx485t-2ffg1761-VVD"] =
-#include "xc7vx485t-2ffg1761-VVD.data"
-       ;
-   default_device_data["xc7vx690t-3ffg1930-VVD"] =
-#include "xc7vx690t-3ffg1930-VVD.data"
-       ;
-   default_device_data["xc7vx330t-1ffg1157"] =
-#include "xc7vx330t-1ffg1157.data"
-       ;
-   default_device_data["xc7a100t-1csg324-VVD"] =
-#include "xc7a100t-1csg324-VVD.data"
-       ;
+   default_device_data["xc4vlx100-10ff1513"] = "xc4vlx100-10ff1513.data";
+   default_device_data["xc5vlx50-3ff1153"] = "xc5vlx50-3ff1153.data";
+   default_device_data["xc5vlx110t-1ff1136"] = "xc5vlx110t-1ff1136.data";
+   default_device_data["xc5vlx330t-2ff1738"] = "xc5vlx330t-2ff1738.data";
+   default_device_data["xc6vlx240t-1ff1156"] = "xc6vlx240t-1ff1156.data";
+   default_device_data["xc7z020-1clg484"] = "xc7z020-1clg484.data";
+   default_device_data["xc7z020-1clg484-VVD"] = "xc7z020-1clg484-VVD.data";
+   default_device_data["xc7z045-2ffg900-VVD"] = "xc7z045-2ffg900-VVD.data";
+   default_device_data["xc7z020-1clg484-YOSYS-VVD"] = "xc7z020-1clg484-YOSYS-VVD.data";
+   default_device_data["xc7vx485t-2ffg1761-VVD"] = "xc7vx485t-2ffg1761-VVD.data";
+   default_device_data["xc7vx690t-3ffg1930-VVD"] = "xc7vx690t-3ffg1930-VVD.data";
+   default_device_data["xc7vx330t-1ffg1157"] = "xc7vx330t-1ffg1157.data";
+   default_device_data["xc7a100t-1csg324-VVD"] = "xc7a100t-1csg324-VVD.data";
 
 #if(0 && HAVE_EXPERIMENTAL)
-   default_device_data["xc3s1500l-4fg676"] =
-#include "Spartan-3-xc3s1500l-4fg676.data"
-       ;
+   default_device_data["xc3s1500l-4fg676"] = "Spartan-3-xc3s1500l-4fg676.data";
 #endif
 
-   default_device_data["EP2C70F896C6"] =
-#include "EP2C70F896C6.data"
-       ;
-   default_device_data["EP2C70F896C6-R"] =
-#include "EP2C70F896C6-R.data"
-       ;
-   default_device_data["5CSEMA5F31C6"] =
-#include "5CSEMA5F31C6.data"
-       ;
-   default_device_data["EP4SGX530KH40C2"] =
-#include "EP4SGX530KH40C2.data"
-       ;
-   default_device_data["5SGXEA7N2F45C1"] =
-#include "5SGXEA7N2F45C1.data"
-       ;
-   default_device_data["LFE335EA8FN484C"] =
-#include "LFE335EA8FN484C.data"
-       ;
-   default_device_data["nx1h35S"] =
-#include "nx1h35S.data"
-       ;
-   default_device_data["nx1h140tsp"] =
-#include "nx1h140tsp.data"
-       ;
+   default_device_data["EP2C70F896C6"] = "EP2C70F896C6.data";
+   default_device_data["EP2C70F896C6-R"] = "EP2C70F896C6-R.data";
+   default_device_data["5CSEMA5F31C6"] = "5CSEMA5F31C6.data";
+   default_device_data["EP4SGX530KH40C2"] = "EP4SGX530KH40C2.data";
+   default_device_data["5SGXEA7N2F45C1"] = "5SGXEA7N2F45C1.data";
+   default_device_data["LFE335EA8FN484C"] = "LFE335EA8FN484C.data";
+   default_device_data["nx1h35S"] = "nx1h35S.data";
+   default_device_data["nx1h140tsp"] = "nx1h140tsp.data";
 
-   default_device_data["nangate45"] =
-#include "nangate45.data"
-       ;
+   default_device_data["nangate45"] = "nangate45.data";
 
    auto output_level = Param->getOption<unsigned int>(OPT_output_level);
 
@@ -168,7 +123,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
             for(const auto& file_device : file_devices)
             {
                PRINT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Imported user data from file " + file_device);
-               ret.insert(XMLDomParserRef(new XMLDomParser(file_device)));
+               ret.insert(XMLDomParserRef(new XMLDomParser(GetPath(file_device))));
             }
          }
          else
@@ -178,7 +133,7 @@ void FPGA_device::load_devices(const target_deviceRef device)
             if(default_device_data.find(device_string) != default_device_data.end())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Loading " + device_string);
-               ret.insert(XMLDomParserRef(new XMLDomParser(device_string, default_device_data[device_string])));
+               ret.insert(XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/FPGA/") + default_device_data[device_string])));
             }
             else
             {

@@ -44,12 +44,13 @@ for compiler in $CLANG_TO_BE_CHECKED; do
 
       llvm_config=`echo $clang_file | sed s/clang/llvm-config/`
       I386_LLVM_CONFIG5_EXE=$clang_dir/$llvm_config
-      I386_LLVM5_HEADER_DIR=`$I386_LLVM_CONFIG5_EXE --includedir`
-      if test "x$I386_LLVM5_HEADER_DIR" = "x"; then
+      LLVM5_CXXFLAGS=`$I386_LLVM_CONFIG5_EXE --cxxflags`
+      I386_LLVM5_CXXFLAGS="$LLVM5_CXXFLAGS -std=c++11 $3"
+      if test "x$I386_LLVM5_CXXFLAGS" = "x"; then
          echo "checking CLANG/LLVM plugin support... no. Package llvm-5.0 missing?"
          break;
       fi
-      echo "checking plugin directory...$I386_LLVM5_HEADER_DIR"
+      echo "llvm cxxflags...$I386_LLVM5_CXXFLAGS"
       cpp=`echo $clang_file | sed s/clang/clang-cpp/`
       I386_CLANG_CPP5_EXE=$clang_dir/$cpp
       if test -f $I386_CLANG_CPP5_EXE; then
@@ -282,16 +283,17 @@ PLUGIN_TEST
              plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG4_EXE --ldflags --libs --system-libs`"
            ;;
            darwin*)
-             plugin_option='-fPIC -shared -undefined dynamic_lookup '
+             plugin_option='-fPIC -shared -undefined dynamic_lookup -fno-rtti '
            ;;
            *)
-             plugin_option='-fPIC -shared '
+             plugin_option='-fPIC -shared -fno-rtti -Wl,-znodelete'
            ;;
          esac
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG5_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
+         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM5_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
+         $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM5_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
          $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
          if test ! -f plugin_test.so; then
             echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-5.0-dev missing?"
@@ -353,7 +355,7 @@ if test x$I386_CLANG5_PLUGIN_COMPILER != x; then
   AC_SUBST(I386_CLANG5_CSROA_PLUGIN)
   AC_SUBST(I386_CLANG5_TOPFNAME_PLUGIN)
   AC_SUBST(I386_CLANG5_ASTANALYZER_PLUGIN)
-  AC_SUBST(I386_LLVM5_HEADER_DIR)
+  AC_SUBST(I386_LLVM5_CXXFLAGS)
   AC_SUBST(I386_CLANG5_EXE)
   AC_SUBST(I386_CLANG5_VERSION)
   AC_SUBST(I386_CLANG5_PLUGIN_COMPILER)

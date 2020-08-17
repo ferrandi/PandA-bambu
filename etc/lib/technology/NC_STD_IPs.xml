@@ -2824,7 +2824,7 @@ process(clock)
 begin
   if(clock&apos;event and clock = &apos;1&apos;) then
     if(1RESET_VALUE) then
-      reg_out1 = (others = &gt; &apos;0&apos;);
+      reg_out1 &lt;= (others =&gt; &apos;0&apos;);
     else
       reg_out1(CONTROLLER_LENGTH-1 downto 1) &lt;= reg_out1(CONTROLLER_LENGTH-2 downto 0);
       reg_out1(0) &lt;= in1;

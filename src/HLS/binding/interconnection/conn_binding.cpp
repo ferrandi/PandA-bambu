@@ -164,42 +164,10 @@ const std::map<conn_binding::ConnectionTarget, conn_binding::ConnectionSources>&
    return conn_variables;
 }
 
-const conn_binding::conn_implementation_map& conn_binding::get_connection_implementations() const
-{
-   return conn_implementation;
-}
-
-void conn_binding::add_connection(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index, connection_objRef conn)
+void conn_binding::AddConnectionCB(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index, connection_objRef conn)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding connection " + op1->get_string() + " " + op2->get_string() + " " + STR(operand) + " " + STR(port_index));
    conn_implementation[connection(op1, op2, operand, port_index)] = conn;
-}
-
-connection_objRef conn_binding::get_connection(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index) const
-{
-   THROW_ASSERT(is_connection(op1, op2, operand, port_index), "missing connection between source and target");
-   return conn_implementation.find(connection(op1, op2, operand, port_index))->second;
-}
-
-bool conn_binding::is_connection(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index) const
-{
-   return conn_implementation.find(connection(op1, op2, operand, port_index)) != conn_implementation.end();
-}
-
-generic_objRef conn_binding::get_command_port(const vertex& ver, conn_binding::direction_type dir, unsigned int mode)
-{
-   switch(dir)
-   {
-      case IN:
-         THROW_ASSERT(command_input_ports.count(std::make_pair(ver, mode)), "Command port not stored into conn_binding class");
-         return command_input_ports[std::make_pair(ver, mode)];
-      case OUT:
-         THROW_ASSERT(command_output_ports.count(ver), "Command port not stored into conn_binding class");
-         return command_output_ports[ver];
-      default:
-         THROW_ERROR("Port kind not allowed");
-   }
-   return generic_objRef();
 }
 
 generic_objRef conn_binding::bind_port(unsigned int var, conn_binding::direction_type dir)
@@ -260,43 +228,6 @@ generic_objRef conn_binding::bind_selector_port(conn_binding::direction_type dir
    generic_objRef port = generic_objRef(new commandport_obj(cond, mode, (dir == IN ? "IN_" : "OUT_") + commandport_obj::get_mode_string(mode) + "_" + GET_NAME(data, cond)));
    activation_ports[cond][dir] = port;
    return selectors[dir][std::make_pair(port, 0)] = port;
-}
-
-unsigned int conn_binding::get_component_num(const std::string& type) const
-{
-   if(component_num.find(type) == component_num.end())
-      return 0;
-   return component_num.find(type)->second;
-}
-
-void conn_binding::add_component(const std::string& type, unsigned int num)
-{
-   if(component_num.find(type) == component_num.end())
-   {
-      component_num[type] = num;
-      return;
-   }
-   component_num[type] += num;
-}
-
-const std::map<std::string, unsigned int>& conn_binding::get_components() const
-{
-   return component_num;
-}
-
-unsigned int conn_binding::get_to_controller_ports() const
-{
-   return static_cast<unsigned int>(command_output_ports.size());
-}
-
-std::map<std::pair<vertex, unsigned int>, generic_objRef> conn_binding::get_command_input_ports() const
-{
-   return command_input_ports;
-}
-
-unsigned int conn_binding::get_from_controller_ports() const
-{
-   return static_cast<unsigned int>(command_input_ports.size());
 }
 
 bool conn_binding::check_pv_allconnected(structural_objectRef port_i)
@@ -735,7 +666,7 @@ generic_objRef conn_binding::get_constant_obj(const std::string& value, const st
    return constant_values[const_param(value, param)];
 }
 
-std::map<conn_binding::const_param, generic_objRef> conn_binding::get_constant_objs() const
+const std::map<conn_binding::const_param, generic_objRef>& conn_binding::get_constant_objs() const
 {
    return constant_values;
 }
@@ -1056,18 +987,12 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
             for(auto v : start_to_vertex.find(c->first)->second)
             {
                technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
-               auto index = 0u;
-               auto& ops = GetPointer<functional_unit>(tn)->get_operations();
-               for(auto o : ops)
-               {
-                  if(GetPointer<operation>(o)->get_name() == data->CGetOpNodeInfo(v)->GetOperation())
-                     break;
-                  ++index;
-               }
+               auto index = HLS->Rfu->get_index(v);
+#if HAVE_ASSERTS
                auto multiplicity = GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity();
-               index = index % multiplicity;
+#endif
                THROW_ASSERT(multiplicity == GetPointer<port_o>(c->first)->get_ports_size(), "unexpected condition");
-               THROW_ASSERT(index < ops.size(), "unexpected condition");
+               THROW_ASSERT(index < multiplicity, "unexpected condition");
                auto sp_i = GetPointer<port_o>(c->first)->get_port(index);
                toOred[sp_i].push_back(*ports_it);
 
@@ -1231,6 +1156,12 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added command ports");
 }
 
+void conn_binding::cleanInternals()
+{
+   command_input_ports.clear();
+   command_output_ports.clear();
+   conn_variables.clear();
+}
 conn_binding::ConnectionTarget::ConnectionTarget(generic_objRef tgt, unsigned int tgt_port, unsigned int tgt_port_index) : std::tuple<generic_objRef, unsigned int, unsigned int>(std::make_tuple(tgt, tgt_port, tgt_port_index))
 {
 }

@@ -59,7 +59,7 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define OUTPUT_FILE "__stdouterr"
+#define OUTPUT_FILE GetPath("__stdouterr")
 
 // constructor
 ToolManager::ToolManager(const ParameterConstRef& _Param) : Param(_Param), local(true), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))

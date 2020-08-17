@@ -117,8 +117,9 @@ std::list<tree_nodeRef> OpenParallelSections;
 std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned int idx) const
 {
    const tree_managerRef TM = AppM->get_tree_manager();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Asking parameter " + boost::lexical_cast<std::string>(idx));
-   const gimple_call* ce = GetPointer<gimple_call>(TM->get_tree_node_const(tree_node));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Asking parameter " + boost::lexical_cast<std::string>(idx) + " " + STR(tree_node));
+   auto tn = TM->get_tree_node_const(tree_node);
+   const gimple_call* ce = GetPointer<gimple_call>(tn);
    if(idx >= ce->args.size())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");
@@ -128,8 +129,37 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
    const auto* ae = GetPointer<const addr_expr>(arg);
    THROW_ASSERT(ae, "Argument of call is not addr_expr: " + arg->get_kind_text());
    const tree_nodeConstRef ae_arg = GET_NODE(ae->op);
-   const auto* sc = GetPointer<const string_cst>(ae_arg->get_kind() == string_cst_K ? ae_arg : GET_NODE(GetPointer<const array_ref>(ae_arg)->op0));
-   const std::string string_arg = sc->strg;
+   std::string string_arg;
+   if(ae_arg->get_kind() == var_decl_K)
+   {
+      auto vd = GetPointer<const var_decl>(ae_arg);
+      THROW_ASSERT(vd, "unexpected condition");
+      THROW_ASSERT(vd->init, "unexpected condition");
+      auto vd_init = GET_NODE(vd->init);
+      if(vd_init->get_kind() == constructor_K)
+      {
+         const constructor* co = GetPointer<const constructor>(vd_init);
+         for(auto idx_valu : co->list_of_idx_valu)
+         {
+            auto valu = GET_NODE(idx_valu.second);
+            THROW_ASSERT(valu->get_kind() == integer_cst_K, "unexpected condition");
+            auto ic = GetPointer<const integer_cst>(valu);
+            char val = static_cast<char>(ic->value);
+            if(!val)
+               break;
+            string_arg.push_back(val);
+         }
+      }
+      else
+      {
+         THROW_ERROR("unexpected condition");
+      }
+   }
+   else
+   {
+      const auto* sc = GetPointer<const string_cst>(ae_arg->get_kind() == string_cst_K ? ae_arg : GET_NODE(GetPointer<const array_ref>(ae_arg)->op0));
+      string_arg = sc->strg;
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parameter is " + string_arg);
    return string_arg;
 }

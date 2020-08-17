@@ -125,7 +125,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
 
    unsigned int pointer_resizing(unsigned int output_id) const;
 
-   unsigned int lsb_to_zero(const addr_expr* ae) const;
+   unsigned int lsb_to_zero(const addr_expr* ae, bool safe) const;
 
    /**
     * Initializes best with C type as bitstring, signed_var and arguments using the information taken from the syntax tree given by the application manager.

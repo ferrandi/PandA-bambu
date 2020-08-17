@@ -192,8 +192,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 
 DesignFlowStep_Status BB_based_stg::InternalExec()
 {
-   long int step_time;
-   START_TIME(step_time);
+   long int step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting creation of STG...");
 
    StateTransitionGraph_constructorRef STG_builder = HLS->STG->STG_builder;
@@ -230,7 +231,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    bool needMemoryMappedRegisters = (top_functions.find(funId) != top_functions.end() && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION) ||
                                     (HLSMgr->hasToBeInterfaced(funId) and top_functions.find(funId) == top_functions.end()) || parameters->getOption<bool>(OPT_memory_mapped_top);
    bool has_registered_inputs = HLS->registered_inputs && !needMemoryMappedRegisters;
-   std::string function_name = HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name();
+   std::string function_name = functions::get_function_name_cleaned(funId, HLSMgr);
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    if(top_function_ids.find(funId) != top_function_ids.end() and parameters->getOption<std::string>(OPT_registered_inputs) == "top")
    {
@@ -692,7 +693,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       HLS->STG->CGetStg()->WriteDot("fsm.dot", 1);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "STG created!");
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time to perform creation of STG: " + print_cpu_time(step_time) + " seconds");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

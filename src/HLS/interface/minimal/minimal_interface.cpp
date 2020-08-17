@@ -81,6 +81,7 @@
 
 /// utility include
 #include "copyrights_strings.hpp"
+#include "fileIO.hpp"
 #include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
@@ -318,8 +319,8 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
             unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
-            std::ofstream init_file_a((init_filename).c_str());
-            std::ofstream init_file_b((+"0_" + init_filename).c_str());
+            std::ofstream init_file_a(GetPath((init_filename).c_str()));
+            std::ofstream init_file_b(GetPath((+"0_" + init_filename).c_str()));
 
             module* shared_memory_module = GetPointer<module>(shared_memory);
             shared_memory_module->SetParameter("address_space_begin", STR(base_address));
@@ -669,8 +670,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          }
          else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
          {
-            auto manage_feedback1 = [&](const std::string& portS,  const std::string& portM)
-            {
+            auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
                structural_objectRef port1, port2;
                structural_objectRef sign;
                /// slave INs connections
@@ -685,8 +685,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                portsToSigConnect[port2] = sign;
                portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
             };
-            auto manage_feedback2 = [&](const std::string& portSin,  const std::string& portSout,  const std::string& portM)
-            {
+            auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM) {
                structural_objectRef port1In, port1Out, port2;
                structural_objectRef sign;
                /// slave INs connections
@@ -1074,7 +1073,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
             }
          }
-         std::cerr << "add interconnection " << port_out->get_path() << " to " << portsToSigConnect.find(port_out)->second->get_path() << "\n";
          port_o::fix_port_properties(port_out, ext_port);
          SM_minimal_interface->add_connection(portsToSigConnect.find(port_out)->second, ext_port);
       }

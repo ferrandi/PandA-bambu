@@ -51,7 +51,6 @@
 
 #define MEM_PREFIX "MEM_"
 
-
 class memory_symbol
 {
    /// identifier of the variable
@@ -70,10 +69,9 @@ class memory_symbol
    /**
     * Constructor
     */
-   memory_symbol(unsigned int var, const std::string &_name, unsigned long long _address, unsigned int funId) : variable(var), symbol_name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), name(_name), address(_address)
+   memory_symbol(unsigned int var, const std::string& _name, unsigned long long _address, unsigned int funId) : variable(var), symbol_name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), name(_name), address(_address)
    {
    }
-
 
    /**
     * Destructor
@@ -83,38 +81,58 @@ class memory_symbol
    /**
     * Sets the actual name for the variable symbol
     */
-   void set_symbol_name(const std::string& _symbol_name) { symbol_name = _symbol_name;}
+   void set_symbol_name(const std::string& _symbol_name)
+   {
+      symbol_name = _symbol_name;
+   }
 
    /**
     * Returns the current name for the variable symbol
     */
-   std::string get_symbol_name() const {return symbol_name;}
+   std::string get_symbol_name() const
+   {
+      return symbol_name;
+   }
 
    /**
     * Sets the actual name for the variable
     */
-   void set_name(const std::string& _name) { name = _name;}
+   void set_name(const std::string& _name)
+   {
+      name = _name;
+   }
 
    /**
     * Returns the current name for the variable
     */
-   std::string get_name() const {return name;}
+   std::string get_name() const
+   {
+      return name;
+   }
 
    /**
     * Sets the actual address for the variable
     */
-   void set_address(unsigned long long _address) {address = _address;}
+   void set_address(unsigned long long _address)
+   {
+      address = _address;
+   }
 
    /**
     * Gets the current address for the variable
     */
-   unsigned long long int get_address() const {return address;}
+   unsigned long long int get_address() const
+   {
+      return address;
+   }
 
    /**
     * Gets the current the variable
     */
-   unsigned int get_variable() const {return variable;}
-
+   unsigned int get_variable() const
+   {
+      return variable;
+   }
 
    bool notEQ(const memory_symbol& ref) const
    {

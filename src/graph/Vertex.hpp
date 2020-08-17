@@ -132,7 +132,7 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
     * Friend definition of the << operator.
     * @param os is the output stream
     */
-   friend std::ostream& operator<<(std::ostream& os, vertex2obj& s)
+   friend std::ostream& operator<<(std::ostream& os, const vertex2obj& s)
    {
       s.print(os);
       return os;

@@ -247,8 +247,8 @@ void Bit_Value::backward()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable has been proven to be constant: " + STR(output_uid));
                      continue;
                   }
-                  std::deque<bit_lattice> res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
-                  current_updated = update_current(std::move(res), output_uid) or current_updated;
+                  auto res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
+                  current_updated = update_current(res, output_uid) or current_updated;
                }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement " + STR(stmt));
@@ -281,8 +281,8 @@ void Bit_Value::backward()
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--variable has been proven to be constant: " + STR(output_uid));
                   continue;
                }
-               std::deque<bit_lattice> res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
-               current_updated = update_current(std::move(res), output_uid) or current_updated;
+               auto res = backward_compute_result_from_uses(*ssa, *sl, B->loop_id);
+               current_updated = update_current(res, output_uid) or current_updated;
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed Phi " + STR(stmt));
          }
@@ -403,6 +403,13 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       THROW_ASSERT(output_id == arg1_uid, "unexpected condition");
 
       std::deque<bit_lattice> arg1_bitstring = best.at(arg1_uid);
+      if(tree_helper::is_real(TM, arg1_uid))
+      {
+         // TODO: implement back propagation for real variables
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer Error: operation unhandled yet with real type operand -> " + GET_NODE(ga->op1)->get_kind_text());
+         return std::deque<bit_lattice>();
+      }
+
       size_t initial_size = arg1_bitstring.size();
       while(arg1_bitstring.size() > output_bitstring.size())
          arg1_bitstring.pop_front();
@@ -415,6 +422,15 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
    }
    else if(op_kind == abs_expr_K)
    {
+      auto* operation = GetPointer<abs_expr>(GET_NODE(ga->op1));
+      if(tree_helper::is_real(TM, GET_INDEX_NODE(operation->op)))
+      {
+         //    const auto left_id = GET_INDEX_NODE(ga->op0);
+         //    const auto& left_bitstring = current.at(left_id);
+
+         // TODO: Back-propagate X on msb and other bits as in standard cast for real types
+      }
+
       /// we cannot say anything on abs_expr
       return std::deque<bit_lattice>();
    }
@@ -763,7 +779,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
@@ -819,7 +835,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
@@ -904,7 +920,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
@@ -931,7 +947,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          if(GET_INDEX_NODE(operation->op1) == output_id && current.find(GET_INDEX_NODE(operation->op1)) != current.end())
          {
             bool op_signed_p = tree_helper::is_int(TM, output_id);
-            unsigned int precision = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
+            unsigned int precision = BitLatticeManipulator::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op0)));
             unsigned int log2;
             for(log2 = 1; precision > (1u << log2); ++log2)
                ;
@@ -951,7 +967,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
    }
 #endif
 #if 1
-   else if(op_kind == nop_expr_K || op_kind == convert_expr_K)
+   else if(op_kind == nop_expr_K || op_kind == convert_expr_K || op_kind == view_convert_expr_K)
    {
       auto* operation = GetPointer<unary_expr>(GET_NODE(ga->op1));
 
@@ -970,6 +986,12 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
 
       const tree_nodeConstRef left_type = tree_helper::CGetType(GET_NODE(ga->op0));
       const tree_nodeConstRef right_type = tree_helper::CGetType(GET_NODE(operation->op));
+
+      if(tree_helper::is_real(TM, left_type->index) and tree_helper::is_real(TM, right_type->index))
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "backward_transfer Error: operation unhandled yet with real type operands -> " + GET_NODE(ga->op1)->get_kind_text());
+         return std::deque<bit_lattice>();
+      }
 
       const size_t left_type_size = tree_helper::Size(left_type);
       const size_t right_type_size = tree_helper::Size(right_type);
@@ -1023,6 +1045,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
                res.pop_front();
          }
       }
+
+      THROW_ASSERT(not tree_helper::is_real(TM, left_type->index) or res.size() == left_type_size, "Real type bit value should be exact");
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + std::string(op_kind != nop_expr_K ? "   " : "") + bitstring_to_string(res) + "(" + STR(right_bitsize) + "->" + STR(res.size()) + ")");
       return res;
@@ -1335,7 +1359,7 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
          return std::deque<bit_lattice>();
    }
    else if(op_kind == lt_expr_K || op_kind == gt_expr_K || op_kind == le_expr_K || op_kind == ge_expr_K || op_kind == eq_expr_K || op_kind == ne_expr_K || op_kind == trunc_div_expr_K || op_kind == exact_div_expr_K || op_kind == trunc_mod_expr_K ||
-           op_kind == view_convert_expr_K || op_kind == min_expr_K || op_kind == max_expr_K)
+           op_kind == min_expr_K || op_kind == max_expr_K)
    {
       return std::deque<bit_lattice>();
    }

@@ -39,6 +39,7 @@
 #include <thread>  // NOLINT(build/c++11)
 
 #include "absl/base/attributes.h"
+#include "absl/base/call_once.h"
 #include "absl/base/config.h"
 #include "absl/base/dynamic_annotations.h"
 #include "absl/base/internal/atomic_hook.h"
@@ -85,35 +86,16 @@ ABSL_CONST_INIT std::atomic<OnDeadlockCycle> synch_deadlock_detection(
     kDeadlockDetectionDefault);
 ABSL_CONST_INIT std::atomic<bool> synch_check_invariants(false);
 
-// ------------------------------------------ spinlock support
-
-// Make sure read-only globals used in the Mutex code are contained on the
-// same cacheline and cacheline aligned to eliminate any false sharing with
-// other globals from this and other modules.
-static struct MutexGlobals {
-  MutexGlobals() {
-    // Find machine-specific data needed for Delay() and
-    // TryAcquireWithSpinning(). This runs in the global constructor
-    // sequence, and before that zeros are safe values.
-    num_cpus = absl::base_internal::NumCPUs();
-    spinloop_iterations = num_cpus > 1 ? 1500 : 0;
-  }
-  int num_cpus;
-  int spinloop_iterations;
-  // Pad this struct to a full cacheline to prevent false sharing.
-  char padding[ABSL_CACHELINE_SIZE - 2 * sizeof(int)];
-} ABSL_CACHELINE_ALIGNED mutex_globals;
-static_assert(
-    sizeof(MutexGlobals) == ABSL_CACHELINE_SIZE,
-    "MutexGlobals must occupy an entire cacheline to prevent false sharing");
-
-ABSL_CONST_INIT absl::base_internal::AtomicHook<void (*)(int64_t wait_cycles)>
-    submit_profile_data;
-ABSL_CONST_INIT absl::base_internal::AtomicHook<
-    void (*)(const char *msg, const void *obj, int64_t wait_cycles)> mutex_tracer;
-ABSL_CONST_INIT absl::base_internal::AtomicHook<
-    void (*)(const char *msg, const void *cv)> cond_var_tracer;
-ABSL_CONST_INIT absl::base_internal::AtomicHook<
+ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES
+    absl::base_internal::AtomicHook<void (*)(int64_t wait_cycles)>
+        submit_profile_data;
+ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES absl::base_internal::AtomicHook<void (*)(
+    const char *msg, const void *obj, int64_t wait_cycles)>
+    mutex_tracer;
+ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES
+    absl::base_internal::AtomicHook<void (*)(const char *msg, const void *cv)>
+        cond_var_tracer;
+ABSL_INTERNAL_ATOMIC_HOOK_ATTRIBUTES absl::base_internal::AtomicHook<
     bool (*)(const void *pc, char *out, int out_size)>
     symbolizer(absl::Symbolize);
 
@@ -140,7 +122,22 @@ void RegisterSymbolizer(bool (*fn)(const void *pc, char *out, int out_size)) {
   symbolizer.Store(fn);
 }
 
-// spinlock delay on iteration c.  Returns new c.
+struct ABSL_CACHELINE_ALIGNED MutexGlobals {
+  absl::once_flag once;
+  int num_cpus = 0;
+  int spinloop_iterations = 0;
+};
+
+static const MutexGlobals& GetMutexGlobals() {
+  ABSL_CONST_INIT static MutexGlobals data;
+  absl::base_internal::LowLevelCallOnce(&data.once, [&]() {
+    data.num_cpus = absl::base_internal::NumCPUs();
+    data.spinloop_iterations = data.num_cpus > 1 ? 1500 : 0;
+  });
+  return data;
+}
+
+// Spinlock delay on iteration c.  Returns new c.
 namespace {
   enum DelayMode { AGGRESSIVE, GENTLE };
 };
@@ -150,22 +147,25 @@ static int Delay(int32_t c, DelayMode mode) {
   // gentle then spin only a few times before yielding.  Aggressive spinning is
   // used to ensure that an Unlock() call, which  must get the spin lock for
   // any thread to make progress gets it without undue delay.
-  int32_t limit = (mutex_globals.num_cpus > 1) ?
-      ((mode == AGGRESSIVE) ? 5000 : 250) : 0;
+  const int32_t limit =
+      GetMutexGlobals().num_cpus > 1 ? (mode == AGGRESSIVE ? 5000 : 250) : 0;
   if (c < limit) {
-    c++;               // spin
+    // Spin.
+    c++;
   } else {
     ABSL_TSAN_MUTEX_PRE_DIVERT(nullptr, 0);
-    if (c == limit) {  // yield once
+    if (c == limit) {
+      // Yield once.
       AbslInternalMutexYield();
       c++;
-    } else {           // then wait
+    } else {
+      // Then wait.
       absl::SleepFor(absl::Microseconds(10));
       c = 0;
     }
     ABSL_TSAN_MUTEX_POST_DIVERT(nullptr, 0);
   }
-  return (c);
+  return c;
 }
 
 // --------------------------Generic atomic ops
@@ -204,12 +204,12 @@ static void AtomicClearBits(std::atomic<intptr_t>* pv, intptr_t bits,
 //------------------------------------------------------------------
 
 // Data for doing deadlock detection.
-static absl::base_internal::SpinLock deadlock_graph_mu(
-    absl::base_internal::kLinkerInitialized);
+ABSL_CONST_INIT static absl::base_internal::SpinLock deadlock_graph_mu(
+    absl::kConstInit, base_internal::SCHEDULE_KERNEL_ONLY);
 
-// graph used to detect deadlocks.
-static GraphCycles *deadlock_graph ABSL_GUARDED_BY(deadlock_graph_mu)
-    ABSL_PT_GUARDED_BY(deadlock_graph_mu);
+// Graph used to detect deadlocks.
+ABSL_CONST_INIT static GraphCycles *deadlock_graph
+    ABSL_GUARDED_BY(deadlock_graph_mu) ABSL_PT_GUARDED_BY(deadlock_graph_mu);
 
 //------------------------------------------------------------------
 // An event mechanism for debugging mutex use.
@@ -270,13 +270,12 @@ static const struct {
     {0, "SignalAll on "},
 };
 
-static absl::base_internal::SpinLock synch_event_mu(
-    absl::base_internal::kLinkerInitialized);
-// protects synch_event
+ABSL_CONST_INIT static absl::base_internal::SpinLock synch_event_mu(
+    absl::kConstInit, base_internal::SCHEDULE_KERNEL_ONLY);
 
 // Hash table size; should be prime > 2.
 // Can't be too small, as it's used for deadlock detection information.
-static const uint32_t kNSynchEvent = 1031;
+static constexpr uint32_t kNSynchEvent = 1031;
 
 static struct SynchEvent {     // this is a trivial hash table for the events
   // struct is freed when refcount reaches 0
@@ -296,7 +295,7 @@ static struct SynchEvent {     // this is a trivial hash table for the events
   bool log;             // logging turned on
 
   // Constant after initialization
-  char name[1];         // actually longer---NUL-terminated std::string
+  char name[1];         // actually longer---NUL-terminated string
 } * synch_event[kNSynchEvent] ABSL_GUARDED_BY(synch_event_mu);
 
 // Ensure that the object at "addr" has a SynchEvent struct associated with it,
@@ -1435,21 +1434,19 @@ void Mutex::AssertNotHeld() const {
 // Attempt to acquire *mu, and return whether successful.  The implementation
 // may spin for a short while if the lock cannot be acquired immediately.
 static bool TryAcquireWithSpinning(std::atomic<intptr_t>* mu) {
-  int c = mutex_globals.spinloop_iterations;
-  int result = -1;  // result of operation:  0=false, 1=true, -1=unknown
-
+  int c = GetMutexGlobals().spinloop_iterations;
   do {  // do/while somewhat faster on AMD
     intptr_t v = mu->load(std::memory_order_relaxed);
-    if ((v & (kMuReader|kMuEvent)) != 0) {  // a reader or tracing -> give up
-      result = 0;
+    if ((v & (kMuReader|kMuEvent)) != 0) {
+      return false;  // a reader or tracing -> give up
     } else if (((v & kMuWriter) == 0) &&  // no holder -> try to acquire
                mu->compare_exchange_strong(v, kMuWriter | v,
                                            std::memory_order_acquire,
                                            std::memory_order_relaxed)) {
-      result = 1;
+      return true;
     }
-  } while (result == -1 && --c > 0);
-  return result == 1;
+  } while (--c > 0);
+  return false;
 }
 
 ABSL_XRAY_LOG_ARGS(1) void Mutex::Lock() {
@@ -1748,7 +1745,8 @@ static const intptr_t ignore_waiting_writers[] = {
 };
 
 // Internal version of LockWhen().  See LockSlowWithDeadline()
-void Mutex::LockSlow(MuHow how, const Condition *cond, int flags) {
+ABSL_ATTRIBUTE_NOINLINE void Mutex::LockSlow(MuHow how, const Condition *cond,
+                                             int flags) {
   ABSL_RAW_CHECK(
       this->LockSlowWithDeadline(how, cond, KernelTimeout::Never(), flags),
       "condition untrue on return from LockSlow");
@@ -2014,7 +2012,7 @@ void Mutex::LockSlowLoop(SynchWaitParams *waitp, int flags) {
 // which holds the lock but is not runnable because its condition is false
 // or it is in the process of blocking on a condition variable; it must requeue
 // itself on the mutex/condvar to wait for its condition to become true.
-void Mutex::UnlockSlow(SynchWaitParams *waitp) {
+ABSL_ATTRIBUTE_NOINLINE void Mutex::UnlockSlow(SynchWaitParams *waitp) {
   intptr_t v = mu_.load(std::memory_order_relaxed);
   this->AssertReaderHeld();
   CheckForMutexCorruption(v, "Unlock");

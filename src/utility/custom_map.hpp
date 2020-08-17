@@ -97,6 +97,7 @@ using CustomMap = OrderedMapStd<T, U>;
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Woverflow"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 #if __GNUC__ == 4 && __GNUC_MINOR__ == 8
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wundef"

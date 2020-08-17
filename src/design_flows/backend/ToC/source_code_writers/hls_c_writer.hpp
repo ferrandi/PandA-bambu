@@ -77,7 +77,7 @@ class HLSCWriter : public CWriter
     */
    size_t WriteBinaryMemoryInit(const std::string& binary_string, const size_t data_size, std::string& bits_offset);
 
-   size_t WriteBinaryMemoryInitToFile(std::ofstream &parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
+   size_t WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
 
    /**
     * Write global variables needed by the tesbench

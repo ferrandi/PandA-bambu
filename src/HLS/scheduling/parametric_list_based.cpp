@@ -43,6 +43,8 @@
 
 #include "parametric_list_based.hpp"
 
+#include "config_HAVE_ASSERTS.hpp"
+
 #include <utility>
 // #include "call_graph.hpp"
 #include "exceptions.hpp"
@@ -222,8 +224,10 @@ class edge_integer_order_by_map : std::binary_function<vertex, vertex, bool>
    /// Topological sorted vertices
    const std::map<vertex, unsigned int>& ref;
 
-   /// Graph
+/// Graph
+#if HAVE_ASSERTS
    const graph* g;
+#endif
 
  public:
    /**
@@ -231,7 +235,14 @@ class edge_integer_order_by_map : std::binary_function<vertex, vertex, bool>
     * @param ref is the map with the topological sort of vertices
     * @param g is a graph used only for debugging purpose to print name of vertex
     */
-   edge_integer_order_by_map(const std::map<vertex, unsigned int>& _ref, const graph* _g) : ref(_ref), g(_g)
+   edge_integer_order_by_map(const std::map<vertex, unsigned int>& _ref, const graph*
+#if HAVE_ASSERTS
+                                                                             _g)
+       : ref(_ref), g(_g)
+#else
+                             )
+       : ref(_ref)
+#endif
    {
    }
 
@@ -346,8 +357,8 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > (current_cycle_ending_time) || unbounded));
    if(pipeliningCond)
       return;
-   cannotBeChained0 = (current_starting_time >= current_cycle_ending_time) ||
-                      ((!is_pipelined && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
+   cannotBeChained0 = (current_starting_time >= current_cycle_ending_time) || ((!is_pipelined && !(GET_TYPE(flow_graph, current_vertex) & TYPE_RET) && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) &&
+                                                                               current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
    if(cannotBeChained0)
       return;
    chainingRetCond = (unbounded || (cstep_has_RET_conflict && current_starting_time > (current_cycle_starting_time))) && (GET_TYPE(flow_graph, current_vertex) & TYPE_RET);
@@ -617,6 +628,11 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          else
          {
             const auto II = HLS->allocation_information->get_initiation_time(res_binding->get_assign(*live_vertex_it), *live_vertex_it);
+            if(FB->build_simple_pipeline() && (II > 1 || II == 0))
+            {
+               auto lat = ending_time[*live_vertex_it] - starting_time[*live_vertex_it];
+               THROW_ERROR("Timing of Vertex " + GET_NAME(flow_graph, *live_vertex_it) + " is not compatible with II=1.\nActual vertex latency is " + STR(lat) + " greater than the clock period");
+            }
 
             if(II == 0u || current_cycle < (II + static_cast<unsigned int>(floor(starting_time[*live_vertex_it] / clock_cycle))))
             {
@@ -1493,8 +1509,9 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues& priority_queu
 DesignFlowStep_Status parametric_list_based::InternalExec()
 {
    executions_number++;
-   long int step_time;
-   START_TIME(step_time);
+   long int step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BBGraphConstRef bbg = FB->CGetBBGraph();
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
@@ -1557,7 +1574,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Estimated max frequency (MHz): " + STR(maxFrequency));
 
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Time to perform scheduling: " + print_cpu_time(step_time) + " seconds");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)

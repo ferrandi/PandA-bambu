@@ -434,7 +434,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
             <connected_objects/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="UINT" size="32" />
             <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
@@ -442,18 +442,19 @@ always @(posedge clock) done_port &lt;= start_port;"/>
             <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="UINT" size="16" />
           </port_o>
           <NP_functionality LIBRARY="BAMBU_READC in1 out1" VERILOG_PROVIDED="reg done_port;
 // synthesis translate_off
 // verilator lint_off BLKSEQ
-reg signed [BITSIZE_out1-1:0] out1;
+reg signed [BITSIZE_out1-1:0] out1_reg;
 reg signed [BITSIZE_in1-1:0] temp_in1;
+assign out1 = out1_reg;
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
    temp_in1 = {1&apos;b1,in1[30:0]};
-   out1=$fgetc(temp_in1);
+   out1_reg=$fgetc(temp_in1);
   end
 // verilator lint_on BLKSEQ
 // synthesis translate_on
@@ -483,7 +484,7 @@ always @(posedge clock) done_port &lt;= start_port;"/>
             <connected_objects/>
           </port_o>
           <port_o id="in1" dir="IN">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="UINT" size="32" />
             <connected_objects/>
           </port_o>
           <port_o id="done_port" dir="OUT">
@@ -491,30 +492,31 @@ always @(posedge clock) done_port &lt;= start_port;"/>
             <connected_objects/>
           </port_o>
           <port_o id="out1" dir="OUT">
-            <structural_type_descriptor type="INT" size="1" />
+            <structural_type_descriptor type="UINT" size="64" />
           </port_o>
           <NP_functionality LIBRARY="BAMBU_READ4C in1 out1" VERILOG_PROVIDED="reg done_port;
 // synthesis translate_off
 // verilator lint_off BLKSEQ
-reg signed [BITSIZE_out1-1:0] out1;
+reg signed [35:0] out1_reg;
 reg signed [BITSIZE_in1-1:0] temp_in1;
 reg signed [8:0] fgetc_res;
+assign out1 = out1_reg;
 always @(negedge clock)
   if(start_port == 1&apos;b1)
   begin
    temp_in1 = {1&apos;b1,in1[30:0]};
    fgetc_res=$fgetc(temp_in1);
-   out1[7:0]=fgetc_res[7:0];
-   out1[32]=fgetc_res[8];
+   out1_reg[7:0]=fgetc_res[7:0];
+   out1_reg[32]=fgetc_res[8];
    fgetc_res=$fgetc(temp_in1);
-   out1[15:8]=fgetc_res[7:0];
-   out1[33]=fgetc_res[8];
+   out1_reg[15:8]=fgetc_res[7:0];
+   out1_reg[33]=fgetc_res[8];
    fgetc_res=$fgetc(temp_in1);
-   out1[23:16]=fgetc_res[7:0];
-   out1[34]=fgetc_res[8];
+   out1_reg[23:16]=fgetc_res[7:0];
+   out1_reg[34]=fgetc_res[8];
    fgetc_res=$fgetc(temp_in1);
-   out1[31:24]=fgetc_res[7:0];
-   out1[35]=fgetc_res[8];
+   out1_reg[31:24]=fgetc_res[7:0];
+   out1_reg[35]=fgetc_res[8];
   end
 // verilator lint_on BLKSEQ
 // synthesis translate_on

@@ -185,7 +185,7 @@ void structural_type_descriptor::print(std::ostream& os) const
       }
       case REAL:
       {
-         THROW_ASSERT(size > 0 && vector_size == 0, "real type descriptor not correctly defined");
+         THROW_ASSERT((size > 0 && vector_size == 0) || (size == 1 && (vector_size == 32 || vector_size == 64 || vector_size == 96 || vector_size == 128)), "real type descriptor not correctly defined " + STR(size) + " " + STR(vector_size));
          os << "Real {" << id_type << "} ";
          if(treenode > 0)
             os << "(@" << treenode << ") ";
@@ -807,7 +807,7 @@ void structural_object::xload(const xml_element* Enode, structural_objectRef, st
       LOAD_XVM(treenode, Enode);
    if(CE_XVM(black_box, Enode))
       LOAD_XVM(black_box, Enode);
-      // Recurse through child nodes
+      // Recourse through child nodes
 #if HAVE_ASSERTS
    bool has_structural_type_descriptor = false;
 #endif
@@ -1035,6 +1035,8 @@ port_o::port_direction port_o::get_port_direction() const
 void port_o::set_port_direction(port_direction _dir)
 {
    dir = _dir;
+   for(auto p : ports)
+      GetPointer<port_o>(p)->set_port_direction(_dir);
 }
 
 port_o::port_endianess port_o::get_port_endianess() const
@@ -1471,7 +1473,7 @@ void port_o::xload(const xml_element* Enode, structural_objectRef _owner, struct
 
    structural_objectRef obj;
    unsigned int minBit = UINT_MAX;
-   // Recurse through child nodes:
+   // Recourse through child nodes:
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
    {
@@ -1865,7 +1867,7 @@ void action_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
    }
    /// someone has to take care of GM
    structural_objectRef obj;
-   // Recurse through child nodes:
+   // Recourse through child nodes:
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
    {
@@ -2092,29 +2094,40 @@ void signal_o::add_port(structural_objectRef p)
 {
    THROW_ASSERT(p, "NULL object received");
    THROW_ASSERT(GetPointer<port_o>(p), "A port is expected");
-   if(std::find(connected_objects.begin(), connected_objects.end(), p) == connected_objects.end())
-      connected_objects.push_back(p);
+   for(auto& connected_object : connected_objects)
+   {
+      if(connected_object.lock() == p)
+         return;
+   }
+   connected_objects.push_back(p);
 }
 
 const structural_objectRef signal_o::get_port(unsigned int n) const
 {
    THROW_ASSERT(n < connected_objects.size(), "index out of range");
-   return connected_objects[n];
+   return connected_objects[n].lock();
 }
 
 structural_objectRef signal_o::get_port(unsigned int n)
 {
    THROW_ASSERT(n < connected_objects.size(), "index out of range");
-   return connected_objects[n];
+   return connected_objects[n].lock();
 }
 
 void signal_o::remove_port(structural_objectRef s)
 {
    THROW_ASSERT(s, "NULL object received");
    THROW_ASSERT(GetPointer<port_o>(s), "A port is expected");
-   auto del = std::find(connected_objects.begin(), connected_objects.end(), s);
+   auto del = connected_objects.begin();
+   for(; del != connected_objects.end(); ++del)
+   {
+      if((*del).lock() == s)
+         break;
+   }
    if(del != connected_objects.end())
+   {
       connected_objects.erase(del);
+   }
 }
 
 bool signal_o::is_connected(structural_objectRef s) const
@@ -2122,15 +2135,31 @@ bool signal_o::is_connected(structural_objectRef s) const
    THROW_ASSERT(s, "NULL object received");
    if(connected_objects.size() == 0)
       return false;
-   return std::find(connected_objects.begin(), connected_objects.end(), s) != connected_objects.end();
+   auto del = connected_objects.begin();
+   for(; del != connected_objects.end(); ++del)
+   {
+      if((*del).lock() == s)
+         return true;
+   }
+   return false;
 }
 
 void signal_o::substitute_port(structural_objectRef old_conn, structural_objectRef new_conn)
 {
-   std::vector<structural_objectRef>::iterator del = std::find(connected_objects.begin(), connected_objects.end(), new_conn);
+   auto del = connected_objects.begin();
+   for(; del != connected_objects.end(); ++del)
+   {
+      if((*del).lock() == new_conn)
+         break;
+   }
    if(del != connected_objects.end())
    {
-      auto del_old = std::find(connected_objects.begin(), connected_objects.end(), old_conn);
+      auto del_old = connected_objects.begin();
+      for(; del_old != connected_objects.end(); ++del_old)
+      {
+         if((*del_old).lock() == old_conn)
+            break;
+      }
       if(del_old != connected_objects.end())
          connected_objects.erase(del_old);
    }
@@ -2138,11 +2167,11 @@ void signal_o::substitute_port(structural_objectRef old_conn, structural_objectR
    {
       for(unsigned int i = 0; i < connected_objects.size(); i++)
       {
-         if(connected_objects[i] == old_conn)
+         if(connected_objects[i].lock() == old_conn)
             connected_objects[i] = new_conn;
          else
          {
-            THROW_ASSERT(GetPointer<port_o>(connected_objects[i]), "Expected port");
+            THROW_ASSERT(GetPointer<port_o>(connected_objects[i].lock()), "Expected port");
          }
       }
    }
@@ -2163,9 +2192,9 @@ bool signal_o::is_full_connected() const
    auto it2_end = connected_objects.end();
    for(auto it = connected_objects.begin(); it != it_end; ++it)
    {
-      if(GetPointer<port_o>(*it))
+      if(GetPointer<port_o>((*it).lock()))
       {
-         auto* port = GetPointer<port_o>(*it);
+         auto* port = GetPointer<port_o>((*it).lock());
          if(port->get_port_direction() == port_o::IN || port->get_port_direction() == port_o::IO)
          {
             in_port = true;
@@ -2175,9 +2204,9 @@ bool signal_o::is_full_connected() const
    }
    for(auto it = connected_objects.begin(); it != it_end; ++it)
    {
-      if(GetPointer<port_o>(*it))
+      if(GetPointer<port_o>((*it).lock()))
       {
-         auto* port = GetPointer<port_o>(*it);
+         auto* port = GetPointer<port_o>((*it).lock());
          if(port->get_port_direction() == port_o::OUT || port->get_port_direction() == port_o::IO)
          {
             out_port = true;
@@ -2190,15 +2219,15 @@ bool signal_o::is_full_connected() const
    // At this point ports are all input or all output
    for(auto it = connected_objects.begin(); it != it_end; ++it)
    {
-      if(GetPointer<port_o>(*it))
+      if(GetPointer<port_o>((*it).lock()))
       {
-         auto* first_port = GetPointer<port_o>(*it);
+         auto* first_port = GetPointer<port_o>((*it).lock());
          structural_objectRef first_owner = first_port->get_owner();
          for(auto it2 = connected_objects.begin(); it2 != it2_end; ++it2)
          {
-            if(GetPointer<port_o>(*it2))
+            if(GetPointer<port_o>((*it2).lock()))
             {
-               auto* second_port = GetPointer<port_o>(*it2);
+               auto* second_port = GetPointer<port_o>((*it2).lock());
                structural_objectRef second_owner = second_port->get_owner();
                if(first_owner == second_owner->get_owner() || second_owner == first_owner->get_owner())
                   return true;
@@ -2217,8 +2246,8 @@ structural_objectRef signal_o::find_member(const std::string& _id, so_kind _type
       case port_o_K:
       {
          for(const auto& connected_object : connected_objects)
-            if(connected_object->get_id() == _id && connected_object->get_owner() == _owner)
-               return connected_object;
+            if(connected_object.lock()->get_id() == _id && connected_object.lock()->get_owner() == _owner)
+               return connected_object.lock();
          break;
       }
       case signal_o_K:
@@ -2339,7 +2368,7 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
 
       set_id(_id);
    }
-   // Recurse through child nodes:
+   // Recourse through child nodes:
    unsigned int minBit = UINT_MAX;
 
    const xml_node::node_list list = Enode->get_children();
@@ -2370,7 +2399,7 @@ void signal_o::xwrite(xml_element* rootnode)
    structural_object::xwrite(Enode);
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i]->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
    for(auto& signal : signals_)
       signal->xwrite(Enode);
 }
@@ -2382,7 +2411,7 @@ void signal_o::print(std::ostream& os) const
    if(connected_objects.size())
       PP(os, "[CON: ");
    for(const auto& connected_object : connected_objects)
-      os << connected_object->get_path() + "-" + convert_so_short(connected_object->get_kind()) << " ";
+      os << connected_object.lock()->get_path() + "-" + convert_so_short(connected_object.lock()->get_kind()) << " ";
    if(connected_objects.size())
       PP(os, "]\n");
 
@@ -2980,6 +3009,7 @@ void module::copy(structural_objectRef dest) const
       else
          THROW_ERROR("Not expected object type: " + std::string(port->get_kind_text()));
       port->copy(obj);
+
       switch(dir)
       {
          case port_o::IN:
@@ -3391,7 +3421,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
    std::map<structural_objectRef, std::vector<std::string>> connections;
 
    structural_objectRef obj;
-   // Recurse through child nodes:
+   // Recourse through child nodes:
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
    {
@@ -4054,7 +4084,7 @@ void channel_o::add_port(structural_objectRef p)
 const structural_objectRef channel_o::get_port(unsigned int n) const
 {
    THROW_ASSERT(n < connected_objects.size(), "index out of range");
-   return connected_objects[n];
+   return connected_objects[n].lock();
 }
 
 unsigned int channel_o::get_connected_objects_size() const
@@ -4072,8 +4102,8 @@ structural_objectRef channel_o::find_member(const std::string& _id, so_kind _typ
       case port_o_K:
       {
          for(const auto& connected_object : connected_objects)
-            if(connected_object->get_id() == _id && connected_object->get_owner() == _owner)
-               return connected_object;
+            if(connected_object.lock()->get_id() == _id && connected_object.lock()->get_owner() == _owner)
+               return connected_object.lock();
          break;
       }
       case action_o_K:
@@ -4145,7 +4175,7 @@ structural_objectRef channel_o::find_isomorphic(const structural_objectRef key) 
 void channel_o::xload(const xml_element* Enode, structural_objectRef _owner, structural_managerRef const& CM)
 {
    module::xload(Enode, _owner, CM);
-   // Recurse through child nodes:
+   // Recourse through child nodes:
    const xml_node::node_list list = Enode->get_children();
    for(const auto& iter : list)
    {
@@ -4176,7 +4206,7 @@ void channel_o::xwrite(xml_element* rootnode)
    }
    xml_element* Enode_CO = Enode->add_child_element("connected_objects");
    for(unsigned int i = 0; i < connected_objects.size(); i++)
-      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i]->get_path(), Enode_CO);
+      WRITE_XNVM2("CON" + boost::lexical_cast<std::string>(i), connected_objects[i].lock()->get_path(), Enode_CO);
 }
 
 #if HAVE_TECHNOLOGY_BUILT
@@ -4199,7 +4229,7 @@ void channel_o::print(std::ostream& os) const
       PP(os, "\n");
    }
    for(const auto& connected_object : connected_objects)
-      os << connected_object->get_path() + "-" + convert_so_short(connected_object->get_kind()) << " ";
+      os << connected_object.lock()->get_path() + "-" + convert_so_short(connected_object.lock()->get_kind()) << " ";
    PP(os, "\n]\n");
 }
 
@@ -4216,7 +4246,7 @@ void bus_connection_o::add_connection(structural_objectRef c)
 const structural_objectRef bus_connection_o::get_connection(unsigned int n) const
 {
    THROW_ASSERT(n < connections.size(), "index out of range");
-   return connections[n];
+   return connections[n].lock();
 }
 
 unsigned int bus_connection_o::get_connections_size() const
@@ -4238,8 +4268,8 @@ structural_objectRef bus_connection_o::find_member(const std::string& _id, so_ki
       case port_o_K:
       {
          for(const auto& connection : connections)
-            if(connection->get_id() == _id && connection->get_owner() == _owner)
-               return connection;
+            if(connection.lock()->get_id() == _id && connection.lock()->get_owner() == _owner)
+               return connection.lock();
          break;
       }
       case action_o_K:
@@ -4282,7 +4312,7 @@ void bus_connection_o::print(std::ostream& os) const
    if(connections.size())
       PP(os, "List of connections:\n");
    for(const auto& connection : connections)
-      os << connection->get_path() + "-" + convert_so_short(connection->get_kind()) << " ";
+      os << connection.lock()->get_path() + "-" + convert_so_short(connection.lock()->get_kind()) << " ";
    PP(os, "\n]\n");
 }
 

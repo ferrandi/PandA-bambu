@@ -38,8 +38,6 @@ absl_cc_library(
     "internal/charconv_bigint.h"
     "internal/charconv_parse.cc"
     "internal/charconv_parse.h"
-    "internal/escaping.cc"
-    "internal/escaping.h"
     "internal/memutil.cc"
     "internal/memutil.h"
     "internal/stl_type_traits.h"
@@ -74,6 +72,8 @@ absl_cc_library(
     strings_internal
   HDRS
     "internal/char_map.h"
+    "internal/escaping.cc"
+    "internal/escaping.h"
     "internal/ostringstream.h"
     "internal/resize_uninitialized.h"
     "internal/utf8.h"
@@ -86,6 +86,7 @@ absl_cc_library(
     absl::config
     absl::core_headers
     absl::endian
+    absl::raw_logging_internal
     absl::type_traits
 )
 
@@ -209,6 +210,8 @@ absl_cc_test(
     absl::base
     absl::core_headers
     absl::dynamic_annotations
+    absl::flat_hash_map
+    absl::node_hash_map
     gmock_main
 )
 
@@ -283,6 +286,7 @@ absl_cc_test(
     absl::raw_logging_internal
     absl::random_random
     absl::random_distributions
+    absl::strings_internal
     gmock_main
 )
 
@@ -388,6 +392,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
+    absl::bits
     absl::strings
     absl::config
     absl::core_headers
@@ -405,6 +410,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::str_format
+    absl::cord
     absl::strings
     absl::core_headers
     gmock_main
@@ -420,6 +426,7 @@ absl_cc_test(
   DEPS
     absl::str_format
     absl::str_format_internal
+    absl::strings
     gmock_main
 )
 
@@ -483,6 +490,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::str_format_internal
+    absl::cord
     gmock_main
 )
 
@@ -523,5 +531,63 @@ absl_cc_test(
   DEPS
     absl::pow10_helper
     absl::str_format
+    gmock_main
+)
+
+absl_cc_library(
+  NAME
+    cord
+  HDRS
+    "cord.h"
+  SRCS
+    "cord.cc"
+    "internal/cord_internal.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  DEPS
+    absl::base
+    absl::base_internal
+    absl::core_headers
+    absl::endian
+    absl::fixed_array
+    absl::function_ref
+    absl::inlined_vector
+    absl::optional
+    absl::raw_logging_internal
+    absl::strings
+    absl::strings_internal
+    absl::type_traits
+  PUBLIC
+)
+
+absl_cc_library(
+  NAME
+    cord_test_helpers
+  HDRS
+    "cord_test_helpers.h"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::cord
+  TESTONLY
+)
+
+absl_cc_test(
+  NAME
+    cord_test
+  SRCS
+    "cord_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::cord
+    absl::str_format
+    absl::strings
+    absl::base
+    absl::config
+    absl::core_headers
+    absl::endian
+    absl::raw_logging_internal
+    absl::fixed_array
     gmock_main
 )

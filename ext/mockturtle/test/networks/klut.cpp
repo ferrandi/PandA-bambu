@@ -565,7 +565,7 @@ TEST_CASE( "visited values in k-LUT networks", "[klut]" )
   klut.clear_visited();
   klut.foreach_node( [&]( auto n ) {
     CHECK( klut.visited( n ) == 0 );
-    klut.set_visited( n, n );
+    klut.set_visited( n, static_cast<uint32_t>( n ) );
     CHECK( klut.visited( n ) == n );
   } );
   klut.clear_visited();

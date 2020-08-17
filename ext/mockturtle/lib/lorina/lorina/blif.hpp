@@ -25,7 +25,7 @@
 
 /*!
   \file blif.hpp
-  \brief Implements blif parser
+  \brief Implements BLIF parser
 
   \author Heinz Riener
 */
@@ -37,6 +37,7 @@
 #include <lorina/detail/utils.hpp>
 #include <regex>
 #include <iostream>
+#include <optional>
 
 namespace lorina
 {
@@ -50,6 +51,70 @@ class blif_reader
 public:
   /*! \brief Type of the output cover as truth table. */
   using output_cover_t = std::vector<std::pair<std::string, std::string>>;
+
+  /*! Latch input values */
+  enum latch_init_value
+  {
+    ZERO = 0 /*!< Initialized with 0 */
+  , ONE /*!< Initialized with 1 */
+  , NONDETERMINISTIC /*!< Not initialized (non-deterministic value) */
+  , UNKNOWN
+  };
+
+  enum latch_type
+  {
+    FALLING = 0
+  , RISING
+  , ACTIVE_HIGH
+  , ACTIVE_LOW
+  , ASYNC
+  , NONE
+  };
+
+public:
+  static std::optional<latch_init_value> latch_init_value_from_string( std::string const& s )
+  {
+    if ( s == "0" )
+    {
+      return blif_reader::latch_init_value::ZERO;
+    }
+    else if ( s == "1" )
+    {
+      return blif_reader::latch_init_value::ONE;
+    }
+    else if ( s == "2" )
+    {
+      return blif_reader::latch_init_value::NONDETERMINISTIC;
+    }
+    else
+    {
+      return blif_reader::latch_init_value::UNKNOWN;
+    }
+  }
+
+  static std::optional<latch_type> latch_type_from_string( std::string const& s )
+  {
+    if ( s == "fe" )
+    {
+      return blif_reader::latch_type::FALLING;
+    }
+    else if ( s == "re" )
+    {
+      return blif_reader::latch_type::RISING;
+    }
+    else if ( s == "ah" )
+    {
+      return blif_reader::latch_type::ACTIVE_HIGH;
+    }
+    else if ( s == "al" )
+    {
+      return blif_reader::latch_type::ACTIVE_LOW;
+    }
+    else
+    {
+      return blif_reader::latch_type::ASYNC;
+    }
+  }
 
 public:
   /*! \brief Callback method for parsed model.
@@ -77,6 +142,23 @@ public:
   virtual void on_output( const std::string& name ) const
   {
     (void)name;
+  }
+
+  /*! \brief Callback method for parsed latch.
+   *
+   * \param input Input name
+   * \param output Output name
+   * \param type Optional type of the latch
+   * \param control Optional name of control signal
+   * \param reset Optional initial value of the latch
+   */
+  virtual void on_latch( const std::string& input, const std::string& output, const std::optional<latch_type>& type, const std::optional<std::string>& control, const std::optional<latch_init_value>& init_value ) const
+  {
+    (void)input;
+    (void)output;
+    (void)type;
+    (void)control;
+    (void)init_value;
   }
 
   /*! \brief Callback method for parsed gate.
@@ -143,6 +225,12 @@ public:
     first_output = false;
   }
 
+  virtual void on_latch( const std::string& input, const std::string& output, const std::optional<latch_type>& type, const std::optional<std::string>& control, const std::optional<latch_init_value>& init_value ) const
+  {
+    _os << fmt::format( "\n.latch {0} {1} {2} {3} {4}", input, output,
+                        ( type ? *type : latch_type::NONE ), ( control ? *control : "" ), ( init_value ? *init_value : latch_init_value::UNKNOWN ) ) << std::endl;
+  }
+
   virtual void on_gate( const std::vector<std::string>& inputs, const std::string& output, const output_cover_t& cover ) const
   {
     _os << std::endl << fmt::format( ".names {0} {1}", detail::join( inputs, "," ), output ) << std::endl;
@@ -191,6 +279,13 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
 
   const auto dispatch_function = [&]( std::vector<std::string> inputs, std::string output, std::vector<std::pair<std::string, std::string>> tt )
     {
+      /* ignore latches */
+      if ( output == "" )
+      {
+        assert( inputs.size() == 0u );
+        return;
+      }
+
       reader.on_gate( inputs, output, tt );
     };
 
@@ -264,6 +359,49 @@ inline return_code read_blif( std::istream& in, const blif_reader& reader, diagn
           reader.on_input( s );
         }
         return true;
+      }
+
+      /* .latch <list of whitespace separated strings> */
+      if ( detail::starts_with( line, ".latch" ) )
+      {
+        std::string const latch_declaration = line.substr( 6 );
+
+        std::vector<std::string> latch_elements = detail::split( detail::trim_copy( latch_declaration ), " " );
+        if ( latch_elements.size() >= 2 )
+        {
+          std::string const& input = latch_elements.at( 0 );
+          std::string const& output = latch_elements.at( 1 );
+          std::optional<blif_reader::latch_init_value> init_value;
+          std::optional<blif_reader::latch_type> type;
+          std::optional<std::string> control;
+
+          if ( latch_elements.size() == 3u )
+          {
+            init_value = blif_reader::latch_init_value_from_string( latch_elements.at( 2 ) );
+          }
+          else if ( latch_elements.size() == 4u )
+          {
+            type = blif_reader::latch_type_from_string( latch_elements.at( 2 ) );
+            control = latch_elements.at( 3 );
+          }
+          else if ( latch_elements.size() == 5u )
+          {
+            type = blif_reader::latch_type_from_string( latch_elements.at( 2 ) );
+            control = latch_elements.at( 3 );
+            init_value = blif_reader::latch_init_value_from_string( latch_elements.at( 4 ) );
+          }
+
+          on_action.declare_known( output );
+          reader.on_latch( input, output, type, control, init_value );
+          on_action.compute_dependencies( output );
+
+          return true;
+        }
+
+        diag->report( diagnostic_level::error,
+                      fmt::format( "latch format not supported `{0}`", line ) );
+
+        result = return_code::parse_error;
       }
 
       /* .outputs <list of whitespace separated strings> */

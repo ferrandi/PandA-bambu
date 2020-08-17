@@ -47,6 +47,7 @@
 #ifndef FUNCTION_BEHAVIOR_HPP
 #define FUNCTION_BEHAVIOR_HPP
 
+#include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include <deque>      // for deque
@@ -941,8 +942,10 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
    /// Topological sorted vertices
    const std::map<vertex, unsigned int>& ref;
 
-   /// Graph
+/// Graph
+#if HAVE_ASSERTS
    const graph* g;
+#endif
 
  public:
    /**
@@ -950,7 +953,14 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
     * @param ref_ is the map with the topological sort of vertices
     * @param g_ is a graph used only for debugging purpose to print name of vertex
     */
-   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph* g_) : ref(ref_), g(g_)
+   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph*
+#if HAVE_ASSERTS
+                                                                          g_)
+       : ref(ref_), g(g_)
+#else
+                          )
+       : ref(ref_)
+#endif
    {
    }
 

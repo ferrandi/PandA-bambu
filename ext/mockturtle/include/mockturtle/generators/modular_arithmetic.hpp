@@ -775,7 +775,7 @@ inline std::vector<signal<Ntk>> montgomery_multiplication( Ntk& ntk, std::vector
     std::tie( old_r, r ) = std::pair{r, old_r - q * r};
     std::tie( old_s, s ) = std::pair{s, old_s - q * s};
   }
-  const auto NN = abs( old_s );
+  const auto NN = std::abs( old_s );
 
   std::vector<bool> Nvec( logR ), NNvec( logR );
   for ( auto i = 0u; i < logR; ++i )

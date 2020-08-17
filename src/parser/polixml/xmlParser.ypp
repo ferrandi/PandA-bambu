@@ -57,6 +57,7 @@ REF_FORWARD_DECL(XmlBisonParserData);
 REF_FORWARD_DECL(XmlFlexLexer);
 REF_FORWARD_DECL(xml_document);
 
+//#define YYDEBUG 1
 #include <string>
 #include <cstdio>
 #include <cstring>
@@ -79,7 +80,6 @@ REF_FORWARD_DECL(xml_document);
 /**
 * Defines
 */
-//#define YYDEBUG 1
 ///Skipping warnings due to bison
 #pragma GCC diagnostic ignored "-Wconversion"
 #pragma GCC diagnostic ignored "-Wsign-conversion"

@@ -69,9 +69,6 @@ REF_FORWARD_DECL(tree_node);
 class use_counting : public FunctionFrontendFlowStep
 {
  private:
-   /// Counters
-   std::map<unsigned int, unsigned int> counter;
-
    /**
     * Update counters with information concerning tree_node tn
     *@param tn is the tree_node to be analyzed

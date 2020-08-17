@@ -3247,7 +3247,7 @@ bool AllocationInformation::can_be_asynchronous_ram(tree_managerConstRef TM, uns
          if(vd->bit_values.size() != 0)
          {
             for(auto bit_el : vd->bit_values)
-               if(bit_el != '0' && bit_el != '1')
+               if(bit_el == 'U')
                   ++meaningful_bits;
          }
          else

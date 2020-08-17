@@ -37,11 +37,11 @@
 #include <vector>
 
 #include "../traits.hpp"
+#include "../utils/include/percy.hpp"
 #include "../utils/stopwatch.hpp"
 #include "cnf.hpp"
 
 #include <fmt/format.h>
-#include <percy/solvers/bsat2.hpp>
 
 namespace mockturtle
 {

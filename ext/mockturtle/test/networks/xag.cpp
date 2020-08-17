@@ -585,7 +585,7 @@ TEST_CASE( "custom node values in xags", "[xag]" )
   xag.clear_values();
   xag.foreach_node( [&]( auto n ) {
     CHECK( xag.value( n ) == 0 );
-    xag.set_value( n, n );
+    xag.set_value( n, static_cast<uint32_t>( n ) );
     CHECK( xag.value( n ) == n );
     CHECK( xag.incr_value( n ) == n );
     CHECK( xag.value( n ) == n + 1 );

@@ -869,6 +869,8 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
          signal_string = "std_logic_vector(" + signal_string + ")";
       else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
          signal_string = "" + signal_string + "(0)";
+      else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_kind() == constant_o_K)
+         signal_string = std::string("'") + signal_string.at(1) + "'";
       indented_output_stream->Append(port_string + " <= " + signal_string + ";\n");
    }
 
@@ -940,10 +942,7 @@ void VHDL_writer::write_io_signal_post_fix_vector(const structural_objectRef& po
          signal_string = "" + signal_string + "(0)";
       indented_output_stream->Append(port_string + " <= " + signal_string + ";\n");
    }
-
-
 }
-
 
 void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)
 {

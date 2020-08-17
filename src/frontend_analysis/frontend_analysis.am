@@ -148,6 +148,7 @@ BUILT_SOURCES =
 
 if BUILD_BAMBU
   noinst_HEADERS += \
+     frontend_analysis/IR_analysis/APInt.hpp \
      frontend_analysis/IR_analysis/bit_lattice.hpp \
      frontend_analysis/IR_analysis/Bit_Value.hpp \
      frontend_analysis/IR_analysis/Bit_Value_opt.hpp \
@@ -157,9 +158,11 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/CSE.hpp \
      frontend_analysis/IR_analysis/dead_code_elimination.hpp \
      frontend_analysis/IR_analysis/determine_memory_accesses.hpp \
+     frontend_analysis/IR_analysis/eSSA.hpp \
      frontend_analysis/IR_analysis/extract_patterns.hpp \
      frontend_analysis/IR_analysis/fanout_opt.hpp\
      frontend_analysis/IR_analysis/FixStructsPassedByValue.hpp \
+     frontend_analysis/IR_analysis/function_parm_mask.hpp \
      frontend_analysis/IR_analysis/FunctionCallTypeCleanup.hpp \
      frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp \
      frontend_analysis/IR_analysis/hdl_var_decl_fix.hpp \
@@ -176,6 +179,8 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/NI_SSA_liveness.hpp \
      frontend_analysis/IR_analysis/phi_opt.hpp \
      frontend_analysis/IR_analysis/parm_decl_taken_address_fix.hpp \
+     frontend_analysis/IR_analysis/Range_Analysis.hpp \
+     frontend_analysis/IR_analysis/Range.hpp \
      frontend_analysis/IR_analysis/rebuild_initializations.hpp \
      frontend_analysis/IR_analysis/remove_clobber_ga.hpp \
      frontend_analysis/IR_analysis/remove_ending_if.hpp \
@@ -184,9 +189,9 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/simple_code_motion.hpp \
      frontend_analysis/IR_analysis/soft_float_cg_ext.hpp \
      frontend_analysis/IR_analysis/vectorize.hpp \
-     frontend_analysis/IR_analysis/virtual_phi_nodes_split.hpp\
-     frontend_analysis/IR_analysis/constant_flop_wrapper.hpp
+     frontend_analysis/IR_analysis/virtual_phi_nodes_split.hpp
   lib_IR_analysis_la_SOURCES += \
+     frontend_analysis/IR_analysis/APInt.cpp \
      frontend_analysis/IR_analysis/IR_lowering.cpp \
      frontend_analysis/IR_analysis/IR_lowering_exec.cpp \
      frontend_analysis/IR_analysis/bit_lattice.cpp \
@@ -200,9 +205,11 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/CSE.cpp \
      frontend_analysis/IR_analysis/dead_code_elimination.cpp \
      frontend_analysis/IR_analysis/determine_memory_accesses.cpp \
+     frontend_analysis/IR_analysis/eSSA.cpp \
      frontend_analysis/IR_analysis/extract_patterns.cpp \
      frontend_analysis/IR_analysis/fanout_opt.cpp\
      frontend_analysis/IR_analysis/FixStructsPassedByValue.cpp \
+     frontend_analysis/IR_analysis/function_parm_mask.cpp \
      frontend_analysis/IR_analysis/FunctionCallTypeCleanup.cpp \
      frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp \
      frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp \
@@ -218,6 +225,8 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/NI_SSA_liveness.cpp \
      frontend_analysis/IR_analysis/phi_opt.cpp \
      frontend_analysis/IR_analysis/parm_decl_taken_address_fix.cpp \
+     frontend_analysis/IR_analysis/Range_Analysis.cpp \
+     frontend_analysis/IR_analysis/Range.cpp \
      frontend_analysis/IR_analysis/rebuild_initializations.cpp \
      frontend_analysis/IR_analysis/remove_clobber_ga.cpp \
      frontend_analysis/IR_analysis/remove_ending_if.cpp \
@@ -226,14 +235,12 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/simple_code_motion.cpp \
      frontend_analysis/IR_analysis/soft_float_cg_ext.cpp \
      frontend_analysis/IR_analysis/vectorize.cpp \
-     frontend_analysis/IR_analysis/virtual_phi_nodes_split.cpp \
-     frontend_analysis/IR_analysis/constant_flop_wrapper.cpp
+     frontend_analysis/IR_analysis/virtual_phi_nodes_split.cpp
    lib_IR_analysis_la_CPPFLAGS += \
       -I$(top_srcdir)/ext/mockturtle/include/\
       -I$(top_srcdir)/ext/mockturtle/lib/kitty/\
       -I$(top_srcdir)/ext/mockturtle/lib/fmt/\
       -I$(top_srcdir)/ext/mockturtle/lib/sparsepp\
-      -I$(top_srcdir)/ext/mockturtle/lib/ez\
       -I$(top_srcdir)/ext/mockturtle/lib/lorina\
       -I$(top_srcdir)/ext/mockturtle/lib/rang\
       -I$(top_srcdir)/ext/mockturtle/lib/percy\

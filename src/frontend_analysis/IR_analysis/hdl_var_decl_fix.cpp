@@ -79,6 +79,17 @@ HDLVarDeclFix::~HDLVarDeclFix() = default;
 DesignFlowStep_Status HDLVarDeclFix::InternalExec()
 {
    const tree_managerRef TM = AppM->get_tree_manager();
+   /// Already considered decl_node
+   CustomUnorderedSet<unsigned int> already_examinated_decls;
+
+   /// Already found variable and parameter names
+   CustomUnorderedSet<std::string> already_examinated_names;
+
+   /// Already found type names
+   CustomUnorderedSet<std::string> already_examinated_type_names;
+
+   /// Already visited address expression (used to avoid infinite recursion)
+   CustomUnorderedSet<unsigned int> already_visited_ae;
 
    /// Preload backend names
    const auto hdl_writer = language_writer::create_writer(hdl_writer_type, GetPointer<HLS_manager>(AppM)->get_HLS_target()->get_technology_manager(), parameters);
@@ -106,7 +117,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
          auto argName = GET_NODE(a->name);
          THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
          const std::string argName_string = GetPointer<identifier_node>(argName)->strg;
-         recursive_examinate(arg);
+         recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
          argName = GET_NODE(a->name);
          THROW_ASSERT(GetPointer<identifier_node>(argName), "unexpected condition");
          const std::string argName_string_new = GetPointer<identifier_node>(argName)->strg;
@@ -179,7 +190,7 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    else
    {
       for(auto arg : fd->list_of_args)
-         recursive_examinate(arg);
+         recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
    }
 
    VarDeclFix::InternalExec();

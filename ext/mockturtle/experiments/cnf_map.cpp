@@ -23,8 +23,8 @@
  * OTHER DEALINGS IN THE SOFTWARE.
  */
 
-#include <algorithm>
 #include <string>
+#include <algorithm>
 #include <vector>
 
 #include <fmt/format.h>
