@@ -1688,7 +1688,6 @@ DesignFlowStep_Status allocation::InternalExec()
             auto* curr_op = GetPointer<operation>(ops);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering operation: " + (ops)->get_name());
             std::string curr_op_name = curr_op->get_name();
-            bool varargs_fu;
             for(const auto vert : vertex_to_analyse)
             {
                const auto vert_node_id = g->CGetOpNodeInfo(vert)->GetNodeId();
@@ -1749,13 +1748,12 @@ DesignFlowStep_Status allocation::InternalExec()
                std::string current_op;
                std::string specialized_fuName = "";
 
-               varargs_fu = false;
-               bool has_to_be_generated = structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
-                                          not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR);
+               bool has_to_be_generated = structManager_obj && (GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) ||
+                                                                GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR));
                if(has_to_be_generated)
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Unit has to be specialized");
-                  varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
+                  bool varargs_fu = GetPointer<module>(structManager_obj->get_circ())->is_var_args();
                   moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
                   if(varargs_fu)
                   {
@@ -2442,8 +2440,8 @@ void allocation::IntegrateTechnologyLibraries()
             if(!wrapper_tn)
             {
                structural_managerRef structManager_obj = GetPointer<functional_unit>(techNode_obj)->CM;
-               if(structManager_obj && GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) and
-                  not GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR))
+               if(structManager_obj && (GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VERILOG_GENERATOR) or
+                                        GetPointer<module>(structManager_obj->get_circ())->get_NP_functionality()->exist_NP_functionality(NP_functionality::VHDL_GENERATOR)))
                {
                   moduleGeneratorRef modGen = moduleGeneratorRef(new moduleGenerator(HLSMgr, parameters));
                   std::string new_shared_fu_name = shared_fu_name + "_modgen";
