@@ -476,7 +476,8 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                }
             }
 
-            if(InterfaceType == port_o::port_interface::PI_RVALID || InterfaceType == port_o::port_interface::PI_WACK || InterfaceType == port_o::port_interface::PI_EMPTY_N || InterfaceType == port_o::port_interface::PI_FULL_N || InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID || InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+            if(InterfaceType == port_o::port_interface::PI_RVALID || InterfaceType == port_o::port_interface::PI_WACK || InterfaceType == port_o::port_interface::PI_EMPTY_N || InterfaceType == port_o::port_interface::PI_FULL_N ||
+               InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID || InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
             {
                if(!have_both && (firstRValid && InterfaceType == port_o::port_interface::PI_RVALID))
                {
