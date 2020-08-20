@@ -212,7 +212,29 @@ public:
        for (llvm::Instruction &i : *L->getHeader()) {
           if (llvm::PHINode *phi_node = llvm::dyn_cast<llvm::PHINode>(&i)) {
              if (phi_node->getType()->isPointerTy()) {
-                phi_candidates.push_back(phi_node);
+                ///phi_candidates.push_back(phi_node);
+
+		bool has_arg_operand = false;
+		for (auto &op : phi_node->incoming_values()) {
+		   if (llvm::Argument *arg = llvm::dyn_cast<llvm::Argument>(&op)) {
+		      for (llvm::User *user : arg->getParent()->users()) {
+		         if (llvm::CallInst *call_inst = llvm::dyn_cast<llvm::CallInst>(user)) {
+			    llvm::Value *op = call_inst->getOperandUse(arg->getArgNo());
+			    if (llvm::GEPOperator *gep_op = llvm::dyn_cast<llvm::GEPOperator>(op)) {
+			       if (llvm::GlobalVariable *g_var = llvm::dyn_cast<llvm::GlobalVariable>(gep_op->getPointerOperand())) {
+			          if (arg->getType()->getPointerElementType()->isIntegerTy(8)) {
+				     has_arg_operand = true;
+				  }
+			       }
+			    }
+			 }
+		      }
+		   }
+		}
+
+		if (!has_arg_operand) {
+		   phi_candidates.push_back(phi_node);
+		}
              }
           }
        }

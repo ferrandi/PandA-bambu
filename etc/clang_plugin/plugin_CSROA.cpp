@@ -197,6 +197,8 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    
    PM.add(createCodeSimplificationPass());
 
+#define CLANG_CSROA_STEP 31
+
 #if (CLANG_CSROA_STEP & 1) == 1
    printf("Added Loop rotate\n");
    PM.add(llvm::createLoopRotatePass());
@@ -235,7 +237,7 @@ static void loadPassFull(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation >);
    PM.add(llvm::createVerifierPass());
 #endif
-
+return;
 #if (CLANG_CSROA_STEP & 32) == 32
    printf("Added Mid Optimization\n");
    // Insert -O3 in chain
