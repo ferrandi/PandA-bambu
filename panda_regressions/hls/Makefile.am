@@ -1158,6 +1158,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_c1_ack.c\
 ./bambu_specific_test4/simple_c3_ovalid.c \
 ./bambu_specific_test4/simple_c4_fifo.c \
+./bambu_specific_test4/simple_c4_axis.c \
 ./bambu_specific_test4/simple_c4_handshake.c \
 ./bambu_specific_test4/simple_c4_array.c \
 ./bambu_specific_test4/simple_c4_array_8bits.c \

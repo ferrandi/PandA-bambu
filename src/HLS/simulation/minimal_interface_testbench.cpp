@@ -443,6 +443,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
       bool firstRValid = true;
       bool firstWAck = true;
       bool firstFull_n = true;
+      bool firstM_axis_tready = true;
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          const structural_objectRef& portInst = mod->get_in_port(i);
@@ -475,7 +476,7 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                }
             }
 
-            if(InterfaceType == port_o::port_interface::PI_RVALID || InterfaceType == port_o::port_interface::PI_WACK || InterfaceType == port_o::port_interface::PI_EMPTY_N || InterfaceType == port_o::port_interface::PI_FULL_N)
+            if(InterfaceType == port_o::port_interface::PI_RVALID || InterfaceType == port_o::port_interface::PI_WACK || InterfaceType == port_o::port_interface::PI_EMPTY_N || InterfaceType == port_o::port_interface::PI_FULL_N || InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID || InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
             {
                if(!have_both && (firstRValid && InterfaceType == port_o::port_interface::PI_RVALID))
                {
@@ -492,6 +493,11 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   firstFull_n = false;
                   writer->write("integer __full_n_port_state = 0;\n");
                }
+               if(firstM_axis_tready && InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+               {
+                  firstM_axis_tready = false;
+                  writer->write("integer __m_axis_tready_port_state = 0;\n");
+               }
                if(InterfaceType == port_o::port_interface::PI_RVALID)
                   writer->write_comment("RVALID handler\n");
                else if(InterfaceType == port_o::port_interface::PI_WACK)
@@ -500,6 +506,10 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   writer->write_comment("EMPTY_N handler\n");
                else if(InterfaceType == port_o::port_interface::PI_FULL_N)
                   writer->write_comment("FULL_N handler\n");
+               else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID)
+                  writer->write_comment("S_AXIS_TVALID handler\n");
+               else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+                  writer->write_comment("M_AXIS_TREADY handler\n");
                else
                   THROW_ERROR("unsupported interface type");
                writer->write("always @ (posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
@@ -527,6 +537,10 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                      writer->write("if(__state == 3)\n");
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
                      writer->write("if(__state == 3)\n");
+                  else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID)
+                     writer->write("if(__state == 3)\n");
+                  else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+                     writer->write("if(__state == 3)\n");
                   else
                      THROW_ERROR("unsupported interface type");
                   writer->write(STR(STD_OPENING_CHAR));
@@ -535,6 +549,8 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __ack_port_state < 1 ? 1'b0 : 1'b1;\n");
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __full_n_port_state < 3 ? 1'b0 : 1'b1;\n");
+                  else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+                     writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __m_axis_tready_port_state < 3 ? 1'b0 : 1'b1;\n");
                   else
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= 1'b1;\n");
                   if(InterfaceType == port_o::port_interface::PI_RVALID)
@@ -548,6 +564,10 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                      ;
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
                      writer->write("__full_n_port_state <= __full_n_port_state + 1;");
+                  else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID)
+                     ;
+                  else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+                     writer->write("__m_axis_tready_port_state <= __m_axis_tready_port_state + 1;");
                   else
                      THROW_ERROR("unsupported interface type");
                   writer->write(STR(STD_CLOSING_CHAR) + "\n");
@@ -853,7 +873,15 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       }
       if(!portInst)
       {
+         portInst = mod->find_member("s_axis_" + par + "_TDATA", port_o_K, cir);
+      }
+      if(!portInst)
+      {
          portInst = mod->find_member(par + "_din", port_o_K, cir);
+      }
+      if(!portInst)
+      {
+         portInst = mod->find_member("m_axis_" + par + "_TDATA", port_o_K, cir);
       }
       if(!portInst)
       {

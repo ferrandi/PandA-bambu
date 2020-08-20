@@ -751,7 +751,11 @@ struct port_o : public structural_object
       S_AXIL_RRESP,
       S_AXIL_BVALID,
       S_AXIL_BREADY,
-      S_AXIL_BRESP
+      S_AXIL_BRESP,
+      PI_S_AXIS_TVALID,
+      PI_S_AXIS_TREADY,
+      PI_M_AXIS_TREADY,
+      PI_M_AXIS_TVALID
    };
 
    static const unsigned int PARAMETRIC_PORT = static_cast<unsigned int>(-1);
