@@ -14,6 +14,14 @@ AC_DISABLE_SHARED
 #AC_DISABLE_STATIC
 AC_CONFIG_MACRO_DIR(etc/macros)
 
+#Flags have to be emptied since AC_PROG_CXX and AC_PROG_CC set them to "-g -O2"
+: ${CFLAGS=""}
+: ${CXXFLAGS=""}
+CFLAGS_EXT=-O2
+CXXFLAGS_EXT=-O2
+CXXFLAGS_EXTFPLL=-O2
+CXXFLAGS_STD=-O2
+
 # Checks for programs.
 AC_PROG_CXX
 AC_PROG_CC
@@ -26,13 +34,6 @@ AC_PROG_MAKE_SET
 AM_PROG_LEX
 AC_PROG_YACC
 AC_PROG_F77
-#Flags have to be emptied since AC_PROG_CXX and AC_PROG_CC set them to "-g -O2"
-: ${CFLAGS=""}
-: ${CXXFLAGS=""}
-CFLAGS_EXT=-O2
-CXXFLAGS_EXT=-O2
-CXXFLAGS_EXTFPLL=-O2
-CXXFLAGS_STD=-O2
 
 AC_ARG_ENABLE(clanglibcpp,         [  --enable-clanglibcpp         Clang is going to use libc++ ],                                                          [panda_clanglibcpp="$enableval"], [panda_clanglibcpp="no"])
 AC_ARG_ENABLE(oldclangabi,         [  --enable-oldclangabi         Clang plugins are compiled with the old abi ],                                           [panda_clangoldabi="$enableval"], [panda_clangoldabi="no"])
