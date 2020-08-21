@@ -45,7 +45,7 @@ SFtype __floatundisf(UDItype i)
    return a;
 }
 
-inline SFtype __uint64_to_float32if(UDItype i)
+SFtype __uint64_to_float32if(UDItype i)
 {
    return __floatundisf(i);
 }

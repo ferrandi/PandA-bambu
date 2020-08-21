@@ -35,6 +35,7 @@
  * @brief Datastructure to represent a memory symbol in HLS
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
+ * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
  * $Date$
  * Last modified by $Author$
@@ -46,75 +47,96 @@
 #include "refcount.hpp"
 #include <string>
 
+#include "string_manipulation.hpp" //STR
+
+#define MEM_PREFIX "MEM_"
+
 class memory_symbol
 {
    /// identifier of the variable
    unsigned int variable;
 
    /// name of the symbol
+   std::string symbol_name;
+
+   /// name of the variable
    std::string name;
 
    /// current variable address
-   unsigned int address;
-
-   /// flag to check if the memory address is defined or not (i.e., it has been actually resolved)
-   bool resolved;
+   unsigned long long int address;
 
  public:
    /**
     * Constructor
     */
-   memory_symbol(unsigned int var, unsigned int address, unsigned int funId);
+   memory_symbol(unsigned int var, const std::string& _name, unsigned long long _address, unsigned int funId) : variable(var), symbol_name(STR(MEM_PREFIX) + "var_" + STR(var) + "_" + STR(funId)), name(_name), address(_address)
+   {
+   }
 
    /**
     * Destructor
     */
-   ~memory_symbol();
+   ~memory_symbol() = default;
 
    /**
     * Sets the actual name for the variable symbol
     */
-   void set_symbol_name(const std::string& name);
+   void set_symbol_name(const std::string& _symbol_name)
+   {
+      symbol_name = _symbol_name;
+   }
 
    /**
     * Returns the current name for the variable symbol
     */
-   std::string get_symbol_name() const;
+   std::string get_symbol_name() const
+   {
+      return symbol_name;
+   }
+
+   /**
+    * Sets the actual name for the variable
+    */
+   void set_name(const std::string& _name)
+   {
+      name = _name;
+   }
+
+   /**
+    * Returns the current name for the variable
+    */
+   std::string get_name() const
+   {
+      return name;
+   }
 
    /**
     * Sets the actual address for the variable
     */
-   void set_address(unsigned int address);
+   void set_address(unsigned long long _address)
+   {
+      address = _address;
+   }
 
    /**
     * Gets the current address for the variable
     */
-   unsigned int get_address() const;
+   unsigned long long int get_address() const
+   {
+      return address;
+   }
 
    /**
     * Gets the current the variable
     */
-   unsigned int get_variable() const;
-
-   /**
-    * Sets if the variable has been actually resolved or not
-    */
-   void set_resolved(bool flag) const;
-
-   /**
-    * Returns if the variable address has been already resolved or not
-    */
-   bool is_resolved() const;
-
-   /**
-    * Returns the binary address in form of string
-    * @param precision is the number of bits which the address should be represented
-    */
-   std::string get_address_string(unsigned int precision) const;
+   unsigned int get_variable() const
+   {
+      return variable;
+   }
 
    bool notEQ(const memory_symbol& ref) const
    {
-      return variable != ref.variable || name != ref.name || address != ref.address || resolved != ref.resolved;
+      return variable != ref.variable || name != ref.name || address != ref.address || symbol_name != ref.symbol_name;
    }
 };
 /// refcount definition of the class

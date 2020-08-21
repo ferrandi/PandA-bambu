@@ -91,6 +91,7 @@
 #include "language_writer.hpp"
 
 #include "Parameter.hpp"
+#include "fileIO.hpp"
 #include "op_graph.hpp"
 #include "polixml.hpp"
 #include "xml_helper.hpp"
@@ -756,8 +757,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          if(memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED &&
             (channels_type.find(CHANNELS_TYPE_MEM_ACC_NN) != std::string::npos || (channels_type.find(CHANNELS_TYPE_MEM_ACC_N1) != std::string::npos && channels_type.find(CHANNELS_TYPE_MEM_ACC_11) == std::string::npos)))
          {
-            std::ofstream init_file_a(("a_" + init_filename).c_str());
-            std::ofstream init_file_b(("b_" + init_filename).c_str());
+            std::ofstream init_file_a(GetPath(("a_" + init_filename).c_str()));
+            std::ofstream init_file_b(GetPath(("b_" + init_filename).c_str()));
             bool is_even = true;
             for(unsigned int i = 0; i < vec_size; ++i)
             {
@@ -785,7 +786,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          else
          {
-            std::ofstream init_file(init_filename.c_str());
+            std::ofstream init_file(GetPath(init_filename.c_str()));
             for(unsigned int i = 0; i < vec_size; ++i)
             {
                for(unsigned int j = 0; j < elts_size; ++j)

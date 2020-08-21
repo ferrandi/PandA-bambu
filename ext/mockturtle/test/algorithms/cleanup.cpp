@@ -55,7 +55,7 @@ void test_cleanup_into_network()
   std::vector<typename NtkDest::signal> pis = {x1, x2};
   dest.create_po( cleanup_dangling( ntk, dest, pis.begin(), pis.end() )[0] );
 
-  CHECK( simulate<kitty::static_truth_table<2>>( ntk )[0] == simulate<kitty::static_truth_table<2>>( dest )[0] );
+  CHECK( simulate<kitty::static_truth_table<2u>>( ntk )[0] == simulate<kitty::static_truth_table<2u>>( dest )[0] );
 }
 
 TEST_CASE( "cleanup networks without PO", "[cleanup]" )

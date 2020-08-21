@@ -20,15 +20,15 @@ EXTRA_DIST = \
              absl/container/BUILD.bazel absl/container/CMakeLists.txt absl/copts/GENERATED_copts.bzl absl/copts/AbseilConfigureCopts.cmake absl/copts/copts.py absl/copts/generate_copts.py absl/copts/GENERATED_AbseilCopts.cmake absl/copts/configure_copts.bzl\
              absl/debugging/symbolize_test.cc absl/debugging/failure_signal_handler_test.cc absl/debugging/internal/demangle_test.cc absl/debugging/leak_check_test.cc absl/debugging/leak_check_fail_test.cc \
              absl/debugging/internal/stack_consumption_test.cc absl/debugging/BUILD.bazel absl/debugging/CMakeLists.txt \
-             absl/flags/internal/commandlineflag_test.cc absl/flags/config_test.cc absl/flags/flag_test.cc absl/flags/flag_test_defs.cc absl/flags/marshalling_test.cc absl/flags/parse_test.cc absl/flags/internal/path_util_test.cc\
-             absl/flags/internal/program_name_test.cc absl/flags/internal/type_erased_test.cc absl/flags/usage_config_test.cc absl/flags/internal/usage_test.cc absl/flags/BUILD.bazel absl/flags/CMakeLists.txt\
+             absl/flags/config_test.cc absl/flags/flag_test.cc absl/flags/flag_test_defs.cc absl/flags/marshalling_test.cc absl/flags/parse_test.cc absl/flags/internal/path_util_test.cc\
+             absl/flags/internal/program_name_test.cc absl/flags/usage_config_test.cc absl/flags/internal/usage_test.cc absl/flags/BUILD.bazel absl/flags/CMakeLists.txt\
              absl/functional/bind_front_test.cc absl/functional/BUILD.bazel absl/functional/function_ref_benchmark.cc absl/functional/function_ref_test.cc\
              absl/hash/hash_testing.h absl/hash/hash_test.cc absl/hash/internal/city_test.cc absl/hash/BUILD.bazel absl/hash/CMakeLists.txt\
              absl/memory/memory_test.cc absl/memory/memory_exception_safety_test.cc absl/memory/BUILD.bazel absl/memory/CMakeLists.txt \
              absl/meta/type_traits_test.cc absl/meta/BUILD.bazel absl/meta/CMakeLists.txt \
              absl/numeric/int128_stream_test.cc absl/numeric/int128_test.cc \
              absl/random/bernoulli_distribution_test.cc absl/random/beta_distribution_test.cc absl/random/bit_gen_ref_test.cc absl/random/distributions_test.cc absl/random/generators_test.cc absl/random/log_uniform_int_distribution_test.cc \
-             absl/random/mocking_bit_gen.cc absl/random/mock_distributions_test.cc absl/random/mocking_bit_gen_test.cc \
+             absl/random/mock_distributions_test.cc absl/random/mocking_bit_gen_test.cc \
              absl/random/discrete_distribution_test.cc absl/random/poisson_distribution_test.cc absl/random/exponential_distribution_test.cc absl/random/gaussian_distribution_test.cc absl/random/uniform_int_distribution_test.cc \
              absl/random/uniform_real_distribution_test.cc absl/random/zipf_distribution_test.cc absl/random/examples_test.cc absl/random/seed_sequences_test.cc absl/random/internal/chi_square.cc \
              absl/random/internal/distribution_test_util.cc absl/random/internal/chi_square.h absl/random/internal/distribution_test_util.h absl/random/internal/traits_test.cc absl/random/internal/generate_real_test.cc \
@@ -53,10 +53,32 @@ EXTRA_DIST = \
              absl/utility/utility_test.cc absl/utility/BUILD.bazel absl/utility/CMakeLists.txt\
              absl/BUILD.bazel absl/CMakeLists.txt absl/compiler_config_setting.bzl absl/abseil.podspec.gen.py\
              ci/linux_clang-latest_libcxx_tsan_bazel.sh ci/macos_xcode_bazel.sh ci/linux_clang-latest_libstdcxx_bazel.sh ci/linux_clang-latest_libcxx_bazel.sh ci/cmake_install_test.sh ci/macos_xcode_cmake.sh ci/linux_gcc-latest_libstdcxx_bazel.sh\
-             ci/linux_clang-latest_libcxx_asan_bazel.sh ci/linux_gcc-4.9_libstdcxx_bazel.sh ci/linux_gcc-latest_libstdcxx_cmake.sh ci/absl_alternate_options.h\
+             ci/linux_clang-latest_libcxx_asan_bazel.sh ci/linux_gcc-4.9_libstdcxx_bazel.sh ci/linux_gcc-latest_libstdcxx_cmake.sh ci/absl_alternate_options.h ci/linux_docker_containers.sh \
              CMake/README.md CMake/AbseilInstallDirs.cmake CMake/abslConfig.cmake.in CMake/install_test_project CMake/install_test_project/CMakeLists.txt CMake/install_test_project/test.sh CMake/install_test_project/simple.cc\
              CMake/AbseilHelpers.cmake CMake/Googletest CMake/Googletest/DownloadGTest.cmake CMake/Googletest/CMakeLists.txt.in \
-             ABSEIL_ISSUE_TEMPLATE.md AUTHORS CMakeLists.txt  conanfile.py  configure.ac  CONTRIBUTING.md  LICENSE  LTS.md  Makefile.am  README.md  UPGRADES.md  WORKSPACE Makefile.autotools
+             ABSEIL_ISSUE_TEMPLATE.md AUTHORS CMakeLists.txt  conanfile.py  configure.ac  CONTRIBUTING.md  LICENSE  LTS.md  Makefile.am  README.md  UPGRADES.md  WORKSPACE Makefile.autotools\
+             BUILD.bazel CMake/AbseilDll.cmake FAQ.md \
+             absl/base/internal/errno_saver_test.cc \
+             absl/base/internal/strerror_test.cc \
+             absl/base/internal/fast_type_id_test.cc \
+             absl/base/internal/strerror_benchmark.cc \
+             absl/base/internal/unique_small_name_test.cc \
+             absl/base/optimization_test.cc \
+             absl/container/btree_benchmark.cc \
+             absl/flags/flag_benchmark.cc \
+             absl/flags/commandlineflag_test.cc \
+             absl/flags/reflection_test.cc \
+             absl/functional/CMakeLists.txt \
+             absl/strings/cord_test.cc \
+             absl/strings/cord_test_helpers.h \
+             absl/status/BUILD.bazel \
+             absl/status/CMakeLists.txt \
+             absl/status/status.cc \
+             absl/status/status.h \
+             absl/status/status_payload_printer.cc \
+             absl/status/status_payload_printer.h \
+             absl/status/status_test.cc
+
 
 noinst_HEADERS = \
           absl/algorithm/algorithm.h absl/algorithm/container.h\
@@ -67,6 +89,11 @@ noinst_HEADERS = \
           absl/base/call_once.h absl/base/casts.h absl/base/internal/cycleclock.h absl/base/internal/low_level_scheduling.h absl/base/internal/per_thread_tls.h absl/base/internal/periodic_sampler.h absl/base/internal/raw_logging.h absl/base/internal/spinlock.h absl/base/internal/sysinfo.h absl/base/internal/thread_identity.h absl/base/internal/tsan_mutex_interface.h absl/base/internal/unscaledcycleclock.h absl/base/log_severity.h \
           absl/base/internal/throw_delegate.h absl/base/internal/pretty_function.h absl/base/internal/endian.h absl/base/internal/unaligned_access.h absl/base/internal/bits.h absl/base/internal/exponential_biased.h \
           absl/base/internal/scoped_set_env.h \
+          absl/base/internal/dynamic_annotations.h \
+          absl/base/internal/errno_saver.h \
+          absl/base/internal/fast_type_id.h \
+          absl/base/internal/strerror.cc \
+          absl/base/internal/strerror.h \
           absl/container/btree_map.h absl/container/btree_set.h absl/container/internal/btree.h absl/container/internal/btree_container.h absl/container/internal/compressed_tuple.h absl/container/fixed_array.h absl/container/internal/inlined_vector.h absl/container/inlined_vector.h absl/container/internal/counting_allocator.h \
           absl/container/flat_hash_map.h absl/container/flat_hash_set.h absl/container/node_hash_map.h absl/container/node_hash_set.h absl/container/internal/container_memory.h absl/container/internal/hash_function_defaults.h \
           absl/container/internal/hash_policy_traits.h absl/container/internal/hashtablez_sampler.h absl/container/internal/hashtable_debug.h absl/container/internal/hashtable_debug_hooks.h absl/container/internal/have_sse.h absl/container/internal/common.h\
@@ -76,26 +103,38 @@ noinst_HEADERS = \
           absl/debugging/internal/stacktrace_arm-inl.inc absl/debugging/internal/stacktrace_config.h absl/debugging/internal/stacktrace_generic-inl.inc absl/debugging/internal/stacktrace_powerpc-inl.inc \
           absl/debugging/internal/stacktrace_unimplemented-inl.inc absl/debugging/internal/stacktrace_win32-inl.inc absl/debugging/internal/stacktrace_x86-inl.inc absl/debugging/internal/vdso_support.h\
           absl/debugging/internal/demangle.h absl/debugging/leak_check.h absl/debugging/internal/stack_consumption.h \
+          absl/debugging/symbolize_darwin.inc \
           absl/flags/internal/path_util.h absl/flags/internal/program_name.h absl/flags/config.h absl/flags/usage_config.h absl/flags/marshalling.h absl/flags/internal/commandlineflag.h absl/flags/internal/registry.h \
-          absl/flags/internal/type_erased.h absl/flags/declare.h absl/flags/flag.h absl/flags/internal/flag.h absl/flags/internal/usage.h absl/flags/usage.h absl/flags/internal/parse.h absl/flags/parse.h \
+          absl/flags/declare.h absl/flags/flag.h absl/flags/internal/flag.h absl/flags/internal/usage.h absl/flags/usage.h absl/flags/internal/parse.h absl/flags/parse.h \
+          absl/flags/commandlineflag.cc \
+          absl/flags/commandlineflag.h \
+          absl/flags/internal/private_handle_accessor.cc \
+          absl/flags/internal/private_handle_accessor.h \
+          absl/flags/reflection.cc \
+          absl/flags/reflection.h \
           absl/functional/bind_front.h absl/functional/function_ref.h absl/functional/internal/front_binder.h absl/functional/internal/function_ref.h \
           absl/hash/hash.h absl/hash/internal/hash.h absl/hash/internal/spy_hash_state.h absl/hash/internal/city.h \
           absl/memory/memory.h absl/meta/type_traits.h \
           absl/numeric/int128.h absl/numeric/int128_have_intrinsic.inc absl/numeric/int128_no_intrinsic.inc \
-          absl/random/random.h absl/random/bernoulli_distribution.h absl/random/beta_distribution.h absl/random/bit_gen_ref.h absl/random/discrete_distribution.h absl/random/distribution_format_traits.h absl/random/distributions.h \
+          absl/random/random.h absl/random/bernoulli_distribution.h absl/random/beta_distribution.h absl/random/bit_gen_ref.h absl/random/discrete_distribution.h absl/random/distributions.h \
           absl/random/exponential_distribution.h absl/random/gaussian_distribution.h absl/random/log_uniform_int_distribution.h absl/random/mock_distributions.h absl/random/mocking_bit_gen.h absl/random/poisson_distribution.h absl/random/uniform_int_distribution.h \
           absl/random/uniform_real_distribution.h absl/random/zipf_distribution.h absl/random/seed_gen_exception.h absl/random/seed_sequences.h absl/random/internal/traits.h absl/random/internal/distribution_caller.h \
-          absl/random/internal/distributions.h absl/random/internal/fast_uniform_bits.h absl/random/internal/seed_material.h absl/random/internal/pool_urbg.h \
-          absl/random/internal/sequence_urbg.h absl/random/internal/salted_seed_seq.h absl/random/internal/iostream_state_saver.h absl/random/internal/mock_overload_set.h absl/random/internal/mocking_bit_gen_base.h \
+          absl/random/internal/fast_uniform_bits.h absl/random/internal/seed_material.h absl/random/internal/pool_urbg.h \
+          absl/random/internal/sequence_urbg.h absl/random/internal/salted_seed_seq.h absl/random/internal/iostream_state_saver.h absl/random/internal/mock_overload_set.h \
           absl/random/internal/generate_real.h absl/random/internal/wide_multiply.h \
           absl/random/internal/fastmath.h \
-          absl/random/internal/nonsecure_base.h absl/random/internal/pcg_engine.h absl/random/internal/randen_engine.h absl/random/internal/randen_traits.h absl/random/internal/randen-keys.inc absl/random/internal/platform.h \
+          absl/random/internal/nonsecure_base.h absl/random/internal/pcg_engine.h absl/random/internal/randen_engine.h absl/random/internal/randen_traits.h absl/random/internal/platform.h \
           absl/random/internal/randen.h absl/random/internal/randen_slow.h absl/random/internal/randen_detect.h absl/random/internal/randen_hwaes.h absl/random/internal/randen_hwaes.h absl/random/internal/uniform_helper.h\
+          absl/random/internal/mock_helpers.h \
+          absl/random/internal/randen_round_keys.cc \
           absl/strings/ascii.h absl/strings/charconv.h absl/strings/escaping.h absl/strings/match.h absl/strings/numbers.h absl/strings/str_cat.h absl/strings/str_join.h absl/strings/str_replace.h absl/strings/str_split.h\
           absl/strings/string_view.h absl/strings/strip.h absl/strings/substitute.h absl/strings/internal/charconv_parse.h absl/strings/internal/escaping.h absl/strings/internal/memutil.h absl/strings/internal/stl_type_traits.h absl/strings/internal/str_join_internal.h \
           absl/strings/internal/str_split_internal.h absl/strings/internal/char_map.h absl/strings/internal/ostringstream.h absl/strings/internal/resize_uninitialized.h absl/strings/internal/utf8.h \
           absl/strings/str_format.h absl/strings/internal/str_format/arg.h absl/strings/internal/str_format/bind.h absl/strings/internal/str_format/checker.h absl/strings/internal/str_format/extension.h \
           absl/strings/internal/str_format/float_conversion.h absl/strings/internal/str_format/output.h absl/strings/internal/str_format/parser.h absl/strings/internal/pow10_helper.h \
+          absl/strings/cord.cc \
+          absl/strings/cord.h \
+          absl/strings/internal/cord_internal.h \
           absl/synchronization/internal/graphcycles.h absl/synchronization/barrier.h absl/synchronization/blocking_counter.h absl/synchronization/internal/create_thread_identity.h absl/synchronization/internal/kernel_timeout.h\
           absl/synchronization/internal/mutex_nonprod.inc absl/synchronization/internal/per_thread_sem.h absl/synchronization/internal/waiter.h absl/synchronization/mutex.h absl/synchronization/notification.h\
           absl/synchronization/internal/thread_pool.h \
@@ -106,6 +145,10 @@ noinst_HEADERS = \
           absl/types/any.h absl/types/bad_any_cast.h absl/types/bad_any_cast.h absl/types/internal/span.h absl/types/optional.h absl/types/span.h absl/types/internal/optional.h absl/types/bad_optional_access.h \
           absl/types/bad_variant_access.h absl/types/variant.h absl/types/internal/variant.h absl/types/compare.h\
           absl/types/internal/conformance_aliases.h absl/types/internal/conformance_archetype.h absl/types/internal/conformance_profile.h \
+          absl/types/internal/conformance_testing.h \
+          absl/types/internal/conformance_testing_helpers.h \
+          absl/types/internal/parentheses.h \
+          absl/types/internal/transform_args.h \
           absl/utility/utility.h
 
 
@@ -121,7 +164,7 @@ libabseil_la_SOURCES = \
                        absl/debugging/stacktrace.cc absl/debugging/symbolize.cc absl/debugging/internal/examine_stack.cc absl/debugging/failure_signal_handler.cc \
                        absl/debugging/internal/address_is_readable.cc absl/debugging/internal/elf_mem_image.cc absl/debugging/internal/vdso_support.cc absl/debugging/internal/demangle.cc\
                        absl/debugging/leak_check.cc absl/debugging/leak_check_disable.cc absl/debugging/internal/stack_consumption.cc \
-                       absl/flags/internal/flag.cc absl/flags/internal/program_name.cc absl/flags/usage_config.cc absl/flags/marshalling.cc absl/flags/internal/registry.cc absl/flags/internal/type_erased.cc \
+                       absl/flags/internal/flag.cc absl/flags/internal/program_name.cc absl/flags/usage_config.cc absl/flags/marshalling.cc \
                        absl/flags/flag.cc absl/flags/internal/usage.cc absl/flags/usage.cc absl/flags/parse.cc \
                        absl/hash/internal/hash.cc absl/hash/internal/city.cc \
                        absl/numeric/int128.cc  \
@@ -141,6 +184,6 @@ libabseil_la_SOURCES = \
                        absl/types/bad_any_cast.cc absl/types/bad_optional_access.cc absl/types/bad_variant_access.cc
  
 
-libabseil_la_CPPFLAGS = -D__CLANG_SUPPORT_DYN_ANNOTATION__
+libabseil_la_CPPFLAGS = -D__CLANG_SUPPORT_DYN_ANNOTATION__  $(CXXFLAGS_EXT)
 
 

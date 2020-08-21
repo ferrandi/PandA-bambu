@@ -444,6 +444,9 @@ namespace llvm
                   case llvm::Intrinsic::ssa_copy:
                      return assignCode(t, GT(GIMPLE_SSACOPY));
 #endif
+                  case llvm::Intrinsic::minnum:
+                  case llvm::Intrinsic::maxnum:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -598,8 +601,37 @@ namespace llvm
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          }
-         case Intrinsic::fmuladd:
-            return "__float32_muladdif";
+         case llvm::Intrinsic::fmuladd:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "__float32_muladdif";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "__float64_muladdif";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+         case llvm::Intrinsic::minnum:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "fminf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "fmin";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "fminl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+         case llvm::Intrinsic::maxnum:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "fmaxf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "fmax";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "fmaxl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
          default:
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
@@ -1843,6 +1875,21 @@ namespace llvm
          auto casted = build1(GT(NOP_EXPR), type, getOperand(inst->getOperand(index), currentFunction));
          auto shiftedLeft = build2(GT(LSHIFT_EXPR), type, casted, MSB_posNode);
          return build2(GT(RSHIFT_EXPR), type, shiftedLeft, MSB_posNode);
+      }
+      else if(isa<llvm::TruncInst>(inst) && cast<const llvm::TruncInst>(*inst).getType()->isIntegerTy())
+      {
+         assert(index == 0);
+         const llvm::TruncInst& tI = cast<const llvm::TruncInst>(*inst);
+         auto bw = tI.getType()->getIntegerBitWidth();
+         if(bw != 8 && bw != 16 && bw != 32 && bw != 64)
+         {
+            auto mask = (1ULL << bw)-1;
+            if(uicTable.find(mask) == uicTable.end())
+               uicTable[mask] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), mask, false));
+            const void* maskNode = uicTable.find(mask)->second;
+            auto type = assignCodeType(tI.getType());
+            return build2(GT(BIT_AND_EXPR), type, getOperand(inst->getOperand(index), currentFunction), maskNode);
+         }
       }
       return getSignedOperandIndex(inst, index, currentFunction);
    }
@@ -4855,7 +4902,9 @@ namespace llvm
          case llvm::Intrinsic::memmove:
          case llvm::Intrinsic::trap:
          case llvm::Intrinsic::rint:
-         case Intrinsic::fmuladd:
+         case llvm::Intrinsic::fmuladd:
+         case llvm::Intrinsic::minnum:
+         case llvm::Intrinsic::maxnum:
             return true;
          default:
             return false;

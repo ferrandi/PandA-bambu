@@ -124,7 +124,7 @@ class NP_functionality
  private:
    /// Store the description of the functionality.
    std::map<NP_functionaly_type, std::string> descriptions;
-   /// store the names of the enumerative NSC_functionaly_type.
+   /// store the names of the enumerative NP_functionaly_type.
    static const char* NP_functionaly_typeNames[];
    /**
     * Convert a string into the corresponding NP_functionaly_type enumerative type

@@ -48,6 +48,7 @@
 
 /// supported synthesis tools
 #include "DesignCompilerWrapper.hpp"
+#include "bash_flow_wrapper.hpp"
 #include "lattice_flow_wrapper.hpp"
 #include "map_wrapper.hpp"
 #include "ngdbuild_wrapper.hpp"
@@ -158,6 +159,8 @@ SynthesisToolRef SynthesisTool::create_synthesis_tool(type_t type, const Paramet
          break;
       case NXPYTHON_FLOW:
          return SynthesisToolRef(new nxpython_flow_wrapper(_Param, _output_dir, _device));
+      case BASH_FLOW:
+         return SynthesisToolRef(new bash_flow_wrapper(_Param, _output_dir, _device));
          break;
 #if(0 && HAVE_EXPERIMENTAL)
       case PRIME_TIME:

@@ -104,7 +104,7 @@ class commandport_obj : public generic_obj
    CustomOrderedSet<transition> activations;
 
    /// structural_object associated with the element inside the controller
-   structural_objectRef controller_SM;
+   Wrefcount<structural_object> controller_SM;
 
  public:
    /**
@@ -169,9 +169,9 @@ class commandport_obj : public generic_obj
     * Gets structural_object associated to this object
     * @return a reference to structural_object associated
     */
-   const structural_objectRef& get_controller_obj() const
+   const structural_objectRef get_controller_obj() const
    {
-      return controller_SM;
+      return controller_SM.lock();
    }
 
    const generic_objRef& get_elem() const

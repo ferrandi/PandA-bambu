@@ -3,11 +3,11 @@
 #include <mockturtle/algorithms/cnf.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/networks/xag.hpp>
+#include <mockturtle/utils/include/percy.hpp>
 
 #include <fmt/format.h>
 #include <kitty/constructors.hpp>
 #include <kitty/dynamic_truth_table.hpp>
-#include <percy/solvers/bsat2.hpp>
 
 using namespace mockturtle;
 

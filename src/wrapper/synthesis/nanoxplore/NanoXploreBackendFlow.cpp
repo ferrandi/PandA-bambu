@@ -40,10 +40,10 @@
 /// Header include
 #include "NanoXploreBackendFlow.hpp"
 
-#include "config_HAVE_NANOXPLORE.hpp"
 #include "config_NANOXPLORE_BYPASS.hpp"
 #include "config_NANOXPLORE_LICENSE.hpp"
 #include "config_NANOXPLORE_SETTINGS.hpp"
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
 
 /// constants include
 #include "synthesis_constants.hpp"
@@ -59,13 +59,9 @@
 
 #include "Parameter.hpp"
 #include "fileIO.hpp"
+#include "string_manipulation.hpp" // for GET_CLASS
 #include "xml_dom_parser.hpp"
 #include "xml_script_command.hpp"
-
-/// circuit include
-#include "structural_objects.hpp"
-
-#include "string_manipulation.hpp" // for GET_CLASS
 
 #define NANOXPLORE_FE "NANOXPLORE_FE"
 #define NANOXPLORE_LUTS "NANOXPLORE_LUTS"
@@ -84,12 +80,8 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
    debug_level = _Param->get_class_debug_level(GET_CLASS(*this));
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Creating NanoXplore Backend Flow ::.");
 
-   default_data["NG-medium"] =
-#include "NG-medium.data"
-       ;
-   default_data["NG-large"] =
-#include "NG-large.data"
-       ;
+   default_data["NG-medium"] = "NG-medium.data";
+   default_data["NG-large"] = "NG-large.data";
 
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
@@ -111,7 +103,7 @@ NanoXploreBackendFlow::NanoXploreBackendFlow(const ParameterConstRef _Param, con
       if(default_data.find(device_string) == default_data.end())
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
-      parser = XMLDomParserRef(new XMLDomParser(device_string, default_data[device_string]));
+      parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/nanoxplore/") + default_data[device_string]));
    }
    parse_flow(parser);
 }
@@ -266,11 +258,7 @@ void NanoXploreBackendFlow::WriteFlowConfiguration(std::ostream& script)
 
 void NanoXploreBackendFlow::ExecuteSynthesis()
 {
-#if HAVE_NANOXPLORE
    BackendFlow::ExecuteSynthesis();
-#else
-   THROW_ERROR("NanoXplore tools not configured; Execution of the synthesis flow is not possible");
-#endif
 }
 
 void NanoXploreBackendFlow::InitDesignParameters()

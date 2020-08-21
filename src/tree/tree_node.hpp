@@ -77,6 +77,7 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(Range);
 template <class value>
 class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
@@ -2787,6 +2788,15 @@ struct function_decl : public decl_node, public attr
    /// True if function read from memory somehow
    bool reading_memory;
 
+   /// True if pipelining is enabled for the function
+   bool pipeline_enabled;
+
+   /// True if the pipeline does not contain any unbounded operation
+   bool simple_pipeline;
+
+   /// Used for pipelined with unbounded operations
+   int initiation_time;
+
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
    size_t omp_for_wrapper;
@@ -2812,6 +2822,9 @@ struct function_decl : public decl_node, public attr
 
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
+
+   /// Range information about bounds of the function return value (valid for real_type too)
+   RangeRef range;
 
    /**
     * tmpl_parms holds template parameters
@@ -2899,6 +2912,19 @@ struct function_decl : public decl_node, public attr
 
    /// returns true if is a declaration of a protected function
    bool is_protected();
+
+   /// returns true if is a declaration of a pipelined function
+   bool is_pipelined();
+
+   void set_pipelining(bool v);
+
+   bool is_simple_pipeline();
+
+   void set_simple_pipeline(bool v);
+
+   int get_initiation_time();
+
+   void set_initiation_time(int time);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(function_decl)
@@ -3691,6 +3717,9 @@ struct parm_decl : public decl_node
 
    /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
    const PointToInformationRef point_to_information;
+
+   /// Range information about bounds of the function parameter (valid for real_type too)
+   RangeRef range;
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(parm_decl)
@@ -4577,6 +4606,9 @@ struct ssa_name : public tree_node
 
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
+
+   /// Range information about numerical values of the ssa variable
+   RangeRef range;
 
    /// point to solution
    PointToSolutionRef use_set;

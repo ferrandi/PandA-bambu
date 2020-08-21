@@ -446,7 +446,6 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       case ssa_name_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added use " + tn->ToString());
-         counter[GET_INDEX_NODE(tn)]++;
          ssa_uses.insert(tn);
          break;
       }

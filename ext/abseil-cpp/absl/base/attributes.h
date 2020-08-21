@@ -45,9 +45,9 @@
 //
 //   * `ADDRESS_SANITIZER` + `-fsanitize=address` (Clang, GCC 4.8)
 //   * `MEMORY_SANITIZER` + `-fsanitize=memory` (Clang-only)
-//   * `THREAD_SANITIZER + `-fsanitize=thread` (Clang, GCC 4.8+)
+//   * `THREAD_SANITIZER` + `-fsanitize=thread` (Clang, GCC 4.8+)
 //   * `UNDEFINED_BEHAVIOR_SANITIZER` + `-fsanitize=undefined` (Clang, GCC 4.9+)
-//   * `CONTROL_FLOW_INTEGRITY` + -fsanitize=cfi (Clang-only)
+//   * `CONTROL_FLOW_INTEGRITY` + `-fsanitize=cfi` (Clang-only)
 //
 // Example:
 //
@@ -507,8 +507,10 @@
 // packages/targets, as this may lead to conflicting definitions of functions at
 // link-time.
 //
+// XRay isn't currently supported on Android:
+// https://github.com/android/ndk/issues/368
 #if ABSL_HAVE_CPP_ATTRIBUTE(clang::xray_always_instrument) && \
-    !defined(ABSL_NO_XRAY_ATTRIBUTES)
+    !defined(ABSL_NO_XRAY_ATTRIBUTES) && !defined(__ANDROID__)
 #define ABSL_XRAY_ALWAYS_INSTRUMENT [[clang::xray_always_instrument]]
 #define ABSL_XRAY_NEVER_INSTRUMENT [[clang::xray_never_instrument]]
 #if ABSL_HAVE_CPP_ATTRIBUTE(clang::xray_log_args)
@@ -563,7 +565,19 @@
 
 // ABSL_ATTRIBUTE_PACKED
 //
-// Prevents the compiler from padding a structure to natural alignment
+// Instructs the compiler not to use natural alignment for a tagged data
+// structure, but instead to reduce its alignment to 1. This attribute can
+// either be applied to members of a structure or to a structure in its
+// entirety. Applying this attribute (judiciously) to a structure in its
+// entirety to optimize the memory footprint of very commonly-used structs is
+// fine. Do not apply this attribute to a structure in its entirety if the
+// purpose is to control the offsets of the members in the structure. Instead,
+// apply this attribute only to structure members that need it.
+//
+// When applying ABSL_ATTRIBUTE_PACKED only to specific structure members the
+// natural alignment of structure members not annotated is preserved. Aligned
+// member accesses are faster than non-aligned member accesses even if the
+// targeted microprocessor supports non-aligned accesses.
 #if ABSL_HAVE_ATTRIBUTE(packed) || (defined(__GNUC__) && !defined(__clang__))
 #define ABSL_ATTRIBUTE_PACKED __attribute__((__packed__))
 #else

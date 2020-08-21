@@ -91,6 +91,7 @@
 #include <utility>
 
 /// technology includes
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "technology_manager.hpp"
 #include "technology_node.hpp"
@@ -153,25 +154,25 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
       {
          if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "" && language == HDLWriter_Language::VERILOG)
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
          else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "" && language == HDLWriter_Language::VHDL)
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
          else if(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED) != "")
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VERILOG_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
          else if(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED) != "")
          {
-            std::string filename_HDL = npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED);
+            std::string filename_HDL = GetPath(npf->get_NP_functionality(NP_functionality::VHDL_FILE_PROVIDED));
             if(std::find(aux_files.begin(), aux_files.end(), filename_HDL) == aux_files.end())
                aux_files.push_back(filename_HDL);
          }
@@ -204,9 +205,10 @@ std::string HDL_manager::write_components(const std::string& filename, HDLWriter
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written components");
    /// write the tail of the file
    writer->write_tail(structural_objectRef());
-   writer->WriteFile(filename + writer->get_extension());
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename + writer->get_extension());
-   return filename + writer->get_extension();
+   auto filename_ext = GetPath(filename + writer->get_extension());
+   writer->WriteFile(filename_ext);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Written " + filename_ext);
+   return filename_ext;
 }
 
 void HDL_manager::write_components(const std::string& filename, const std::list<structural_objectRef>& components, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files)
@@ -496,6 +498,30 @@ void HDL_manager::io_signal_fix_ith(const language_writerRef writer, const struc
             lspf = true;
          }
          writer->write_io_signal_post_fix(po, p->get_connection(j));
+      }
+   }
+}
+
+void HDL_manager::io_signal_fix_ith_vector(const language_writerRef writer, const structural_objectRef po, bool& lspf) const
+{
+   THROW_ASSERT(po && po->get_kind() == port_vector_o_K, "Expected a port; got something different");
+   auto* p = GetPointer<port_o>(po);
+   THROW_ASSERT(p, "Expected a port; got something different");
+   structural_objectRef po_owner = po->get_owner();
+   for(unsigned int j = 0; j < p->get_connections_size(); j++)
+   {
+      if(p->get_connection(j)->get_kind() == signal_vector_o_K and p->get_connection(j)->get_owner() == po_owner)
+      {
+         if(!lspf)
+         {
+            writer->write_comment("io-signal post fix\n");
+            lspf = true;
+         }
+         writer->write_io_signal_post_fix_vector(po, p->get_connection(j));
+      }
+      if(p->get_connection(j)->get_kind() == constant_o_K and p->get_connection(j)->get_owner() == po_owner)
+      {
+         THROW_ERROR("unexpected condition");
       }
    }
 }
@@ -820,6 +846,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_in_port(i), lspf);
                else
                {
+                  io_signal_fix_ith_vector(writer, mod->get_in_port(i), lspf);
                   auto* pv = GetPointer<port_o>(mod->get_in_port(i));
                   for(unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
@@ -834,6 +861,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_out_port(i), lspf);
                else
                {
+                  io_signal_fix_ith_vector(writer, mod->get_out_port(i), lspf);
                   auto* pv = GetPointer<port_o>(mod->get_out_port(i));
                   for(unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
@@ -848,6 +876,7 @@ void HDL_manager::write_module(const language_writerRef writer, const structural
                   io_signal_fix_ith(writer, mod->get_in_out_port(i), lspf);
                else
                {
+                  io_signal_fix_ith_vector(writer, mod->get_in_out_port(i), lspf);
                   auto* pv = GetPointer<port_o>(mod->get_in_out_port(i));
                   for(unsigned int k = 0; k < pv->get_ports_size(); k++)
                      io_signal_fix_ith(writer, pv->get_port(k), lspf);
@@ -1033,7 +1062,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
       boost::algorithm::to_lower(family);
    }
 
-   bool is_yosys = vendor == "xilinx" && family.find("yosys") != std::string::npos;
+   bool is_yosys = family.find("yosys") != std::string::npos;
 
    writer->write_state_declaration(cir, list_of_states, reset_port, reset_state, one_hot_encoding);
 

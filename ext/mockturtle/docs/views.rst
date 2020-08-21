@@ -81,3 +81,11 @@ algorithm.  Several views are implemented in mockturtle.
 
 .. doxygenclass:: mockturtle::names_view
    :members:
+
+`cnf_view`: Creates a CNF while creating a network
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/views/cnf_view.hpp``
+
+.. doxygenclass:: mockturtle::cnf_view
+   :members:

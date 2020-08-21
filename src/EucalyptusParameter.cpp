@@ -227,7 +227,7 @@ int EucalyptusParameter::Exec()
             }
             else if(long_options[option_index].name == std::string("output"))
             {
-               setOption(OPT_output_file, optarg);
+               setOption(OPT_output_file, GetPath(optarg));
             }
 #endif
             else
@@ -302,7 +302,6 @@ void EucalyptusParameter::SetDefaults()
    /// debugging levels
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_MINIMUM);
-   setOption(OPT_circuit_debug_level, DEBUG_LEVEL_NONE);
 
    /// target device
    setOption("device_name", "xc7z020");

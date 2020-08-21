@@ -41,6 +41,7 @@
 #include "behavioral_helper.hpp"
 #include "call_graph_manager.hpp"
 #include "copyrights_strings.hpp"
+#include "fileIO.hpp"
 #include "hls.hpp"
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -117,7 +118,7 @@ static unsigned int get_data_bus_bitsize(const hlsRef HLS, const HLS_managerRef 
 static unsigned int get_addr_bus_bitsize(const HLS_managerRef HLSMgr)
 {
    unsigned int addr_bus_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int allocated_space = HLSMgr->Rmem->get_max_address();
+   unsigned long long int allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
       ++parameter_addr_bit;
@@ -220,7 +221,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    slaves.push_back(wrappedObj);
 
    std::string baseAddressFileName = "intercon_" + STR(HLS->functionId) + ".mem";
-   std::ofstream baseAddressFile(baseAddressFileName);
+   std::ofstream baseAddressFile(GetPath(baseAddressFileName));
 
    std::string topFunctionBaseAddress = STR(WB_BASE_ADDRESS) + "_" + topFunctionName;
    wrappedObj->SetParameter(topFunctionBaseAddress, topModuleBaseAddress + " + " + topFunctionBaseAddress);

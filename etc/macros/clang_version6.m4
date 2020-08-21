@@ -21,7 +21,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
    if test -f $compiler; then
       echo "checking $compiler..."
       dnl check for clang
-      I386_CLANG6_VERSION=`$compiler --version | grep "\.0\."`
+      I386_CLANG6_VERSION=`$compiler --version | grep "6\.0\."`
       if test x"$I386_CLANG6_VERSION" = "x"; then
          I386_CLANG6_VERSION="0.0.0"
       else
@@ -44,12 +44,13 @@ for compiler in $CLANG_TO_BE_CHECKED; do
 
       llvm_config=`echo $clang_file | sed s/clang/llvm-config/`
       I386_LLVM_CONFIG6_EXE=$clang_dir/$llvm_config
-      I386_LLVM6_HEADER_DIR=`$I386_LLVM_CONFIG6_EXE --includedir`
-      if test "x$I386_LLVM6_HEADER_DIR" = "x"; then
+      LLVM6_CXXFLAGS=`$I386_LLVM_CONFIG6_EXE --cxxflags`
+      I386_LLVM6_CXXFLAGS="$LLVM6_CXXFLAGS -std=c++11 $3"
+      if test "x$I386_LLVM6_CXXFLAGS" = "x"; then
          echo "checking CLANG/LLVM plugin support... no. Package llvm-6.0 missing?"
          break;
       fi
-      echo "checking plugin directory...$I386_LLVM6_HEADER_DIR"
+      echo "llvm cxxflags...$I386_LLVM6_CXXFLAGS"
       cpp=`echo $clang_file | sed s/clang/clang-cpp/`
       I386_CLANG_CPP6_EXE=$clang_dir/$cpp
       if test -f $I386_CLANG_CPP6_EXE; then
@@ -294,12 +295,13 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
+         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM6_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
          case $host_os in
            mingw*) 
              I386_CLANG6_PLUGIN_COMPILER=$plugin_compiler
              ;;
            *)
-             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ `$I386_LLVM_CONFIG6_EXE --cxxflags` -c plugin_test.cpp -o plugin_test.o -std=c++11 2> /dev/null
+             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM6_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
              $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
              if test ! -f plugin_test.so; then
                echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-6.0-dev missing?"
@@ -362,7 +364,7 @@ if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
   AC_SUBST(I386_CLANG6_CSROA_PLUGIN)
   AC_SUBST(I386_CLANG6_TOPFNAME_PLUGIN)
   AC_SUBST(I386_CLANG6_ASTANALYZER_PLUGIN)
-  AC_SUBST(I386_LLVM6_HEADER_DIR)
+  AC_SUBST(I386_LLVM6_CXXFLAGS)
   AC_SUBST(I386_CLANG6_EXE)
   AC_SUBST(I386_CLANG6_VERSION)
   AC_SUBST(I386_CLANG6_PLUGIN_COMPILER)

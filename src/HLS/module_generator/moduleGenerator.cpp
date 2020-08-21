@@ -98,14 +98,17 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// utility include
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
+#include "gcc_wrapper.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters) : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this)))
+moduleGenerator::moduleGenerator(const HLS_managerConstRef _HLSMgr, const ParameterConstRef _parameters)
+    : HLSMgr(_HLSMgr), parameters(_parameters), debug_level(_parameters->get_class_debug_level(GET_CLASS(*this))), output_directory(parameters->getOption<std::string>(OPT_output_directory) + "/module-generation/")
 {
+   if(!boost::filesystem::exists(output_directory))
+      boost::filesystem::create_directories(output_directory);
 }
 
 moduleGenerator::~moduleGenerator() = default;
@@ -277,33 +280,34 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Creating temp c++ file...");
 
+   static int progress_counter = 0;
    std::fstream File;
-   const std::string temp_generator_filename = language == HDLWriter_Language::VERILOG ? "temp_verilog_generator.cpp" : "temp_vhdl_generator.cpp";
-   const std::string temp_generator_exec = language == HDLWriter_Language::VERILOG ? "temp_verilog_generator" : "temp_vhdl_generator";
-   const std::string temp_generated_filename = language == HDLWriter_Language::VERILOG ? "temp_verilog_file.v" : "temp_vhdl_file.vhd";
+   const std::string temp_generator_filename = output_directory + STR(progress_counter) + (language == HDLWriter_Language::VERILOG ? "temp_verilog_generator.cpp" : "temp_vhdl_generator.cpp");
+   const std::string temp_generator_exec = output_directory + STR(progress_counter) + (language == HDLWriter_Language::VERILOG ? "temp_verilog_generator" : "temp_vhdl_generator");
+   const std::string temp_generated_filename = output_directory + STR(progress_counter) + (language == HDLWriter_Language::VERILOG ? "temp_verilog_file.v" : "temp_vhdl_file.vhd");
+   ++progress_counter;
 
    File.open(temp_generator_filename, std::ios::out);
    if(File.is_open())
       File << cpp_code;
    File.close();
 
-   int err;
+   const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
+   std::string compiler_flags = " -lstdc++ -lm ";
+   // setup source files
+   std::list<std::string> file_sources;
+   file_sources.push_front(temp_generator_filename);
+   gcc_wrapper->CreateExecutable(file_sources, temp_generator_exec, compiler_flags, true);
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Compiling temp c++ file...");
-   err = PandaSystem(parameters, "g++ " + temp_generator_filename + " -o" + temp_generator_exec + " -I" + BOOST_INCLUDE_DIR);
-   if(IsError(err))
-   {
-      THROW_ERROR("Error in generating " + temp_generator_exec);
-   }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Executing temp c++ file...");
-   err = PandaSystem(parameters, "./" + temp_generator_exec, temp_generated_filename);
+   auto err = PandaSystem(parameters, temp_generator_exec, temp_generated_filename);
    if(IsError(err))
    {
       THROW_ERROR("Error in generating " + temp_generated_filename);
    }
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Verilog file generated successfully!...");
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Importing hdl...");
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Importing HDL...");
 
    std::string HDLOutput = "";
    line = "";
@@ -323,9 +327,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    if(!parameters->isOption(OPT_no_clean) || !parameters->getOption<bool>(OPT_no_clean))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Deleting all temp files...");
-      boost::filesystem::remove_all(temp_generator_filename);
-      boost::filesystem::remove_all(temp_generator_exec);
-      boost::filesystem::remove_all(temp_generated_filename);
+      boost::filesystem::remove_all(output_directory);
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ DONE");
 
@@ -521,6 +523,8 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
 
       NP_parameters = new_fu_name + std::string(" ") + param_list;
       CM->add_NP_functionality(top, NP_functionality::LIBRARY, NP_parameters);
+      if(fu_module->get_NP_functionality()->exist_NP_functionality(NP_functionality::IP_COMPONENT))
+         CM->add_NP_functionality(top, NP_functionality::IP_COMPONENT, fu_module->get_NP_functionality()->get_NP_functionality(NP_functionality::IP_COMPONENT));
 
       const auto np = fu_module->get_NP_functionality();
       const auto writer = [&]() -> HDLWriter_Language {

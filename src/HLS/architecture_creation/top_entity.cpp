@@ -227,7 +227,8 @@ DesignFlowStep_Status top_entity::InternalExec()
       SM->add_connection(sync_datapath_controller, controller_start);
    structural_objectRef done_signal_out;
    if(HLS->registered_done_port and
-      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR))
+      (parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+       parameters->getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR))
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
@@ -365,7 +366,8 @@ void top_entity::add_ports(structural_objectRef circuit, structural_objectRef cl
       }
       else
          top_obj = SM->add_port(FB->CGetBehavioralHelper()->PrintVariable(function_parameter), port_o::IN, circuit, port_type);
-      if(has_registered_inputs)
+      bool is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline();
+      if(has_registered_inputs && !is_pipelined)
       {
          std::string port_prefix = GetPointer<port_o>(in_obj)->get_id();
          if(in_obj->get_kind() == port_vector_o_K)
@@ -556,8 +558,7 @@ void top_entity::add_command_signals(structural_objectRef circuit)
    structural_objectRef Datapath = HLS->datapath->get_circ();
    structural_objectRef Controller = HLS->controller->get_circ();
 
-   const auto& selectors = HLS->Rconn->GetSelectors();
-   for(const auto& selector : selectors)
+   for(const auto& selector : HLS->Rconn->GetSelectors())
    {
       for(const auto& l : selector.second)
       {

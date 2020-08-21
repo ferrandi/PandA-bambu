@@ -462,6 +462,13 @@ class tree_helper
     */
    static bool is_unsigned(const tree_managerConstRef& TM, const unsigned int index);
 
+   /**
+    * Return true if the treenode is an int, an unsigned, a real or a Boolean data type
+    * @param TM is the tree_manager
+    * @param index is the treenode index
+    */
+   static bool is_scalar(const tree_managerConstRef& TM, const unsigned int index);
+
    static bool is_a_variable(const tree_managerConstRef& TM, const unsigned int index);
 
    static bool is_static(const tree_managerConstRef& TM, const unsigned int index);

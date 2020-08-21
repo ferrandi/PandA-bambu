@@ -42,9 +42,7 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_MODELSIM.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
-#include "config_HAVE_XILINX.hpp"
 
 /// Header include
 #include "translator.hpp"
@@ -642,7 +640,7 @@ void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string,
    out << std::endl;
    for(const auto row : results)
    {
-      THROW_ASSERT(column_labels.size() == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
+      THROW_ASSERT(static_cast<decltype(row.second.size())>(column_labels.size()) == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
       out << row.first << ", ";
       for(const auto column_label : column_labels)
       {
@@ -792,7 +790,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    /// The stream
    XMLDomParserRef parser;
 
-#if HAVE_XILINX && HAVE_MODELSIM && HAVE_EXPERIMENTAL
+#if HAVE_EXPERIMENTAL
    if(Param->isOption(OPT_evaluation) and (Param->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and Param->isOption(OPT_evaluation_objectives)))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Estimation=EXACT");

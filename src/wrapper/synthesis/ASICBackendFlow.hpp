@@ -32,9 +32,9 @@
  */
 /**
  * @file ASICBackendFlow.hpp
- * @brief Wrapper to implement a synthesis tools by Altera
+ * @brief Wrapper to implement a synthesis tools
  *
- * A object used to invoke synthesis tools by Altera
+ * A object used to invoke synthesis tools
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * $Date$
@@ -55,7 +55,7 @@ class ASICBackendFlow : public BackendFlow
    void WriteFlowConfiguration(std::ostream& script) override;
 
    /**
-    * Checks the synthesis results and fills the corresponding datastructures
+    * Checks the synthesis results and fills the corresponding data structures
     */
    void CheckSynthesisResults() override;
 

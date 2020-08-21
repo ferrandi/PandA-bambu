@@ -47,7 +47,7 @@
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_L2_NAME.hpp"
-#include "config_HAVE_VERILATOR.hpp"
+#include "config_HAVE_THREADS.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -63,6 +63,7 @@
 
 #include <cerrno>
 #include <fstream>
+#include <thread>
 #include <unistd.h>
 #include <utility>
 
@@ -90,9 +91,6 @@ VerilatorWrapper::~VerilatorWrapper() = default;
 
 void VerilatorWrapper::CheckExecution()
 {
-#if !HAVE_VERILATOR
-   THROW_ERROR("VERILATOR not correctly configured!");
-#endif
 }
 
 void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
@@ -116,7 +114,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #else
    script << "verilator";
 #endif
-   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET -sv";
+   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
 #else
 #ifdef _WIN32
    /// this removes the dependency from perl on MinGW32
@@ -126,6 +124,10 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
+#endif
+   unsigned int nThreads = std::thread::hardware_concurrency();
+#if HAVE_THREADS
+   script << " --threads " << nThreads;
 #endif
    if(generate_vcd_output)
    {
@@ -145,9 +147,15 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "   exit 1;" << std::endl;
    script << "fi" << std::endl;
    script << std::endl << std::endl;
-   script << "ln -s ../../../" + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
+   script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j4 OPT_FAST=\"-O1 -fstrict-aliasing\" -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
+#if HAVE_THREADS
+   script << " OPT_FAST=\"-O2\" OPT_SLOW=\"-O1 -fstrict-aliasing\" OPT=\"-march=native\"";
+#else
+   script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
+#endif
+   script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";

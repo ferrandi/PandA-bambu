@@ -41,17 +41,16 @@
 #include "../networks/detail/foreach.hpp"
 #include "../traits.hpp"
 #include "../utils/algorithm.hpp"
+#include "../utils/include/spp.hpp"
 #include "../utils/node_map.hpp"
 #include "../utils/stopwatch.hpp"
-
-#include <sparsepp/spp.h>
 
 template<>
 struct std::hash<std::array<uint64_t, 2>>
 {
   auto operator()( std::array<uint64_t, 2> const& key ) const
   {
-    std::hash<uint32_t> hasher;
+    std::hash<uint64_t> hasher;
     return hasher( key[0] ) * 31 + hasher( key[1] );
   }
 };

@@ -64,6 +64,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "xst_wrapper.hpp"
 
+#include "fileIO.hpp"
 #include "structural_objects.hpp"
 
 XilinxTasteBackendFlow::XilinxTasteBackendFlow(const ParameterConstRef& _parameters, const std::string& _flow_name, const target_managerRef& _manager) : XilinxBackendFlow(_parameters, _flow_name, _manager)
@@ -127,7 +128,8 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    const auto ret = CreateScripts(actual_parameters);
 
    /// Copying GRLIB
-   const auto cp_ret = PandaSystem(Param, "cp -r " GRLIB_DIR " .");
+
+   const auto cp_ret = PandaSystem(Param, "cp -r " + relocate_compiler_path(GRLIB_DIR) + " " + GetCurrentPath());
    if(IsError(cp_ret))
    {
       THROW_ERROR("copy of GRLIB returns an error");

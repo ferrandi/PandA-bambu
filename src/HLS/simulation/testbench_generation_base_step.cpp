@@ -266,6 +266,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    std::ofstream fileOut(fileName.c_str(), std::ios::out);
 
    std::string top_fname = mod->get_typeRef()->id_type;
+   PP(os, "#include <iostream>\n");
    PP(os, "#include <string>\n");
    PP(os, "#include <verilated.h>\n");
    PP(os, "#include \"V" + top_fname + "_tb.h\"\n");
@@ -275,13 +276,13 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "#endif\n");
    PP(os, "\n");
    PP(os, "\n");
-   PP(os, "#define SIMULATION_MAX " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
-   PP(os, "static const double CLOCK_PERIOD =" + boost::lexical_cast<std::string>(target_period) + ";\n");
-   PP(os, "static const double HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
+   PP(os, "#define SIMULATION_MAX " + STR(2 * parameters->getOption<int>(OPT_max_sim_cycles)) + "ULL\n\n");
+   PP(os, "static vluint64_t CLOCK_PERIOD = 1000*" + boost::lexical_cast<std::string>(target_period) + ";\n");
+   PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");
-   PP(os, "double main_time = 0;\n");
+   PP(os, "vluint64_t main_time = 0;\n");
    PP(os, "\n");
-   PP(os, "double sc_time_stamp ()  {return main_time;}\n");
+   PP(os, "double sc_time_stamp ()  {return main_time/1000.0;}\n");
    PP(os, "\n");
    PP(os, "int main (int argc, char **argv, char **env)\n");
    PP(os, "{\n");
@@ -300,9 +301,11 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "   main_time=0;\n");
    PP(os, "#if VM_TRACE\n");
    PP(os, "   top->trace (tfp, 99);\n");
+   PP(os, "   tfp->set_time_unit(\"n\");\n");
+   PP(os, "   tfp->set_time_resolution(\"p\");\n");
    PP(os, "   tfp->open (vcd_output_filename.c_str());\n");
    PP(os, "#endif\n");
-   PP(os, "   int cycleCounter = 0;\n");
+   PP(os, "   long long int cycleCounter = 0;\n");
    PP(os, "   top->" + std::string(CLOCK_PORT_NAME) + " = 1;\n");
    PP(os, "   while (!Verilated::gotFinish() && cycleCounter < SIMULATION_MAX)\n");
    PP(os, "   {\n");
@@ -314,6 +317,8 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "     main_time += HALF_CLOCK_PERIOD;\n");
    PP(os, "     cycleCounter++;\n");
    PP(os, "   }\n");
+   PP(os, "if(cycleCounter>=SIMULATION_MAX)\n");
+   PP(os, "  std::cerr << \"Simulation not completed into " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + " cycles\\n\";\n");
    PP(os, "#if VM_TRACE\n");
    PP(os, "   if (tfp) tfp->dump (main_time);\n");
    PP(os, "#endif\n");
@@ -791,7 +796,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
-                        writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
@@ -959,7 +964,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
                         writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + port_to_be_compared + ", " + output_name + "));\n");
-                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
@@ -1098,7 +1103,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
                         writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + port_to_be_compared + ", " + output_name + "));\n");
-                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
@@ -1277,7 +1282,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
-                        writer->write(") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                        writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
@@ -1390,7 +1395,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                {
                   writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", $bitstoreal(registered_" + std::string(RETURN_PORT_NAME) + "), $bitstoreal(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
                   writer->write("$display(\" FP error %f \\n\", compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
-                  writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
+                  writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                }
                else
                   THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(return_port)));
@@ -1627,7 +1632,7 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
 
 void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
-   unsigned int testbench_memsize = HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned int>(OPT_base_address);
+   unsigned long long int testbench_memsize = HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
    if(testbench_memsize == 0)
       testbench_memsize = 1;
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));

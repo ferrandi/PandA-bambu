@@ -74,6 +74,7 @@
 #include "absl/base/port.h"
 #include "absl/debugging/internal/demangle.h"
 #include "absl/debugging/internal/vdso_support.h"
+#include "absl/strings/string_view.h"
 
 namespace absl {
 ABSL_NAMESPACE_BEGIN
@@ -149,13 +150,15 @@ struct FileMappingHint {
 // Moreover, we are using only TryLock(), if the decorator list
 // is being modified (is busy), we skip all decorators, and possibly
 // loose some info. Sorry, that's the best we could do.
-base_internal::SpinLock g_decorators_mu(base_internal::kLinkerInitialized);
+ABSL_CONST_INIT absl::base_internal::SpinLock g_decorators_mu(
+    absl::kConstInit, absl::base_internal::SCHEDULE_KERNEL_ONLY);
 
 const int kMaxFileMappingHints = 8;
 int g_num_file_mapping_hints;
 FileMappingHint g_file_mapping_hints[kMaxFileMappingHints];
 // Protects g_file_mapping_hints.
-base_internal::SpinLock g_file_mapping_mu(base_internal::kLinkerInitialized);
+ABSL_CONST_INIT absl::base_internal::SpinLock g_file_mapping_mu(
+    absl::kConstInit, absl::base_internal::SCHEDULE_KERNEL_ONLY);
 
 // Async-signal-safe function to zero a buffer.
 // memset() is not guaranteed to be async-signal-safe.
@@ -496,7 +499,7 @@ static ABSL_ATTRIBUTE_NOINLINE bool GetSectionHeaderByType(
 const int kMaxSectionNameLen = 64;
 
 bool ForEachSection(int fd,
-                    const std::function<bool(const std::string &name,
+                    const std::function<bool(absl::string_view name,
                                              const ElfW(Shdr) &)> &callback) {
   ElfW(Ehdr) elf_header;
   if (!ReadFromOffsetExact(fd, &elf_header, sizeof(elf_header), 0)) {
@@ -518,7 +521,7 @@ bool ForEachSection(int fd,
       return false;
     }
     off_t name_offset = shstrtab.sh_offset + out.sh_name;
-    char header_name[kMaxSectionNameLen + 1];
+    char header_name[kMaxSectionNameLen];
     ssize_t n_read =
         ReadFromOffset(fd, &header_name, kMaxSectionNameLen, name_offset);
     if (n_read == -1) {
@@ -527,9 +530,8 @@ bool ForEachSection(int fd,
       // Long read?
       return false;
     }
-    header_name[n_read] = '\0';
 
-    std::string name(header_name);
+    absl::string_view name(header_name, strnlen(header_name, n_read));
     if (!callback(name, out)) {
       break;
     }
@@ -1402,7 +1404,7 @@ bool RegisterFileMappingHint(const void *start, const void *end, uint64_t offset
   if (g_num_file_mapping_hints >= kMaxFileMappingHints) {
     ret = false;
   } else {
-    // TODO(ckennelly): Move this into a std::string copy routine.
+    // TODO(ckennelly): Move this into a string copy routine.
     int len = strlen(filename);
     char *dst = static_cast<char *>(
         base_internal::LowLevelAlloc::AllocWithArena(len + 1, SigSafeArena()));

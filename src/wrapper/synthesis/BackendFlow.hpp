@@ -108,6 +108,7 @@ class BackendFlow
       ALTERA_FPGA,
       LATTICE_FPGA,
       NANOXPLORE_FPGA,
+      GENERIC,
    } type_t;
 
  protected:
@@ -135,10 +136,10 @@ class BackendFlow
    /// root node of the configuration device
    xml_element* root;
 
-   /// pointer to the datastructure containing information about the resources
+   /// pointer to the data structure containing information about the resources
    area_modelRef area_m;
 
-   /// pointer to the datastructure containing timing information
+   /// pointer to the data structure containing timing information
    time_modelRef time_m;
 
    /// ordered list of synthesis steps
@@ -173,7 +174,7 @@ class BackendFlow
    virtual void WriteFlowConfiguration(std::ostream& script) = 0;
 
    /**
-    * Checks the synthesis results and fills the corresponding datastructures
+    * Checks the synthesis results and fills the corresponding data structures
     */
    virtual void CheckSynthesisResults() = 0;
 
@@ -182,7 +183,7 @@ class BackendFlow
     * Constructor
     * @param Param is the reference to the class containing all the parameters
     * @param flow_name is a string representing the name of the flow
-    * @param target is the datastructure containing all the information about the target of the synthesis
+    * @param target is the data structure containing all the information about the target of the synthesis
     */
    BackendFlow(const ParameterConstRef Param, std::string flow_name, const target_managerRef target);
 

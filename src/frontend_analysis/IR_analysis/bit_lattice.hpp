@@ -57,6 +57,7 @@
 CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(tree_manager);
 REF_FORWARD_DECL(tree_node);
+CONSTREF_FORWARD_DECL(tree_node);
 
 enum class bit_lattice
 {
@@ -91,8 +92,6 @@ class BitLatticeManipulator
    /// The debug level of methods of this class - it cannot be named debug_level because of ambiguity of FrontendFlowStep::debug_level derived classes
    const int bl_debug_level;
 
-   bit_lattice bit_sup(const bit_lattice a, const bit_lattice b) const;
-
    /**
     * Computes the sup between two bitstrings
     * @param a first bitstring variable
@@ -103,8 +102,6 @@ class BitLatticeManipulator
 
    std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
 
-   bit_lattice bit_inf(const bit_lattice a, const bit_lattice b) const;
-
    /**
     * Computes the inf between two bitstrings
     * @param a first bitstring
@@ -113,24 +110,6 @@ class BitLatticeManipulator
     * @return inf between the two bitstrings
     */
    std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const unsigned int output_uid) const;
-
-   /**
-    * Extends a bitstring
-    * @param bitstring to extend
-    * @param bitstring_is_signed must be true if bitstring is signed
-    * @param final_size desired length of the bitstrign
-    * @return the extended bitstring
-    */
-   std::deque<bit_lattice> sign_extend_bitstring(const std::deque<bit_lattice>& bitstring, bool bitstring_is_signed, size_t final_size) const;
-
-   /**
-    * @brief Reduce the size of a bitstring
-    * 	erasing all but one most significant zeros in unsigned bitstring and all
-    * 	but one most significant values in signed bitstrings.
-    * 	@param bitstring bitstring to reduce.
-    * 	@param bitstring_is_signed must be true if bitstring is signed
-    */
-   void sign_reduce_bitstring(std::deque<bit_lattice>& bitstring, bool bitstring_is_signed) const;
 
    /**
     * auxiliary function used to build the bitstring lattice for read-only arrays
@@ -164,7 +143,7 @@ class BitLatticeManipulator
     * functions checks if it is necessary to update the bistring stored in
     * the current map used by the bitvalue analysis algorithm.
     */
-   bool update_current(std::deque<bit_lattice> res, unsigned int output_uid);
+   bool update_current(std::deque<bit_lattice>& res, unsigned int output_uid);
 
    /**
     * Clean up the internal data structures
@@ -181,6 +160,36 @@ class BitLatticeManipulator
     * Destructor
     */
    ~BitLatticeManipulator();
+
+   /**
+    * Extends a bitstring
+    * @param bitstring to extend
+    * @param bitstring_is_signed must be true if bitstring is signed
+    * @param final_size desired length of the bitstrign
+    * @return the extended bitstring
+    */
+   static std::deque<bit_lattice> sign_extend_bitstring(const std::deque<bit_lattice>& bitstring, bool bitstring_is_signed, size_t final_size);
+
+   /**
+    * @brief Reduce the size of a bitstring
+    * 	erasing all but one most significant zeros in unsigned bitstring and all
+    * 	but one most significant values in signed bitstrings.
+    * 	@param bitstring bitstring to reduce.
+    * 	@param bitstring_is_signed must be true if bitstring is signed
+    */
+   static void sign_reduce_bitstring(std::deque<bit_lattice>& bitstring, bool bitstring_is_signed);
+
+   static bit_lattice bit_sup(const bit_lattice a, const bit_lattice b);
+
+   static bit_lattice bit_inf(const bit_lattice a, const bit_lattice b);
+
+   static std::deque<bit_lattice> sup(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
+
+   static std::deque<bit_lattice> inf(const std::deque<bit_lattice>& a, const std::deque<bit_lattice>& b, const size_t out_type_size, const bool out_is_signed, const bool out_is_bool);
+
+   static unsigned int Size(const tree_nodeConstRef t);
+
+   static unsigned int size(const tree_managerConstRef tm, unsigned int index);
 };
 
 /**

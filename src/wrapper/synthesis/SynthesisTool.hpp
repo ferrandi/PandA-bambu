@@ -69,6 +69,7 @@ class xml_element;
 #define PARAM_HDL_files "HDL_files"
 #define PARAM_clk_name "clk_name"
 #define PARAM_clk_period "clk_period"
+#define PARAM_clk_period_ps "clk_period_ps"
 #define PARAM_clk_period_default (1.0 / 50)
 #define PARAM_clk_freq "clk_freq"
 #define PARAM_time_constrained "time_constrained"
@@ -79,6 +80,7 @@ class xml_element;
 #define PARAM_has_VHDL_library "has_VHDL_library"
 #define PARAM_VHDL_library "VHDL_library"
 #define PARAM_connect_iob "connect_iob"
+#define PARAM_power_optimization "power_optimization"
 
 /// used by Intel/Altera Characterization
 #define PARAM_fu "fu"
@@ -114,7 +116,8 @@ class SynthesisTool
       QUARTUS_POW,
       QUARTUS_STA,
       LATTICE_FLOW,
-      NXPYTHON_FLOW
+      NXPYTHON_FLOW,
+      BASH_FLOW
    } type_t;
 
  protected:

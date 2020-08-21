@@ -64,9 +64,6 @@ class statement_list;
 class Bit_Value_opt : public FunctionFrontendFlowStep
 {
  private:
-   /// the tree manipulation
-   tree_manipulationRef IRman;
-
    /// when true IR has been modified
    bool modified;
 
@@ -81,7 +78,7 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @param sl is the statement list
     * @param TM is the tree manager
     */
-   void optimize(statement_list* sl, tree_managerRef TM);
+   void optimize(statement_list* sl, tree_managerRef TM, tree_manipulationRef IRman);
 
  public:
    /**

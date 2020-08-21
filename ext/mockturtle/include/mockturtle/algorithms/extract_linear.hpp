@@ -85,7 +85,7 @@ extract_linear_circuit( xag_network const& xag )
     }
     else /* if ( xag.is_xor( n ) ) */
     {
-      std::array<xag_network::signal, 2> children;
+      std::array<xag_network::signal, 2> children{};
       xag.foreach_fanin( n, [&]( auto const& f, auto i ) {
         children[i] = old_to_new[f] ^ xag.is_complemented( f );
       } );
@@ -173,7 +173,7 @@ private:
     }
 
     assert( xag.is_xor( n ) );
-    std::array<xag_network::signal, 2> children;
+    std::array<xag_network::signal, 2> children{};
     xag.foreach_fanin( n, [&]( auto const& cf, auto i ) {
       children[i] = run_rec( xag.get_node( cf ) ) ^ xag.is_complemented( cf );
     } );

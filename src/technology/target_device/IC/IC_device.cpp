@@ -42,6 +42,8 @@
  */
 #include "IC_device.hpp"
 
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+
 /// technology includes
 #include "BackendFlow.hpp"
 #include "CMOS_technology.hpp"
@@ -133,9 +135,7 @@ void IC_device::initialize()
 void IC_device::load_devices(const target_deviceRef device)
 {
    /// Load default resources
-   const char* builtin_technology = {
-#include "Nangate.data"
-   };
+   const char* builtin_technology = {"Nangate.data"};
 
    auto output_level = Param->getOption<int>(OPT_output_level);
 
@@ -144,7 +144,7 @@ void IC_device::load_devices(const target_deviceRef device)
 
    try
    {
-      XMLDomParser parser("builtin_technology", builtin_technology);
+      XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/IC/") + builtin_technology[0]);
       parser.Exec();
       if(parser)
       {
@@ -156,7 +156,7 @@ void IC_device::load_devices(const target_deviceRef device)
       /// update with specified device information
       if(Param->isOption(OPT_target_device_file))
       {
-         const auto file_name = Param->getOption<std::string>(OPT_target_device_file);
+         const auto file_name = GetPath(Param->getOption<std::string>(OPT_target_device_file));
          if(!boost::filesystem::exists(file_name))
          {
             THROW_ERROR("Device information file " + file_name + " does not exist!");

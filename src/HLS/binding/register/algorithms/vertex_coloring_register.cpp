@@ -74,8 +74,9 @@ vertex_coloring_register::~vertex_coloring_register() = default;
 
 DesignFlowStep_Status vertex_coloring_register::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    create_conflict_graph();
    /// coloring based on DSATUR 2 heuristic
    cg_vertices_size_type num_colors = dsatur2_coloring(cg, color);
@@ -96,7 +97,8 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
       }
    }
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");

@@ -47,6 +47,7 @@
 #ifndef FUNCTION_BEHAVIOR_HPP
 #define FUNCTION_BEHAVIOR_HPP
 
+#include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include <deque>      // for deque
@@ -411,8 +412,14 @@ class FunctionBehavior
    /// set of global variables
    CustomOrderedSet<unsigned int> state_variables;
 
-   /// when true pipelining has been requested for this function
-   bool pipelining_enabled;
+   /// true when pipelining is enabled for the function
+   bool pipeline_enabled;
+
+   /// true when the requested pipeline does not include unbounded functions
+   bool simple_pipeline;
+
+   /// used only for stallable pipelines
+   int initiation_time;
 
  public:
    /**
@@ -845,14 +852,25 @@ class FunctionBehavior
    {
       return packed_vars;
    }
+
    bool is_pipelining_enabled() const
    {
-      return pipelining_enabled;
+      return pipeline_enabled;
    }
 
-   void set_pipelining_enabled(bool f)
+   bool build_simple_pipeline() const
    {
-      pipelining_enabled = f;
+      if(simple_pipeline)
+      {
+         THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
+      }
+      return simple_pipeline;
+   }
+
+   int get_initiation_time() const
+   {
+      THROW_ASSERT(pipeline_enabled && !simple_pipeline, "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
+      return initiation_time;
    }
 
    /**
@@ -924,8 +942,10 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
    /// Topological sorted vertices
    const std::map<vertex, unsigned int>& ref;
 
-   /// Graph
+/// Graph
+#if HAVE_ASSERTS
    const graph* g;
+#endif
 
  public:
    /**
@@ -933,7 +953,14 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
     * @param ref_ is the map with the topological sort of vertices
     * @param g_ is a graph used only for debugging purpose to print name of vertex
     */
-   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph* g_) : ref(ref_), g(g_)
+   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph*
+#if HAVE_ASSERTS
+                                                                          g_)
+       : ref(ref_), g(g_)
+#else
+                          )
+       : ref(ref_)
+#endif
    {
    }
 

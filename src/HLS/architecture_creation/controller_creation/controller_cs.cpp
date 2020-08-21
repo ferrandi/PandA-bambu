@@ -63,9 +63,9 @@ controller_cs::~controller_cs()
 {
 }
 
-void controller_cs::add_common_ports(structural_objectRef circuit)
+void controller_cs::add_common_ports(structural_objectRef circuit, structural_managerRef SM)
 {
-   fsm_controller::add_common_ports(circuit);
+   fsm_controller::add_common_ports(circuit, SM);
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    bool found = false;
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
@@ -77,11 +77,11 @@ void controller_cs::add_common_ports(structural_objectRef circuit)
    if(found) // function with selector
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
-      this->add_selector_register_file_port(circuit);
+      this->add_selector_register_file_port(circuit, SM);
    }
 }
 
-void controller_cs::add_selector_register_file_port(structural_objectRef circuit)
+void controller_cs::add_selector_register_file_port(structural_objectRef circuit, structural_managerRef SM)
 {
    int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
@@ -93,9 +93,9 @@ void controller_cs::add_selector_register_file_port(structural_objectRef circuit
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - Selector signal added!");
 }
 
-void controller_cs::add_correct_transition_memory(std::string state_representation)
+void controller_cs::add_correct_transition_memory(std::string state_representation, structural_managerRef SM)
 {
-   structural_objectRef circuit = this->SM->get_circ();
+   structural_objectRef circuit = SM->get_circ();
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    bool found = false;
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())

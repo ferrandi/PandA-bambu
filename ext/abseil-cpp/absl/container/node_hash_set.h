@@ -77,7 +77,7 @@ struct NodeHashSetPolicy;
 //
 //   // Create a node hash set of three strings
 //   absl::node_hash_map<std::string, std::string> ducks =
-//     {"huey", "dewey"}, "louie"};
+//     {"huey", "dewey", "louie"};
 //
 //  // Insert a new element into the node hash map
 //  ducks.insert("donald"};
@@ -111,7 +111,7 @@ class node_hash_set
   // * Initializer List constructor
   //
   //   absl::node_hash_set<std::string> set2 =
-  //       {{"huey"}, {"dewey"}, {"louie"},};
+  //       {{"huey"}, {"dewey"}, {"louie"}};
   //
   // * Copy constructor
   //
@@ -427,12 +427,6 @@ class node_hash_set
   //
   // Returns the function used for comparing keys equality.
   using Base::key_eq;
-
-  ABSL_DEPRECATED("Call `hash_function()` instead.")
-  typename Base::hasher hash_funct() { return this->hash_function(); }
-
-  ABSL_DEPRECATED("Call `rehash()` instead.")
-  void resize(typename Base::size_type hint) { this->rehash(hint); }
 };
 
 // erase_if(node_hash_set<>, Pred)

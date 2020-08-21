@@ -133,14 +133,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status CheckSystemType::InternalExec()
 {
+   CustomUnorderedSet<unsigned int> already_visited;
+
    const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
-   recursive_examinate(curr_tn, function_id);
+   recursive_examinate(curr_tn, function_id, already_visited);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
 
    for(const auto f : AppM->get_functions_without_body())
    {
-      recursive_examinate(TM->get_tree_node_const(f), f);
+      recursive_examinate(TM->get_tree_node_const(f), f, already_visited);
    }
 
    std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
@@ -152,7 +154,7 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
       {
          for(const auto& stmt : it->second->CGetStmtList())
          {
-            recursive_examinate(stmt);
+            recursive_examinate(stmt, already_visited);
          }
       }
    }
@@ -161,13 +163,13 @@ DesignFlowStep_Status CheckSystemType::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void CheckSystemType::recursive_examinate(const tree_nodeRef& tn)
+void CheckSystemType::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<unsigned int>& already_visited)
 {
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Not Passed a tree_reindex");
-   recursive_examinate(GET_NODE(tn), GET_INDEX_NODE(tn));
+   recursive_examinate(GET_NODE(tn), GET_INDEX_NODE(tn), already_visited);
 }
 
-void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index)
+void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const unsigned int index, CustomUnorderedSet<unsigned int>& already_visited)
 {
    THROW_ASSERT(curr_tn, "Empty current tree node");
    if(already_visited.find(index) != already_visited.end())
@@ -183,36 +185,36 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
       case aggr_init_expr_K:
       {
          const call_expr* ce = GetPointer<call_expr>(curr_tn);
-         recursive_examinate(ce->fn);
+         recursive_examinate(ce->fn, already_visited);
          const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
-            recursive_examinate(*arg);
+            recursive_examinate(*arg, already_visited);
          }
          break;
       }
       case gimple_call_K:
       {
          const gimple_call* ce = GetPointer<gimple_call>(curr_tn);
-         recursive_examinate(ce->fn);
+         recursive_examinate(ce->fn, already_visited);
          const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
-            recursive_examinate(*arg);
+            recursive_examinate(*arg, already_visited);
          }
          break;
       }
       case gimple_assign_K:
       {
          const gimple_assign* gm = GetPointer<gimple_assign>(curr_tn);
-         recursive_examinate(gm->op0);
-         recursive_examinate(gm->op1);
+         recursive_examinate(gm->op0, already_visited);
+         recursive_examinate(gm->op1, already_visited);
 
          if(gm->predicate)
          {
-            recursive_examinate(gm->predicate);
+            recursive_examinate(gm->predicate, already_visited);
          }
          break;
       }
@@ -329,16 +331,16 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          }
 #endif
 
-         recursive_examinate(dn->type);
+         recursive_examinate(dn->type, already_visited);
          break;
       }
       case ssa_name_K:
       {
          const ssa_name* sn = GetPointer<ssa_name>(curr_tn);
          if(sn->type)
-            recursive_examinate(sn->type);
+            recursive_examinate(sn->type, already_visited);
          else
-            recursive_examinate(sn->var);
+            recursive_examinate(sn->var, already_visited);
          break;
       }
       case tree_list_K:
@@ -347,8 +349,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          while(current)
          {
             if(GetPointer<tree_list>(current)->purp)
-               recursive_examinate(GetPointer<tree_list>(current)->purp);
-            recursive_examinate(GetPointer<tree_list>(current)->valu);
+               recursive_examinate(GetPointer<tree_list>(current)->purp, already_visited);
+            recursive_examinate(GetPointer<tree_list>(current)->valu, already_visited);
             current = GetPointer<tree_list>(current)->chan;
             if(current)
                current = GET_NODE(current);
@@ -359,78 +361,78 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
       {
          const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
          if(ue->type)
-            recursive_examinate(ue->type);
-         recursive_examinate(ue->op);
+            recursive_examinate(ue->type, already_visited);
+         recursive_examinate(ue->op, already_visited);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          const binary_expr* be = GetPointer<binary_expr>(curr_tn);
          if(be->type)
-            recursive_examinate(be->type);
-         recursive_examinate(be->op0);
-         recursive_examinate(be->op1);
+            recursive_examinate(be->type, already_visited);
+         recursive_examinate(be->op0, already_visited);
+         recursive_examinate(be->op1, already_visited);
          break;
       }
       case CASE_TERNARY_EXPRESSION:
       {
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
          if(te->type)
-            recursive_examinate(te->type);
-         recursive_examinate(te->op0);
+            recursive_examinate(te->type, already_visited);
+         recursive_examinate(te->op0, already_visited);
          if(te->op1)
-            recursive_examinate(te->op1);
+            recursive_examinate(te->op1, already_visited);
          if(te->op2)
-            recursive_examinate(te->op2);
+            recursive_examinate(te->op2, already_visited);
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
          if(qe->type)
-            recursive_examinate(qe->type);
-         recursive_examinate(qe->op0);
+            recursive_examinate(qe->type, already_visited);
+         recursive_examinate(qe->op0, already_visited);
          if(qe->op1)
-            recursive_examinate(qe->op1);
+            recursive_examinate(qe->op1, already_visited);
          if(qe->op2)
-            recursive_examinate(qe->op2);
+            recursive_examinate(qe->op2, already_visited);
          if(qe->op3)
-            recursive_examinate(qe->op3);
+            recursive_examinate(qe->op3, already_visited);
          break;
       }
       case lut_expr_K:
       {
          auto* le = GetPointer<lut_expr>(curr_tn);
-         recursive_examinate(le->op0);
-         recursive_examinate(le->op1);
+         recursive_examinate(le->op0, already_visited);
+         recursive_examinate(le->op1, already_visited);
          if(le->op2)
-            recursive_examinate(le->op2);
+            recursive_examinate(le->op2, already_visited);
          if(le->op3)
-            recursive_examinate(le->op3);
+            recursive_examinate(le->op3, already_visited);
          if(le->op4)
-            recursive_examinate(le->op4);
+            recursive_examinate(le->op4, already_visited);
          if(le->op5)
-            recursive_examinate(le->op5);
+            recursive_examinate(le->op5, already_visited);
          if(le->op6)
-            recursive_examinate(le->op6);
+            recursive_examinate(le->op6, already_visited);
          if(le->op7)
-            recursive_examinate(le->op7);
+            recursive_examinate(le->op7, already_visited);
          if(le->op8)
-            recursive_examinate(le->op8);
+            recursive_examinate(le->op8, already_visited);
          break;
       }
       case constructor_K:
       {
          const constructor* co = GetPointer<constructor>(curr_tn);
          if(co->type)
-            recursive_examinate(co->type);
+            recursive_examinate(co->type, already_visited);
          else
          {
             const std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = co->list_of_idx_valu;
             std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator it, it_end = list_of_idx_valu.end();
             for(it = list_of_idx_valu.begin(); it != it_end; ++it)
             {
-               recursive_examinate(it->second);
+               recursive_examinate(it->second, already_visited);
             }
          }
          break;
@@ -438,13 +440,13 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
       case gimple_cond_K:
       {
          const gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
-         recursive_examinate(gc->op0);
+         recursive_examinate(gc->op0, already_visited);
          break;
       }
       case gimple_switch_K:
       {
          const gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
-         recursive_examinate(se->op0);
+         recursive_examinate(se->op0, already_visited);
          break;
       }
       case gimple_multi_way_if_K:
@@ -452,34 +454,34 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
-               recursive_examinate(cond.first);
+               recursive_examinate(cond.first, already_visited);
          break;
       }
       case gimple_return_K:
       {
          const gimple_return* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
-            recursive_examinate(re->op);
+            recursive_examinate(re->op, already_visited);
          break;
       }
       case gimple_for_K:
       {
          const gimple_for* fe = GetPointer<gimple_for>(curr_tn);
-         recursive_examinate(fe->op0);
-         recursive_examinate(fe->op1);
-         recursive_examinate(fe->op2);
+         recursive_examinate(fe->op0, already_visited);
+         recursive_examinate(fe->op1, already_visited);
+         recursive_examinate(fe->op2, already_visited);
          break;
       }
       case gimple_while_K:
       {
          const gimple_while* we = GetPointer<gimple_while>(curr_tn);
-         recursive_examinate(we->op0);
+         recursive_examinate(we->op0, already_visited);
          break;
       }
       case gimple_goto_K:
       {
          const gimple_goto* ge = GetPointer<gimple_goto>(curr_tn);
-         recursive_examinate(ge->op);
+         recursive_examinate(ge->op, already_visited);
          break;
       }
       case CASE_TYPE_NODES:
@@ -487,7 +489,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          auto* ty = GetPointer<type_node>(curr_tn);
          THROW_ASSERT(ty, "expected a name");
          if(ty->name)
-            recursive_examinate(ty->name);
+            recursive_examinate(ty->name, already_visited);
          switch(curr_tn->get_kind())
          {
             case boolean_type_K:
@@ -512,13 +514,13 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case vector_type_K:
             {
                const vector_type* vt = GetPointer<vector_type>(curr_tn);
-               recursive_examinate(vt->elts);
+               recursive_examinate(vt->elts, already_visited);
                break;
             }
             case array_type_K:
             {
                const array_type* at = GetPointer<array_type>(curr_tn);
-               recursive_examinate(at->elts);
+               recursive_examinate(at->elts, already_visited);
                break;
             }
             case record_type_K:
@@ -529,7 +531,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
                for(it = list_of_flds.begin(); it != it_end; ++it)
                {
-                  recursive_examinate(*it);
+                  recursive_examinate(*it, already_visited);
                   if(not rt->libbambu_flag and tree_helper::IsInLibbambu(TM, (*it)->index))
                   {
                      rt->libbambu_flag = true;
@@ -539,7 +541,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                const std::vector<tree_nodeRef>& list_of_fncs = rt->list_of_fncs;
                std::vector<tree_nodeRef>::const_iterator it_f, it_f_end = list_of_fncs.end();
                for(it_f = list_of_fncs.begin(); it_f != it_f_end; ++it_f)
-                  recursive_examinate(*it_f);
+                  recursive_examinate(*it_f, already_visited);
                break;
             }
             case union_type_K:
@@ -550,7 +552,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                std::vector<tree_nodeRef>::const_iterator it, it_end = list_of_flds.end();
                for(it = list_of_flds.begin(); it != it_end; ++it)
                {
-                  recursive_examinate(*it);
+                  recursive_examinate(*it, already_visited);
                   if(not ut->libbambu_flag and tree_helper::IsInLibbambu(TM, (*it)->index))
                   {
                      ut->libbambu_flag = true;
@@ -560,40 +562,40 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
                const std::vector<tree_nodeRef>& list_of_fncs = ut->list_of_fncs;
                std::vector<tree_nodeRef>::const_iterator it_f, it_f_end = list_of_fncs.end();
                for(it_f = list_of_fncs.begin(); it_f != it_f_end; ++it_f)
-                  recursive_examinate(*it_f);
+                  recursive_examinate(*it_f, already_visited);
                break;
             }
             case pointer_type_K:
             {
                const pointer_type* pt = GetPointer<pointer_type>(curr_tn);
-               recursive_examinate(pt->ptd);
+               recursive_examinate(pt->ptd, already_visited);
                break;
             }
             case reference_type_K:
             {
                const reference_type* rt = GetPointer<reference_type>(curr_tn);
                if(rt->refd)
-                  recursive_examinate(rt->refd);
+                  recursive_examinate(rt->refd, already_visited);
                break;
             }
             case function_type_K:
             {
                const function_type* ft = GetPointer<function_type>(curr_tn);
                if(ft->retn)
-                  recursive_examinate(ft->retn);
+                  recursive_examinate(ft->retn, already_visited);
                if(ft->prms)
-                  recursive_examinate(ft->prms);
+                  recursive_examinate(ft->prms, already_visited);
                break;
             }
             case method_type_K:
             {
                const method_type* mt = GetPointer<method_type>(curr_tn);
                if(mt->retn)
-                  recursive_examinate(mt->retn);
+                  recursive_examinate(mt->retn, already_visited);
                if(mt->prms)
-                  recursive_examinate(mt->prms);
+                  recursive_examinate(mt->prms, already_visited);
                if(mt->clas)
-                  recursive_examinate(mt->clas);
+                  recursive_examinate(mt->clas, already_visited);
                break;
             }
             case integer_type_K:
@@ -628,13 +630,13 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
             case template_type_parm_K:
             {
                const template_type_parm* ttp = GetPointer<template_type_parm>(curr_tn);
-               recursive_examinate(ttp->name);
+               recursive_examinate(ttp->name, already_visited);
                break;
             }
             case typename_type_K:
             {
                const typename_type* tt = GetPointer<typename_type>(curr_tn);
-               recursive_examinate(tt->name);
+               recursive_examinate(tt->name, already_visited);
                break;
             }
 
@@ -707,22 +709,22 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
       {
          const target_mem_ref* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
-            recursive_examinate(tmr->symbol);
+            recursive_examinate(tmr->symbol, already_visited);
          if(tmr->base)
-            recursive_examinate(tmr->base);
+            recursive_examinate(tmr->base, already_visited);
          if(tmr->idx)
-            recursive_examinate(tmr->idx);
+            recursive_examinate(tmr->idx, already_visited);
          break;
       }
       case target_mem_ref461_K:
       {
          const target_mem_ref461* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
-            recursive_examinate(tmr->base);
+            recursive_examinate(tmr->base, already_visited);
          if(tmr->idx)
-            recursive_examinate(tmr->idx);
+            recursive_examinate(tmr->idx, already_visited);
          if(tmr->idx2)
-            recursive_examinate(tmr->idx2);
+            recursive_examinate(tmr->idx2, already_visited);
          break;
       }
       case real_cst_K:
@@ -744,7 +746,7 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
       {
          const cast_expr* ce = GetPointer<cast_expr>(curr_tn);
          if(ce->op)
-            recursive_examinate(ce->op);
+            recursive_examinate(ce->op, already_visited);
          break;
       }
       case binfo_K:
@@ -879,6 +881,12 @@ void CheckSystemType::build_include_structures()
             if(boost::algorithm::starts_with(temp, "z:/mingw"))
                temp = temp.replace(0, 8, FILENAME_NORM(mingw_prefix)); /// replace z:/mingw at the beginning of the string
             temp = FILENAME_NORM(temp);
+            systemIncPath.push_back(temp);
+         }
+         else if(getenv("APPDIR"))
+         {
+            std::string app_prefix = getenv("APPDIR");
+            temp = app_prefix + "/" + FILENAME_NORM(tok_iter);
             systemIncPath.push_back(temp);
          }
          else

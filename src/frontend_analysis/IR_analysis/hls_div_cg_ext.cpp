@@ -89,13 +89,7 @@
 #include "string_manipulation.hpp" // for GET_CLASS
 
 hls_div_cg_ext::hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters),
-      TreeM(_AppM->get_tree_manager()),
-      tree_man(new tree_manipulation(TreeM, parameters)),
-      already_executed(false),
-      changed_call_graph(false),
-      fix_nop(false),
-      use64bitMul(false)
+    : FunctionFrontendFlowStep(_AppM, _function_id, HLS_DIV_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), already_executed(false), changed_call_graph(false), fix_nop(false), use64bitMul(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -161,6 +155,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status hls_div_cg_ext::InternalExec()
 {
+   const tree_manipulationRef tree_man(new tree_manipulation(TreeM, parameters));
+
    const tree_nodeRef curr_tn = TreeM->GetTreeNode(function_id);
    auto* fd = GetPointer<function_decl>(curr_tn);
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -180,7 +176,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    {
       for(const auto& stmt : it->second->CGetStmtList())
       {
-         recursive_examinate(stmt, stmt);
+         recursive_examinate(stmt, stmt, tree_man);
       }
    }
 
@@ -258,7 +254,7 @@ DesignFlowStep_Status hls_div_cg_ext::InternalExec()
    return changed_call_graph ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }
 
-void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement)
+void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement, const tree_manipulationRef tree_man)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively " + boost::lexical_cast<std::string>(GET_INDEX_NODE(current_tree_node)) + " " + GET_NODE(current_tree_node)->ToString());
@@ -282,7 +278,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          unsigned int parm_index = 0;
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
-            recursive_examinate(*arg, current_statement);
+            recursive_examinate(*arg, current_statement, tree_man);
             ++parm_index;
          }
          break;
@@ -295,7 +291,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          unsigned int parm_index = 0;
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
-            recursive_examinate(*arg, current_statement);
+            recursive_examinate(*arg, current_statement, tree_man);
             ++parm_index;
          }
          break;
@@ -303,10 +299,10 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case gimple_assign_K:
       {
          auto* gm = GetPointer<gimple_assign>(curr_tn);
-         recursive_examinate(gm->op0, current_statement);
-         recursive_examinate(gm->op1, current_statement);
+         recursive_examinate(gm->op0, current_statement, tree_man);
+         recursive_examinate(gm->op1, current_statement, tree_man);
          if(gm->predicate)
-            recursive_examinate(gm->predicate, current_statement);
+            recursive_examinate(gm->predicate, current_statement, tree_man);
          break;
       }
       case gimple_nop_K:
@@ -324,7 +320,7 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          tree_nodeRef current = current_tree_node;
          while(current)
          {
-            recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement);
+            recursive_examinate(GetPointer<tree_list>(GET_NODE(current))->valu, current_statement, tree_man);
             current = GetPointer<tree_list>(GET_NODE(current))->chan;
          }
          break;
@@ -332,14 +328,14 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case CASE_UNARY_EXPRESSION:
       {
          const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
-         recursive_examinate(ue->op, current_statement);
+         recursive_examinate(ue->op, current_statement, tree_man);
          break;
       }
       case CASE_BINARY_EXPRESSION:
       {
          const binary_expr* be = GetPointer<binary_expr>(curr_tn);
-         recursive_examinate(be->op0, current_statement);
-         recursive_examinate(be->op1, current_statement);
+         recursive_examinate(be->op0, current_statement, tree_man);
+         recursive_examinate(be->op1, current_statement, tree_man);
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wswitch-enum"
          switch(curr_tn->get_kind())
@@ -470,44 +466,44 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       case CASE_TERNARY_EXPRESSION:
       {
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
-         recursive_examinate(te->op0, current_statement);
+         recursive_examinate(te->op0, current_statement, tree_man);
          if(te->op1)
-            recursive_examinate(te->op1, current_statement);
+            recursive_examinate(te->op1, current_statement, tree_man);
          if(te->op2)
-            recursive_examinate(te->op2, current_statement);
+            recursive_examinate(te->op2, current_statement, tree_man);
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
-         recursive_examinate(qe->op0, current_statement);
+         recursive_examinate(qe->op0, current_statement, tree_man);
          if(qe->op1)
-            recursive_examinate(qe->op1, current_statement);
+            recursive_examinate(qe->op1, current_statement, tree_man);
          if(qe->op2)
-            recursive_examinate(qe->op2, current_statement);
+            recursive_examinate(qe->op2, current_statement, tree_man);
          if(qe->op3)
-            recursive_examinate(qe->op3, current_statement);
+            recursive_examinate(qe->op3, current_statement, tree_man);
          break;
       }
       case lut_expr_K:
       {
          auto* le = GetPointer<lut_expr>(curr_tn);
-         recursive_examinate(le->op0, current_statement);
-         recursive_examinate(le->op1, current_statement);
+         recursive_examinate(le->op0, current_statement, tree_man);
+         recursive_examinate(le->op1, current_statement, tree_man);
          if(le->op2)
-            recursive_examinate(le->op2, current_statement);
+            recursive_examinate(le->op2, current_statement, tree_man);
          if(le->op3)
-            recursive_examinate(le->op3, current_statement);
+            recursive_examinate(le->op3, current_statement, tree_man);
          if(le->op4)
-            recursive_examinate(le->op4, current_statement);
+            recursive_examinate(le->op4, current_statement, tree_man);
          if(le->op5)
-            recursive_examinate(le->op5, current_statement);
+            recursive_examinate(le->op5, current_statement, tree_man);
          if(le->op6)
-            recursive_examinate(le->op6, current_statement);
+            recursive_examinate(le->op6, current_statement, tree_man);
          if(le->op7)
-            recursive_examinate(le->op7, current_statement);
+            recursive_examinate(le->op7, current_statement, tree_man);
          if(le->op8)
-            recursive_examinate(le->op8, current_statement);
+            recursive_examinate(le->op8, current_statement, tree_man);
          break;
       }
       case constructor_K:
@@ -517,20 +513,20 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator it, it_end = list_of_idx_valu.end();
          for(it = list_of_idx_valu.begin(); it != it_end; ++it)
          {
-            recursive_examinate(it->second, current_statement);
+            recursive_examinate(it->second, current_statement, tree_man);
          }
          break;
       }
       case gimple_cond_K:
       {
          const gimple_cond* gc = GetPointer<gimple_cond>(curr_tn);
-         recursive_examinate(gc->op0, current_statement);
+         recursive_examinate(gc->op0, current_statement, tree_man);
          break;
       }
       case gimple_switch_K:
       {
          const gimple_switch* se = GetPointer<gimple_switch>(curr_tn);
-         recursive_examinate(se->op0, current_statement);
+         recursive_examinate(se->op0, current_statement, tree_man);
          break;
       }
       case gimple_multi_way_if_K:
@@ -538,28 +534,28 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
             if(cond.first)
-               recursive_examinate(cond.first, current_statement);
+               recursive_examinate(cond.first, current_statement, tree_man);
          break;
       }
       case gimple_return_K:
       {
          const gimple_return* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
-            recursive_examinate(re->op, current_statement);
+            recursive_examinate(re->op, current_statement, tree_man);
          break;
       }
       case gimple_for_K:
       {
          const auto* gf = GetPointer<const gimple_for>(curr_tn);
-         recursive_examinate(gf->op0, current_statement);
-         recursive_examinate(gf->op1, current_statement);
-         recursive_examinate(gf->op2, current_statement);
+         recursive_examinate(gf->op0, current_statement, tree_man);
+         recursive_examinate(gf->op1, current_statement, tree_man);
+         recursive_examinate(gf->op2, current_statement, tree_man);
          break;
       }
       case gimple_while_K:
       {
          const gimple_while* gw = GetPointer<gimple_while>(curr_tn);
-         recursive_examinate(gw->op0, current_statement);
+         recursive_examinate(gw->op0, current_statement, tree_man);
          break;
       }
       case CASE_TYPE_NODES:
@@ -572,22 +568,22 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
       {
          const target_mem_ref* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
-            recursive_examinate(tmr->symbol, current_statement);
+            recursive_examinate(tmr->symbol, current_statement, tree_man);
          if(tmr->base)
-            recursive_examinate(tmr->base, current_statement);
+            recursive_examinate(tmr->base, current_statement, tree_man);
          if(tmr->idx)
-            recursive_examinate(tmr->idx, current_statement);
+            recursive_examinate(tmr->idx, current_statement, tree_man);
          break;
       }
       case target_mem_ref461_K:
       {
          const target_mem_ref461* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
-            recursive_examinate(tmr->base, current_statement);
+            recursive_examinate(tmr->base, current_statement, tree_man);
          if(tmr->idx)
-            recursive_examinate(tmr->idx, current_statement);
+            recursive_examinate(tmr->idx, current_statement, tree_man);
          if(tmr->idx2)
-            recursive_examinate(tmr->idx2, current_statement);
+            recursive_examinate(tmr->idx2, current_statement, tree_man);
          break;
       }
       case real_cst_K:

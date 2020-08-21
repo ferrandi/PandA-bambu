@@ -32,6 +32,26 @@ AC_PROG_F77
 CFLAGS_EXT=-O2
 CXXFLAGS_EXT=-O2
 CXXFLAGS_EXTFPLL=-O2
+CXXFLAGS_STD=-O2
+
+AC_ARG_ENABLE(clanglibcpp,         [  --enable-clanglibcpp         Clang is going to use libc++ ],                                                          [panda_clanglibcpp="$enableval"], [panda_clanglibcpp="no"])
+AC_ARG_ENABLE(oldclangabi,         [  --enable-oldclangabi         Clang plugins are compiled with the old abi ],                                           [panda_clangoldabi="$enableval"], [panda_clangoldabi="no"])
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  CXXFLAGS+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_EXT+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_EXT+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_STD+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_STD+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+fi
+
 
 # Check if compiler support c++17
 AC_COMPILE_STDCXX_17
@@ -48,25 +68,37 @@ if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes; then
       CXXFLAGS+=" --std=c++17 "
       CXXFLAGS_EXT+=" --std=c++17 "
-   else
-if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
-   if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
+      CXXFLAGS_STD+=" --std=c++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++17 "
+      CXXFLAGS_EXT+=" --std=g++17 "
+      CXXFLAGS_STD+=" --std=g++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes; then
+      CXXFLAGS+=" --std=c++1z "
+      CXXFLAGS_EXT+=" --std=c++1z "
+      CXXFLAGS_STD+=" --std=c++1z "
+   elif test "x$ac_cv_cxx_compile_cxx11_native" = xyes; then
+      CXXFLAGS+=" "
+      CXXFLAGS_EXT+=" "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
       CXXFLAGS_EXT+=" --std=c++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++11 "
+      CXXFLAGS_EXT+=" --std=g++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx1x" = xyes; then
+      CXXFLAGS+=" --std=c++1x "
+      CXXFLAGS_EXT+=" --std=c++1x "
+   elif test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
+      CXXFLAGS+=" --std=c++0x "
+      CXXFLAGS_EXT+=" --std=c++0x "
    else
-      if test "x$ac_cv_cxx_compile_cxx0x_native" != xyes; then
-         if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
-            CXXFLAGS+=" --std=c++0x "
-            CXXFLAGS_EXT+=" --std=c++0x "
-         else
-                  AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
-               fi
-            fi
-         fi
-      fi
+      AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
    fi
 fi
-AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes)
+AC_SUBST(CXXFLAGS_STD)
+AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes)
+
 
 AM_PO_SUBDIRS
 
@@ -283,6 +315,7 @@ AC_ARG_ENABLE(verilator,           [  --enable-verilator           compile Veril
 #                                                                              #
 ################################################################################
 panda_USE_FRACTIONS=no;
+panda_USE_GENERIC_BASHBACKEND=no
 panda_USE_I386_GCC=no;
 panda_USE_LIB_AIG=no;
 panda_USE_LIB_ALGORITHMS=no;
@@ -453,9 +486,10 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_SPIDER=yes;
   panda_USE_TASTE=yes;
   panda_USE_ABSEIL=yes;
+  panda_USE_GENERIC_BASHBACKEND=yes;
 
   #characterization requires to configure at least one synthesis toolchain
-  if test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
+  if test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
     AC_APPEND(ENABLE_DOC,"EUCALYPTUS")
     panda_USE_EUCALYPTUS=yes;
   fi
@@ -909,7 +943,7 @@ if test "x$panda_USE_LIB_TARGET_PROFILING" != xyes && test "x$panda_USE_LIB_COMP
    panda_USE_LIB_COMPARE_MODELS=no;
 fi
 
-if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
+if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
    panda_USE_LIB_RTL_CHARACTERIZATION=yes;
 fi
 
@@ -928,7 +962,7 @@ if test "x$panda_USE_LIB_CODE_ESTIMATION" = xyes && test "x$panda_USE_LIB_FROM_C
    panda_USE_LIB_HOST_PROFILING=yes;
 fi
 
-if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes; then
+if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_GENERIC_BASHBACKEND" = xyes; then
    panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
 fi
 
@@ -966,6 +1000,13 @@ fi
 
 if test "x$panda_USE_TASTE" = xyes; then
    panda_USE_LIB_FROM_AADL_ASN=yes;
+fi
+
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, " -stdlib=libc++ ", "Define extra compiler options")
+else
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, "", "Define extra compiler options")
 fi
 
 ###################### Release and experimental checking #######################
@@ -1493,6 +1534,7 @@ AC_CONFIG_FILES(
                  Makefile
                  panda_regressions/Makefile
                  panda_regressions/hls/Makefile
+                 panda_unit/Makefile
                  examples/Makefile
                  documentation/Makefile
                  documentation/img/Makefile
@@ -1502,6 +1544,7 @@ AC_CONFIG_FILES(
                  style/img/Makefile
                  style/img/panda.png
                  style/img/logoPoli.gif
+                 Appimage/Makefile
                )
 
 ################################################################################
@@ -2306,38 +2349,31 @@ AM_CONDITIONAL(BUILD_CORE_TOOLS, test "x$panda_USE_CORE_TOOLS" = xyes)
 if test "x$panda_USE_WRAPPER_XILINX" = xyes; then
   AC_DEFINE(HAVE_XILINX, 1, "Define if Xilinx wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_XILINX, test "x$panda_USE_WRAPPER_XILINX" = xyes)
 
 ################ Altera stuff ########################
 if test "x$panda_USE_WRAPPER_ALTERA" = xyes; then
   AC_DEFINE(HAVE_ALTERA, 1, "Define if Altera wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_ALTERA, test "x$panda_USE_WRAPPER_ALTERA" = xyes)
 
 ################ Lattice stuff ########################
 if test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
   AC_DEFINE(HAVE_LATTICE, 1, "Define if Lattice wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_LATTICE, test "x$panda_USE_WRAPPER_LATTICE" = xyes)
 
 ################ NanoXplore stuff ########################
 if test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
   AC_DEFINE(HAVE_NANOXPLORE, 1, "Define if NanoXplore wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_NANOXPLORE, test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes)
-
 
 ################ Design Compiler stuff #####################
 if test "x$panda_USE_DESIGN_COMPILER" = xyes; then
   AC_DEFINE(HAVE_DESIGN_COMPILER, 1, "Define if Synopsys Design Compiler is correctly configured")
 fi
-AM_CONDITIONAL(BUILD_DESIGN_COMPILER, test "x$panda_USE_DESIGN_COMPILER" = xyes)
 
 ################ Formality stuff #########################
 if test "x$panda_USE_FORMALITY" = xyes; then
   AC_DEFINE(HAVE_FORMALITY, 1, "Define if Synopsys Formality is correctly configured")
 fi
-AM_CONDITIONAL(BUILD_FORMALITY, test "x$panda_USE_FORMALITY" = xyes)
 
 ################ Library Compiler stuff #########################
 if test "x$panda_USE_LIBRARY_COMPILER" = xyes; then
@@ -2478,6 +2514,7 @@ AC_CONFIG_FILES(
    etc/devices/ASIC_devices/Makefile
    etc/devices/Lattice_devices/Makefile
    etc/devices/NanoXplore_devices/Makefile
+   etc/devices/Generic_devices/Makefile
    )
 
 
@@ -2511,7 +2548,11 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    if test "x$MIN_GCC_VERSION" = "x"; then
       AC_MSG_ERROR("Oldest supported version of I386 gcc not set")
    fi
-   AC_CHECK_PLUGIN_DIR
+   EXTRA_CLANG_OPTIONS=
+   if test "x$panda_clangoldabi" = xyes; then
+     EXTRA_CLANG_OPTIONS=-D_GLIBCXX_USE_CXX11_ABI=0
+   fi
+   AC_CHECK_GCC_PLUGIN_DIR
    AC_CHECK_GCC45_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC46_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC47_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
@@ -2521,12 +2562,13 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    AC_CHECK_GCC6_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC7_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC8_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
-   AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG6_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG7_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG8_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG9_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
+   AC_CHECK_CLANG_PLUGIN_DIR
+   AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG6_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG7_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG8_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG9_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
 
    if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x && test "x$I386_GCC8_PLUGIN_COMPILER" = x && test "x$I386_CLANG4_PLUGIN_COMPILER" = x && test "x$I386_CLANG5_PLUGIN_COMPILER" = x && test "x$I386_CLANG6_PLUGIN_COMPILER" = x && test "x$I386_CLANG7_PLUGIN_COMPILER" = x && test "x$I386_CLANG8_PLUGIN_COMPILER" = x && test "x$I386_CLANG9_PLUGIN_COMPILER" = x; then
       AC_MSG_ERROR("gcc with support to -m32 and plugin not found")
@@ -2819,7 +2861,7 @@ fi
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
   AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic "
+  CXXFLAGS+=" -g3 "
   AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
 fi
 
@@ -2853,11 +2895,40 @@ for file in `find $BUILDDIR/config_headers -name *hpp`; do
    fi
 done;
 
-for keyword in `grep "#undef" $BUILDDIR/lconfig.h.in | awk '{print $2}'`; do
-   if test ! -f config_headers/config_"$keyword".hpp.in; then
-      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp.in
+for keyword in `grep "#undef" $BUILDDIR/lconfig.h | awk '{print $3}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp
+   else
+      echo "#define "$keyword 0 > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
    fi
 done;
+
+for keyword in `grep "#define" $BUILDDIR/lconfig.h | awk '{print $2}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      grep $keyword $BUILDDIR/lconfig.h > config_headers/config_"$keyword".hpp
+   else
+      grep $keyword $BUILDDIR/lconfig.h > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
+   fi
+done;
+
 all_includes=" -I$BUILDDIR/config_headers"
 
 
@@ -2979,4 +3050,5 @@ echo config_headers/config_"$keyword".hpp is unchanged >&6;}
     fi
    fi
 done;
+
 

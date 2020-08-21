@@ -68,6 +68,7 @@
 #include "control_flow_checker.hpp"
 #include "controller_cs.hpp"
 #include "fsm_controller.hpp"
+#include "pipeline_controller.hpp"
 #if HAVE_EXPERIMENTAL
 #include "ParallelController.hpp"
 #endif
@@ -214,7 +215,6 @@
 /// HLS/memory
 #include "mem_dominator_allocation.hpp"
 #include "mem_dominator_allocation_cs.hpp"
-#include "mem_xml_allocation.hpp"
 
 /// HLS/module_allocation includes
 #include "add_library.hpp"
@@ -679,6 +679,11 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
+      case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
+      {
+         design_flow_step = DesignFlowStepRef(new pipeline_controller(parameters, HLS_mgr, funId, design_flow_manager.lock()));
+         break;
+      }
       case HLSFlowStep_Type::PORT_SWAPPING:
       {
          design_flow_step = DesignFlowStepRef(new port_swapping(parameters, HLS_mgr, funId, design_flow_manager.lock()));
@@ -845,11 +850,6 @@ DesignFlowStepRef HLSFlowStepFactory::CreateHLSFlowStep(const HLSFlowStep_Type t
          break;
       }
 #endif
-      case HLSFlowStep_Type::XML_MEMORY_ALLOCATOR:
-      {
-         design_flow_step = DesignFlowStepRef(new mem_xml_allocation(parameters, HLS_mgr, design_flow_manager.lock()));
-         break;
-      }
       case HLSFlowStep_Type::UNKNOWN:
       {
          THROW_UNREACHABLE("");
@@ -1006,6 +1006,7 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnord
 #if HAVE_EXPERIMENTAL
          case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
 #endif
+         case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
          case HLSFlowStep_Type::PORT_SWAPPING:
          case HLSFlowStep_Type::SCHED_CHAINING:
 #if HAVE_ILP_BUILT
@@ -1039,7 +1040,6 @@ const DesignFlowStepSet HLSFlowStepFactory::CreateHLSFlowSteps(const CustomUnord
          case HLSFlowStep_Type::WB4_INTERFACE_GENERATION:
          case HLSFlowStep_Type::WB4_TESTBENCH_GENERATION:
          case HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING:
-         case HLSFlowStep_Type::XML_MEMORY_ALLOCATOR:
          default:
             THROW_UNREACHABLE("Step not expected: " + HLS_step::EnumToName(hls_flow_step.first));
       }

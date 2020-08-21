@@ -3610,7 +3610,7 @@ begin
   reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a = dout_a_tmp;
   assign dout_b = dout_b_tmp;
   initial
@@ -3731,7 +3731,7 @@ begin
     reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a = dout_a_tmp;
     assign dout_b = dout_b_tmp;
     initial
@@ -4547,7 +4547,7 @@ begin
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
   assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
   initial
@@ -4666,7 +4666,7 @@ begin
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
     assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
     initial
@@ -8039,7 +8039,7 @@ begin
   reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a = dout_a_tmp;
   assign dout_b = dout_b_tmp;
   initial
@@ -8160,7 +8160,7 @@ begin
     reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a = dout_a_tmp;
     assign dout_b = dout_b_tmp;
     initial
@@ -8455,7 +8455,7 @@ reg [(n_byte_on_databus)*8-1:0] dout_a_tmp 1INIT_ZERO_VALUE;
 reg [(n_byte_on_databus)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
 reg [(n_byte_on_databus)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
 reg [(n_byte_on_databus)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-reg [(n_byte_on_databus)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+reg [(n_byte_on_databus)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
 
 generate
   if(HIGH_LATENCY==2)
@@ -9284,7 +9284,7 @@ begin
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
   reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-  reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+  reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
   assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
   assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
   initial
@@ -9403,7 +9403,7 @@ begin
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_tmp 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_a_registered 1INIT_ZERO_VALUE;
     reg [(n_byte_on_databus/2)*8-1:0] dout_b_registered 1INIT_ZERO_VALUE;
-    reg [(n_byte_on_databus/2)*8-1:0] memory [n_mem_elements-1:0]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
+    reg [(n_byte_on_databus/2)*8-1:0] memory [0:n_mem_elements-1]/* synthesis syn_ramstyle = &quot;no_rw_check&quot; */ ;
     assign dout_a[BRAM_BITSIZE-1:0] = dout_a_tmp;
     assign dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE] = dout_b_tmp;
     initial

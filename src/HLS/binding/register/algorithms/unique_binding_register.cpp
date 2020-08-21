@@ -69,25 +69,18 @@ unique_binding_register::~unique_binding_register() = default;
 
 DesignFlowStep_Status unique_binding_register::InternalExec()
 {
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
-   const std::list<vertex>& support = HLS->Rliv->get_support();
-
-   const std::list<vertex>::const_iterator vEnd = support.end();
-   for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
+   for(unsigned int sv = 0; sv < HLS->storage_value_information->get_number_of_storage_values(); sv++)
    {
-      const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
-      auto k_end = live.end();
-      for(auto k = live.begin(); k != k_end; ++k)
-      {
-         unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
-         HLS->Rreg->bind(storage_value_index, storage_value_index);
-      }
+      HLS->Rreg->bind(sv, sv);
    }
    HLS->Rreg->set_used_regs(HLS->storage_value_information->get_number_of_storage_values());
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");

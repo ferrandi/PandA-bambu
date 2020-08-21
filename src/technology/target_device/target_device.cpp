@@ -127,7 +127,13 @@ void target_device::xload_device_parameters(const xml_element* dev_xml)
       std::string value;
       LOAD_XVM(value, t_elem);
 
-      parameters[t_elem->get_name()] = value;
+      bool is_bash_var = false;
+      if(CE_XVM(is_bash_var, t_elem))
+         LOAD_XVM(is_bash_var, t_elem);
+      if(is_bash_var)
+         bash_vars[t_elem->get_name()] = value;
+      else
+         parameters[t_elem->get_name()] = value;
       if(t_elem->get_name() == "model")
       {
          const_cast<Parameter*>(Param.get())->setOption("device_name", value);

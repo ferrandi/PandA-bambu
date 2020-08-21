@@ -37,7 +37,6 @@
 #include <stack>
 #include <string>
 
-#include <ez/direct_iterator.hpp>
 #include <kitty/dynamic_truth_table.hpp>
 #include <kitty/operators.hpp>
 
@@ -190,7 +189,7 @@ public:
     /* increase ref-count to children */
     _storage->nodes[f.index].data[0].h1++;
 
-    auto const po_index = _storage->outputs.size();
+    auto const po_index = static_cast<uint32_t>( _storage->outputs.size() );
     _storage->outputs.emplace_back( f.index, f.complement );
     ++_storage->data.num_pos;
 
@@ -214,7 +213,7 @@ public:
 
     /* increase ref-count to children */
     _storage->nodes[f.index].data[0].h1++;
-    auto const ri_index = _storage->outputs.size();
+    auto const ri_index = static_cast<uint32_t>( _storage->outputs.size() );
     _storage->outputs.emplace_back( f.index, f.complement );
     _storage->data.latches.emplace_back( reset );
     return ri_index;
@@ -746,7 +745,7 @@ public:
 #pragma region Structural properties
   uint32_t size() const
   {
-    return _storage->nodes.size();
+    return static_cast<uint32_t>( _storage->nodes.size() );
   }
 
   auto num_cis() const
@@ -757,6 +756,11 @@ public:
   auto num_cos() const
   {
     return static_cast<uint32_t>( _storage->outputs.size() );
+  }
+
+  uint32_t num_latches() const
+  {
+      return static_cast<uint32_t>( _storage->data.latches.size() );
   }
 
   uint32_t num_pis() const
@@ -835,6 +839,24 @@ public:
   {
     return n > 0 && !is_ci( n ) && _storage->nodes[n].children[0].index > _storage->nodes[n].children[1].index;
   }
+
+  bool is_nary_and( node const& n ) const
+  {
+    (void)n;
+    return false;
+  }
+
+  bool is_nary_or( node const& n ) const
+  {
+    (void)n;
+    return false;
+  }
+
+  bool is_nary_xor( node const& n ) const
+  {
+    (void)n;
+    return false;
+  }
 #pragma endregion
 
 #pragma region Functional properties
@@ -864,7 +886,7 @@ public:
 
   uint32_t node_to_index( node const& n ) const
   {
-    return n;
+    return static_cast<uint32_t>( n );
   }
 
   node index_to_node( uint32_t index ) const
@@ -912,7 +934,7 @@ public:
   {
     assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data &&
             _storage->nodes[n].children[0].data == _storage->nodes[n].children[2].data );
-    return ( _storage->nodes[n].children[0].data );
+    return static_cast<uint32_t>( _storage->nodes[n].children[0].data );
   }
 
   uint32_t co_index( signal const& s ) const
@@ -934,7 +956,7 @@ public:
     assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data &&  
             _storage->nodes[n].children[0].data == _storage->nodes[n].children[2].data );
     assert( _storage->nodes[n].children[0].data < _storage->data.num_pis );
-    return ( _storage->nodes[n].children[0].data );
+    return static_cast<uint32_t>( _storage->nodes[n].children[0].data );
   }
 
   uint32_t po_index( signal const& s ) const
@@ -956,7 +978,7 @@ public:
     assert( _storage->nodes[n].children[0].data == _storage->nodes[n].children[1].data && 
             _storage->nodes[n].children[0].data == _storage->nodes[n].children[2].data );
     assert( _storage->nodes[n].children[0].data >= _storage->data.num_pis );
-    return ( _storage->nodes[n].children[0].data - _storage->data.num_pis );
+    return static_cast<uint32_t>( _storage->nodes[n].children[0].data - _storage->data.num_pis );
   }
 
   uint32_t ri_index( signal const& s ) const
@@ -980,7 +1002,7 @@ public:
 
   node ri_to_ro( signal const& s ) const
   {
-    return *( _storage->inputs.begin() + ri_index( s ) );
+    return *( _storage->inputs.begin() + _storage->data.num_pis + ri_index( s ) );
   }
 #pragma endregion
 
@@ -988,9 +1010,9 @@ public:
   template<typename Fn>
   void foreach_node( Fn&& fn ) const
   {
+    auto r = range<uint64_t>( _storage->nodes.size() );
     detail::foreach_element_if(
-        ez::make_direct_iterator<uint64_t>( 0 ),
-        ez::make_direct_iterator<uint64_t>( _storage->nodes.size() ),
+        r.begin(), r.end(),
         [this]( auto n ) { return !is_dead( n ); },
         fn );
   }
@@ -1079,9 +1101,9 @@ public:
   template<typename Fn>
   void foreach_gate( Fn&& fn ) const
   {
+    auto r = range<uint64_t>( 1u, _storage->nodes.size() ); // start from 1 to avoid constant
     detail::foreach_element_if(
-        ez::make_direct_iterator<std::size_t>( 1 ), // start from 1 to avoid constant
-        ez::make_direct_iterator<std::size_t>( _storage->nodes.size() ),
+        r.begin(), r.end(),
         [this]( auto n ) { return !is_ci( n ) && !is_dead( n ); },
         fn );
   }

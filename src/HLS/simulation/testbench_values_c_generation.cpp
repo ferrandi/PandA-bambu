@@ -46,14 +46,6 @@
 /// Header include
 #include "testbench_values_c_generation.hpp"
 
-/// Autoheader includes
-#include "config_HAVE_I386_GCC47_COMPILER.hpp"
-#include "config_HAVE_I386_GCC48_COMPILER.hpp"
-#include "config_HAVE_I386_GCC49_COMPILER.hpp"
-#include "config_HAVE_I386_GCC5_COMPILER.hpp"
-#include "config_HAVE_I386_GCC6_COMPILER.hpp"
-#include "config_HAVE_I386_GCC7_COMPILER.hpp"
-
 ///. include
 #include "Parameter.hpp"
 
@@ -248,7 +240,7 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    std::string c_stdout_file = "";
    if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
       c_stdout_file = output_directory + "dynamic_discrepancy_stats";
-   // executing the test to generate inputs and exected outputs values
+   // executing the test to generate inputs and executed outputs values
    if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {
       if(false

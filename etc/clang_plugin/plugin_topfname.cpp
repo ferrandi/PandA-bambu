@@ -63,6 +63,7 @@ namespace llvm
 {
    cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
    cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(true), cl::desc("Specify if the global variables has to be internalize"));
+   cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols to be not internalize"), cl::value_desc("comma separated list of external symbols"));
    struct CLANG_VERSION_SYMBOL(_plugin_topfname) : public ModulePass
    {
       static char ID;
@@ -142,6 +143,12 @@ namespace llvm
                   llvm::errs() << "Global defined in the libbambu library skipped: " << globalVar.getName() << "\n";
 #endif
                }
+               else if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(varName+",") == 0 || ExternSymbolsList.find(","+varName+",") != std::string::npos))
+               {
+#if PRINT_DBG_MSG
+                  llvm::errs() << "Global symbol that need to be externally visible: " << globalVar.getName() << "\n";
+#endif
+               }
                else if(!globalVar.hasInternalLinkage() && !globalVar.hasAvailableExternallyLinkage() && !globalVar.hasDLLExportStorageClass() && !globalVar.hasExternalWeakLinkage())
                {
 #if PRINT_DBG_MSG
@@ -170,7 +177,13 @@ namespace llvm
 #if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
 #endif
-               if(!fun.hasInternalLinkage() && funName != TopFunctionName_TFP && demangled != TopFunctionName_TFP && !is_builtin_fn(funName) && !is_builtin_fn(demangled))
+               if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(std::string(funName)+",") == 0 || ExternSymbolsList.find(","+std::string(funName)+",") != std::string::npos))
+               {
+#if PRINT_DBG_MSG
+                  llvm::errs() << "Global symbol that need to be externally visible: " << globalVar.getName() << "\n";
+#endif
+               }
+               else if(!fun.hasInternalLinkage() && funName != TopFunctionName_TFP && demangled != TopFunctionName_TFP && !is_builtin_fn(funName) && !is_builtin_fn(demangled))
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "it becomes internal\n";

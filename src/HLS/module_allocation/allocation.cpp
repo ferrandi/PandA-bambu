@@ -956,7 +956,7 @@ bool allocation::check_templated_units(double clock_period, node_kind_prec_infoR
    if(pipeline_id == "")
    {
       if(curr_op->time_m->get_cycles() == 0 && allocation_information->time_m_execution_time(curr_op) > clock_period)
-         THROW_WARNING("No functional unit exists for the given clock period: the fastest unit will be used as multy-cycle unit (" + GetPointer<functional_unit>(current_fu)->fu_template_name +
+         THROW_WARNING("No functional unit exists for the given clock period: the fastest unit will be used as multi-cycle unit (" + GetPointer<functional_unit>(current_fu)->fu_template_name +
                        "): " + STR(allocation_information->time_m_execution_time(curr_op)));
    }
    return false;
@@ -1147,14 +1147,14 @@ DesignFlowStep_Status allocation::InternalExec()
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    const std::map<unsigned int, memory_symbolRef>& function_vars = HLSMgr->Rmem->get_function_vars(funId);
    double clock_period = HLS_C->get_clock_period_resource_fraction() * HLS_C->get_clock_period();
-   long step_time;
-   START_TIME(step_time);
+   long step_time = 0;
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      START_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Module allocation information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
-   unsigned int base_address = HLSMgr->base_address;
-   bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM &&
-                                     parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) ||
+   unsigned long long int base_address = HLSMgr->base_address;
+   bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - base_address) > 0 && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) ||
                                     (HLSMgr->Rmem->has_unknown_addresses() && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM &&
                                      parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
    IntegrateTechnologyLibraries();
@@ -1569,7 +1569,7 @@ DesignFlowStep_Status allocation::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Starting allocation of operations in queued vertices");
 
    for(const auto& tv : tech_vec)
-      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Resource constraint on " + tv.first + ": " + STR(tv.second));
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_VERY_PEDANTIC, output_level, "---Resource constraint on " + tv.first + ": " + STR(tv.second));
 
    std::string bambu_provided_resource;
    for(const auto& lib_name : TM->get_library_list())
@@ -1950,7 +1950,8 @@ DesignFlowStep_Status allocation::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "<--");
    }
 #endif
-   STOP_TIME(step_time);
+   if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+      STOP_TIME(step_time);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform module allocation: " + print_cpu_time(step_time) + " seconds");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");

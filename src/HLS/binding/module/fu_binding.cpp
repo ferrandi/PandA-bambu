@@ -103,6 +103,7 @@
 #include <vector>
 
 /// utility include
+#include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
@@ -737,7 +738,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Memory Unit: " + allocation_information->get_string_name(fu_type_id) + " for variable: " + HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBehavioralHelper()->PrintVariable(var));
       std::string base_address = HLSMgr->Rmem->get_symbol(var, HLS->functionId)->get_symbol_name();
-      unsigned int rangesize = HLSMgr->Rmem->get_rangesize(var);
+      unsigned long long int rangesize = HLSMgr->Rmem->get_rangesize(var);
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - base address: " + STR(base_address));
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  - range size: " + STR(rangesize));
       unsigned int n_channels = allocation_information->get_number_channels(fu_type_id);
@@ -1540,8 +1541,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
-         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM and
-                                           parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) or
+         bool Has_extern_allocated_data = ((HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address) > 0 and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM) or
                                           (HLSMgr->Rmem->has_unknown_addresses() and parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM and
                                            parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
          if(Has_extern_allocated_data)
@@ -1684,7 +1684,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var0->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var0->bit_values.at(lengthBV - 1 - tailZeros) == '0')
+                           const auto& currBit = ssa_var0->bit_values.at(lengthBV - 1 - tailZeros);
+                           while(lengthBV > tailZeros && (currBit == '0' || currBit == 'X'))
                               ++tailZeros;
                            if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
@@ -1701,7 +1702,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                         {
                            auto tailZeros = 0u;
                            const auto lengthBV = ssa_var1->bit_values.size();
-                           while(lengthBV > tailZeros && ssa_var1->bit_values.at(lengthBV - 1 - tailZeros) == '0')
+                           const auto& currBit = ssa_var1->bit_values.at(lengthBV - 1 - tailZeros);
+                           while(lengthBV > tailZeros && (currBit == '0' || currBit == 'X'))
                               ++tailZeros;
                            if(tailZeros < curr_LSB)
                               curr_LSB = tailZeros;
@@ -1759,7 +1761,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                   {
                      unsigned int index = data->CGetOpNodeInfo(mapped_operation)->GetNodeId();
                      std::string parameterAddressFileName = "function_addresses_" + STR(index) + ".mem";
-                     std::ofstream parameterAddressFile(parameterAddressFileName);
+                     std::ofstream parameterAddressFile(GetPath(parameterAddressFileName));
 
                      const tree_nodeRef call = TreeM->GetTreeNode(index);
                      tree_nodeRef calledFunction = GetPointer<gimple_call>(call)->args[0];
@@ -1769,7 +1771,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      tree_nodeRef functionType = getFunctionType(addrExpr);
                      tree_nodeRef paramList = GetPointer<function_type>(functionType)->prms;
                      unsigned int count_param = 0;
-                     unsigned int address = 0;
+                     unsigned long long int address = 0;
                      unsigned int alignment = HLSMgr->Rmem->get_parameter_alignment();
                      HLSMgr->Rmem->compute_next_base_address(address, index, alignment);
                      while(paramList)
@@ -1903,8 +1905,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned int rangesize, bool is_doubled, bool is_memory_splitted, bool is_sparse_memory,
-                                        bool is_sds)
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_doubled, bool is_memory_splitted,
+                                        bool is_sparse_memory, bool is_sds)
 {
    auto* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
@@ -1920,10 +1922,10 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    /// array ref initialization
    THROW_ASSERT(ar, "expected a real tree node index");
    std::string init_filename = "array_ref_" + std::to_string(ar) + ".mem";
-   std::ofstream init_file_a((init_filename).c_str());
+   std::ofstream init_file_a(GetPath((init_filename).c_str()));
    std::ofstream init_file_b;
    if(is_memory_splitted)
-      init_file_b.open(("0_" + init_filename).c_str());
+      init_file_b.open(GetPath(("0_" + init_filename).c_str()));
    unsigned int elts_size;
    fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, ((is_doubled ? 2 : 1) * boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"))), is_memory_splitted, is_sds, fu_module);
    THROW_ASSERT(vec_size, "at least one element is expected");
@@ -2122,8 +2124,14 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
          }
          if(!is_even && is_memory_splitted)
          {
+            bool need_newline_b = false;
             for(unsigned int l = 0; l < (nbyte_on_memory * 8); ++l)
+            {
                init_file_b << "0";
+               need_newline_b = true;
+            }
+            if(need_newline_b)
+               init_file_b << std::endl;
          }
       }
    }
@@ -2143,21 +2151,35 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       {
          unsigned int counter = 0;
          bool is_even = true;
+         bool need_newline_a = false;
+         bool need_newline_b = false;
          for(unsigned int i = 0; i < vec_size; ++i)
          {
             for(unsigned int j = 0; j < elts_size; ++j)
             {
                if(is_even || !is_memory_splitted)
+               {
                   init_file_a << "0";
+                  need_newline_a = true;
+               }
                else
+               {
                   init_file_b << "0";
+                  need_newline_b = true;
+               }
                counter++;
                if(counter % (nbyte_on_memory * 8) == 0)
                {
                   if(is_even || !is_memory_splitted)
+                  {
                      init_file_a << std::endl;
+                     need_newline_a = false;
+                  }
                   else
+                  {
                      init_file_b << std::endl;
+                     need_newline_b = false;
+                  }
                   is_even = !is_even;
                }
             }
@@ -2167,17 +2189,30 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
             for(unsigned int l = counter % (nbyte_on_memory * 8); l < (nbyte_on_memory * 8); ++l)
             {
                if(is_even || !is_memory_splitted)
+               {
                   init_file_a << "0";
+                  need_newline_a = true;
+               }
                else
+               {
                   init_file_b << "0";
+                  need_newline_b = true;
+               }
             }
             is_even = !is_even;
          }
          if(!is_even && is_memory_splitted)
          {
             for(unsigned int l = 0; l < (nbyte_on_memory * 8); ++l)
+            {
                init_file_b << "0";
+               need_newline_b = true;
+            }
          }
+         if(need_newline_a)
+            init_file_a << std::endl;
+         if(need_newline_b)
+            init_file_b << std::endl;
       }
    }
 }

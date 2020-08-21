@@ -185,7 +185,7 @@ public:
       this->set_value( c1, 2 );
     }
 
-    this->foreach_pi( [this]( auto n ) {
+    this->foreach_ci( [this]( auto n ) {
       if ( this->value( n ) != 2 )
       {
         topo_order.push_back( n );
@@ -201,7 +201,7 @@ public:
     }
     else
     {
-      Ntk::foreach_po( [this]( auto f ) {
+      Ntk::foreach_co( [this]( auto f ) {
         /* node was already visited */
         if ( this->value( this->get_node( f ) ) == 2 )
           return;

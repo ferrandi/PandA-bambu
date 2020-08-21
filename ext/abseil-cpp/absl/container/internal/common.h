@@ -56,7 +56,7 @@ class node_handle_base {
  public:
   using allocator_type = Alloc;
 
-  constexpr node_handle_base() {}
+  constexpr node_handle_base() = default;
   node_handle_base(node_handle_base&& other) noexcept {
     *this = std::move(other);
   }
@@ -109,9 +109,8 @@ class node_handle_base {
   allocator_type* alloc() { return std::addressof(*alloc_); }
 
  private:
-  absl::optional<allocator_type> alloc_;
-  mutable absl::aligned_storage_t<sizeof(slot_type), alignof(slot_type)>
-      slot_space_;
+  absl::optional<allocator_type> alloc_ = {};
+  alignas(slot_type) mutable unsigned char slot_space_[sizeof(slot_type)] = {};
 };
 
 // For sets.
@@ -139,6 +138,7 @@ class node_handle<Policy, PolicyTraits, Alloc,
                   absl::void_t<typename Policy::mapped_type>>
     : public node_handle_base<PolicyTraits, Alloc> {
   using Base = node_handle_base<PolicyTraits, Alloc>;
+  using slot_type = typename PolicyTraits::slot_type;
 
  public:
   using key_type = typename Policy::key_type;
@@ -146,7 +146,7 @@ class node_handle<Policy, PolicyTraits, Alloc,
 
   constexpr node_handle() {}
 
-  auto key() const -> decltype(PolicyTraits::key(this->slot())) {
+  auto key() const -> decltype(PolicyTraits::key(std::declval<slot_type*>())) {
     return PolicyTraits::key(this->slot());
   }
 

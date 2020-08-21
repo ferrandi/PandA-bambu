@@ -51,6 +51,11 @@
 #include "hls.hpp"
 #include "hls_manager.hpp"
 
+#include "dbgPrintHelper.hpp"
+#include "memory.hpp"
+
+#include <boost/filesystem/operations.hpp>
+
 WriteHLSSummary::WriteHLSSummary(const ParameterConstRef _parameters, const HLS_managerRef _hls_mgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _hls_mgr, _design_flow_manager, HLSFlowStep_Type::WRITE_HLS_SUMMARY)
 {
 }
@@ -87,6 +92,18 @@ DesignFlowStep_Status WriteHLSSummary::Exec()
    {
       const hlsRef top_HLS = HLSMgr->get_HLS(top_function);
       top_HLS->PrintResources();
+      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+      {
+         std::string out_file_name = "memory_allocation";
+         unsigned int progressive = 0;
+         std::string candidate_out_file_name;
+         do
+         {
+            candidate_out_file_name = out_file_name + "_" + std::to_string(progressive++) + ".xml";
+         } while(boost::filesystem::exists(candidate_out_file_name));
+         out_file_name = candidate_out_file_name;
+         HLSMgr->Rmem->xwrite(out_file_name);
+      }
 #if 0
       std::string out_file_name = "hls_summary";
       unsigned int progressive = 0;

@@ -53,8 +53,11 @@ class array_ref;
 
 #include "hls_manager.hpp"
 
+#include "state_transition_graph.hpp"
+
 REF_FORWARD_DECL(conn_binding);
 CONSTREF_FORWARD_DECL(OpGraph);
+CONSTREF_FORWARD_DECL(StateTransitionGraph);
 
 /**
  * @class mux_connection_binding
@@ -195,5 +198,4 @@ class mux_connection_binding : public conn_binding_creator
     */
    unsigned int swap_p(const OpGraphConstRef data, vertex op, unsigned int num, std::vector<HLS_manager::io_binding_type>& vars_read, const BehavioralHelperConstRef behavioral_helper, const tree_managerRef TreeM);
 };
-
 #endif

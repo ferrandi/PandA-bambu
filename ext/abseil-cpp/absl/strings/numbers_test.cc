@@ -40,6 +40,7 @@
 #include "absl/random/distributions.h"
 #include "absl/random/random.h"
 #include "absl/strings/internal/numbers_test_common.h"
+#include "absl/strings/internal/ostringstream.h"
 #include "absl/strings/internal/pow10_helper.h"
 #include "absl/strings/str_cat.h"
 
@@ -481,7 +482,7 @@ TEST(stringtest, safe_strto32_base) {
   EXPECT_TRUE(safe_strto32_base(std::string("0x1234"), &value, 16));
   EXPECT_EQ(0x1234, value);
 
-  // Base-10 std::string version.
+  // Base-10 string version.
   EXPECT_TRUE(safe_strto32_base("1234", &value, 10));
   EXPECT_EQ(1234, value);
 }
@@ -622,7 +623,7 @@ TEST(stringtest, safe_strto64_base) {
   EXPECT_TRUE(safe_strto64_base(std::string("0x1234"), &value, 16));
   EXPECT_EQ(0x1234, value);
 
-  // Base-10 std::string version.
+  // Base-10 string version.
   EXPECT_TRUE(safe_strto64_base("1234", &value, 10));
   EXPECT_EQ(1234, value);
 }

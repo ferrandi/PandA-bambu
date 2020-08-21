@@ -61,6 +61,9 @@
 #include "structural_manager.hpp"
 #include "technology_manager.hpp"
 
+#include "state_transition_graph.hpp"
+#include "state_transition_graph_manager.hpp"
+
 /// HLS/binding/storage_value_information
 #include "storage_value_information.hpp"
 
@@ -226,7 +229,24 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
 {
    reverse_map[sv] = index;
    if(unique_table.find(index) == unique_table.end())
+   {
       unique_table[index] = generic_objRef(new register_obj(index));
+      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
+      {
+         for(vertex v : HLS->Rliv->get_support())
+         {
+            if(HLS->STG->GetStg()->GetStateInfo(v)->loopId != 0)
+            {
+               auto live_in = HLS->Rliv->get_live_in(v);
+               for(unsigned int var : live_in)
+               {
+                  if(sv == HLS->storage_value_information->get_storage_value_index(v, var))
+                     stall_reg_table[index] = generic_objRef(new register_obj(index + used_regs));
+               }
+            }
+         }
+      }
+   }
    auto i = this->find(sv);
    if(i == this->end())
       this->insert(std::make_pair(sv, unique_table[index]));
@@ -248,9 +268,18 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs()));
+   bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled() && !HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline();
 
-   compute_is_without_enable();
+   if(stallable_pipeline)
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs() + stall_reg_table.size()) + ", " + std::to_string(stall_reg_table.size()) + " introduced for supporting pipelined loops");
+   else
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs()));
+
+   if(!stallable_pipeline)
+   {
+      // all registers need an enable in stallable pipelines
+      compute_is_without_enable();
+   }
    /// define boolean type for command signals
    all_regs_without_enable = get_used_regs() != 0;
    for(unsigned int i = 0; i < get_used_regs(); i++)
@@ -271,6 +300,20 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
          SM->add_connection(reset_port, port_rst);
       regis->set_structural_obj(reg_mod);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
+      if(stallable_pipeline && stall_reg_table.find(i) != stall_reg_table.end())
+      {
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " also needs a stall register, allocating it...");
+         name = "stall_" + name;
+         reg_mod = SM->add_module_from_technology_library(name, register_type_name, library, circuit, HLS->HLS_T->get_technology_manager());
+         this->specialise_reg(reg_mod, i);
+         port_ck = reg_mod->find_member(CLOCK_PORT_NAME, port_o_K, reg_mod);
+         SM->add_connection(clock_port, port_ck);
+         port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
+         THROW_ASSERT(port_rst != nullptr, "The stall register was not allocated a reset port");
+         SM->add_connection(reset_port, port_rst);
+         regis->set_structural_obj(reg_mod);
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Successfully allocated stall register for std reg " + boost::lexical_cast<std::string>(i));
+      }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - End");
    if(HLS->output_level >= OUTPUT_LEVEL_MINIMUM)
@@ -292,7 +335,7 @@ std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
    std::string register_type_name;
    std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-   if(is_without_enable.find(i) != is_without_enable.end())
+   if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       register_type_name = register_STD;
    else if(synch_reset == "no")
       register_type_name = register_SE;

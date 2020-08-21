@@ -117,7 +117,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
       case COMPUTE_IMPLICIT_CALLS:
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
-      case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:
 #endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
@@ -128,6 +127,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
@@ -311,6 +311,7 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -334,6 +335,9 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
 #endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):

@@ -1355,9 +1355,10 @@ namespace percy
             }
         }
 
-        bool encode(const spec& spec)
+        bool encode(spec& spec)
         {
             assert(spec.nr_in >= 3);
+            spec.add_colex_clauses = false;
 
             create_variables(spec);
             create_main_clauses(spec);
@@ -1370,9 +1371,9 @@ namespace percy
                 create_alonce_clauses(spec);
             }
 
-            if (spec.add_colex_clauses) {
+            /*if (spec.add_colex_clauses) {
                 create_colex_clauses(spec);
-            }
+            }*/
             
             if (spec.add_noreapply_clauses) {
                 create_noreapply_clauses(spec);
@@ -1538,7 +1539,7 @@ namespace percy
                         }
                     }
                 }
-                chain.set_step(i, op_inputs[0], op_inputs[1], op_inputs[2], op);
+                chain.set_step(i, op_inputs[0]+1, op_inputs[1]+1, op_inputs[2]+1, op);
             }
 
             // TODO: support multiple outputs
@@ -1600,7 +1601,7 @@ namespace percy
                         }
                     }
                 }
-                mig.set_step(i, op_inputs[0], op_inputs[1], op_inputs[2], op);
+                mig.set_step(i, op_inputs[0]+1, op_inputs[1]+1, op_inputs[2]+1, op);
             }
 
             // TODO: support multiple outputs
@@ -1634,7 +1635,7 @@ namespace percy
                         }
                     }
                 }
-                chain.set_step(i, op_inputs[0], op_inputs[1], op_inputs[2], op);
+                chain.set_step(i, op_inputs[0]+1, op_inputs[1]+1, op_inputs[2]+1, op);
             }
 
             // TODO: support multiple outputs
@@ -1810,7 +1811,6 @@ namespace percy
                 }
             }
             assert(ctr == spec.nr_steps);
-
             return solver->add_clause(pLits, pLits + ctr);
         }
         

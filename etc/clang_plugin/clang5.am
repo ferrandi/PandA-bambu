@@ -214,10 +214,10 @@ $(I386_CLANG5_ASTANALYZER_PLUGIN) : clang5_plugin_ASTAnalyzer.o
 clang5_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_dumpGimpleEmpty.o; \
@@ -227,10 +227,10 @@ clang5_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimp
 clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_dumpGimpleSSA.o;\
@@ -240,10 +240,10 @@ clang5_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimple
 clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_dumpGimpleSSACpp.o;\
@@ -253,10 +253,10 @@ clang5_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGim
 clang5_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_expandMemOps.o; \
@@ -266,10 +266,10 @@ clang5_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOp
 clang5_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_GepiCanon.o; \
@@ -279,10 +279,10 @@ clang5_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp 
 clang5_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_CSROA.o; \
@@ -292,10 +292,10 @@ clang5_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_sr
 clang5_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang5_plugin_topfname.o; \
@@ -305,22 +305,22 @@ clang5_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(
 clang5_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_plugin_ASTAnalyzer.o;\
 	fi;
 
-clang5_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
+clang5_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_dumpGimple.o;\
@@ -330,10 +330,10 @@ if BUILD_PTAA
 clang5_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	  $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_HardekopfLin_AA.o ; \
@@ -343,10 +343,10 @@ endif
 clang5_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_RangeAnalysis.o; \
@@ -355,10 +355,10 @@ clang5_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $
 clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_eSSA.o; \
@@ -367,10 +367,10 @@ clang5_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/c
 clang5_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_GepiCanon.o; \
@@ -379,10 +379,10 @@ clang5_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp
 clang5_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 	case $(host_os) in \
 	  mingw*) \
-	    compile_options=' -std=c++11 -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
 	    compile_options='';; \
 	  *) \
-	    compile_options=' -std=c++11 -fPIC -fno-rtti -O2 -I$(I386_LLVM5_HEADER_DIR) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	    compile_options=' -fPIC $(I386_LLVM5_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
 	esac;\
 	if test -n "$$compile_options"; then \
 	    $(I386_CLANG5_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang5_CSROA.o; \

@@ -45,7 +45,7 @@ DFtype __floatdidf(DItype i)
    return a;
 }
 
-inline DFtype __int64_to_float64if(DItype i)
+DFtype __int64_to_float64if(DItype i)
 {
    return __floatdidf(i);
 }

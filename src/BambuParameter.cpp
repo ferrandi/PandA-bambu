@@ -40,7 +40,6 @@
  */
 
 /// Autoheader
-#include "config_HAVE_ALTERA.hpp"
 #include "config_HAVE_BEAGLE.hpp"
 #include "config_HAVE_COIN_OR.hpp"
 #include "config_HAVE_CUDD.hpp"
@@ -325,6 +324,8 @@
 #define OPT_VHDL_LIBRARY_PARAMETER (1 + OPT_UNALIGNED_ACCESS_PARAMETER)
 #define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
+#define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
+#define OPT_MASK (1 + OPT_RANGE_ANALYSIS_MODE)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -550,13 +551,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 
    // Memory allocation options
    os << "  Memory allocation:\n\n"
-      << "    --memory-allocation=<type>\n"
-      << "        Set the algorithm used for memory allocation. Possible values for the\n"
-      << "        type argument are the following:\n"
-      << "            DOMINATOR          - all local variables, static variables and\n"
-      << "                                 strings are allocated on BRAMs (default)\n"
-      << "            XML_SPECIFICATION  - import the memory allocation from an XML\n"
-      << "                                 specification\n\n"
       << "    --xml-memory-allocation=<xml_file_name>\n"
       << "        Specify the file where the XML configuration has been defined.\n\n"
       << "    --memory-allocation-policy=<type>\n"
@@ -673,7 +667,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 
    // Options for Evaluation of HLS results
    os << "  Evaluation of HLS results:\n\n"
-#if HAVE_ICARUS || HAVE_XILINX || HAVE_VERILATOR || HAVE_MODELSIM
       << "    --simulate\n"
       << "        Simulate the RTL implementation.\n\n"
 #if HAVE_MENTOR_VISUALIZER_EXE
@@ -682,19 +675,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
       << "    --simulator=<type>\n"
       << "        Specify the simulator used in generated simulation scripts:\n"
-#if HAVE_MODELSIM
       << "            MODELSIM - Mentor Modelsim\n"
-#endif
-#if HAVE_XILINX
       << "            XSIM - Xilinx XSim\n"
       << "            ISIM - Xilinx iSim\n"
-#endif
-#if HAVE_ICARUS
       << "            ICARUS - Verilog Icarus simulator\n"
-#endif
-#if HAVE_VERILATOR
       << "            VERILATOR - Verilator simulator\n"
-#endif
       << "\n"
       << "    --max-sim-cycles=<cycles>\n"
       << "        Specify the maximum number of cycles a HDL simulation may run.\n"
@@ -704,7 +689,6 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --generate-vcd\n"
       << "        Enable .vcd output file generation for waveform visualization (requires\n"
       << "        testbench generation).\n\n"
-#endif
       << "    --evaluation[=type]\n"
       << "        Perform evaluation of the results.\n"
       << "        The value of 'type' selects the objectives to be evaluated\n"
@@ -1069,7 +1053,7 @@ int BambuParameter::Exec()
    // Bambu short option. An option character in this string can be followed by a colon (`:') to indicate that it
    // takes a required argument. If an option character is followed by two colons (`::'), its argument is optional;
    // this is a GNU extension.
-   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p" GCC_SHORT_OPTIONS_STRING;
+   const char* const short_options = COMMON_SHORT_OPTIONS_STRING "o:t:u:H:sSC::b:w:p::" GCC_SHORT_OPTIONS_STRING;
 
    const struct option long_options[] = {
       COMMON_LONG_OPTIONS,
@@ -1118,7 +1102,7 @@ int BambuParameter::Exec()
 #if HAVE_ILP_BUILT
       {"speculative-sdc-scheduling", no_argument, nullptr, 's'},
 #endif
-      {"pipelining", no_argument, nullptr, 'p'},
+      {"pipelining", optional_argument, nullptr, 'p'},
       {"serialize-memory-accesses", no_argument, nullptr, OPT_SERIALIZE_MEMORY_ACCESSES},
       {PAR_LIST_BASED_OPT, optional_argument, nullptr, OPT_LIST_BASED}, // no short option
       {"post-rescheduling", no_argument, nullptr, OPT_POST_RESCHEDULING},
@@ -1138,7 +1122,6 @@ int BambuParameter::Exec()
       {"register-allocation", required_argument, nullptr, OPT_REGISTER_ALLOCATION},
       {"storage-value-insertion", required_argument, nullptr, 0},
       /// Memory allocation
-      {"memory-allocation", required_argument, nullptr, 0},
       {"memory-allocation-policy", required_argument, nullptr, 0},
       {"xml-memory-allocation", required_argument, nullptr, 0},
       {"base-address", required_argument, nullptr, 0},
@@ -1249,6 +1232,8 @@ int BambuParameter::Exec()
       {"discrepancy-no-load-pointers", no_argument, nullptr, OPT_DISCREPANCY_NO_LOAD_POINTERS},
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
+      {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
+      {"mask", optional_argument, nullptr, OPT_MASK},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
@@ -1310,7 +1295,7 @@ int BambuParameter::Exec()
             break;
          }
          case 'o':
-            setOption(OPT_output_file, optarg);
+            setOption(OPT_output_file, GetPath(optarg));
             break;
          case 'S':
          {
@@ -1926,7 +1911,9 @@ int BambuParameter::Exec()
 #endif
          case 'p':
          {
-            setOption(OPT_pipelining, true);
+            setOption(OPT_pipelining, "@ll");
+            if(optarg)
+               setOption(OPT_pipelining, optarg);
             break;
          }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
@@ -2126,7 +2113,7 @@ int BambuParameter::Exec()
          }
          case OPT_PRETTY_PRINT:
          {
-            setOption(OPT_pretty_print, optarg);
+            setOption(OPT_pretty_print, GetPath(optarg));
             break;
          }
          case OPT_PRAGMA_PARSE:
@@ -2140,7 +2127,7 @@ int BambuParameter::Exec()
             const std::string arg = TrimSpaces(std::string(optarg));
             if(arg.size() >= 4 and arg.substr(arg.size() - 4) == ".xml")
             {
-               setOption(OPT_testbench_input_xml, optarg);
+               setOption(OPT_testbench_input_xml, GetPath(optarg));
             }
             else
             {
@@ -2259,6 +2246,16 @@ int BambuParameter::Exec()
             setOption(OPT_discrepancy_permissive_ptrs, true);
             break;
          }
+         case OPT_RANGE_ANALYSIS_MODE:
+         {
+            setOption(OPT_range_analysis_mode, optarg);
+            break;
+         }
+         case OPT_MASK:
+         {
+            setOption(OPT_mask, optarg);
+            break;
+         }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
          case OPT_NUM_ACCELERATORS:
          {
@@ -2301,7 +2298,7 @@ int BambuParameter::Exec()
             for(auto& i : Splitted)
             {
                boost::trim(i);
-               no_parse_files += i + " ";
+               no_parse_files += GetPath(i) + " ";
             }
             setOption(OPT_no_parse_files, no_parse_files);
             break;
@@ -2313,7 +2310,7 @@ int BambuParameter::Exec()
             for(auto& i : Splitted)
             {
                boost::trim(i);
-               no_parse_c_python_files += i + " ";
+               no_parse_c_python_files += GetPath(i) + " ";
             }
             setOption(OPT_no_parse_c_python, no_parse_c_python_files);
             break;
@@ -2406,20 +2403,9 @@ int BambuParameter::Exec()
                   throw "BadParameters: module binding option not correctly specified";
                break;
             }
-            if(strcmp(long_options[option_index].name, "memory-allocation") == 0)
-            {
-               if(std::string(optarg) == "DOMINATOR")
-                  setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION);
-               else if(std::string(optarg) == "XML_SPECIFICATION")
-                  setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR);
-               else
-                  throw "BadParameters: memory allocation option not correctly specified";
-               break;
-            }
             if(strcmp(long_options[option_index].name, "xml-memory-allocation") == 0)
             {
-               setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::XML_MEMORY_ALLOCATOR);
-               setOption(OPT_xml_memory_allocation, optarg);
+               setOption(OPT_xml_memory_allocation, GetPath(optarg));
                break;
             }
             if(strcmp(long_options[option_index].name, "memory-allocation-policy") == 0)
@@ -2434,8 +2420,6 @@ int BambuParameter::Exec()
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
                else if(std::string(optarg) == "EXT_PIPELINED_BRAM")
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
-               else if(std::string(optarg) == "INTERN_UNALIGNED")
-                  setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::INTERN_UNALIGNED);
                else
                   throw "BadParameters: memory allocation policy option not correctly specified";
                break;
@@ -2533,11 +2517,6 @@ int BambuParameter::Exec()
                setOption(OPT_assert_debug, true);
                break;
             }
-            if(strcmp(long_options[option_index].name, "circuit-dbg") == 0)
-            {
-               setOption(OPT_circuit_debug_level, optarg);
-               break;
-            }
             /// scheduling options
             if(strcmp(long_options[option_index].name, "no-chaining") == 0)
             {
@@ -2558,6 +2537,9 @@ int BambuParameter::Exec()
                else if(std::string(optarg) == "WB4")
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
+                  setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
+                  setOption(OPT_channels_number, 1);
+                  setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
                }
 #if HAVE_EXPERIMENTAL
                else if(std::string(optarg) == "AXI4LITE")
@@ -2642,7 +2624,7 @@ int BambuParameter::Exec()
    if(isOption(OPT_gcc_write_xml))
    {
       const std::string filenameXML = getOption<std::string>(OPT_gcc_write_xml);
-      write_xml_configuration_file(filenameXML);
+      write_xml_configuration_file(GetPath(filenameXML));
       PRINT_MSG("Configuration saved into file \"" + filenameXML + "\"");
       return EXIT_SUCCESS;
    }
@@ -2674,7 +2656,7 @@ int BambuParameter::Exec()
       else if(file_type == Parameters_FileFormat::FF_AADL)
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_AADL));
       }
 #endif
@@ -2685,13 +2667,13 @@ int BambuParameter::Exec()
       )
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
          setOption(OPT_input_format, static_cast<int>(file_type));
       }
       else if(file_type == Parameters_FileFormat::FF_RAW or (isOption(OPT_input_format) and getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_RAW))
       {
          const auto input_file = isOption(OPT_input_file) ? getOption<std::string>(OPT_input_file) + STR_CST_string_separator : "";
-         setOption(OPT_input_file, input_file + argv[optind]);
+         setOption(OPT_input_file, input_file + GetPath(argv[optind]));
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
          if(!isOption(OPT_pretty_print))
             setOption(OPT_pretty_print, "_a.c");
@@ -2759,7 +2741,7 @@ void BambuParameter::CheckParameters()
       setOption("device_synthesis_tool", "");
       if(getOption<std::string>(OPT_bram_high_latency) != "")
       {
-         THROW_ERROR("High latency bram cannot be used in taste architecture");
+         THROW_ERROR("High latency BRAM cannot be used in taste architecture");
       }
    }
 #endif
@@ -2805,7 +2787,8 @@ void BambuParameter::CheckParameters()
    }
 
    /// controller options
-   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR || getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR)
+   if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
+      getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR)
       setOption(OPT_stg, true);
 
    /// chaining options
@@ -2841,7 +2824,7 @@ void BambuParameter::CheckParameters()
             if(not getOption<bool>(OPT_generate_testbench))
             {
                setOption(OPT_generate_testbench, true);
-               setOption(OPT_testbench_input_xml, "test.xml");
+               setOption(OPT_testbench_input_xml, GetPath("test.xml"));
             }
          }
          const auto is_valid_evaluation_mode = [](const std::string& s) -> bool {
@@ -2905,7 +2888,7 @@ void BambuParameter::CheckParameters()
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
-      std::string includes = "-I " + std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include") + " -I " + std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include");
+      std::string includes = "-I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) + " -I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
       if(isOption(OPT_gcc_includes))
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
       setOption(OPT_gcc_includes, includes);
@@ -3081,7 +3064,7 @@ void BambuParameter::CheckParameters()
             std::ofstream filestream(concat_filename.c_str());
             for(const auto& source_file : source_files)
             {
-               filestream << "#include \"../" << source_file << "\"\n";
+               filestream << "#include \"" << source_file << "\"\n";
             }
             filestream.close();
             setOption(OPT_input_file, concat_filename);
@@ -3216,7 +3199,7 @@ void BambuParameter::CheckParameters()
       setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::LSS);
 
    /// base address and initial internal address checks
-   if(isOption(OPT_initial_internal_address) && (getOption<unsigned int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
+   if(isOption(OPT_initial_internal_address) && (getOption<unsigned long long int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
    {
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))
@@ -3225,11 +3208,6 @@ void BambuParameter::CheckParameters()
    }
 
    /// Checks
-   if(getOption<HLSFlowStep_Type>(OPT_memory_allocation_algorithm) == HLSFlowStep_Type::XML_MEMORY_ALLOCATOR and not!isOption(OPT_xml_memory_allocation))
-   {
-      if(!isOption(OPT_xml_input_configuration))
-         THROW_ERROR("XML specification of the memory allocation has not been specified!");
-   }
    if(isOption(OPT_memory_banks_number) && getOption<int>(OPT_memory_banks_number) > 1)
    {
       setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
@@ -3262,8 +3240,6 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
       THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
 
-   if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::INTERN_UNALIGNED && !getOption<bool>(OPT_do_not_expose_globals))
-      THROW_ERROR("--memory-allocation-policy=INTERN_UNALIGNED implies --do-not-expose-globals");
    if(not getOption<bool>(OPT_gcc_include_sysdir))
    {
       if(not isOption(OPT_input_file))
@@ -3353,7 +3329,7 @@ void BambuParameter::CheckParameters()
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)
       {
-         std::string command = "cp " + splitted[i] + " .";
+         std::string command = "cp " + GetPath(splitted[i]) + " " + GetCurrentPath();
          int ret = PandaSystem(ParameterConstRef(this, null_deleter()), command);
          if(IsError(ret))
          {
@@ -3372,7 +3348,7 @@ void BambuParameter::CheckParameters()
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
-         THROW_ERROR("Simulation of Lattice device does not work with VERILATOR");
+         THROW_WARNING("Simulation of Lattice device may not work with VERILATOR. Recent versions ignore some issue in Verilog Lattice libraries.");
       }
    }
 #if !HAVE_LATTICE
@@ -3382,7 +3358,7 @@ void BambuParameter::CheckParameters()
    }
 #endif
 #if HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("ARE") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
       !getOption<bool>(OPT_connect_iob))
    {
       THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
@@ -3405,19 +3381,13 @@ void BambuParameter::SetDefaults()
 {
    // ---------- general options ----------- //
    /// Revision
-#ifdef _WIN32
    setOption(OPT_dot_directory, GetCurrentPath() + "/HLS_output/dot/");
    setOption(OPT_output_directory, GetCurrentPath() + "/HLS_output/");
-#else
-   setOption(OPT_dot_directory, "HLS_output/dot/");
-   setOption(OPT_output_directory, "HLS_output/");
-#endif
-   setOption(OPT_simulation_output, "results.txt");
-   setOption(OPT_profiling_output, "profiling_results.txt");
+   setOption(OPT_simulation_output, GetPath("results.txt"));
+   setOption(OPT_profiling_output, GetPath("profiling_results.txt"));
    /// Debugging level
    setOption(OPT_output_level, OUTPUT_LEVEL_MINIMUM);
    setOption(OPT_debug_level, DEBUG_LEVEL_NONE);
-   setOption(OPT_circuit_debug_level, DEBUG_LEVEL_NONE);
    setOption(OPT_print_dot, false);
    /// maximum execution time: 0 means no time limit
    setOption(OPT_ilp_max_time, 0);
@@ -3537,15 +3507,8 @@ void BambuParameter::SetDefaults()
 
    /// backend HDL
    setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
-   std::string mingw_prefix;
-   if(getenv("MINGW_INST_DIR"))
-      mingw_prefix = getenv("MINGW_INST_DIR");
-#ifdef _WIN32
-   else
-      mingw_prefix = "c:/msys64/";
-#endif
 
-   setOption("dynamic_generators_dir", mingw_prefix + PANDA_DATA_INSTALLDIR "/panda");
+   setOption("dynamic_generators_dir", relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda"));
 
    /// -- Module Interfaces -- //
    setOption(OPT_interface, true);
@@ -3821,6 +3784,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_scheduling_mux_margins, 0.0);
    setOption(OPT_no_return_zero, false);
    setOption(OPT_bitvalue_ipa, true);
+   setOption(OPT_range_analysis_mode, "");
+   setOption(OPT_mask, "");
 
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);
@@ -3900,103 +3865,97 @@ void BambuParameter::add_bambu_library(std::string lib)
    }
    if(isOption(OPT_archive_files))
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
-   std::string mingw_prefix;
-   if(getenv("MINGW_INST_DIR"))
-      mingw_prefix = getenv("MINGW_INST_DIR");
-#ifdef _WIN32
-   else
-      mingw_prefix = "c:/msys64/";
-#endif
+
 #endif
 
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc45" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc45" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc46" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc46" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc47" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc47" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc48" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc48" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc49" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc49" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6))
    {
-      setOption(OPT_archive_files, archive_files + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_GCC8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_gcc8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_gcc8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang4" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang4" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang5" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang5" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang6" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang6" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang7" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang7" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang8" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang8" + VSuffix + ".a");
    }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9))
    {
-      setOption(OPT_archive_files, archive_files + mingw_prefix + PANDA_LIB_INSTALLDIR "/panda/lib" + lib + "_clang9" + VSuffix + ".a");
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang9" + VSuffix + ".a");
    }
 #endif
 }

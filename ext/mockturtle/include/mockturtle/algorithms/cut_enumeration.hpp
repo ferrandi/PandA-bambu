@@ -435,7 +435,7 @@ private:
     std::vector<uint32_t> cut_sizes;
     ntk.foreach_fanin( ntk.index_to_node( index ), [this, &pairs, &cut_sizes]( auto child, auto i ) {
       lcuts[i] = &cuts.cuts( ntk.node_to_index( ntk.get_node( child ) ) );
-      cut_sizes.push_back( lcuts[i]->size() );
+      cut_sizes.push_back( static_cast<uint32_t>( lcuts[i]->size() ) );
       pairs *= cut_sizes.back();
     } );
 

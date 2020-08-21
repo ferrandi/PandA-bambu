@@ -43,11 +43,14 @@
 #include "../networks/klut.hpp"
 #include "../networks/mig.hpp"
 #include "../traits.hpp"
+#include "../utils/cost_functions.hpp"
 #include "../utils/node_map.hpp"
 #include "../utils/progress_bar.hpp"
 #include "../utils/stopwatch.hpp"
 #include "../views/cut_view.hpp"
-#include "../views/fanout_view2.hpp"
+#include "../views/depth_view.hpp"
+#include "../views/fanout_view.hpp"
+#include "cleanup.hpp"
 #include "cut_enumeration.hpp"
 #include "detail/mffc_utils.hpp"
 #include "dont_cares.hpp"
@@ -94,6 +97,9 @@ struct cut_rewriting_params
   /*! \brief Minimum candidate cut size override (in conflict graph) */
   std::optional<uint32_t> min_cand_cut_size_override{};
 
+  /*! \brief If true, candidates are only accepted if they do not increase logic level of node. */
+  bool preserve_depth{false};
+
   /*! \brief Show progress. */
   bool progress{false};
 
@@ -123,12 +129,15 @@ struct cut_rewriting_stats
   /*! \brief Runtime to find minimal independent set. */
   stopwatch<>::duration time_mis{0};
 
-  void report() const
+  void report( bool show_time_mis = true ) const
   {
-    std::cout << fmt::format( "[i] total time     = {:>5.2f} secs\n", to_seconds( time_total ) );
-    std::cout << fmt::format( "[i] cut enum. time = {:>5.2f} secs\n", to_seconds( time_cuts ) );
-    std::cout << fmt::format( "[i] rewriting time = {:>5.2f} secs\n", to_seconds( time_rewriting ) );
-    std::cout << fmt::format( "[i] ind. set time  = {:>5.2f} secs\n", to_seconds( time_mis ) );
+    fmt::print( "[i] total time     = {:>5.2f} secs\n", to_seconds( time_total ) );
+    fmt::print( "[i] cut enum. time = {:>5.2f} secs\n", to_seconds( time_cuts ) );
+    fmt::print( "[i] rewriting time = {:>5.2f} secs\n", to_seconds( time_rewriting ) );
+    if ( show_time_mis )
+    {
+      fmt::print( "[i] ind. set time  = {:>5.2f} secs\n", to_seconds( time_mis ) );
+    }
   }
 };
 
@@ -333,7 +342,7 @@ std::tuple<graph, std::vector<std::pair<node<Ntk>, uint32_t>>> network_cuts_grap
       auto v = g.add_vertex( ( *cut )->data.gain );
       assert( v == vertex_to_cut_addr.size() );
       vertex_to_cut_addr.emplace_back( n, cctr );
-      cut_addr_to_vertex[ntk.node_to_index( n )].emplace_back( v );
+      cut_addr_to_vertex[ntk.node_to_index( n )].emplace_back( static_cast<uint32_t>( v ) );
 
       ++cctr;
     }
@@ -379,22 +388,11 @@ struct has_rewrite_with_dont_cares<Ntk,
 template<class Ntk, class RewritingFn, class Iterator>
 inline constexpr bool has_rewrite_with_dont_cares_v = has_rewrite_with_dont_cares<Ntk, RewritingFn, Iterator>::value;
 
-template<class Ntk>
-struct unit_cost
-{
-  uint32_t operator()( Ntk const& ntk, node<Ntk> const& node ) const
-  {
-    (void)ntk;
-    (void)node;
-    return 1u;
-  }
-};
-
 template<class Ntk, class RewritingFn, class NodeCostFn>
-class cut_rewriting_impl
+class cut_rewriting_with_compatibility_graph_impl
 {
 public:
-  cut_rewriting_impl( Ntk& ntk, RewritingFn&& rewriting_fn, cut_rewriting_params const& ps, cut_rewriting_stats& st, NodeCostFn const& cost_fn )
+  cut_rewriting_with_compatibility_graph_impl( Ntk& ntk, RewritingFn&& rewriting_fn, cut_rewriting_params const& ps, cut_rewriting_stats& st, NodeCostFn const& cost_fn )
       : ntk( ntk ),
         rewriting_fn( rewriting_fn ),
         ps( ps ),
@@ -452,14 +450,14 @@ public:
           children.push_back( ntk.make_signal( ntk.index_to_node( l ) ) );
         }
 
-        int32_t value = recursive_deref( n );
+        int32_t value = recursive_deref<Ntk, NodeCostFn>( ntk, n );
         {
           stopwatch t( st.time_rewriting );
           int32_t best_gain{-1};
 
           const auto on_signal = [&]( auto const& f_new ) {
             auto [v, contains] = recursive_ref_contains( ntk.get_node( f_new ), n );
-            recursive_deref( ntk.get_node( f_new ) );
+            recursive_deref<Ntk, NodeCostFn>( ntk, ntk.get_node( f_new ) );
 
             int32_t gain = contains ? -1 : value - v;
 
@@ -507,7 +505,7 @@ public:
           }
         }
 
-        recursive_ref( n );
+        recursive_ref<Ntk, NodeCostFn>( ntk, n );
       }
 
       return true;
@@ -556,40 +554,6 @@ public:
   }
 
 private:
-  uint32_t recursive_deref( node<Ntk> const& n )
-  {
-    /* terminate? */
-    if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
-      return 0;
-
-    /* recursively collect nodes */
-    uint32_t value{cost_fn( ntk, n )};
-    ntk.foreach_fanin( n, [&]( auto const& s ) {
-      if ( ntk.decr_value( ntk.get_node( s ) ) == 0 )
-      {
-        value += recursive_deref( ntk.get_node( s ) );
-      }
-    } );
-    return value;
-  }
-
-  uint32_t recursive_ref( node<Ntk> const& n )
-  {
-    /* terminate? */
-    if ( ntk.is_constant( n ) || ntk.is_pi( n ) )
-      return 0;
-
-    /* recursively collect nodes */
-    uint32_t value{cost_fn( ntk, n )};
-    ntk.foreach_fanin( n, [&]( auto const& s ) {
-      if ( ntk.incr_value( ntk.get_node( s ) ) == 0 )
-      {
-        value += recursive_ref( ntk.get_node( s ) );
-      }
-    } );
-    return value;
-  }
-
   std::pair<int32_t, bool> recursive_ref_contains( node<Ntk> const& n, node<Ntk> const& repl )
   {
     /* terminate? */
@@ -621,7 +585,7 @@ private:
 
 } /* namespace detail */
 
-/*! \brief Cut rewriting algorithm.
+/*! \brief In-place cut rewriting algorithm with compabitility graph.
  *
  * This algorithm enumerates cut of a network and then tries to rewrite the cut
  * in terms of gates of the same network.  The rewritten structures are added
@@ -664,8 +628,8 @@ private:
  * \param pst Rewriting statistics
  * \param cost_fn Node cost function (a functor with signature `uint32_t(Ntk const&, node<Ntk> const&)`)
  */
-template<class Ntk, class RewritingFn, class NodeCostFn = detail::unit_cost<Ntk>>
-void cut_rewriting( Ntk& ntk, RewritingFn&& rewriting_fn, cut_rewriting_params const& ps = {}, cut_rewriting_stats* pst = nullptr, NodeCostFn const& cost_fn = {} )
+template<class Ntk, class RewritingFn, class NodeCostFn = unit_cost<Ntk>>
+void cut_rewriting_with_compatibility_graph( Ntk& ntk, RewritingFn&& rewriting_fn, cut_rewriting_params const& ps = {}, cut_rewriting_stats* pst = nullptr, NodeCostFn const& cost_fn = {} )
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
   static_assert( has_fanout_size_v<Ntk>, "Ntk does not implement the fanout_size method" );
@@ -685,15 +649,15 @@ void cut_rewriting( Ntk& ntk, RewritingFn&& rewriting_fn, cut_rewriting_params c
   cut_rewriting_stats st;
   if constexpr ( std::is_same_v<typename Ntk::base_type, klut_network> )
   {
-    detail::cut_rewriting_impl<Ntk, RewritingFn, NodeCostFn> p( ntk, rewriting_fn, ps, st, cost_fn );
+    detail::cut_rewriting_with_compatibility_graph_impl<Ntk, RewritingFn, NodeCostFn> p( ntk, rewriting_fn, ps, st, cost_fn );
     p.run();
   }
   else
   {
-    fanout_view2_params fvps;
+    fanout_view_params fvps;
     fvps.update_on_delete = false;
-    fanout_view2<Ntk> ntk_fo{ntk, fvps};
-    detail::cut_rewriting_impl<fanout_view2<Ntk>, RewritingFn, NodeCostFn> p( ntk_fo, rewriting_fn, ps, st, cost_fn );
+    fanout_view<Ntk> ntk_fo{ntk, fvps};
+    detail::cut_rewriting_with_compatibility_graph_impl<fanout_view<Ntk>, RewritingFn, NodeCostFn> p( ntk_fo, rewriting_fn, ps, st, cost_fn );
     p.run();
   }
 
@@ -706,6 +670,196 @@ void cut_rewriting( Ntk& ntk, RewritingFn&& rewriting_fn, cut_rewriting_params c
   {
     *pst = st;
   }
+}
+
+namespace detail
+{
+
+template<class NtkDest, class Ntk, class RewritingFn, class NodeCostFn>
+struct cut_rewriting_impl
+{
+  cut_rewriting_impl( Ntk const& ntk, RewritingFn const& rewriting_fn, cut_rewriting_params const& ps, cut_rewriting_stats& st )
+      : ntk_( ntk ),
+        rewriting_fn_( rewriting_fn ),
+        ps_( ps ),
+        st_( st ) {}
+
+  NtkDest run()
+  {
+    stopwatch t( st_.time_total );
+
+    /* initial node map */
+    node_map<signal<Ntk>, Ntk> old2new( ntk_ );
+    Ntk res;
+    old2new[ntk_.get_constant( false )] = res.get_constant( false );
+    if ( ntk_.get_node( ntk_.get_constant( true ) ) != ntk_.get_node( ntk_.get_constant( false ) ) )
+    {
+      old2new[ntk_.get_constant( true )] = res.get_constant( true );
+    }
+    ntk_.foreach_pi( [&]( auto const& n ) {
+      old2new[n] = res.create_pi();
+    } );
+
+    /* enumerate cuts */
+    const auto cuts = call_with_stopwatch( st_.time_cuts, [&]() { return cut_enumeration<Ntk, true, cut_enumeration_cut_rewriting_cut>( ntk_, ps_.cut_enumeration_ps ); } );
+
+    /* for cost estimation we use reference counters initialized by the fanout size */
+    initialize_values_with_fanout( ntk_ );
+
+    /* original cost */
+    const auto orig_cost = costs<Ntk, NodeCostFn>( ntk_ );
+
+    progress_bar pbar{ntk_.num_gates(), "cut_rewriting |{0}| node = {1:>4} / " + std::to_string( ntk_.num_gates() ) + "   original cost = " + std::to_string( orig_cost ), ps_.progress};
+    ntk_.foreach_gate( [&]( auto const& n, auto i ) {
+      pbar( i, i );
+
+      /* nothing to optimize? */
+      int32_t value = mffc_size<Ntk, NodeCostFn>( ntk_, n );
+      if ( value == 1 )
+      {
+        std::vector<signal<Ntk>> children( ntk_.fanin_size( n ) );
+        ntk_.foreach_fanin( n, [&]( auto const& f, auto i ) {
+          children[i] = ntk_.is_complemented( f ) ? res.create_not( old2new[f] ) : old2new[f];
+        } );
+
+        old2new[n] = res.clone_node( ntk_, n, children );
+      }
+      else
+      {
+        /* foreach cut */
+        int32_t best_gain = -1;
+        signal<Ntk> best_signal;
+        for ( auto& cut : cuts.cuts( ntk_.node_to_index( n ) ) )
+        {
+          /* skip small enough cuts */
+          if ( cut->size() == 1 || cut->size() < ps_.min_cand_cut_size )
+            continue;
+
+          const auto tt = cuts.truth_table( *cut );
+          assert( cut->size() == static_cast<unsigned>( tt.num_vars() ) );
+
+          std::vector<signal<Ntk>> children( cut->size() );
+          auto ctr = 0u;
+          for ( auto l : *cut )
+          {
+            children[ctr++] = old2new[ntk_.index_to_node( l )];
+          }
+
+          const auto on_signal = [&]( auto const& f_new ) {
+            auto value2 = recursive_ref<Ntk, NodeCostFn>( res, res.get_node( f_new ) );
+            recursive_deref<Ntk, NodeCostFn>( res, res.get_node( f_new ) );
+            int32_t gain = value - value2;
+
+            if ( ( gain > 0 || ( ps_.allow_zero_gain && gain == 0 ) ) && gain > best_gain )
+            {
+              if constexpr ( has_level_v<Ntk> )
+              {
+                if ( !ps_.preserve_depth || res.level( res.get_node( f_new ) ) <= ntk_.level( n ) )
+                {
+                  best_gain = gain;
+                  best_signal = f_new;
+                }
+              }
+              else
+              {
+                best_gain = gain;
+                best_signal = f_new;
+              }
+            }
+
+            return true;
+          };
+          stopwatch<> t( st_.time_rewriting );
+          rewriting_fn_( res, cuts.truth_table( *cut ), children.begin(), children.end(), on_signal );
+        }
+
+        if ( best_gain == -1 )
+        {
+          std::vector<signal<Ntk>> children( ntk_.fanin_size( n ) );
+          ntk_.foreach_fanin( n, [&]( auto const& f, auto i ) {
+            children[i] = ntk_.is_complemented( f ) ? res.create_not( old2new[f] ) : old2new[f];
+          } );
+
+          old2new[n] = res.clone_node( ntk_, n, children );
+        }
+        else
+        {
+          old2new[n] = best_signal;
+        }
+      }
+
+      recursive_ref<Ntk, NodeCostFn>( res, res.get_node( old2new[n] ) );
+    } );
+
+    /* create POs */
+    ntk_.foreach_po( [&]( auto const& f ) {
+      res.create_po( ntk_.is_complemented( f ) ? res.create_not( old2new[f] ) : old2new[f] );
+    } );
+
+    NtkDest ret = cleanup_dangling<NtkDest>( res );
+
+    /* new costs */
+    return costs<NtkDest, NodeCostFn>( ret ) > orig_cost ? static_cast<NtkDest>( ntk_ ) : ret;
+  }
+
+private:
+  Ntk const& ntk_;
+  RewritingFn const& rewriting_fn_;
+  cut_rewriting_params const& ps_;
+  cut_rewriting_stats& st_;
+};
+
+} // namespace detail
+
+/*! \brief Cut rewriting algorithm.
+ *
+ * This algorithm enumerates cut of a network and then tries to rewrite the cut
+ * in terms of gates of the same network.  The rewritten structures are added
+ * to the network, and if they lead to area improvement, will be used as new
+ * parts of the logic.
+ *
+ * The rewriting function must be of type `NtkDest::signal(NtkDest&,
+ * kitty::dynamic_truth_table const&, LeavesIterator, LeavesIterator)` where
+ * `LeavesIterator` can be dereferenced to a `NtkDest::signal`.  The last two
+ * parameters compose an iterator pair where the distance matches the number of
+ * variables of the truth table that is passed as second parameter.  There are
+ * some rewriting algorithms in the folder
+ * `mockturtle/algorithms/node_resyntesis`, since the resynthesis functions
+ * have the same signature.
+ *
+ * In contrast to node resynthesis, cut rewriting uses the same type for the
+ * input and output network.
+ *
+ * \param ntk Network
+ * \param rewriting_fn Rewriting function
+ * \param ps Rewriting params
+ * \param pst Rewriting statistics
+ */
+template<class Ntk, class RewritingFn, class NodeCostFn = unit_cost<Ntk>>
+Ntk cut_rewriting( Ntk const& ntk, RewritingFn const& rewriting_fn = {}, cut_rewriting_params const& ps = {}, cut_rewriting_stats* pst = nullptr )
+{
+  cut_rewriting_stats st;
+  const auto result = [&]() {
+    if ( ps.preserve_depth )
+    {
+      depth_view<Ntk, NodeCostFn> depth_ntk{ntk};
+      return detail::cut_rewriting_impl<Ntk, depth_view<Ntk, NodeCostFn>, RewritingFn, NodeCostFn>( depth_ntk, rewriting_fn, ps, st ).run();
+    }
+    else
+    {
+      return detail::cut_rewriting_impl<Ntk, Ntk, RewritingFn, NodeCostFn>( ntk, rewriting_fn, ps, st ).run();
+    }
+  }();
+
+  if ( ps.verbose )
+  {
+    st.report( false );
+  }
+  if ( pst )
+  {
+    *pst = st;
+  }
+  return result;
 }
 
 } /* namespace mockturtle */

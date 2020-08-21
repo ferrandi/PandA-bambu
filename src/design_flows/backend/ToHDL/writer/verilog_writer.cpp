@@ -885,6 +885,21 @@ void verilog_writer::write_io_signal_post_fix(const structural_objectRef& port, 
       indented_output_stream->Append("assign " + port_string + " = " + signal_string + ";\n");
 }
 
+void verilog_writer::write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig)
+{
+   THROW_ASSERT(port && port->get_kind() == port_vector_o_K, "Expected a port got something of different");
+   THROW_ASSERT(port->get_owner(), "Expected a port with an owner");
+   THROW_ASSERT(sig && sig->get_kind() == signal_vector_o_K, "Expected a signal got something of different");
+   std::string port_string;
+   std::string signal_string;
+   signal_string = HDL_manager::convert_to_identifier(this, sig->get_id());
+   port_string = HDL_manager::convert_to_identifier(this, port->get_id());
+   if(GetPointer<port_o>(port)->get_port_direction() == port_o::IN)
+      std::swap(port_string, signal_string);
+   if(port_string != signal_string)
+      indented_output_stream->Append("assign " + port_string + " = " + signal_string + ";\n");
+}
+
 void verilog_writer::write_module_parametrization(const structural_objectRef& cir)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing module generics of " + cir->get_path());
@@ -1302,7 +1317,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          }
       }
 
-
       if(!skip_state_transition)
       {
          /// check unique-case condition
@@ -1367,11 +1381,11 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
                               if((*in_or_conditions_tokens_it)[0] != '&')
                               {
-                                  unique_case_condition = false;
+                                 unique_case_condition = false;
                               }
                               else
                               {
-                                 if(n_bits_guard_casez_port==0)
+                                 if(n_bits_guard_casez_port == 0)
                                     n_bits_guard_casez_port = vec_size == 0 ? port_size : vec_size;
                               }
                            }
@@ -1379,7 +1393,6 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                         ++current_input_it;
                      }
                   }
-
                }
             }
          }
@@ -1418,7 +1431,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                if(i == 0)
                {
                   if(unique_case_condition)
-                     indented_output_stream->Append(STR(n_bits_guard_casez_port)+"'b");
+                     indented_output_stream->Append(STR(n_bits_guard_casez_port) + "'b");
                   else
                      indented_output_stream->Append("if (");
                }
@@ -1432,7 +1445,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                else
                {
                   if(unique_case_condition)
-                     indented_output_stream->Append(STR(n_bits_guard_casez_port)+"'b");
+                     indented_output_stream->Append(STR(n_bits_guard_casez_port) + "'b");
                   else
                      indented_output_stream->Append("else if (");
                }
@@ -1560,7 +1573,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-               if(single_proc || output_index == i)
+               if((single_proc || output_index == i) && (parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1))
                   indented_output_stream->Append(port_name + " = 1'bX;");
                if(single_proc)
                   indented_output_stream->Append("\n");
@@ -1590,7 +1603,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
          if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
          {
             port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
-            if(single_proc || output_index == i)
+            if((single_proc || output_index == i) && (parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1))
                indented_output_stream->Append(port_name + " = 1'bX;");
             if(single_proc)
                indented_output_stream->Append("\n");

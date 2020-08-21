@@ -5,8 +5,8 @@
  */
 #include <stddef.h>
 #include <unistd.h>
-signed short int __bambu_readc(int fd);
-long long int __bambu_read4c(int fd);
+unsigned short int __bambu_readc(unsigned int fd);
+unsigned long long int __bambu_read4c(unsigned int fd);
 
 ssize_t read(int fd, void* __restrict buf, size_t count)
 {
@@ -16,7 +16,7 @@ ssize_t read(int fd, void* __restrict buf, size_t count)
    while(index + 4 < count)
    {
       char control_word;
-      res_ll_int = __bambu_read4c(fd);
+      res_ll_int = (long long int)__bambu_read4c((unsigned int)fd);
       control_word = (char)((res_ll_int >> 32) & 15);
       if(control_word)
       {
@@ -42,7 +42,7 @@ ssize_t read(int fd, void* __restrict buf, size_t count)
    }
    while(index < count)
    {
-      res = __bambu_readc(fd);
+      res = (short int )__bambu_readc((unsigned int)fd);
       if(res < 0)
          break;
       ((signed char*)buf)[index] = res;

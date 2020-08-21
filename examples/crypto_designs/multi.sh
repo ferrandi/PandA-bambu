@@ -28,7 +28,7 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
-bambu --use-raw --top-fname=keccak_coproc -v4 --channels-type=MEM_ACC_11 --device-name=LFE335EA8FN484C src/keccak --simulate --generate-tb=$root_dir/multi-keccak/test.xml --print-dot -v3
+timeout 2h bambu --use-raw --top-fname=keccak_coproc -v4 --channels-type=MEM_ACC_11 --device-name=LFE335EA8FN484C src/keccak --simulate --generate-tb=$root_dir/multi-keccak/test.xml --print-dot -v3
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

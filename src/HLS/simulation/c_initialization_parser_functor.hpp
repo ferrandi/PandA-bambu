@@ -55,7 +55,17 @@ class CInitializationParserFunctor
    /// The debug level
    int debug_level;
 
+   /// the data will be written in a data copied by the caller
+   bool write_in_a_file;
+
+   /// variable used to write in a variable
+   std::string file_variable;
+
  public:
+   /**
+    * Constructor
+    */
+   CInitializationParserFunctor();
    /**
     * Destructor
     */
@@ -86,6 +96,17 @@ class CInitializationParserFunctor
     * @param content is the string assocated with the string
     */
    virtual void Process(const std::string& content) = 0;
+
+   /**
+    * In case the test_v has a size over a threshold write the tests on a file
+    * @param filename is the file name to use
+    */
+   virtual void ActivateFileInit(const std::string& filename) = 0;
+
+   /**
+    * Copy and close the file
+    */
+   virtual void FinalizeFileInit() = 0;
 };
 typedef refcount<CInitializationParserFunctor> CInitializationParserFunctorRef;
 #endif

@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -36,6 +36,7 @@
 
 #include "detail/constants.hpp"
 #include "operators.hpp"
+#include "traits.hpp"
 
 namespace kitty
 {
@@ -76,6 +77,8 @@ void exact_npn_canonization_null_callback( const TT& tt )
 template<typename TT, typename Callback = decltype( detail::exact_npn_canonization_null_callback<TT> )>
 std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_p_canonization( const TT& tt, Callback&& fn = detail::exact_npn_canonization_null_callback<TT> )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto num_vars = tt.num_vars();
 
   /* Special case for n = 0 */
@@ -110,7 +113,7 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_p_canonization( const TT& t
 
     if ( t1 < tmin )
     {
-      best_swap = i;
+      best_swap = static_cast<int>( i );
       tmin = t1;
     }
   }
@@ -146,27 +149,29 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_p_canonization( const TT& t
     where *n* is the number of variables in `tt`
   - input permutation to apply
 
-  \param tt The truth table
+  \param tt The truth table (with at most 6 variables)
   \param fn Callback for each visited truth table in the class (default does nothing)
   \return NPN configuration
 */
 template<typename TT, typename Callback = decltype( detail::exact_npn_canonization_null_callback<TT> )>
 std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_npn_canonization( const TT& tt, Callback&& fn = detail::exact_npn_canonization_null_callback<TT> )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto num_vars = tt.num_vars();
 
   /* Special case for n = 0 */
   if ( num_vars == 0 )
   {
     const auto bit = get_bit( tt, 0 );
-    return std::make_tuple( unary_not_if( tt, bit ), bit, std::vector<uint8_t>{} );
+    return std::make_tuple( unary_not_if( tt, bit ), static_cast<uint32_t>( bit ), std::vector<uint8_t>{} );
   }
 
   /* Special case for n = 1 */
   if ( num_vars == 1 )
   {
     const auto bit1 = get_bit( tt, 1 );
-    return std::make_tuple( unary_not_if( tt, bit1 ), bit1 << 1, std::vector<uint8_t>{0} );
+    return std::make_tuple( unary_not_if( tt, bit1 ), static_cast<uint32_t>( bit1 << 1 ), std::vector<uint8_t>{0} );
   }
 
   assert( num_vars >= 2 && num_vars <= 6 );
@@ -195,7 +200,7 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_npn_canonization( const TT&
 
     if ( t1 < tmin || t2 < tmin )
     {
-      best_swap = i;
+      best_swap = static_cast<int>( i );
       tmin = std::min( t1, t2 );
       invo = tmin == t2;
     }
@@ -215,7 +220,7 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_npn_canonization( const TT&
     if ( t1 < tmin || t2 < tmin )
     {
       best_swap = -1;
-      best_flip = j;
+      best_flip = static_cast<int>( j );
       tmin = std::min( t1, t2 );
       invo = tmin == t2;
     }
@@ -231,8 +236,8 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_npn_canonization( const TT&
 
       if ( t1 < tmin || t2 < tmin )
       {
-        best_swap = i;
-        best_flip = j;
+        best_swap = static_cast<int>( i );
+        best_flip = static_cast<int>( j );
         tmin = std::min( t1, t2 );
         invo = tmin == t2;
       }
@@ -279,6 +284,8 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> exact_npn_canonization( const TT&
 template<typename TT>
 std::tuple<TT, uint32_t, std::vector<uint8_t>> flip_swap_npn_canonization( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto num_vars = tt.num_vars();
 
   /* initialize permutation and phase */
@@ -295,7 +302,7 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> flip_swap_npn_canonization( const
     improvement = false;
 
     /* input inversion */
-    for ( auto i = 0; i < num_vars; ++i )
+    for ( auto i = 0u; i < num_vars; ++i )
     {
       const auto flipped = flip( npn, i );
       if ( flipped < npn )
@@ -316,9 +323,9 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> flip_swap_npn_canonization( const
     }
 
     /* permute inputs */
-    for ( auto d = 1; d < num_vars - 1; ++d )
+    for ( auto d = 1u; d < num_vars - 1; ++d )
     {
-      for ( auto i = 0; i < num_vars - d; ++i )
+      for ( auto i = 0u; i < num_vars - d; ++i )
       {
         auto j = i + d;
 
@@ -423,6 +430,8 @@ void sifting_npn_canonization_loop( TT& npn, uint32_t& phase, std::vector<uint8_
 template<typename TT>
 std::tuple<TT, uint32_t, std::vector<uint8_t>> sifting_npn_canonization( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto num_vars = tt.num_vars();
 
   /* initialize permutation and phase */
@@ -470,6 +479,8 @@ std::tuple<TT, uint32_t, std::vector<uint8_t>> sifting_npn_canonization( const T
 template<typename TT>
 TT create_from_npn_config( const std::tuple<TT, uint32_t, std::vector<uint8_t>>& config )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto& from = std::get<0>( config );
   const auto& phase = std::get<1>( config );
   auto perm = std::get<2>( config );
@@ -479,7 +490,7 @@ TT create_from_npn_config( const std::tuple<TT, uint32_t, std::vector<uint8_t>>&
   auto res = ( ( phase >> num_vars ) & 1 ) ? ~from : from;
 
   /* input permutations */
-  for ( auto i = 0; i < num_vars; ++i )
+  for ( auto i = 0u; i < num_vars; ++i )
   {
     if ( perm[i] == i )
     {
@@ -497,7 +508,7 @@ TT create_from_npn_config( const std::tuple<TT, uint32_t, std::vector<uint8_t>>&
   }
 
   /* input complementations */
-  for ( auto i = 0; i < num_vars; ++i )
+  for ( auto i = 0u; i < num_vars; ++i )
   {
     if ( ( phase >> i ) & 1 )
     {

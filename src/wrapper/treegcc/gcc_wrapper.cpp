@@ -51,6 +51,9 @@
 #include "config_ARM_RTL_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGIN.hpp"
 #include "config_ARM_SSA_PLUGINCPP.hpp"
+#include "config_CLANG_PLUGIN_DIR.hpp"
+#include "config_EXTRA_CLANGPP_COMPILER_OPTION.hpp"
+#include "config_GCC_PLUGIN_DIR.hpp"
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
@@ -229,8 +232,6 @@
 #include "config_I386_LLVM9_LINK_EXE.hpp"
 #include "config_I386_LLVM9_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
-#include "config_PANDA_INCLUDE_INSTALLDIR.hpp"
-#include "config_PLUGIN_DIR.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
 #include "config_SPARC_ELF_CPP.hpp"
 #include "config_SPARC_ELF_GCC.hpp"
@@ -239,7 +240,6 @@
 #include "config_SPARC_RTL_PLUGIN.hpp"
 #include "config_SPARC_SSA_PLUGIN.hpp"
 #include "config_SPARC_SSA_PLUGINCPP.hpp"
-
 /// Header include
 #include "gcc_wrapper.hpp"
 
@@ -326,17 +326,17 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          flag_cpp = false;
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-      command = flag_cpp ? I386_CLANGPP9_EXE : I386_CLANG9_EXE;
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
 #elif HAVE_I386_CLANG8_COMPILER
-      command = flag_cpp ? I386_CLANGPP8_EXE : I386_CLANG8_EXE;
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
 #elif HAVE_I386_CLANG7_COMPILER
-      command = flag_cpp ? I386_CLANGPP7_EXE : I386_CLANG7_EXE;
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
 #elif HAVE_I386_CLANG6_COMPILER
-      command = flag_cpp ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
 #elif HAVE_I386_CLANG5_COMPILER
-      command = flag_cpp ? I386_CLANGPP5_EXE : I386_CLANG5_EXE;
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
 #elif HAVE_I386_CLANG4_COMPILER
-      command = flag_cpp ? I386_CLANGPP4_EXE : I386_CLANG4_EXE;
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
 #else
       THROW_ERROR("unexpected condition");
 #endif
@@ -436,6 +436,75 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          if(compiler.is_clang)
          {
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
+            std::string extern_symbols;
+            std::vector<std::string> xml_files;
+            if(Param->isOption(OPT_xml_memory_allocation))
+            {
+               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
+            }
+            else
+            {
+               /// load xml memory allocation file
+               auto source_file = real_file_name;
+               const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+               std::string leaf_name = GetLeafFileName(source_file);
+               auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
+               if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
+               {
+                  xml_files.push_back(XMLfilename);
+               }
+            }
+            for(auto XMLfilename : xml_files)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+               XMLDomParser parser(XMLfilename);
+               parser.Exec();
+               if(parser)
+               {
+                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+                  const xml_node::node_list list = node->get_children();
+                  for(const auto& l : list)
+                  {
+                     const xml_element* child = GetPointer<xml_element>(l);
+                     if(!child)
+                        continue;
+                     if(child->get_name() == "memory_allocation")
+                     {
+                        for(const auto& it : child->get_children())
+                        {
+                           const xml_element* mem_node = GetPointer<xml_element>(it);
+                           if(!mem_node)
+                              continue;
+                           if(mem_node->get_name() == "object")
+                           {
+                              std::string is_internal;
+                              if(!CE_XVM(is_internal, mem_node))
+                                 THROW_ERROR("expected the is_internal attribute");
+                              LOAD_XVM(is_internal, mem_node);
+                              if(is_internal == "T")
+                              {
+                              }
+                              else if(is_internal == "F")
+                              {
+                                 if(!CE_XVM(name, mem_node))
+                                    THROW_ERROR("expected the name attribute");
+                                 std::string name;
+                                 LOAD_XVM(name, mem_node);
+                                 extern_symbols = extern_symbols + name + ",";
+                              }
+                              else
+                                 THROW_ERROR("unexpected value for is_internal attribute");
+                           }
+                        }
+                     }
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+            }
+            if(!extern_symbols.empty())
+            {
+               command += " -mllvm -panda-ESL=" + extern_symbols;
+            }
             command += " -mllvm -panda-Internalize";
             if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
@@ -484,7 +553,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
       else
       {
-         temporary_file_run_o = boost::filesystem::unique_path(std::string(STR_CST_gcc_obj_file)).string();
+         temporary_file_run_o = boost::filesystem::unique_path(GetCurrentPath() + std::string(STR_CST_gcc_obj_file)).string();
          command += " -o " + temporary_file_run_o;
       }
    }
@@ -519,13 +588,16 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Invoke: " + command);
 #if !NPROFILE
    long int gcc_compilation_time = 0;
-   START_TIME(gcc_compilation_time);
+   if(output_level >= OUTPUT_LEVEL_VERBOSE)
+   {
+      START_TIME(gcc_compilation_time);
+   }
 #endif
    int ret = PandaSystem(Param, command, gcc_output_file_name);
 #if !NPROFILE
-   STOP_TIME(gcc_compilation_time);
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
    {
+      STOP_TIME(gcc_compilation_time);
       dump_exec_time("Compilation time", gcc_compilation_time);
    }
 #endif
@@ -575,10 +647,13 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
    }
    const Compiler compiler = GetCompiler();
 
-   if(compiler.is_clang || (Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION))
+   bool disable_pragma_parsing = false;
+   if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
+      disable_pragma_parsing = true;
+   if(disable_pragma_parsing || !(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER))
+      THROW_WARNING("pragma analysis requires CLANG");
+   else
    {
-      if(!(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER))
-         THROW_ERROR("inferred interfaces analysis requires CLANG");
       for(auto& source_file : source_files)
       {
          if(already_processed_files.find(source_file.first) != already_processed_files.end())
@@ -619,7 +694,6 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, GccWrapper_CompilerMode::CM_ANALYZER);
       }
    }
-
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
    bool enable_LTO = (compiler.is_clang && source_files.size() > 1);
    for(auto& source_file : source_files)
@@ -732,6 +806,73 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             command += " -load=" + renamed_plugin;
 #endif
             command += " -panda-TFN=" + fname + " " + temporary_file_o_bc;
+            std::string extern_symbols;
+            std::vector<std::string> xml_files;
+            if(Param->isOption(OPT_xml_memory_allocation))
+            {
+               xml_files.push_back(Param->getOption<std::string>(OPT_xml_memory_allocation));
+            }
+            else
+            {
+               for(auto& entry : boost::make_iterator_range(boost::filesystem::directory_iterator(output_temporary_directory), {}))
+               {
+                  auto source_file = GetLeafFileName(entry.path().string());
+                  if(source_file.find(".memory_allocation.xml") != std::string::npos)
+                     xml_files.push_back(source_file);
+               }
+            }
+            for(auto XMLfilename : xml_files)
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
+               XMLDomParser parser(XMLfilename);
+               parser.Exec();
+               if(parser)
+               {
+                  const xml_element* node = parser.get_document()->get_root_node(); // deleted by DomParser.
+                  const xml_node::node_list list = node->get_children();
+                  for(const auto& l : list)
+                  {
+                     const xml_element* child = GetPointer<xml_element>(l);
+                     if(!child)
+                        continue;
+                     if(child->get_name() == "memory_allocation")
+                     {
+                        for(const auto& it : child->get_children())
+                        {
+                           const xml_element* mem_node = GetPointer<xml_element>(it);
+                           if(!mem_node)
+                              continue;
+                           if(mem_node->get_name() == "object")
+                           {
+                              std::string is_internal;
+                              if(!CE_XVM(is_internal, mem_node))
+                                 THROW_ERROR("expected the is_internal attribute");
+                              LOAD_XVM(is_internal, mem_node);
+                              if(is_internal == "T")
+                              {
+                              }
+                              else if(is_internal == "F")
+                              {
+                                 if(!CE_XVM(name, mem_node))
+                                    THROW_ERROR("expected the name attribute");
+                                 std::string name;
+                                 LOAD_XVM(name, mem_node);
+                                 extern_symbols = extern_symbols + name + ",";
+                              }
+                              else
+                                 THROW_ERROR("unexpected value for is_internal attribute");
+                           }
+                        }
+                     }
+                  }
+               }
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--parsed file " + XMLfilename);
+            }
+            if(!extern_symbols.empty())
+            {
+               command += " -mllvm -panda-ESL=" + extern_symbols;
+            }
+
             if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
                command += " -panda-Internalize";
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
@@ -1732,111 +1873,112 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
       preferred_compiler = compiler_target;
    }
-   const std::string plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : STR(PLUGIN_DIR)) + "/";
+   const std::string gcc_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) : relocate_compiler_path(GCC_PLUGIN_DIR)) + "/";
+   const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) + "/../clang_plugin" : relocate_compiler_path(CLANG_PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
 #endif
 
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {
-      compiler.gcc = flag_cpp ? I386_GPP45_EXE : I386_GCC45_EXE;
-      compiler.cpp = I386_CPP45_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP45_EXE) : relocate_compiler_path(I386_GCC45_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP45_EXE);
       compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
          compiler.extra_options += " -msse2 -mfpmath=sse ";
       else
          compiler.extra_options += " -mno-sse2 ";
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC45_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC45_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC45_EMPTY_PLUGIN;
       if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC45_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC45_SSAVRP_PLUGIN + plugin_ext;
          compiler.ssa_plugin_name = I386_GCC45_SSAVRP_PLUGIN;
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC45_SSA_PLUGINCPP : I386_GCC45_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC45_SSA_PLUGINCPP : I386_GCC45_SSA_PLUGIN) + plugin_ext;
          compiler.ssa_plugin_name = (flag_cpp ? I386_GCC45_SSA_PLUGINCPP : I386_GCC45_SSA_PLUGIN);
       }
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC45_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC45_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
    {
-      compiler.gcc = flag_cpp ? I386_GPP46_EXE : I386_GCC46_EXE;
-      compiler.cpp = I386_CPP46_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP46_EXE) : relocate_compiler_path(I386_GCC46_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP46_EXE);
       compiler.extra_options = Param->getOption<std::string>(OPT_gcc_m32_mx32) + " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
          compiler.extra_options += " -msse2 -mfpmath=sse ";
       else
          compiler.extra_options += " -mno-sse2 ";
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC46_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC46_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC46_EMPTY_PLUGIN;
       if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC46_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC46_SSAVRP_PLUGIN + plugin_ext;
          compiler.ssa_plugin_name = I386_GCC46_SSAVRP_PLUGIN;
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC46_SSA_PLUGINCPP : I386_GCC46_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC46_SSA_PLUGINCPP : I386_GCC46_SSA_PLUGIN) + plugin_ext;
          compiler.ssa_plugin_name = (flag_cpp ? I386_GCC46_SSA_PLUGINCPP : I386_GCC46_SSA_PLUGIN);
       }
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC46_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC46_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
    {
-      compiler.gcc = flag_cpp ? I386_GPP47_EXE : I386_GCC47_EXE;
-      compiler.cpp = I386_CPP47_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP47_EXE) : relocate_compiler_path(I386_GCC47_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP47_EXE);
       compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
@@ -1849,49 +1991,49 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC47_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC47_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC47_EMPTY_PLUGIN;
       if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC47_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC47_SSAVRP_PLUGIN + plugin_ext;
          compiler.ssa_plugin_name = I386_GCC47_SSAVRP_PLUGIN;
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC47_SSA_PLUGINCPP : I386_GCC47_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC47_SSA_PLUGINCPP : I386_GCC47_SSA_PLUGIN) + plugin_ext;
          compiler.ssa_plugin_name = (flag_cpp ? I386_GCC47_SSA_PLUGINCPP : I386_GCC47_SSA_PLUGIN);
       }
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC47_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC47_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
    {
-      compiler.gcc = flag_cpp ? I386_GPP48_EXE : I386_GCC48_EXE;
-      compiler.cpp = I386_CPP48_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP48_EXE) : relocate_compiler_path(I386_GCC48_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP48_EXE);
       compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
@@ -1904,49 +2046,49 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC48_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC48_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC48_EMPTY_PLUGIN;
       if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
       {
-         compiler.ssa_plugin_obj = plugin_dir + I386_GCC48_SSAVRP_PLUGIN + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + I386_GCC48_SSAVRP_PLUGIN + plugin_ext;
          compiler.ssa_plugin_name = I386_GCC48_SSAVRP_PLUGIN;
       }
       else
       {
-         compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC48_SSA_PLUGINCPP : I386_GCC48_SSA_PLUGIN) + plugin_ext;
+         compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC48_SSA_PLUGINCPP : I386_GCC48_SSA_PLUGIN) + plugin_ext;
          compiler.ssa_plugin_name = (flag_cpp ? I386_GCC48_SSA_PLUGINCPP : I386_GCC48_SSA_PLUGIN);
       }
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC48_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC48_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
    {
-      compiler.gcc = flag_cpp ? I386_GPP49_EXE : I386_GCC49_EXE;
-      compiler.cpp = I386_CPP49_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP49_EXE) : relocate_compiler_path(I386_GCC49_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP49_EXE);
       compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
@@ -1959,41 +2101,41 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC49_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC49_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC49_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC49_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC49_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
    {
-      compiler.gcc = flag_cpp ? I386_GPP5_EXE : I386_GCC5_EXE;
-      compiler.cpp = I386_CPP5_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP5_EXE) : relocate_compiler_path(I386_GCC5_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP5_EXE);
       compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
@@ -2006,33 +2148,33 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC5_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC5_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC5_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC5_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
@@ -2040,8 +2182,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #if HAVE_I386_GCC6_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6))
    {
-      compiler.gcc = flag_cpp ? I386_GPP6_EXE : I386_GCC6_EXE;
-      compiler.cpp = I386_CPP6_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP6_EXE) : relocate_compiler_path(I386_GCC6_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP6_EXE);
       compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
@@ -2054,34 +2196,34 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC6_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC6_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC6_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC6_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
@@ -2089,8 +2231,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #if HAVE_I386_GCC7_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
    {
-      compiler.gcc = flag_cpp ? I386_GPP7_EXE : I386_GCC7_EXE;
-      compiler.cpp = I386_CPP7_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP7_EXE) : relocate_compiler_path(I386_GCC7_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP7_EXE);
       compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
@@ -2103,34 +2245,34 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC7_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC7_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC7_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC7_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
@@ -2138,8 +2280,8 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #if HAVE_I386_GCC8_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8))
    {
-      compiler.gcc = flag_cpp ? I386_GPP8_EXE : I386_GCC8_EXE;
-      compiler.cpp = I386_CPP8_EXE;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP8_EXE) : relocate_compiler_path(I386_GCC8_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CPP8_EXE);
       compiler.extra_options = " -mlong-double-64 -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
       if(optimization_flags.find("tree-vectorize") != optimization_flags.end() && optimization_flags.find("tree-vectorize")->second)
       {
@@ -2152,34 +2294,34 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       }
       else
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_GCC8_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC8_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC8_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_GCC8_SSA_PLUGINCPP : I386_GCC8_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC8_SSA_PLUGINCPP : I386_GCC8_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_GCC8_SSA_PLUGINCPP : I386_GCC8_SSA_PLUGIN);
-      compiler.topfname_plugin_obj = plugin_dir + I386_GCC8_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = gcc_plugin_dir + I386_GCC8_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_GCC8_TOPFNAME_PLUGIN;
 #if HAVE_I386_CLANG9_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG8_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG7_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG6_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG5_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
 
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
+      compiler.rtl_plugin = gcc_plugin_dir + "";
 #endif
    }
 #endif
@@ -2188,30 +2330,26 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? I386_CLANGPP4_EXE : I386_CLANG4_EXE;
-      compiler.cpp = I386_CLANG_CPP4_EXE;
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP4_EXE);
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_CLANG4_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG4_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG4_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = clang_plugin_dir + (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG4_SSA_PLUGINCPP : I386_CLANG4_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG4_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG4_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG4_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = plugin_dir + I386_CLANG4_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG4_GEPICANON_PLUGIN + plugin_ext;
       compiler.GepiCanon_plugin_name = I386_CLANG4_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG4_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG4_CSROA_PLUGIN + plugin_ext;
       compiler.CSROA_plugin_name = I386_CLANG4_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG4_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG4_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = I386_LLVM4_LINK_EXE;
-      compiler.llvm_opt = I386_LLVM4_OPT_EXE;
-
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
-#endif
+      compiler.llvm_link = relocate_compiler_path(I386_LLVM4_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVM4_OPT_EXE);
    }
 #endif
 
@@ -2219,30 +2357,26 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? I386_CLANGPP5_EXE : I386_CLANG5_EXE;
-      compiler.cpp = I386_CLANG_CPP5_EXE;
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP5_EXE);
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_CLANG5_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG5_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG5_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = clang_plugin_dir + (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG5_SSA_PLUGINCPP : I386_CLANG5_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG5_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG5_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG5_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = plugin_dir + I386_CLANG5_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG5_GEPICANON_PLUGIN + plugin_ext;
       compiler.GepiCanon_plugin_name = I386_CLANG5_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG5_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG5_CSROA_PLUGIN + plugin_ext;
       compiler.CSROA_plugin_name = I386_CLANG5_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG5_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG5_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG5_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = I386_LLVM5_LINK_EXE;
-      compiler.llvm_opt = I386_LLVM5_OPT_EXE;
-
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
-#endif
+      compiler.llvm_link = relocate_compiler_path(I386_LLVM5_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVM5_OPT_EXE);
    }
 #endif
 
@@ -2250,30 +2384,26 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? I386_CLANGPP6_EXE : I386_CLANG6_EXE;
-      compiler.cpp = I386_CLANG_CPP6_EXE;
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP6_EXE);
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_CLANG6_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG6_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG6_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = clang_plugin_dir + (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG6_SSA_PLUGINCPP : I386_CLANG6_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG6_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG6_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG6_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = plugin_dir + I386_CLANG6_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG6_GEPICANON_PLUGIN + plugin_ext;
       compiler.GepiCanon_plugin_name = I386_CLANG6_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG6_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG6_CSROA_PLUGIN + plugin_ext;
       compiler.CSROA_plugin_name = I386_CLANG6_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG6_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG6_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG6_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG6_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG6_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = I386_LLVM6_LINK_EXE;
-      compiler.llvm_opt = I386_LLVM6_OPT_EXE;
-
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
-#endif
+      compiler.llvm_link = relocate_compiler_path(I386_LLVM6_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVM6_OPT_EXE);
    }
 #endif
 
@@ -2281,30 +2411,26 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? I386_CLANGPP7_EXE : I386_CLANG7_EXE;
-      compiler.cpp = I386_CLANG_CPP7_EXE;
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP7_EXE);
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_CLANG7_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG7_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG7_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = clang_plugin_dir + (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG7_SSA_PLUGINCPP : I386_CLANG7_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG7_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG7_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG7_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = plugin_dir + I386_CLANG7_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG7_GEPICANON_PLUGIN + plugin_ext;
       compiler.GepiCanon_plugin_name = I386_CLANG7_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG7_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG7_CSROA_PLUGIN + plugin_ext;
       compiler.CSROA_plugin_name = I386_CLANG7_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG7_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG7_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG7_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG7_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG7_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = I386_LLVM7_LINK_EXE;
-      compiler.llvm_opt = I386_LLVM7_OPT_EXE;
-
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
-#endif
+      compiler.llvm_link = relocate_compiler_path(I386_LLVM7_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVM7_OPT_EXE);
    }
 #endif
 
@@ -2312,30 +2438,26 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? I386_CLANGPP8_EXE : I386_CLANG8_EXE;
-      compiler.cpp = I386_CLANG_CPP8_EXE;
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP8_EXE);
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_CLANG8_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG8_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG8_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG8_SSA_PLUGINCPP : I386_CLANG8_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = clang_plugin_dir + (flag_cpp ? I386_CLANG8_SSA_PLUGINCPP : I386_CLANG8_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG8_SSA_PLUGINCPP : I386_CLANG8_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG8_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG8_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG8_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = plugin_dir + I386_CLANG8_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG8_GEPICANON_PLUGIN + plugin_ext;
       compiler.GepiCanon_plugin_name = I386_CLANG8_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG8_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG8_CSROA_PLUGIN + plugin_ext;
       compiler.CSROA_plugin_name = I386_CLANG8_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG8_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG8_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG8_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG8_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG8_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = I386_LLVM8_LINK_EXE;
-      compiler.llvm_opt = I386_LLVM8_OPT_EXE;
-
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
-#endif
+      compiler.llvm_link = relocate_compiler_path(I386_LLVM8_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVM8_OPT_EXE);
    }
 #endif
 
@@ -2343,45 +2465,41 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9))
    {
       compiler.is_clang = true;
-      compiler.gcc = flag_cpp ? I386_CLANGPP9_EXE : I386_CLANG9_EXE;
-      compiler.cpp = I386_CLANG_CPP9_EXE;
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPP9_EXE);
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
-      compiler.empty_plugin_obj = plugin_dir + I386_CLANG9_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANG9_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANG9_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? I386_CLANG9_SSA_PLUGINCPP : I386_CLANG9_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = clang_plugin_dir + (flag_cpp ? I386_CLANG9_SSA_PLUGINCPP : I386_CLANG9_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? I386_CLANG9_SSA_PLUGINCPP : I386_CLANG9_SSA_PLUGIN);
-      compiler.expandMemOps_plugin_obj = plugin_dir + I386_CLANG9_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANG9_EXPANDMEMOPS_PLUGIN + plugin_ext;
       compiler.expandMemOps_plugin_name = I386_CLANG9_EXPANDMEMOPS_PLUGIN;
-      compiler.GepiCanon_plugin_obj = plugin_dir + I386_CLANG9_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANG9_GEPICANON_PLUGIN + plugin_ext;
       compiler.GepiCanon_plugin_name = I386_CLANG9_GEPICANON_PLUGIN;
-      compiler.CSROA_plugin_obj = plugin_dir + I386_CLANG9_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANG9_CSROA_PLUGIN + plugin_ext;
       compiler.CSROA_plugin_name = I386_CLANG9_CSROA_PLUGIN;
-      compiler.topfname_plugin_obj = plugin_dir + I386_CLANG9_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANG9_TOPFNAME_PLUGIN + plugin_ext;
       compiler.topfname_plugin_name = I386_CLANG9_TOPFNAME_PLUGIN;
-      compiler.ASTAnalyzer_plugin_obj = plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG9_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG9_ASTANALYZER_PLUGIN;
-      compiler.llvm_link = I386_LLVM9_LINK_EXE;
-      compiler.llvm_opt = I386_LLVM9_OPT_EXE;
-
-#if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + "";
-#endif
+      compiler.llvm_link = relocate_compiler_path(I386_LLVM9_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVM9_OPT_EXE);
    }
 #endif
 
 #if HAVE_SPARC_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC))
    {
-      compiler.gcc = SPARC_GCC_EXE;
-      compiler.cpp = SPARC_CPP_EXE;
+      compiler.gcc = relocate_compiler_path(SPARC_GCC_EXE);
+      compiler.cpp = relocate_compiler_path(SPARC_CPP_EXE);
       compiler.extra_options = gcc_extra_options;
-      compiler.empty_plugin_obj = plugin_dir + SPARC_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + SPARC_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = SPARC_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? SPARC_SSA_PLUGINCPP : SPARC_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? SPARC_SSA_PLUGINCPP : SPARC_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? SPARC_SSA_PLUGINCPP : SPARC_SSA_PLUGIN);
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + SPARC_RTL_PLUGIN + plugin_ext;
+      compiler.rtl_plugin = gcc_plugin_dir + SPARC_RTL_PLUGIN + plugin_ext;
 #endif
    }
 #endif
@@ -2396,15 +2514,15 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #if HAVE_ARM_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC))
    {
-      compiler.gcc = ARM_GCC_EXE;
-      compiler.cpp = ARM_CPP_EXE;
+      compiler.gcc = relocate_compiler_path(ARM_GCC_EXE);
+      compiler.cpp = relocate_compiler_path(ARM_CPP_EXE);
       compiler.extra_options = gcc_extra_options + " -mlittle-endian -fsigned-char";
-      compiler.empty_plugin_obj = plugin_dir + ARM_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_obj = gcc_plugin_dir + ARM_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = ARM_EMPTY_PLUGIN;
-      compiler.ssa_plugin_obj = plugin_dir + (flag_cpp ? ARM_SSA_PLUGINCPP : ARM_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? ARM_SSA_PLUGINCPP : ARM_SSA_PLUGIN) + plugin_ext;
       compiler.ssa_plugin_name = (flag_cpp ? ARM_SSA_PLUGINCPP : ARM_SSA_PLUGIN);
 #if HAVE_FROM_RTL_BUILT
-      compiler.rtl_plugin = plugin_dir + ARM_RTL_PLUGIN + plugin_ext;
+      compiler.rtl_plugin = gcc_plugin_dir + ARM_RTL_PLUGIN + plugin_ext;
 #endif
    }
 #endif
@@ -2432,7 +2550,7 @@ void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 
    std::string list_of_dirs;
 
-   std::ifstream includefile(STR_CST_gcc_include);
+   std::ifstream includefile(GetPath(STR_CST_gcc_include));
    if(includefile.is_open())
    {
       std::string line;
@@ -2448,7 +2566,7 @@ void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
    else
       THROW_ERROR("Error in retrieving gcc system include");
 
-   std::remove(STR_CST_gcc_include);
+   std::remove(GetPath(STR_CST_gcc_include).c_str());
 
    // Ok, now here there are the list of the system paths in which
    // the system includes are found
@@ -2512,14 +2630,14 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    return 0;
 }
 
-void GccWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
+void GccWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters) const
 {
    std::list<std::string> sorted_file_names;
    for(const auto& file_name : file_names)
       sorted_file_names.push_back(file_name);
-   CreateExecutable(sorted_file_names, executable_name, extra_gcc_options);
+   CreateExecutable(sorted_file_names, executable_name, extra_gcc_options, no_gcc_compiling_parameters);
 }
-void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options) const
+void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters) const
 {
    std::string file_names_string;
    bool has_cpp_file = false;
@@ -2537,13 +2655,13 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
 
    command += file_names_string + " ";
 
-   command += gcc_compiling_parameters + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
+   command += (no_gcc_compiling_parameters ? "" : gcc_compiling_parameters) + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
    if(!has_cpp_file && command.find("--std=c++14") != std::string::npos)
       boost::replace_all(command, "--std=c++14", "");
 
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
-   std::string local_compiler_extra_options = compiler.extra_options;
+   std::string local_compiler_extra_options = no_gcc_compiling_parameters ? "" : compiler.extra_options;
    if(extra_gcc_options.find("-m32") != std::string::npos)
       boost::replace_all(local_compiler_extra_options, "-mx32", "");
 
@@ -3327,7 +3445,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
        if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG9)
    {
       const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
+      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +

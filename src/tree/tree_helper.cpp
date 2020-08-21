@@ -103,6 +103,37 @@ tree_helper::tree_helper() = default;
 
 tree_helper::~tree_helper() = default;
 
+static std::string sign_reduce_bitstring(std::string bitstring, bool bitstring_is_signed)
+{
+   THROW_ASSERT(not bitstring.empty(), "");
+   while(bitstring.size() > 1)
+   {
+      if(bitstring_is_signed)
+      {
+         if(bitstring.at(0) == 'X' or (bitstring.at(0) != 'U' and (bitstring.at(0) == bitstring.at(1) or bitstring.at(1) == 'X')))
+         {
+            bitstring = bitstring.substr(1);
+         }
+         else
+         {
+            break;
+         }
+      }
+      else
+      {
+         if(bitstring.at(0) == 'X' or bitstring.at(0) == '0')
+         {
+            bitstring = bitstring.substr(1);
+         }
+         else
+         {
+            break;
+         }
+      }
+   }
+   return bitstring;
+}
+
 unsigned int tree_helper::size(const tree_managerConstRef tm, unsigned int index)
 {
    return Size(tm->get_tree_node_const(index));
@@ -143,7 +174,14 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
          THROW_ASSERT(GetPointer<const ssa_name>(t), "Expected an ssa_name");
          if(!sa->bit_values.empty())
          {
-            return_value = static_cast<unsigned int>(sa->bit_values.size());
+            const auto type = GET_NODE(sa->type);
+            if(type->get_kind() == real_type_K)
+            {
+               return Size(GET_NODE(sa->type));
+            }
+            const bool signed_p = type->get_kind() == integer_type_K ? !(GetPointer<integer_type>(type)->unsigned_flag) : (type->get_kind() == enumeral_type_K ? !(GetPointer<enumeral_type>(type)->unsigned_flag) : false);
+            const auto bv_test = sign_reduce_bitstring(sa->bit_values, signed_p);
+            return_value = static_cast<unsigned int>(bv_test.size());
             break;
          }
          else if(sa->min && sa->max && GET_NODE(sa->min)->get_kind() == integer_cst_K && GET_NODE(sa->max)->get_kind() == integer_cst_K)
@@ -3052,8 +3090,6 @@ bool tree_helper::is_unsigned(const tree_managerConstRef& TM, const unsigned int
    }
    else
    {
-      // decl_node * dn = GetPointer<decl_node>(T);
-      // THROW_ASSERT(dn, "expected a declaration object");
       type_index = 0;
       Type = get_type_node(T, type_index);
       THROW_ASSERT(type_index > 0, "expected a type index");
@@ -3072,20 +3108,19 @@ bool tree_helper::is_unsigned(const tree_managerConstRef& TM, const unsigned int
    }
 
    std::string type_name = name_type(TM, type_index);
-   if(type_name == std::string("unsigned") || type_name.find(" unsigned") != std::string::npos || type_name.find("unsigned ") != std::string::npos || type_name == std::string("sc_uint") || type_name == std::string("sc_lv") ||
-      type_name == std::string("sc_in_rv") || type_name == std::string("sc_out_rv") || type_name == std::string("sc_inout_rv") || type_name == std::string("sc_bv") || type_name == std::string("sc_signal_rv"))
+   if(type_name == std::string("sc_uint") || type_name == std::string("sc_lv") || type_name == std::string("sc_in_rv") || type_name == std::string("sc_out_rv") || type_name == std::string("sc_inout_rv") || type_name == std::string("sc_bv") ||
+      type_name == std::string("sc_signal_rv"))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--yes");
       return true;
    }
-   if(GetPointer<array_type>(Type))
-   {
-      const bool return_value = is_unsigned(TM, GetElements(TM, index));
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--It depends on element");
-      return return_value;
-   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--no");
    return false;
+}
+
+bool tree_helper::is_scalar(const tree_managerConstRef& TM, const unsigned int var)
+{
+   return tree_helper::is_int(TM, var) || tree_helper::is_real(TM, var) || tree_helper::is_unsigned(TM, var) || tree_helper::is_bool(TM, var);
 }
 
 bool tree_helper::is_module(const tree_managerConstRef& TM, const unsigned int index)
@@ -8946,8 +8981,7 @@ bool tree_helper::IsStore(const tree_managerConstRef& TM, const tree_nodeConstRe
    if(op0->get_kind() == realpart_expr_K || op0->get_kind() == imagpart_expr_K)
    {
       enum kind code0 = GET_NODE(GetPointer<unary_expr>(op0)->op)->get_kind();
-      if((code0 == bit_field_ref_K) || code0 == component_ref_K || code0 == indirect_ref_K || code0 == bit_field_ref_K || code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K || code0 == target_mem_ref_K ||
-         code0 == target_mem_ref461_K)
+      if(code0 == bit_field_ref_K || code0 == component_ref_K || code0 == indirect_ref_K || code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K || code0 == target_mem_ref_K || code0 == target_mem_ref461_K)
       {
          store_candidate = true;
       }

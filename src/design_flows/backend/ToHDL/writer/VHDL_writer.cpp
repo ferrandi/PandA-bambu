@@ -830,7 +830,7 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
 {
    THROW_ASSERT(port && port->get_kind() == port_o_K, "Expected a port got something of different");
    THROW_ASSERT(port->get_owner(), "Expected a port with an owner");
-   THROW_ASSERT(sig && sig->get_kind() == signal_o_K, "Expected a signal got something of different");
+   THROW_ASSERT(sig && (sig->get_kind() == signal_o_K || sig->get_kind() == constant_o_K), "Expected a signal or a constant, got something of different");
    std::string port_string;
    std::string signal_string;
    if(sig->get_kind() == constant_o_K)
@@ -869,6 +869,8 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
          signal_string = "std_logic_vector(" + signal_string + ")";
       else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
          signal_string = "" + signal_string + "(0)";
+      else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_kind() == constant_o_K )
+         signal_string = std::string("'") + signal_string.at(1) + "'";
       indented_output_stream->Append(port_string + " <= " + signal_string + ";\n");
    }
 
@@ -911,6 +913,35 @@ void VHDL_writer::write_io_signal_post_fix(const structural_objectRef& port, con
    //   {
    //      THROW_UNREACHABLE(left_string + "(" + left->get_typeRef()->get_name() + ") <= " + right_string + "(" + right->get_typeRef()->get_name() + ")");
    //   }
+}
+
+void VHDL_writer::write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig)
+{
+   THROW_ASSERT(port && port->get_kind() == port_vector_o_K, "Expected a port got something of different");
+   THROW_ASSERT(port->get_owner(), "Expected a port with an owner");
+   THROW_ASSERT(sig && sig->get_kind() == signal_vector_o_K, "Expected a signal got something of different");
+   std::string port_string;
+   std::string signal_string;
+   signal_string = HDL_manager::convert_to_identifier(this, sig->get_id());
+   port_string = HDL_manager::convert_to_identifier(this, port->get_id());
+
+   if(GetPointer<port_o>(port)->get_port_direction() == port_o::IN)
+      std::swap(port_string, signal_string);
+
+   if(port_string != signal_string)
+   {
+      const auto left = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? sig : port;
+      const auto right = GetPointer<port_o>(port)->get_port_direction() == port_o::IN ? port : sig;
+      if(left->get_typeRef()->type == structural_type_descriptor::UINT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+         signal_string = "unsigned(" + signal_string + ")";
+      else if(left->get_typeRef()->type == structural_type_descriptor::INT and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+         signal_string = "signed(" + signal_string + ")";
+      else if(left->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL and right->get_typeRef()->type == structural_type_descriptor::UINT)
+         signal_string = "std_logic_vector(" + signal_string + ")";
+      else if(left->get_typeRef()->type == structural_type_descriptor::BOOL and right->get_typeRef()->type == structural_type_descriptor::VECTOR_BOOL)
+         signal_string = "" + signal_string + "(0)";
+      indented_output_stream->Append(port_string + " <= " + signal_string + ";\n");
+   }
 }
 
 void VHDL_writer::write_module_parametrization(const structural_objectRef& cir)

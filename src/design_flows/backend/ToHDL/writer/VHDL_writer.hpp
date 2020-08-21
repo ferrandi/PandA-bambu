@@ -170,6 +170,7 @@ struct VHDL_writer : public language_writer
     * @param sig is the attached signal.
     */
    void write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig) override;
+   void write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig) override;
    /**
     * Module can be parametrized with respect different features. Port vectors are parametrized with the number of port associated,
     * while ports are parametrized in case the type is a integer with the number of bits. The id of the module is modified

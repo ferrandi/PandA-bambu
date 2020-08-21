@@ -43,12 +43,14 @@ noinst_HEADERS += \
    architecture_creation/controller_creation/controller_creator_base_step.hpp \
    architecture_creation/controller_creation/control_flow_checker.hpp \
    architecture_creation/controller_creation/controller_cs.hpp \
-   architecture_creation/controller_creation/fsm_controller.hpp
+   architecture_creation/controller_creation/fsm_controller.hpp \
+   architecture_creation/controller_creation/pipeline_controller.hpp
 lib_controller_creation_la_SOURCES = \
    architecture_creation/controller_creation/controller_creator_base_step.cpp \
    architecture_creation/controller_creation/control_flow_checker.cpp \
    architecture_creation/controller_creation/controller_cs.cpp \
-   architecture_creation/controller_creation/fsm_controller.cpp
+   architecture_creation/controller_creation/fsm_controller.cpp \
+   architecture_creation/controller_creation/pipeline_controller.cpp
 
 #DOCUMENTATION STUFF
 PRJ_DOC += architecture_creation/controller_creation/controller.doc architecture_creation/controller_creation/fsm.doc
@@ -212,6 +214,7 @@ lib_registerbinding_la_CPPFLAGS = \
     -I$(top_srcdir)/src/HLS/binding/register/algorithms \
     -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
     -I$(top_srcdir)/src/HLS/liveness \
+    -I$(top_srcdir)/src/HLS/stg \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/technology/target_device \
     -I$(top_srcdir)/src/technology/target_device/FPGA \
@@ -275,6 +278,7 @@ lib_modulebinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/algorithms/bipartite_matching \
    -I$(top_srcdir)/src/behavior  \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants  \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/graph \
@@ -324,8 +328,8 @@ lib_storage_value_insertion_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
    $(AM_CPPFLAGS)
-noinst_HEADERS += binding/storage_value_insertion/storage_value_information.hpp binding/storage_value_insertion/storage_value_insertion.hpp binding/storage_value_insertion/values_scheme.hpp
-lib_storage_value_insertion_la_SOURCES = binding/storage_value_insertion/storage_value_information.cpp binding/storage_value_insertion/storage_value_insertion.cpp binding/storage_value_insertion/values_scheme.cpp
+noinst_HEADERS += binding/storage_value_insertion/storage_value_information.hpp binding/storage_value_insertion/storage_value_information_fsm.hpp binding/storage_value_insertion/storage_value_information_pipeline.hpp binding/storage_value_insertion/storage_value_insertion.hpp binding/storage_value_insertion/values_scheme.hpp
+lib_storage_value_insertion_la_SOURCES = binding/storage_value_insertion/storage_value_information.cpp binding/storage_value_insertion/storage_value_information_fsm.cpp binding/storage_value_insertion/storage_value_information_pipeline.cpp binding/storage_value_insertion/storage_value_insertion.cpp binding/storage_value_insertion/values_scheme.cpp
 
 lib_binding_la_SOURCES =
 lib_binding_la_LIBADD = lib_registerbinding.la lib_interconnectionbinding.la lib_storage_value_insertion.la lib_modulebinding.la
@@ -696,17 +700,13 @@ noinst_HEADERS += \
    memory/memory_symbol.hpp \
    memory/memory.hpp \
    memory/mem_dominator_allocation.hpp \
-   memory/mem_xml_allocation.hpp \
    memory/mem_dominator_allocation_cs.hpp \
    memory/memory_cs.hpp
 lib_HLS_memory_la_SOURCES = \
    memory/memory_allocation.cpp \
-   memory/memory_symbol.cpp \
    memory/memory.cpp \
    memory/mem_dominator_allocation.cpp \
-   memory/mem_xml_allocation.cpp \
-   memory/mem_dominator_allocation_cs.cpp \
-   memory/memory_cs.cpp
+   memory/mem_dominator_allocation_cs.cpp
 
 noinst_LTLIBRARIES += lib_allocation.la
 lib_allocation_la_CPPFLAGS = \
@@ -1022,6 +1022,7 @@ lib_vcd_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/behavior \
    -I$(top_srcdir)/src/circuit \
+   -I$(top_srcdir)/src/constants  \
    -I$(top_srcdir)/src/design_flows \
    -I$(top_srcdir)/src/design_flows/backend/ToHDL \
    -I$(top_srcdir)/src/graph \

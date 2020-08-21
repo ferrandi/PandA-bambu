@@ -47,7 +47,7 @@
 /// Utility include
 #include "fileIO.hpp"
 
-XMLDomParser::XMLDomParser(std::string _name, std::string string_to_be_parsed) : name(std::move(_name)), to_be_parsed(std::move(string_to_be_parsed))
+XMLDomParser::XMLDomParser(const std::string& _name, const std::string& string_to_be_parsed) : name(_name), to_be_parsed(string_to_be_parsed)
 
 {
 }

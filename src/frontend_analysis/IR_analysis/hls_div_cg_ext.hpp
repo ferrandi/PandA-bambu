@@ -65,8 +65,6 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
  protected:
    const tree_managerRef TreeM;
 
-   const tree_manipulationRef tree_man;
-
    /// True if already executed
    bool already_executed;
 
@@ -77,9 +75,9 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
    bool use64bitMul;
 
    /**
-    * Recursive examinate tree node
+    * Recursive examine tree node
     */
-   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement);
+   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement, const tree_manipulationRef tree_man);
 
    /**
     * Return the set of analyses in relationship with this design step

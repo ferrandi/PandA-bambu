@@ -1841,7 +1841,7 @@
       </cell>
       <cell>
         <name>ASSIGN_REAL_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:14</characterization_timestamp>
@@ -1849,7 +1849,7 @@
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:14</characterization_timestamp>
@@ -1865,7 +1865,7 @@
       </cell>
       <cell>
         <name>ASSIGN_UNSIGNED_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:15</characterization_timestamp>
@@ -1873,7 +1873,7 @@
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:21</characterization_timestamp>
@@ -3923,10 +3923,11 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">35</attribute>
         <characterization_timestamp>2016-06-24T11:04:28</characterization_timestamp>
         <operation operation_name="__builtin_signbit" supported_types="REAL:32,64" execution_time="0.93800007128800544"/>
+        <operation operation_name="__builtin_signbitf" supported_types="REAL:32,64" execution_time="0.93800007128800544"/>
       </cell>
       <cell>
         <name>addr_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:04:19</characterization_timestamp>
@@ -3934,7 +3935,7 @@
       </cell>
       <cell>
         <name>assert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:04:19</characterization_timestamp>
@@ -9758,7 +9759,7 @@
       </cell>
       <cell>
         <name>fp_view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:30:37</characterization_timestamp>
@@ -10502,6 +10503,7 @@
         <attribute name="area" value_type="float64">5</attribute>
         <attribute name="REGISTERS" value_type="float64">7</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">5</attribute>
+        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
         <operation operation_name="lut_expr" supported_types="UINT:4" execution_time="1.0129999999999999"/>
       </cell>
       <cell>
@@ -12079,7 +12081,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">24</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="16 16 16 2"/>
-        <characterization_timestamp>2017-02-20T23:00:19</characterization_timestamp>
+        <characterization_timestamp>2020-05-28T00:22:05</characterization_timestamp>
         <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.1099999999999999"/>
         <circuit>
           <component_o id="mult_expr_FU" path="mult_expr_FU">
@@ -12155,7 +12157,7 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">27</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="18 18 32 1"/>
-        <characterization_timestamp>2017-02-20T23:00:19</characterization_timestamp>
+        <characterization_timestamp>2020-05-28T00:22:05</characterization_timestamp>
         <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.7400000000000002"/>
         <circuit>
           <component_o id="mult_expr_FU" path="mult_expr_FU">
@@ -27935,7 +27937,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_16_8_0_16_8</name>
-        <attribute name="area" value_type="float64">108</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">216</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">108</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="16 8 0 16 8"/>
@@ -27954,7 +27956,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_1_128_0_1_128</name>
-        <attribute name="area" value_type="float64">64</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="1 128 0 1 128"/>
@@ -27973,7 +27975,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_32_4_0_32_4</name>
-        <attribute name="area" value_type="float64">86</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">172</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">86</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="32 4 0 32 4"/>
@@ -27992,7 +27994,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_64_2_0_64_2</name>
-        <attribute name="area" value_type="float64">107</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">214</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">107</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="64 2 0 64 2"/>
@@ -28011,7 +28013,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_8_16_0_8_16</name>
-        <attribute name="area" value_type="float64">88</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">176</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">88</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="8 16 0 8 16"/>
@@ -31549,7 +31551,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_16_8_0_16_8</name>
-        <attribute name="area" value_type="float64">126</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">251</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">126</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="16 8 0 16 8"/>
@@ -31568,7 +31570,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_1_128_0_1_128</name>
-        <attribute name="area" value_type="float64">128</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">255</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="1 128 0 1 128"/>
@@ -31587,7 +31589,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_32_4_0_32_4</name>
-        <attribute name="area" value_type="float64">118</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">235</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">118</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="32 4 0 32 4"/>
@@ -31606,7 +31608,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_64_2_0_64_2</name>
-        <attribute name="area" value_type="float64">118</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">235</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">118</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="64 2 0 64 2"/>
@@ -31625,7 +31627,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_8_16_0_8_16</name>
-        <attribute name="area" value_type="float64">126</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">251</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">126</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="8 16 0 8 16"/>
@@ -36476,7 +36478,7 @@
       </cell>
       <cell>
         <name>ui_view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T13:03:38</characterization_timestamp>
@@ -46178,7 +46180,7 @@
       </cell>
       <cell>
         <name>view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T13:27:09</characterization_timestamp>
