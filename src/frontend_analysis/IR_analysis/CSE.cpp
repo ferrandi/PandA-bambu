@@ -455,11 +455,11 @@ DesignFlowStep_Status CSE::InternalExec()
       unique_table[bb].clear();
       if(bb_dominator_map.find(bb) != bb_dominator_map.end())
       {
-         THROW_ASSERT(unique_table.find(bb_dominator_map.find(bb)->second) != unique_table.end(), "unexpected condition");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding dominator equiv: " + STR(bb_domGraph->CGetBBNodeInfo(bb_dominator_map.find(bb)->second)->block->number));
+         THROW_ASSERT(unique_table.find(bb_dominator_map.at(bb)) != unique_table.end(), "unexpected condition");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding dominator equiv: " + STR(bb_domGraph->CGetBBNodeInfo(bb_dominator_map.at(bb))->block->number));
 
-         for(auto key_value_pair : unique_table.find(bb_dominator_map.find(bb)->second)->second)
-            unique_table.find(bb)->second[key_value_pair.first] = key_value_pair.second;
+         for(auto key_value_pair : unique_table.at(bb_dominator_map.at(bb)))
+            unique_table.at(bb)[key_value_pair.first] = key_value_pair.second;
       }
       TreeNodeSet to_be_removed;
       for(const auto& stmt : B->CGetStmtList())
@@ -504,9 +504,18 @@ DesignFlowStep_Status CSE::InternalExec()
                tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, tree_nodeRef(), tree_nodeRef(), ssa_vd, ref_ga->bb_index, srcp_default);
                TM->ReplaceTreeNode(curr_ga, GetPointer<gimple_assign>(GET_NODE(curr_ga))->op0, ref_ga->op0);
                TM->ReplaceTreeNode(TM->GetTreeReindex(eq_tn->index), ref_ga->op0, ssa_vd);
-               B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated old GA: " + ref_ga->ToString());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new GA: " + curr_ga->ToString());
+               if(B->number == ref_ga->bb_index)
+               {
+                  B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
+               }
+               else
+               {
+                  THROW_ASSERT(inverse_vertex_map.find(ref_ga->bb_index) != inverse_vertex_map.end(), "unexpected condition");
+                  THROW_ASSERT(bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index)), "unexpected condition");
+                  bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index))->block->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
+               }
             }
             if(!same_range && dead_ssa->min && dead_ssa->max && GET_NODE(ga_op_type)->get_kind() == integer_type_K)
             {
