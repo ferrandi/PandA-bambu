@@ -91,40 +91,34 @@ Range* Range::clone() const
 
 void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
 {
-   if(rType == Real)
+   type = rType;
+   switch(rType)
    {
-      THROW_UNREACHABLE("Real range is a storage class only");
-   }
-   if(rType == Empty || rType == Unknown)
-   {
-      l = Min;
-      u = Max;
-   }
-   else if(rType == Anti)
-   {
-      if(lb > ub)
+      case Empty:
+      case Unknown:
       {
-         type = Regular;
          l = Min;
          u = Max;
+         break;
       }
-      else
+      case Anti:
       {
-         if((lb == Min) && (ub == Max))
+         if(lb > ub)
+         {
+            return normalizeRange(ub + MinDelta, lb - MinDelta, Regular);
+         }
+         else if((lb == Min) && (ub == Max))
          {
             type = Empty;
+            return;
          }
          else if(lb == Min)
          {
-            type = Regular;
-            l = ub + MinDelta;
-            u = APInt::getSignedMaxValue(bw);
+            return normalizeRange(ub + MinDelta, Max, Regular);
          }
          else if(ub == Max)
          {
-            type = Regular;
-            l = APInt::getSignedMinValue(bw);
-            u = lb - MinDelta;
+            return normalizeRange(Min, lb - MinDelta, Regular);
          }
          else
          {
@@ -137,42 +131,60 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
             const bool ublt = ub < minS;
             if(lbgt && ubgt)
             {
-               l = lb.extOrTrunc(bw, true);
-               u = ub.extOrTrunc(bw, true);
-            }
-            else if(lblt && ublt)
-            {
-               l = ub.extOrTrunc(bw, true);
-               u = lb.extOrTrunc(bw, true);
-            }
-            else if(!lblt && ubgt)
-            {
-               const auto ubnew = ub.extOrTrunc(bw, true);
-               if(ubnew >= (lb - MinDelta))
+               if((ub - lb).abs() < APInt::getMaxValue(bw))
                {
-                  l = Min;
-                  u = Max;
+                  l = lb.extOrTrunc(bw, true);
+                  u = ub.extOrTrunc(bw, true);
                }
                else
                {
                   type = Regular;
+                  l = APInt::getSignedMinValue(bw);
+                  u = APInt::getSignedMaxValue(bw);
+               }
+            }
+            else if(lblt && ublt)
+            {
+               if((ub - lb).abs() < APInt::getMaxValue(bw))
+               {
+                  l = ub.extOrTrunc(bw, true);
+                  u = lb.extOrTrunc(bw, true);
+               }
+               else
+               {
+                  type = Regular;
+                  l = APInt::getSignedMinValue(bw);
+                  u = APInt::getSignedMaxValue(bw);
+               }
+            }
+            else if(!lblt && ubgt)
+            {
+               const auto ubnew = ub.extOrTrunc(bw, true);
+               type = Regular;
+               if((ub - lb).abs() < APInt::getMaxValue(bw) && ubnew != (lb - MinDelta))
+               {
                   l = ubnew + MinDelta;
                   u = lb - MinDelta;
+               }
+               else
+               {
+                  l = APInt::getSignedMinValue(bw);
+                  u = APInt::getSignedMaxValue(bw);
                }
             }
             else if(lblt && !ubgt)
             {
                const auto lbnew = lb.extOrTrunc(bw, true);
-               if(lbnew <= (ub + MinDelta))
+               type = Regular;
+               if((ub - lb).abs() < APInt::getMaxValue(bw) && lbnew != (ub + MinDelta))
                {
-                  l = Min;
-                  u = Max;
+                  l = ub + MinDelta;
+                  u = lbnew - MinDelta;
                }
                else
                {
-                  type = Regular;
-                  l = ub + MinDelta;
-                  u = lbnew - MinDelta;
+                  l = APInt::getSignedMinValue(bw);
+                  u = APInt::getSignedMaxValue(bw);
                }
             }
             else if(!lblt && !ubgt)
@@ -185,83 +197,158 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
                THROW_UNREACHABLE("unexpected condition");
             }
          }
+         break;
       }
-   }
-   else if((lb - MinDelta) == ub)
-   {
-      type = Regular;
-      l = Min;
-      u = Max;
-   }
-   else if(lb > ub)
-   {
-      normalizeRange(ub + MinDelta, lb - MinDelta, Anti);
-   }
-   else
-   {
-      THROW_ASSERT(ub >= lb, "");
-      const auto maxS = APInt::getSignedMaxValue(bw);
-      const auto minS = APInt::getSignedMinValue(bw);
-      const bool lbgt = lb > maxS;
-      const bool ubgt = ub > maxS;
-      const bool lblt = lb < minS;
-      const bool ublt = ub < minS;
-      if(ubgt && lblt)
+      case Regular:
       {
-         l = Min;
-         u = Max;
-      }
-      else if(lbgt && ubgt)
-      {
-         l = lb.extOrTrunc(bw, true);
-         u = ub.extOrTrunc(bw, true);
-      }
-      else if(lblt && ublt)
-      {
-         l = ub.extOrTrunc(bw, true);
-         u = lb.extOrTrunc(bw, true);
-      }
-      else if(!lblt && ubgt)
-      {
-         const auto ubnew = ub.extOrTrunc(bw, true);
-         if(ubnew >= (lb - MinDelta))
+         if((lb - MinDelta) == ub)
          {
-            l = Min;
-            u = Max;
+            l = APInt::getSignedMinValue(bw);
+            u = APInt::getSignedMaxValue(bw);
+         }
+         else if(lb > ub)
+         {
+            return normalizeRange(ub + MinDelta, lb - MinDelta, Anti);
+         }
+         else if(lb == Min && ub == Max)
+         {
+            l = APInt::getSignedMinValue(bw);
+            u = APInt::getSignedMaxValue(bw);
+         }
+         else if(ub == Max)
+         {
+            const auto maxS = APInt::getSignedMaxValue(bw);
+            const auto minS = APInt::getSignedMinValue(bw);
+            if(lb < minS)
+            {
+               l = maxS;
+               u = minS;
+            }
+            else if(lb >= minS && lb < 0)
+            {
+               l = lb;
+               u = maxS;
+            }
+            else if(lb >= 0 && lb <= maxS)
+            {
+               l = lb;
+               u = APInt::getSignedMaxValue(bw);
+            }
+            else if(lb > maxS && lb <= APInt::getMaxValue(bw))
+            {
+               l = lb.extOrTrunc(bw, true);
+               u = -1;
+            }
+            else
+            {
+               l = maxS;
+               u = minS;
+            }
+         }
+         else if(lb == Min)
+         {
+            const auto maxS = APInt::getSignedMaxValue(bw);
+            const auto minS = APInt::getSignedMinValue(bw);
+            if(ub < minS)
+            {
+               l = maxS;
+               u = minS;
+            }
+            else if(ub >= minS && ub < 0)
+            {
+               l = minS;
+               u = ub;
+            }
+            else if(ub >= 0 && ub <= maxS)
+            {
+               l = APInt::getSignedMinValue(bw);
+               u = ub;
+            }
+            else if(ub > maxS && ub < APInt::getMaxValue(bw))
+            {
+               type = Anti;
+               u = -1;
+               l = ub.extOrTrunc(bw, true) + MinDelta;
+            }
+            else
+            {
+               l = maxS;
+               u = minS;
+            }
          }
          else
          {
-            type = Anti;
-            l = ubnew + MinDelta;
-            u = lb - MinDelta;
+            THROW_ASSERT(ub >= lb, "");
+            const auto maxS = APInt::getSignedMaxValue(bw);
+            const auto minS = APInt::getSignedMinValue(bw);
+            const bool lbgt = lb > maxS;
+            const bool ubgt = ub > maxS;
+            const bool lblt = lb < minS;
+            const bool ublt = ub < minS;
+            if(ubgt && lblt)
+            {
+               l = maxS;
+               u = minS;
+            }
+            else if(lbgt && ubgt)
+            {
+               l = lb.extOrTrunc(bw, true);
+               u = ub.extOrTrunc(bw, true);
+            }
+            else if(lblt && ublt)
+            {
+               l = ub.extOrTrunc(bw, true);
+               u = lb.extOrTrunc(bw, true);
+            }
+            else if(!lblt && ubgt)
+            {
+               const auto ubnew = ub.extOrTrunc(bw, true);
+               if((ub - lb).abs() < APInt::getMaxValue(bw) && ubnew != (lb - MinDelta))
+               {
+                  type = Anti;
+                  l = ubnew + MinDelta;
+                  u = lb - MinDelta;
+               }
+               else
+               {
+                  l = maxS;
+                  u = minS;
+               }
+            }
+            else if(lblt && !ubgt)
+            {
+               const auto lbnew = lb.extOrTrunc(bw, true);
+               if((ub - lb).abs() < APInt::getMaxValue(bw) && lbnew != (ub + MinDelta))
+               {
+                  type = Anti;
+                  l = ub + MinDelta;
+                  u = lbnew - MinDelta;
+               }
+               else
+               {
+                  l = maxS;
+                  u = minS;
+               }
+            }
+            else if(!lblt && !ubgt)
+            {
+               l = lb;
+               u = ub;
+            }
+            else
+            {
+               THROW_UNREACHABLE("unexpected condition");
+            }
          }
+         break;
       }
-      else if(lblt && !ubgt)
+      case Real:
       {
-         const auto lbnew = lb.extOrTrunc(bw, true);
-         if(lbnew <= (ub + MinDelta))
-         {
-            l = Min;
-            u = Max;
-         }
-         else
-         {
-            type = Anti;
-            l = ub + MinDelta;
-            u = lbnew - MinDelta;
-         }
-      }
-      else if(!lblt && !ubgt)
-      {
-         l = lb;
-         u = ub;
-      }
-      else
-      {
-         THROW_UNREACHABLE("unexpected condition");
+         THROW_UNREACHABLE("Real range is a storage class only");
+         break;
       }
    }
-   if(!(u >= l))
+   if(u < l)
    {
       l = Min;
       u = Max;

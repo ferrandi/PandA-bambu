@@ -4,38 +4,197 @@
 
 BOOST_AUTO_TEST_CASE(range)
 {
-   RangeRef r;
+   RangeRef r, a;
+   // Full range
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(0, r->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(255, r->getUnsignedMax());
+   BOOST_REQUIRE_EQUAL(-128, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(127, r->getSignedMax());
+
+   // Regular pos-pos
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, 10, 113)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(10, r->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(113, r->getUnsignedMax());
+   BOOST_REQUIRE_EQUAL(10, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(113, r->getSignedMax());
+
+   // Regular pos-pos unsigned
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, 129, 236)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(129, r->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(236, r->getUnsignedMax());
+   BOOST_REQUIRE_EQUAL(static_cast<int8_t>(129), r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(static_cast<int8_t>(236), r->getSignedMax());
+
+   // Regular neg-pos
    BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, -5, 113)));
    BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
    BOOST_REQUIRE_EQUAL(0, r->getUnsignedMin());
    BOOST_REQUIRE_EQUAL(255, r->getUnsignedMax());
    BOOST_REQUIRE_EQUAL(-5, r->getSignedMin());
    BOOST_REQUIRE_EQUAL(113, r->getSignedMax());
-   BOOST_REQUIRE(!r->isFullSet());
 
-   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8)));
+   // Regular neg-pos overflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, -5, 132)));
    BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isAnti());
    BOOST_REQUIRE_EQUAL(0, r->getUnsignedMin());
    BOOST_REQUIRE_EQUAL(255, r->getUnsignedMax());
    BOOST_REQUIRE_EQUAL(-128, r->getSignedMin());
    BOOST_REQUIRE_EQUAL(127, r->getSignedMax());
+   a = r->getAnti();
+   BOOST_REQUIRE_EQUAL(-123, a->getSignedMin());
+   BOOST_REQUIRE_EQUAL(-6, a->getSignedMax());
+
+   // Regular neg-pos full overflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, -3, 252)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
    BOOST_REQUIRE(r->isFullSet());
 
-   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, -3, 257)));
+   // Regular neg-neg
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, -111, -36)));
    BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
-   BOOST_REQUIRE_EQUAL(0, r->getUnsignedMin());
-   BOOST_REQUIRE_EQUAL(255, r->getUnsignedMax());
-   BOOST_REQUIRE_EQUAL(-128, r->getSignedMin());
-   BOOST_REQUIRE_EQUAL(127, r->getSignedMax());
-   BOOST_REQUIRE(r->isFullSet());
-
-   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, 5, 120)));
-   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
-   BOOST_REQUIRE_EQUAL(5, r->getUnsignedMin());
-   BOOST_REQUIRE_EQUAL(120, r->getUnsignedMax());
-   BOOST_REQUIRE_EQUAL(5, r->getSignedMin());
-   BOOST_REQUIRE_EQUAL(120, r->getSignedMax());
    BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(static_cast<uint8_t>(-111), r->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(static_cast<uint8_t>(-36), r->getUnsignedMax());
+   BOOST_REQUIRE_EQUAL(-111, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(-36, r->getSignedMax());
+
+   // Regular neg-neg underflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, -130, -36)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isAnti());
+   a = r->getAnti();
+   BOOST_REQUIRE_EQUAL(-35, a->getSignedMin());
+   BOOST_REQUIRE_EQUAL(125, a->getSignedMax());
+
+   // Regular neg-neg full underflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Regular, 8, -292, -36)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+
+   // Anti pos-pos
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, 10, 113)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isAnti());
+   a = r->getAnti();
+   BOOST_REQUIRE_EQUAL(10, a->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(113, a->getUnsignedMax());
+   BOOST_REQUIRE_EQUAL(10, a->getSignedMin());
+   BOOST_REQUIRE_EQUAL(113, a->getSignedMax());
+
+   // Anti pos-pos unsigned
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, 132, 213)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isAnti());
+   a = r->getAnti();
+   BOOST_REQUIRE_EQUAL(132, a->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(213, a->getUnsignedMax());
+   BOOST_REQUIRE_EQUAL(static_cast<int8_t>(132), a->getSignedMin());
+   BOOST_REQUIRE_EQUAL(static_cast<int8_t>(213), a->getSignedMax());
+
+   // Anti neg-pos
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, -34, 97)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isAnti());
+   BOOST_REQUIRE_EQUAL(98, r->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(static_cast<uint8_t>(-35), r->getUnsignedMax());
+   a = r->getAnti();
+   BOOST_REQUIRE_EQUAL(-34, a->getSignedMin());
+   BOOST_REQUIRE_EQUAL(97, a->getSignedMax());
+
+   // Anti neg-pos overflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, -34, 210)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(-45, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(-35, r->getSignedMax());
+
+   // Anti neg-pos full overflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, -34, 230)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isAnti());
+   BOOST_REQUIRE(r->isFullSet());
+
+   // Anti neg-neg
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, -104, -67)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isAnti());
+   a = r->getAnti();
+   BOOST_REQUIRE_EQUAL(static_cast<uint8_t>(-104), a->getUnsignedMin());
+   BOOST_REQUIRE_EQUAL(static_cast<uint8_t>(-67), a->getUnsignedMax());
+   BOOST_REQUIRE_EQUAL(-104, a->getSignedMin());
+   BOOST_REQUIRE_EQUAL(-67, a->getSignedMax());
+
+   // Anti neg-neg underflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, -130, -67)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(-66, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(125, r->getSignedMax());
+
+   // Anti neg-neg full underflow
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, -323, -67)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+
+   // Anti min-neg
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, Range::Min, -57)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(-56, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(127, r->getSignedMax());
+   BOOST_REQUIRE_EQUAL(127, r->getUpper());
+
+   // Anti min-pos
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, Range::Min, 13)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(14, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(127, r->getSignedMax());
+   BOOST_REQUIRE_EQUAL(127, r->getUpper());
+
+   // Anti pos-max
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, 32, Range::Max)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(31, r->getSignedMax());
+   BOOST_REQUIRE_EQUAL(-128, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(-128, r->getLower());
+
+   // Anti neg-max
+   BOOST_REQUIRE_NO_THROW(r.reset(new Range(Anti, 8, -33, Range::Max)));
+   BOOST_REQUIRE_EQUAL(8, r->getBitWidth());
+   BOOST_REQUIRE(!r->isFullSet());
+   BOOST_REQUIRE(r->isRegular());
+   BOOST_REQUIRE_EQUAL(-34, r->getSignedMax());
+   BOOST_REQUIRE_EQUAL(-128, r->getSignedMin());
+   BOOST_REQUIRE_EQUAL(-128, r->getLower());
 
    const auto antiZero = Range(Anti, 1, 0, 0);
    const auto antiOne = Range(Anti, 1, 1, 1);
