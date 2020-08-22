@@ -3590,7 +3590,7 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
          RETURN_DISABLED_OPTION(or, bw);
          return op1->Or(op2);
       case bit_xor_expr_K:
-         RETURN_DISABLED_OPTION (xor, bw);
+         RETURN_DISABLED_OPTION(xor, bw);
          return op1->Xor(op2);
       case uneq_expr_K:
       case eq_expr_K:
@@ -5118,7 +5118,13 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
 
             if(newLower > oldLower || newUpper < oldUpper)
             {
-               return RangeRef(new Range(Anti, bw, newLower > oldLower ? nlconstant : oldLower, newUpper < oldUpper ? nuconstant : oldUpper));
+               const auto& l = newLower > oldLower ? nlconstant : oldLower;
+               const auto& u = newUpper < oldUpper ? nuconstant : oldUpper;
+               if(l > u)
+               {
+                  return RangeRef(new Range(Regular, bw));
+               }
+               return RangeRef(new Range(Anti, bw, l, u));
             }
          }
          else
@@ -5127,6 +5133,10 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
             if(!oldInterval->isUnknown() && oldInterval->isFullSet() && newInterval->isAnti())
             {
                return RangeRef(oldInterval->clone());
+            }
+            if(oldInterval->isRegular() && newInterval->isAnti())
+            {
+               return oldInterval->unionWith(newInterval);
             }
             return RangeRef(newInterval->clone());
          }
@@ -5166,7 +5176,9 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
    }
    else
    {
-      op->getSink()->setRange(intervalWiden(oldRange, newRange));
+      const auto widen = intervalWiden(oldRange, newRange);
+      //    THROW_ASSERT(oldRange->getSpan() <= widen->getSpan(), "Widening should produce bigger range: " + oldRange->ToString() + " > " + widen->ToString());
+      op->getSink()->setRange(widen);
    }
 
    const auto sinkRange = op->getSink()->getRange();
@@ -5264,12 +5276,24 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
             const auto& oldUpper = oldAnti->getUpper();
             const auto& newLower = newAnti->getLower();
             const auto& newUpper = newAnti->getUpper();
-            const auto& nlconstant = getFirstLessFromVector(constantvector, newLower);
-            const auto& nuconstant = getFirstGreaterFromVector(constantvector, newUpper);
+            const auto& nlconstant = getFirstGreaterFromVector(constantvector, newLower);
+            const auto& nuconstant = getFirstLessFromVector(constantvector, newUpper);
 
-            if(newLower <= oldLower && (newLower < oldLower || newUpper > oldUpper))
+            if(oldLower < nlconstant && oldUpper > nuconstant)
             {
-               return RangeRef(new Range(Anti, bw, newLower < oldLower ? nlconstant : oldLower, newUpper > oldUpper ? nuconstant : oldUpper));
+               if(nlconstant <= nuconstant)
+               {
+                  return RangeRef(new Range(Anti, bw, nlconstant, nuconstant));
+               }
+               return RangeRef(new Range(Regular, bw));
+            }
+            if(oldLower < nlconstant)
+            {
+               return RangeRef(new Range(Anti, bw, nlconstant, oldUpper));
+            }
+            if(oldUpper > nuconstant)
+            {
+               return RangeRef(new Range(Anti, bw, oldLower, nuconstant));
             }
          }
          else if(newInterval->isUnknown() || !newInterval->isFullSet())
@@ -5279,19 +5303,31 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
       }
       else
       {
-         const auto& oldLower = oldInterval->getLower();
-         const auto& oldUpper = oldInterval->getUpper();
-         const auto& newLower = newInterval->getLower();
-         const auto& newUpper = newInterval->getUpper();
-
-         // Jump-set
-         const auto& nlconstant = getFirstGreaterFromVector(constantvector, newLower);
-         const auto& nuconstant = getFirstLessFromVector(constantvector, newUpper);
-
-         if(newLower <= oldLower && (newLower > oldLower || newUpper < oldUpper))
+         const auto& oLower = oldInterval->isFullSet() ? Range::Min : oldInterval->getLower();
+         const auto& oUpper = oldInterval->isFullSet() ? Range::Max : oldInterval->getUpper();
+         const auto& nLower = newInterval->isFullSet() ? Range::Min : newInterval->getLower();
+         const auto& nUpper = newInterval->isFullSet() ? Range::Max : newInterval->getUpper();
+         auto sinkInterval = RangeRef(oldInterval->clone());
+         if((oLower == Range::Min) && (nLower != Range::Min))
          {
-            return RangeRef(new Range(Regular, bw, newLower > oldLower ? nlconstant : oldLower, newUpper < oldUpper ? nuconstant : oldUpper));
+            sinkInterval = RangeRef(new Range(Regular, bw, nLower, oUpper));
          }
+         else if(nLower < oLower)
+         {
+            sinkInterval = RangeRef(new Range(Regular, bw, nLower, oUpper));
+         }
+         if(!sinkInterval->isAnti())
+         {
+            if((oUpper == Range::Max) && (nUpper != Range::Max))
+            {
+               sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), nUpper));
+            }
+            else if(oUpper < nUpper)
+            {
+               sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), nUpper));
+            }
+         }
+         return sinkInterval;
       }
       return RangeRef(oldInterval->clone());
    };
@@ -5306,7 +5342,7 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
       for(auto i = 0; i < 3; ++i)
       {
          const auto narrow = intervalNarrow(oldIntervals[i], newIntervals[i]);
-         THROW_ASSERT(oldIntervals[i]->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldIntervals[i]->ToString() + " < " + narrow->ToString());
+         //    THROW_ASSERT(oldIntervals[i]->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldIntervals[i]->ToString() + " < " + narrow->ToString());
          newIntervals[i] = narrow;
       }
       op->getSink()->setRange(RangeRef(new RealRange(newIntervals[0], newIntervals[1], newIntervals[2])));
@@ -5314,7 +5350,7 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
    else
    {
       const auto narrow = intervalNarrow(oldRange, newRange);
-      THROW_ASSERT(oldRange->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldRange->ToString() + " < " + narrow->ToString());
+      //    THROW_ASSERT(oldRange->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldRange->ToString() + " < " + narrow->ToString());
       op->getSink()->setRange(narrow);
    }
 
@@ -7013,7 +7049,10 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    CustomSet<std::string> ra_mode;
    for(const auto& opt : opts)
    {
-      ra_mode.insert(opt);
+      if(opt.size())
+      {
+         ra_mode.insert(opt);
+      }
    }
    if(ra_mode.erase("crop"))
    {
@@ -7076,7 +7115,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
    {
-      THROW_ASSERT(ra_mode.size() <= 2, "Too many options left to parse");
+      THROW_ASSERT(ra_mode.size() <= 2, "Too many range analysis options left to parse");
       auto it = ra_mode.begin();
       if(ra_mode.size() == 2)
       {
@@ -7108,6 +7147,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
    }
+#else
+   THROW_ASSERT(ra_mode.empty(), "Invalid range analysis mode falgs. (" + *ra_mode.begin() + ")");
 #endif
 }
 
