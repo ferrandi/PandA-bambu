@@ -23,11 +23,11 @@ Vagrant.configure(2) do |config|
      chmod +x appimagetool-x86_64.AppImage
      wget https://github.com/AppImage/AppImageKit/releases/download/12/AppRun-x86_64 
      chmod +x AppRun-x86_64
-     wget https://github.com/niess/python-appimage/releases/download/python3.8/python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage
-     chmod +x python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage
-     ./python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage --appimage-extract
+     wget https://github.com/niess/python-appimage/releases/download/python3.8/python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
+     chmod +x python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
+     ./python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage --appimage-extract
      mv squashfs-root python3.8
-     rm -f python3.8.3-cp38-cp38-manylinux1_x86_64.AppImage
+     rm -f python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
      cd python3.8
      tar cvJf ../python3.8.tar.xz *
      cd ..
