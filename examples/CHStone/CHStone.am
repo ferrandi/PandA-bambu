@@ -131,13 +131,16 @@ EXTRA_DIST += %D%/adpcm/adpcm.c %D%/aes/aes_enc.c\
 %D%/CHStone_xc7z020-1clg484-VVD_10.0_O3_sdc.tex\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_access.tex\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O3_sdc.tex\
+%D%/list_CSROA\
 %D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.sh\
+%D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4_CSROA.sh\
 %D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.sh\
 %D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.sh\
 %D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.sh\
 %D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang8.sh\
 %D%/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang9.sh\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4.tex\
+%D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4_CSROA.tex\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.tex\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang6.tex\
 %D%/CHStone_xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang7.tex\
