@@ -343,6 +343,7 @@ void Range::normalizeRange(const APInt& lb, const APInt& ub, RangeType rType)
          break;
       }
       case Real:
+      default:
       {
          THROW_UNREACHABLE("Real range is a storage class only");
          break;
