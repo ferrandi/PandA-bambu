@@ -3534,7 +3534,7 @@ void process_arg_pointer(llvm::Use* ptr_u,
          }
          else
          {
-            idx_chain.erase(idx_chain.begin());
+            //idx_chain.erase(idx_chain.begin());
 
             if(idx_chain.empty())
             {
@@ -3600,11 +3600,15 @@ void process_arg_pointer(llvm::Use* ptr_u,
                }
                else
                {
+		  exp_idx_chain.pop_back();
+
                   llvm::ConstantInt* c_idx = llvm::ConstantInt::get(base_address->getContext(), llvm::APInt(bitwidth, (unsigned long long)exp_arg_u_idx));
                   exp_idx_chain.push_back(std::make_pair(exp_arg_u->getType()->getPointerElementType(), c_idx));
 
                   std::string gepi_name = base_address->getName().str() + ".gepi";
                   std::vector<llvm::Value*> gepi_idxs;
+		  
+		  gepi_idxs.push_back(llvm::ConstantInt::get(base_address->getContext(), llvm::APInt(32, (unsigned long long)0)));
 
                   for(const std::pair<llvm::Type*, llvm::Value*>& idx : exp_idx_chain)
                   {

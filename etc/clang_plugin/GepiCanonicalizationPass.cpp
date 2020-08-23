@@ -148,10 +148,10 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
       llvm::LoadInst* lowered_load = new llvm::LoadInst(load_gep_inst, "ccload." + gepi_name, load_inst);
       llvm::StoreInst* lowered_store = new llvm::StoreInst(lowered_load, store_gep_inst, store_inst);
 
-      llvm::dbgs() << "Lowered load gepi: "; load_gep_inst->dump();
-      llvm::dbgs() << "Lowered load inst: "; lowered_load->dump();
-      llvm::dbgs() << "Lowered store gepi: "; store_gep_inst->dump();
-      llvm::dbgs() << "Lowered store inst: "; lowered_store->dump();
+      llvm::dbgs() << "Lowered load gepi: "; load_gep_inst->print(llvm::dbgs(), false);
+      llvm::dbgs() << "Lowered load inst: "; lowered_load->print(llvm::dbgs(), false);
+      llvm::dbgs() << "Lowered store gepi: "; store_gep_inst->print(llvm::dbgs(), false);
+      llvm::dbgs() << "Lowered store inst: "; lowered_store->print(llvm::dbgs(), false);
    }
 }
 
@@ -233,13 +233,13 @@ void lower_chunk_copy(const ChunkCopy& chunk_copy, const llvm::DataLayout& DL)
 {
    llvm::dbgs() << "INFO: Lowered chunk copy\n";
    llvm::dbgs() << "          Load bitcast:  ";
-   chunk_copy.load_bitcast_op->dump();
+   chunk_copy.load_bitcast_op->print(llvm::dbgs(), false);
    llvm::dbgs() << "          Load inst:     ";
-   chunk_copy.load_inst->dump();
+   chunk_copy.load_inst->print(llvm::dbgs(), false);
    llvm::dbgs() << "          Store bitcast: ";
-   chunk_copy.store_bitcast_op->dump();
+   chunk_copy.store_bitcast_op->print(llvm::dbgs(), false);
    llvm::dbgs() << "          Store inst:    ";
-   chunk_copy.store_inst->dump();
+   chunk_copy.store_inst->print(llvm::dbgs(), false);
 
    double fitting = (double)DL.getTypeAllocSize(chunk_copy.dest_ty->getPointerElementType()) / (double)DL.getTypeAllocSize(chunk_copy.src_ty->getPointerElementType());
    std::vector<unsigned long long> gepi_idxs = std::vector<unsigned long long>();
@@ -274,13 +274,13 @@ void lower_chunk_init(const ChunkInit& chunk_init)
 {
    llvm::dbgs() << "INFO: Lowered chunk init\n";
    llvm::dbgs() << "          Store bitcast: ";
-   chunk_init.store_bitcast_op->dump();
+   chunk_init.store_bitcast_op->print(llvm::dbgs(), false);
    llvm::dbgs() << "          Store inst:    ";
-   chunk_init.store_bitcast_op->dump();
+   chunk_init.store_bitcast_op->print(llvm::dbgs(), false);
    llvm::dbgs() << "          Stored val:    ";
-   chunk_init.stored_value->dump();
+   chunk_init.stored_value->print(llvm::dbgs(), false);
    llvm::dbgs() << "          Stored ptr:    ";
-   chunk_init.stored_ptr->dump();
+   chunk_init.stored_ptr->print(llvm::dbgs(), false);
 
    const llvm::DataLayout& DL = chunk_init.store_inst->getModule()->getDataLayout();
    unsigned long long lo_bit = 0;
@@ -345,14 +345,14 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
       // llvm::Type* gepi_type = llvm::cast<llvm::PointerType>(init_ptr->getType()->getScalarType())->getElementType();
       llvm::GetElementPtrInst* new_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr, ptr_iter_init, new_gepi_idx_vec, new_gepi_name, gepi_inst);
 
-      llvm::dbgs() << "INFO: Expanding GEPI: "; gepi_inst->dump();
-      llvm::dbgs() << "      With new GEPI: "; new_gepi->dump();
-      llvm::dbgs() << "      Having index: "; new_idx->dump();
+      llvm::dbgs() << "INFO: Expanding GEPI: "; gepi_inst->print(llvm::dbgs(), false);
+      llvm::dbgs() << "      With new GEPI: "; new_gepi->print(llvm::dbgs(), false);
+      llvm::dbgs() << "      Having index: "; new_idx->print(llvm::dbgs(), false);
 
       gepi_inst->replaceAllUsesWith(new_gepi);
 
       for (llvm::Use &use : new_gepi->uses()) {
-         llvm::dbgs() << "      Replaced use #" << use.getOperandNo() << " in user: "; use.getUser()->dump();
+         llvm::dbgs() << "      Replaced use #" << use.getOperandNo() << " in user: "; use.getUser()->print(llvm::dbgs(), false);
          iterator_canonicalization(use, ptr_iter_init, new_idx, first_phi_node, new_phi_node, encountered_cmps,
                                    encountered_phis, inst_to_remove, LI, loop);
       }
@@ -363,14 +363,14 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
    } else if (llvm::PHINode *phi_node = llvm::dyn_cast<llvm::PHINode>(user)) {
       if (phi_node == first_phi_node) {
          new_phi_node->setOperand(op_num, int_ind_var);
-         llvm::dbgs() << "      Setting init PHI: "; new_phi_node->dump();
+         llvm::dbgs() << "      Setting init PHI: "; new_phi_node->print(llvm::dbgs(), false);
          return;
       } else {
          if (LI.getLoopFor(phi_node->getParent()) != loop) {
             return;
          }
 
-         llvm::dbgs() << "      Expanding conditional PHI: "; new_phi_node->dump();
+         llvm::dbgs() << "      Expanding conditional PHI: "; new_phi_node->print(llvm::dbgs(), false);
          llvm::PHINode *new_phi = llvm::PHINode::Create(int_ind_var->getType(), 2, phi_node->getName().str() + ".phi", phi_node);
          if (phi_node->getIncomingValue(0) == ptr_iter_init) {
             new_phi->addIncoming(llvm::ConstantInt::get(int_ind_var->getType(), 0, true), phi_node->getIncomingBlock(0));
@@ -391,7 +391,7 @@ void iterator_canonicalization(llvm::Use &iter_use, /// the gepi or cmp instruct
          phi_node->replaceAllUsesWith(new_gepi);
 
          for (llvm::Use &use : new_gepi->uses()) {
-            llvm::dbgs() << "      Replaced use# " << use.getOperandNo() << " in user: "; use.getUser()->dump();
+            llvm::dbgs() << "      Replaced use# " << use.getOperandNo() << " in user: "; use.getUser()->print(llvm::dbgs(), false);
             iterator_canonicalization(use, ptr_iter_init, new_phi, first_phi_node, new_phi_node, encountered_cmps,
                                       encountered_phis, inst_to_remove, LI, loop);
          }
@@ -567,10 +567,10 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo &LI)
             // llvm::Type* gepi_type = llvm::cast<llvm::PointerType>(init_ptr->getType()->getScalarType())->getElementType();
             llvm::GetElementPtrInst* first_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr, phi_node, gepi_idx_vec, new_gepi_name, phi_node->getParent()->getFirstNonPHI());
 
-            llvm::dbgs() << "INFO: Expanding PHI: "; phi_node->dump();
-            llvm::dbgs() << "      With PHI: "; new_phi_node->dump();
-            llvm::dbgs() << "      Init ptr: "; init_ptr->dump();
-            llvm::dbgs() << "      First GEPI: "; first_gepi->dump();
+            llvm::dbgs() << "INFO: Expanding PHI: "; phi_node->print(llvm::dbgs(), false);
+            llvm::dbgs() << "      With PHI: "; new_phi_node->print(llvm::dbgs(), false);
+            llvm::dbgs() << "      Init ptr: "; init_ptr->print(llvm::dbgs(), false);
+            llvm::dbgs() << "      First GEPI: "; first_gepi->print(llvm::dbgs(), false);
 
             phi_node->replaceAllUsesWith(first_gepi);
             first_gepi->setOperand(0, phi_node);
@@ -601,8 +601,6 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo &LI)
          if (gepi_0 and gepi_1) {
             if (gepi_0->getPointerOperand() == gepi_1->getPointerOperand()) {
                if (gepi_0->getNumIndices() == 1 and gepi_1->getNumIndices() == 1) {
-                  gepi_0->dump();
-                  gepi_1->dump();
                   llvm::CmpInst *new_cmp_inst = llvm::CmpInst::Create(llvm::CmpInst::OtherOps::ICmp,
                                                                       cmp_inst->getPredicate(),
                                                                       gepi_0->getOperand(1),
