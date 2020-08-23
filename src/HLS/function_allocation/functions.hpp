@@ -46,6 +46,8 @@
 
 #include "refcount.hpp"
 
+REF_FORWARD_DECL(HLS_manager);
+
 #include "custom_map.hpp"
 #include "custom_set.hpp"
 
@@ -93,7 +95,7 @@ class functions
    bool has_shared_functions(unsigned int funID_scope) const;
 
    /**
-    * return true if a given function is a shared function allocated in a givend function scope
+    * return true if a given function is a shared function allocated in a given function scope
     * @param funID_scope is the function scope
     * @param fun is the shared function
     * @return true when fun is a shared function in funID_scope, false otherwise
@@ -115,16 +117,16 @@ class functions
    const CustomOrderedSet<std::string>& get_proxied_shared_functions(unsigned int funID_scope) const;
 
    /**
-    * check if the function has proxied shared functions
+    * check if the function has proxy shared functions
     * @param funID_scope is the function id
-    * @return true when there are proxied shared functions, false otherwise
+    * @return true when there are proxy shared functions, false otherwise
     */
    bool has_proxied_shared_functions(unsigned int funID_scope) const;
 
    /**
-    * return true if a given function is a shared function allocated in a givend function scope
+    * return true if a given function is a shared function allocated in a given function scope
     * @param funID_scope is the function scope
-    * @param fun is the proxied shared function
+    * @param fun is the proxy shared function
     * @return true when fun is a proxied shared in funID_scope, false otherwise
     */
    bool is_a_proxied_shared_function(unsigned int funID_scope, const std::string& fun) const;
@@ -142,6 +144,10 @@ class functions
     * @return the function ID of the function having the instance of proxy function fun
     */
    unsigned int get_proxy_mapping(const std::string& fun) const;
+
+   static std::string get_function_name_cleaned(const std::string& original_function_name);
+
+   static std::string get_function_name_cleaned(unsigned funID, const HLS_managerRef HLSMgr);
 };
 /// refcount definition of the class
 typedef refcount<functions> functionsRef;

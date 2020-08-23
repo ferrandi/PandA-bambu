@@ -357,8 +357,8 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > (current_cycle_ending_time) || unbounded));
    if(pipeliningCond)
       return;
-   cannotBeChained0 = (current_starting_time >= current_cycle_ending_time) ||
-                      ((!is_pipelined && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) && current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
+   cannotBeChained0 = (current_starting_time >= current_cycle_ending_time) || ((!is_pipelined && !(GET_TYPE(flow_graph, current_vertex) & TYPE_RET) && n_cycles == 0 && current_starting_time > (current_cycle_starting_time)) &&
+                                                                               current_ending_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > current_cycle_ending_time);
    if(cannotBeChained0)
       return;
    chainingRetCond = (unbounded || (cstep_has_RET_conflict && current_starting_time > (current_cycle_starting_time))) && (GET_TYPE(flow_graph, current_vertex) & TYPE_RET);

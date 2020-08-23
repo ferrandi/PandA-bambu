@@ -2119,6 +2119,9 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
       fd->AddArg(p_decl);
       ++Pindex;
    }
+   if(!with_body)
+      fd->undefined_flag = true;
+   TreeM->add_function(function_decl_id, GET_NODE(function_decl_res));
    return function_decl_res;
 }
 

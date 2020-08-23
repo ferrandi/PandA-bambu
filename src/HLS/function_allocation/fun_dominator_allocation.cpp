@@ -53,7 +53,7 @@
 /// Header include
 #include "fun_dominator_allocation.hpp"
 
-/// algorithms/domainance include
+/// algorithms/dominance include
 #include "Dominance.hpp"
 
 /// behavior include
@@ -247,9 +247,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          vert_dominator = current_vertex;
       BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(current_vertex, *cg))
       {
-         const FunctionBehaviorConstRef called_function_behavior = HLSMgr->CGetFunctionBehavior(CG->get_function(boost::target(eo, *cg)));
-         const BehavioralHelperConstRef called_BH = called_function_behavior->CGetBehavioralHelper();
-         std::string called_fu_name = called_BH->get_function_name();
+         std::string called_fu_name = functions::get_function_name_cleaned(CG->get_function(boost::target(eo, *cg)), HLSMgr);
          if(HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
             HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1)               // or single instance functions
          {
@@ -270,8 +268,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       }
    }
    /// compute the number of instances for each function
-   std::map<vertex, unsigned int> num_instances;
-   num_instances[top_vertex] = 1;
+   std::map<std::string, unsigned int> num_instances;
+   num_instances[functions::get_function_name_cleaned(CG->get_function(top_vertex), HLSMgr)] = 1;
    std::map<unsigned int, std::vector<std::string>> function_allocation_map;
    std::list<vertex> topology_sorted_vertex;
    cg->TopologicalSort(topology_sorted_vertex);
@@ -280,21 +278,21 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       unsigned int funID = CG->get_function(cur);
       if(reached_fu_ids.find(funID) == reached_fu_ids.end())
          continue;
-      THROW_ASSERT(num_instances.find(CG->GetVertex(funID)) != num_instances.end(), "missing number of instances of function " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
+      THROW_ASSERT(num_instances.find(functions::get_function_name_cleaned(funID, HLSMgr)) != num_instances.end(), "missing number of instances of function " + HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name());
       function_allocation_map[funID];
-      unsigned int cur_instances = num_instances.at(cur);
+      unsigned int cur_instances = num_instances.at(functions::get_function_name_cleaned(funID, HLSMgr));
       BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(cur, *cg))
       {
          vertex tgt = boost::target(eo, *cg);
          unsigned int n_call_points = static_cast<unsigned int>(Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg)->direct_call_points.size());
-         if(num_instances.find(tgt) == num_instances.end())
-            num_instances[tgt] = cur_instances * n_call_points;
+         if(num_instances.find(functions::get_function_name_cleaned(CG->get_function(tgt), HLSMgr)) == num_instances.end())
+            num_instances[functions::get_function_name_cleaned(CG->get_function(tgt), HLSMgr)] = cur_instances * n_call_points;
          else
-            num_instances[tgt] += cur_instances * n_call_points;
+            num_instances[functions::get_function_name_cleaned(CG->get_function(tgt), HLSMgr)] += cur_instances * n_call_points;
       }
    }
 
-   THROW_ASSERT(num_instances.at(top_vertex) == 1, "top function cannot be called from some other function");
+   THROW_ASSERT(num_instances.at(functions::get_function_name_cleaned(CG->get_function(top_vertex), HLSMgr)) == 1, "top function cannot be called from some other function");
    /// find the common dominator and decide where to allocate
    for(const auto& dom_map : fun_dom_map)
    {
@@ -302,7 +300,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       if(dom_map.second.size() == 1)
       {
          vertex cur = *dom_map.second.begin();
-         while(num_instances.at(cur) != 1)
+         while(num_instances.at(functions::get_function_name_cleaned(CG->get_function(cur), HLSMgr)) != 1)
             cur = cg_dominator_map.at(cur);
          funID = CG->get_function(cur);
       }
@@ -336,7 +334,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                } while(cur != top_vertex);
                /// find the common dominator between two candidates
                std::list<vertex>::const_iterator dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(), dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
-               while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it && (num_instances.at(*dl1_it) == 1))
+               while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it && (num_instances.at(functions::get_function_name_cleaned(CG->get_function(*dl1_it), HLSMgr)) == 1))
                {
                   cur = *dl1_it;
                   ++dl1_it;

@@ -53,8 +53,10 @@
 #include "design_flow_manager.hpp"
 #include "ext_tree_node.hpp"
 #include "function_behavior.hpp"
+#include "hls_function_step.hpp"
 #include "hls_manager.hpp"
 #include "math_function.hpp"
+#include "sdc_scheduling.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "token_interface.hpp"
 #include "tree_basic_block.hpp"
@@ -123,6 +125,24 @@ bool dead_code_elimination::HasToBeExecuted() const
       cur_reading_memory[i] = fdCalled->reading_memory;
    }
    return cur_writing_memory != last_writing_memory || cur_reading_memory != last_reading_memory;
+}
+
+void dead_code_elimination::fix_sdc_motion(DesignFlowManagerConstRef design_flow_manager, unsigned int function_id, tree_nodeRef removedStmt)
+{
+   const auto design_flow_graph = design_flow_manager->CGetDesignFlowGraph();
+   const auto sdc_scheduling_step = design_flow_manager->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::SDC_SCHEDULING, HLSFlowStepSpecializationConstRef(), function_id));
+   if(sdc_scheduling_step)
+   {
+      const auto sdc_scheduling = GetPointer<SDCScheduling>(design_flow_graph->CGetDesignFlowStepInfo(sdc_scheduling_step)->design_flow_step);
+      auto& movements_list = sdc_scheduling->movements_list;
+      const auto removed_index = GET_INDEX_CONST_NODE(removedStmt);
+      movements_list.remove_if([&](const std::vector<unsigned int>& mv) { return mv[0] == removed_index; });
+   }
+}
+
+void dead_code_elimination::fix_sdc_motion(tree_nodeRef removedStmt) const
+{
+   return fix_sdc_motion(design_flow_manager.lock(), function_id, removedStmt);
 }
 
 void dead_code_elimination::kill_uses(const tree_managerRef TM, tree_nodeRef op0) const
@@ -759,6 +779,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   }
                }
                block_it->second->RemoveStmt(curr_el);
+               fix_sdc_motion(curr_el);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + curr_el->ToString());
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead statements");
@@ -940,6 +961,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         }
                      }
                      blocks.at(bb)->RemoveStmt(curr_el);
+                     fix_sdc_motion(curr_el);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removed " + curr_el->ToString());
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Removed dead statements");

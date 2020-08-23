@@ -845,7 +845,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            if(GET_NODE(ga->op1)->get_kind() == minus_expr_K)
                            {
                               TM->ReplaceTreeNode(stmt, ga->op1, TM->CreateUniqueIntegerCst(0, type_index));
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement transformed in " + GET_NODE(stmt)->ToString());
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Statement transformed in " + GET_NODE(stmt)->ToString());
                               modified = true;
 #ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
@@ -857,7 +857,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                               tree_nodeRef op_expr = IRman->create_binary_operation(ga_op_type, me->op0, op_const_node, srcp_default, lshift_expr_K);
                               TM->ReplaceTreeNode(stmt, ga->op1, op_expr);
-                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement transformed in " + GET_NODE(stmt)->ToString());
+                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Statement transformed in " + GET_NODE(stmt)->ToString());
                               modified = true;
 #ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);

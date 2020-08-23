@@ -148,6 +148,13 @@ bool BitValueIPA::HasToBeExecuted() const
 
 DesignFlowStep_Status BitValueIPA::Exec()
 {
+#ifndef NDEBUG
+   if(not AppM->ApplyNewTransformation())
+   {
+      return DesignFlowStep_Status::UNCHANGED;
+   }
+#endif
+
    BitLatticeManipulator::clear();
    fun_id_to_restart.clear();
 

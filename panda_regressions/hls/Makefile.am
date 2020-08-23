@@ -1153,6 +1153,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_c2_none.c\
 ./bambu_specific_test4/simple_c3_none.c\
 ./bambu_specific_test4/simple_c1_in_valid.c\
+./bambu_specific_test4/simple_c1_valid_nested.c\
 ./bambu_specific_test4/simple_c1_in_ack.c\
 ./bambu_specific_test4/simple_c1_ack.c\
 ./bambu_specific_test4/simple_c3_ovalid.c \
@@ -1165,6 +1166,8 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_test.c \
 ./bambu_specific_test4/simpleif_c1_none.c \
 ./bambu_specific_test4/simpleif_c1_none_test.xml \
+./bambu_specific_test4/iterative_merge_sort.c \
+./bambu_specific_test4/iterative_merge_sort_sum.c \
 ./bambu_specific_test4.sh\
 ./bambu_specific_test4_list\
 ./bambu_specific_test5/adders.c \

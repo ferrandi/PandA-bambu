@@ -78,6 +78,9 @@
  * 64bit block we have used is contained in *num;
  */
 
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();
+
 void
 __attribute__ ((noinline))  
 BF_cfb64_encrypt (in, out, length, ivec, num, encrypt)

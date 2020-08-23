@@ -959,7 +959,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
 
       for(const auto Itr : addressed_functions)
       {
-         std::string FUName = tree_helper::name_function(TreeM, Itr);
+         std::string FUName = functions::get_function_name_cleaned(tree_helper::name_function(TreeM, Itr));
 
          if(HLSMgr->Rfuns->is_a_proxied_function(FUName))
             continue;
@@ -972,10 +972,10 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering additional top: " + FUName + "@" + STR(Itr));
          if(HLSMgr->Rfuns->has_proxied_shared_functions(Itr))
          {
-            CustomOrderedSet<std::string> proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(Itr);
+            auto proxied_shared_functions = HLSMgr->Rfuns->get_proxied_shared_functions(Itr);
             for(auto name : proxied_shared_functions)
             {
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxied shared function: " + name);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---  proxy shared function: " + name);
             }
             kill_proxy_function_units(wrapped_units, FU, fun_call_sites_rel, reverse_function_units);
          }

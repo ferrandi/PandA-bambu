@@ -62,6 +62,8 @@
 #include "design_flow_manager.hpp"
 #include "function_frontend_flow_step.hpp"
 
+#include "dead_code_elimination.hpp"
+
 /// HLS include
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -565,6 +567,8 @@ namespace
          case real_type_K:
             return true;
          case array_type_K:
+         case vector_type_K:
+            return isValidType(tree_helper::CGetElements(tn));
          case CharType_K:
          case nullptr_type_K:
          case type_pack_expansion_K:
@@ -584,7 +588,6 @@ namespace
          case typename_type_K:
          case type_argument_pack_K:
          case union_type_K:
-         case vector_type_K:
          case void_type_K:
             return false;
          case tree_reindex_K:
@@ -632,6 +635,11 @@ namespace
          case gimple_assign_K:
          {
             auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+            if(tree_helper::CGetType(GET_CONST_NODE(ga->op0))->get_kind() == vector_type_K)
+            {
+               // Vector arithmetic not yet supported
+               return false;
+            }
             if(tree_helper::IsLoad(TM, stmt, FB->get_function_mem()))
             {
                Type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
@@ -646,6 +654,13 @@ namespace
 
             switch(GET_CONST_NODE(ga->op1)->get_kind())
             {
+               /// cst_node cases
+               case integer_cst_K:
+               case real_cst_K:
+               case string_cst_K:
+               case vector_cst_K:
+                  break;
+
                /// unary_expr cases
                case nop_expr_K:
                case abs_expr_K:
@@ -821,7 +836,8 @@ namespace
                case ternary_mm_expr_K:
                case CASE_QUATERNARY_EXPRESSION:
                case CASE_TYPE_NODES:
-               case CASE_CST_NODES:
+               case complex_cst_K:
+               case void_cst_K:
                case CASE_DECL_NODES:
                case CASE_FAKE_NODES:
                case CASE_GIMPLE_NODES:
@@ -1109,6 +1125,11 @@ namespace
          max = APInt::getMaxValue(bw);
       }
 #endif
+      else if(type->get_kind() == vector_type_K || type->get_kind() == array_type_K)
+      {
+         bw = static_cast<bw_t>(BitLatticeManipulator::Size(tree_helper::CGetElements(type)));
+         return RangeRef(new Range(Regular, bw));
+      }
       else if(const auto* rt = GetPointer<const record_type>(type))
       {
          THROW_ASSERT(GetPointer<const integer_cst>(GET_CONST_NODE(rt->size)), "record_type has no size");
@@ -1208,7 +1229,7 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
-   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                 ,
                 int debug_level, application_managerRef AppM
@@ -1246,7 +1267,7 @@ void VarNode::init(bool outside)
    }
 }
 
-int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                       ,
                       int debug_level, application_managerRef AppM
@@ -1342,34 +1363,34 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          return ut_None;
       }
 #endif
-      const auto hasBetterSuper = [&]() {
-         if(SSA->min && SSA->max)
-         {
-            RangeRef superRange(
-                new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
-            if(superRange->isRegular())
-            {
-               // Intersect with computed range, because range computed from LLVM range analysis may not be valid any more
-               superRange = superRange->intersectWith(interval);
-               if(superRange->isRegular() && superRange->getSpan() < interval->getSpan())
-               {
-                  const auto superBW = isSigned ? Range::neededBits(superRange->getSignedMin(), superRange->getSignedMax(), true) : Range::neededBits(superRange->getUnsignedMin(), superRange->getUnsignedMax(), false);
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                 "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " +
-                                     GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
-                  interval = superRange;
-                  newBW = superBW;
-                  return true;
-               }
-            }
-         }
-         return false;
-      }();
+      //    const auto hasBetterSuper = [&]() {
+      //       if(SSA->min && SSA->max)
+      //       {
+      //          RangeRef superRange(
+      //              new Range(Regular, interval->getBitWidth(), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->min))), tree_helper::get_integer_cst_value(GetPointer<const integer_cst>(GET_CONST_NODE(SSA->max)))));
+      //          if(superRange->isRegular())
+      //          {
+      //             // Intersect with computed range, because range computed from LLVM range analysis may not be valid any more
+      //             superRange = superRange->intersectWith(interval);
+      //             if(superRange->isRegular() && superRange->getSpan() < interval->getSpan())
+      //             {
+      //                const auto superBW = isSigned ? Range::neededBits(superRange->getSignedMin(), superRange->getSignedMax(), true) : Range::neededBits(superRange->getUnsignedMin(), superRange->getUnsignedMax(), false);
+      //                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+      //                               "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " +
+      //                                   GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
+      //                interval = superRange;
+      //                newBW = superBW;
+      //                return true;
+      //             }
+      //          }
+      //       }
+      //       return false;
+      //    }();
 
-      if(!hasBetterSuper)
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
-      }
+      //    if(!hasBetterSuper)
+      //    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
+      //    }
    }
 
    auto getConstNode = [&](const RangeConstRef& range) {
@@ -1476,6 +1497,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                      auto bb = sl->list_of_bloc.at(ga->bb_index);
                      bb->RemoveStmt(def);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + ga->ToString());
+                     dead_code_elimination::fix_sdc_motion(design_flow_manager, function_id, def);
 #ifndef NDEBUG
                      AppM->RegisterTransformation("RangeAnalysis", def);
 #endif
@@ -2537,6 +2559,9 @@ static bool enable_bit_phi = true;
 #define RESULT_DISABLED_OPTION(x, var, stdResult) stdResult
 #endif
 
+// Tells if --soft-float flag is active inside bambu
+static bool enable_softfloat = true;
+
 // ========================================================================== //
 // PhiOp
 // ========================================================================== //
@@ -3095,7 +3120,7 @@ std::function<OpNode*(NodeContainer*)> UnaryOpNode::opCtorGenerator(const tree_n
    {
       return nullptr;
    }
-   if(GetPointer<const ssa_name>(GET_CONST_NODE(assign->op1)) != nullptr)
+   if(GetPointer<const ssa_name>(GET_CONST_NODE(assign->op1)) != nullptr || GetPointer<const cst_node>(GET_CONST_NODE(assign->op1)))
    {
       return [function_id, stmt, assign](NodeContainer* NC) {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "Analysing assign operation " + assign->ToString());
@@ -3719,7 +3744,7 @@ RangeRef BinaryOpNode::eval() const
          }();
          const auto op_code = this->getOpcode();
          if(bvRange->isConstant() && (bvRange->getSignedMax() != -1 || bvRange->getBitWidth() < result->getBitWidth()) &&
-            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /* || op_code == minus_expr_K */ || op_code == pointer_plus_expr_K))
+            (op_code == mult_expr_K || op_code == widen_mult_expr_K || op_code == plus_expr_K /* || op_code == minus_expr_K || op_code == pointer_plus_expr_K */))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                            "---Result range " + result->ToString() + " filtered with mask " + bitstring_to_string(bvRange->getBitValues(sinkSigned)) + "<" + STR(bvRange->getBitWidth()) + "> from " + ssa->bit_values + "<" +
@@ -3741,8 +3766,16 @@ RangeRef BinaryOpNode::eval() const
    }
    else if(op1->isReal() && op2->isReal())
    {
-      THROW_ASSERT(this->getOpcode() == eq_expr_K || this->getOpcode() == ne_expr_K, tree_node::GetString(this->getOpcode()) + " with real operands not supported");
-      result = evaluate(this->getOpcode(), bw, op1, op2, false);
+      // When softfloat is disabled, floating-point operators are not replaced by function calls
+      if(!enable_softfloat && this->getOpcode() != eq_expr_K && this->getOpcode() != ne_expr_K)
+      {
+         result = getRangeFor(getSink()->getValue(), Regular);
+      }
+      else
+      {
+         THROW_ASSERT(this->getOpcode() == eq_expr_K || this->getOpcode() == ne_expr_K, tree_node::GetString(this->getOpcode()) + " with real operands not supported");
+         result = evaluate(this->getOpcode(), bw, op1, op2, false);
+      }
    }
    else if(op1->isEmpty() || op2->isEmpty())
    {
@@ -5090,7 +5123,13 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
 
             if(newLower > oldLower || newUpper < oldUpper)
             {
-               return RangeRef(new Range(Anti, bw, newLower > oldLower ? nlconstant : oldLower, newUpper < oldUpper ? nuconstant : oldUpper));
+               const auto& l = newLower > oldLower ? nlconstant : oldLower;
+               const auto& u = newUpper < oldUpper ? nuconstant : oldUpper;
+               if(l > u)
+               {
+                  return RangeRef(new Range(Regular, bw));
+               }
+               return RangeRef(new Range(Anti, bw, l, u));
             }
          }
          else
@@ -5099,6 +5138,10 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
             if(!oldInterval->isUnknown() && oldInterval->isFullSet() && newInterval->isAnti())
             {
                return RangeRef(oldInterval->clone());
+            }
+            if(oldInterval->isRegular() && newInterval->isAnti())
+            {
+               return oldInterval->unionWith(newInterval);
             }
             return RangeRef(newInterval->clone());
          }
@@ -5138,7 +5181,9 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
    }
    else
    {
-      op->getSink()->setRange(intervalWiden(oldRange, newRange));
+      const auto widen = intervalWiden(oldRange, newRange);
+      //    THROW_ASSERT(oldRange->getSpan() <= widen->getSpan(), "Widening should produce bigger range: " + oldRange->ToString() + " > " + widen->ToString());
+      op->getSink()->setRange(widen);
    }
 
    const auto sinkRange = op->getSink()->getRange();
@@ -5221,89 +5266,75 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
    const auto newRange = op->eval();
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval) {
-      auto bw = oldInterval->getBitWidth();
-      RangeRef sinkInterval(oldInterval->clone());
+      if(newInterval->isConstant())
+      {
+         return RangeRef(newInterval->clone());
+      }
+      const auto bw = oldInterval->getBitWidth();
       if(oldInterval->isAnti() || newInterval->isAnti() || oldInterval->isEmpty() || newInterval->isEmpty())
       {
          if(oldInterval->isAnti() && newInterval->isAnti() && !newInterval->isSameRange(oldInterval))
          {
             const auto oldAnti = oldInterval->getAnti();
             const auto newAnti = newInterval->getAnti();
-            const auto& oLower = oldAnti->getLower();
-            const auto& oUpper = oldAnti->getUpper();
-            const auto& nLower = newAnti->getLower();
-            const auto& nUpper = newAnti->getUpper();
-            const auto& nlconstant = getFirstGreaterFromVector(constantvector, nLower);
-            const auto& nuconstant = getFirstLessFromVector(constantvector, nUpper);
-            const auto smin = std::max({oLower, nlconstant});
-            const auto smax = std::min({oUpper, nuconstant});
-            THROW_ASSERT(oLower != Range::Min, "");
-            THROW_ASSERT(oUpper != Range::Max, "");
+            const auto& oldLower = oldAnti->getLower();
+            const auto& oldUpper = oldAnti->getUpper();
+            const auto& newLower = newAnti->getLower();
+            const auto& newUpper = newAnti->getUpper();
+            const auto& nlconstant = getFirstGreaterFromVector(constantvector, newLower);
+            const auto& nuconstant = getFirstLessFromVector(constantvector, newUpper);
 
-            if(oLower != smin)
+            if(oldLower < nlconstant && oldUpper > nuconstant)
             {
-               sinkInterval = RangeRef(new Range(Anti, bw, smin, oUpper));
+               if(nlconstant <= nuconstant)
+               {
+                  return RangeRef(new Range(Anti, bw, nlconstant, nuconstant));
+               }
+               return RangeRef(new Range(Regular, bw));
             }
-            if(oUpper != smax)
+            if(oldLower < nlconstant)
             {
-               if(sinkInterval->isAnti())
-               {
-                  const auto sinkAnti = sinkInterval->getAnti();
-                  sinkInterval = RangeRef(new Range(Anti, bw, sinkAnti->getLower(), smax));
-               }
-               else
-               {
-                  sinkInterval = RangeRef(new Range(Anti, bw, sinkInterval->getLower(), smax));
-               }
+               return RangeRef(new Range(Anti, bw, nlconstant, oldUpper));
+            }
+            if(oldUpper > nuconstant)
+            {
+               return RangeRef(new Range(Anti, bw, oldLower, nuconstant));
             }
          }
-         else
+         else if(newInterval->isUnknown() || !newInterval->isFullSet())
          {
-            if(!newInterval->isUnknown() && newInterval->isFullSet())
-            {
-               sinkInterval = RangeRef(oldInterval->clone());
-            }
-            else
-            {
-               sinkInterval = RangeRef(newInterval->clone());
-            }
+            return RangeRef(newInterval->clone());
          }
       }
       else
       {
-         const auto& oLower = oldInterval->getLower();
-         const auto& oUpper = oldInterval->getUpper();
-         const auto& nLower = newInterval->getLower();
-         const auto& nUpper = newInterval->getUpper();
-         if((oLower == Range::Min) && (nLower == Range::Min))
+         const auto& oLower = oldInterval->isFullSet() ? Range::Min : oldInterval->getLower();
+         const auto& oUpper = oldInterval->isFullSet() ? Range::Max : oldInterval->getUpper();
+         const auto& nLower = newInterval->isFullSet() ? Range::Min : newInterval->getLower();
+         const auto& nUpper = newInterval->isFullSet() ? Range::Max : newInterval->getUpper();
+         auto sinkInterval = RangeRef(oldInterval->clone());
+         if((oLower == Range::Min) && (nLower != Range::Min))
          {
             sinkInterval = RangeRef(new Range(Regular, bw, nLower, oUpper));
          }
-         else
+         else if(nLower < oLower)
          {
-            const auto smin = std::min({oLower, nLower});
-            if(oLower != smin)
-            {
-               sinkInterval = RangeRef(new Range(Regular, bw, smin, oUpper));
-            }
+            sinkInterval = RangeRef(new Range(Regular, bw, nLower, oUpper));
          }
          if(!sinkInterval->isAnti())
          {
-            if((oUpper == Range::Max) && (nUpper == Range::Max))
+            if((oUpper == Range::Max) && (nUpper != Range::Max))
             {
                sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), nUpper));
             }
-            else
+            else if(oUpper < nUpper)
             {
-               const auto smax = std::max({oUpper, nUpper});
-               if(oUpper != smax)
-               {
-                  sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), smax));
-               }
+               sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), nUpper));
             }
          }
+         return sinkInterval;
       }
-      return sinkInterval;
+      return RangeRef(oldInterval->clone());
    };
 
    if(oldRange->isReal())
@@ -5315,13 +5346,17 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
       RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getSignificand()};
       for(auto i = 0; i < 3; ++i)
       {
-         newIntervals[i] = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         const auto narrow = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         //    THROW_ASSERT(oldIntervals[i]->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldIntervals[i]->ToString() + " < " + narrow->ToString());
+         newIntervals[i] = narrow;
       }
       op->getSink()->setRange(RangeRef(new RealRange(newIntervals[0], newIntervals[1], newIntervals[2])));
    }
    else
    {
-      op->getSink()->setRange(intervalNarrow(oldRange, newRange));
+      const auto narrow = intervalNarrow(oldRange, newRange);
+      //    THROW_ASSERT(oldRange->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldRange->ToString() + " < " + narrow->ToString());
+      op->getSink()->setRange(narrow);
    }
 
    const auto sinkRange = op->getSink()->getRange();
@@ -5422,7 +5457,7 @@ class ConstraintGraph : public NodeContainer
             if(meet(op, constantvector))
             {
                // I want to use it as a set, but I also want
-               // keep an order or insertions and removals.
+               // keep an order of insertions and removals.
                const auto& val = op->getSink()->getValue();
                actv.insert(val);
             }
@@ -7011,11 +7046,18 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       execution_mode(RA_EXEC_NORMAL)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+   if(!parameters->isOption(OPT_soft_float) || !parameters->getOption<bool>(OPT_soft_float))
+   {
+      enable_softfloat = false;
+   }
    const auto opts = SplitString(parameters->getOption<std::string>(OPT_range_analysis_mode), ",");
    CustomSet<std::string> ra_mode;
    for(const auto& opt : opts)
    {
-      ra_mode.insert(opt);
+      if(opt.size())
+      {
+         ra_mode.insert(opt);
+      }
    }
    if(ra_mode.erase("crop"))
    {
@@ -7078,7 +7120,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
    {
-      THROW_ASSERT(ra_mode.size() <= 2, "Too many options left to parse");
+      THROW_ASSERT(ra_mode.size() <= 2, "Too many range analysis options left to parse");
       auto it = ra_mode.begin();
       if(ra_mode.size() == 2)
       {
@@ -7110,6 +7152,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
    }
+#else
+   THROW_ASSERT(ra_mode.empty(), "Invalid range analysis mode falgs. (" + *ra_mode.begin() + ")");
 #endif
 }
 
@@ -7354,6 +7398,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      const auto dfm = design_flow_manager.lock();
       for(const auto& varNode : vars)
       {
 #ifndef NDEBUG
@@ -7363,7 +7408,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
             break;
          }
 #endif
-         if(const auto ut = varNode.second->updateIR(TM, tree_man
+         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm
 #ifndef NDEBUG
                                                      ,
                                                      debug_level, AppM
