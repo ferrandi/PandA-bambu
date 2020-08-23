@@ -635,6 +635,11 @@ namespace
          case gimple_assign_K:
          {
             auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+            if(tree_helper::CGetType(GET_CONST_NODE(ga->op0))->get_kind() == vector_type_K)
+            {
+               // Vector arithmetic not yet supported
+               return false;
+            }
             if(tree_helper::IsLoad(TM, stmt, FB->get_function_mem()))
             {
                Type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
