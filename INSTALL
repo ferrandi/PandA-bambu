@@ -120,7 +120,6 @@ Ubuntu 18.04 64bit:
 - gcc-5-multilib
 - gcc-6-multilib
 - gcc-7-multilib
-- gcc-7-multilib
 - g++-4.8-multilib
 - g++-5-multilib
 - g++-6-multilib
