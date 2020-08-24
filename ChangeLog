@@ -10,6 +10,7 @@ New features introduced:
 - Added support to AppImage bambu binary distribution (https://appimage.org/).
 - Added support to xc7z045-2ffg900-VVD device.
 - Improved and better integrated value range analysis.
+- Improved support to interface synthesis by allowing references in called functions.
 
 =========== PANDA 0.9.6 ===========
 Sat 11 January 2020, PandA release 0.9.6

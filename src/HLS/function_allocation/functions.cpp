@@ -32,7 +32,7 @@
  */
 /**
  * @file memory.cpp
- * @brief Datastructure to describe functions allocation in high-level synthesis
+ * @brief Data structure describing function allocation in high-level synthesis
  *
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
@@ -42,8 +42,14 @@
  *
  */
 #include "functions.hpp"
+#include "behavioral_helper.hpp"
+#include "constant_strings.hpp"
 #include "exceptions.hpp"
+#include "function_behavior.hpp"
+#include "hls_manager.hpp"
 #include "string_manipulation.hpp" //STR
+
+#include <boost/algorithm/string/predicate.hpp>
 
 functions::functions() = default;
 
@@ -101,4 +107,20 @@ unsigned int functions::get_proxy_mapping(const std::string& fun) const
 {
    THROW_ASSERT(proxied_functions.find(fun) != proxied_functions.end(), "this is not a proxy function");
    return proxied_functions.at(fun);
+}
+
+std::string functions::get_function_name_cleaned(const std::string& original_function_name)
+{
+   if(original_function_name.find(STR_CST_interface_parameter_keyword) != std::string::npos && boost::algorithm::ends_with(original_function_name, "_array"))
+   {
+      return original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword) + std::string(STR_CST_interface_parameter_keyword).length());
+   }
+   else
+      return original_function_name;
+}
+
+std::string functions::get_function_name_cleaned(unsigned int funID, const HLS_managerRef HLSMgr)
+{
+   const auto original_function_name = HLSMgr->CGetFunctionBehavior(funID)->CGetBehavioralHelper()->get_function_name();
+   return get_function_name_cleaned(original_function_name);
 }

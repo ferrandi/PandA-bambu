@@ -31,7 +31,7 @@
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  *
@@ -59,81 +59,85 @@
  *   WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  *
  */
-int
-__attribute__ ((noinline))  
+
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();
+
+int 
+__attribute__ ((noinline))
 decrypt (int statemt[32], int key[32], int type)
 {
-  int i;
-/*
-+--------------------------------------------------------------------------+
-| * Test Vector (added for CHStone)                                        |
-|     out_enc_statemt : expected output data for "decrypt"                 |
-+--------------------------------------------------------------------------+
-*/
-  const int out_dec_statemt[16] =
+   int i;
+   /*
+   +--------------------------------------------------------------------------+
+   | * Test Vector (added for CHStone)                                        |
+   |     out_enc_statemt : expected output data for "decrypt"                 |
+   +--------------------------------------------------------------------------+
+   */
+   const int out_dec_statemt[16] = 
     { 0x32, 0x43, 0xf6, 0xa8, 0x88, 0x5a, 0x30, 0x8d, 0x31, 0x31, 0x98, 0xa2,
     0xe0, 0x37, 0x7, 0x34
-  };
-  __builtin_bambu_time_start();
-  KeySchedule (type, key);
+    };
+   __builtin_bambu_time_start();
+   KeySchedule (type, key);
 
-  switch (type)
-    {
-    case 128128:
-      round = 10;
-      nb = 4;
-      break;
-    case 128192:
-    case 192192:
-      round = 12;
-      nb = 6;
-      break;
-    case 192128:
-      round = 12;
-      nb = 4;
-      break;
-    case 128256:
-    case 192256:
-      round = 14;
-      nb = 8;
-      break;
-    case 256128:
-      round = 14;
-      nb = 4;
-      break;
-    case 256192:
-      round = 14;
-      nb = 6;
-      break;
-    case 256256:
-      round = 14;
-      nb = 8;
-      break;
-    }
+   switch (type)
+   {
+      case 128128:
+         i_round = 10;
+         nb = 4;
+         break;
+      case 128192:
+      case 192192:
+         i_round = 12;
+         nb = 6;
+         break;
+      case 192128:
+         i_round = 12;
+         nb = 4;
+         break;
+      case 128256:
+      case 192256:
+         i_round = 14;
+         nb = 8;
+         break;
+      case 256128:
+         i_round = 14;
+         nb = 4;
+         break;
+      case 256192:
+         i_round = 14;
+         nb = 6;
+         break;
+      case 256256:
+         i_round = 14;
+         nb = 8;
+         break;
+   }
 
-  AddRoundKey (statemt, type, round);
+   AddRoundKey (statemt, type, i_round);
 
-  InversShiftRow_ByteSub (statemt, nb);
+   InversShiftRow_ByteSub (statemt, nb);
 
-  for (i = round - 1; i >= 1; --i)
-    {
+   for (i = i_round - 1; i >= 1; --i)
+   {
       AddRoundKey_InversMixColumn (statemt, nb, i);
       InversShiftRow_ByteSub (statemt, nb);
-    }
+   }
 
-  AddRoundKey (statemt, type, 0);
+   AddRoundKey (statemt, type, 0);
 
-  printf ("\ndecrypto message\t");
-  for (i = 0; i < ((type % 1000) / 8); ++i)
-    {
+   printf ("\ndecrypto message\t");
+   for (i = 0; i < ((type % 1000) / 8); ++i)
+   {
       if (statemt[i] < 16)
-	printf ("0");
+         printf ("0");
       printf ("%x", statemt[i]);
-    }
+   }
 
-  for (i = 0; i < 16; i++)
-    main_result += (statemt[i] != out_dec_statemt[i]);
+   for (i = 0; i < 16; i++)
+      main_result += (statemt[i] != out_dec_statemt[i]);
 
    __builtin_bambu_time_stop();
- return 0;
+   return 0;
 }

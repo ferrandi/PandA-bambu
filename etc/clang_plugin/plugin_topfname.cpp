@@ -143,7 +143,7 @@ namespace llvm
                   llvm::errs() << "Global defined in the libbambu library skipped: " << globalVar.getName() << "\n";
 #endif
                }
-               else if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(varName+",") == 0 || ExternSymbolsList.find(","+varName+",") != std::string::npos))
+               else if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(varName + ",") == 0 || ExternSymbolsList.find("," + varName + ",") != std::string::npos))
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "Global symbol that need to be externally visible: " << globalVar.getName() << "\n";
@@ -177,7 +177,7 @@ namespace llvm
 #if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
 #endif
-               if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(std::string(funName)+",") == 0 || ExternSymbolsList.find(","+std::string(funName)+",") != std::string::npos))
+               if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(std::string(funName) + ",") == 0 || ExternSymbolsList.find("," + std::string(funName) + ",") != std::string::npos))
                {
 #if PRINT_DBG_MSG
                   llvm::errs() << "Global symbol that need to be externally visible: " << globalVar.getName() << "\n";
@@ -219,13 +219,13 @@ namespace llvm
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)> XPass(CLANG_VERSION_STRING(_plugin_topfname), "Make all private/static but the top function", false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
 }
 
-#if ADD_RSP
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_topfname_Ox)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 #endif
