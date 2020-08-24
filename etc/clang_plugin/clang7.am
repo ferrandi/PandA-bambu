@@ -275,7 +275,7 @@ clang7_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp 
 	  $(I386_CLANG7_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang7_plugin_GepiCanon.o; \
 	fi;
 
-clang7_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+clang7_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/PtrIteratorSimplifyPass.hpp  $(top_srcdir)/etc/clang_plugin/ExpandMemOpsPass.hpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='  -fPIC $(I386_LLVM7_CXXFLAGS) $(WFLAGS) -I.'; \
