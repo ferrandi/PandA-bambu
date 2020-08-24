@@ -62,12 +62,12 @@
 
 #define DEBUG_CSROA
 
-STATISTIC(TotalAllocaBytes, "Total amount of aggregate bytes by alloca instructions");
-STATISTIC(TotalGlobalBytes, "Total amount of aggregate bytes by Global variables");
-STATISTIC(TotalOperandBytes, "Total amount of aggregate bytes as function operands");
-STATISTIC(DisaggregatedAllocaBytes, "Disaggregated amount of aggregate bytes by alloca instructions");
-STATISTIC(DisaggregatedGlobalBytes, "Disaggregated amount of aggregate bytes by Global variables");
-STATISTIC(DisaggregatedOperandBytes, "Disaggregated amount of aggregate bytes as function operands");
+static unsigned TotalAllocaBytes /*"Total amount of aggregate bytes by alloca instructions"*/;
+static unsigned TotalGlobalBytes /*"Total amount of aggregate bytes by Global variables"*/;
+static unsigned TotalOperandBytes /*"Total amount of aggregate bytes as function operands"*/;
+static unsigned DisaggregatedAllocaBytes /*"Disaggregated amount of aggregate bytes by alloca instructions"*/;
+static unsigned DisaggregatedGlobalBytes /*"Disaggregated amount of aggregate bytes by Global variables"*/;
+static unsigned DisaggregatedOperandBytes /*"Disaggregated amount of aggregate bytes as function operands"*/;
 
 #include "fpga_callbacks.hpp"
 
@@ -2042,7 +2042,8 @@ void expand_allocas(const std::set<llvm::Function*>& function_worklist,
             if(llvm::AllocaInst* alloca_inst = llvm::dyn_cast<llvm::AllocaInst>(&i))
             {
                if (alloca_inst->getAllocatedType()->isAggregateType()) {
-                  TotalAllocaBytes += DL.getTypeAllocSize(alloca_inst->getAllocatedType());
+                  auto  objType = alloca_inst->getAllocatedType();
+                  TotalAllocaBytes += DL.getTypeAllocSize(objType);
                }
 
                if(allocas_expandability_map.at(alloca_inst).expandability)
@@ -4448,6 +4449,7 @@ llvm::Function* get_top_function(llvm::Module& module, std::string top_name)
 
 bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 {
+   TotalAllocaBytes =  TotalGlobalBytes = TotalOperandBytes = DisaggregatedAllocaBytes = DisaggregatedGlobalBytes = DisaggregatedOperandBytes = 0;
    llvm::Function* kernel_function = get_top_function(module, kernel_name);
 #ifdef DEBUG_CSROA
    recorded_expanded_aggregates.clear();
