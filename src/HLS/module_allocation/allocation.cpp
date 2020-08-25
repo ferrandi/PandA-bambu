@@ -693,7 +693,8 @@ void allocation::BuildProxyFunctionVHDL(functional_unit* current_fu)
          if(port_name == START_PORT_NAME)
             VHDL_description = VHDL_description + fix_identifier(PROXY_PREFIX + port_name, writer) + " <= " + fix_identifier(port_name, writer) + ";";
          else if(fu_module->find_member(PROXY_PREFIX + port_name, port_o_K, top))
-            VHDL_description = VHDL_description + fix_identifier(PROXY_PREFIX + port_name, writer) + " <= " + fix_identifier(port_name, writer) + " when (" + sel_guard + ") else " + (GET_TYPE_SIZE(curr_port) == 1 ? "'0'" : "(others => '0')") + ";";
+            VHDL_description = VHDL_description + fix_identifier(PROXY_PREFIX + port_name, writer) + " <= " + fix_identifier(port_name, writer) + " when (" + sel_guard + ") else " +
+                               (curr_port->get_typeRef()->type == structural_type_descriptor::BOOL ? "'0'" : "(others => '0')") + ";";
       }
    }
    for(unsigned int currentPort = 0; currentPort < outPortSize; ++currentPort)

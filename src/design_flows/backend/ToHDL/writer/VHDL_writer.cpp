@@ -781,7 +781,12 @@ void VHDL_writer::write_port_binding(const structural_objectRef& port, const str
    }
    else if(port->get_typeRef()->type == object_bounded->get_typeRef()->type or object_bounded->get_typeRef()->type == structural_type_descriptor::BOOL)
    {
-      indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_id()));
+      if(object_bounded->get_kind() == port_o_K && object_bounded->get_owner()->get_kind() == port_vector_o_K)
+      {
+         indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_owner()->get_id()) + may_slice_string(object_bounded));
+      }
+      else
+         indented_output_stream->Append(HDL_manager::convert_to_identifier(this, object_bounded->get_id()));
    }
    else
    {
