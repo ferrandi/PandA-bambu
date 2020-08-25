@@ -97,6 +97,7 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disag
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining>> XPassWI(CLANG_VERSION_STRING(_plugin_CSROA) "WI", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -140,7 +141,6 @@ static void loadPassLate(const llvm::PassManagerBuilder&, llvm::legacy::PassMana
    PM.add(llvm::createSimpleLoopUnrollPass());
 }
 
-#if ADD_RSP
 // These constructors add our pass to a list of global extensions.
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxFVD)(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPass);
 static llvm::RegisterStandardPasses CLANG_VERSION_SYMBOL(_plugin_CSROA_OxIW)(llvm::PassManagerBuilder::EP_OptimizerLast, loadPassLate);

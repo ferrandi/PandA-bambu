@@ -62,6 +62,8 @@
 #include "design_flow_manager.hpp"
 #include "function_frontend_flow_step.hpp"
 
+#include "dead_code_elimination.hpp"
+
 /// HLS include
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
@@ -633,6 +635,11 @@ namespace
          case gimple_assign_K:
          {
             auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
+            if(tree_helper::CGetType(GET_CONST_NODE(ga->op0))->get_kind() == vector_type_K)
+            {
+               // Vector arithmetic not yet supported
+               return false;
+            }
             if(tree_helper::IsLoad(TM, stmt, FB->get_function_mem()))
             {
                Type = tree_helper::CGetType(GET_CONST_NODE(ga->op0));
@@ -1222,7 +1229,7 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
-   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                 ,
                 int debug_level, application_managerRef AppM
@@ -1260,7 +1267,7 @@ void VarNode::init(bool outside)
    }
 }
 
-int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man
+int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
 #ifndef NDEBUG
                       ,
                       int debug_level, application_managerRef AppM
@@ -1490,6 +1497,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                      auto bb = sl->list_of_bloc.at(ga->bb_index);
                      bb->RemoveStmt(def);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + ga->ToString());
+                     dead_code_elimination::fix_sdc_motion(design_flow_manager, function_id, def);
 #ifndef NDEBUG
                      AppM->RegisterTransformation("RangeAnalysis", def);
 #endif
@@ -3587,7 +3595,7 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
          RETURN_DISABLED_OPTION(or, bw);
          return op1->Or(op2);
       case bit_xor_expr_K:
-         RETURN_DISABLED_OPTION (xor, bw);
+         RETURN_DISABLED_OPTION(xor, bw);
          return op1->Xor(op2);
       case uneq_expr_K:
       case eq_expr_K:
@@ -5115,7 +5123,13 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
 
             if(newLower > oldLower || newUpper < oldUpper)
             {
-               return RangeRef(new Range(Anti, bw, newLower > oldLower ? nlconstant : oldLower, newUpper < oldUpper ? nuconstant : oldUpper));
+               const auto& l = newLower > oldLower ? nlconstant : oldLower;
+               const auto& u = newUpper < oldUpper ? nuconstant : oldUpper;
+               if(l > u)
+               {
+                  return RangeRef(new Range(Regular, bw));
+               }
+               return RangeRef(new Range(Anti, bw, l, u));
             }
          }
          else
@@ -5124,6 +5138,10 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
             if(!oldInterval->isUnknown() && oldInterval->isFullSet() && newInterval->isAnti())
             {
                return RangeRef(oldInterval->clone());
+            }
+            if(oldInterval->isRegular() && newInterval->isAnti())
+            {
+               return oldInterval->unionWith(newInterval);
             }
             return RangeRef(newInterval->clone());
          }
@@ -5163,7 +5181,9 @@ bool Meet::widen(OpNode* op, const std::vector<APInt>& constantvector)
    }
    else
    {
-      op->getSink()->setRange(intervalWiden(oldRange, newRange));
+      const auto widen = intervalWiden(oldRange, newRange);
+      //    THROW_ASSERT(oldRange->getSpan() <= widen->getSpan(), "Widening should produce bigger range: " + oldRange->ToString() + " > " + widen->ToString());
+      op->getSink()->setRange(widen);
    }
 
    const auto sinkRange = op->getSink()->getRange();
@@ -5240,29 +5260,81 @@ bool Meet::growth(OpNode* op)
 /// analysis expands the bounds of each variable, regardless of intersections
 /// in the constraint graph, the cropping analysis shrinks these bounds back
 /// to ranges that respect the intersections.
-bool Meet::narrow(OpNode* op, const std::vector<APInt>& /* constantvector */)
+bool Meet::narrow(OpNode* op, const std::vector<APInt>& constantvector)
 {
    const auto oldRange = op->getSink()->getRange();
    const auto newRange = op->eval();
 
    auto intervalNarrow = [&](RangeConstRef oldInterval, RangeConstRef newInterval) {
-      RangeRef sinkInterval(oldInterval->clone());
+      if(newInterval->isConstant())
+      {
+         return RangeRef(newInterval->clone());
+      }
+      const auto bw = oldInterval->getBitWidth();
       if(oldInterval->isAnti() || newInterval->isAnti() || oldInterval->isEmpty() || newInterval->isEmpty())
       {
          if(oldInterval->isAnti() && newInterval->isAnti() && !newInterval->isSameRange(oldInterval))
          {
-            return oldInterval->intersectWith(newInterval);
+            const auto oldAnti = oldInterval->getAnti();
+            const auto newAnti = newInterval->getAnti();
+            const auto& oldLower = oldAnti->getLower();
+            const auto& oldUpper = oldAnti->getUpper();
+            const auto& newLower = newAnti->getLower();
+            const auto& newUpper = newAnti->getUpper();
+            const auto& nlconstant = getFirstGreaterFromVector(constantvector, newLower);
+            const auto& nuconstant = getFirstLessFromVector(constantvector, newUpper);
+
+            if(oldLower < nlconstant && oldUpper > nuconstant)
+            {
+               if(nlconstant <= nuconstant)
+               {
+                  return RangeRef(new Range(Anti, bw, nlconstant, nuconstant));
+               }
+               return RangeRef(new Range(Regular, bw));
+            }
+            if(oldLower < nlconstant)
+            {
+               return RangeRef(new Range(Anti, bw, nlconstant, oldUpper));
+            }
+            if(oldUpper > nuconstant)
+            {
+               return RangeRef(new Range(Anti, bw, oldLower, nuconstant));
+            }
          }
          else if(newInterval->isUnknown() || !newInterval->isFullSet())
          {
-            sinkInterval = RangeRef(newInterval->clone());
+            return RangeRef(newInterval->clone());
          }
       }
       else
       {
-         return oldInterval->intersectWith(newInterval);
+         const auto& oLower = oldInterval->isFullSet() ? Range::Min : oldInterval->getLower();
+         const auto& oUpper = oldInterval->isFullSet() ? Range::Max : oldInterval->getUpper();
+         const auto& nLower = newInterval->isFullSet() ? Range::Min : newInterval->getLower();
+         const auto& nUpper = newInterval->isFullSet() ? Range::Max : newInterval->getUpper();
+         auto sinkInterval = RangeRef(oldInterval->clone());
+         if((oLower == Range::Min) && (nLower != Range::Min))
+         {
+            sinkInterval = RangeRef(new Range(Regular, bw, nLower, oUpper));
+         }
+         else if(nLower < oLower)
+         {
+            sinkInterval = RangeRef(new Range(Regular, bw, nLower, oUpper));
+         }
+         if(!sinkInterval->isAnti())
+         {
+            if((oUpper == Range::Max) && (nUpper != Range::Max))
+            {
+               sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), nUpper));
+            }
+            else if(oUpper < nUpper)
+            {
+               sinkInterval = RangeRef(new Range(Regular, bw, sinkInterval->getLower(), nUpper));
+            }
+         }
+         return sinkInterval;
       }
-      return sinkInterval;
+      return RangeRef(oldInterval->clone());
    };
 
    if(oldRange->isReal())
@@ -5274,13 +5346,17 @@ bool Meet::narrow(OpNode* op, const std::vector<APInt>& /* constantvector */)
       RangeConstRef newIntervals[] = {newRR->getSign(), newRR->getExponent(), newRR->getSignificand()};
       for(auto i = 0; i < 3; ++i)
       {
-         newIntervals[i] = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         const auto narrow = intervalNarrow(oldIntervals[i], newIntervals[i]);
+         //    THROW_ASSERT(oldIntervals[i]->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldIntervals[i]->ToString() + " < " + narrow->ToString());
+         newIntervals[i] = narrow;
       }
       op->getSink()->setRange(RangeRef(new RealRange(newIntervals[0], newIntervals[1], newIntervals[2])));
    }
    else
    {
-      op->getSink()->setRange(intervalNarrow(oldRange, newRange));
+      const auto narrow = intervalNarrow(oldRange, newRange);
+      //    THROW_ASSERT(oldRange->getSpan() >= narrow->getSpan(), "Narrowing should produce smaller range: " + oldRange->ToString() + " < " + narrow->ToString());
+      op->getSink()->setRange(narrow);
    }
 
    const auto sinkRange = op->getSink()->getRange();
@@ -6978,7 +7054,10 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    CustomSet<std::string> ra_mode;
    for(const auto& opt : opts)
    {
-      ra_mode.insert(opt);
+      if(opt.size())
+      {
+         ra_mode.insert(opt);
+      }
    }
    if(ra_mode.erase("crop"))
    {
@@ -7041,7 +7120,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, bit_phi);
    if(ra_mode.size() && ra_mode.begin()->size())
    {
-      THROW_ASSERT(ra_mode.size() <= 2, "Too many options left to parse");
+      THROW_ASSERT(ra_mode.size() <= 2, "Too many range analysis options left to parse");
       auto it = ra_mode.begin();
       if(ra_mode.size() == 2)
       {
@@ -7073,6 +7152,8 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: only " + STR(stop_iteration) + " iteration" + (stop_iteration > 1 ? "s" : "") + " will run");
    }
+#else
+   THROW_ASSERT(ra_mode.empty(), "Invalid range analysis mode falgs. (" + *ra_mode.begin() + ")");
 #endif
 }
 
@@ -7317,6 +7398,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Bounds for " + STR(vars.size()) + " variables");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      const auto dfm = design_flow_manager.lock();
       for(const auto& varNode : vars)
       {
 #ifndef NDEBUG
@@ -7326,7 +7408,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
             break;
          }
 #endif
-         if(const auto ut = varNode.second->updateIR(TM, tree_man
+         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm
 #ifndef NDEBUG
                                                      ,
                                                      debug_level, AppM

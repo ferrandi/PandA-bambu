@@ -74,7 +74,7 @@ enum mask_type : uint8_t
    mt_Significand = 4,
    mt_Bitmask = 8
 };
-struct MaskInfo 
+struct MaskInfo
 {
    uint8_t mt;
    bool sign;
@@ -82,7 +82,7 @@ struct MaskInfo
    int16_t max_exp;
    uint8_t significand_bits;
    uint64_t bitmask;
-   
+
    MaskInfo& operator|=(const MaskInfo& rhs)
    {
       mt |= rhs.mt;
@@ -186,8 +186,7 @@ namespace clang
             auto maskInfoIT = HLS_maskMap.find(funArgPair.first);
             if(maskInfoIT != HLS_maskMap.end())
             {
-               auto pushMaskInfoAttributes = [] (const MaskInfo& maskInfo, llvm::raw_fd_ostream& str)
-               {
+               auto pushMaskInfoAttributes = [](const MaskInfo& maskInfo, llvm::raw_fd_ostream& str) {
                   if(maskInfo.mt != mt_Invalid)
                   {
                      if(maskInfo.mt & mt_Sign)
@@ -209,7 +208,7 @@ namespace clang
                   }
                };
                const auto& maskInfos = maskInfoIT->second;
-               
+
                stream << "  <function id=\"" << funArgPair.first << "\"";
                pushMaskInfoAttributes(maskInfos.back(), stream);
                stream << ">\n";
@@ -286,7 +285,7 @@ namespace clang
          for(auto function : Fun2Params)
          {
             std::string function_name = function.first;
-            std::string is_pipelined = "no";            
+            std::string is_pipelined = "no";
             std::string simple_pipeline = "no";
             std::string initiation_time = "1";
             if(HLS_pipelineSet.find(function_name) != HLS_pipelineSet.end())
@@ -422,8 +421,7 @@ namespace clang
             }
          }
 
-         auto maskInfoParser = [&](MaskInfo& userMaskInfo, clang::QualType argType)
-         {
+         auto maskInfoParser = [&](MaskInfo& userMaskInfo, clang::QualType argType) {
             if(userMaskInfo.mt == mt_Invalid)
             {
                return;
@@ -1103,7 +1101,6 @@ namespace clang
          {
             auto& SM = PP.getSourceManager();
             auto filename = SM.getPresumedLoc(loc, false).getFilename();
-            auto maskInfo = HLS_mask_PragmaMap[filename].find(loc);
             HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Bitmask, false, 0, 0, 0, mask});
          }
          else if(index == 4)
@@ -1112,17 +1109,14 @@ namespace clang
             auto filename = SM.getPresumedLoc(loc, false).getFilename();
             if(mask == 1)
             {
-               auto maskInfo = HLS_mask_PragmaMap[filename].find(loc);
                HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Sign, sign, 0, 0, 0, 0});
             }
             else if(mask == 2)
             {
-               auto maskInfo = HLS_mask_PragmaMap[filename].find(loc);
                HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Exponent, false, exp_l, exp_u, 0, 0});
             }
             else if(mask == 4)
             {
-               auto maskInfo = HLS_mask_PragmaMap[filename].find(loc);
                HLS_mask_PragmaMap[filename][loc] = std::make_pair(par, (MaskInfo){mt_Significand, false, 0, 0, s_bits, 0});
             }
          }
@@ -1155,7 +1149,7 @@ namespace clang
          auto loc = PragmaTok.getLocation();
          auto& SM = PP.getSourceManager();
          auto filename = SM.getPresumedLoc(loc, false).getFilename();
-         int index = 0;
+
          while(Tok.isNot(tok::eod))
          {
             PP.Lex(Tok);
