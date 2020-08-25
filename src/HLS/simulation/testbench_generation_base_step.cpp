@@ -276,7 +276,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "#endif\n");
    PP(os, "\n");
    PP(os, "\n");
-   PP(os, "#define SIMULATION_MAX " + STR(2 * parameters->getOption<int>(OPT_max_sim_cycles)) + "ULL\n\n");
+   PP(os, "#define SIMULATION_MAX " + STR(2 * parameters->getOption<long long int>(OPT_max_sim_cycles)) + "ULL\n\n");
    PP(os, "static vluint64_t CLOCK_PERIOD = 1000*" + boost::lexical_cast<std::string>(target_period) + ";\n");
    PP(os, "static vluint64_t HALF_CLOCK_PERIOD = CLOCK_PERIOD/2;\n");
    PP(os, "\n");
@@ -318,7 +318,7 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
    PP(os, "     cycleCounter++;\n");
    PP(os, "   }\n");
    PP(os, "if(cycleCounter>=SIMULATION_MAX)\n");
-   PP(os, "  std::cerr << \"Simulation not completed into " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + " cycles\\n\";\n");
+   PP(os, "  std::cerr << \"Simulation not completed into " + STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + " cycles\\n\";\n");
    PP(os, "#if VM_TRACE\n");
    PP(os, "   if (tfp) tfp->dump (main_time);\n");
    PP(os, "#endif\n");
@@ -477,7 +477,15 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          }
          if(!portInst)
          {
+            portInst = mod->find_member("s_axis_" + par + "_TDATA", port_o_K, cir);
+         }
+         if(!portInst)
+         {
             portInst = mod->find_member(par + "_din", port_o_K, cir);
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member("m_axis_" + par + "_TDATA", port_o_K, cir);
          }
          if(!portInst)
          {
@@ -632,26 +640,34 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
          if(InterfaceType == port_o::port_interface::PI_WNONE)
          {
-            auto port_vld = mod->find_member(portInst->get_id() + "_vld", port_o_K, cir);
+            auto port_name = portInst->get_id();
+            auto port_vld = mod->find_member(port_name + "_vld", port_o_K, cir);
             auto has_valid = port_vld && GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WVALID;
             if(!port_vld)
             {
-               auto port_name = portInst->get_id();
                auto terminate = port_name.size() > 4 ? port_name.size() - std::string("_din").size() : 0;
                if(port_name.substr(terminate) == "_din")
                {
                   port_vld = mod->find_member(port_name.substr(0, terminate) + "_write", port_o_K, cir);
                   has_valid = port_vld && GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_WRITE;
                }
+               else
+               {
+                  terminate = port_name.size() > 6 ? port_name.size() - std::string("_TDATA").size() : 0;
+                  if(port_name.substr(terminate) == "_TDATA")
+                  {
+                     port_vld = mod->find_member(port_name.substr(0, terminate) + "_TVALID", port_o_K, cir);
+                     has_valid = port_vld && GetPointer<port_o>(port_vld)->get_port_interface() == port_o::port_interface::PI_M_AXIS_TVALID;
+                  }
+               }
             }
-            auto orig_name = portInst->get_id();
             writer->write("always @(negedge " + std::string(CLOCK_PORT_NAME) + ")\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
             writer->write("if (" + (has_valid ? port_vld->get_id() : DONE_PORT_NAME) + " == 1)\n");
             writer->write(STR(STD_OPENING_CHAR));
             writer->write("begin\n");
-            writer->write("registered_" + orig_name + " <= " + orig_name + ";\n");
+            writer->write("registered_" + port_name + " <= " + port_name + ";\n");
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
             writer->write(STR(STD_CLOSING_CHAR));
@@ -682,7 +698,15 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          }
          if(!portInst)
          {
+            portInst = mod->find_member("s_axis_" + par + "_TDATA", port_o_K, cir);
+         }
+         if(!portInst)
+         {
             portInst = mod->find_member(par + "_din", port_o_K, cir);
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member("m_axis_" + par + "_TDATA", port_o_K, cir);
          }
          if(!portInst)
          {
@@ -1544,7 +1568,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
 
    writer->write("`timescale 1ns / 1ps\n");
    writer->write_comment("CONSTANTS DECLARATION\n");
-   writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " + STR(parameters->getOption<int>(OPT_max_sim_cycles)) + "\n\n");
+   writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " + STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + "\n\n");
    std::string half_target_period_string = STR(target_period / 2);
    // If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
    if(half_target_period_string.find(".") == std::string::npos)
@@ -1688,7 +1712,15 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          }
          if(!portInst)
          {
+            portInst = mod->find_member("s_axis_" + par + "_TDATA", port_o_K, cir);
+         }
+         if(!portInst)
+         {
             portInst = mod->find_member(par + "_din", port_o_K, cir);
+         }
+         if(!portInst)
+         {
+            portInst = mod->find_member("m_axis_" + par + "_TDATA", port_o_K, cir);
          }
          if(!portInst)
          {

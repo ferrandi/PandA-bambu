@@ -217,7 +217,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                {
                   auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
                   THROW_ASSERT(p, "unexpected condition");
-                  portsToConstant.insert(p);
+                  bool is_direct = interfaceType == "m_axi" && HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
+                                   HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute2.find(fname)->second.end() &&
+                                   HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string)->second == "direct";
+                  if(!is_direct)
+                     portsToConstant.insert(p);
                   param_renamed.insert(argName_string);
                }
                else
@@ -758,6 +762,14 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                THROW_ASSERT(GetPointer<port_o>(int_port)->get_port_direction() == port_o::port_direction::OUT, "unexpected condition");
             }
+            else if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_M_AXI_OFF)
+            {
+               portsToConstant.insert(int_port);
+            }
+            else if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_M_AXI_DIRECT)
+            {
+               portsToConstant.insert(int_port);
+            }
             else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
                THROW_ERROR("not yet supported port interface");
          }
@@ -836,6 +848,40 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
                               THROW_ASSERT(int_port, "unexpected condition");
                               portsToSkip.insert(int_port);
+                           }
+                        }
+                        else
+                        {
+                           /// check if we have axis master interface
+                           int_port = wrappedObj->find_member("_m_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                           if(int_port)
+                           {
+                              if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE)
+                              {
+                                 int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+                                 THROW_ASSERT(int_port, "unexpected condition");
+                                 portsToSkip.insert(int_port);
+                              }
+                           }
+                           else
+                           {
+                              /// check if we have axis slave interface
+                              int_port = wrappedObj->find_member("_s_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                              if(int_port)
+                              {
+                                 if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE)
+                                 {
+                                    portsToSkip.insert(int_port);
+                                    if(port_in->get_kind() == port_vector_o_K)
+                                       ext_port = SM_minimal_interface->add_port_vector("s_axis_" + port_name + "_TDATA", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                                    else
+                                       ext_port = SM_minimal_interface->add_port("s_axis_" + port_name + "_TDATA", port_o::IN, interfaceObj, int_port->get_typeRef());
+                                    port_o::fix_port_properties(int_port, ext_port);
+                                    SM_minimal_interface->add_connection(int_port, ext_port);
+                                 }
+                                 else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+                                    THROW_ERROR("not yet supported port interface");
+                              }
                            }
                         }
                      }
@@ -964,11 +1010,20 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       auto port_name = GetPointer<port_o>(port_out)->get_id();
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
-         if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WVALID ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_READ ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_ADDRESS ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_CHIPENABLE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITEENABLE ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_DOUT)
+         auto check_interfaces = [&](std::set<port_o::port_interface> interfList) -> bool { return interfList.find(GetPointer<port_o>(port_out)->get_port_interface()) != interfList.end(); };
+         if(check_interfaces({port_o::port_interface::PI_WNONE,        port_o::port_interface::PI_WVALID,     port_o::port_interface::PI_RACK,        port_o::port_interface::PI_READ,        port_o::port_interface::PI_WRITE,
+                              port_o::port_interface::PI_ADDRESS,      port_o::port_interface::PI_CHIPENABLE, port_o::port_interface::PI_WRITEENABLE, port_o::port_interface::PI_DOUT,        port_o::port_interface::M_AXI_AWVALID,
+                              port_o::port_interface::M_AXI_AWADDR,    port_o::port_interface::M_AXI_AWID,    port_o::port_interface::M_AXI_AWLEN,    port_o::port_interface::M_AXI_AWSIZE,   port_o::port_interface::M_AXI_AWBURST,
+                              port_o::port_interface::M_AXI_AWLOCK,    port_o::port_interface::M_AXI_AWCACHE, port_o::port_interface::M_AXI_AWPROT,   port_o::port_interface::M_AXI_AWQOS,    port_o::port_interface::M_AXI_AWREGION,
+                              port_o::port_interface::M_AXI_AWUSER,    port_o::port_interface::M_AXI_WVALID,  port_o::port_interface::M_AXI_WDATA,    port_o::port_interface::M_AXI_WSTRB,    port_o::port_interface::M_AXI_WLAST,
+                              port_o::port_interface::M_AXI_WID,       port_o::port_interface::M_AXI_WUSER,   port_o::port_interface::M_AXI_ARVALID,  port_o::port_interface::M_AXI_ARADDR,   port_o::port_interface::M_AXI_ARID,
+                              port_o::port_interface::M_AXI_ARLEN,     port_o::port_interface::M_AXI_ARSIZE,  port_o::port_interface::M_AXI_ARBURST,  port_o::port_interface::M_AXI_ARLOCK,   port_o::port_interface::M_AXI_ARCACHE,
+                              port_o::port_interface::M_AXI_ARPROT,    port_o::port_interface::M_AXI_ARQOS,   port_o::port_interface::M_AXI_ARREGION, port_o::port_interface::M_AXI_ARUSER,   port_o::port_interface::M_AXI_RREADY,
+                              port_o::port_interface::M_AXI_BREADY,    port_o::port_interface::M_AXI_BUSER,   port_o::port_interface::S_AXIL_AWVALID, port_o::port_interface::S_AXIL_AWREADY, port_o::port_interface::S_AXIL_AWADDR,
+                              port_o::port_interface::S_AXIL_WVALID,   port_o::port_interface::S_AXIL_WREADY, port_o::port_interface::S_AXIL_WDATA,   port_o::port_interface::S_AXIL_WSTRB,   port_o::port_interface::S_AXIL_ARVALID,
+                              port_o::port_interface::S_AXIL_ARREADY,  port_o::port_interface::S_AXIL_ARADDR, port_o::port_interface::S_AXIL_RVALID,  port_o::port_interface::S_AXIL_RREADY,  port_o::port_interface::S_AXIL_RDATA,
+                              port_o::port_interface::S_AXIL_RRESP,    port_o::port_interface::S_AXIL_BVALID, port_o::port_interface::S_AXIL_BREADY,  port_o::port_interface::S_AXIL_BRESP,   port_o::port_interface::PI_S_AXIS_TREADY,
+                              port_o::port_interface::PI_M_AXIS_TVALID}))
          {
             portsToSkip.insert(port_out);
             std::string ext_name = port_name[0] == '_' ? port_name.substr(1) : port_name;
@@ -984,7 +1039,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             SM_minimal_interface->add_connection(port_out, ext_port);
          }
          else
-            THROW_ERROR("not yet supported port interface");
+            THROW_ERROR("not yet supported port interface" + STR(GetPointer<port_o>(port_out)->get_port_interface()));
       }
       if(portsToSkip.find(port_out) == portsToSkip.end() && portsToConnect.find(port_out) == portsToConnect.end() && portsToSigConnect.find(port_out) == portsToSigConnect.end())
       {

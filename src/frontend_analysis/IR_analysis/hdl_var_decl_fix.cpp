@@ -134,6 +134,20 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
                HLSMgr->design_interface_arraysize.find(fname)->second.erase(dia_it);
                HLSMgr->design_interface_arraysize.find(fname)->second[argName_string_new] = dia_value;
             }
+            if(HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() && HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute2.find(fname)->second.end())
+            {
+               auto dia_it = HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string);
+               auto dia_value = dia_it->second;
+               HLSMgr->design_interface_attribute2.find(fname)->second.erase(dia_it);
+               HLSMgr->design_interface_attribute2.find(fname)->second[argName_string_new] = dia_value;
+            }
+            if(HLSMgr->design_interface_attribute3.find(fname) != HLSMgr->design_interface_attribute3.end() && HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute3.find(fname)->second.end())
+            {
+               auto dia_it = HLSMgr->design_interface_attribute3.find(fname)->second.find(argName_string);
+               auto dia_value = dia_it->second;
+               HLSMgr->design_interface_attribute3.find(fname)->second.erase(dia_it);
+               HLSMgr->design_interface_attribute3.find(fname)->second[argName_string_new] = dia_value;
+            }
             auto dit_it = HLSMgr->design_interface_typename.find(fname)->second.find(argName_string);
             auto dit_value = dit_it->second;
             HLSMgr->design_interface_typename.find(fname)->second.erase(dit_it);
