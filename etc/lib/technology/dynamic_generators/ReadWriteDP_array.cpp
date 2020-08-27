@@ -53,7 +53,7 @@ if(_np_in==9)
 
 unsigned int log2nbyte= _ports_out[1].alignment==1 ? 0 : (32u-static_cast<unsigned>(__builtin_clz(_ports_out[1].alignment-1)));
 
-auto addressMaxValue=_ports_out[1].alignment*boost::lexical_cast<unsigned>(_specializing_string)-1;
+auto addressMaxValue=_ports_out[1].alignment*static_cast<unsigned>(std::stoi(_specializing_string))-1;
 unsigned int nbitAddress= addressMaxValue == 1 ? 1 : (32u-static_cast<unsigned>(__builtin_clz(addressMaxValue)));
 
 if(log2nbyte>0)
