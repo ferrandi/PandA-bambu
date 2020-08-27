@@ -3595,7 +3595,7 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
          RETURN_DISABLED_OPTION(or, bw);
          return op1->Or(op2);
       case bit_xor_expr_K:
-         RETURN_DISABLED_OPTION(xor, bw);
+         RETURN_DISABLED_OPTION (xor, bw);
          return op1->Xor(op2);
       case uneq_expr_K:
       case eq_expr_K:

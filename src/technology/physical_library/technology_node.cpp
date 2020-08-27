@@ -298,7 +298,8 @@ void operation::lef_write(std::ofstream&, const simple_indentRef)
 void operation::print(std::ostream& os) const
 {
    os << " [OP: " << operation_name << " " << (time_m ? STR(time_m->get_execution_time()) : "(n.a.)") << " " << (time_m ? STR(time_m->get_initiation_time()) : "(n.a.)") << " ";
-   os << (commutative ? " true" : " false") << "]";
+   os << (commutative ? " commutative" : " non-commutative");
+   os << (bounded ? " bounded" : " unbounded") << "]";
 }
 
 bool operation::is_type_supported(std::string type_name) const
