@@ -53,9 +53,9 @@
 #include "clang/Sema/Sema.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include <boost/algorithm/string/predicate.hpp>
 #include <cstdlib>
 #include <iostream>
-#include <boost/algorithm/string/predicate.hpp>
 
 static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMap;
 static std::map<std::string, std::map<clang::SourceLocation, std::pair<std::string, std::string>>> HLS_interface_PragmaMapArraySize;
@@ -620,7 +620,7 @@ namespace clang
                      {
                         attribute3 = interface_PragmaMapAttribute3.find(parName)->second;
                         UDIT_attribute3_p = true;
-                  }
+                     }
                   }
                   auto argType = ND->getType();
                   // argType->dump (llvm::errs() );
@@ -646,7 +646,8 @@ namespace clang
                      }
                      if(UDIT_p)
                      {
-                        if(UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType.find("array") == std::string::npos && UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" && UserDefinedInterfaceType != "axis" )
+                        if(UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType.find("array") == std::string::npos && UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" &&
+                           UserDefinedInterfaceType != "axis")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of constant array type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
@@ -679,7 +680,7 @@ namespace clang
                      if(UDIT_p)
                      {
                         if(UserDefinedInterfaceType != "none" && UserDefinedInterfaceType != "none_registered" && UserDefinedInterfaceType != "handshake" && UserDefinedInterfaceType != "valid" && UserDefinedInterfaceType != "ovalid" &&
-                           UserDefinedInterfaceType != "acknowledge" && UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" && UserDefinedInterfaceType != "axis" )
+                           UserDefinedInterfaceType != "acknowledge" && UserDefinedInterfaceType != "fifo" && UserDefinedInterfaceType != "bus" && UserDefinedInterfaceType != "m_axi" && UserDefinedInterfaceType != "axis")
                         {
                            DiagnosticsEngine& D = CI.getDiagnostics();
                            D.Report(D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface non-consistent with parameter of pointer type, where user defined interface is: %0")).AddString(UserDefinedInterfaceType);
@@ -881,7 +882,8 @@ namespace clang
                   auto tokString = PP.getSpelling(Tok);
                   if(index == 1)
                   {
-                     if(tokString != "none" && tokString != "none_registered" && tokString != "array" && tokString != "bus" && tokString != "fifo" && tokString != "handshake" && tokString != "valid" && tokString != "ovalid" && tokString != "acknowledge" && tokString != "m_axi" && tokString != "axis")
+                     if(tokString != "none" && tokString != "none_registered" && tokString != "array" && tokString != "bus" && tokString != "fifo" && tokString != "handshake" && tokString != "valid" && tokString != "ovalid" && tokString != "acknowledge" &&
+                        tokString != "m_axi" && tokString != "axis")
                      {
                         DiagnosticsEngine& D = PP.getDiagnostics();
                         unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface unexpected interface type. Currently accepted keywords are: none,none_registered,array,bus,fifo,handshake,valid,ovalid,acknowledge");
@@ -898,14 +900,14 @@ namespace clang
                         D.Report(PragmaTok.getLocation(), ID);
                      }
                      if(interface == "array")
-                     ArraySize = tokString;
+                        ArraySize = tokString;
                      else if(interface == "m_axi" && tokString == "bundle")
                      {
                         bundle_p = true;
-                  }
+                     }
                      else if(interface == "m_axi")
                         Attribute2 = tokString;
-               }
+                  }
                   else if(index == 3)
                   {
                      if(interface == "m_axi" && tokString == "=" && bundle_p)
@@ -933,7 +935,6 @@ namespace clang
                         unsigned ID = D.getCustomDiagID(DiagnosticsEngine::Error, "#pragma HLS_interface malformed2");
                         D.Report(PragmaTok.getLocation(), ID);
                      }
-
                   }
                   else if(index == 5)
                   {
@@ -1164,7 +1165,7 @@ namespace clang
          HLS_simple_pipeline_PragmaMap[filename].push_back(loc);
       }
    };
-   
+
    class HLS_stallable_pipeline_PragmaHandler : public PragmaHandler
    {
     public:
@@ -1214,8 +1215,8 @@ namespace clang
          }
          HLS_pipeline_PragmaMap[filename].push_back(loc);
          HLS_stallable_pipeline_PragmaMap[filename][loc] = time;
-       }
-    };
+      }
+   };
 
    class CLANG_VERSION_SYMBOL(_plugin_ASTAnalyzer) : public PluginASTAction
    {
