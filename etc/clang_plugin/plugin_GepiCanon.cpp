@@ -80,17 +80,17 @@ namespace llvm
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "COL";
          else if(OPT_SELECTION == SROA_bitcastVectorRemoval)
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR";
- 	 else if(OPT_SELECTION == SROA_removeLifetime)
+         else if(OPT_SELECTION == SROA_removeLifetime)
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "LTR";
-	 else if(OPT_SELECTION == SROA_selectLowering) 
-	    return CLANG_VERSION_STRING(_plugin_GepiCanon) "SL";
-	 else if(OPT_SELECTION == SROA_canonicalIdxs) 
+         else if(OPT_SELECTION == SROA_selectLowering)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "SL";
+         else if(OPT_SELECTION == SROA_canonicalIdxs)
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "CIDX";
-	 else if(OPT_SELECTION == SROA_cleanLCSSA) 
+         else if(OPT_SELECTION == SROA_cleanLCSSA)
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "CLCSSA";
-	 else if(OPT_SELECTION == SROA_gepiExplicitation) 
-	    return CLANG_VERSION_STRING(_plugin_GepiCanon) "GEXP";
-	 else if(OPT_SELECTION == SROA_codeSimplification) 
+         else if(OPT_SELECTION == SROA_gepiExplicitation)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "GEXP";
+         else if(OPT_SELECTION == SROA_codeSimplification)
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "CSIMPL";
       }
    };

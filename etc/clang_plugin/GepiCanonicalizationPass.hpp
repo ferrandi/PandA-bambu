@@ -37,11 +37,11 @@
 #ifndef SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP
 #define SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP
 
-#include <llvm/IR/Instructions.h>
-#include <llvm/Pass.h>
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/ScalarEvolution.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/Intrinsics.h>
+#include <llvm/Pass.h>
 
 enum SROA_optimizations
 {
@@ -56,7 +56,6 @@ enum SROA_optimizations
    SROA_canonicalIdxs,
    SROA_removeMeta
 };
-
 
 static const char* optimization_names[] = {"LCSSA cleanup",
                                            "GEPOP to GEPI",
@@ -76,7 +75,6 @@ class GepiCanonicalizationPass : public llvm::FunctionPass
 
  private:
    unsigned short optimization_selection = 0;
-
 
  public:
    explicit GepiCanonicalizationPass(char& _ID, unsigned short optimization_selection) : llvm::FunctionPass(_ID), optimization_selection(optimization_selection)
