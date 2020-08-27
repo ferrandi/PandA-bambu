@@ -181,6 +181,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "#include <sstream>\n";
    cpp_code_header += "#include <fcntl.h>\n";
    cpp_code_header += "#include <regex>\n";
+   cpp_code_header += "#include <cmath>\n";
 
    cpp_code_header += "#define STR(x) std::to_string(x)\n\n";
    cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
