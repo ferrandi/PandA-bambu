@@ -44,6 +44,7 @@
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/IR/PassManager.h"
 #include "llvm/Transforms/Scalar/LoopPassManager.h"
+#include "llvm/Transforms/Utils/LoopUtils.h"
 
 unsigned int total_expanded_phis = 0;
 class PtrIteratorSimplifyPass : public llvm::LoopPass
@@ -160,7 +161,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
          }
          else
          {
-            /// Don't care, it's gonna be relpaced by the transformation
+            /// Don't care, it's gonna be replaced by the transformation
          }
       }
 
@@ -221,6 +222,9 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
    bool runOnLoop(llvm::Loop* L, llvm::LPPassManager&) override
    {
+      if(skipLoop(L))
+         return false;
+
       llvm::Type* idx_ty = llvm::Type::getInt32Ty(L->getHeader()->getContext());
 
       unsigned long expanded_phis = 0;
@@ -289,7 +293,7 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
             /// Try to reconduct all of the external addresses to a single base address (and relative offsets)
 
             /// Store a vector of set of pointers
-            /// Each pointer will add the base address to the set if it's a gepi, nothing otehrwise
+            /// Each pointer will add the base address to the set if it's a gepi, nothing otherwise
             std::vector<std::pair<llvm::Value*, std::set<llvm::Value*>>> vec_ptr_addr_set;
 
             for(llvm::Use* external_use : external_uses)
@@ -594,6 +598,8 @@ class PtrIteratorSimplifyPass : public llvm::LoopPass
 
    void getAnalysisUsage(llvm::AnalysisUsage& AU) const override
    {
+      AU.addRequired<llvm::TargetTransformInfoWrapperPass>();
+      llvm::getLoopAnalysisUsage(AU);
    }
 };
 

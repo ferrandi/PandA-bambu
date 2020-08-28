@@ -4392,6 +4392,8 @@ llvm::Function* get_top_function(llvm::Module& module, std::string top_name)
 
 bool CustomScalarReplacementOfAggregatesPass::runOnModule(llvm::Module& module)
 {
+   if(skipModule(module))
+      return false;
    TotalAllocaBytes = TotalGlobalBytes = TotalOperandBytes = DisaggregatedAllocaBytes = DisaggregatedGlobalBytes = DisaggregatedOperandBytes = 0;
    llvm::Function* kernel_function = get_top_function(module, kernel_name);
 #ifdef DEBUG_CSROA

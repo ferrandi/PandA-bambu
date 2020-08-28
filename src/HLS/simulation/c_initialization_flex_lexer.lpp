@@ -87,7 +87,7 @@ CInitializationFlexLexer::~CInitializationFlexLexer()
 }
 #ifndef __clang_analyzer__
 %}
-number [\-]?([0-9]|0\.)[0-9\.e\-\+]*|0|\+Inf|\-Inf|\+NaN|\-NaN|\+qNaN|\-qNaN|\+QNaN|\-QNaN
+number [\-]?(0[xX])?([0-9a-fA-F]|0\.)[0-9a-fA-F\.p\-\+]*|0|\+Inf|\-Inf|\+NaN|\-NaN|\+qNaN|\-qNaN|\+QNaN|\-QNaN
 
 %%
 {number} {lvalp->content = YYText(); return TOK_CI_NUMBER;}
