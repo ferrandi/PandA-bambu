@@ -32,6 +32,7 @@ include $(top_srcdir)/examples/softfloat/softfloat.am
 include $(top_srcdir)/examples/taste/taste.am
 include $(top_srcdir)/examples/VGA/VGA.am
 include $(top_srcdir)/examples/VGA_Nexys4/VGA_Nexys4.am
+include $(top_srcdir)/examples/rosetta/rosetta.am
 
 
 examples_dir = $(pkgdatadir)/examples
