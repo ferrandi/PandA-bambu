@@ -40,18 +40,9 @@
 */
 //void fun()
 //{
-   boost::replace_all(_specializing_string, "%%", "&percent;");
-#if 0
-   for(unsigned int i=0; i < _np; ++i)
-   {
-      std::string formal_param_string, actual_param_string;
-      formal_param_string = "%" + STR(i);
-      actual_param_string = "in" + STR(i+1);
-      boost::replace_all(_specializing_string, formal_param_string, actual_param_string);
-   }
-#endif
-   boost::replace_all(_specializing_string, "&percent;", "%");
-   boost::replace_all(_specializing_string, "\n", "\\n");
+   _specializing_string = std::regex_replace(_specializing_string, std::regex("%%"), "&percent;");
+   _specializing_string = std::regex_replace(_specializing_string, std::regex("&percent;"), "%");
+   _specializing_string = std::regex_replace(_specializing_string, std::regex("\n"), "\\n");
    ///remove possible dialects
    std::string res_asm;
    res_asm = "begin\n";

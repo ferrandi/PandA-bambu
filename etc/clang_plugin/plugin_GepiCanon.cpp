@@ -80,6 +80,18 @@ namespace llvm
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "COL";
          else if(OPT_SELECTION == SROA_bitcastVectorRemoval)
             return CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR";
+         else if(OPT_SELECTION == SROA_removeLifetime)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "LTR";
+         else if(OPT_SELECTION == SROA_selectLowering)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "SL";
+         else if(OPT_SELECTION == SROA_canonicalIdxs)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "CIDX";
+         else if(OPT_SELECTION == SROA_cleanLCSSA)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "CLCSSA";
+         else if(OPT_SELECTION == SROA_gepiExplicitation)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "GEXP";
+         else if(OPT_SELECTION == SROA_codeSimplification)
+            return CLANG_VERSION_STRING(_plugin_GepiCanon) "CSIMPL";
       }
    };
 
@@ -92,17 +104,35 @@ namespace llvm
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification>> XPassPS(CLANG_VERSION_STRING(_plugin_GepiCanon) "PS", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering>> XPassCOL(CLANG_VERSION_STRING(_plugin_GepiCanon) "COL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
 static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval>> XPassBVR(CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_removeLifetime>> XPassLTR(CLANG_VERSION_STRING(_plugin_GepiCanon) "LTR", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering>> XPassSL(CLANG_VERSION_STRING(_plugin_GepiCanon) "SL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs>> XPassCIDX(CLANG_VERSION_STRING(_plugin_GepiCanon) "CIDX", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_cleanLCSSA>> XPassCLCSSA(CLANG_VERSION_STRING(_plugin_GepiCanon) "CLCSSA", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation>> XPassGEXP(CLANG_VERSION_STRING(_plugin_GepiCanon) "GEXP", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_codeSimplification>> XPassCSIMPL(CLANG_VERSION_STRING(_plugin_GepiCanon) "CSIMPL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(llvm::createPromoteMemoryToRegisterPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_removeLifetime >);
+   PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs >);
+   PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation >);
+   PM.add(llvm::createVerifierPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification >);
    PM.add(llvm::createVerifierPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering >);
    PM.add(llvm::createVerifierPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval >);
+   PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering >);
+   PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs >);
+   PM.add(llvm::createVerifierPass());
+   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation >);
    PM.add(llvm::createVerifierPass());
 }
 

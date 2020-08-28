@@ -126,6 +126,11 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
+$dir_script/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang4_CSROA.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
 $dir_script/xc7z020-1clg484-VVD_15.0_O2_sdc_aligned_accessClang5.sh $@
 return_value=$?
 if test $return_value != 0; then

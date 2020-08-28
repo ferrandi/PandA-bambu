@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,6 +41,13 @@
 #ifndef SCALAR_REPLACEMENT_OF_AGGREGATES_CUSTOMSCALARREPLACEMENTOFAGGREGATESPASS_HPP
 #define SCALAR_REPLACEMENT_OF_AGGREGATES_CUSTOMSCALARREPLACEMENTOFAGGREGATESPASS_HPP
 
+#include <llvm/Analysis/AssumptionCache.h>
+#include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Analysis/ScalarEvolution.h>
+#include <llvm/Analysis/TargetLibraryInfo.h>
+#include <llvm/Analysis/TargetTransformInfo.h>
+#include <llvm/IR/Dominators.h>
+
 #include <llvm/IR/Instructions.h>
 #include <llvm/IR/Module.h>
 #include <llvm/Pass.h>
@@ -57,6 +64,80 @@ enum SROA_phase
    SROA_functionVersioning,
    SROA_disaggregation,
    SROA_wrapperInlining
+};
+
+class Expandability
+{
+ public:
+   bool expandability;
+   double area_profit;
+   double latency_profit;
+
+   Expandability() : expandability(true), area_profit(0.0), latency_profit(0.0)
+   {
+   }
+
+   Expandability(bool expandability, double area_profit, double latency_profit) : expandability(expandability), area_profit(area_profit), latency_profit(latency_profit)
+   {
+   }
+
+   bool cast()
+   {
+      bool profitable = (area_profit + latency_profit) >= 0;
+      bool got_casted = expandability and !profitable;
+
+      expandability = expandability and profitable;
+      area_profit = 0.0;
+      latency_profit = 0.0;
+
+      return got_casted;
+   }
+
+   Expandability get_casted()
+   {
+      return Expandability(expandability and (area_profit + latency_profit) > 0, 0.0, 0.0);
+   }
+
+   void and_add(const Expandability& op)
+   {
+      expandability = op.expandability and expandability;
+      area_profit += op.area_profit;
+      latency_profit += op.latency_profit;
+   }
+
+   void and_cond_add(const Expandability& op)
+   {
+      expandability = op.expandability and expandability;
+      if(op.expandability)
+      {
+         area_profit += op.area_profit;
+         latency_profit += op.latency_profit;
+      }
+   }
+
+   void operator*=(double factor)
+   {
+      area_profit *= factor;
+      latency_profit *= factor;
+   }
+
+   void operator+=(const Expandability& exp)
+   {
+      area_profit += exp.area_profit;
+      latency_profit += exp.latency_profit;
+   }
+
+   void operator-=(const Expandability& exp)
+   {
+      area_profit -= exp.area_profit;
+      latency_profit -= exp.latency_profit;
+   }
+
+   std::string get_string() const
+   {
+      std::string ret = "<" + std::to_string(expandability) + "," + std::to_string(area_profit) + "," + std::to_string(latency_profit) + ">";
+      return ret;
+   }
 };
 
 class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
@@ -80,8 +161,18 @@ class CustomScalarReplacementOfAggregatesPass : public llvm::ModulePass
 
    bool runOnModule(llvm::Module& module) override;
 
-   void getAnalysisUsage(llvm::AnalysisUsage& AU) const override;
+   void getAnalysisUsage(llvm::AnalysisUsage& AU) const override
+   {
+      AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
+      AU.addRequiredTransitive<llvm::ScalarEvolutionWrapperPass>();
+      AU.addRequiredTransitive<llvm::TargetTransformInfoWrapperPass>();
+      AU.addRequiredTransitive<llvm::TargetLibraryInfoWrapperPass>();
+      AU.addRequiredTransitive<llvm::DominatorTreeWrapperPass>();
+      AU.addRequiredTransitive<llvm::AssumptionCacheTracker>();
+   }
 };
+
+// CustomScalarReplacementOfAggregatesPass* createSROACodeSimplificationPass(std::string kernel_name);
 
 CustomScalarReplacementOfAggregatesPass* createSROAFunctionVersioningPass(std::string kernel_name);
 

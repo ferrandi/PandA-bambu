@@ -1,0 +1,12 @@
+adpcm/adpcm.c
+aes/aes.c
+dfadd/dfadd.c
+dfdiv/dfdiv.c
+dfmul/dfmul.c
+dfsin/dfsin.c
+gsm/gsm.c
+mips/mips.c
+motion/mpeg2.c
+sha/sha_driver.c
+blowfish/bf.c
+jpeg/main.c --benchmark-name=jpeg -fno-tree-pre

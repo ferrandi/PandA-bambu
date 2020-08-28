@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2020 Politecnico di Milano
+ *              Copyright (C) 2019 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -37,15 +37,36 @@
 #ifndef SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP
 #define SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP
 
+#include <llvm/Analysis/LoopInfo.h>
+#include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/IR/Instructions.h>
+#include <llvm/IR/Intrinsics.h>
 #include <llvm/Pass.h>
 
 enum SROA_optimizations
 {
+   SROA_cleanLCSSA,
+   SROA_gepiExplicitation,
+   SROA_codeSimplification,
    SROA_ptrIteratorSimplification,
    SROA_chunkOperationsLowering,
-   SROA_bitcastVectorRemoval
+   SROA_bitcastVectorRemoval,
+   SROA_removeLifetime,
+   SROA_selectLowering,
+   SROA_canonicalIdxs,
+   SROA_removeMeta
 };
+
+static const char* optimization_names[] = {"LCSSA cleanup",
+                                           "GEPOP to GEPI",
+                                           "Force unroll",
+                                           "Pointer Iterator Simplification"
+                                           "Chunk operations lowering",
+                                           "Bitcast vector removal",
+                                           "Remove lifetime intrinsic",
+                                           "Select lowering",
+                                           "Canonical indexes",
+                                           "Remove metadata"};
 
 class GepiCanonicalizationPass : public llvm::FunctionPass
 {
@@ -68,13 +89,29 @@ class GepiCanonicalizationPass : public llvm::FunctionPass
    void getAnalysisUsage(llvm::AnalysisUsage& AU) const override
    {
       AU.setPreservesCFG();
+      AU.addRequiredTransitive<llvm::LoopInfoWrapperPass>();
+      AU.addRequiredTransitive<llvm::ScalarEvolutionWrapperPass>();
    }
 };
+
+GepiCanonicalizationPass* createCleanLCSSA();
+
+GepiCanonicalizationPass* createGepiExplicitation();
+
+GepiCanonicalizationPass* createCodeSimplificationPass();
 
 GepiCanonicalizationPass* createPtrIteratorSimplificationPass();
 
 GepiCanonicalizationPass* createChunkOperationsLoweringPass();
 
 GepiCanonicalizationPass* createBitcastVectorRemovalPass();
+
+GepiCanonicalizationPass* createRemoveIntrinsicPass();
+
+GepiCanonicalizationPass* createSelectLoweringPass();
+
+GepiCanonicalizationPass* createGepiCanonicalIdxsPass();
+
+GepiCanonicalizationPass* createRemoveMetaPass();
 
 #endif // SCALAR_REPLACEMENT_OF_AGGREGATES_GEPICANONICALIZATIONPASS_HPP

@@ -180,10 +180,10 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "#include <fstream>\n";
    cpp_code_header += "#include <sstream>\n";
    cpp_code_header += "#include <fcntl.h>\n";
-   cpp_code_header += "#include <boost/lexical_cast.hpp>\n";
-   cpp_code_header += "#include <boost/algorithm/string/replace.hpp>\n";
+   cpp_code_header += "#include <regex>\n";
+   cpp_code_header += "#include <cmath>\n";
 
-   cpp_code_header += "#define STR(x) boost::lexical_cast<std::string>(x)\n\n";
+   cpp_code_header += "#define STR(x) std::to_string(x)\n\n";
    cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
    cpp_code_header += "#define RUPNP2_4(x)   ( RUPNP2_2(x) | ( RUPNP2_2(x) >> 2) )\n";
    cpp_code_header += "#define RUPNP2_8(x)   ( RUPNP2_4(x) | ( RUPNP2_4(x) >> 4) )\n";
