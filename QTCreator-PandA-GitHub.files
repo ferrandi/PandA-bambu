@@ -2335,6 +2335,7 @@ src/utility/parsing_error.hpp
 src/utility/refcount.hpp
 src/utility/simple_indent.cpp
 src/utility/simple_indent.hpp
+src/utility/string_manipulation.cpp
 src/utility/string_manipulation.hpp
 src/utility/strong_typedef.hpp
 src/utility/utility.cpp

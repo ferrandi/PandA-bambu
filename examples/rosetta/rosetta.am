@@ -1,0 +1,6 @@
+EXTRA_DIST += %D%/digit-recognition/bambu-CSROA.sh \
+                          %D%/digit-recognition/digitrec_sw.c \
+                          %D%/digit-recognition/digitrec_sw.h \
+                          %D%/digit-recognition/typedefs.h \
+                          %D%/digit-recognition/bambu.sh
+

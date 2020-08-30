@@ -93,7 +93,7 @@ class CInitializationParserFunctor
 
    /**
     * Process an element
-    * @param content is the string assocated with the string
+    * @param content is the string associated with the string
     */
    virtual void Process(const std::string& content) = 0;
 

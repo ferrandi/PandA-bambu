@@ -367,6 +367,8 @@ namespace llvm
 
       bool runOnModule(Module& M) override
       {
+         if(skipModule(M))
+            return false;
          auto DL = &M.getDataLayout();
          auto res = false;
          auto currFuncIterator = M.getFunctionList().begin();

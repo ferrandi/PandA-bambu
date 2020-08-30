@@ -1654,6 +1654,8 @@ bool clean_lcssa(llvm::Function& function)
 
 bool GepiCanonicalizationPass::runOnFunction(llvm::Function& function)
 {
+   if(skipFunction(function))
+      return false;
    // auto t_begin = std::chrono::high_resolution_clock::now();
    bool result = false;
    switch(optimization_selection)
