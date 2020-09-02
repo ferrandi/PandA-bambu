@@ -295,7 +295,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    File.close();
 
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
-   std::string compiler_flags = " -lstdc++ -lm --std=c++14";
+   std::string compiler_flags = " -lstdc++ -lm";
    // setup source files
    std::list<std::string> file_sources;
    file_sources.push_front(temp_generator_filename);
