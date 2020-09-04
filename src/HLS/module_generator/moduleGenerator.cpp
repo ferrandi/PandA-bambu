@@ -180,8 +180,16 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "#include <fstream>\n";
    cpp_code_header += "#include <sstream>\n";
    cpp_code_header += "#include <fcntl.h>\n";
-   cpp_code_header += "#include <regex>\n";
    cpp_code_header += "#include <cmath>\n";
+
+   cpp_code_header += "inline void __replaceStringInPlace(std::string& subject, const std::string& search,\n";
+   cpp_code_header += "                                                   const std::string& replace) {\n";
+   cpp_code_header += "   size_t pos = 0;\n";
+   cpp_code_header += "   while ((pos = subject.find(search, pos)) != std::string::npos) {\n";
+   cpp_code_header += "      subject.replace(pos, search.length(), replace);\n";
+   cpp_code_header += "      pos += replace.length();\n";
+   cpp_code_header += "   }\n";
+   cpp_code_header += "}\n";
 
    cpp_code_header += "#define STR(x) std::to_string(x)\n\n";
    cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
