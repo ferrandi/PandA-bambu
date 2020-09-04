@@ -5252,7 +5252,7 @@ void tree_helper::get_array_dimensions(const tree_managerConstRef& TM, const uns
    auto* it = GetPointer<integer_type>(domn);
    unsigned int min_value = 0;
    unsigned int max_value = 0;
-   if(GET_NODE(it->min)->get_kind() == integer_cst_K && GET_NODE(it->max)->get_kind() == integer_cst_K)
+   if(it->min && GET_NODE(it->min)->get_kind() == integer_cst_K && it->max && GET_NODE(it->max)->get_kind() == integer_cst_K)
    {
       if(it->min)
       {
@@ -5266,7 +5266,7 @@ void tree_helper::get_array_dimensions(const tree_managerConstRef& TM, const uns
       dims.push_back(range_domain);
    }
    else
-      dims.push_back(0); //variable size array may fall in this case
+      dims.push_back(0); // variable size array may fall in this case
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);
    if(elts->get_kind() == array_type_K)
