@@ -10,7 +10,7 @@
  *                              PandA Project
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
  *              Copyright (c) 2004-2020 Politecnico di Milano
  *
