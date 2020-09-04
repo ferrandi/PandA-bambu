@@ -5968,9 +5968,9 @@ class ConstraintGraph : public NodeContainer
    /*
     * Used to insert constant in the right position
     */
-   void insertConstantIntoVector(const APInt& constantval)
+   void insertConstantIntoVector(const APInt& constantval, bw_t bw)
    {
-      constantvector.push_back(constantval);
+      constantvector.push_back(constantval.extOrTrunc(bw, true));
    }
 
    /*
@@ -5993,7 +5993,7 @@ class ConstraintGraph : public NodeContainer
          const auto& V = varNode->getValue();
          if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(V)))
          {
-            insertConstantIntoVector(tree_helper::get_integer_cst_value(ic));
+            insertConstantIntoVector(tree_helper::get_integer_cst_value(ic), varNode->getBitWidth());
          }
       }
 
@@ -6013,38 +6013,38 @@ class ConstraintGraph : public NodeContainer
             {
                if(pred == eq_expr_K || pred == ne_expr_K)
                {
-                  insertConstantIntoVector(cst);
-                  insertConstantIntoVector(cst - 1);
-                  insertConstantIntoVector(cst + 1);
+                  insertConstantIntoVector(cst, bw);
+                  insertConstantIntoVector(cst - 1, bw);
+                  insertConstantIntoVector(cst + 1, bw);
                }
                else if(pred == uneq_expr_K)
                {
                   const auto ucst = cst.extOrTrunc(bw, false);
-                  insertConstantIntoVector(ucst);
-                  insertConstantIntoVector(ucst - 1);
-                  insertConstantIntoVector(ucst + 1);
+                  insertConstantIntoVector(ucst, bw);
+                  insertConstantIntoVector(ucst - 1, bw);
+                  insertConstantIntoVector(ucst + 1, bw);
                }
                else if(pred == gt_expr_K || pred == le_expr_K)
                {
-                  insertConstantIntoVector(cst);
-                  insertConstantIntoVector(cst + 1);
+                  insertConstantIntoVector(cst, bw);
+                  insertConstantIntoVector(cst + 1, bw);
                }
                else if(pred == ge_expr_K || pred == lt_expr_K)
                {
-                  insertConstantIntoVector(cst);
-                  insertConstantIntoVector(cst - 1);
+                  insertConstantIntoVector(cst, bw);
+                  insertConstantIntoVector(cst - 1, bw);
                }
                else if(pred == ungt_expr_K || pred == unle_expr_K)
                {
                   const auto ucst = cst.extOrTrunc(bw, false);
-                  insertConstantIntoVector(ucst);
-                  insertConstantIntoVector(ucst + 1);
+                  insertConstantIntoVector(ucst, bw);
+                  insertConstantIntoVector(ucst + 1, bw);
                }
                else if(pred == unge_expr_K || pred == unlt_expr_K)
                {
                   const auto ucst = cst.extOrTrunc(bw, false);
-                  insertConstantIntoVector(ucst);
-                  insertConstantIntoVector(ucst - 1);
+                  insertConstantIntoVector(ucst, bw);
+                  insertConstantIntoVector(ucst - 1, bw);
                }
                else
                {
@@ -6053,7 +6053,7 @@ class ConstraintGraph : public NodeContainer
             }
             else
             {
-               insertConstantIntoVector(cst);
+               insertConstantIntoVector(cst, bw);
             }
          };
 
@@ -6089,7 +6089,7 @@ class ConstraintGraph : public NodeContainer
                const auto& sourceval = source->getValue();
                if(const auto* ic = GetPointer<const integer_cst>(GET_CONST_NODE(sourceval)))
                {
-                  insertConstantIntoVector(tree_helper::get_integer_cst_value(ic));
+                  insertConstantIntoVector(tree_helper::get_integer_cst_value(ic), source->getBitWidth());
                }
             }
          }
@@ -6107,6 +6107,7 @@ class ConstraintGraph : public NodeContainer
                continue;
             }
             const auto rintersect = op->getIntersect()->getRange();
+            const auto bw = rintersect->getBitWidth();
             if(rintersect->isAnti())
             {
                const auto anti = rintersect->getAnti();
@@ -6114,13 +6115,13 @@ class ConstraintGraph : public NodeContainer
                const auto& ub = anti->getUpper();
                if((lb != Range::Min) && (lb != Range::Max))
                {
-                  insertConstantIntoVector(lb - 1);
-                  insertConstantIntoVector(lb);
+                  insertConstantIntoVector(lb - 1, bw);
+                  insertConstantIntoVector(lb, bw);
                }
                if((ub != Range::Min) && (ub != Range::Max))
                {
-                  insertConstantIntoVector(ub);
-                  insertConstantIntoVector(ub + 1);
+                  insertConstantIntoVector(ub, bw);
+                  insertConstantIntoVector(ub + 1, bw);
                }
             }
             else
@@ -6129,13 +6130,13 @@ class ConstraintGraph : public NodeContainer
                const auto& ub = rintersect->getUpper();
                if((lb != Range::Min) && (lb != Range::Max))
                {
-                  insertConstantIntoVector(lb - 1);
-                  insertConstantIntoVector(lb);
+                  insertConstantIntoVector(lb - 1, bw);
+                  insertConstantIntoVector(lb, bw);
                }
                if((ub != Range::Min) && (ub != Range::Max))
                {
-                  insertConstantIntoVector(ub);
-                  insertConstantIntoVector(ub + 1);
+                  insertConstantIntoVector(ub, bw);
+                  insertConstantIntoVector(ub + 1, bw);
                }
             }
          }
