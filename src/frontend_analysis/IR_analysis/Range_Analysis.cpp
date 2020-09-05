@@ -1834,7 +1834,7 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
       return getRangeFor(_sink->getValue(), Regular);
    }
 
-   auto IsAnti = _bound->getRange()->isAnti() || sinkRange->isAnti();
+   auto IsAnti = boundRange->isAnti() || sinkRange->isAnti();
    const auto l = IsAnti ? (boundRange->isUnknown() ? Range::Min : boundRange->getUnsignedMin()) : boundRange->getLower();
    const auto u = IsAnti ? (boundRange->isUnknown() ? Range::Max : boundRange->getUnsignedMax()) : boundRange->getUpper();
 
@@ -1858,7 +1858,7 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
             return RangeRef(new Range(Regular, bw, lower, u));
          }
       case lt_expr_K: // signed less than
-         if(u != Range::Max)
+         if(u != Range::Max && u != APInt::getSignedMaxValue(bw))
          {
             if(lower > (u - 1))
             {
@@ -1886,7 +1886,7 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
             return RangeRef(new Range(Regular, bw, l, upper));
          }
       case gt_expr_K: // signed greater than
-         if(l != Range::Min)
+         if(l != Range::Min && l != APInt::getSignedMinValue(bw))
          {
             if((l + 1) > upper)
             {
