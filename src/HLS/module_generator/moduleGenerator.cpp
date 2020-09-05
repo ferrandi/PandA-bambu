@@ -191,7 +191,17 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "   }\n";
    cpp_code_header += "}\n";
 
-   cpp_code_header += "#define STR(x) std::to_string(x)\n\n";
+   cpp_code_header += "#if __cplusplus > 201103L\n";
+   cpp_code_header += "#define STR(x) std::to_string(x)\n";
+   cpp_code_header += "#else\n";
+   cpp_code_header += "inline std::string __to_string(long long value)\n";
+   cpp_code_header += "{\n";
+   cpp_code_header += "   char buf[16];\n";
+   cpp_code_header += "   int len = std::sprintf(&buf[0], \"%lld\", value);\n";
+   cpp_code_header += "   return std::string(buf, len);\n";
+   cpp_code_header += "}\n";
+   cpp_code_header += "#define STR(x) __to_string(x)\n";
+   cpp_code_header += "#endif\n\n";
    cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
    cpp_code_header += "#define RUPNP2_4(x)   ( RUPNP2_2(x) | ( RUPNP2_2(x) >> 2) )\n";
    cpp_code_header += "#define RUPNP2_8(x)   ( RUPNP2_4(x) | ( RUPNP2_4(x) >> 4) )\n";
