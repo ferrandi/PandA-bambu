@@ -10,7 +10,7 @@
  *                              PandA Project 
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
  *              Copyright (c) 2015-2020 Politecnico di Milano
  *
@@ -42,9 +42,9 @@
 */
 //void fun()
 //{
-   _specializing_string = std::regex_replace(_specializing_string, std::regex("%%"), "&percent;");
-   _specializing_string = std::regex_replace(_specializing_string, std::regex("&percent;"), "%");
-   _specializing_string = std::regex_replace(_specializing_string, std::regex("\n"), "\\n");
+   __replaceStringInPlace(_specializing_string, "%%", "&percent;");
+   __replaceStringInPlace(_specializing_string, "&percent;", "%");
+   __replaceStringInPlace(_specializing_string, "\n", "\\n");
    ///remove possible dialects
    std::string res_asm;
    bool open_curl = false;

@@ -5252,16 +5252,21 @@ void tree_helper::get_array_dimensions(const tree_managerConstRef& TM, const uns
    auto* it = GetPointer<integer_type>(domn);
    unsigned int min_value = 0;
    unsigned int max_value = 0;
-   if(it->min)
+   if(it->min && GET_NODE(it->min)->get_kind() == integer_cst_K && it->max && GET_NODE(it->max)->get_kind() == integer_cst_K)
    {
-      min_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
+      if(it->min)
+      {
+         min_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->min))));
+      }
+      if(it->max)
+      {
+         max_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
+      }
+      unsigned int range_domain = max_value - min_value + 1;
+      dims.push_back(range_domain);
    }
-   if(it->max)
-   {
-      max_value = static_cast<unsigned int>(get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(it->max))));
-   }
-   unsigned int range_domain = max_value - min_value + 1;
-   dims.push_back(range_domain);
+   else
+      dims.push_back(0); // variable size array may fall in this case
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);
    if(elts->get_kind() == array_type_K)

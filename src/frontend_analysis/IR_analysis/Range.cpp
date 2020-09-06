@@ -1893,15 +1893,15 @@ RangeRef Range::truncate(bw_t bitwidth) const
    {
       return RangeRef(new Range(Unknown, bitwidth));
    }
+   if(bitwidth == bw)
+   {
+      return RangeRef(this->clone());
+   }
    const auto a = this->getSignedMin();
    const auto b = this->getSignedMax();
    if(isFullSet() || isAnti() || (b - a).abs() > APInt::getMaxValue(bitwidth))
    {
       return RangeRef(new Range(Regular, bitwidth));
-   }
-   if(bitwidth == bw)
-   {
-      return RangeRef(this->clone());
    }
 
    const auto stmin = a.extOrTrunc(bitwidth, true);

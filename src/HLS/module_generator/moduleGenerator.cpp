@@ -180,10 +180,28 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "#include <fstream>\n";
    cpp_code_header += "#include <sstream>\n";
    cpp_code_header += "#include <fcntl.h>\n";
-   cpp_code_header += "#include <regex>\n";
    cpp_code_header += "#include <cmath>\n";
 
-   cpp_code_header += "#define STR(x) std::to_string(x)\n\n";
+   cpp_code_header += "inline void __replaceStringInPlace(std::string& subject, const std::string& search,\n";
+   cpp_code_header += "                                                   const std::string& replace) {\n";
+   cpp_code_header += "   size_t pos = 0;\n";
+   cpp_code_header += "   while ((pos = subject.find(search, pos)) != std::string::npos) {\n";
+   cpp_code_header += "      subject.replace(pos, search.length(), replace);\n";
+   cpp_code_header += "      pos += replace.length();\n";
+   cpp_code_header += "   }\n";
+   cpp_code_header += "}\n";
+
+   cpp_code_header += "#if __cplusplus > 201103L\n";
+   cpp_code_header += "#define STR(x) std::to_string(x)\n";
+   cpp_code_header += "#else\n";
+   cpp_code_header += "inline std::string __to_string(long long value)\n";
+   cpp_code_header += "{\n";
+   cpp_code_header += "   char buf[16];\n";
+   cpp_code_header += "   int len = std::sprintf(&buf[0], \"%lld\", value);\n";
+   cpp_code_header += "   return std::string(buf, len);\n";
+   cpp_code_header += "}\n";
+   cpp_code_header += "#define STR(x) __to_string(x)\n";
+   cpp_code_header += "#endif\n\n";
    cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
    cpp_code_header += "#define RUPNP2_4(x)   ( RUPNP2_2(x) | ( RUPNP2_2(x) >> 2) )\n";
    cpp_code_header += "#define RUPNP2_8(x)   ( RUPNP2_4(x) | ( RUPNP2_4(x) >> 4) )\n";
@@ -295,7 +313,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    File.close();
 
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
-   std::string compiler_flags = " -lstdc++ -lm --std=c++14";
+   std::string compiler_flags = " -lstdc++ -lm";
    // setup source files
    std::list<std::string> file_sources;
    file_sources.push_front(temp_generator_filename);

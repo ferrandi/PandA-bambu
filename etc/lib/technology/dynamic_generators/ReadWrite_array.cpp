@@ -10,7 +10,7 @@
  *                              PandA Project
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
  *              Copyright (c) 2018-2020 Politecnico di Milano
  *
@@ -49,7 +49,7 @@ if(_np_in==8)
 
 unsigned int log2nbyte= _ports_out[1].alignment==1 ? 0 : (32u-static_cast<unsigned>(__builtin_clz(_ports_out[1].alignment-1)));
 
-auto addressMaxValue=_ports_out[1].alignment*static_cast<unsigned>(std::stoi(_specializing_string))-1;
+unsigned addressMaxValue=_ports_out[1].alignment*static_cast<unsigned>(std::stoi(_specializing_string))-1;
 unsigned int nbitAddress= addressMaxValue == 1 ? 1 : (32u-static_cast<unsigned>(__builtin_clz(addressMaxValue)));
 
 if(log2nbyte>0)
