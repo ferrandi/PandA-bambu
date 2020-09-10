@@ -181,6 +181,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "#include <sstream>\n";
    cpp_code_header += "#include <fcntl.h>\n";
    cpp_code_header += "#include <cmath>\n";
+   cpp_code_header += "#include <cstdlib>\n\n";
 
    cpp_code_header += "inline void __replaceStringInPlace(std::string& subject, const std::string& search,\n";
    cpp_code_header += "                                                   const std::string& replace) {\n";
@@ -202,6 +203,7 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "}\n";
    cpp_code_header += "#define STR(x) __to_string(x)\n";
    cpp_code_header += "#endif\n\n";
+
    cpp_code_header += "#define RUPNP2_2(x)   (        (x) | (   (x) >> 1) )\n";
    cpp_code_header += "#define RUPNP2_4(x)   ( RUPNP2_2(x) | ( RUPNP2_2(x) >> 2) )\n";
    cpp_code_header += "#define RUPNP2_8(x)   ( RUPNP2_4(x) | ( RUPNP2_4(x) >> 4) )\n";
@@ -210,7 +212,6 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    cpp_code_header += "#define RUPNP2(x)     (RUPNP2_32(x-1) + 1)\n";
    cpp_code_header += "int main(int argc, char **argv)\n";
    cpp_code_header += "{\n";
-
    cpp_code_header += "   struct parameter\n";
    cpp_code_header += "   {\n";
    cpp_code_header += "         std::string name;\n";
