@@ -229,7 +229,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          if(is_memory)
          {
             std::vector<std::string> splitted = SplitString(test_v, ",");
-            for(const auto element : splitted)
+            for(const auto &element : splitted)
             {
                THROW_ASSERT(element.size() % 8 == 0, element + ": " + STR(element.size()));
                for(size_t bits = 0; bits < element.size(); bits += 8)

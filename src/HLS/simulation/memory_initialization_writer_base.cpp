@@ -225,7 +225,7 @@ void MemoryInitializationWriterBase::GoNext()
 const std::string MemoryInitializationWriterBase::PrintStatus() const
 {
    std::string ret;
-   for(const auto level : status)
+   for(const auto &level : status)
    {
       if(ret != "")
          ret += ":";
