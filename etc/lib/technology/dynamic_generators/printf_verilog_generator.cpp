@@ -46,11 +46,11 @@ std::string fsm;
 std::string case_statement;
 
 std::stringstream _npString;
-_npString<<((_np < 2) ? 2 : _np));
+_npString<<((_np < 2) ? 2 : _np);
 std::string selector_dimension=_npString.str();
 
 std::stringstream _np1String;
-_np1String<<((_np-1) < 1) ? 1 : (_np-1));
+_np1String<<(((_np-1) < 1) ? 1 : (_np-1));
 std::string selector_left=_np1String.str();
 
 int selector=1;
