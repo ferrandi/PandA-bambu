@@ -364,7 +364,7 @@ void datapath_parallel_cs::manage_extern_global_port_parallel(const structural_m
    structural_objectRef memory_parallel = circuit->find_member("memory_parallel", component_o_K, circuit);
    unsigned int num_kernel = 0;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_port of memory_parallel");
-   for(const auto memory_module : memory_modules)
+   for(const auto& memory_module : memory_modules)
    {
       for(unsigned int j = 0; j < GetPointer<module>(memory_module)->get_in_port_size(); j++) // from ctrl_parallel to module
       {

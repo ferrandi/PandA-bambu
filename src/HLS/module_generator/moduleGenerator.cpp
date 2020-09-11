@@ -438,7 +438,7 @@ void moduleGenerator::specialize_fu(std::string fuName, vertex ve, std::string l
       GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
       GetPointer<module>(top)->set_authors(fu_module->get_authors());
       GetPointer<module>(top)->set_license(fu_module->get_license());
-      for(const auto module_parameter : fu_module->GetParameters())
+      for(const auto& module_parameter : fu_module->GetParameters())
       {
          GetPointer<module>(top)->AddParameter(module_parameter.first, fu_module->GetDefaultParameter(module_parameter.first));
          GetPointer<module>(top)->SetParameter(module_parameter.first, module_parameter.second);
@@ -656,7 +656,7 @@ void moduleGenerator::create_generic_module(const std::string fuName, const std:
    GetPointer<module>(top)->set_copyright(fu_module->get_copyright());
    GetPointer<module>(top)->set_authors(fu_module->get_authors());
    GetPointer<module>(top)->set_license(fu_module->get_license());
-   for(const auto module_parameter : fu_module->GetParameters())
+   for(const auto& module_parameter : fu_module->GetParameters())
    {
       GetPointer<module>(top)->AddParameter(module_parameter.first, fu_module->GetDefaultParameter(module_parameter.first));
       GetPointer<module>(top)->SetParameter(module_parameter.first, module_parameter.second);

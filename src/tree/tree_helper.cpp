@@ -7686,7 +7686,7 @@ unsigned int tree_helper::get_multi_way_if_pos(const tree_managerConstRef& TM, u
    const tree_nodeRef t = TM->get_tree_node_const(node_id);
    auto* gmwi = GetPointer<gimple_multi_way_if>(t);
    unsigned int pos = 0;
-   for(auto const cond : gmwi->list_of_cond)
+   for(auto const& cond : gmwi->list_of_cond)
    {
       if(cond.first and cond.first->index == looked_for_cond)
       {

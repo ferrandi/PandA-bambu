@@ -789,7 +789,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
             THROW_ASSERT(node->get_kind() == gimple_multi_way_if_K, "unexpected node");
             auto* gmwi = GetPointer<gimple_multi_way_if>(node);
             std::map<unsigned int, bool> add_elseif_to_goto;
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                unsigned int bb_index_num = cond.second;
                const vertex bb_vertex = bb_index_map.find(bb_index_num)->second;
@@ -803,7 +803,7 @@ void EdgeCWriter::writeRoutineInstructions_rec(vertex current_vertex, bool brack
                else
                   add_elseif_to_goto[bb_index_num] = false;
             }
-            for(const auto cond : gmwi->list_of_cond)
+            for(const auto& cond : gmwi->list_of_cond)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering successor BB" + STR(cond.second));
                unsigned int bb_index_num = cond.second;

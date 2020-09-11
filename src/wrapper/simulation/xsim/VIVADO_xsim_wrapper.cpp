@@ -83,7 +83,7 @@ std::string VIVADO_xsim_wrapper::create_project_script(const std::string& top_fi
 {
    std::string project_filename = XSIM_SUBDIR + suffix + "/" + top_filename + ".prj";
    std::ofstream prj_file(project_filename.c_str());
-   for(auto const file : file_list)
+   for(auto const& file : file_list)
    {
       boost::filesystem::path file_path(file);
       std::string extension = GetExtension(file_path);

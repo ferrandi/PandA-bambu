@@ -644,7 +644,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                {
                   // Group the uses of ssa variables on the basis of the basic block they belong to
                   OrderedMapStd<unsigned int, std::vector<tree_nodeRef>> copy_bloc_to_stmt;
-                  for(auto const use : sn->CGetUseStmts())
+                  for(auto const& use : sn->CGetUseStmts())
                   {
                      THROW_ASSERT(stmt_to_bloc.find(use.first->index) != stmt_to_bloc.end(), STR(use.first->index) + " is not in stmt_to_bloc");
                      unsigned int copy_block_index = (stmt_to_bloc.find(use.first->index))->second;
@@ -1773,7 +1773,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    std::string symbol_name;
    std::string symbol_scope;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking types");
-   for(const auto ti : tree_nodes)
+   for(const auto& ti : tree_nodes)
    {
       const tree_nodeRef tn = ti.second;
       auto* dn = GetPointer<decl_node>(tn);

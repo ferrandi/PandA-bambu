@@ -1582,7 +1582,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          clique_iteration_cputime[iteration] = 0;
          if(output_level >= OUTPUT_LEVEL_VERBOSE)
             START_TIME(clique_iteration_cputime[iteration]);
-         for(const auto partition : partitions)
+         for(const auto& partition : partitions)
          {
             THROW_ASSERT(partition.second.size() > 1, "bad projection");
             auto vert_it_end = partition.second.end();

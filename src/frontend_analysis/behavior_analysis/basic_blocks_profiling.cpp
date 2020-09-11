@@ -95,7 +95,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Changing working directory to " + parameters->getOption<std::string>(OPT_path));
    }
    const auto exec_argvs = parameters->getOption<const CustomSet<std::string>>(OPT_exec_argv);
-   for(const auto exec_argv : exec_argvs)
+   for(const auto& exec_argv : exec_argvs)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Running with parameters: " + exec_argv);
       // The argument

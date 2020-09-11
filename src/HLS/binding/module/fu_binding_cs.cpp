@@ -289,7 +289,7 @@ void fu_binding_cs::manage_memory_port_kernel(const structural_managerRef SM, co
       }
    }
 
-   for(const auto memory_module : memory_modules) // connect scheduler with memory_modules
+   for(const auto& memory_module : memory_modules) // connect scheduler with memory_modules
    {
       for(unsigned int j = 0; j < GetPointer<const module>(memory_module)->get_in_port_size(); j++)
       {
@@ -352,7 +352,7 @@ void fu_binding_cs::manage_memory_port_hierarchical(const structural_managerRef 
    std::map<structural_objectRef, std::list<structural_objectRef>, jms_sorter> primary_outs;
    structural_objectRef cir_port;
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Start merging, splitting for hierarchical");
-   for(const auto memory_module : memory_modules)
+   for(const auto& memory_module : memory_modules)
    {
       for(unsigned int j = 0; j < GetPointer<const module>(memory_module)->get_in_port_size(); j++)
       {

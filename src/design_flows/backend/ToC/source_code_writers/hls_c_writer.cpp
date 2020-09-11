@@ -1395,7 +1395,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef behavioral_he
       case record_type_K:
       {
          const auto rt = GetPointer<const record_type>(type);
-         for(const auto field : rt->list_of_flds)
+         for(const auto& field : rt->list_of_flds)
          {
             const auto field_param = param + "." + behavioral_helper->PrintVariable(field->index);
             WriteParamInMemory(behavioral_helper, field_param, tree_helper::get_type_index(TM, field->index), nesting_level + 1, input);

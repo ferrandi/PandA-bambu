@@ -136,7 +136,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
    }
    bool changed = false;
    const auto loops = function_behavior->CGetLoops();
-   for(const auto loop : loops->GetList())
+   for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing loop " + STR(loop->GetId()));
       if(not(loop->loop_type & DOALL_LOOP))
@@ -243,7 +243,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                      THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
                   }
                }
-               for(const auto statement : basic_block_info->block->CGetStmtList())
+               for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
                   if(gr and not gr->op)
@@ -341,7 +341,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                   continue;
                if(not basic_block_info->block->CGetStmtList().size())
                   continue;
-               for(const auto statement : basic_block_info->block->CGetStmtList())
+               for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
                   if(gr and not gr->op)

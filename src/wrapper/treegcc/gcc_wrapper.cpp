@@ -2693,7 +2693,7 @@ void GccWrapper::ReadParameters()
    if(Param->isOption(OPT_gcc_optimizations))
    {
       const auto parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_optimizations);
-      for(const auto parameter : parameters)
+      for(const auto& parameter : parameters)
       {
          THROW_ASSERT(parameter != "", "unexpected condition:" + Param->getOption<std::string>(OPT_gcc_optimizations));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining parameter " + parameter);
@@ -2714,7 +2714,7 @@ void GccWrapper::ReadParameters()
    if(Param->isOption(OPT_gcc_parameters))
    {
       const auto parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_parameters);
-      for(const auto parameter : parameters)
+      for(const auto& parameter : parameters)
       {
          const size_t equal_size = parameter.find("=");
          if(equal_size == std::string::npos)
