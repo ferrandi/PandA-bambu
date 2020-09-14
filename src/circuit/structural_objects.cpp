@@ -1269,10 +1269,12 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
    if(port_count > 1)
    {
       INDENT_DBG_MEX(0, 0, "Too many bindings to " + get_path());
+#ifndef NDEBUG
       for(const auto& connected_object : connected_objects)
       {
          INDENT_DBG_MEX(0, 0, "---" + connected_object.lock()->get_path());
       }
+#endif
       THROW_UNREACHABLE("");
    }
    return res;
