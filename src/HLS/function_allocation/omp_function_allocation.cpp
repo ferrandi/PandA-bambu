@@ -82,7 +82,21 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
    const auto TM = HLSMgr->get_tree_manager();
    fun_dominator_allocation::Exec();
    const auto call_graph_manager = HLSMgr->CGetCallGraphManager();
-   const auto call_graph = call_graph_manager->CGetCallGraph();
+   auto root_functions = call_graph_manager->GetRootFunctions();
+   if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
+   {
+      const auto top_rtldesign_function_id = HLSMgr->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
+      if(top_rtldesign_function_id != 0 and root_functions.find(top_rtldesign_function_id) != root_functions.end())
+      {
+         root_functions.clear();
+         root_functions.insert(top_rtldesign_function_id);
+      }
+   }
+   CustomUnorderedSet<vertex> vertex_subset;
+   for(const auto f_id : root_functions)
+      for(const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
+         vertex_subset.insert(call_graph_manager->GetVertex(reached_f_id));
+   const auto call_graph = call_graph_manager->CGetCallSubGraph(vertex_subset);
    std::list<vertex> sorted_functions;
    call_graph->TopologicalSort(sorted_functions);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Computing functions to be parallelized");

@@ -337,6 +337,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    const CallGraphConstRef cg = CG->CGetCallGraph();
    CustomMap<unsigned int, refcount<dominance<graph>>> cg_dominators;
    OrderedMapStd<unsigned int, CustomUnorderedSet<vertex>> reachable_vertices;
+   CustomUnorderedSet<vertex> all_reachable_vertices;
    CustomMap<unsigned int, CustomUnorderedMapStable<vertex, vertex>> cg_dominator_map;
    auto top_functions = CG->GetRootFunctions();
    for(const auto top_function : top_functions)
@@ -345,7 +346,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
       CustomOrderedSet<unsigned int> temp = CG->GetReachedBodyFunctionsFrom(top_function);
       for(const auto temp_int : temp)
       {
-         reachable_vertices[top_function].insert(CG->GetVertex(temp_int));
+         auto cVertex = CG->GetVertex(temp_int);
+         reachable_vertices[top_function].insert(cVertex);
+         all_reachable_vertices.insert(cVertex);
       }
       const CallGraphConstRef subgraph = CG->CGetCallSubGraph(reachable_vertices[top_function]);
       /// we do not need the exit vertex since the post-dominator graph is not used
@@ -712,8 +715,9 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    }
    std::map<unsigned int, std::vector<std::pair<unsigned int, bool>>> memory_allocation_map;
    const HLS_constraintsRef HLS_C = HLS_constraintsRef(new HLS_constraints(HLSMgr->get_parameter(), ""));
+   const CallGraphConstRef cg_projection = CG->CGetCallSubGraph(all_reachable_vertices);
    std::list<vertex> topology_sorted_vertex;
-   cg->TopologicalSort(topology_sorted_vertex);
+   cg_projection->TopologicalSort(topology_sorted_vertex);
    const auto& reached_fu_ids = CG->GetReachedBodyFunctions();
    for(const auto cur : topology_sorted_vertex)
    {

@@ -272,7 +272,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
    num_instances[functions::get_function_name_cleaned(CG->get_function(top_vertex), HLSMgr)] = 1;
    std::map<unsigned int, std::vector<std::string>> function_allocation_map;
    std::list<vertex> topology_sorted_vertex;
-   cg->TopologicalSort(topology_sorted_vertex);
+   subgraph->TopologicalSort(topology_sorted_vertex);
    for(const auto& cur : topology_sorted_vertex)
    {
       unsigned int funID = CG->get_function(cur);
