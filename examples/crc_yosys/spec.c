@@ -3,8 +3,10 @@
 #include <math.h>
 #include <stdio.h>
 
+#ifdef BAMBU_PROFILING
 extern void __builtin_bambu_time_start();
 extern void __builtin_bambu_time_stop();
+#endif
 
 typedef unsigned char uchar;
 #define LOBYTE(x) ((uchar)((x) & 0xFF))
@@ -16,7 +18,9 @@ unsigned short
 __attribute__ ((noinline)) __attribute__ ((used))  
 icrc1(unsigned short crc, unsigned char onech)
 {
+#ifdef BAMBU_PROFILING
     __builtin_bambu_time_start();
+#endif
     int i;
     unsigned short ans=(crc^onech << 8);
     
@@ -26,7 +30,9 @@ icrc1(unsigned short crc, unsigned char onech)
         else
             ans <<= 1;
     }
+#ifdef BAMBU_PROFILING
     __builtin_bambu_time_stop();
+#endif
     return ans;
 }
 
