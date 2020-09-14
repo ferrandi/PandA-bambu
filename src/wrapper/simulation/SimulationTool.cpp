@@ -321,7 +321,9 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
                time_stamp = time_stamp + clock_period + boost::lexical_cast<double>(filevalues[1]);
             }
             i++;
+#if HAVE_ASSERTS
             first_iteration = false;
+#endif
          }
          num_cycles = static_cast<unsigned long long int>(std::round(time_stamp / clock_period));
          i = i / 2;
