@@ -4200,7 +4200,7 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    aSig = COND_EXPR_MACRO64(swap, tmp_sig, aSig);
 
    tmp_sign = bSign;
-   bSign = swap ? aSign : bSign;
+   //bSign = swap ? aSign : bSign;
    aSign = swap ? tmp_sign : aSign;
 
    tmp_c_normal = b_c_normal;

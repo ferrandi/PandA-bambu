@@ -737,11 +737,11 @@ std::string structural_object::GetDefaultParameter(std::string name) const
 CustomMap<std::string, std::string> structural_object::GetParameters()
 {
    CustomMap<std::string, std::string> ret;
-   for(const auto default_parameter : default_parameters)
+   for(const auto& default_parameter : default_parameters)
    {
       ret[default_parameter.first] = default_parameter.second;
    }
-   for(const auto parameter : parameters)
+   for(const auto& parameter : parameters)
    {
       ret[parameter.first] = parameter.second;
    }
@@ -854,7 +854,7 @@ void structural_object::xwrite(xml_element* Enode)
       type->xwrite(Enode);
    if(!default_parameters.empty())
    {
-      for(const auto default_parameter : default_parameters)
+      for(const auto& default_parameter : default_parameters)
       {
          xml_element* Enode_parameter = Enode->add_child_element("parameter");
          WRITE_XNVM2("name", default_parameter.first, Enode_parameter);
@@ -1269,10 +1269,12 @@ structural_objectRef port_o::find_bounded_object(const structural_objectConstRef
    if(port_count > 1)
    {
       INDENT_DBG_MEX(0, 0, "Too many bindings to " + get_path());
-      for(const auto connected_object : connected_objects)
+#ifndef NDEBUG
+      for(const auto& connected_object : connected_objects)
       {
          INDENT_DBG_MEX(0, 0, "---" + connected_object.lock()->get_path());
       }
+#endif
       THROW_UNREACHABLE("");
    }
    return res;

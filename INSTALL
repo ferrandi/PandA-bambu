@@ -14,9 +14,11 @@ In order to install the PandA framework, you need to perform the following steps
 
 4) Create the directory for the building:
    $mkdir obj
+
+5) Move into the building directory:
    $cd obj
 
-5) Configure PandA:
+6) Configure PandA:
    $../configure [--enable-<ext-feature>...] --prefix=/opt/panda
 
 Currently accepted parameters are:
@@ -41,7 +43,7 @@ Currently accepted parameters are:
 
 Note that the scripts for synthesis and simulation are generated even if the 
 corresponding tools are not configured as described above. In this case, the 
-synthesis/simulation has to be performed using the standard shell command line.
+synthesis/simulation will exploit the system PATH variable.
 Since FloPoCo generates a VHDL-based description, co-simulation requires a
 mixed-language simulator. Both Modelsim from Mentor and XSIM/ISIM from Xilinx
 have such support.

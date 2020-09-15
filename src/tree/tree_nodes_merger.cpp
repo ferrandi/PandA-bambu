@@ -536,7 +536,7 @@ void tree_node_reached::operator()(const ssa_name* obj, unsigned int& mask)
       CHECK_AND_ADD(*use, ssa_name::use_set);
    }
 
-   for(auto const def_stmt : obj->CGetDefStmts())
+   for(auto const& def_stmt : obj->CGetDefStmts())
    {
       CHECK_AND_ADD(def_stmt, ssa_name::def_stmts);
    }

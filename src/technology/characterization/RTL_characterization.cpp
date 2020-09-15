@@ -833,7 +833,7 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
       {
          std::vector<std::string> params;
          NPF->get_library_parameters(params);
-         for(const auto param : params)
+         for(const auto& param : params)
          {
             if(param == "PRECISION")
             {

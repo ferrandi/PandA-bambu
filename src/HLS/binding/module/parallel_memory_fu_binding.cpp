@@ -153,7 +153,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
             atomics.insert(get(*operation)->get_structural_obj());
          }
       }
-      for(const auto atomic : atomics)
+      for(const auto& atomic : atomics)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding ALLOW_MEM_ACCESS_FU for " + atomic->get_path());
          const auto allow_mem_access = SM->add_module_from_technology_library("allow_memory_access_" + atomic->get_id(), "ALLOW_MEM_ACCESS_FU", LIBRARY_PC, circuit, TM);
@@ -294,7 +294,7 @@ void ParallelMemoryFuBinding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRe
          THROW_ASSERT(enable_so, "");
 
          unsigned int internal_object_id = 0;
-         for(const auto slave : slaves)
+         for(const auto& slave : slaves)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering component " + slave->get_path());
             THROW_ASSERT(slave->find_member("access_request", port_o_K, slave), "");

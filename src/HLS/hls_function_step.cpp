@@ -140,7 +140,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed steps to be created");
-   for(auto const step_to_be_created : steps_to_be_created)
+   for(auto const& step_to_be_created : steps_to_be_created)
    {
       switch(std::get<2>(step_to_be_created))
       {

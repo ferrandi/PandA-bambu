@@ -834,7 +834,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
    const std::string controller_str = "Controller_i" + STR(HIERARCHY_SEPARATOR);
    const std::string datapath_str = "Datapath_i" + STR(HIERARCHY_SEPARATOR);
    /* generate the scoped signal names and insert them in the selected signals*/
-   for(const auto vs : Discr->unfolded_v_to_scope)
+   for(const auto& vs : Discr->unfolded_v_to_scope)
    {
       const unsigned int f_id = Cget_node_info<UnfoldedFunctionInfo>(vs.first, Discr->DiscrepancyCallGraph)->f_id;
       const BehavioralHelperConstRef BH = Cget_node_info<UnfoldedFunctionInfo>(vs.first, Discr->DiscrepancyCallGraph)->behavior->CGetBehavioralHelper();
@@ -873,7 +873,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
       }
       // select local signals in the datapath
       THROW_ASSERT(fun_ids_to_local_sig_names.find(f_id) != fun_ids_to_local_sig_names.end(), "f_id = " + STR(f_id));
-      for(const auto local_sig_name : fun_ids_to_local_sig_names.at(f_id))
+      for(const auto& local_sig_name : fun_ids_to_local_sig_names.at(f_id))
       {
          datapath_scope.insert(local_sig_name);
       }
@@ -890,7 +890,7 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
 
    std::size_t pointers_n = 0;
    std::size_t fully_resolved_n = 0;
-   for(const auto s : Discr->address_ssa)
+   for(const auto& s : Discr->address_ssa)
    {
       const unsigned int ssa_index = s->index;
       const auto* ssa = GetPointer<const ssa_name>(s);

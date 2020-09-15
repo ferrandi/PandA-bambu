@@ -417,7 +417,7 @@ DesignFlowStep_Status Evaluation::Exec()
    WRITE_XNVM2("benchmark_name", bench_name, nodeRoot);
    xml_element* child_element;
 
-   for(auto const objective : objective_vector)
+   for(auto const& objective : objective_vector)
    {
       std::string value;
       if(objective == "AREAxTIME")

@@ -63,7 +63,7 @@ const std::string FindMaxCFGTransformations::ComputeArgString(const size_t cfg_m
 {
    const auto argv = parameters->CGetArgv();
    std::string arg_string;
-   for(const auto arg : argv)
+   for(const auto& arg : argv)
    {
       /// Executable
       if(arg_string == "")

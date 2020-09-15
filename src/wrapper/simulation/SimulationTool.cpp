@@ -286,6 +286,7 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
          double time_stamp = 0.0;
 #if HAVE_ASSERTS
          unsigned int prev_state = 3;
+         bool first_iteration = true;
 #endif
          while(!profiling_res_file.eof())
          {
@@ -313,13 +314,16 @@ unsigned long long int SimulationTool::DetermineCycles(unsigned long long int& a
             }
             else
             {
-               THROW_ASSERT(prev_state == 2, "Something wrong happen during the reading of the profiling results");
+               THROW_ASSERT(prev_state == 2 || first_iteration, "Something wrong happen during the reading of the profiling results");
 #if HAVE_ASSERTS
                prev_state = 3;
 #endif
-               time_stamp = time_stamp - clock_period + boost::lexical_cast<double>(filevalues[1]);
+               time_stamp = time_stamp + clock_period + boost::lexical_cast<double>(filevalues[1]);
             }
             i++;
+#if HAVE_ASSERTS
+            first_iteration = false;
+#endif
          }
          num_cycles = static_cast<unsigned long long int>(std::round(time_stamp / clock_period));
          i = i / 2;

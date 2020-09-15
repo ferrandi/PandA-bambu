@@ -344,7 +344,7 @@ features : NONE
          {
             $$ = AadlParserNode();
             $$ = $2;
-            for(const auto feature : $1.features)
+            for(const auto& feature : $1.features)
                $$.features.push_front(feature);
          }
          ;

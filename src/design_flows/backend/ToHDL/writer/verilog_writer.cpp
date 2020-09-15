@@ -188,7 +188,7 @@ std::string verilog_writer::type_converter_size(const structural_objectRef& cir)
       {
          std::vector<std::pair<std::string, structural_objectRef>> library_parameters;
          mod->get_NP_library_parameters(Owner, library_parameters);
-         for(auto const library_parameter : library_parameters)
+         for(auto const& library_parameter : library_parameters)
             if(port_name == library_parameter.first)
                specialization_string = true;
       }

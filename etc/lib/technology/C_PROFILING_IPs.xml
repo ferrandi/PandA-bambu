@@ -23,7 +23,7 @@
             <structural_type_descriptor type="BOOL" size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="__builtin_bambu_time_start" VERILOG_PROVIDED="reg done_port;\n// synthesis translate_off\ninteger res_file;\nalways @(posedge clock)\n  if(start_port == 1&apos;b1)\n  begin\n    res_file = $fopen(&quot;profiling_results.txt&quot;,&quot;a+&quot;);\n    /*$display(&quot;__builtin_bambu_time_start %d&quot;, $time);*/\n    $fwrite(res_file, &quot;2\\t&quot;);\n    $fwrite(res_file, &quot;%d\\n&quot;, $time);\n    $fclose(res_file);\n  end\n// synthesis translate_on\nalways @(posedge clock) done_port &lt;= start_port;"/>
+          <NP_functionality LIBRARY="__builtin_bambu_time_start" VERILOG_PROVIDED="reg done_port;\n// synthesis translate_off\ninteger res_file;\nalways @(posedge clock)\n  if(start_port == 1&apos;b1)\n  begin\n    res_file = $fopen(&quot;profiling_results.txt&quot;,&quot;a&quot;);\n    /*$display(&quot;__builtin_bambu_time_start %d&quot;, $time);*/\n    $fwrite(res_file, &quot;2\\t&quot;);\n    $fwrite(res_file, &quot;%d\\n&quot;, $time);\n    $fclose(res_file);\n  end\n// synthesis translate_on\nalways @(posedge clock) done_port &lt;= start_port;"/>
         </component_o>
       </circuit>
     </cell>

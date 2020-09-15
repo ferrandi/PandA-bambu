@@ -573,7 +573,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
    if(src->ExistsParameter(MEMORY_PARAMETER))
    {
       std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(src->GetParameter(MEMORY_PARAMETER), ";");
-      for(const auto current_src_parameter : current_src_parameters)
+      for(const auto& current_src_parameter : current_src_parameters)
       {
          std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
          res_parameters[current_parameter[0]] = current_parameter[1];
@@ -590,7 +590,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
          if(subModule->ExistsParameter(MEMORY_PARAMETER))
          {
             std::vector<std::string> current_src_parameters = convert_string_to_vector<std::string>(subModule->GetParameter(MEMORY_PARAMETER), ";");
-            for(const auto current_src_parameter : current_src_parameters)
+            for(const auto& current_src_parameter : current_src_parameters)
             {
                std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_src_parameter, "=");
                res_parameters[current_parameter[0]] = current_parameter[1];

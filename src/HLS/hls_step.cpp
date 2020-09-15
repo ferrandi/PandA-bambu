@@ -404,7 +404,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
       functions.insert(memcpy_function_id);
    }
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
-   for(auto const step_to_be_created : steps_to_be_created)
+   for(auto const& step_to_be_created : steps_to_be_created)
    {
       switch(std::get<2>(step_to_be_created))
       {
