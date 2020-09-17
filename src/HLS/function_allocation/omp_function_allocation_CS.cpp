@@ -100,7 +100,8 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    for(const auto f_id : root_functions)
       for(const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
          vertex_subset.insert(call_graph_manager->GetVertex(reached_f_id));
-   const auto call_graph = call_graph_manager->CGetCallSubGraph(vertex_subset);   std::list<vertex> sorted_functions;
+   const auto call_graph = call_graph_manager->CGetCallSubGraph(vertex_subset);
+   std::list<vertex> sorted_functions;
    call_graph->TopologicalSort(sorted_functions);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Computing functions to be parallelized");
    int cycleInd = 0;

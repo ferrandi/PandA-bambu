@@ -396,6 +396,9 @@ namespace llvm
    case llvm::Value::InstructionVal + llvm::Instruction::OPC: \
       return assignCode(t, GT(GIMPLE_ASSIGN));
 #include "llvm/IR/Instruction.def"
+#if __clang_major__ >= 10
+         case llvm::Value::InstructionVal + llvm::Instruction::FNeg:
+#endif
          case llvm::Value::InstructionVal + llvm::Instruction::Store:
          case llvm::Value::InstructionVal + llvm::Instruction::Load:
          case llvm::Value::InstructionVal + llvm::Instruction::Select:
@@ -998,6 +1001,10 @@ namespace llvm
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
+#if __clang_major__ >= 10
+         case llvm::Instruction::FNeg:
+            return GT(NEGATE_EXPR);
+#endif
          case llvm::Instruction::Add:
             return GT(PLUS_EXPR);
          case llvm::Instruction::FAdd:
@@ -1180,7 +1187,11 @@ namespace llvm
          av.alloc_inst = inst;
          std::set<const llvm::User*> visited;
          visited.insert(inst);
+#if __clang_major__ >= 10
+         const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
+#else
          const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
          av.addr = temporary_addr_check(inst, visited, TLI);
          allocaVar = assignCode(&av, GT(ALLOCAVAR_DECL));
       }
@@ -1518,7 +1529,11 @@ namespace llvm
             if(operand->getType()->isPointerTy() && PtoSets_AA)
             {
                auto varId = PtoSets_AA->PE(operand);
+#if __clang_major__ >= 10
+               const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*currentFunction);
+#else
                const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
                if(is_PTS(varId, TLI, true))
                {
                   const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
@@ -4005,7 +4020,12 @@ namespace llvm
             std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User*>(g);
             visited.insert(currInst);
+#if __clang_major__ >= 10
+            auto castInst = reinterpret_cast<const llvm::Instruction*>(g);
+            const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*castInst->getFunction());
+#else
             const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
             if(temporary_addr_check(currInst, visited, TLI))
                serialize_string("addr");
             break;
@@ -5238,7 +5258,9 @@ namespace llvm
       while(currFuncIterator != M.getFunctionList().end())
       {
          auto& F = *currFuncIterator;
+#if __clang_major__ != 4
          const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+#endif
          auto fname = std::string(currFuncIterator->getName());
          llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
@@ -5723,7 +5745,9 @@ namespace llvm
    }
    bool DumpGimpleRaw::RebuildConstants(llvm::Module& M)
    {
+#if __clang_major__ < 10
       llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
       llvm::SmallPtrSet<llvm::GlobalVariable*, 8> Invariants;
       llvm::SmallPtrSet<llvm::Instruction*, 8> Stores;
       auto res = false;
@@ -5732,6 +5756,9 @@ namespace llvm
       {
          auto fname = std::string(currFuncIterator->getName());
          auto& F = *currFuncIterator;
+#if __clang_major__ >= 10
+         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
+#endif
          std::list<llvm::Instruction*> deadList;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
          {
@@ -5974,10 +6001,15 @@ namespace llvm
    {
       if(RA)
       {
+#if __clang_major__ < 10
          llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
 
          for(llvm::Function& F : M)
          {
+#if __clang_major__ >= 10
+            llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
+#endif
 #ifdef DEBUG_RA
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << F.getName() << "\n";
 #endif

@@ -80,3 +80,9 @@ if test $return_value != 0; then
    exit $return_value
 fi
 exit 0
+$(dirname $0)/softfloat-tests-clang10.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
+exit 0

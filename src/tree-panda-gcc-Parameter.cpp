@@ -41,6 +41,7 @@
  */
 
 /// Autoheader include
+#include "config_HAVE_I386_CLANG10_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -446,6 +447,8 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8));
 #elif HAVE_I386_CLANG9_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9));
+#elif HAVE_I386_CLANG10_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -494,6 +497,9 @@ void tree_panda_gcc_parameter::SetDefaults()
 #endif
 #if HAVE_I386_CLANG9_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9)
+#endif
+#if HAVE_I386_CLANG10_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10)
 #endif
 #if HAVE_ARM_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)

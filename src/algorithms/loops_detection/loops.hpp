@@ -190,7 +190,7 @@ class Loops
                  ,
                  const ProfilingInformationConstRef profiling_information = ProfilingInformationConstRef()
 #endif
-                     ) const;
+   ) const;
 };
 
 #endif // LOOPS_HPP

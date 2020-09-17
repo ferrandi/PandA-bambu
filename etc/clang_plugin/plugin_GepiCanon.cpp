@@ -47,6 +47,9 @@
 #if __clang_major__ >= 7
 #include "llvm/Transforms/Utils.h"
 #endif
+#if __clang_major__ >= 10
+#include "llvm/InitializePasses.h"
+#endif
 #include "GepiCanonicalizationPass.hpp"
 
 namespace llvm

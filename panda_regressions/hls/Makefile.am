@@ -1251,12 +1251,16 @@ clang8_regression_simple_no_expose_globals.sh\
 clang9_regression_simple_default.sh\
 clang9_regression_simple_ext_pipelined.sh\
 clang9_regression_simple_no_expose_globals.sh\
+clang10_regression_simple_default.sh\
+clang10_regression_simple_ext_pipelined.sh\
+clang10_regression_simple_no_expose_globals.sh\
 softfloat-tests-clang4.sh\
 softfloat-tests-clang5.sh\
 softfloat-tests-clang6.sh\
 softfloat-tests-clang7.sh\
 softfloat-tests-clang8.sh\
 softfloat-tests-clang9.sh\
+softfloat-tests-clang10.sh\
 libm-testsClang.sh\
 libm-testsClang4.sh\
 libm-testsClang5.sh\
@@ -1264,6 +1268,7 @@ libm-testsClang6.sh\
 libm-testsClang7.sh\
 libm-testsClang8.sh\
 libm-testsClang9.sh\
+libm-testsClang10.sh\
 CHStone_frontend1Clang.sh\
 gcc49_regression_simple_no_expose_globals_pretty_print.sh
 

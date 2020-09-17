@@ -120,7 +120,7 @@ Expandability compute_operand_expandability_profit(llvm::Use* op_use, const llvm
    llvm::Type* allocated_type = op_use->get()->getType()->getPointerElementType();
 
    unsigned long num_elements = get_num_elements(allocated_type) * decayed_dim;
-   unsigned long size = DL.getTypeAllocSize(allocated_type) * decayed_dim;
+   unsigned long size = static_cast<unsigned long>(DL.getTypeAllocSize(allocated_type)) * decayed_dim;
    bool expandable_size = num_elements <= MaxNumScalarTypes and size <= MaxTypeByteSize;
 
    if(!expandable_size)

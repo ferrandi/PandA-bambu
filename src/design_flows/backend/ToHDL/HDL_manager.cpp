@@ -949,7 +949,7 @@ void HDL_manager::write_flopoco_module(const structural_objectRef& cir, std::lis
 #if HAVE_FLOPOCO
                                                                             aux_files
 #endif
-                                       ) const
+) const
 {
    auto* mod_inst = GetPointer<module>(cir);
    long long int mod_size_in = 0, mod_size_out = 0;

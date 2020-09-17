@@ -47,7 +47,10 @@
 #if __clang_major__ >= 7
 #include "llvm/Transforms/Utils.h"
 #endif
-
+#if __clang_major__ >= 10
+#include "llvm/Support/CommandLine.h"
+#include "llvm/InitializePasses.h"
+#endif
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 #include "ExpandMemOpsPass.hpp"
 #include "GepiCanonicalizationPass.hpp"

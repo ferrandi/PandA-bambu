@@ -129,7 +129,8 @@
 
 using bw_t = Range::bw_t;
 
-union vcFloat {
+union vcFloat
+{
    float flt;
    struct _FP_STRUCT_LAYOUT
    {
@@ -143,7 +144,8 @@ union vcFloat {
    } bits __attribute__((packed));
 };
 
-union vcDouble {
+union vcDouble
+{
    double dub;
    struct _FP_STRUCT_LAYOUT
    {
@@ -7111,7 +7113,7 @@ RangeAnalysis::RangeAnalysis(const application_managerRef AM, const DesignFlowMa
    OPERATION_OPTION(ra_mode, shr);
    OPERATION_OPTION(ra_mode, abs);
    OPERATION_OPTION(ra_mode, negate);
-   OPERATION_OPTION(ra_mode, not);
+   OPERATION_OPTION(ra_mode, not );
    OPERATION_OPTION(ra_mode, and);
    OPERATION_OPTION(ra_mode, or);
    OPERATION_OPTION(ra_mode, xor);

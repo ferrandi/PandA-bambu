@@ -47,6 +47,10 @@
 #include "config_HAVE_FLOPOCO.hpp"
 #include "config_HAVE_GLPK.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
+#include "config_HAVE_I386_CLANG10_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG10_M32.hpp"
+#include "config_HAVE_I386_CLANG10_M64.hpp"
+#include "config_HAVE_I386_CLANG10_MX32.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_M32.hpp"
 #include "config_HAVE_I386_CLANG4_M64.hpp"
@@ -2661,7 +2665,7 @@ int BambuParameter::Exec()
       }
 #endif
       else if(file_type == Parameters_FileFormat::FF_C || file_type == Parameters_FileFormat::FF_OBJECTIVEC || file_type == Parameters_FileFormat::FF_CPP || file_type == Parameters_FileFormat::FF_FORTRAN
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER
               || file_type == Parameters_FileFormat::FF_LLVM
 #endif
       )
@@ -3019,6 +3023,9 @@ void BambuParameter::CheckParameters()
 #endif
 #if HAVE_I386_CLANG9_COMPILER
                  or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG9
+#endif
+#if HAVE_I386_CLANG10_COMPILER
+                 or getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
          )
          {
@@ -3611,6 +3618,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8));
 #elif HAVE_I386_CLANG9_COMPILER
    setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9));
+#elif HAVE_I386_CLANG10_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -3660,6 +3669,9 @@ void BambuParameter::SetDefaults()
 #if HAVE_I386_CLANG9_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9)
 #endif
+#if HAVE_I386_CLANG10_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10)
+#endif
 #if HAVE_ARM_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
 #endif
@@ -3669,79 +3681,81 @@ void BambuParameter::SetDefaults()
    );
 
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_GCC46_COMPILER)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_GCC45_COMPILER)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32 ");
+   setOption(OPT_gcc_m32_mx32, "-mx32");
 #elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #elif(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64 ");
+   setOption(OPT_gcc_m32_mx32, "-m64");
+#elif(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64)
+   setOption(OPT_gcc_m32_mx32, "-m64");
 #else
    THROW_ERROR("None of -m32, -mx32, -m64 GCC option is supported");
 #endif
@@ -3820,6 +3834,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8));
 #elif HAVE_I386_CLANG9_COMPILER
    setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9));
+#elif HAVE_I386_CLANG10_COMPILER
+   setOption(OPT_host_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
@@ -3846,7 +3862,7 @@ void BambuParameter::SetDefaults()
 void BambuParameter::add_bambu_library(std::string lib)
 {
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
-    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER
+    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER
    auto preferred_compiler = getOption<unsigned int>(OPT_default_compiler);
    std::string archive_files;
    bool is_subnormals = isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal);
@@ -3956,6 +3972,12 @@ void BambuParameter::add_bambu_library(std::string lib)
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9))
    {
       setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang9" + VSuffix + ".a");
+   }
+#endif
+#if HAVE_I386_CLANG10_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10))
+   {
+      setOption(OPT_archive_files, archive_files + relocate_compiler_path(PANDA_LIB_INSTALLDIR "/panda/lib") + lib + "_clang10" + VSuffix + ".a");
    }
 #endif
 }

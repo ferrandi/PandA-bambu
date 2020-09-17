@@ -52,7 +52,9 @@
 #include <llvm/Transforms/Utils/BasicBlockUtils.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 #include <stack>
-
+#if __clang_major__ >= 10
+#include "llvm/Support/CommandLine.h"
+#endif
 #include <cxxabi.h>
 #include <llvm/ADT/Statistic.h>
 
@@ -4315,7 +4317,11 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
       }
       if(doOpt)
       {
+#if __clang_major__ >= 10
+         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*f);
+#else
          llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
          const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(*f);
          for(llvm::Function::iterator BBIt = f->begin(); BBIt != f->end();)
             llvm::SimplifyInstructionsInBlock(&*BBIt++, &TLI);

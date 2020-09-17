@@ -1,79 +1,79 @@
 dnl
 dnl check clang version 
 dnl
-AC_DEFUN([AC_CHECK_CLANG6_I386_VERSION],[
-    AC_ARG_WITH(clang6,
-    [  --with-clang6=executable-path path where the CLANG 6.0 is installed ],
+AC_DEFUN([AC_CHECK_CLANG10_I386_VERSION],[
+    AC_ARG_WITH(clang10,
+    [  --with-clang10=executable-path path where the CLANG 10.0 is installed ],
     [
-       ac_clang6="$withval"
+       ac_clang10="$withval"
     ])
 dnl switch to c
 AC_LANG_PUSH([C])
 
-if test "x$ac_clang6" = x; then
-   CLANG_TO_BE_CHECKED="/usr/bin/clang /usr/bin/clang-6.0"
+if test "x$ac_clang10" = x; then
+   CLANG_TO_BE_CHECKED="/usr/bin/clang /usr/bin/clang-10"
 else
-   CLANG_TO_BE_CHECKED=$ac_clang6;
+   CLANG_TO_BE_CHECKED=$ac_clang10;
 fi
 
-echo "looking for clang 6.0..."
+echo "looking for clang 10.0..."
 for compiler in $CLANG_TO_BE_CHECKED; do
    if test -f $compiler; then
       echo "checking $compiler..."
       dnl check for clang
-      I386_CLANG6_VERSION=`$compiler --version |grep clang|awk -F' ' '{print $[3]}'| awk -F'-' '{print $[1]}'`
-      AS_VERSION_COMPARE($1, [6.0.0], MIN_CLANG6=[6.0.0], MIN_CLANG6=$1, MIN_CLANG6=$1)
-      AS_VERSION_COMPARE([7.0.0], $2, MAX_CLANG6=[7.0.0], MAX_CLANG6=$2, MAX_CLANG6=$2)
-      AS_VERSION_COMPARE($I386_CLANG6_VERSION, $MIN_CLANG6, echo "checking $compiler >= $MIN_CLANG6... no"; min=no, echo "checking $compiler >= $MIN_CLANG6... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG6... yes"; min=yes)
+      I386_CLANG10_VERSION=`$compiler --version |grep clang|awk -F' ' '{print $[3]}'| awk -F'-' '{print $[1]}'`
+      AS_VERSION_COMPARE($1, [10.0.0], MIN_CLANG10=[10.0.0], MIN_CLANG10=$1, MIN_CLANG10=$1)
+      AS_VERSION_COMPARE([11.0.0], $2, MAX_CLANG10=[11.0.0], MAX_CLANG10=$2, MAX_CLANG10=$2)
+      AS_VERSION_COMPARE($I386_CLANG10_VERSION, $MIN_CLANG10, echo "checking $compiler >= $MIN_CLANG10... no"; min=no, echo "checking $compiler >= $MIN_CLANG10... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG10... yes"; min=yes)
       if test "$min" = "no" ; then
          continue;
       fi
-      AS_VERSION_COMPARE($I386_CLANG6_VERSION, $MAX_CLANG6, echo "checking $compiler < $MAX_CLANG6... yes"; max=yes, echo "checking $compiler < $MAX_CLANG6... no"; max=no, echo "checking $compiler < $MAX_CLANG6... no"; max=no)
+      AS_VERSION_COMPARE($I386_CLANG10_VERSION, $MAX_CLANG10, echo "checking $compiler < $MAX_CLANG10... yes"; max=yes, echo "checking $compiler < $MAX_CLANG10... no"; max=no, echo "checking $compiler < $MAX_CLANG10... no"; max=no)
       if test "$max" = "no" ; then
          continue;
       fi
-      I386_CLANG6_EXE=$compiler;
-      clang_file=`basename $I386_CLANG6_EXE`
-      clang_dir=`dirname $I386_CLANG6_EXE`
+      I386_CLANG10_EXE=$compiler;
+      clang_file=`basename $I386_CLANG10_EXE`
+      clang_dir=`dirname $I386_CLANG10_EXE`
 
       llvm_config=`echo $clang_file | sed s/clang/llvm-config/`
-      I386_LLVM_CONFIG6_EXE=$clang_dir/$llvm_config
-      LLVM6_CXXFLAGS=`$I386_LLVM_CONFIG6_EXE --cxxflags`
-      I386_LLVM6_CXXFLAGS="$LLVM6_CXXFLAGS -std=c++11 $3"
-      if test "x$I386_LLVM6_CXXFLAGS" = "x"; then
-         echo "checking CLANG/LLVM plugin support... no. Package llvm-6.0 missing?"
+      I386_LLVM_CONFIG10_EXE=$clang_dir/$llvm_config
+      LLVM10_CXXFLAGS=`$I386_LLVM_CONFIG10_EXE --cxxflags`
+      I386_LLVM10_CXXFLAGS="$LLVM10_CXXFLAGS -std=c++14 $3"
+      if test "x$I386_LLVM10_CXXFLAGS" = "x"; then
+         echo "checking CLANG/LLVM plugin support... no. Package llvm-10.0 missing?"
          break;
       fi
-      echo "llvm cxxflags...$I386_LLVM6_CXXFLAGS"
+      echo "llvm cxxflags...$I386_LLVM10_CXXFLAGS"
       cpp=`echo $clang_file | sed s/clang/clang-cpp/`
-      I386_CLANG_CPP6_EXE=$clang_dir/$cpp
-      if test -f $I386_CLANG_CPP6_EXE; then
-         echo "checking cpp...$I386_CLANG_CPP6_EXE"
+      I386_CLANG_CPP10_EXE=$clang_dir/$cpp
+      if test -f $I386_CLANG_CPP10_EXE; then
+         echo "checking cpp...$I386_CLANG_CPP10_EXE"
       else
          echo "checking cpp...no"
-         I386_CLANG6_EXE=""
+         I386_CLANG10_EXE=""
          continue
       fi
       clangpp=`echo $clang_file | sed s/clang/clang\+\+/`
-      I386_CLANGPP6_EXE=$clang_dir/$clangpp
-      if test -f $I386_CLANGPP6_EXE; then
-         echo "checking clang++...$I386_CLANGPP6_EXE"
+      I386_CLANGPP10_EXE=$clang_dir/$clangpp
+      if test -f $I386_CLANGPP10_EXE; then
+         echo "checking clang++...$I386_CLANGPP10_EXE"
       else
          echo "checking clang++...no"
          continue
       fi
       llvm_link=`echo $clang_file | sed s/clang/llvm-link/`
-      I386_LLVM6_LINK_EXE=$clang_dir/$llvm_link
-      if test -f $I386_LLVM6_LINK_EXE; then
-         echo "checking llvm-link...$I386_LLVM6_LINK_EXE"
+      I386_LLVM10_LINK_EXE=$clang_dir/$llvm_link
+      if test -f $I386_LLVM10_LINK_EXE; then
+         echo "checking llvm-link...$I386_LLVM10_LINK_EXE"
       else
          echo "checking llvm-link...no"
          continue
       fi
       llvm_opt=`echo $clang_file | sed s/clang/opt/`
-      I386_LLVM6_OPT_EXE=$clang_dir/$llvm_opt
-      if test -f $I386_LLVM6_OPT_EXE; then
-         echo "checking llvm-opt...$I386_LLVM6_OPT_EXE"
+      I386_LLVM10_OPT_EXE=$clang_dir/$llvm_opt
+      if test -f $I386_LLVM10_OPT_EXE; then
+         echo "checking llvm-opt...$I386_LLVM10_OPT_EXE"
       else
          echo "checking llvm-opt...no"
          continue
@@ -82,19 +82,19 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LDFLAGS="$LDFLAGS"
       ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG6_EXE
+      CC=$I386_CLANG10_EXE
       CFLAGS="-m32"
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG6_M32=yes,I386_CLANG6_M32=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG10_M32=yes,I386_CLANG10_M32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG6_M32" == xyes; then
-         AC_DEFINE(HAVE_I386_CLANG6_M32,1,[Define if clang 6.0 supports -m32 ])
+      if test "x$I386_CLANG10_M32" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG10_M32,1,[Define if clang 10.0 supports -m32 ])
          echo "checking support to -m32... yes"
       else
          echo "checking support to -m32... no"
@@ -103,19 +103,19 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LDFLAGS="$LDFLAGS"
       ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG6_EXE
+      CC=$I386_CLANG10_EXE
       CFLAGS="-mx32"
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG6_MX32=yes,I386_CLANG6_MX32=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG10_MX32=yes,I386_CLANG10_MX32=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG6_MX32" == xyes; then
-         AC_DEFINE(HAVE_I386_CLANG6_MX32,1,[Define if clang 6.0 supports -mx32 ])
+      if test "x$I386_CLANG10_MX32" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG10_MX32,1,[Define if clang 10.0 supports -mx32 ])
          echo "checking support to -mx32... yes"
       else
          echo "checking support to -mx32... no"
@@ -124,19 +124,19 @@ for compiler in $CLANG_TO_BE_CHECKED; do
       ac_save_CFLAGS="$CFLAGS"
       ac_save_LDFLAGS="$LDFLAGS"
       ac_save_LIBS="$LIBS"
-      CC=$I386_CLANG6_EXE
+      CC=$I386_CLANG10_EXE
       CFLAGS="-m64"
       LDFLAGS=
       LIBS=
       AC_LANG_PUSH([C])
-      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG6_M64=yes,I386_CLANG6_M64=no)
+      AC_LINK_IFELSE([AC_LANG_SOURCE([int main(void){ return 0;}])],I386_CLANG10_M64=yes,I386_CLANG10_M64=no)
       AC_LANG_POP([C])
       CC=$ac_save_CC
       CFLAGS=$ac_save_CFLAGS
       LDFLAGS=$ac_save_LDFLAGS
       LIBS=$ac_save_LIBS
-      if test "x$I386_CLANG6_M64" == xyes; then
-         AC_DEFINE(HAVE_I386_CLANG6_M64,1,[Define if clang 6.0 supports -m64 ])
+      if test "x$I386_CLANG10_M64" == xyes; then
+         AC_DEFINE(HAVE_I386_CLANG10_M64,1,[Define if clang 10.0 supports -m64 ])
          echo "checking support to -m64... yes"
       else
          echo "checking support to -m64... no"
@@ -228,7 +228,7 @@ class PrintFunctionNamesAction : public PluginASTAction {
 protected:
   std::unique_ptr<ASTConsumer> CreateASTConsumer(CompilerInstance &CI,
                                                  llvm::StringRef) override {
-    return llvm::make_unique<PrintFunctionsConsumer>(CI, ParsedTemplates);
+    return std::make_unique<PrintFunctionsConsumer>(CI, ParsedTemplates);
   }
 
   bool ParseArgs(const CompilerInstance &CI,
@@ -273,11 +273,11 @@ static FrontendPluginRegistry::Add<PrintFunctionNamesAction>
 X1("print-fns", "print function names");
 #endif
 PLUGIN_TEST
-      for plugin_compiler in $I386_CLANGPP6_EXE; do
+      for plugin_compiler in $I386_CLANGPP10_EXE; do
          plugin_option=
          case $host_os in
            mingw*) 
-             echo plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG6_EXE --ldflags --libs --system-libs`"
+             echo plugin_option="-shared -Wl,--export-all-symbols -Wl,--start-group -lclangAST -lclangASTMatchers -lclangAnalysis -lclangBasic -lclangDriver -lclangEdit -lclangFrontend -lclangFrontendTool -lclangLex -lclangParse -lclangSema -lclangEdit -lclangRewrite -lclangRewriteFrontend -lclangStaticAnalyzerFrontend -lclangStaticAnalyzerCheckers -lclangStaticAnalyzerCore -lclangCrossTU -lclangIndex -lclangSerialization -lclangToolingCore -lclangTooling -lclangFormat -Wl,--end-group -lversion `$I386_LLVM_CONFIG10_EXE --ldflags --libs --system-libs`"
            ;;
            darwin*)
              plugin_option='-fPIC -shared -undefined dynamic_lookup '
@@ -289,96 +289,96 @@ PLUGIN_TEST
          if test -f plugin_test.so; then
             rm plugin_test.so
          fi
-         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM6_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC"
+         echo "compiling plugin $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM10_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++14 -fPIC"
          case $host_os in
            mingw*) 
-             I386_CLANG6_PLUGIN_COMPILER=$plugin_compiler
+             I386_CLANG10_PLUGIN_COMPILER=$plugin_compiler
              ;;
            *)
-             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM6_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++11 -fPIC 2> /dev/null
+             $plugin_compiler -I$TOPSRCDIR/etc/clang_plugin/ $I386_LLVM10_CXXFLAGS -c plugin_test.cpp -o plugin_test.o -std=c++14 -fPIC 2> /dev/null
              $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so 2> /dev/null
              if test ! -f plugin_test.so; then
-               echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-6.0-dev missing?"
+               echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... no... Package libclang-10.0-dev missing?"
               continue
              fi
              echo "checking $plugin_compiler plugin_test.o $plugin_option -o plugin_test.so ... yes"
              ac_save_CC="$CC"
              ac_save_CFLAGS="$CFLAGS"
-             CC=$I386_CLANG6_EXE
+             CC=$I386_CLANG10_EXE
              CFLAGS="-fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns"
              AC_LANG_PUSH([C])
              AC_COMPILE_IFELSE([AC_LANG_SOURCE([[
                ]],[[
                   return 0;
                ]])],
-             I386_CLANG6_PLUGIN_COMPILER=$plugin_compiler,I386_CLANG6_PLUGIN_COMPILER=)
+             I386_CLANG10_PLUGIN_COMPILER=$plugin_compiler,I386_CLANG10_PLUGIN_COMPILER=)
              AC_LANG_POP([C])
              CC=$ac_save_CC
              CFLAGS=$ac_save_CFLAGS
              #If plugin compilation fails, skip this executable
-             if test "x$I386_CLANG6_PLUGIN_COMPILER" = x; then
-               echo "plugin compilation does not work... $I386_CLANG6_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
+             if test "x$I386_CLANG10_PLUGIN_COMPILER" = x; then
+               echo "plugin compilation does not work... $I386_CLANG10_EXE -fplugin=$BUILDDIR/plugin_test.so -Xclang -add-plugin -Xclang print-fns ?"
               continue
              fi
            ;;
          esac
          echo "OK, we have found the compiler"
-         build_I386_CLANG6=yes;
-         build_I386_CLANG6_EMPTY_PLUGIN=yes;
-         build_I386_CLANG6_SSA_PLUGIN=yes;
-         build_I386_CLANG6_SSA_PLUGINCPP=yes;
-         build_I386_CLANG6_EXPANDMEMOPS_PLUGIN=yes;
-         build_I386_CLANG6_GEPICANON_PLUGIN=yes;
-         build_I386_CLANG6_CSROA_PLUGIN=yes;
-         build_I386_CLANG6_TOPFNAME_PLUGIN=yes;
-         build_I386_CLANG6_ASTANALYZER_PLUGIN=yes;
+         build_I386_CLANG10=yes;
+         build_I386_CLANG10_EMPTY_PLUGIN=yes;
+         build_I386_CLANG10_SSA_PLUGIN=yes;
+         build_I386_CLANG10_SSA_PLUGINCPP=yes;
+         build_I386_CLANG10_EXPANDMEMOPS_PLUGIN=yes;
+         build_I386_CLANG10_GEPICANON_PLUGIN=yes;
+         build_I386_CLANG10_CSROA_PLUGIN=yes;
+         build_I386_CLANG10_TOPFNAME_PLUGIN=yes;
+         build_I386_CLANG10_ASTANALYZER_PLUGIN=yes;
       done
-      if test "x$I386_CLANG6_PLUGIN_COMPILER" != x; then
+      if test "x$I386_CLANG10_PLUGIN_COMPILER" != x; then
          break;
       fi
    else
       echo "checking $compiler... not found"
    fi
 done
-if test x$I386_CLANG6_PLUGIN_COMPILER != x; then
+if test x$I386_CLANG10_PLUGIN_COMPILER != x; then
   dnl set configure and makefile variables
-  I386_CLANG6_EMPTY_PLUGIN=clang6_plugin_dumpGimpleEmpty
-  I386_CLANG6_SSA_PLUGIN=clang6_plugin_dumpGimpleSSA
-  I386_CLANG6_SSA_PLUGINCPP=clang6_plugin_dumpGimpleSSACpp
-  I386_CLANG6_EXPANDMEMOPS_PLUGIN=clang6_plugin_expandMemOps
-  I386_CLANG6_GEPICANON_PLUGIN=clang6_plugin_GepiCanon
-  I386_CLANG6_CSROA_PLUGIN=clang6_plugin_CSROA
-  I386_CLANG6_TOPFNAME_PLUGIN=clang6_plugin_topfname
-  I386_CLANG6_ASTANALYZER_PLUGIN=clang6_plugin_ASTAnalyzer
-  AC_SUBST(I386_CLANG6_EMPTY_PLUGIN)
-  AC_SUBST(I386_CLANG6_SSA_PLUGIN)
-  AC_SUBST(I386_CLANG6_SSA_PLUGINCPP)
-  AC_SUBST(I386_CLANG6_EXPANDMEMOPS_PLUGIN)
-  AC_SUBST(I386_CLANG6_GEPICANON_PLUGIN)
-  AC_SUBST(I386_CLANG6_CSROA_PLUGIN)
-  AC_SUBST(I386_CLANG6_TOPFNAME_PLUGIN)
-  AC_SUBST(I386_CLANG6_ASTANALYZER_PLUGIN)
-  AC_SUBST(I386_LLVM6_CXXFLAGS)
-  AC_SUBST(I386_CLANG6_EXE)
-  AC_SUBST(I386_CLANG6_VERSION)
-  AC_SUBST(I386_CLANG6_PLUGIN_COMPILER)
-  AC_SUBST(I386_LLVM_CONFIG6_EXE)
-  AC_DEFINE(HAVE_I386_CLANG6_COMPILER, 1, "Define if CLANG 6.0 I386 compiler is compliant")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_EXE, "${I386_CLANG6_EXE}", "Define the plugin clang")
-  AC_DEFINE_UNQUOTED(I386_CLANG_CPP6_EXE, "${I386_CLANG_CPP6_EXE}", "Define the plugin cpp")
-  AC_DEFINE_UNQUOTED(I386_CLANGPP6_EXE, "${I386_CLANGPP6_EXE}", "Define the plugin clang++")
-  AC_DEFINE_UNQUOTED(I386_LLVM6_LINK_EXE, "${I386_LLVM6_LINK_EXE}", "Define the plugin clang++")
-  AC_DEFINE_UNQUOTED(I386_LLVM6_OPT_EXE, "${I386_LLVM6_OPT_EXE}", "Define the plugin clang++")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_EMPTY_PLUGIN, "${I386_CLANG6_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_SSA_PLUGIN, "${I386_CLANG6_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_SSA_PLUGINCPP, "${I386_CLANG6_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_EXPANDMEMOPS_PLUGIN, "${I386_CLANG6_EXPANDMEMOPS_PLUGIN}", "Define the filename of the CLANG PandA expandMemOps plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_GEPICANON_PLUGIN, "${I386_CLANG6_GEPICANON_PLUGIN}", "Define the filename of the CLANG PandA GepiCanon plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_CSROA_PLUGIN, "${I386_CLANG6_CSROA_PLUGIN}", "Define the filename of the CLANG PandA CSROA plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_TOPFNAME_PLUGIN, "${I386_CLANG6_TOPFNAME_PLUGIN}", "Define the filename of the CLANG PandA topfname plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_ASTANALYZER_PLUGIN, "${I386_CLANG6_ASTANALYZER_PLUGIN}", "Define the filename of the CLANG PandA ASTAnalyzer plugin")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_VERSION, "${I386_CLANG6_VERSION}", "Define the clang version")
-  AC_DEFINE_UNQUOTED(I386_CLANG6_PLUGIN_COMPILER, "${I386_CLANG6_PLUGIN_COMPILER}", "Define the plugin compiler")
+  I386_CLANG10_EMPTY_PLUGIN=clang10_plugin_dumpGimpleEmpty
+  I386_CLANG10_SSA_PLUGIN=clang10_plugin_dumpGimpleSSA
+  I386_CLANG10_SSA_PLUGINCPP=clang10_plugin_dumpGimpleSSACpp
+  I386_CLANG10_EXPANDMEMOPS_PLUGIN=clang10_plugin_expandMemOps
+  I386_CLANG10_GEPICANON_PLUGIN=clang10_plugin_GepiCanon
+  I386_CLANG10_CSROA_PLUGIN=clang10_plugin_CSROA
+  I386_CLANG10_TOPFNAME_PLUGIN=clang10_plugin_topfname
+  I386_CLANG10_ASTANALYZER_PLUGIN=clang10_plugin_ASTAnalyzer
+  AC_SUBST(I386_CLANG10_EMPTY_PLUGIN)
+  AC_SUBST(I386_CLANG10_SSA_PLUGIN)
+  AC_SUBST(I386_CLANG10_SSA_PLUGINCPP)
+  AC_SUBST(I386_CLANG10_EXPANDMEMOPS_PLUGIN)
+  AC_SUBST(I386_CLANG10_GEPICANON_PLUGIN)
+  AC_SUBST(I386_CLANG10_CSROA_PLUGIN)
+  AC_SUBST(I386_CLANG10_TOPFNAME_PLUGIN)
+  AC_SUBST(I386_CLANG10_ASTANALYZER_PLUGIN)
+  AC_SUBST(I386_LLVM10_CXXFLAGS)
+  AC_SUBST(I386_CLANG10_EXE)
+  AC_SUBST(I386_CLANG10_VERSION)
+  AC_SUBST(I386_CLANG10_PLUGIN_COMPILER)
+  AC_SUBST(I386_LLVM_CONFIG10_EXE)
+  AC_DEFINE(HAVE_I386_CLANG10_COMPILER, 1, "Define if CLANG 10.0 I386 compiler is compliant")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_EXE, "${I386_CLANG10_EXE}", "Define the plugin clang")
+  AC_DEFINE_UNQUOTED(I386_CLANG_CPP10_EXE, "${I386_CLANG_CPP10_EXE}", "Define the plugin cpp")
+  AC_DEFINE_UNQUOTED(I386_CLANGPP10_EXE, "${I386_CLANGPP10_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM10_LINK_EXE, "${I386_LLVM10_LINK_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_LLVM10_OPT_EXE, "${I386_LLVM10_OPT_EXE}", "Define the plugin clang++")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_EMPTY_PLUGIN, "${I386_CLANG10_EMPTY_PLUGIN}", "Define the filename of the CLANG PandA Empty plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_SSA_PLUGIN, "${I386_CLANG10_SSA_PLUGIN}", "Define the filename of the CLANG PandA SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_SSA_PLUGINCPP, "${I386_CLANG10_SSA_PLUGINCPP}", "Define the filename of the CLANG PandA C++ SSA plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_EXPANDMEMOPS_PLUGIN, "${I386_CLANG10_EXPANDMEMOPS_PLUGIN}", "Define the filename of the CLANG PandA expandMemOps plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_GEPICANON_PLUGIN, "${I386_CLANG10_GEPICANON_PLUGIN}", "Define the filename of the CLANG PandA GepiCanon plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_CSROA_PLUGIN, "${I386_CLANG10_CSROA_PLUGIN}", "Define the filename of the CLANG PandA CSROA plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_TOPFNAME_PLUGIN, "${I386_CLANG10_TOPFNAME_PLUGIN}", "Define the filename of the CLANG PandA topfname plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_ASTANALYZER_PLUGIN, "${I386_CLANG10_ASTANALYZER_PLUGIN}", "Define the filename of the CLANG PandA ASTAnalyzer plugin")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_VERSION, "${I386_CLANG10_VERSION}", "Define the clang version")
+  AC_DEFINE_UNQUOTED(I386_CLANG10_PLUGIN_COMPILER, "${I386_CLANG10_PLUGIN_COMPILER}", "Define the plugin compiler")
 fi
 
 dnl switch back to old language

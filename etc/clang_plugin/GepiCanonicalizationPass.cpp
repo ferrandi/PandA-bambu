@@ -1260,15 +1260,15 @@ bool remove_lifetime(llvm::Function& function)
 
             if(called_function)
             {
-               if(called_function->getIntrinsicID() == llvm::Intrinsic::ID::lifetime_start)
+               if(called_function->getIntrinsicID() == llvm::Intrinsic::lifetime_start)
                {
                   intrinsic_to_remove.push_back(call_inst);
                }
-               if(called_function->getIntrinsicID() == llvm::Intrinsic::ID::lifetime_end)
+               if(called_function->getIntrinsicID() == llvm::Intrinsic::lifetime_end)
                {
                   intrinsic_to_remove.push_back(call_inst);
                }
-               if(called_function->getIntrinsicID() == llvm::Intrinsic::ID::memcpy)
+               if(called_function->getIntrinsicID() == llvm::Intrinsic::memcpy)
                {
                   if(llvm::BitCastOperator* src_op = llvm::dyn_cast<llvm::BitCastOperator>(call_inst->getOperand(0)))
                   {
