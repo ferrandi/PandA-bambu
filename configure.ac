@@ -3018,6 +3018,10 @@ AC_SUBST(all_includes)
 
 AC_OUTPUT()
 
+if test "$no_create" = yes; then
+/bin/bash ./config.status lconfig.h
+fi
+
 for keyword in `grep "#undef" $BUILDDIR/lconfig.h | awk '{print $3}'`; do
    if test ! -f config_headers/config_"$keyword".hpp; then
       echo Creating config_headers/config_"$keyword".hpp
