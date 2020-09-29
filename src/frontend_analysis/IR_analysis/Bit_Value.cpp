@@ -935,7 +935,7 @@ void Bit_Value::print_bitstring_map(const CustomUnorderedMap<unsigned int, std::
 #ifndef NDEBUG
                                         map
 #endif
-                                    ) const
+) const
 {
    const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
 #ifndef NDEBUG

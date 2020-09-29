@@ -343,7 +343,8 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               tree_nodeRef val;
                               if(bitwidth_op == 32)
                               {
-                                 union {
+                                 union
+                                 {
                                     float dest;
                                     int source;
                                  } __conv_union;
@@ -354,7 +355,8 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               }
                               else if(bitwidth_op == 64)
                               {
-                                 union {
+                                 union
+                                 {
                                     double dest;
                                     long long int source;
                                  } __conv_union;
