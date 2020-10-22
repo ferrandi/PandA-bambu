@@ -739,7 +739,8 @@ void vcd_utility::update_discr_list(const vcd_trace_head& t, const uint64_t c_co
 bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const std::string& resized_vcd_val) const
 {
    THROW_ASSERT(c_val.length() == resized_vcd_val.length(), STR(c_val.length()) + " != " + STR(resized_vcd_val.length()));
-   union {
+   union
+   {
       float f;
       unsigned int b;
    } expected, computed;
@@ -784,7 +785,8 @@ bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const s
 bool vcd_utility::detect_binary_double_mismatch(const std::string& c_val, const std::string& resized_vcd_val) const
 {
    THROW_ASSERT(c_val.length() == resized_vcd_val.length(), STR(c_val.length()) + " != " + STR(resized_vcd_val.length()));
-   union {
+   union
+   {
       double f;
       unsigned long long b;
    } expected, computed;

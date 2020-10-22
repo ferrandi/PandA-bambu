@@ -604,7 +604,7 @@ void Loops::WriteDot(const std::string& file_name
                      ,
                      const ProfilingInformationConstRef profiling_information
 #endif
-                     ) const
+) const
 {
    std::string output_directory = Param->getOption<std::string>(OPT_dot_directory);
    output_directory += FB->CGetBehavioralHelper()->get_function_name() + "/";

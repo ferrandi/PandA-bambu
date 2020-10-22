@@ -404,5 +404,5 @@ ext/mockturtle/lib/json/nlohmann
 ext/mockturtle/lib/abcsat
 ext/mockturtle/lib/abcsat/abc
 ext/abseil-cpp
-/usr/local/llvm-4.0.0/include
+/usr/local/llvm-10.0.0/include
 
