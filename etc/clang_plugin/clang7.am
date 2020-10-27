@@ -2,9 +2,10 @@
 
 CLANG7_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions -Wl,--end-group
 CLANG7_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
+CLANG7_SYSTEM_H=$(shell $(I386_CLANG_CPP7_EXE) -v  < /dev/null 2>&1 | grep -E -v "(\#|Configured with|Using built-in|Target|Thread model|gcc version|End of search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E -quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|ignoring duplicate directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC installation|Candidate multilib|Selected multilib|-cc1)" | tr '\n' ' ' | tr '\r' ' '  | sed 's/\\/\//g')
 
 if BUILD_I386_CLANG7_EMPTY_PLUGIN
-all: $(I386_CLANG7_EMPTY_PLUGIN)
+all: $(I386_CLANG7_EMPTY_PLUGIN) bambuS2S-7
 endif
 
 if BUILD_I386_CLANG7_SSA_PLUGIN
@@ -391,9 +392,9 @@ clang7_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggrega
 bambuS2S-7: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
 	case $(host_os) in \
 	  darwin*) \
-	    $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBSD)  -o $@;;\
+	    $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DCLANG_SYSTEM_H="\"$(CLANG7_SYSTEM_H)\"" -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBSD)  -o $@;;\
 	  *) \
-	    $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@;;\
+	    $(I386_CLANG7_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DCLANG_SYSTEM_H="\"$(CLANG7_SYSTEM_H)\"" -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG7_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG7_LIBS)  -o $@;;\
 	esac;
 
 ######

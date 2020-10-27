@@ -1652,7 +1652,7 @@ void structural_manager::xwrite(xml_element* rootnode, const technology_nodeRef&
 #if HAVE_KOALA_BUILT
                                                            tn
 #endif
-                                ) const
+) const
 {
 #if HAVE_KOALA_BUILT
    get_circ()->xwrite_attributes(rootnode, tn);

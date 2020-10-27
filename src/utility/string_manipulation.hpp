@@ -210,7 +210,8 @@ inline std::string NumberToBinaryString(const numeric_type number, const size_t 
  */
 inline std::string convert_fp_to_string(std::string num, unsigned int precision)
 {
-   union {
+   union
+   {
       unsigned long long ll;
       double d;
       unsigned int i;

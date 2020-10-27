@@ -590,6 +590,12 @@ namespace llvm
             return "__builtin_trap";
          case llvm::Intrinsic::dbg_value:
             return "__builtin_debug_value";
+         case llvm::Intrinsic::vastart:
+            return "__builtin_va_start";
+         case llvm::Intrinsic::vaend:
+            return "__builtin_va_end";
+         case llvm::Intrinsic::vacopy:
+            return "__builtin_va_copy";
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -4915,6 +4921,9 @@ namespace llvm
       switch(id)
       {
          case llvm::Intrinsic::dbg_value:
+         case llvm::Intrinsic::vastart:
+         case llvm::Intrinsic::vaend:
+         case llvm::Intrinsic::vacopy:
             return true;
          default:
             return false;

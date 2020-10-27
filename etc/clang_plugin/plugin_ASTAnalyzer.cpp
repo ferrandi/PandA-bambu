@@ -1236,7 +1236,11 @@ namespace clang
          PP.AddPragmaHandler(new Mask_PragmaHandler());
          PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
          PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
+#if __clang_major__ > 9
+         return std::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
+#else
          return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
+#endif
       }
 
       bool ParseArgs(const CompilerInstance& CI, const std::vector<std::string>& args) override
