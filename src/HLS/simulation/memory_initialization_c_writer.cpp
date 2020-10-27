@@ -81,6 +81,7 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case integer_type_K:
       case real_type_K:
       case boolean_type_K:
+      case void_type_K:
          base_type_index = status.back().first->index;
          break;
       case array_type_K:
@@ -102,7 +103,6 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case type_argument_pack_K:
       case type_pack_expansion_K:
       case vector_type_K:
-      case void_type_K:
          THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
          break;
       case aggr_init_expr_K:
@@ -140,6 +140,7 @@ void MemoryInitializationCWriter::Process(const std::string& content)
    unsigned int size = 0;
    switch(base_type->get_kind())
    {
+      case void_type_K:
       case boolean_type_K:
          size = 8;
          binary_value = ConvertInBinary(content, size, false, true);
@@ -175,7 +176,6 @@ void MemoryInitializationCWriter::Process(const std::string& content)
       case type_argument_pack_K:
       case type_pack_expansion_K:
       case vector_type_K:
-      case void_type_K:
          THROW_ERROR("Unexpected type in initializing parameter/variable: " + status.back().first->get_kind_text());
          break;
       case aggr_init_expr_K:
