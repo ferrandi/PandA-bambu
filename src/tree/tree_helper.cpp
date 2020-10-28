@@ -308,7 +308,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
       }
       case void_type_K:
       {
-         return_value = 32;
+         return_value = 8;
          break;
       }
       case enumeral_type_K:
