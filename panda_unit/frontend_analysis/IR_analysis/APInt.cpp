@@ -28,6 +28,7 @@ BOOST_AUTO_TEST_CASE(apint_cast)
    BOOST_REQUIRE_EQUAL(static_cast<int16_t>(std::numeric_limits<uint16_t>::max()), APInt(std::numeric_limits<uint16_t>::max()).cast_to<int16_t>());
    BOOST_REQUIRE_EQUAL(0b01100110, APInt(0b1111111001100110).cast_to<uint8_t>());
    BOOST_REQUIRE_EQUAL(53, APInt(53).cast_to<uint8_t>());
+   BOOST_REQUIRE_EQUAL(-34, APInt(-34).cast_to<int8_t>());
 }
 
 BOOST_AUTO_TEST_CASE(apint_not)

@@ -312,7 +312,8 @@
 #define OPT_SKIP_PIPE_PARAMETER (1 + OPT_SIMULATE)
 #define OPT_SOFT_FLOAT (1 + OPT_SKIP_PIPE_PARAMETER)
 #define OPT_SOFTFLOAT_SUBNORMAL (1 + OPT_SOFT_FLOAT)
-#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_SUBNORMAL)
+#define OPT_SOFTFLOAT_NOROUNDING (1 + OPT_SOFTFLOAT_SUBNORMAL)
+#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOROUNDING)
 #define OPT_STG (1 + OPT_SOFT_FP)
 #define OPT_SPECULATIVE (1 + OPT_STG)
 #define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
@@ -787,6 +788,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
 #endif
       << "    --softfloat-subnormal\n"
       << "        Enable the soft-based implementation of floating-point operations with subnormals support.\n\n"
+      << "    --softfloat-norounding\n"
+      << "        Enable the soft-based implementation of floating-point operations without rounding.\n\n"
       << "    --libm-std-rounding\n"
       << "        Enable the use of classical libm. This library combines a customized version of glibc, newlib and musl libm implementations into a single libm library synthetizable with bambu.\n"
       << "        Without this option, Bambu uses as default a faithfully rounded version of libm.\n\n"
@@ -1167,6 +1170,7 @@ int BambuParameter::Exec()
       {"flopoco", no_argument, nullptr, OPT_FLOPOCO},
 #endif
       {"softfloat-subnormal", no_argument, nullptr, OPT_SOFTFLOAT_SUBNORMAL},
+      {"softfloat-norounding", no_argument, nullptr, OPT_SOFTFLOAT_NOROUNDING},
       {"libm-std-rounding", no_argument, nullptr, OPT_LIBM_STD_ROUNDING},
       {"soft-fp", no_argument, nullptr, OPT_SOFT_FP},
       {"hls-div", optional_argument, nullptr, OPT_HLS_DIV},
@@ -1940,6 +1944,12 @@ int BambuParameter::Exec()
          case OPT_SOFTFLOAT_SUBNORMAL:
          {
             setOption(OPT_softfloat_subnormal, true);
+            break;
+         }
+         case OPT_SOFTFLOAT_NOROUNDING:
+         {
+            setOption(OPT_softfloat_subnormal, false);
+            setOption(OPT_softfloat_norounding, true);
             break;
          }
          case OPT_LIBM_STD_ROUNDING:
@@ -3151,6 +3161,8 @@ void BambuParameter::CheckParameters()
          THROW_ERROR("--hls-fpdiv=SF requires --soft-fp option");
       else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
          add_bambu_library("softfloat_subnormals");
+      else if(isOption(OPT_softfloat_norounding) && getOption<bool>(OPT_softfloat_norounding))
+         add_bambu_library("softfloat_norounding");
       else
          add_bambu_library("softfloat");
    }
