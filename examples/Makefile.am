@@ -33,7 +33,7 @@ include $(top_srcdir)/examples/taste/taste.am
 include $(top_srcdir)/examples/VGA/VGA.am
 include $(top_srcdir)/examples/VGA_Nexys4/VGA_Nexys4.am
 include $(top_srcdir)/examples/rosetta/rosetta.am
-
+include $(top_srcdir)/examples/sha-256/sha-256.am
 
 examples_dir = $(pkgdatadir)/examples
 examples_arf_dir = $(examples_dir)/arf

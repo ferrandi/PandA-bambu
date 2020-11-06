@@ -1,0 +1,2 @@
+EXTRA_DIST += %D%/sha-256.c %D%/sha-256.h %D%/test.xml %D%/bambu.sh %D%/README.md %D%/LICENSE      
+TESTS+=%D%/bambu.sh
