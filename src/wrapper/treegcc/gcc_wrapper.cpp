@@ -3487,7 +3487,7 @@ void GccWrapper::CheckGccCompatibleVersion(const std::string& gcc_version, const
 size_t GccWrapper::CGetPointerSize(const ParameterConstRef parameters)
 {
    const std::string gcc_m32_mx32 = parameters->getOption<std::string>(OPT_gcc_m32_mx32);
-   if(gcc_m32_mx32 == "-m32" or gcc_m32_mx32 == "-m32 -mno-sse2 ")
+   if(gcc_m32_mx32 == "-m32" or gcc_m32_mx32 == "-m32 -mno-sse2")
    {
       return 32;
    }
