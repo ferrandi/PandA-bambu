@@ -6,6 +6,11 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
+$dir_script/floatrange/all.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
 $dir_script/libm/all.sh $@
 return_value=$?
 if test $return_value != 0; then

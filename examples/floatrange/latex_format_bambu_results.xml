@@ -1,0 +1,64 @@
+<?xml version="1.0"?>
+<latex_table_format max_column_size="7">
+   <column name="Benchmark Name">
+      <source_name value="benchmark_name"/>
+      <alignment value="l|"/>
+      <text_format value="text"/>
+   </column>
+   <column name="Tot. Latency">
+      <source_name value="TIME"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="Num Cycles">
+      <source_name value="CYCLES"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="Area LUT pairs">
+      <source_name value="AREA"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="DSPs">
+      <source_name value="DSPS"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="BRAMs">
+      <source_name value="BRAMS"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="Clock Frequency">
+      <source_name value="FREQUENCY"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="2"/>
+      <total value="average"/>
+   </column>
+   <column name="Clock Slack">
+      <source_name value="CLOCK_SLACK"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="2"/>
+      <total value="average"/>
+   </column>
+   <column name="HLS Time(s)">
+      <source_name value="HLS_execution_time"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="2"/>
+      <total value="overall"/>
+   </column>
+</latex_table_format>
