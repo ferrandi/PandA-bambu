@@ -198,7 +198,7 @@ namespace ac_math
 
       // exponent and normalized output are combined to get the final ac_fixed value, which is written at memory location of output
       ac_math::ac_shift_left(m1, normalized_exp, output_temp);
-      output = (input == 0) ? 0 : output_temp;
+      output = (input == 0) ? (ac_fixed<outW, outI, false, outQ, outO>)0 : output_temp;
 
 #if !defined(__BAMBU__) && defined(AC_SQRT_PWL_H_DEBUG)
       cout << "W = " << W << endl;
