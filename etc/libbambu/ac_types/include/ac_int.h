@@ -4430,6 +4430,35 @@ typedef signed long long Slong;
       {
          return W1;
       }
+      __FORCE_INLINE operator int() const
+      {
+         return to_int();
+      }
+      __FORCE_INLINE operator unsigned() const
+      {
+         return to_uint();
+      }
+      __FORCE_INLINE operator long() const
+      {
+         return to_long();
+      }
+      __FORCE_INLINE operator unsigned long() const
+      {
+         return to_ulong();
+      }
+      __FORCE_INLINE operator Slong() const
+      {
+         return to_int64();
+      }
+      __FORCE_INLINE operator Ulong() const
+      {
+         return to_uint64();
+      }
+      __FORCE_INLINE operator double() const
+      {
+         return to_double();
+      }
+
    };
 
    namespace ac

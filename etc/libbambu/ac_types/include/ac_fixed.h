@@ -218,9 +218,12 @@ namespace __AC_NAMESPACE
     public:
       static const int width = W;
       static const int i_width = I;
+      static const int iwidth = I;
       static const bool sign = S;
       static const ac_o_mode o_mode = O;
       static const ac_q_mode q_mode = Q;
+      static const ac_q_mode qmode = Q;
+      static const ac_o_mode omode = O;
       static const int e_width = 0;
 
       template <int W2, int I2, bool S2>
@@ -1200,6 +1203,30 @@ namespace __AC_NAMESPACE
          __FORCE_INLINE const range_ref_fixed& operator=(const RRF& b) const
          {
             return operator=(b.operator const ac_int<W, S>());
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const int& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const unsigned& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const long& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const unsigned long& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const Slong& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const Ulong& b) const
+         {
+            return operator=(ac_int<W, S>(b));
          }
          __FORCE_INLINE const range_ref_fixed& operator=(const range_ref_fixed& b) const
          {
