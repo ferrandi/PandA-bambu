@@ -4774,10 +4774,10 @@ typedef signed long long Slong;
 
    // Stream --------------------------------------------------------------------
 
-#ifndef __BAMBU__
    template <int W, bool S>
    __FORCE_INLINE std::ostream& operator<<(std::ostream& os, const ac_int<W, S>& x)
    {
+#ifndef __BAMBU__
       if((os.flags() & std::ios::hex) != 0)
       {
          os << x.to_string(AC_HEX);
@@ -4790,9 +4790,26 @@ typedef signed long long Slong;
       {
          os << x.to_string(AC_DEC);
       }
+#endif
       return os;
    }
+
+   template <int W, bool S>
+   __FORCE_INLINE std::istream& operator>>(std::istream& in, ac_int<W, S>& x)
+   {
+#ifndef __BAMBU__
+
+      std::string str;
+      in >> str;
+      const std::ios_base::fmtflags basefield = in.flags() & std::ios_base::basefield;
+      unsigned radix = (basefield == std::ios_base::dec) ? 0 : (
+                                                                   (basefield == std::ios_base::oct) ? 8 : (
+                                                                                                               (basefield == std::ios_base::hex) ? 16 : 0));
+      //x = convert a char * str.c_str() with specified radix into ac_int; //TODO
 #endif
+      return in;
+
+   }
 
    // Macros for Binary Operators with Integers
    // --------------------------------------------

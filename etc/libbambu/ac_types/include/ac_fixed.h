@@ -1812,6 +1812,17 @@ namespace __AC_NAMESPACE
       return os;
    }
 
+   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
+   __FORCE_INLINE std::istream& operator>>(std::istream& in, ac_fixed<W, I, S, Q, O>& x)
+   {
+#ifndef __BAMBU__
+      double d;
+      in >> d;
+      x = ac_fixed<W, I, S, Q, O>(d);
+#endif
+      return in;
+   }
+
    // Macros for Binary Operators with C Integers
    // --------------------------------------------
 
