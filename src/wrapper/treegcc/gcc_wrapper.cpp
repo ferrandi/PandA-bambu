@@ -342,7 +342,6 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #endif
    }
    command += " -D__NO_INLINE__ ";     /// needed to avoid problem with glibc inlines
-   command += " -D_GLIBCXX_IOSTREAM "; /// needed to avoid problem with iostream
 #ifdef _WIN32
    if(compiler.is_clang)
       command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem /mingw64/include/c++/v1/"; /// needed by clang compiler

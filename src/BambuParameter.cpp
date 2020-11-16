@@ -2540,7 +2540,7 @@ int BambuParameter::Exec()
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
                }
-               if(std::string(optarg) == "INFER")
+               else if(std::string(optarg) == "INFER")
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION);
                }
@@ -2567,7 +2567,7 @@ int BambuParameter::Exec()
 #endif
                else
                {
-                  THROW_ERROR("Not supported interface: " + std::string(optarg));
+                  THROW_ERROR("Not supported interface: |" + std::string(optarg) + "|");
                }
                break;
             }

@@ -2614,7 +2614,7 @@ typedef signed long long Slong;
          *this = iv(l);
       }
 
-      // add automatic conversion to Slong/Ulong depending on S and C
+      // add automatic conversion to Slong/Ulong depending on S and LTE64
       template <int N, bool S, bool LTE64, bool C, int W>
       class iv_conv : public iv<N, C>
       {
@@ -3370,19 +3370,11 @@ typedef signed long long Slong;
          op1_local.bit_adjust();
          return op1_local.v[0];
       }
-      __FORCE_INLINE explicit operator int() const
-      {
-         return to_int();
-      }
       __FORCE_INLINE unsigned to_uint() const
       {
          ac_int<W, S> op1_local = *this;
          op1_local.bit_adjust();
          return op1_local.v[0];
-      }
-      __FORCE_INLINE explicit operator unsigned() const
-      {
-         return to_uint();
       }
       __FORCE_INLINE long to_long() const
       {
@@ -3404,23 +3396,51 @@ typedef signed long long Slong;
       {
          return Base::to_double();
       }
-      __FORCE_INLINE explicit operator double() const
-      {
-         return to_double();
-      }
       __FORCE_INLINE float to_float() const
       {
          return Base::to_float();
+      }
+      __FORCE_INLINE int length() const
+      {
+         return W;
+      }
+
+      __FORCE_INLINE explicit operator bool() const { return !Base::equal_zero(); }
+
+      __FORCE_INLINE explicit operator char() const { return (char)to_int(); }
+
+      __FORCE_INLINE explicit operator signed char() const { return (signed char)to_int(); }
+
+      __FORCE_INLINE explicit operator unsigned char() const { return (unsigned char)to_uint(); }
+
+      __FORCE_INLINE explicit operator short() const { return (short)to_int(); }
+
+      __FORCE_INLINE explicit operator unsigned short() const { return (unsigned short)to_uint(); }
+      __FORCE_INLINE explicit operator int() const
+      {
+         return to_int();
+      }
+      __FORCE_INLINE explicit operator unsigned() const
+      {
+         return to_uint();
+      }
+      __FORCE_INLINE explicit operator long() const
+      {
+         return to_long();
+      }
+      __FORCE_INLINE explicit operator unsigned long() const
+      {
+         return to_ulong();
+      }
+      __FORCE_INLINE explicit operator double() const
+      {
+         return to_double();
       }
       __FORCE_INLINE explicit operator float() const
       {
          return to_float();
       }
 
-      __FORCE_INLINE int length() const
-      {
-         return W;
-      }
 
       __FORCE_INLINE std::string to_string(ac_base_mode base_rep, bool sign_mag = false) const
       {
@@ -4410,6 +4430,35 @@ typedef signed long long Slong;
       {
          return W1;
       }
+      __FORCE_INLINE operator int() const
+      {
+         return to_int();
+      }
+      __FORCE_INLINE operator unsigned() const
+      {
+         return to_uint();
+      }
+      __FORCE_INLINE operator long() const
+      {
+         return to_long();
+      }
+      __FORCE_INLINE operator unsigned long() const
+      {
+         return to_ulong();
+      }
+      __FORCE_INLINE operator Slong() const
+      {
+         return to_int64();
+      }
+      __FORCE_INLINE operator Ulong() const
+      {
+         return to_uint64();
+      }
+      __FORCE_INLINE operator double() const
+      {
+         return to_double();
+      }
+
    };
 
    namespace ac
@@ -4725,10 +4774,10 @@ typedef signed long long Slong;
 
    // Stream --------------------------------------------------------------------
 
-#ifndef __BAMBU__
    template <int W, bool S>
    __FORCE_INLINE std::ostream& operator<<(std::ostream& os, const ac_int<W, S>& x)
    {
+#ifndef __BAMBU__
       if((os.flags() & std::ios::hex) != 0)
       {
          os << x.to_string(AC_HEX);
@@ -4741,9 +4790,26 @@ typedef signed long long Slong;
       {
          os << x.to_string(AC_DEC);
       }
+#endif
       return os;
    }
+
+   template <int W, bool S>
+   __FORCE_INLINE std::istream& operator>>(std::istream& in, ac_int<W, S>& x)
+   {
+#ifndef __BAMBU__
+
+      std::string str;
+      in >> str;
+      const std::ios_base::fmtflags basefield = in.flags() & std::ios_base::basefield;
+      unsigned radix = (basefield == std::ios_base::dec) ? 0 : (
+                                                                   (basefield == std::ios_base::oct) ? 8 : (
+                                                                                                               (basefield == std::ios_base::hex) ? 16 : 0));
+      //x = convert a char * str.c_str() with specified radix into ac_int; //TODO
 #endif
+      return in;
+
+   }
 
    // Macros for Binary Operators with Integers
    // --------------------------------------------
