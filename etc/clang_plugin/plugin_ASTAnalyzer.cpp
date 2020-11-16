@@ -798,7 +798,6 @@ namespace clang
 
       bool HandleTopLevelDecl(DeclGroupRef DG) override
       {
-
          for(auto D : DG)
          {
             if(const auto* FD = dyn_cast<FunctionDecl>(D))

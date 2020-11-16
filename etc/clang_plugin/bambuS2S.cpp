@@ -46,14 +46,14 @@
 #include "clang/Lex/Lexer.h"
 #include "clang/Lex/PPCallbacks.h"
 #include "clang/Lex/Preprocessor.h"
+#include "clang/Rewrite/Core/Rewriter.h"
+#include "clang/Rewrite/Frontend/Rewriters.h"
 #include "clang/Tooling/ArgumentsAdjusters.h"
 #include "clang/Tooling/CommonOptionsParser.h"
 #include "clang/Tooling/Refactoring.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/Signals.h"
 #include "llvm/Support/TargetSelect.h"
-#include "clang/Rewrite/Core/Rewriter.h"
-#include "clang/Rewrite/Frontend/Rewriters.h"
 #include <boost/tokenizer.hpp>
 #include <set>
 
@@ -189,7 +189,6 @@ static clang::Optional<clang::Token> findNextToken_local(clang::SourceLocation L
    lexer.LexFromRawLexer(Tok);
    return Tok;
 }
-
 
 struct re_user : public clang::ast_matchers::MatchFinder::MatchCallback
 {
@@ -353,19 +352,20 @@ int toVoidRefactor(clang::tooling::CommonOptionsParser& op, const boost::tokeniz
 
 struct pragmaInfo
 {
-   const enum pragmaKind
-   {
-      pipeline
-   } Kind;
+   const enum pragmaKind { pipeline } Kind;
    /// in case a loop pipeline the value field contains the initiation interval
    const std::string value;
-   pragmaInfo(enum pragmaKind k, const std::string v) : Kind(k), value(v){}
+   pragmaInfo(enum pragmaKind k, const std::string v) : Kind(k), value(v)
+   {
+   }
 };
 
 class pragmaCallBack : public clang::PPCallbacks
 {
  public:
-   explicit pragmaCallBack(std::map<clang::SourceLocation,std::list<pragmaInfo>>& _pragmaAnnotations, const clang::SourceManager &_SM, const clang::LangOptions & _langOpts) : SM(_SM), langOpts(_langOpts), pragmaAnnotations(_pragmaAnnotations) {}
+   explicit pragmaCallBack(std::map<clang::SourceLocation, std::list<pragmaInfo>>& _pragmaAnnotations, const clang::SourceManager& _SM, const clang::LangOptions& _langOpts) : SM(_SM), langOpts(_langOpts), pragmaAnnotations(_pragmaAnnotations)
+   {
+   }
    void PragmaDirective(clang::SourceLocation Loc, clang::PragmaIntroducerKind Introducer) override
    {
       using namespace clang;
@@ -390,7 +390,7 @@ class pragmaCallBack : public clang::PPCallbacks
                   auto pipeline_id = Tok.getValue().getRawIdentifier();
                   if(pipeline_id == std::string("pipeline"))
                   {
-                     auto II=std::string("1");
+                     auto II = std::string("1");
                      Tok = findNextToken_local(Tok.getValue().getLocation(), SM, langOpts);
                      if(Tok.hasValue() && Tok.getValue().is(tok::raw_identifier))
                      {
@@ -402,13 +402,14 @@ class pragmaCallBack : public clang::PPCallbacks
                            if(Tok.hasValue() && Tok.getValue().is(tok::equal))
                            {
                               Tok = findNextToken_local(Tok.getValue().getLocation(), SM, langOpts);
-                               if(Tok.hasValue() && Tok.getValue().is(tok::numeric_constant))
-                               {
-                                  II = getText(SM,langOpts,Tok.getValue().getLocation());
-                                  llvm::errs() << "\""<< II << "\""<< "\n";
-                                  Tok = findNextToken_local(Tok.getValue().getLocation(), SM, langOpts);
-                                  llvm::errs() << Tok.getValue().getRawIdentifier() << "\n";
-                               }
+                              if(Tok.hasValue() && Tok.getValue().is(tok::numeric_constant))
+                              {
+                                 II = getText(SM, langOpts, Tok.getValue().getLocation());
+                                 llvm::errs() << "\"" << II << "\""
+                                              << "\n";
+                                 Tok = findNextToken_local(Tok.getValue().getLocation(), SM, langOpts);
+                                 llvm::errs() << Tok.getValue().getRawIdentifier() << "\n";
+                              }
                            }
                         }
                      }
@@ -419,32 +420,40 @@ class pragmaCallBack : public clang::PPCallbacks
          }
       }
    }
+
  private:
-   const clang::SourceManager &SM;
-   const clang::LangOptions & langOpts;
-   std::map<clang::SourceLocation,std::list<pragmaInfo>>& pragmaAnnotations;
+   const clang::SourceManager& SM;
+   const clang::LangOptions& langOpts;
+   std::map<clang::SourceLocation, std::list<pragmaInfo>>& pragmaAnnotations;
 };
 
-struct pragmaManipulatorCallBack: public clang::tooling::SourceFileCallbacks
+struct pragmaManipulatorCallBack : public clang::tooling::SourceFileCallbacks
 {
-   explicit pragmaManipulatorCallBack(std::map<clang::SourceLocation,std::list<pragmaInfo>>& _pragmaAnnotations) : pragmaAnnotations(_pragmaAnnotations){}
+   explicit pragmaManipulatorCallBack(std::map<clang::SourceLocation, std::list<pragmaInfo>>& _pragmaAnnotations) : pragmaAnnotations(_pragmaAnnotations)
+   {
+   }
 
-   bool handleBeginSource(clang::CompilerInstance &CI
+   bool handleBeginSource(clang::CompilerInstance& CI
 #if __clang_major__ == 4
-                          , llvm::StringRef Filename
+                          ,
+                          llvm::StringRef Filename
 #endif
                           ) override
    {
-      clang::Preprocessor *PP = &CI.getPreprocessor();
-      llvm::errs()<<"add callback"<<"\n";
+      clang::Preprocessor* PP = &CI.getPreprocessor();
+      llvm::errs() << "add callback"
+                   << "\n";
       PP->addPPCallbacks(std::make_unique<pragmaCallBack>(pragmaAnnotations, PP->getSourceManager(), CI.getLangOpts()));
       return true;
    }
-   void handleEndSource()  override {
-      llvm::errs()<<"end source"<<"\n";
+   void handleEndSource() override
+   {
+      llvm::errs() << "end source"
+                   << "\n";
    }
+
  private:
-   std::map<clang::SourceLocation,std::list<pragmaInfo>>& pragmaAnnotations;
+   std::map<clang::SourceLocation, std::list<pragmaInfo>>& pragmaAnnotations;
 };
 
 struct Loop_user0 : public clang::ast_matchers::MatchFinder::MatchCallback
@@ -506,22 +515,25 @@ int pragmaManipulator(clang::tooling::CommonOptionsParser& op)
    finder.addMatcher(loop_matcher0(), &fl_finder);
    finder.addMatcher(loop_matcher1(), &wl_finder);
    finder.addMatcher(loop_matcher2(), &cxxl_finder);
-   std::map<clang::SourceLocation,std::list<pragmaInfo>> pragmaAnnotations;
+   std::map<clang::SourceLocation, std::list<pragmaInfo>> pragmaAnnotations;
    pragmaManipulatorCallBack PPMCB(pragmaAnnotations);
    return Tool.run(clang::tooling::newFrontendActionFactory(&finder, &PPMCB).get());
 }
 
-
-class OMPMASTVisitor : public clang::RecursiveASTVisitor<OMPMASTVisitor> {
+class OMPMASTVisitor : public clang::RecursiveASTVisitor<OMPMASTVisitor>
+{
  public:
-   explicit OMPMASTVisitor(clang::Rewriter &R) : TheRewriter(R) {}
-   bool VisitStmt(clang::Stmt *s) {
+   explicit OMPMASTVisitor(clang::Rewriter& R) : TheRewriter(R)
+   {
+   }
+   bool VisitStmt(clang::Stmt* s)
+   {
       // Only care about If statements.
-      if (clang::isa<clang::ForStmt>(s))
+      if(clang::isa<clang::ForStmt>(s))
       {
-         for (const clang::Stmt *Child : s->children())
+         for(const clang::Stmt* Child : s->children())
          {
-            if (Child)
+            if(Child)
                Child->dump(llvm::errs());
             llvm::errs() << "\n-----------------\n";
          }
@@ -562,105 +574,118 @@ class OMPMASTVisitor : public clang::RecursiveASTVisitor<OMPMASTVisitor> {
 
       return true;
    }
+
  private:
-   clang::Rewriter &TheRewriter;
+   clang::Rewriter& TheRewriter;
 };
 
-class OMPMASTConsumer : public clang::ASTConsumer {
+class OMPMASTConsumer : public clang::ASTConsumer
+{
  public:
-   explicit OMPMASTConsumer(clang::Rewriter &R) : Visitor(R)
+   explicit OMPMASTConsumer(clang::Rewriter& R) : Visitor(R)
    {
    }
 
    // Override the method that gets called for each parsed top-level
    // declaration.
-   virtual bool HandleTopLevelDecl(clang::DeclGroupRef DR) {
-      for (clang::DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b)
+   virtual bool HandleTopLevelDecl(clang::DeclGroupRef DR)
+   {
+      for(clang::DeclGroupRef::iterator b = DR.begin(), e = DR.end(); b != e; ++b)
          // Traverse the declaration using our AST visitor.
          Visitor.TraverseDecl(*b);
       return true;
    }
- private:
 
+ private:
    OMPMASTVisitor Visitor;
 };
 
-inline std::unique_ptr<clang::tooling::FrontendActionFactory> localnewFrontendActionFactory(clang::tooling::SourceFileCallbacks *Callbacks) {
-   class FrontendActionFactoryAdapter : public clang::tooling::FrontendActionFactory {
+inline std::unique_ptr<clang::tooling::FrontendActionFactory> localnewFrontendActionFactory(clang::tooling::SourceFileCallbacks* Callbacks)
+{
+   class FrontendActionFactoryAdapter : public clang::tooling::FrontendActionFactory
+   {
     public:
-      explicit FrontendActionFactoryAdapter(clang::tooling::SourceFileCallbacks *_Callbacks)
-          : Callbacks(_Callbacks) {}
-
+      explicit FrontendActionFactoryAdapter(clang::tooling::SourceFileCallbacks* _Callbacks) : Callbacks(_Callbacks)
+      {
+      }
 
 #if __clang_major__ > 9
-      std::unique_ptr<clang::FrontendAction> create() override {
+      std::unique_ptr<clang::FrontendAction> create() override
+      {
          return std::make_unique<OMPMFactoryAdaptor>(Callbacks);
       }
 #else
-      clang::FrontendAction * create() override {
+      clang::FrontendAction* create() override
+      {
          return new OMPMFactoryAdaptor(Callbacks);
       }
 #endif
 
     private:
-      class OMPMFactoryAdaptor : public clang::ASTFrontendAction {
+      class OMPMFactoryAdaptor : public clang::ASTFrontendAction
+      {
        public:
-         explicit OMPMFactoryAdaptor(clang::tooling::SourceFileCallbacks *_Callbacks)
-             : Callbacks(_Callbacks) {}
+         explicit OMPMFactoryAdaptor(clang::tooling::SourceFileCallbacks* _Callbacks) : Callbacks(_Callbacks)
+         {
+         }
 
          // Create the AST consumer object for this action
          // CI - The current compiler instance
          // file - The current input file
-         std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance &CI,
-                                                               clang::StringRef file) override {
+         std::unique_ptr<clang::ASTConsumer> CreateASTConsumer(clang::CompilerInstance& CI, clang::StringRef file) override
+         {
             TheRewriter.setSourceMgr(CI.getSourceManager(), CI.getLangOpts());
             return std::make_unique<OMPMASTConsumer>(TheRewriter);
          }
+
        protected:
-         bool BeginSourceFileAction(clang::CompilerInstance &CI
+         bool BeginSourceFileAction(clang::CompilerInstance& CI
 #if __clang_major__ == 4
-                                    , llvm::StringRef Filename
+                                    ,
+                                    llvm::StringRef Filename
 #endif
-                                    ) override {
-            if (!ASTFrontendAction::BeginSourceFileAction(CI
+                                    ) override
+         {
+            if(!ASTFrontendAction::BeginSourceFileAction(CI
 #if __clang_major__ == 4
-                                                         , Filename
+                                                         ,
+                                                         Filename
 #endif
                                                          ))
                return false;
-            if (Callbacks)
+            if(Callbacks)
                return Callbacks->handleBeginSource(CI
 #if __clang_major__ == 4
-                                                       , Filename
+                                                   ,
+                                                   Filename
 #endif
-                                                   );
+               );
             return true;
          }
 
-         void EndSourceFileAction() override {
-            if (Callbacks)
+         void EndSourceFileAction() override
+         {
+            if(Callbacks)
                Callbacks->handleEndSource();
             ASTFrontendAction::EndSourceFileAction();
-            TheRewriter.getEditBuffer(TheRewriter.getSourceMgr().getMainFileID())
-                .write(llvm::outs());
+            TheRewriter.getEditBuffer(TheRewriter.getSourceMgr().getMainFileID()).write(llvm::outs());
          }
 
        private:
-         clang::tooling::SourceFileCallbacks *Callbacks;
+         clang::tooling::SourceFileCallbacks* Callbacks;
          clang::Rewriter TheRewriter;
       };
-      clang::tooling::SourceFileCallbacks *Callbacks;
+      clang::tooling::SourceFileCallbacks* Callbacks;
    };
 
-   return std::unique_ptr<clang::tooling::FrontendActionFactory>(
-       new FrontendActionFactoryAdapter(Callbacks));
+   return std::unique_ptr<clang::tooling::FrontendActionFactory>(new FrontendActionFactoryAdapter(Callbacks));
 }
 
 int OmpPragmaManipulator(clang::tooling::CommonOptionsParser& op)
 {
    clang::tooling::RefactoringTool Tool(op.getCompilations(), op.getSourcePathList());
    clang::ast_matchers::MatchFinder finder;
-   std::map<clang::SourceLocation,std::list<pragmaInfo>> pragmaAnnotations;
+   std::map<clang::SourceLocation, std::list<pragmaInfo>> pragmaAnnotations;
    pragmaManipulatorCallBack PPMCB(pragmaAnnotations);
    return Tool.run(localnewFrontendActionFactory(&PPMCB).get());
 }
@@ -683,13 +708,13 @@ int main(int argc, const char** argv)
       headers_vec.push_back("-isystem");
       headers_vec.push_back(h);
    }
-   int new_argc = argc + headers_vec.size() ;
-   auto new_argv = new const char*[new_argc+1];
+   int new_argc = argc + headers_vec.size();
+   auto new_argv = new const char*[new_argc + 1];
    new_argv[new_argc] = nullptr;
-   for (int ii = 0; ii < argc; ++ii)
+   for(int ii = 0; ii < argc; ++ii)
       new_argv[ii] = argv[ii];
-   for (int ii = argc; ii < new_argc; ++ii)
-      new_argv[ii] = headers_vec.at(ii-argc).c_str();
+   for(int ii = argc; ii < new_argc; ++ii)
+      new_argv[ii] = headers_vec.at(ii - argc).c_str();
 
    // parse the command-line args passed to your code
    clang::tooling::CommonOptionsParser op(new_argc, new_argv, bambuSource2SourceCategory);
@@ -698,11 +723,11 @@ int main(int argc, const char** argv)
    auto VR = toVoidRefactor(op, topFunTokenizer);
    if(VR)
       return VR;
-//   auto PM = pragmaManipulator(op);
-//   if(PM)
-//      return PM;
-//   auto OPM = OmpPragmaManipulator(op);
-//   if(OPM)
-//      return OPM;
+   //   auto PM = pragmaManipulator(op);
+   //   if(PM)
+   //      return PM;
+   //   auto OPM = OmpPragmaManipulator(op);
+   //   if(OPM)
+   //      return OPM;
    return 0;
 }
