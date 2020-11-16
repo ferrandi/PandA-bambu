@@ -17,7 +17,7 @@ parser.add_argument(
 parser.add_argument(
     "--testrunner", help="Require to setup a test runner for aggregated failed tests", action='store_true')
 parser.add_argument(
-    "--replace", help="Comma separated old,new paths to be replaced in test path", default="")
+    "--replace", help="Comma separated old,new paths to be replaced in test path", default=",")
 
 args = parser.parse_args()
 in_file = args.log
@@ -26,13 +26,13 @@ test_required = args.testrunner
 old_path = args.replace.split(',')[0].rstrip('/')
 root_path = args.replace.split(',')[1].rstrip('/')
 
-print 'Out file is ', out_file
-print'In file is ', in_file
+print('Out file is {}'.format(out_file))
+print('In file is {}'.format(in_file))
 if len(old_path) != 0:
     if len(root_path) == 0:
         parser.error("Argument --replace not correctly set")
-    print 'Old path to be replaced is ', old_path
-    print 'New root directory for tests is ', root_path
+    print('Old path to be replaced is {}'.format(old_path))
+    print('New root directory for tests is {}'.format(root_path))
 
 t = open(in_file, "r")
 lines = t.readlines()

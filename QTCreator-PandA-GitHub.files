@@ -557,6 +557,7 @@ etc/libbambu/ac_types/include/ac_sc.h
 etc/libbambu/ac_types/include/ap_fixed.h
 etc/libbambu/ac_types/include/ap_int.h
 etc/libbambu/ac_types/include/ap_shift_reg.h
+etc/libbambu/ac_types/include/hls_stream.h
 etc/libbambu/assert.c
 etc/libbambu/bambu_macros.h
 etc/libbambu/byteswap.c

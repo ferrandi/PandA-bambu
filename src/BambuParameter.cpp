@@ -2544,7 +2544,7 @@ int BambuParameter::Exec()
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::MINIMAL_INTERFACE_GENERATION);
                }
-               if(std::string(optarg) == "INFER")
+               else if(std::string(optarg) == "INFER")
                {
                   setOption(OPT_interface_type, HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION);
                }
@@ -2571,7 +2571,7 @@ int BambuParameter::Exec()
 #endif
                else
                {
-                  THROW_ERROR("Not supported interface: " + std::string(optarg));
+                  THROW_ERROR("Not supported interface: |" + std::string(optarg) + "|");
                }
                break;
             }
@@ -3693,79 +3693,79 @@ void BambuParameter::SetDefaults()
    );
 
 #if(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_GCC8_COMPILER && HAVE_I386_GCC8_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_GCC7_COMPILER && HAVE_I386_GCC7_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_GCC6_COMPILER && HAVE_I386_GCC6_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_GCC46_COMPILER)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_GCC45_COMPILER)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_CLANG4_COMPILER && HAVE_I386_CLANG4_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_CLANG5_COMPILER && HAVE_I386_CLANG5_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_CLANG6_COMPILER && HAVE_I386_CLANG6_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M32)
-   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
+   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2 ");
 #elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_MX32)
-   setOption(OPT_gcc_m32_mx32, "-mx32");
+   setOption(OPT_gcc_m32_mx32, "-mx32 ");
 #elif(HAVE_I386_CLANG7_COMPILER && HAVE_I386_CLANG7_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_CLANG8_COMPILER && HAVE_I386_CLANG8_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_CLANG9_COMPILER && HAVE_I386_CLANG9_M64)
-   setOption(OPT_gcc_m32_mx32, "-m64");
+   setOption(OPT_gcc_m32_mx32, "-m64 ");
 #elif(HAVE_I386_CLANG10_COMPILER && HAVE_I386_CLANG10_M64)
    setOption(OPT_gcc_m32_mx32, "-m64");
 #else

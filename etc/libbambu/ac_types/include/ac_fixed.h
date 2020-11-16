@@ -218,9 +218,12 @@ namespace __AC_NAMESPACE
     public:
       static const int width = W;
       static const int i_width = I;
+      static const int iwidth = I;
       static const bool sign = S;
       static const ac_o_mode o_mode = O;
       static const ac_q_mode q_mode = Q;
+      static const ac_q_mode qmode = Q;
+      static const ac_o_mode omode = O;
       static const int e_width = 0;
 
       template <int W2, int I2, bool S2>
@@ -568,29 +571,15 @@ namespace __AC_NAMESPACE
       {
          return ((ac_fixed<AC_MAX(I, 1), AC_MAX(I, 1), S>)*this).template slc<AC_MAX(I, 1)>(0);
       }
-      template <int W1, bool S1>
-      __FORCE_INLINE explicit operator ac_int<W1, S1>() const
-      {
-         ac_int<AC_MAX(I, 1), S> temp = to_ac_int();
-         return (ac_int<W1, S1>)temp;
-      }
 
       // Explicit conversion functions to C built-in types -------------
       __FORCE_INLINE int to_int() const
       {
          return ((I - W) >= 32) ? 0 : (signed int)to_ac_int();
       }
-      __FORCE_INLINE explicit operator int() const
-      {
-         return to_int();
-      }
       __FORCE_INLINE unsigned to_uint() const
       {
          return ((I - W) >= 32) ? 0 : (unsigned int)to_ac_int();
-      }
-      __FORCE_INLINE explicit operator unsigned() const
-      {
-         return to_uint();
       }
       __FORCE_INLINE long to_long() const
       {
@@ -612,23 +601,66 @@ namespace __AC_NAMESPACE
       {
          return ac_private::ldexpr<I - W>(Base::to_double());
       }
-      __FORCE_INLINE explicit operator double() const
-      {
-         return to_double();
-      }
       __FORCE_INLINE float to_float() const
       {
          return ac_private::ldexpr<I - W>(Base::to_float());
+      }
+      __FORCE_INLINE int length() const
+      {
+         return W;
+      }
+
+      // Cast conversion functions to C built-in types -------------
+      template <int W1, bool S1>
+      __FORCE_INLINE operator ac_int<W1, S1>() const
+      {
+         ac_int<AC_MAX(I, 1), S> temp = to_ac_int();
+         return (ac_int<W1, S1>)temp;
+      }
+      __FORCE_INLINE operator bool() const { return !Base::equal_zero(); }
+
+      __FORCE_INLINE operator char() const { return (char)to_int(); }
+
+      __FORCE_INLINE operator signed char() const { return (signed char)to_int(); }
+
+      __FORCE_INLINE operator unsigned char() const { return (unsigned char)to_uint(); }
+
+      __FORCE_INLINE operator short() const { return (short)to_int(); }
+
+      __FORCE_INLINE operator unsigned short() const { return (unsigned short)to_uint(); }
+      __FORCE_INLINE operator int() const
+      {
+         return to_int();
+      }
+      __FORCE_INLINE operator unsigned() const
+      {
+         return to_uint();
+      }
+      __FORCE_INLINE operator long() const
+      {
+         return to_long();
+      }
+      __FORCE_INLINE operator unsigned long() const
+      {
+         return to_ulong();
+      }
+     __FORCE_INLINE operator Slong() const
+     {
+         return to_int64();
+      }
+      __FORCE_INLINE operator Ulong() const
+      {
+         return to_uint64();
+      }
+      __FORCE_INLINE explicit operator double() const
+      {
+         return to_double();
       }
       __FORCE_INLINE explicit operator float() const
       {
          return to_float();
       }
 
-      __FORCE_INLINE int length() const
-      {
-         return W;
-      }
 
       __FORCE_INLINE std::string to_string(ac_base_mode base_rep, bool sign_mag = false) const
       {
@@ -1171,6 +1203,30 @@ namespace __AC_NAMESPACE
          __FORCE_INLINE const range_ref_fixed& operator=(const RRF& b) const
          {
             return operator=(b.operator const ac_int<W, S>());
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const int& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const unsigned& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const long& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const unsigned long& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const Slong& b) const
+         {
+            return operator=(ac_int<W, S>(b));
+         }
+         __FORCE_INLINE const range_ref_fixed& operator=(const Ulong& b) const
+         {
+            return operator=(ac_int<W, S>(b));
          }
          __FORCE_INLINE const range_ref_fixed& operator=(const range_ref_fixed& b) const
          {
@@ -1754,6 +1810,17 @@ namespace __AC_NAMESPACE
       os << x.to_string(AC_DEC);
 #endif
       return os;
+   }
+
+   template <int W, int I, bool S, ac_q_mode Q, ac_o_mode O>
+   __FORCE_INLINE std::istream& operator>>(std::istream& in, ac_fixed<W, I, S, Q, O>& x)
+   {
+#ifndef __BAMBU__
+      double d;
+      in >> d;
+      x = ac_fixed<W, I, S, Q, O>(d);
+#endif
+      return in;
    }
 
    // Macros for Binary Operators with C Integers
