@@ -138,7 +138,7 @@ namespace llvm
             if(BufOrErr)
             {
                std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
-               std::string buf = Buffer->getBuffer();
+               std::string buf = Buffer->getBuffer().data();
                std::stringstream ss(buf);
                std::string item;
                while(std::getline(ss, item, '\n'))

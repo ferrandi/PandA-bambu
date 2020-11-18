@@ -110,7 +110,7 @@ namespace llvm
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
-               auto funName = fun.getName();
+               std::string funName = fun.getName().data();
                auto demangled = getDemangled(funName);
                if(!fun.hasInternalLinkage() && (funName == TopFunctionName_TFP || demangled == TopFunctionName_TFP))
                {
@@ -172,7 +172,7 @@ namespace llvm
             }
             else
             {
-               auto funName = fun.getName();
+               std::string funName = fun.getName().data();
                auto demangled = getDemangled(funName);
 #if PRINT_DBG_MSG
                llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";

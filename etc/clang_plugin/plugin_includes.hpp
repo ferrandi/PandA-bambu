@@ -63,7 +63,10 @@
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
 
-#if __clang_major__ == 10
+#if __clang_major__ == 11
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang11##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang11" #SYMBOL
+#elif __clang_major__ == 10
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang10##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang10" #SYMBOL
 #elif __clang_major__ == 9
@@ -78,12 +81,14 @@
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
+#elif __clang_major__ == 5
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
 #elif __clang_major__ == 4
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang4##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
 #else
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
+#error
 #endif
 
 namespace llvm
@@ -718,13 +723,13 @@ namespace llvm
       void dequeue_and_serialize();
 
       std::map<const llvm::Value*, llvm::Metadata*> MetaDataMap;
-      void buildMetaDataMap(llvm::Module& M);
+      void buildMetaDataMap(const llvm::Module& M);
 
       bool lowerMemIntrinsics(llvm::Module& M);
       bool RebuildConstants(llvm::Module& M);
       bool lowerIntrinsics(llvm::Module& M);
 
-      void compute_eSSA(llvm::Module& M);
+      void compute_eSSA(llvm::Module& M, bool * changed);
 
       void computeValueRange(llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);

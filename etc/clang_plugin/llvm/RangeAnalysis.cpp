@@ -78,6 +78,7 @@
 #include "llvm/IR/Argument.h"
 #include "llvm/IR/CallSite.h"
 #include "llvm/IR/ConstantRange.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
@@ -90,8 +91,7 @@
 #include "llvm/IR/Use.h"
 #include "llvm/IR/User.h"
 #include "llvm/IR/Value.h"
-#include "llvm/PassAnalysisSupport.h"
-#include "llvm/PassSupport.h"
+#include "llvm/Pass.h"
 #include "llvm/Support/FileSystem.h"
 
 #if __clang_major__ == 4
@@ -350,9 +350,16 @@ namespace RangeAnalysis
             case llvm::Value::ConstantAggregateZeroVal:
             {
                auto type = CV->getType();
-               if(dyn_cast<llvm::ArrayType>(type) || dyn_cast<llvm::VectorType>(type))
+               if(dyn_cast<llvm::ArrayType>(type))
                {
-                  auto elmtType = cast<llvm::SequentialType>(type)->getElementType();
+                  auto elmtType = cast<llvm::ArrayType>(type)->getElementType();
+                  assert(elmtType->isIntegerTy());
+                  auto bw = elmtType->getPrimitiveSizeInBits();
+                  return Range(Regular, bw, Zero, Zero);
+               }
+               if(dyn_cast<llvm::VectorType>(type))
+               {
+                  auto elmtType = cast<llvm::VectorType>(type)->getElementType();
                   assert(elmtType->isIntegerTy());
                   auto bw = elmtType->getPrimitiveSizeInBits();
                   return Range(Regular, bw, Zero, Zero);
@@ -407,8 +414,7 @@ namespace RangeAnalysis
       unsigned ObjectBW(const llvm::Value* varValue)
       {
          assert(varValue);
-         auto vid = varValue->getValueID();
-         assert(vid == llvm::Value::InstructionVal + llvm::Instruction::Alloca || vid == llvm::Value::GlobalVariableVal);
+         assert(varValue->getValueID() == llvm::Value::InstructionVal + llvm::Instruction::Alloca || varValue->getValueID() == llvm::Value::GlobalVariableVal);
          unsigned int elmtSize = 0;
          if(auto AI = llvm::dyn_cast<const llvm::AllocaInst>(varValue))
          {

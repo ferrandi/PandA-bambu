@@ -36,8 +36,10 @@ if BUILD_I386_CLANG9_ASTANALYZER_PLUGIN
 all: $(I386_CLANG9_ASTANALYZER_PLUGIN)
 endif
 
+$(I386_CLANG9_SSA_PLUGIN) : clang9_plugin_dumpGimpleSSA.so clang9_plugin_dumpGimpleSSA_opt.so
+clang9_plugin_dumpGimpleSSA_opt.so : clang9_plugin_dumpGimpleSSA.so
 if BUILD_PTAA
-$(I386_CLANG9_SSA_PLUGIN) : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -53,7 +55,7 @@ $(I386_CLANG9_SSA_PLUGIN) : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o cl
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-$(I386_CLANG9_SSA_PLUGIN) : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSA.so : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -69,8 +71,11 @@ $(I386_CLANG9_SSA_PLUGIN) : clang9_plugin_dumpGimpleSSA.o clang9_dumpGimple.o cl
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
+
+$(I386_CLANG9_SSA_PLUGINCPP) : clang9_plugin_dumpGimpleSSACpp.so clang9_plugin_dumpGimpleSSACpp_opt.so
+clang9_plugin_dumpGimpleSSACpp_opt.so : clang9_plugin_dumpGimpleSSACpp.so
 if BUILD_PTAA
-$(I386_CLANG9_SSA_PLUGINCPP) : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -86,7 +91,7 @@ $(I386_CLANG9_SSA_PLUGINCPP) : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimpl
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-$(I386_CLANG9_SSA_PLUGINCPP) : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleSSACpp.so : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -103,8 +108,10 @@ $(I386_CLANG9_SSA_PLUGINCPP) : clang9_plugin_dumpGimpleSSACpp.o clang9_dumpGimpl
 	fi;
 endif
 
+$(I386_CLANG9_EMPTY_PLUGIN) : clang9_plugin_dumpGimpleEmpty.so clang9_plugin_dumpGimpleEmpty_opt.so
+clang9_plugin_dumpGimpleEmpty_opt.so : clang9_plugin_dumpGimpleEmpty.so
 if BUILD_PTAA
-$(I386_CLANG9_EMPTY_PLUGIN) : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o clang9_HardekopfLin_AA.o clang9_RangeAnalysis.o clang9_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -120,7 +127,7 @@ $(I386_CLANG9_EMPTY_PLUGIN) : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang9_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-$(I386_CLANG9_EMPTY_PLUGIN) : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
+clang9_plugin_dumpGimpleEmpty.so : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.o clang9_RangeAnalysis.o clang9_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -137,7 +144,9 @@ $(I386_CLANG9_EMPTY_PLUGIN) : clang9_plugin_dumpGimpleEmpty.o clang9_dumpGimple.
 	fi;
 endif
 
-$(I386_CLANG9_EXPANDMEMOPS_PLUGIN) : clang9_plugin_expandMemOps.o 
+$(I386_CLANG9_EXPANDMEMOPS_PLUGIN) : clang9_plugin_expandMemOps.so clang9_plugin_expandMemOps_opt.so
+clang9_plugin_expandMemOps_opt.so : clang9_plugin_expandMemOps.so
+clang9_plugin_expandMemOps.so : clang9_plugin_expandMemOps.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -152,7 +161,9 @@ $(I386_CLANG9_EXPANDMEMOPS_PLUGIN) : clang9_plugin_expandMemOps.o
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_expandMemOps.o $$compile_options -o clang9_plugin_expandMemOps.so; \
 	fi;
 
-$(I386_CLANG9_GEPICANON_PLUGIN) : clang9_plugin_GepiCanon.o clang9_GepiCanon.o
+$(I386_CLANG9_GEPICANON_PLUGIN) : clang9_plugin_GepiCanon.so clang9_plugin_GepiCanon_opt.so
+clang9_plugin_GepiCanon_opt.so : clang9_plugin_GepiCanon.so
+clang9_plugin_GepiCanon.so : clang9_plugin_GepiCanon.o clang9_GepiCanon.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -167,7 +178,9 @@ $(I386_CLANG9_GEPICANON_PLUGIN) : clang9_plugin_GepiCanon.o clang9_GepiCanon.o
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_GepiCanon.o clang9_GepiCanon.o $$compile_options -o clang9_plugin_GepiCanon.so; \
 	fi;
 
-$(I386_CLANG9_CSROA_PLUGIN) : clang9_plugin_CSROA.o clang9_CSROA.o clang9_GepiCanon.o
+$(I386_CLANG9_CSROA_PLUGIN) : clang9_plugin_CSROA.so clang9_plugin_CSROA_opt.so
+clang9_plugin_CSROA_opt.so : clang9_plugin_CSROA.so
+clang9_plugin_CSROA.so : clang9_plugin_CSROA.o clang9_CSROA.o clang9_GepiCanon.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -182,7 +195,9 @@ $(I386_CLANG9_CSROA_PLUGIN) : clang9_plugin_CSROA.o clang9_CSROA.o clang9_GepiCa
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_CSROA.o clang9_GepiCanon.o clang9_CSROA.o $$compile_options -o clang9_plugin_CSROA.so; \
 	fi;
 
-$(I386_CLANG9_TOPFNAME_PLUGIN) : clang9_plugin_topfname.o 
+$(I386_CLANG9_TOPFNAME_PLUGIN) : clang9_plugin_topfname.so clang9_plugin_topfname_opt.so
+clang9_plugin_topfname_opt.so : clang9_plugin_topfname.so
+clang9_plugin_topfname.so : clang9_plugin_topfname.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \
@@ -197,7 +212,8 @@ $(I386_CLANG9_TOPFNAME_PLUGIN) : clang9_plugin_topfname.o
 	  $(I386_CLANG9_PLUGIN_COMPILER) clang9_plugin_topfname.o $$compile_options -o clang9_plugin_topfname.so; \
 	fi;
 
-$(I386_CLANG9_ASTANALYZER_PLUGIN) : clang9_plugin_ASTAnalyzer.o 
+$(I386_CLANG9_ASTANALYZER_PLUGIN) : clang9_plugin_ASTAnalyzer.so
+clang9_plugin_ASTAnalyzer.so : clang9_plugin_ASTAnalyzer.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG9_LIBS) -lversion `$(I386_LLVM_CONFIG9_EXE) --ldflags --libs --system-libs`'; \

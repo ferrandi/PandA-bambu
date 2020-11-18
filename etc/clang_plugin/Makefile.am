@@ -12,7 +12,8 @@ EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdi
              $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/LICENSE.TXT $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp \
              $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp \
              $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp \
-             $(top_srcdir)/etc/clang_plugin/ExpandMemOpsPass.hpp $(top_srcdir)/etc/clang_plugin/PtrIteratorSimplifyPass.hpp $(top_srcdir)/etc/clang_plugin/fpga_callbacks.hpp
+             $(top_srcdir)/etc/clang_plugin/ExpandMemOpsPass.hpp $(top_srcdir)/etc/clang_plugin/PtrIteratorSimplifyPass.hpp $(top_srcdir)/etc/clang_plugin/fpga_callbacks.hpp\
+             $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.hpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.cpp
 
 LD_LIBRARY_PATH=
 PANDA_PLUGIN_VERSION=0.11
@@ -63,6 +64,9 @@ include $(top_srcdir)/etc/clang_plugin/clang9.am
 
 ###### clang 10.0
 include $(top_srcdir)/etc/clang_plugin/clang10.am
+
+###### clang 11.0
+include $(top_srcdir)/etc/clang_plugin/clang11.am
 
 clean :
 	rm -rf *.o *.so *.h bambuS2S-*

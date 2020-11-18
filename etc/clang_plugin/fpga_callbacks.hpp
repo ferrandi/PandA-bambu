@@ -197,15 +197,15 @@ Expandability compute_function_versioning_cost(llvm::Function* function)
                {
                   inst_cost *= 0;
                }
-               else if(i.getOpcodeName() == "add" or i.getOpcodeName() == "fadd")
+               else if(i.getOpcodeName() == std::string("add") or i.getOpcodeName() == std::string("fadd"))
                {
                   inst_cost *= 1;
                }
-               else if(i.getOpcodeName() == "sub" or i.getOpcodeName() == "fsub")
+               else if(i.getOpcodeName() == std::string("sub") or i.getOpcodeName() == std::string("fsub"))
                {
                   inst_cost *= 1;
                }
-               else if(i.getOpcodeName() == "mul" or i.getOpcodeName() == "fmul")
+               else if(i.getOpcodeName() == std::string("mul") or i.getOpcodeName() == std::string("fmul"))
                {
                   inst_cost *= 100;
                }

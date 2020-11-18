@@ -50,6 +50,7 @@
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
 #include "config_HAVE_I386_CLANG10_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -167,12 +168,15 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG10_COMPILER
    CT_I386_CLANG10 = 32768,
 #endif
+#if HAVE_I386_CLANG11_COMPILER
+   CT_I386_CLANG11 = 65536,
+#endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 65536,
+   CT_ARM_GCC = 131072,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 131072,
-   CT_SPARC_ELF_GCC = 262144
+   CT_SPARC_GCC = 262144,
+   CT_SPARC_ELF_GCC = 524288
 #endif
 };
 

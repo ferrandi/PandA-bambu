@@ -41,6 +41,7 @@
 #include <llvm/Pass.h>
 
 #include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/IR/CallSite.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Transforms/Utils/Local.h"
 #include "llvm/Transforms/Utils/PromoteMemToReg.h"
@@ -2297,7 +2298,7 @@ void expand_signatures_and_call_sites(std::set<llvm::Function*>& function_workli
          const std::vector<unsigned long long>& arg_dimensions = arg_dimensions_map.at(arg);
 
          llvm::Type* new_arg_ty = arg->getType();
-         std::string new_arg_name = arg->getName();
+         std::string new_arg_name = arg->getName().data();
 
          // Create the new argument and append it to the mock function
          unsigned long long argNo = newMockFunctionArgs.size();
@@ -2756,9 +2757,9 @@ static void gen_gepi_map(llvm::Value* gepi_base, llvm::Argument* arg, llvm::Use*
             }
             else if(ptd_ty->isVectorTy())
             {
-               for(unsigned long long idx = 0; idx < ptd_ty->getVectorNumElements(); idx++)
+               for(unsigned long long idx = 0; idx < llvm::dyn_cast<llvm::VectorType>(ptd_ty)->getNumElements(); idx++)
                {
-                  type_vec.push_back(ptd_ty->getVectorElementType());
+                  type_vec.push_back(ptd_ty->getScalarType());
                }
             }
             else
@@ -4104,7 +4105,7 @@ void cleanup(llvm::Module& module, const std::map<llvm::Function*, llvm::Functio
                         if(to_exp_it == arg_to_arg.end())
                         {
                            std::string new_load_name = call_inst->getName().str() + ".load." + std::to_string(i);
-                           llvm::LoadInst* load_inst = new llvm::LoadInst(operand, new_load_name, call_inst);
+                           llvm::LoadInst* load_inst = new llvm::LoadInst(llvm::cast<llvm::PointerType>(operand->getType())->getElementType(), operand, new_load_name, call_inst);
 
                            call_ops.push_back(load_inst);
                         }
@@ -4131,8 +4132,7 @@ void cleanup(llvm::Module& module, const std::map<llvm::Function*, llvm::Functio
             {
                llvm::Value* arg_op = call_inst->getOperand(arg_stored_once->getArgNo());
 
-               llvm::StoreInst* new_store = new llvm::StoreInst(new_call_inst, arg_op);
-               new_store->insertAfter(new_call_inst);
+               llvm::StoreInst* new_store = new llvm::StoreInst(new_call_inst, arg_op, call_inst);
             }
             else
             {
@@ -4270,7 +4270,7 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
          {
             if(llvm::isa<llvm::CallInst>(inst) || llvm::isa<llvm::InvokeInst>(inst))
             {
-               auto call_inst = llvm::dyn_cast<llvm::Instruction>(&inst);
+               llvm::Instruction* call_inst = llvm::dyn_cast<llvm::Instruction>(&inst);
                auto cf = llvm::CallSite(call_inst).getCalledFunction();
                if(cf == nullptr)
                   continue;
@@ -4301,7 +4301,18 @@ void inline_wrappers(llvm::Function* kernel_function, std::set<llvm::Function*>&
                   cf->removeFnAttr(llvm::Attribute::NoInline);
                   cf->removeFnAttr(llvm::Attribute::OptimizeNone);
                   llvm::InlineFunctionInfo IFI = llvm::InlineFunctionInfo();
-                  if((llvm::isa<llvm::CallInst>(inst) && !llvm::InlineFunction(llvm::dyn_cast<llvm::CallInst>(call_inst), IFI)) || (llvm::isa<llvm::InvokeInst>(inst) && !llvm::InlineFunction(llvm::dyn_cast<llvm::InvokeInst>(call_inst), IFI)))
+                  if(!(llvm::isa<llvm::CallInst>(call_inst) || llvm::isa<llvm::InvokeInst>(call_inst)))
+                  {
+                     llvm::errs() << "ERR: Cannot inline function " << cf->getName() << "\n";
+                     exit(-1);
+                  }
+#if __clang_major__ == 11
+                  llvm::CallBase *CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
+                  if(!llvm::InlineFunction(*CB, IFI).isSuccess())
+#else
+                  llvm::CallSite CS(call_inst);
+                  if(!llvm::InlineFunction(CS, IFI))
+#endif
                   {
                      llvm::errs() << "ERR: Cannot inline wrapper " << cf->getName() << "\n";
                      exit(-1);
@@ -4384,7 +4395,7 @@ llvm::Function* get_top_function(llvm::Module& module, std::string top_name)
    {
       if(!fun.isIntrinsic() && !fun.isDeclaration())
       {
-         auto funName = fun.getName();
+         std::string funName = fun.getName().data();
          auto demangled = getDemangled(funName);
          if(!fun.hasInternalLinkage() && (funName == top_name || demangled == top_name))
          {

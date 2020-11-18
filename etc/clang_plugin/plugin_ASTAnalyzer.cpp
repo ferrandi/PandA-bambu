@@ -1236,7 +1236,7 @@ namespace clang
          PP.AddPragmaHandler(new HLS_simple_pipeline_PragmaHandler());
          PP.AddPragmaHandler(new HLS_stallable_pipeline_PragmaHandler());
 #if __clang_major__ > 9
-         return std::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
+         return std::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile.data());
 #else
          return llvm::make_unique<FunctionArgConsumer>(CI, topfname, outdir_name, InFile);
 #endif

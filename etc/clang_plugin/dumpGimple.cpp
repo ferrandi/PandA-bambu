@@ -51,6 +51,7 @@
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Attributes.h"
+#include "llvm/IR/CallSite.h"
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
@@ -65,6 +66,7 @@
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -81,6 +83,7 @@
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/CodeGen/IntrinsicLowering.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/InstrTypes.h"
@@ -398,6 +401,7 @@ namespace llvm
 #include "llvm/IR/Instruction.def"
 #if __clang_major__ >= 10
          case llvm::Value::InstructionVal + llvm::Instruction::FNeg:
+         case llvm::Value::InstructionVal + llvm::Instruction::Freeze:
 #endif
          case llvm::Value::InstructionVal + llvm::Instruction::Store:
          case llvm::Value::InstructionVal + llvm::Instruction::Load:
@@ -457,7 +461,8 @@ namespace llvm
                      llvm_unreachable("Plugin Error");
                }
             }
-            auto calledFun = ci->getCalledValue();
+            llvm::ImmutableCallSite CS(ci);
+            auto calledFun = CS.getCalledValue();
             if(isa<llvm::InlineAsm>(calledFun))
                return assignCode(t, GT(GIMPLE_ASM));
             if(ci->getType()->isVoidTy() || ci->use_empty())
@@ -821,33 +826,33 @@ namespace llvm
       }
       else if(auto* di = dyn_cast<llvm::DIVariable>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DISubprogram>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DILocation>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
          res.column = di->getColumn();
       }
       else if(auto* di = dyn_cast<llvm::DILexicalBlock>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
          res.column = di->getColumn();
       }
       else if(auto* di = dyn_cast<llvm::DIMacroFile>(llvm_obj))
       {
-         res.filename = di->getFile()->getFilename();
+         res.filename = di->getFile()->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
@@ -857,24 +862,24 @@ namespace llvm
       }
       else if(auto* di = dyn_cast<llvm::DIImportedEntity>(llvm_obj))
       {
-         // res.filename = di->getFile()->getFilename();
+         // res.filename = di->getFile()->getFilename().data();
          // res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DIObjCProperty>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DICompileUnit>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else if(auto* di = dyn_cast<llvm::DIFile>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else if(auto* di = dyn_cast<llvm::DICompositeType>(llvm_obj))
@@ -883,7 +888,7 @@ namespace llvm
             res = expand_location(di->getBaseType());
          else
          {
-            res.filename = di->getFilename();
+            res.filename = di->getFilename().data();
             res.file = res.filename.c_str();
             res.line = di->getLine();
          }
@@ -894,20 +899,20 @@ namespace llvm
             res = expand_location(di->getBaseType());
          else
          {
-            res.filename = di->getFilename();
+            res.filename = di->getFilename().data();
             res.file = res.filename.c_str();
             res.line = di->getLine();
          }
       }
       else if(auto* di = dyn_cast<llvm::DIType>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DINamespace>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
 #if __clang_major__ == 4
          res.line = di->getLine();
@@ -915,12 +920,12 @@ namespace llvm
       }
       else if(auto* di = dyn_cast<llvm::DIModule>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else if(auto* di = dyn_cast<llvm::DILexicalBlockFile>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else
@@ -1010,6 +1015,8 @@ namespace llvm
 #if __clang_major__ >= 10
          case llvm::Instruction::FNeg:
             return GT(NEGATE_EXPR);
+         case llvm::Instruction::Freeze:
+            return GT(SSA_NAME);
 #endif
          case llvm::Instruction::Add:
             return GT(PLUS_EXPR);
@@ -1171,7 +1178,7 @@ namespace llvm
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto funName = store.getFunction()->getName();
+         std::string funName = store.getFunction()->getName().data();
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
@@ -1873,7 +1880,7 @@ namespace llvm
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto funName = load.getFunction()->getName();
+         std::string funName = load.getFunction()->getName().data();
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
 
@@ -1924,7 +1931,8 @@ namespace llvm
    const char* DumpGimpleRaw::gimple_asm_string(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
-      auto calledFun = ci->getCalledValue();
+      llvm::ImmutableCallSite CS(ci);
+      auto calledFun = CS.getCalledValue();
       assert(isa<llvm::InlineAsm>(calledFun));
       auto ia = cast<llvm::InlineAsm>(calledFun);
       return ia->getAsmString().c_str();
@@ -1984,7 +1992,8 @@ namespace llvm
    const void* DumpGimpleRaw::gimple_call_fn(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
-      auto calledFun = ci->getCalledValue();
+      llvm::ImmutableCallSite CS(ci);
+      auto calledFun = CS.getCalledValue();
       if(isa<llvm::Function>(calledFun))
       {
          auto type = assignCodeType(calledFun->getType());
@@ -2484,7 +2493,12 @@ namespace llvm
             return assignCode(ty, GT(ARRAY_TYPE));
          case llvm::Type::PointerTyID:
             return assignCode(ty, GT(POINTER_TYPE));
+#if __clang_major__ >= 11
+         case llvm::Type::FixedVectorTyID:
+         case llvm::Type::ScalableVectorTyID:
+#else
          case llvm::Type::VectorTyID:
+#endif
             return assignCode(ty, GT(VECTOR_TYPE));
          default:
          {
@@ -2577,7 +2591,12 @@ namespace llvm
                return assignCodeType(cast<llvm::ArrayType>(ty)->getElementType());
             case llvm::Type::PointerTyID:
                return assignCodeType(cast<llvm::PointerType>(ty)->getElementType());
+#if __clang_major__ >= 11
+            case llvm::Type::FixedVectorTyID:
+            case llvm::Type::ScalableVectorTyID:
+#else
             case llvm::Type::VectorTyID:
+#endif
                return assignCodeType(cast<llvm::VectorType>(ty)->getElementType());
             default:
             {
@@ -2663,7 +2682,12 @@ namespace llvm
          case llvm::Type::FunctionTyID:
          case llvm::Type::ArrayTyID:
          case llvm::Type::PointerTyID:
+#if __clang_major__ >= 11
+         case llvm::Type::FixedVectorTyID:
+         case llvm::Type::ScalableVectorTyID:
+#else
          case llvm::Type::VectorTyID:
+#endif
          default:
             llvm::errs() << "TYPE_PRECISION kind not supported\n";
             llvm_unreachable("Plugin Error");
@@ -2720,7 +2744,7 @@ namespace llvm
          auto st = cast<llvm::StructType>(ty);
          if(st->hasName())
          {
-            std::string declname = st->getName();
+            std::string declname = st->getName().data();
             if(identifierTable.find(declname) == identifierTable.end())
                identifierTable.insert(declname);
             const void* dn = identifierTable.find(declname)->c_str();
@@ -2883,7 +2907,7 @@ namespace llvm
    {
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
       bool nameAreKnown = false;
-      if(fd->hasName() && fun2params->find(fd->getName()) != fun2params->end() && fun2params->find(fd->getName())->second.size() == fd->arg_size())
+      if(fd->hasName() && fun2params->find(fd->getName().data()) != fun2params->end() && fun2params->find(fd->getName().data())->second.size() == fd->arg_size())
       {
          nameAreKnown = true;
       }
@@ -2894,7 +2918,7 @@ namespace llvm
       {
          res.push_back(assignCodeAuto(&par));
          if(nameAreKnown)
-            argNameTable[&par] = fun2params->find(fd->getName())->second[par_index];
+            argNameTable[&par] = fun2params->find(fd->getName().data())->second[par_index];
          ++par_index;
       }
       return res;
@@ -4984,7 +5008,7 @@ namespace llvm
    {
       if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
       {
-         return VTy->getBitWidth() / 8;
+         return  (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
       }
       return Type->getPrimitiveSizeInBits() / 8;
    }
@@ -5212,7 +5236,13 @@ namespace llvm
       LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
 
       if(AlignCanBeUsed)
+      {
+#if __clang_major__ >= 11
+         LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), llvm::MaybeAlign(Align), IsVolatile);
+#else
          LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
+#endif
+      }
       else
          LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), IsVolatile);
 
@@ -5222,7 +5252,7 @@ namespace llvm
       LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, ActualCopyLen), LoopBB, NewBB);
    }
 
-   void DumpGimpleRaw::buildMetaDataMap(llvm::Module& M)
+   void DumpGimpleRaw::buildMetaDataMap(const llvm::Module& M)
    {
       for(auto& fun : M.getFunctionList())
       {
@@ -5459,8 +5489,14 @@ namespace llvm
       }
 
       llvm::ConstantInt* CI = cast<llvm::ConstantInt>(Addr->getOperand(OpNo));
-      llvm::SequentialType* InitTy = cast<llvm::SequentialType>(Init->getType());
-      uint64_t NumElts = InitTy->getNumElements();
+      auto initType = Init->getType();
+      uint64_t NumElts=0;
+      if(dyn_cast<llvm::ArrayType>(initType))
+         NumElts = dyn_cast<llvm::ArrayType>(initType)->getNumElements();
+      else if(dyn_cast<llvm::VectorType>(initType))
+         NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
+      else
+         llvm_unreachable("unexpected case");
 
       // Break up the array into elements.
       for(uint64_t i = 0, e = NumElts; i != e; ++i)
@@ -5470,7 +5506,7 @@ namespace llvm
       Elts[CI->getZExtValue()] = EvaluateStoreIntoLocal(Elts[CI->getZExtValue()], Val, Addr, OpNo + 1);
 
       if(Init->getType()->isArrayTy())
-         return llvm::ConstantArray::get(cast<llvm::ArrayType>(InitTy), Elts);
+         return llvm::ConstantArray::get(cast<llvm::ArrayType>(initType), Elts);
       return llvm::ConstantVector::get(Elts);
    }
 
@@ -5558,11 +5594,15 @@ namespace llvm
             // Need to clear and set up cache for new initializer.
             CurrentGV = GV;
             Elts.clear();
-            unsigned NumElts;
+            unsigned NumElts=0;
             if(auto* STy = dyn_cast<llvm::StructType>(Ty))
                NumElts = STy->getNumElements();
+            else if(auto* ATy = dyn_cast<llvm::ArrayType>(Ty))
+               NumElts = ATy->getNumElements();
+            else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
+               NumElts = VTy->getNumElements();
             else
-               NumElts = cast<llvm::SequentialType>(Ty)->getNumElements();
+               llvm_unreachable("unexpected case");
             for(unsigned i = 0, e = NumElts; i != e; ++i)
                Elts.push_back(Init->getAggregateElement(i));
          }
@@ -5986,13 +6026,16 @@ namespace llvm
       return res;
    }
 
-   void DumpGimpleRaw::compute_eSSA(llvm::Module& M)
+   void DumpGimpleRaw::compute_eSSA(llvm::Module& M, bool * changed)
    {
       eSSA eSSAHelper;
       for(auto& fun : M.getFunctionList())
       {
          if(!fun.isIntrinsic() && !fun.isDeclaration())
-            eSSAHelper.runOnFunction(fun, modulePass);
+         {
+            bool res = eSSAHelper.runOnFunction(fun, modulePass, changed);
+            *changed = *changed || res;
+         }
       }
    }
 
@@ -6409,9 +6452,9 @@ namespace llvm
          buildMetaDataMap(M);
       auto res = !earlyAnalysis && lowerMemIntrinsics(M);
 
-      res = res | (!earlyAnalysis && RebuildConstants(M));
-      res = res | (!earlyAnalysis && lowerIntrinsics(M));
-      compute_eSSA(M);
+      res = res || (!earlyAnalysis && RebuildConstants(M));
+      res = res || (!earlyAnalysis && lowerIntrinsics(M));
+      compute_eSSA(M, &res);
 #if HAVE_LIBBDD
       if(!earlyAnalysis && !onlyGlobals)
       {

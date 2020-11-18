@@ -2655,7 +2655,7 @@ std::string Andersen_AA::get_type_name(const llvm::Type* T) const
       auto ST = llvm::dyn_cast<const llvm::StructType>(T);
       if(ST && ST->hasName())
       {
-         return ST->getName();
+         return std::string(ST->getName().data());
       }
       return "<anon.struct>";
    }
@@ -3211,7 +3211,7 @@ void Andersen_AA::list_ext_unknown(const llvm::Module& M) const
          }
          if(rel && extinfo->get_type(&it) == EFT_OTHER)
          {
-            names.push_back(it.getName());
+            names.push_back(it.getName().data());
          }
       }
    }
@@ -4107,7 +4107,7 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
       {
          llvm::errs() << "\n";
       }
-      std::string fn = F->getName();
+      std::string fn = F->getName().data();
       u32 on = 0;
       auto i_srn = stat_ret_node.find(fn);
       if(i_srn != stat_ret_node.end())
@@ -7441,7 +7441,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
          break;
       default:
          // FIXME: support other types
-         ext_failed.insert(F->getName());
+         ext_failed.insert(F->getName().data());
    }
 }
 
@@ -9661,7 +9661,8 @@ static const llvm::Function* calledFunction(const llvm::CallInst* ci)
       return F;
    }
 
-   auto v = ci->getCalledValue();
+   llvm::ImmutableCallSite CS(ci);
+   auto v = CS.getCalledValue();
 
    if(auto C = llvm::dyn_cast<const llvm::ConstantExpr>(v))
    {
@@ -9904,12 +9905,13 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
          else
          { // indirect call
             auto ci = llvm::cast<const llvm::CallInst>(I);
-            if(llvm::isa<llvm::InlineAsm>(ci->getCalledValue()))
+            llvm::ImmutableCallSite CS(ci);
+            if(llvm::isa<llvm::InlineAsm>(CS.getCalledValue()))
             {
                continue;
             }
 
-            u32 fp = get_val_node(ci->getCalledValue(), true);
+            u32 fp = get_val_node(CS.getCalledValue(), true);
             if(fp)
             {
                block_call = true;
@@ -10078,7 +10080,8 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
       assert(call_succ.count(n));
       u32 succ = call_succ[n];
 
-      u32 fp = get_val_node(ci->getCalledValue());
+      llvm::ImmutableCallSite CS(ci);
+      u32 fp = get_val_node(CS.getCalledValue());
       u32 rep = PRE.PE(fp);
       bool seen = tgts.count(rep);
 
