@@ -21,7 +21,11 @@ for compiler in $CLANG_TO_BE_CHECKED; do
    if test -f $compiler; then
       echo "checking $compiler..."
       dnl check for clang
-      I386_CLANG11_VERSION=`$compiler --version |grep clang|awk -F' ' '{print $[4]}'| awk -F'-' '{print $[1]}'`
+      if test `$compiler --version |grep clang|awk -F' ' '{print $[1]}'` = "clang"; then
+        I386_CLANG11_VERSION=`$compiler --version |grep clang|awk -F' ' '{print $[3]}'| awk -F'-' '{print $[1]}'`
+       else
+        I386_CLANG11_VERSION=`$compiler --version |grep clang|awk -F' ' '{print $[4]}'| awk -F'-' '{print $[1]}'`
+      fi
       AS_VERSION_COMPARE($1, [11.0.0], MIN_CLANG11=[11.0.0], MIN_CLANG11=$1, MIN_CLANG11=$1)
       AS_VERSION_COMPARE([12.0.0], $2, MAX_CLANG11=[12.0.0], MAX_CLANG11=$2, MAX_CLANG11=$2)
       AS_VERSION_COMPARE($I386_CLANG11_VERSION, $MIN_CLANG11, echo "checking $compiler >= $MIN_CLANG11... no"; min=no, echo "checking $compiler >= $MIN_CLANG11... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG11... yes"; min=yes)
