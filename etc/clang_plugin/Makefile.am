@@ -16,7 +16,7 @@ EXTRA_DIST = $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdi
              $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.hpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.cpp
 
 LD_LIBRARY_PATH=
-PANDA_PLUGIN_VERSION=0.11
+PANDA_PLUGIN_VERSION=0.12
 #if ENABLE_WERROR
 #WFLAGS=-Wall \
 #   -Werror \

@@ -594,6 +594,8 @@ enum class TreeVocabularyTokenTypes_TokenEnum
    TOK_USE_VARS,
    TOK_PREDICATE,
    TOK_SLOT,
+   TOK_SAT_PLUS_EXPR,
+   TOK_SAT_MINUS_EXPR,
 
    /// RTL token
    TOK_RTL,

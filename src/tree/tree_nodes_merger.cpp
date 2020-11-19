@@ -1385,6 +1385,10 @@ void tree_node_index_factory::create_tree_node(const unsigned int node_id, const
          CREATE_TREE_NODE_CASE_BODY(gimple_multi_way_if, node_id)
       case extract_bit_expr_K:
          CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
+      case sat_plus_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
+      case sat_minus_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
       case do_stmt_K:
       case for_stmt_K:
       case if_stmt_K:

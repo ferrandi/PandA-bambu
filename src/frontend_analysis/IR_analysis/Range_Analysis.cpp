@@ -262,6 +262,8 @@ namespace
          case vec_interleavehigh_expr_K:
          case vec_interleavelow_expr_K:
          case extract_bit_expr_K:
+         case sat_plus_expr_K:
+         case sat_minus_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -372,6 +374,8 @@ namespace
          case vec_interleavehigh_expr_K:
          case vec_interleavelow_expr_K:
          case extract_bit_expr_K:
+         case sat_plus_expr_K:
+         case sat_minus_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -483,6 +487,8 @@ namespace
          case vec_interleavehigh_expr_K:
          case vec_interleavelow_expr_K:
          case extract_bit_expr_K:
+         case sat_plus_expr_K:
+         case sat_minus_expr_K:
          case CASE_UNARY_EXPRESSION:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
@@ -707,6 +713,8 @@ namespace
 #endif
                case min_expr_K:
                case max_expr_K:
+               case sat_plus_expr_K:
+               case sat_minus_expr_K:
                {
                   const auto bin_op = GetPointer<const binary_expr>(GET_CONST_NODE(ga->op1));
                   if(!isValidType(bin_op->op0) || !isValidType(bin_op->op1))
@@ -1977,6 +1985,8 @@ RangeConstRef SymbRange::solveFuture(const VarNode* _bound, const VarNode* _sink
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
       case extract_bit_expr_K:
+      case sat_plus_expr_K:
+      case sat_minus_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -2111,6 +2121,8 @@ void SymbRange::print(std::ostream& OS) const
       case vec_interleavehigh_expr_K:
       case vec_interleavelow_expr_K:
       case extract_bit_expr_K:
+      case sat_plus_expr_K:
+      case sat_minus_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:
@@ -2979,6 +2991,8 @@ RangeRef UnaryOpNode::eval() const
          case vec_interleavehigh_expr_K:
          case vec_interleavelow_expr_K:
          case extract_bit_expr_K:
+         case sat_plus_expr_K:
+         case sat_minus_expr_K:
          case CASE_TERNARY_EXPRESSION:
          case CASE_QUATERNARY_EXPRESSION:
          case CASE_TYPE_NODES:
@@ -3634,6 +3648,13 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case max_expr_K:
          RETURN_DISABLED_OPTION(max, bw);
          return opSigned ? op1->SMax(op2) : op1->UMax(op2);
+
+      case sat_plus_expr_K:
+         RETURN_DISABLED_OPTION(add, bw);
+         return op1->add(op2); /// TOBEFIXED
+      case sat_minus_expr_K:
+         RETURN_DISABLED_OPTION(sub, bw);
+         return op1->sub(op2); /// TOBEFIXED
 
 #ifndef INTEGER_PTR
       case pointer_plus_expr_K:

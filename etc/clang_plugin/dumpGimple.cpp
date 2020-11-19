@@ -138,7 +138,7 @@ namespace llvm
           DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                      DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                      DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)  DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -154,7 +154,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)  DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -168,7 +169,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)  DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -182,7 +184,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)  DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef DEFGSCODE
 
@@ -211,7 +214,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)  DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+   };
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 
@@ -454,6 +458,13 @@ namespace llvm
                   case llvm::Intrinsic::minnum:
                   case llvm::Intrinsic::maxnum:
                      return assignCode(t, GT(GIMPLE_ASSIGN));
+#if __clang_major__ > 7
+                  case llvm::Intrinsic::sadd_sat:
+                  case llvm::Intrinsic::uadd_sat:
+                  case llvm::Intrinsic::ssub_sat:
+                  case llvm::Intrinsic::usub_sat:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
+#endif
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -604,6 +615,16 @@ namespace llvm
             return "__builtin_va_end";
          case llvm::Intrinsic::vacopy:
             return "__builtin_va_copy";
+#if __clang_major__ > 7
+         case llvm::Intrinsic::sadd_sat:
+            return "__llvm_sadd_sat";
+         case llvm::Intrinsic::uadd_sat:
+            return "__llvm_uadd_sat";
+         case llvm::Intrinsic::ssub_sat:
+            return "__llvm_ssub_sat";
+         case llvm::Intrinsic::usub_sat:
+            return "__llvm_usub_sat";
+#endif
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -1006,6 +1027,33 @@ namespace llvm
       return ce->getPredicate();
    }
 
+   static Intrinsic::ID getIntrinsicIDTEC(const llvm::Instruction* inst)
+   {
+      auto ci = llvm::dyn_cast<const llvm::CallInst>(inst);
+      assert(ci);
+      if(ci->getCalledFunction() && ci->getCalledFunction()->isIntrinsic())
+      {
+         return ci->getCalledFunction()->getIntrinsicID();
+      }
+      return (Intrinsic::ID)0;
+   }
+   static Intrinsic::ID getIntrinsicIDTEC(const llvm::ConstantExpr* ce)
+   {
+#if __clang_major__ > 7
+#if __clang_major__ > 9
+      auto ci = llvm::dyn_cast<llvm::CallInst>(ce->getAsInstruction());
+#else
+      auto ci = llvm::dyn_cast<llvm::CallInst>(const_cast<llvm::ConstantExpr*>(ce)->getAsInstruction());
+#endif
+      assert(ci);
+      if(ci->getCalledFunction() && ci->getCalledFunction()->isIntrinsic())
+      {
+         return ci->getCalledFunction()->getIntrinsicID();
+      }
+#endif
+      return (Intrinsic::ID)0;
+   }
+
    template <class InstructionOrConstantExpr>
    DumpGimpleRaw::tree_codes DumpGimpleRaw::tree_expr_code(InstructionOrConstantExpr* inst)
    {
@@ -1064,7 +1112,17 @@ namespace llvm
          case llvm::Instruction::BitCast:
             return GT(VIEW_CONVERT_EXPR);
          case llvm::Instruction::Call:
-            return GT(CALL_EXPR);
+         {
+#if __clang_major__ > 7
+            auto CallID = getIntrinsicIDTEC(inst);
+            if(CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::uadd_sat)
+               return GT(SAT_PLUS_EXPR);
+            else if(CallID == llvm::Intrinsic::ssub_sat || CallID == llvm::Intrinsic::usub_sat)
+               return GT(SAT_MINUS_EXPR);
+            else
+#endif
+               return GT(CALL_EXPR);
+         }
          case llvm::Instruction::SExt:
          case llvm::Instruction::ZExt:
          case llvm::Instruction::Trunc:
@@ -1344,6 +1402,13 @@ namespace llvm
             else
                return false;
          }
+#if __clang_major__ > 7
+         case llvm::Instruction::Call:
+         {
+            auto CallID = getIntrinsicIDTEC(inst);
+            return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat);
+         }
+#endif
          default:
             return false;
       }
@@ -1426,6 +1491,10 @@ namespace llvm
          {
             return isSignedInstruction(inst);
          }
+         case llvm::Instruction::Call:
+         {
+            return isSignedInstruction(inst);
+         }
          default:
             return false;
       }
@@ -1488,6 +1557,10 @@ namespace llvm
          case llvm::Instruction::Add:
          case llvm::Instruction::Sub:
          case llvm::Instruction::Mul:
+         {
+            return !isSignedInstruction(inst);
+         }
+         case llvm::Instruction::Call:
          {
             return !isSignedInstruction(inst);
          }
@@ -4955,6 +5028,12 @@ namespace llvm
          case llvm::Intrinsic::fmuladd:
          case llvm::Intrinsic::minnum:
          case llvm::Intrinsic::maxnum:
+#if __clang_major__ > 7
+         case llvm::Intrinsic::sadd_sat:
+         case llvm::Intrinsic::uadd_sat:
+         case llvm::Intrinsic::ssub_sat:
+         case llvm::Intrinsic::usub_sat:
+#endif
             return true;
          default:
             return false;
