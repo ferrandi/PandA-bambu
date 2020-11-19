@@ -1173,6 +1173,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             right = ("(" + print_node(right_op, v, vppf) + ")");
             res += "( (" + left + " + " +  right  + ") < " + right + " ? " + STR((1ULL << res_size)-1) + (res_size>32?"ULL":"") +" : " + left + " + " + right + ")";
          }
+         break;
       }
       case sat_minus_expr_K:
       {
@@ -1196,6 +1197,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             right = ("(" + print_node(right_op, v, vppf) + ")");
             res += "( " + left + " > " + right + " ? " + left + " - " + right + " : 0)";
          }
+         break;
       }
       case plus_expr_K:
       {
