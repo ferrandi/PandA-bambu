@@ -68,7 +68,7 @@ REF_FORWARD_DECL(type_casting);
            mult_highpart_expr)(ne_expr)(ordered_expr)(plus_expr)(pointer_plus_expr)(postdecrement_expr)(postincrement_expr)(predecrement_expr)(preincrement_expr)(range_expr)(paren_expr)(rdiv_expr)(round_div_expr)(round_mod_expr)(rrotate_expr)(           \
            rshift_expr)(set_le_expr)(trunc_div_expr)(trunc_mod_expr)(truth_and_expr)(truth_andif_expr)(truth_or_expr)(truth_orif_expr)(truth_xor_expr)(try_catch_expr)(try_finally)(uneq_expr)(ltgt_expr)(unge_expr)(ungt_expr)(unle_expr)(unlt_expr)(        \
            unordered_expr)(widen_sum_expr)(widen_mult_expr)(with_size_expr)(vec_lshift_expr)(vec_rshift_expr)(widen_mult_hi_expr)(widen_mult_lo_expr)(vec_pack_trunc_expr)(vec_pack_sat_expr)(vec_pack_fix_trunc_expr)(vec_extracteven_expr)(                 \
-           vec_extractodd_expr)(vec_interleavehigh_expr)(vec_interleavelow_expr)(extract_bit_expr)
+           vec_extractodd_expr)(vec_interleavehigh_expr)(vec_interleavelow_expr)(extract_bit_expr)(sat_plus_expr)(sat_minus_expr)
 
 struct type_casting : public tree_node_visitor
 {
