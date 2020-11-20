@@ -126,6 +126,7 @@ namespace llvm
 {
    class DumpGimpleRaw
    {
+      bool changed;
       bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */
@@ -650,7 +651,7 @@ namespace llvm
       const void* getStatement_list(const void* t);
       const void* getGimpleScpe(const void* g);
       int getGimple_bb_index(const void* g);
-      bool gimple_has_mem_ops(const void* g) const;
+      bool gimple_has_mem_ops(const void* g);
       std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>> CurrentListofMAEntryDef;
       void serialize_vops(const void* g);
       void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag);

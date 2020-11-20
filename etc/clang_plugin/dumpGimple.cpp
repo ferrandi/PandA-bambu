@@ -3062,7 +3062,7 @@ namespace llvm
       return getBB_index(BB);
    }
 
-   bool DumpGimpleRaw::gimple_has_mem_ops(const void* g) const
+   bool DumpGimpleRaw::gimple_has_mem_ops(const void* g)
    {
       if(TREE_CODE(g) == GT(GIMPLE_NOP))
          return false;
@@ -3072,7 +3072,11 @@ namespace llvm
          return false;
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
       return MSSA.getMemoryAccess(inst);
    }
 
@@ -3131,7 +3135,11 @@ namespace llvm
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
       {
@@ -3304,12 +3312,20 @@ namespace llvm
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
             assert(modulePass);
+#if __clang_major__ >= 11
+            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
+#else
             llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+#endif
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
             auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+#if __clang_major__ >= 11
+            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
+#else
             auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+#endif
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
 #else
@@ -3441,12 +3457,20 @@ namespace llvm
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
             assert(modulePass);
+#if __clang_major__ >= 11
+            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
+#else
             llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+#endif
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
             auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+#if __clang_major__ >= 11
+            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
+#else
             const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+#endif
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
 #else
@@ -4079,7 +4103,11 @@ namespace llvm
          llvm::errs() << "@" << code_name << " @" << index << "\n";
          inst->print(llvm::errs());
          llvm::errs() << "\n";
+#if __clang_major__ >= 11
+         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
          auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
          if(MSSA.getMemoryAccess(inst))
             llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
       }
@@ -4391,7 +4419,11 @@ namespace llvm
       const llvm::Function::BasicBlockListType& bblist = *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
       llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
       assert(modulePass);
+#if __clang_major__ >= 11
+      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
+#else
       auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
+#endif
       std::map<const llvm::Loop*, unsigned> loopLabes;
       if(!LI.empty())
       {
@@ -4416,7 +4448,11 @@ namespace llvm
             }
          }
       }
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
 
       for(const auto& BB : bblist)
       {
@@ -6514,7 +6550,11 @@ namespace llvm
 
    void DumpGimpleRaw::computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass)
    {
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F)).getMSSA();
+#endif
       for(const auto& BB : F->getBasicBlockList())
       {
          for(const auto& inst : BB)
