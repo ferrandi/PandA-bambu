@@ -51,7 +51,11 @@
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Attributes.h"
+#if __clang_major__ >= 11
+#include "llvm/IR/AbstractCallSite.h"
+#else
 #include "llvm/IR/CallSite.h"
+#endif
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
@@ -472,8 +476,12 @@ namespace llvm
                      llvm_unreachable("Plugin Error");
                }
             }
+#if __clang_major__ >= 11
+            auto calledFun = ci->getCalledOperand();
+#else
             llvm::ImmutableCallSite CS(ci);
             auto calledFun = CS.getCalledValue();
+#endif
             if(isa<llvm::InlineAsm>(calledFun))
                return assignCode(t, GT(GIMPLE_ASM));
             if(ci->getType()->isVoidTy() || ci->use_empty())
@@ -2004,8 +2012,12 @@ namespace llvm
    const char* DumpGimpleRaw::gimple_asm_string(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
+#if __clang_major__ >= 11
+      auto calledFun = ci->getCalledOperand();
+#else
       llvm::ImmutableCallSite CS(ci);
       auto calledFun = CS.getCalledValue();
+#endif
       assert(isa<llvm::InlineAsm>(calledFun));
       auto ia = cast<llvm::InlineAsm>(calledFun);
       return ia->getAsmString().c_str();
@@ -2065,8 +2077,12 @@ namespace llvm
    const void* DumpGimpleRaw::gimple_call_fn(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
+#if __clang_major__ >= 11
+      auto calledFun = ci->getCalledOperand();
+#else
       llvm::ImmutableCallSite CS(ci);
       auto calledFun = CS.getCalledValue();
+#endif
       if(isa<llvm::Function>(calledFun))
       {
          auto type = assignCodeType(calledFun->getType());
@@ -3136,7 +3152,7 @@ namespace llvm
          /// Serialize gimple pairs because of use after def chain
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
+         if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
          else
          {
@@ -3150,7 +3166,7 @@ namespace llvm
          serialize_child("vdef", vdef);
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
+         if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
          else
          {
@@ -5892,10 +5908,9 @@ namespace llvm
          {
             for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
             {
-               if(isa<llvm::CallInst>(II) || isa<llvm::InvokeInst>(II))
+               if(isa<llvm::IntrinsicInst>(*II))
                {
-                  llvm::CallSite CS(&*II);
-                  llvm::IntrinsicInst* IntInst = dyn_cast<llvm::IntrinsicInst>(CS.getInstruction());
+                  llvm::IntrinsicInst* IntInst = dyn_cast<llvm::IntrinsicInst>(&(*II));
                   if(IntInst && IntInst->getIntrinsicID() == llvm::Intrinsic::invariant_start)
                   {
                      llvm::ConstantInt* Size = cast<llvm::ConstantInt>(IntInst->getArgOperand(0));

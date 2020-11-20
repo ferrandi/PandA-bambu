@@ -68,7 +68,7 @@ unsigned long get_num_elements(llvm::Type* ty, unsigned long decayed_dim_if_any 
    return non_aggregate_types;
 }
 
-Expandability compute_alloca_expandability_profit(llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL, std::string& msg)
+Expandability compute_alloca_expandability_profit(const llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL, std::string& msg)
 {
    llvm::Type* allocated_type = alloca_inst->getAllocatedType();
 

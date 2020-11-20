@@ -874,7 +874,6 @@ namespace eSSAInfoClasses
 
 bool eSSA::runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass, bool *changed)
 {
-   llvm::errs() << "eSSA::runOnFunction" << fun.getName()<<"\n";
 #if __clang_major__ >= 11
    auto DT = &modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(fun, changed).getDomTree();
 #else

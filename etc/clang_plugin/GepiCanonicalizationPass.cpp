@@ -38,7 +38,9 @@
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
+#if __clang_major__ < 11
 #include <llvm/IR/CallSite.h>
+#endif
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
@@ -1528,7 +1530,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
                   llvm::errs() << "ERR: Cannot inline function " << called_function->getName() << "\n";
                   exit(-1);
                }
-#if __clang_major__ == 11
+#if __clang_major__ >= 11
                llvm::CallBase *CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
                if(!llvm::InlineFunction(*CB, IFI).isSuccess())
 #else

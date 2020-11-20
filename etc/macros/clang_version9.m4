@@ -21,7 +21,7 @@ for compiler in $CLANG_TO_BE_CHECKED; do
    if test -f $compiler; then
       echo "checking $compiler..."
       dnl check for clang
-      I386_CLANG9_VERSION=`$compiler --version |grep clang|awk -F' ' '{print $[3]}'| awk -F'-' '{print $[1]}'`
+      I386_CLANG9_VERSION=`$compiler --version |grep clang|grep -v InstalledDir|awk -F' ' '{print $[3]}'| awk -F'-' '{print $[1]}'`
       AS_VERSION_COMPARE($1, [9.0.0], MIN_CLANG9=[9.0.0], MIN_CLANG9=$1, MIN_CLANG9=$1)
       AS_VERSION_COMPARE([10.0.0], $2, MAX_CLANG9=[10.0.0], MAX_CLANG9=$2, MAX_CLANG9=$2)
       AS_VERSION_COMPARE($I386_CLANG9_VERSION, $MIN_CLANG9, echo "checking $compiler >= $MIN_CLANG9... no"; min=no, echo "checking $compiler >= $MIN_CLANG9... yes"; min=yes, echo "checking $compiler >= $MIN_CLANG9... yes"; min=yes)

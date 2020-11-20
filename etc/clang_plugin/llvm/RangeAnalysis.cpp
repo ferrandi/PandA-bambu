@@ -76,7 +76,11 @@
 #include "llvm/Analysis/LazyValueInfo.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Argument.h"
+#if __clang_major__ >= 11
+#include "llvm/IR/AbstractCallSite.h"
+#else
 #include "llvm/IR/CallSite.h"
+#endif
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Constants.h"
@@ -6756,8 +6760,11 @@ namespace RangeAnalysis
             continue;
          }
 
-         auto* caller = cast<Instruction>(Us);
-         CallSite CS(caller);
+#if __clang_major__ >= 9
+         AbstractCallSite CS(&U);
+#else
+         CallSite CS(cast<Instruction>(Us));
+#endif
          if(!CS.isCallee(&U))
          {
             continue;
@@ -6851,9 +6858,11 @@ namespace RangeAnalysis
             continue;
          }
 
-         auto* caller = cast<Instruction>(Us);
-
-         CallSite CS(caller);
+#if __clang_major__ >= 9
+         AbstractCallSite CS(&U);
+#else
+         CallSite CS(cast<Instruction>(Us));
+#endif
 
          if(!CS.isCallee(&U))
          {
@@ -6861,12 +6870,15 @@ namespace RangeAnalysis
          }
 
          // Iterate over the real parameters and put them in the data structure
-         CallSite::arg_iterator AI;
-         CallSite::arg_iterator EI;
+         auto n_arg = CS.getNumArgOperands();
 
-         for(i = 0, AI = CS.arg_begin(), EI = CS.arg_end(); AI != EI; ++i, ++AI)
+         for(i = 0; i < n_arg; ++i)
          {
-            parameters[i].second = *AI;
+#if __clang_major__ >= 9
+            parameters[i].second = CS.getCallArgOperand(i);
+#else
+            parameters[i].second = CS.getArgOperand(i);
+#endif
          }
 
          // // Do the inter-procedural construction of CG
@@ -6890,7 +6902,7 @@ namespace RangeAnalysis
          if(!noReturn)
          {
             // Add caller instruction to the CG (it receives the return value)
-            to = G.addVarNode(caller, nullptr, DL);
+            to = G.addVarNode(CS.getInstruction(), nullptr, DL);
             to->setRange(Range(Regular, to->getBitWidth(), Min, Max));
 
             PhiOp* phiOp = new PhiOp(std::make_shared<BasicInterval>(), to, nullptr);
