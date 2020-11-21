@@ -49,9 +49,10 @@
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/ADT/StringSet.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Support/FileSystem.h"
 #include "llvm/Transforms/IPO.h"
-#include "llvm/Analysis/CallGraph.h"
-#include "llvm/Transforms/Utils/LoopUtils.h"
+
 #include <cxxabi.h>
 #include <sstream>
 
@@ -64,9 +65,10 @@ namespace llvm
 
 namespace llvm
 {
-   cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
-   cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(true), cl::desc("Specify if the global variables has to be internalize"));
-   cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols to be not internalize"), cl::value_desc("comma separated list of external symbols"));
+   static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
+   static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false), cl::desc("Specify if the global variables has to be internalize"));
+   static cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols to be not internalize"), cl::value_desc("comma separated list of external symbols"));
+   static cl::opt<std::string> outdir_name("internalize-outputdir", cl::desc("Specify the directory where the external symbol file will be written"), cl::value_desc("directory path"));
 
    // Helper to load an API list to preserve and expose it as a functor for internalization.
    class PreserveSymbolList
@@ -84,7 +86,6 @@ namespace llvm
       }
       bool operator()(const llvm::GlobalValue &GV)
       {
-         llvm::errs() << "|||>" << GV.getName() << " " << ExternalNames.size() << "\n";
          return ExternalNames.count(GV.getName());
       }
 
@@ -129,7 +130,6 @@ namespace llvm
          return builtinsNames.find(std::string("__builtin_") + declname) != builtinsNames.end() || builtinsNames.find(declname) != builtinsNames.end();
       }
 
-
       bool runOnModule(Module& M) override
       {
          bool changed = false;
@@ -137,7 +137,6 @@ namespace llvm
          if(TopFunctionName_TFP.empty())
             return false;
          std::list<std::string> symbolList;
-         llvm::errs() << "begin\n";
          if(!ExternSymbolsList.empty())
          {
             std::stringstream ss(ExternSymbolsList);
@@ -148,7 +147,6 @@ namespace llvm
                symbolList.push_back(substr);
             }
          }
-         llvm::errs() << "2\n";
          /// check if the translation unit has the top function name
          for(auto& fun : M.getFunctionList())
          {
@@ -171,7 +169,6 @@ namespace llvm
          llvm::errs() << "Top function name: " << TopFunctionName_TFP << "\n";
 #endif
          symbolList.push_back("signgam");
-         llvm::errs() << "Internalize_TFP\n";
 
          if(!Internalize_TFP)
          {
@@ -181,10 +178,21 @@ namespace llvm
                symbolList.push_back(varName);
             }
          }
-         llvm::errs() << "run createInternalizePass\n";
-         for(auto symbols :symbolList )
-            llvm::errs() << symbols << "\n";
          preservedSyms.addSymbols(symbolList);
+         if(!outdir_name.empty())
+         {
+            std::error_code EC;
+            std::string filename = outdir_name+"external-symbols.txt";
+#if __clang_major__ >= 7
+            llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+#else
+            llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+#endif
+            for(auto symb : symbolList)
+            {
+               stream << symb << "\n";
+            }
+         }
 
          return changed;
       }
