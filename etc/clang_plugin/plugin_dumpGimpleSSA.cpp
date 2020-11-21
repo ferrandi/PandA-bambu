@@ -90,20 +90,13 @@ namespace llvm
 
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)() : ModulePass(ID)
       {
-         initializeLoopPassPass(*PassRegistry::getPassRegistry());
-         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeMemoryDependenceWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());
-         // initializeMemorySSAPrinterLegacyPassPass(*PassRegistry::getPassRegistry());
-         initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeCFLSteensAAWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
-         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeDominanceFrontierWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeUnifyFunctionExitNodesPass(*PassRegistry::getPassRegistry());
+         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
+         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
+         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());//
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
+         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
+         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());//
+         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());//
       }
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
@@ -177,24 +170,14 @@ namespace llvm
       }
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
-         AU.addRequired<UnifyFunctionExitNodes>();
-         AU.addRequired<CFLSteensAAWrapperPass>();
-         AU.addRequired<TypeBasedAAWrapperPass>();
-         getLoopAnalysisUsage(AU);
-
-         AU.addRequired<MemoryDependenceWrapperPass>();
-         AU.addRequired<MemorySSAWrapperPass>();
-         //           AU.addRequired<MemorySSAPrinterLegacyPass>();
-         AU.addRequired<LazyValueInfoWrapperPass>();
-         AU.addRequired<AAResultsWrapperPass>();
-
+         AU.addRequired<LoopInfoWrapperPass>();//
          AU.addPreserved<MemorySSAWrapperPass>();
-         // AU.addPreserved<MemorySSAPrinterLegacyPass>();
-         AU.addRequired<TargetTransformInfoWrapperPass>();
-         AU.addRequired<TargetLibraryInfoWrapperPass>();
-         AU.addRequired<AssumptionCacheTracker>();
-         AU.addRequired<DominatorTreeWrapperPass>();
-         AU.addRequired<DominanceFrontierWrapperPass>();
+         AU.addRequired<MemorySSAWrapperPass>();//
+         AU.addRequired<LazyValueInfoWrapperPass>();//
+         AU.addRequired<TargetTransformInfoWrapperPass>();//
+         AU.addRequired<TargetLibraryInfoWrapperPass>();//
+         AU.addRequired<AssumptionCacheTracker>();//
+         AU.addRequired<DominatorTreeWrapperPass>();//
       }
    };
    template <>
