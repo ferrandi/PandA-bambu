@@ -547,7 +547,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                   if(is_constant)
                   {
                      auto c_BVO = [&] {
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Left part is constant");
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Left part is constant " + bit_values);
                         unsigned long long int const_value = 0;
                         unsigned int index_val = 0;
                         for(auto current_el : boost::adaptors::reverse(bit_values))

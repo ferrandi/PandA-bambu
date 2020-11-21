@@ -506,7 +506,7 @@ bool BitLatticeManipulator::update_current(std::deque<bit_lattice>& res, unsigne
 
       auto& cur_lattice = current.at(output_uid);
       const auto best_lattice = best.at(output_uid);
-      auto sup_lattice = sup(res, best_lattice, output_uid);
+      auto sup_lattice = bitstring_constant(res) ? res : sup(res, best_lattice, output_uid);
       if(cur_lattice != sup_lattice)
       {
          cur_lattice = sup_lattice;
