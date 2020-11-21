@@ -6586,8 +6586,10 @@ namespace llvm
          buildMetaDataMap(M);
       auto res = !earlyAnalysis && lowerMemIntrinsics(M);
 
-      res = res || (!earlyAnalysis && RebuildConstants(M));
-      res = res || (!earlyAnalysis && lowerIntrinsics(M));
+      auto res_RC = (!earlyAnalysis && RebuildConstants(M));
+      res = res || res_RC;
+      auto res_LI = (!earlyAnalysis && lowerIntrinsics(M));
+      res = res || res_LI;
       compute_eSSA(M, &res);
 #if HAVE_LIBBDD
       if(!earlyAnalysis && !onlyGlobals)

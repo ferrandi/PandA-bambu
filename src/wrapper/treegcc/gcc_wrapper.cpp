@@ -464,11 +464,11 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          addTopFName = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
          fname = top_functions_names.front();
       }
-      if(addTopFName && (isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals)))
+      if(addTopFName)
       {
          if(compiler.is_clang)
          {
-            command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -panda-TFN=" + fname;
+            command += " -fplugin=" + compiler.topfname_plugin_obj + " -mllvm -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -panda-TFN=" + fname;
             std::string extern_symbols;
             std::vector<std::string> xml_files;
             if(Param->isOption(OPT_xml_memory_allocation))
@@ -538,7 +538,8 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
             {
                command += " -mllvm -panda-ESL=" + extern_symbols;
             }
-            command += " -mllvm -panda-Internalize";
+            if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
+               command += " -mllvm -panda-Internalize";
             if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
                command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
@@ -833,7 +834,8 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             boost::replace_all(renamed_plugin, ".so", "_opt.so");
             command += " -load=" + renamed_plugin;
 #endif
-            command += " -panda-TFN=" + fname + " " + temporary_file_o_bc;
+            command += " -internalize-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+            command += " -panda-TFN=" + fname;
             std::string extern_symbols;
             std::vector<std::string> xml_files;
             if(Param->isOption(OPT_xml_memory_allocation))
@@ -898,14 +900,15 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             }
             if(!extern_symbols.empty())
             {
-               command += " -mllvm -panda-ESL=" + extern_symbols;
+               command += " -panda-ESL=" + extern_symbols;
             }
 
             if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
                command += " -panda-Internalize";
+            command += " -" + compiler.topfname_plugin_name;
+            command += " " + temporary_file_o_bc;
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
             command += " -o " + temporary_file_o_bc;
-            command += " -" + compiler.topfname_plugin_name;
             const std::string tfn_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
             ret = PandaSystem(Param, command, tfn_output_file_name);
             if(IsError(ret))
@@ -914,6 +917,28 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
                if(boost::filesystem::exists(boost::filesystem::path(tfn_output_file_name)))
                {
                   CopyStdout(tfn_output_file_name);
+                  THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+                  THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+               }
+               else
+               {
+                  THROW_ERROR("Error in opt invocation");
+               }
+            }
+
+            command = compiler.llvm_opt.string();
+            command += " " + temporary_file_o_bc;
+            command += " --internalize-public-api-file=" + Param->getOption<std::string>(OPT_output_temporary_directory) + "external-symbols.txt -internalize ";
+            temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
+            command += " -o " + temporary_file_o_bc;
+            const std::string int_output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_gcc_output;
+            ret = PandaSystem(Param, command, int_output_file_name);
+            if(IsError(ret))
+            {
+               PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in opt");
+               if(boost::filesystem::exists(boost::filesystem::path(int_output_file_name)))
+               {
+                  CopyStdout(int_output_file_name);
                   THROW_ERROR_CODE(COMPILING_EC, "opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
                   THROW_ERROR("opt returns an error during compilation " + boost::lexical_cast<std::string>(errno));
                }
@@ -3486,7 +3511,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
        if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG11)
    {
       const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
-      recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
+      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
             recipe += " -" + GepiCanon_plugin_name +
