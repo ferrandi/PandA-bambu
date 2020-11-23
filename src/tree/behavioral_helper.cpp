@@ -1162,7 +1162,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             std::string left, right;
             left = ("(" + print_node(left_op, v, vppf) + ")");
             right = ("(" + print_node(right_op, v, vppf) + ")");
-            res += "(" + left + " + " +  right  + ")";
+            res += "(" + left + " + " + right + ")";
          }
          else
          {
@@ -1171,7 +1171,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             std::string left, right;
             left = ("(" + print_node(left_op, v, vppf) + ")");
             right = ("(" + print_node(right_op, v, vppf) + ")");
-            res += "( (" + left + " + " +  right  + ") < " + right + " ? " + STR((1ULL << res_size)-1) + (res_size>32?"ULL":"") +" : " + left + " + " + right + ")";
+            res += "( (" + left + " + " + right + ") < " + right + " ? " + STR((1ULL << res_size) - 1) + (res_size > 32 ? "ULL" : "") + " : " + left + " + " + right + ")";
          }
          break;
       }
@@ -1180,13 +1180,13 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          auto* be = GetPointer<binary_expr>(node);
          if(tree_helper::is_int(TM, GET_INDEX_NODE(be->type)))
          {
-            //const unsigned int res_size = static_cast<unsigned int>(tree_helper::Size(be->type));
+            // const unsigned int res_size = static_cast<unsigned int>(tree_helper::Size(be->type));
             unsigned int left_op = GET_INDEX_NODE(be->op0);
             unsigned int right_op = GET_INDEX_NODE(be->op1);
             std::string left, right;
             left = ("(" + print_node(left_op, v, vppf) + ")");
             right = ("(" + print_node(right_op, v, vppf) + ")");
-            res += "(" + left + " + " +  right  + ")";
+            res += "(" + left + " + " + right + ")";
          }
          else
          {
