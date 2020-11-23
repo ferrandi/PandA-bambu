@@ -1154,47 +1154,58 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case sat_plus_expr_K:
       {
          auto* be = GetPointer<binary_expr>(node);
-         const unsigned int res_size = static_cast<unsigned int>(tree_helper::Size(be->type));
+         const unsigned int res_size = tree_helper::Size(be->type);
+         unsigned int left_op = GET_INDEX_NODE(be->op0);
+         unsigned int right_op = GET_INDEX_NODE(be->op1);
+         std::string left, right;
+         left = ("(" + print_node(left_op, v, vppf) + ")");
+         right = ("(" + print_node(right_op, v, vppf) + ")");
          if(tree_helper::is_int(TM, GET_INDEX_NODE(be->type)))
          {
-            unsigned int left_op = GET_INDEX_NODE(be->op0);
-            unsigned int right_op = GET_INDEX_NODE(be->op1);
-            std::string left, right;
-            left = ("(" + print_node(left_op, v, vppf) + ")");
-            right = ("(" + print_node(right_op, v, vppf) + ")");
-            res += "(" + left + " + " +  right  + ")";
+            const unsigned int op_size = tree_helper::Size(be->op0);
+            res += "((((" + left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ^ (" + right + " & " + STR(1ULL << (op_size - 1)) +
+                   "ULL)) |"
+                   "((" +
+                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) == ((" + left + " + " + right + ") & " + STR(1ULL << (op_size - 1)) +
+                   "ULL))) ? "
+                   "(" +
+                   left + " + " + right +
+                   ") "
+                   ": ((" +
+                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ? " + STR(-1LL << (res_size - 1)) + " : " + STR((1LL << (res_size - 1)) - 1) + "))";
          }
          else
          {
-            unsigned int left_op = GET_INDEX_NODE(be->op0);
-            unsigned int right_op = GET_INDEX_NODE(be->op1);
-            std::string left, right;
-            left = ("(" + print_node(left_op, v, vppf) + ")");
-            right = ("(" + print_node(right_op, v, vppf) + ")");
-            res += "( (" + left + " + " +  right  + ") < " + right + " ? " + STR((1ULL << res_size)-1) + (res_size>32?"ULL":"") +" : " + left + " + " + right + ")";
+            res += "( (" + left + " + " + right + ") < " + right + " ? " + STR((1ULL << res_size) - 1) + (res_size > 32 ? "ULL" : "") + " : " + left + " + " + right + ")";
          }
          break;
       }
       case sat_minus_expr_K:
       {
          auto* be = GetPointer<binary_expr>(node);
+         unsigned int left_op = GET_INDEX_NODE(be->op0);
+         unsigned int right_op = GET_INDEX_NODE(be->op1);
+         std::string left, right;
+         left = ("(" + print_node(left_op, v, vppf) + ")");
+         right = ("(" + print_node(right_op, v, vppf) + ")");
          if(tree_helper::is_int(TM, GET_INDEX_NODE(be->type)))
          {
-            //const unsigned int res_size = static_cast<unsigned int>(tree_helper::Size(be->type));
-            unsigned int left_op = GET_INDEX_NODE(be->op0);
-            unsigned int right_op = GET_INDEX_NODE(be->op1);
-            std::string left, right;
-            left = ("(" + print_node(left_op, v, vppf) + ")");
-            right = ("(" + print_node(right_op, v, vppf) + ")");
-            res += "(" + left + " + " +  right  + ")";
+            const unsigned int res_size = static_cast<unsigned int>(tree_helper::Size(be->type));
+            const unsigned int op_size = tree_helper::Size(be->op0);
+            res += "((((" + left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ^ (~" + right + " & " + STR(1ULL << (op_size - 1)) +
+                   "ULL)) | "
+                   "((" +
+                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) == ((" + left + " - " + right + ") & " + STR(1ULL << (op_size - 1)) +
+                   "ULL))) ? "
+                   "(" +
+                   left + " - " + right +
+                   ") "
+                   ": ((" +
+                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ? " + STR(-1LL << (res_size - 1)) + " : " + STR((1LL << (res_size - 1)) - 1) + "))";
+            res += "(" + left + " - " + right + ")";
          }
          else
          {
-            unsigned int left_op = GET_INDEX_NODE(be->op0);
-            unsigned int right_op = GET_INDEX_NODE(be->op1);
-            std::string left, right;
-            left = ("(" + print_node(left_op, v, vppf) + ")");
-            right = ("(" + print_node(right_op, v, vppf) + ")");
             res += "( " + left + " > " + right + " ? " + left + " - " + right + " : 0)";
          }
          break;
