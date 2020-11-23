@@ -2681,7 +2681,7 @@ assign mask_min = {1&apos;b1, {BITSIZE_out1-1{1&apos;b0}}};
 assign mask_max = {1&apos;b0, {BITSIZE_out1-1{1&apos;b1}}};
 assign cond1 = (!in1[BITSIZE_in1-1])&amp;(!in2[BITSIZE_in2-1])&amp;add_tmp[BITSIZE_out1-1];
 assign cond2 = in1[BITSIZE_in1-1]&amp;in2[BITSIZE_in2-1]&amp;(!add_tmp[BITSIZE_out1-1]);
-assign out1 = cond2 ? mask_min : (cond1 ? mask_min : add_tmp);
+assign out1 = cond2 ? mask_min : (cond1 ? mask_max : add_tmp);
 "/>
         </component_o>
       </circuit>
@@ -3961,7 +3961,7 @@ assign mask_min = {1&apos;b1, {BITSIZE_out1-1{1&apos;b0}}};
 assign mask_max = {1&apos;b0, {BITSIZE_out1-1{1&apos;b1}}};
 assign cond1 = (!in1[BITSIZE_in1-1])&amp;in2[BITSIZE_in2-1]&amp;sub_tmp[BITSIZE_out1-1];
 assign cond2 = in1[BITSIZE_in1-1]&amp;(!in2[BITSIZE_in2-1])&amp;(!sub_tmp[BITSIZE_out1-1]);
-assign out1 = cond2 ? mask_min : (cond1 ? mask_min : sub_tmp);
+assign out1 = cond2 ? mask_min : (cond1 ? mask_max : sub_tmp);
 "/>
         </component_o>
       </circuit>
