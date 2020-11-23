@@ -51,9 +51,7 @@
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Attributes.h"
-#if __clang_major__ >= 11
-#include "llvm/IR/AbstractCallSite.h"
-#else
+#if __clang_major__ < 11
 #include "llvm/IR/CallSite.h"
 #endif
 #include "llvm/IR/CFG.h"
@@ -6170,7 +6168,7 @@ namespace llvm
       }
    }
 
-   void DumpGimpleRaw::computeValueRange(llvm::Module& M)
+   void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
    {
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
       RA->runOnModule(M, modulePass, PtoSets_AA);
