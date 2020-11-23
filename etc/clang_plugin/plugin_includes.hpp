@@ -730,7 +730,7 @@ namespace llvm
       bool RebuildConstants(llvm::Module& M);
       bool lowerIntrinsics(llvm::Module& M);
 
-      void compute_eSSA(llvm::Module& M, bool * changed);
+      void compute_eSSA(llvm::Module& M, bool* changed);
 
       void computeValueRange(llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);

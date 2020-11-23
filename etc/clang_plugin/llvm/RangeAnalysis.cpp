@@ -82,8 +82,8 @@
 #include "llvm/IR/CallSite.h"
 #endif
 #include "llvm/IR/ConstantRange.h"
-#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Constants.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/InstIterator.h"
@@ -4074,7 +4074,7 @@ namespace RangeAnalysis
       }
    }
 
-   void ConstraintGraph::addSigmaOp(const PHINode* Sigma, ModulePass* modulePass, const llvm::DataLayout* DL, bool *changed)
+   void ConstraintGraph::addSigmaOp(const PHINode* Sigma, ModulePass* modulePass, const llvm::DataLayout* DL, bool* changed)
    {
       assert(Sigma->getNumOperands() == 1U);
       // Create the sink.
@@ -4165,7 +4165,7 @@ namespace RangeAnalysis
    }
 
    void ConstraintGraph::addLoadOp(const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
-                                   llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, bool *changed)
+                                   llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, bool* changed)
    {
       auto bw = LI->getType()->getPrimitiveSizeInBits();
       Range intersection(Regular, bw, Min, Max);
@@ -4271,7 +4271,7 @@ namespace RangeAnalysis
    }
 
    static bool recurseComputeConflictingStores(llvm::SmallPtrSet<const llvm::Value*, 6>& visited, const Instruction* mInstr, const llvm::Value* GV, llvm::SmallPtrSet<const llvm::Value*, 6>& res, Andersen_AA* PtoSets_AA,
-                                               llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool *changed)
+                                               llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool* changed)
    {
       assert(mInstr);
       bool GVfound = false;
@@ -4427,7 +4427,7 @@ namespace RangeAnalysis
          }
       }
    }
-   static void recurseUpMemoryAccess(const llvm::Function* fun, llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzedInstr, llvm::ModulePass* modulePass, bool *changed)
+   static void recurseUpMemoryAccess(const llvm::Function* fun, llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>>& toBeAnalyzedInstr, llvm::ModulePass* modulePass, bool* changed)
    {
       for(auto fuse : fun->users())
       {
@@ -4470,7 +4470,7 @@ namespace RangeAnalysis
    }
 
    llvm::SmallPtrSet<const llvm::Value*, 6> ConstraintGraph::ComputeConflictingStores(const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr0, Andersen_AA* PtoSets_AA,
-                                                                                      llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, llvm::ModulePass* modulePass, bool *changed)
+                                                                                      llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, llvm::ModulePass* modulePass, bool* changed)
    {
       llvm::SmallPtrSet<const llvm::Value*, 6> res;
       llvm::DenseSet<std::pair<const llvm::Instruction*, const llvm::Function*>> toBeAnalyzed;
@@ -4575,7 +4575,8 @@ namespace RangeAnalysis
       varValue->print(llvm::errs());
       llvm_unreachable("unexpected condition");
    }
-   void ConstraintGraph::addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, const llvm::DataLayout* DL, bool *changed)
+   void ConstraintGraph::addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, const llvm::DataLayout* DL,
+                                    bool* changed)
    {
 #if HAVE_LIBBDD
       if(arePointersResolved)
@@ -4638,11 +4639,12 @@ namespace RangeAnalysis
       }
    } // namespace
 
-   void ConstraintGraph::buildOperations(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool *changed)
+   void ConstraintGraph::buildOperations(const Instruction* I, ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
+                                         bool* changed)
    {
       if(auto LI = dyn_cast<LoadInst>(I))
       {
-         addLoadOp(LI, PtoSets_AA, arePointersResolved, modulePass, DL, Function2Store,changed);
+         addLoadOp(LI, PtoSets_AA, arePointersResolved, modulePass, DL, Function2Store, changed);
       }
       else if(auto SI = dyn_cast<StoreInst>(I))
       {
@@ -5182,7 +5184,8 @@ namespace RangeAnalysis
    }
 
    /// Iterates through all instructions in the function and builds the graph.
-   void ConstraintGraph::buildGraph(const Function& F, ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store, bool *changed)
+   void ConstraintGraph::buildGraph(const Function& F, ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::DenseMap<const Function*, SmallPtrSet<const Instruction*, 6>>& Function2Store,
+                                    bool* changed)
    {
       this->func = &F;
       buildValueMaps(F, DL);

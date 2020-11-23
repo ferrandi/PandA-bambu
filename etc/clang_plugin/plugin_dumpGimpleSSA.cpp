@@ -90,13 +90,13 @@ namespace llvm
 
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)() : ModulePass(ID)
       {
-         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
-         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
-         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());//
-         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
-         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());//
-         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());//
-         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());//
+         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
+         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
+         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());           //
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry()); //
+         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
+         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
+         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
       }
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
@@ -170,14 +170,14 @@ namespace llvm
       }
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
-         AU.addRequired<LoopInfoWrapperPass>();//
+         AU.addRequired<LoopInfoWrapperPass>(); //
          AU.addPreserved<MemorySSAWrapperPass>();
-         AU.addRequired<MemorySSAWrapperPass>();//
-         AU.addRequired<LazyValueInfoWrapperPass>();//
-         AU.addRequired<TargetTransformInfoWrapperPass>();//
-         AU.addRequired<TargetLibraryInfoWrapperPass>();//
-         AU.addRequired<AssumptionCacheTracker>();//
-         AU.addRequired<DominatorTreeWrapperPass>();//
+         AU.addRequired<MemorySSAWrapperPass>();           //
+         AU.addRequired<LazyValueInfoWrapperPass>();       //
+         AU.addRequired<TargetTransformInfoWrapperPass>(); //
+         AU.addRequired<TargetLibraryInfoWrapperPass>();   //
+         AU.addRequired<AssumptionCacheTracker>();         //
+         AU.addRequired<DominatorTreeWrapperPass>();       //
       }
    };
    template <>

@@ -40,6 +40,7 @@
  */
 #include "plugin_includes.hpp"
 
+#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
@@ -47,11 +48,10 @@
 #include "llvm/Pass.h"
 #include "llvm/PassRegistry.h"
 #include "llvm/Support/CommandLine.h"
-#include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/ADT/StringSet.h"
-#include "llvm/Support/raw_ostream.h"
 #include "llvm/Support/FileSystem.h"
+#include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/IPO/PassManagerBuilder.h"
 
 #include <cxxabi.h>
 #include <sstream>
@@ -74,17 +74,19 @@ namespace llvm
    class PreserveSymbolList
    {
     public:
-      PreserveSymbolList() {}
-      explicit PreserveSymbolList(const std::list<std::string> &symbolList)
+      PreserveSymbolList()
+      {
+      }
+      explicit PreserveSymbolList(const std::list<std::string>& symbolList)
       {
          ExternalNames.insert(symbolList.begin(), symbolList.end());
       }
 
-      void addSymbols(const std::list<std::string> &symbolList)
+      void addSymbols(const std::list<std::string>& symbolList)
       {
          ExternalNames.insert(symbolList.begin(), symbolList.end());
       }
-      bool operator()(const llvm::GlobalValue &GV)
+      bool operator()(const llvm::GlobalValue& GV)
       {
          return ExternalNames.count(GV.getName());
       }
@@ -93,7 +95,7 @@ namespace llvm
       // Contains the set of symbols loaded to preserve
       static llvm::StringSet<> ExternalNames;
    };
-   llvm::StringSet<>PreserveSymbolList::ExternalNames;
+   llvm::StringSet<> PreserveSymbolList::ExternalNames;
    static PreserveSymbolList preservedSyms;
 
    struct CLANG_VERSION_SYMBOL(_plugin_topfname) : public ModulePass
@@ -141,7 +143,8 @@ namespace llvm
          {
             std::stringstream ss(ExternSymbolsList);
 
-            while (ss.good()) {
+            while(ss.good())
+            {
                std::string substr;
                std::getline(ss, substr, ',');
                symbolList.push_back(substr);
@@ -182,7 +185,7 @@ namespace llvm
          if(!outdir_name.empty())
          {
             std::error_code EC;
-            std::string filename = outdir_name+"external-symbols.txt";
+            std::string filename = outdir_name + "external-symbols.txt";
 #if __clang_major__ >= 7
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else

@@ -110,7 +110,7 @@ namespace llvm
       {
          if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
          {
-            return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits())  / 8;
+            return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
          }
          return Type->getPrimitiveSizeInBits() / 8;
       }
