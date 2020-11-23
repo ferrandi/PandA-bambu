@@ -732,7 +732,7 @@ namespace llvm
 
       void compute_eSSA(llvm::Module& M, bool* changed);
 
-      void computeValueRange(llvm::Module& M);
+      void computeValueRange(const llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);
       bool LoadStoreOptimizer(llvm::Module& M);
       void computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);
