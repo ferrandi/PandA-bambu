@@ -3648,13 +3648,12 @@ RangeRef BinaryOpNode::evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, 
       case max_expr_K:
          RETURN_DISABLED_OPTION(max, bw);
          return opSigned ? op1->SMax(op2) : op1->UMax(op2);
-
       case sat_plus_expr_K:
          RETURN_DISABLED_OPTION(add, bw);
-         return op1->add(op2); /// TOBEFIXED
+         return opSigned ? op1->sat_add(op2) : op1->usat_add(op2);
       case sat_minus_expr_K:
          RETURN_DISABLED_OPTION(sub, bw);
-         return op1->sub(op2); /// TOBEFIXED
+         return opSigned ? op1->sat_sub(op2) : op1->usat_sub(op2);
 
 #ifndef INTEGER_PTR
       case pointer_plus_expr_K:

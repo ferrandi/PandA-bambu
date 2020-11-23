@@ -643,9 +643,6 @@ bool Range::isConstant() const
       return RangeRef(new Range(Unknown, b));  \
    }
 
-/// Add and Mul are commutative. So, they are a little different
-/// than the other operations.
-/// Many Range reductions are done by exploiting ConstantRange code
 RangeRef Range::add(const RangeConstRef& other) const
 {
    THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
@@ -687,6 +684,118 @@ RangeRef Range::add(const RangeConstRef& other) const
 
    const auto min = getLower() + other->getLower();
    const auto max = getUpper() + other->getUpper();
+   RangeRef res(new Range(Regular, bw, min, max));
+   if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   return res;
+}
+
+RangeRef Range::sat_add(const RangeConstRef& other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(isAnti() && other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(ol == 0)
+      {
+         return RangeRef(this->clone());
+      }
+      if(ol > 0)
+      {
+         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) + ol, APInt::getSignedMaxValue(bw)));
+      }
+      return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw) + ol));
+   }
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(ol == 0)
+      {
+         return RangeRef(this->clone());
+      }
+      if(l == Min)
+      {
+         THROW_ASSERT(u != Max, "");
+         if(ol > 0)
+         {
+            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) + ol, std::min(APInt::getSignedMaxValue(bw), u + ol)));
+         }
+         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u + ol)));
+      }
+      if(u == Max)
+      {
+         THROW_ASSERT(l != Min, "");
+         if(ol > 0)
+         {
+            return RangeRef(new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l + ol), APInt::getSignedMaxValue(bw)));
+         }
+         return RangeRef(new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l + ol), APInt::getSignedMaxValue(bw) + ol));
+      }
+   }
+
+   const auto min = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() + other->getLower()));
+   const auto max = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() + other->getUpper()));
+   RangeRef res(new Range(Regular, bw, min, max));
+   if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   return res;
+}
+
+RangeRef Range::usat_add(const RangeConstRef& other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(isAnti() && other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(l + ol >= APInt::getMaxValue(bw))
+      {
+         return RangeRef(new Range(Anti, bw, 0, u + ol));
+      }
+      return RangeRef(new Range(Anti, bw, l + ol, u + ol));
+   }
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(l == Min)
+      {
+         THROW_ASSERT(u != Max, "");
+         return RangeRef(new Range(Regular, bw, 0, std::min(APInt::getMaxValue(bw), u + ol)));
+      }
+      if(u == Max)
+      {
+         THROW_ASSERT(l != Min, "");
+         return RangeRef(new Range(Regular, bw, std::min(APInt::getMaxValue(bw), l + ol), APInt::getMaxValue(bw)));
+      }
+
+      return RangeRef(new Range(Regular, bw, l + ol, std::min(APInt::getMaxValue(bw), u + ol)));
+   }
+
+   const auto min = std::min(APInt::getMaxValue(bw), getLower() + other->getLower());
+   const auto max = std::min(APInt::getMaxValue(bw), getUpper() + other->getUpper());
    RangeRef res(new Range(Regular, bw, min, max));
    if(res->getSpan() <= getSpan() || res->getSpan() <= other->getSpan())
    {
@@ -757,6 +866,124 @@ RangeRef Range::sub(const RangeConstRef& other) const
 
    const auto min = getLower() - other->getUpper();
    const auto max = getUpper() - other->getLower();
+   RangeRef res(new Range(Regular, bw, min, max));
+   if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   return res;
+}
+
+RangeRef Range::sat_sub(const RangeConstRef& other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(this->isAnti() && other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(ol == 0)
+      {
+         return RangeRef(this->clone());
+      }
+      if(ol < 0)
+      {
+         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) - ol, APInt::getSignedMaxValue(bw)));
+      }
+      return RangeRef(new Range(Anti, bw, APInt::getSignedMinValue(bw), APInt::getSignedMaxValue(bw) - ol));
+   }
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(l == Min)
+      {
+         THROW_ASSERT(u != Max, "");
+         if(ol < 0)
+         {
+            return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw) - ol, std::min(APInt::getSignedMaxValue(bw), u - ol)));
+         }
+         return RangeRef(new Range(Regular, bw, APInt::getSignedMinValue(bw), std::max(APInt::getSignedMinValue(bw), u - ol)));
+      }
+      if(u == Max)
+      {
+         THROW_ASSERT(l != Min, "");
+         if(ol < 0)
+         {
+            return RangeRef(new Range(Regular, bw, std::min(APInt::getSignedMaxValue(bw), l - ol), APInt::getSignedMaxValue(bw)));
+         }
+         return RangeRef(new Range(Regular, bw, std::max(APInt::getSignedMinValue(bw), l - ol), APInt::getSignedMaxValue(bw) - ol));
+      }
+   }
+
+   const auto min = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getLower() - other->getUpper()));
+   const auto max = std::max(APInt::getSignedMinValue(bw), std::min(APInt::getSignedMaxValue(bw), getUpper() - other->getLower()));
+   RangeRef res(new Range(Regular, bw, min, max));
+   if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   return res;
+}
+
+RangeRef Range::usat_sub(const RangeConstRef& other) const
+{
+   THROW_ASSERT(!isReal() && !other->isReal(), "Real range is a storage class only");
+   RETURN_EMPTY_ON_EMPTY(bw);
+   RETURN_UNKNOWN_ON_UNKNOWN(bw);
+   if(this->isFullSet() || other->isFullSet())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(this->isAnti() && other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(ol == 0)
+      {
+         return RangeRef(this->clone());
+      }
+      if(ol < 0)
+      {
+         return RangeRef(new Range(Regular, bw, 0 - ol, APInt::getMaxValue(bw)));
+      }
+      return RangeRef(new Range(Regular, bw, 0, APInt::getMaxValue(bw) - ol));
+   }
+   if(this->isAnti() || other->isAnti())
+   {
+      return RangeRef(new Range(Regular, bw));
+   }
+   if(other->isConstant())
+   {
+      auto ol = other->getLower();
+      if(l == Min)
+      {
+         THROW_ASSERT(u != Max, "");
+         if(ol < 0)
+         {
+            return RangeRef(new Range(Regular, bw, 0 - ol, std::min(APInt::getMaxValue(bw), u - ol)));
+         }
+         return RangeRef(new Range(Regular, bw, 0, std::max(APInt(0), u - ol)));
+      }
+      if(u == Max)
+      {
+         THROW_ASSERT(l != Min, "");
+         if(ol < 0)
+         {
+            return RangeRef(new Range(Regular, bw, std::min(APInt::getMaxValue(bw), l - ol), APInt::getMaxValue(bw)));
+         }
+         return RangeRef(new Range(Regular, bw, std::max(APInt(0), l - ol), APInt::getMaxValue(bw) - ol));
+      }
+   }
+
+   const auto min = std::max(APInt(0), std::min(APInt::getMaxValue(bw), getLower() - other->getUpper()));
+   const auto max = std::max(APInt(0), std::min(APInt::getMaxValue(bw), getUpper() - other->getLower()));
    RangeRef res(new Range(Regular, bw, min, max));
    if(res->getSpan() < getSpan() || res->getSpan() < other->getSpan())
    {
