@@ -4309,7 +4309,7 @@ void Andersen_AA::id_dir_call(const CallInstOrInvokeInst* I, const llvm::Functio
 //------------------------------------------------------------------------------
 // Add the constraints for an indirect call.
 template <class CallInstOrInvokeInst>
-void Andersen_AA::id_ind_call(const CallInstOrInvokeInst*I)
+void Andersen_AA::id_ind_call(const CallInstOrInvokeInst* I)
 {
    if(DEBUG_AA)
    {
@@ -7273,7 +7273,7 @@ void Andersen_AA::solve_prop(u32 n, const bdd& d_points_to)
 //------------------------------------------------------------------------------
 // Add the edges for the indirect call (I) of ext.func (F).
 template <class CallInstOrInvokeInst>
-void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst *I)
+void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst* I)
 {
    assert(extinfo->is_ext(F));
    std::pair<const llvm::Function*, const llvm::Instruction*> arg(F, I);

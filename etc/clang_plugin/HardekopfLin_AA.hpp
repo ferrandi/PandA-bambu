@@ -418,9 +418,9 @@ class Andersen_AA
  private:
    void id_call_obj(u32 vnI, const llvm::Function* F);
    template <class CallInstOrInvokeInst>
-   void id_dir_call(const CallInstOrInvokeInst*I, const llvm::Function* F);
+   void id_dir_call(const CallInstOrInvokeInst* I, const llvm::Function* F);
    template <class CallInstOrInvokeInst>
-   void id_ind_call(const CallInstOrInvokeInst*I);
+   void id_ind_call(const CallInstOrInvokeInst* I);
 
    void id_global(const llvm::GlobalVariable* G);
    u32 get_ret_node(const llvm::Function* F) const;
@@ -453,7 +453,7 @@ class Andersen_AA
  protected:
    void id_ret_insn(const llvm::Instruction* I);
    template <class CallInstOrInvokeInst>
-   void id_call_insn(const CallInstOrInvokeInst *I);
+   void id_call_insn(const CallInstOrInvokeInst* I);
    void id_alloc_insn(const llvm::Instruction* I);
    void id_load_insn(const llvm::Instruction* I);
    void id_store_insn(const llvm::Instruction* I);
@@ -461,7 +461,7 @@ class Andersen_AA
 
  private:
    template <class CallInstOrInvokeInst>
-   void id_ext_call(const CallInstOrInvokeInst *I, const llvm::Function* F);
+   void id_ext_call(const CallInstOrInvokeInst* I, const llvm::Function* F);
    void add_store2_cons(const llvm::Value* D, const llvm::Value* S, size_t sz = 0);
 
    void processBlock(const llvm::BasicBlock* BB, std::set<const llvm::BasicBlock*>& bb_seen);

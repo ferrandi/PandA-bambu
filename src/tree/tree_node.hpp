@@ -525,8 +525,8 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case vec_extractodd_expr_K:     \
    case vec_interleavehigh_expr_K: \
    case vec_interleavelow_expr_K:  \
-   case extract_bit_expr_K: \
-   case sat_plus_expr_K:\
+   case extract_bit_expr_K:        \
+   case sat_plus_expr_K:           \
    case sat_minus_expr_K
 
 /**
@@ -6133,6 +6133,5 @@ CREATE_TREE_NODE_CLASS(sat_plus_expr, binary_expr);
  * Simple arithmetic.
  */
 CREATE_TREE_NODE_CLASS(sat_minus_expr, binary_expr);
-
 
 #endif

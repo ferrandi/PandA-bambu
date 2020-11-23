@@ -2792,7 +2792,7 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
          || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-         )
+      )
          setOption(OPT_gcc_m32_mx32, "-m64");
 #endif
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_MX32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_MX32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_MX32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_MX32) ||            \
@@ -2845,7 +2845,7 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
          || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-         )
+      )
          setOption(OPT_gcc_m32_mx32, "-mx32");
 #endif
 #if(HAVE_I386_GCC47_COMPILER && HAVE_I386_GCC47_M32) || (HAVE_I386_GCC48_COMPILER && HAVE_I386_GCC48_M32) || (HAVE_I386_GCC49_COMPILER && HAVE_I386_GCC49_M32) || (HAVE_I386_GCC5_COMPILER && HAVE_I386_GCC5_M32) ||            \
@@ -2898,12 +2898,11 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
          || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-         )
+      )
          setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
 #endif
    }
 }
-
 
 void BambuParameter::CheckParameters()
 {

@@ -448,7 +448,6 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
 
    for(const llvm::Loop* loop : LI)
    {
-
       std::vector<llvm::PHINode*> one_op_phi_vec;
       std::vector<llvm::PHINode*> two_op_phi_vec;
 
@@ -645,7 +644,7 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
    for(auto& cmp_it : encountered_cmps)
    {
       llvm::CmpInst* cmp_inst = cmp_it.first;
-      //std::vector<llvm::Use*>& use_vec = cmp_it.second;
+      // std::vector<llvm::Use*>& use_vec = cmp_it.second;
 
       if(cmp_inst->getOperand(0)->getType()->isPointerTy())
       {
@@ -1414,7 +1413,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
    for(auto pts_it : point_to_set_map)
    {
       llvm::Use* use = pts_it.first;
-      //llvm::Value* base = pts_it.second;
+      // llvm::Value* base = pts_it.second;
 
       if(llvm::Instruction* user_inst = llvm::dyn_cast<llvm::Instruction>(use->getUser()))
       {
@@ -1431,7 +1430,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
 
                   if(loop)
                   {
-                     //auto i_it = non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
+                     // auto i_it = non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
                      non_const_idxs_per_loop.at(loop) += 1;
 
                      if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(user_inst))
@@ -1498,11 +1497,11 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
       auto call_inst = call_it.first;
       unsigned long long idx_count = call_it.second;
 
-      llvm::Function * called_function=nullptr;
+      llvm::Function* called_function = nullptr;
       if(llvm::isa<llvm::CallInst>(call_inst))
-         called_function =  llvm::dyn_cast<llvm::CallInst>(call_inst)->getCalledFunction();
+         called_function = llvm::dyn_cast<llvm::CallInst>(call_inst)->getCalledFunction();
       if(llvm::isa<llvm::InvokeInst>(call_inst))
-         called_function =  llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getCalledFunction();
+         called_function = llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getCalledFunction();
       if(called_function)
       {
          if(called_function and called_function->size() > 0)
@@ -1531,7 +1530,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
                   exit(-1);
                }
 #if __clang_major__ >= 11
-               llvm::CallBase *CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
+               llvm::CallBase* CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
                if(!llvm::InlineFunction(*CB, IFI).isSuccess())
 #else
                llvm::CallSite CS(call_inst);
