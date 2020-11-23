@@ -6777,6 +6777,12 @@ namespace RangeAnalysis
 #else
          CallSite CS(cast<Instruction>(Us));
 #endif
+#if __clang_major__ >= 9
+         if (!CS)
+         {
+            continue;
+         }
+#endif
          if(!CS.isCallee(&U))
          {
             continue;
@@ -6839,15 +6845,15 @@ namespace RangeAnalysis
       // the matching
       SmallVector<PhiOp*, 4> matchers(F.arg_size(), nullptr);
 
-      for(unsigned long i = 0ul, e = parameters.size(); i < e; ++i)
+      for(unsigned long pos = 0ul, e = parameters.size(); pos < e; ++pos)
       {
-         VarNode* sink = G.addVarNode(parameters[i].first, nullptr, DL);
+         VarNode* sink = G.addVarNode(parameters[pos].first, nullptr, DL);
          sink->setRange(Range(Regular, sink->getBitWidth(), Min, Max));
-         matchers[i] = new PhiOp(std::make_shared<BasicInterval>(), sink, nullptr);
+         matchers[pos] = new PhiOp(std::make_shared<BasicInterval>(), sink, nullptr);
          // Insert the operation in the graph.
-         G.getOprs()->insert(matchers[i]);
+         G.getOprs()->insert(matchers[pos]);
          // Insert this definition in defmap
-         (*G.getDefMap())[sink->getValue()] = matchers[i];
+         (*G.getDefMap())[sink->getValue()] = matchers[pos];
       }
 
       // For each return value, create a node
@@ -6875,7 +6881,12 @@ namespace RangeAnalysis
 #else
          CallSite CS(cast<Instruction>(Us));
 #endif
-
+#if __clang_major__ >= 9
+         if (!CS)
+         {
+            continue;
+         }
+#endif
          if(!CS.isCallee(&U))
          {
             continue;
