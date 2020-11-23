@@ -1172,7 +1172,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                    left + " + " + right +
                    ") "
                    ": ((" +
-                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ? " + STR(-1LL << (res_size - 1)) + " : " + STR((1LL << (res_size - 1)) - 1) + "))";
+                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ? " + STR(static_cast<long long>(-1ULL << (res_size - 1))) + " : " + STR((1LL << (res_size - 1)) - 1) + "))";
          }
          else
          {
@@ -1201,7 +1201,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                    left + " - " + right +
                    ") "
                    ": ((" +
-                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ? " + STR(-1LL << (res_size - 1)) + " : " + STR((1LL << (res_size - 1)) - 1) + "))";
+                   left + " & " + STR(1ULL << (op_size - 1)) + "ULL) ? " + STR(static_cast<long long>(-1ULL << (res_size - 1))) + " : " + STR((1LL << (res_size - 1)) - 1) + "))";
             res += "(" + left + " - " + right + ")";
          }
          else
