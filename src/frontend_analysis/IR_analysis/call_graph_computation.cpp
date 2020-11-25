@@ -164,7 +164,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
          const auto* sl = GetPointer<const statement_list>(GET_NODE(fd->body));
          if(sl->list_of_bloc.empty())
          {
-            THROW_ERROR("We can only work on CFG provided by GCC");
+            THROW_ERROR("We can only work on CFG provided by GCC/CLANG");
          }
          else
          {
@@ -190,7 +190,7 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_nodeRef& curr_tn = GET_NODE(tn);
    unsigned int ind = GET_INDEX_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " + STR(node_stmt) + ")");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " + tn->ToString() + ")");
 
    switch(curr_tn->get_kind())
    {
@@ -257,6 +257,10 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
          }
 
          call_graph_computation_recursive(TM, fun_node, node_stmt, FunctionEdgeInfo::CallType::direct_call);
+         for(auto& arg : ce->args)
+         {
+            call_graph_computation_recursive(TM, arg, node_stmt, call_type);
+         }
          break;
       }
       case gimple_call_K:
@@ -277,6 +281,10 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
             fun_node = ce->fn;
          }
          call_graph_computation_recursive(TM, fun_node, node_stmt, FunctionEdgeInfo::CallType::direct_call);
+         for(auto& arg : ce->args)
+         {
+            call_graph_computation_recursive(TM, arg, node_stmt, call_type);
+         }
          break;
       }
       case cond_expr_K:

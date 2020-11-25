@@ -49,6 +49,8 @@
 #include "config_HAVE_ARM_COMPILER.hpp"
 #include "config_HAVE_BAMBU_BUILT.hpp"
 #include "config_HAVE_FROM_RTL_BUILT.hpp"
+#include "config_HAVE_I386_CLANG10_COMPILER.hpp"
+#include "config_HAVE_I386_CLANG11_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG4_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG5_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG6_COMPILER.hpp"
@@ -163,12 +165,18 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG9_COMPILER
    CT_I386_CLANG9 = 16384,
 #endif
+#if HAVE_I386_CLANG10_COMPILER
+   CT_I386_CLANG10 = 32768,
+#endif
+#if HAVE_I386_CLANG11_COMPILER
+   CT_I386_CLANG11 = 65536,
+#endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 32768,
+   CT_ARM_GCC = 131072,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 65536,
-   CT_SPARC_ELF_GCC = 131072
+   CT_SPARC_GCC = 262144,
+   CT_SPARC_ELF_GCC = 524288
 #endif
 };
 
@@ -284,10 +292,10 @@ class GccWrapper
     * @param original_file_name is the original file passed through command line; this information is necessary to retrieve include directory
     * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case of empty file
     * @param parameters_line are the parameters to be passed to gcc
-    * @param empty_file tells if .001.tu tree has to be produced
-    * @param enable Analyzer plugin.
+    * @param multiple_files is the true in case multiple files are considered.
+    * @param cm is the mode in which we compile
     */
-   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, GccWrapper_CompilerMode cm = GccWrapper_CompilerMode::CM_STD);
+   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, GccWrapper_CompilerMode cm);
 
    /**
     * Return the compiler for a given target

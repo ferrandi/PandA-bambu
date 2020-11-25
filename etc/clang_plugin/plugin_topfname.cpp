@@ -40,6 +40,7 @@
  */
 #include "plugin_includes.hpp"
 
+#include "llvm/ADT/StringSet.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/PassManager.h"
@@ -47,10 +48,13 @@
 #include "llvm/Pass.h"
 #include "llvm/PassRegistry.h"
 #include "llvm/Support/CommandLine.h"
+#include "llvm/Support/FileSystem.h"
+#include "llvm/Support/raw_ostream.h"
+#include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
-#include "llvm/Transforms/Utils/LoopUtils.h"
 
 #include <cxxabi.h>
+#include <sstream>
 
 #define PRINT_DBG_MSG 0
 
@@ -61,16 +65,45 @@ namespace llvm
 
 namespace llvm
 {
-   cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
-   cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(true), cl::desc("Specify if the global variables has to be internalize"));
-   cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols to be not internalize"), cl::value_desc("comma separated list of external symbols"));
+   static cl::opt<std::string> TopFunctionName_TFP("panda-TFN", cl::desc("Specify the name of the top function"), cl::value_desc("name of the top function"));
+   static cl::opt<bool> Internalize_TFP("panda-Internalize", cl::init(false), cl::desc("Specify if the global variables has to be internalize"));
+   static cl::opt<std::string> ExternSymbolsList("panda-ESL", cl::desc("Specify the list of symbols to be not internalize"), cl::value_desc("comma separated list of external symbols"));
+   static cl::opt<std::string> outdir_name("internalize-outputdir", cl::desc("Specify the directory where the external symbol file will be written"), cl::value_desc("directory path"));
+
+   // Helper to load an API list to preserve and expose it as a functor for internalization.
+   class PreserveSymbolList
+   {
+    public:
+      PreserveSymbolList()
+      {
+      }
+      explicit PreserveSymbolList(const std::list<std::string>& symbolList)
+      {
+         ExternalNames.insert(symbolList.begin(), symbolList.end());
+      }
+
+      void addSymbols(const std::list<std::string>& symbolList)
+      {
+         ExternalNames.insert(symbolList.begin(), symbolList.end());
+      }
+      bool operator()(const llvm::GlobalValue& GV)
+      {
+         return ExternalNames.count(GV.getName());
+      }
+
+    private:
+      // Contains the set of symbols loaded to preserve
+      static llvm::StringSet<> ExternalNames;
+   };
+   llvm::StringSet<> PreserveSymbolList::ExternalNames;
+   static PreserveSymbolList preservedSyms;
+
    struct CLANG_VERSION_SYMBOL(_plugin_topfname) : public ModulePass
    {
       static char ID;
       static const std::set<std::string> builtinsNames;
       CLANG_VERSION_SYMBOL(_plugin_topfname)() : ModulePass(ID)
       {
-         initializeLoopPassPass(*PassRegistry::getPassRegistry());
       }
       std::string getDemangled(const std::string& declname)
       {
@@ -105,15 +138,30 @@ namespace llvm
          bool hasTopFun = false;
          if(TopFunctionName_TFP.empty())
             return false;
+         std::list<std::string> symbolList;
+         if(!ExternSymbolsList.empty())
+         {
+            std::stringstream ss(ExternSymbolsList);
+
+            while(ss.good())
+            {
+               std::string substr;
+               std::getline(ss, substr, ',');
+               symbolList.push_back(substr);
+            }
+         }
          /// check if the translation unit has the top function name
          for(auto& fun : M.getFunctionList())
          {
             if(!fun.isIntrinsic() && !fun.isDeclaration())
             {
-               auto funName = fun.getName();
+               std::string funName = fun.getName().data();
                auto demangled = getDemangled(funName);
+               if(is_builtin_fn(funName) || is_builtin_fn(demangled))
+                  symbolList.push_back(funName);
                if(!fun.hasInternalLinkage() && (funName == TopFunctionName_TFP || demangled == TopFunctionName_TFP))
                {
+                  symbolList.push_back(funName);
                   hasTopFun = true;
                }
             }
@@ -123,76 +171,32 @@ namespace llvm
 #if PRINT_DBG_MSG
          llvm::errs() << "Top function name: " << TopFunctionName_TFP << "\n";
 #endif
-         if(Internalize_TFP)
+         symbolList.push_back("signgam");
+
+         if(!Internalize_TFP)
          {
             for(auto& globalVar : M.getGlobalList())
             {
                std::string varName = std::string(globalVar.getName());
-#if PRINT_DBG_MSG
-               llvm::errs() << "Found global name: " << varName << "\n";
-#endif
-               if(varName == "llvm.global_ctors" || varName == "llvm.global_dtors" || varName == "llvm.used" || varName == "llvm.compiler.used")
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Global intrinsic skipped: " << globalVar.getName() << "\n";
-#endif
-               }
-               else if(varName == "signgam")
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Global defined in the libbambu library skipped: " << globalVar.getName() << "\n";
-#endif
-               }
-               else if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(varName + ",") == 0 || ExternSymbolsList.find("," + varName + ",") != std::string::npos))
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Global symbol that need to be externally visible: " << globalVar.getName() << "\n";
-#endif
-               }
-               else if(!globalVar.hasInternalLinkage() && !globalVar.hasAvailableExternallyLinkage() && !globalVar.hasDLLExportStorageClass() && !globalVar.hasExternalWeakLinkage())
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "it becomes internal\n";
-#endif
-                  changed = true;
-                  if(auto GO = llvm::dyn_cast<llvm::GlobalObject>(&globalVar))
-                     GO->setComdat(nullptr);
-                  globalVar.setVisibility(llvm::GlobalValue::DefaultVisibility);
-                  globalVar.setLinkage(llvm::GlobalValue::InternalLinkage);
-               }
+               symbolList.push_back(varName);
             }
          }
-         for(auto& fun : M.getFunctionList())
+         preservedSyms.addSymbols(symbolList);
+         if(!outdir_name.empty())
          {
-            if(fun.isIntrinsic() || fun.isDeclaration())
+            std::error_code EC;
+            std::string filename = outdir_name + "external-symbols.txt";
+#if __clang_major__ >= 7
+            llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
+#else
+            llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
+#endif
+            for(auto symb : symbolList)
             {
-#if PRINT_DBG_MSG
-               llvm::errs() << "Function intrinsic skipped: " << fun.getName() << "\n";
-#endif
-            }
-            else
-            {
-               auto funName = fun.getName();
-               auto demangled = getDemangled(funName);
-#if PRINT_DBG_MSG
-               llvm::errs() << "Found function: " << funName << "|" << demangled << "\n";
-#endif
-               if(!ExternSymbolsList.empty() && (ExternSymbolsList.find(std::string(funName) + ",") == 0 || ExternSymbolsList.find("," + std::string(funName) + ",") != std::string::npos))
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "Global symbol that need to be externally visible: " << globalVar.getName() << "\n";
-#endif
-               }
-               else if(!fun.hasInternalLinkage() && funName != TopFunctionName_TFP && demangled != TopFunctionName_TFP && !is_builtin_fn(funName) && !is_builtin_fn(demangled))
-               {
-#if PRINT_DBG_MSG
-                  llvm::errs() << "it becomes internal\n";
-#endif
-                  changed = true;
-                  fun.setLinkage(llvm::GlobalValue::InternalLinkage);
-               }
+               stream << symb << "\n";
             }
          }
+
          return changed;
       }
       StringRef getPassName() const override
@@ -201,7 +205,6 @@ namespace llvm
       }
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
-         getLoopAnalysisUsage(AU);
       }
    };
 
@@ -224,6 +227,7 @@ static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)> XPass(CL
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_topfname)());
+   PM.add(llvm::createInternalizePass(llvm::preservedSyms));
 }
 
 // These constructors add our pass to a list of global extensions.

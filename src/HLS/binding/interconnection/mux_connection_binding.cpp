@@ -1222,6 +1222,8 @@ void mux_connection_binding::determine_connection(const vertex& op, const HLS_ma
          case vtable_ref_K:
          case with_cleanup_expr_K:
          case extract_bit_expr_K:
+         case sat_plus_expr_K:
+         case sat_minus_expr_K:
          case CASE_TYPE_NODES:
          default:
             THROW_ERROR("determine_connection pattern not supported: " + std::string(tn->get_kind_text()) + " @" + STR(tree_var));
@@ -2079,6 +2081,8 @@ void mux_connection_binding::create_connections()
                   case vec_unpack_float_hi_expr_K:
                   case vec_unpack_float_lo_expr_K:
                   case extract_bit_expr_K:
+                  case sat_plus_expr_K:
+                  case sat_minus_expr_K:
                   default:
                      THROW_ERROR("MEMORY REFERENCE/LOAD-STORE type not supported: " + var_node->get_kind_text() + " " + STR(node_id));
                }

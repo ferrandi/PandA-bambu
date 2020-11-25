@@ -146,6 +146,11 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
+$dir_script/bambu_specific_test6.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
 $dir_script/function_pointers.sh $@
 return_value=$?
 if test $return_value != 0; then

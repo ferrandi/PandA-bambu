@@ -32,7 +32,7 @@
  */
 /**
  * @file extract_patterns.hpp
- * @brief Class extracting patterns extending the GCC IR. An example is the ternary_plus_expr.
+ * @brief Class extracting patterns extending the GCC/CLANG IR. An example is the ternary_plus_expr.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -57,7 +57,7 @@ class statement_list;
 //@}
 
 /**
- * @brief Class extracting patterns extending the GCC IR.
+ * @brief Class extracting patterns extending the GCC/CLANG IR.
  */
 class extract_patterns : public FunctionFrontendFlowStep
 {
@@ -86,7 +86,7 @@ class extract_patterns : public FunctionFrontendFlowStep
     */
    ~extract_patterns() override;
    /**
-    * Extract patterns from the GCC IR.
+    * Extract patterns from the GCC/CLANG IR.
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;

@@ -32,7 +32,7 @@
  */
 /**
  * @file Bit_Value_opt.hpp
- * @brief Class performing some optimizations on the GCC IR exploiting Bit Value analysis.
+ * @brief Class performing some optimizations on the IR exploiting Bit Value analysis.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -59,7 +59,7 @@ class statement_list;
 //@}
 
 /**
- * @brief Class performing some optimizations on the GCC IR exploiting Bit Value analysis.
+ * @brief Class performing some optimizations on the IR exploiting Bit Value analysis.
  */
 class Bit_Value_opt : public FunctionFrontendFlowStep
 {

@@ -1,7 +1,7 @@
 bambu_specific_test5/adders.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12" --top-fname=adders
 bambu_specific_test5/multipliers.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12" --top-fname=multipliers
 bambu_specific_test5/mixed_operations.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12,m=13" --top-fname=mixed_operations
-bambu_specific_test5/if_clauses.c --generate-tb="a=1,b=2,c=3,d=4" --top-fname=if_clauses
+bambu_specific_test5/if_clauses.c --generate-tb="a=1,b=2,c=3,d=4,e=5,f=6,g=7,h=8,i=9,j=10,k=11,l=12" --top-fname=if_clauses
 bambu_specific_test5/function_call.c --generate-tb="a=1,b=2,c=3,d=4,e=5" --top-fname=main_caller
 bambu_specific_test5/memory.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test5/memory.xml
 bambu_specific_test5/outer_loop.c --generate-tb="a=3,b=4,c=7" --top-fname=outer_loop

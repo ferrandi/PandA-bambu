@@ -32,7 +32,7 @@
  */
 /**
  * @file phi_opt.cpp
- * @brief Analysis step that improves the GCC IR w.r.t. phis
+ * @brief Analysis step that improves the IR w.r.t. phis
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$

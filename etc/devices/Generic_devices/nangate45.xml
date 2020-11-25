@@ -99,22 +99,22 @@
         <name>ARRAY_1D_STD_BRAM_N1_SDS</name>
         <attribute name="area" value_type="float64">497243</attribute>
         <characterization_timestamp>2020-02-20T17:17:46</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.91000000000000001"/>
-        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.91000000000000003"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000003"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_3</name>
         <attribute name="area" value_type="float64">498401</attribute>
         <characterization_timestamp>2020-02-20T17:17:47</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000001"/>
-        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000003"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000003"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_4</name>
         <attribute name="area" value_type="float64">494007</attribute>
         <characterization_timestamp>2020-02-20T17:17:36</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.7799999999999994"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.7799999999999994"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77999999999999936"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77999999999999936"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS</name>
@@ -134,8 +134,8 @@
         <name>ARRAY_1D_STD_BRAM_N1_SDS_BUS_4</name>
         <attribute name="area" value_type="float64">495906</attribute>
         <characterization_timestamp>2020-02-20T17:17:36</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.9700000000000003"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.9700000000000003"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.97000000000000031"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.97000000000000031"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN</name>
@@ -162,22 +162,22 @@
         <name>ARRAY_1D_STD_BRAM_NN_SDS</name>
         <attribute name="area" value_type="float64">499925</attribute>
         <characterization_timestamp>2020-02-20T17:17:48</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.91000000000000001"/>
-        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.91000000000000003"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000003"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_3</name>
         <attribute name="area" value_type="float64">501082</attribute>
         <characterization_timestamp>2020-02-20T17:17:48</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000001"/>
-        <operation operation_name="STORE" execution_time="0.91000000000000001"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000003"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000003"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_4</name>
         <attribute name="area" value_type="float64">496688</attribute>
         <characterization_timestamp>2020-02-20T17:17:36</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.7799999999999994"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.7799999999999994"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77999999999999936"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77999999999999936"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS</name>
@@ -190,36 +190,36 @@
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS_3</name>
         <attribute name="area" value_type="float64">509062</attribute>
         <characterization_timestamp>2020-02-20T17:17:58</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91"/>
-        <operation operation_name="STORE" execution_time="0.91"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000003"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000003"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_NN_SDS_BUS_4</name>
         <attribute name="area" value_type="float64">502623</attribute>
         <characterization_timestamp>2020-02-20T17:17:33</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.7400000000000002"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.7400000000000002"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.74000000000000021"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.74000000000000021"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS</name>
         <attribute name="area" value_type="float64">364500</attribute>
         <characterization_timestamp>2020-02-20T17:16:51</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.93"/>
-        <operation operation_name="STORE" execution_time="0.93"/>
+        <operation operation_name="LOAD" cycles="2" initiation_time="1" stage_period="0.93000000000000005"/>
+        <operation operation_name="STORE" execution_time="0.93000000000000005"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_3</name>
         <attribute name="area" value_type="float64">365079</attribute>
         <characterization_timestamp>2020-02-20T17:16:50</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.93"/>
-        <operation operation_name="STORE" execution_time="0.93"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.93000000000000005"/>
+        <operation operation_name="STORE" execution_time="0.93000000000000005"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_4</name>
         <attribute name="area" value_type="float64">355054</attribute>
         <characterization_timestamp>2020-02-20T17:16:43</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77000000000000002"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77000000000000002"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_BUS</name>
@@ -232,15 +232,15 @@
         <name>ARRAY_1D_STD_BRAM_SDS_BUS_3</name>
         <attribute name="area" value_type="float64">372212</attribute>
         <characterization_timestamp>2020-02-20T17:16:56</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91"/>
-        <operation operation_name="STORE" execution_time="0.91"/>
+        <operation operation_name="LOAD" cycles="3" initiation_time="1" stage_period="0.91000000000000003"/>
+        <operation operation_name="STORE" execution_time="0.91000000000000003"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_BRAM_SDS_BUS_4</name>
         <attribute name="area" value_type="float64">359368</attribute>
         <characterization_timestamp>2020-02-20T17:16:44</characterization_timestamp>
-        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77"/>
-        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77"/>
+        <operation operation_name="LOAD" cycles="4" initiation_time="1" stage_period="0.77000000000000002"/>
+        <operation operation_name="STORE" cycles="2" initiation_time="1" stage_period="0.77000000000000002"/>
       </cell>
       <cell>
         <name>ARRAY_1D_STD_DISTRAM_N1_SDS</name>
@@ -8974,6 +8974,236 @@
         <operation operation_name="rshift_expr" supported_types="INT:8" execution_time="0.53000000000000003"/>
       </cell>
       <cell>
+        <name>sat_minus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">1822</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:57:56</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="0.55000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">89</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:57:56</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="0.26000000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">3572</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:57:56</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="0.62"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">7359</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:57:57</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="0.72999999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">789</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:57:59</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="0.39000000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">1785</attribute>
+        <template name="sat_minus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:00</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="0.57000000000000006"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">2841</attribute>
+        <template name="sat_minus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T13:58:00</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="0.67000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">89</attribute>
+        <template name="sat_minus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:00</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="0.26000000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">147</attribute>
+        <template name="sat_minus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T13:58:02</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="0.30000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">3743</attribute>
+        <template name="sat_minus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:03</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="0.64000000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">6227</attribute>
+        <template name="sat_minus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T13:58:03</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="0.72999999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">7249</attribute>
+        <template name="sat_minus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:03</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="0.75"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">11742</attribute>
+        <template name="sat_minus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T13:58:06</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="0.79000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">843</attribute>
+        <template name="sat_minus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:06</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="0.5"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">1700</attribute>
+        <template name="sat_minus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T13:58:06</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="0.59999999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">1708</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:06</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="0.48999999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">83</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:08</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.02"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">3637</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:10</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="0.68000000000000005"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">7203</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:09</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="0.79000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">877</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:10</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="0.48000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">1708</attribute>
+        <template name="sat_plus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:06</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="0.48999999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">2876</attribute>
+        <template name="sat_plus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T13:58:11</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="0.57000000000000006"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">83</attribute>
+        <template name="sat_plus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:08</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.02"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">157</attribute>
+        <template name="sat_plus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T13:58:12</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.31"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">3637</attribute>
+        <template name="sat_plus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:10</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="0.68000000000000005"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">5846</attribute>
+        <template name="sat_plus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T13:58:13</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="0.64000000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">7203</attribute>
+        <template name="sat_plus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:09</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="0.79000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">11282</attribute>
+        <template name="sat_plus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T13:58:14</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="0.71999999999999997"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">877</attribute>
+        <template name="sat_plus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:10</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="0.48000000000000004"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">1400</attribute>
+        <template name="sat_plus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T13:58:15</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="0.48000000000000004"/>
+      </cell>
+      <cell>
         <name>ternary_alu_expr_FU_0_16_16_16</name>
         <attribute name="area" value_type="float64">4609</attribute>
         <template name="ternary_alu_expr_FU" parameter="0 16 16 16"/>
@@ -17049,6 +17279,236 @@
         <template name="ui_rshift_expr_FU" parameter="8 8 8"/>
         <characterization_timestamp>2020-02-20T17:25:25</characterization_timestamp>
         <operation operation_name="rshift_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="0.56000000000000005"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">1674</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:16</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.48000000000000004"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">89</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:17</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.26000000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">3582</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:18</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.63"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">7223</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:19</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="0.75"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">777</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:19</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="0.37"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">1940</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:20</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.58000000000000007"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">2742</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T13:58:21</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.53000000000000003"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">83</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:22</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.02"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">152</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T13:58:23</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.32000000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">3698</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:25</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.63"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">5771</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T13:58:25</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.68000000000000005"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">7287</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:26</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="0.71999999999999997"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">11999</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T13:58:28</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="0.80000000000000004"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">901</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:27</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="0.48999999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">1683</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T13:58:29</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="0.56000000000000005"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">1739</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:29</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.57000000000000006"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">83</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:30</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.02"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">3697</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:32</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.60999999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">7194</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:33</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="0.71999999999999997"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">883</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:33</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="0.44"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">1739</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:29</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.57000000000000006"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">2770</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T13:58:34</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="0.54000000000000004"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">83</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:30</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.02"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">157</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T13:58:34</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.31"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">3697</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:32</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.60999999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">5671</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T13:58:37</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="0.59999999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">7194</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:33</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="0.71999999999999997"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">11289</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T13:58:37</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="0.68000000000000005"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">883</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T13:58:33</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="0.44"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">1417</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T13:58:37</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="0.58999999999999997"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_16_16_16</name>

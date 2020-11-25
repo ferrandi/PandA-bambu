@@ -81,7 +81,6 @@
 #include "llvm/Analysis/MemoryBuiltins.h"
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/IR/CFG.h"
-#include "llvm/IR/CallSite.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/Function.h"
@@ -1637,10 +1636,9 @@ void Andersen_AA::verify_nodes()
    {
       const Node* N = nodes[i];
       auto V = N->get_val();
-      u32 sz = N->obj_sz;
       if(!V)
       {
-         assert(!sz || i == i2p && "artificial node has an obj_sz");
+         assert(!N->obj_sz || i == i2p && "artificial node has an obj_sz");
          continue;
       }
       u32 vn = get_val_node(V, true), on = get_obj_node(V, true), rn = 0, va = 0;
@@ -1663,12 +1661,12 @@ void Andersen_AA::verify_nodes()
       // This is a value node (including ret/vararg).
       if(i == vn || i == rn || i == va)
       {
-         assert((!sz || at_args.count(V)) && "value node has an obj_sz");
+         assert((!N->obj_sz || at_args.count(V)) && "value node has an obj_sz");
          // This node is within the object of its value.
       }
       else if(i < on + osz)
       {
-         assert(sz && i + sz <= on + osz && "invalid obj_sz");
+         assert(N->obj_sz && i + N->obj_sz <= on + osz && "invalid obj_sz");
       }
       else
       {
@@ -2251,8 +2249,7 @@ bool Andersen_AA::trace_int(const llvm::Value* V, llvm::DenseSet<const llvm::Val
          }
 
          assert(opcode == llvm::Instruction::BitCast && "invalid operand for int insn");
-         llvm::Type::TypeID t = TR->getTypeID();
-         assert(t == llvm::Type::FloatTyID || t == llvm::Type::DoubleTyID && "invalid cast to int");
+         assert(TR->getTypeID() == llvm::Type::FloatTyID || TR->getTypeID() == llvm::Type::DoubleTyID && "invalid cast to int");
          seen[V] = true;
          return true;
       }
@@ -2655,7 +2652,7 @@ std::string Andersen_AA::get_type_name(const llvm::Type* T) const
       auto ST = llvm::dyn_cast<const llvm::StructType>(T);
       if(ST && ST->hasName())
       {
-         return ST->getName();
+         return std::string(ST->getName().data());
       }
       return "<anon.struct>";
    }
@@ -3211,7 +3208,7 @@ void Andersen_AA::list_ext_unknown(const llvm::Module& M) const
          }
          if(rel && extinfo->get_type(&it) == EFT_OTHER)
          {
-            names.push_back(it.getName());
+            names.push_back(it.getName().data());
          }
       }
    }
@@ -3550,10 +3547,10 @@ void Andersen_AA::id_ret_insn(const llvm::Instruction* I)
 
 //------------------------------------------------------------------------------
 // Note: this handles both call and invoke
-void Andersen_AA::id_call_insn(const llvm::Instruction* I)
+template <class CallInstOrInvokeInst>
+void Andersen_AA::id_call_insn(const CallInstOrInvokeInst* I)
 {
    assert(I);
-   llvm::ImmutableCallSite CS(I); // this will assert the correct opcode
    u32 vnI = get_val_node(I, true);
    // val_node may be 0 if the call returns non-ptr.
 
@@ -3570,7 +3567,12 @@ void Andersen_AA::id_call_insn(const llvm::Instruction* I)
       llvm::errs() << "\n";
    }
 
-   const llvm::Value* callee = CS.getCalledValue();
+#if __clang_major__ >= 11
+   auto callee = I->getCalledOperand();
+#else
+   auto callee = I->getCalledValue();
+#endif
+
    auto F = llvm::dyn_cast<const llvm::Function>(callee);
    if(!F)
    {
@@ -3591,17 +3593,17 @@ void Andersen_AA::id_call_insn(const llvm::Instruction* I)
    {
       if(extinfo->is_ext(F))
       {
-         id_ext_call(CS, F);
+         id_ext_call(I, F);
       }
       else
       {
-         id_dir_call(CS, F);
+         id_dir_call(I, F);
       }
    }
    else
    {
       // If the callee was not identified as a function (null F), this is indirect.
-      id_ind_call(CS);
+      id_ind_call(I);
    }
 }
 
@@ -4036,7 +4038,6 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
 {
    auto I = llvm::dyn_cast_or_null<const llvm::Instruction>(nodes[vnI]->get_val());
    assert(I);
-   llvm::ImmutableCallSite CS(I);
    if(DEBUG_AA)
    {
       llvm::errs() << "    id_call_obj:  ";
@@ -4056,7 +4057,7 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
       // An indirect call may refer to an is_alloc external.
       // Also, realloc does a normal alloc if arg0 is null.
    }
-   else if(!F || extinfo->is_alloc(F) || (extinfo->get_type(F) == EFT_REALLOC && llvm::isa<llvm::ConstantPointerNull>(CS.getArgument(0))))
+   else if(!F || extinfo->is_alloc(F) || (extinfo->get_type(F) == EFT_REALLOC && llvm::isa<llvm::ConstantPointerNull>(llvm::dyn_cast<llvm::CallInst>(I)->getArgOperand(0))))
    {
       if(DEBUG_AA)
       {
@@ -4107,7 +4108,7 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
       {
          llvm::errs() << "\n";
       }
-      std::string fn = F->getName();
+      std::string fn = F->getName().data();
       u32 on = 0;
       auto i_srn = stat_ret_node.find(fn);
       if(i_srn != stat_ret_node.end())
@@ -4158,7 +4159,8 @@ void Andersen_AA::id_call_obj(u32 vnI, const llvm::Function* F)
 
 //------------------------------------------------------------------------------
 // Add the constraints for a direct, non-external call.
-void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* F)
+template <class CallInstOrInvokeInst>
+void Andersen_AA::id_dir_call(const CallInstOrInvokeInst* I, const llvm::Function* F)
 {
    assert(F);
    if(DEBUG_AA)
@@ -4175,9 +4177,9 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* 
    }
 
    // Only handle the ret.val. if it's used as a ptr.
-   if(llvm::isa<llvm::PointerType>(CS.getType()))
+   if(llvm::isa<llvm::PointerType>(I->getType()))
    {
-      u32 vnI = get_val_node(CS.getInstruction());
+      u32 vnI = get_val_node(I);
       // Does it actually return a ptr?
       if(llvm::isa<llvm::PointerType>(F->getReturnType()))
       {
@@ -4205,7 +4207,7 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* 
    }
 
    // Iterators for the actual and formal parameters
-   auto itA = CS.arg_begin(), ieA = CS.arg_end();
+   auto itA = I->arg_begin(), ieA = I->arg_end();
    auto itF = F->arg_begin(), ieF = F->arg_end();
    // Go through the fixed parameters.
    if(DEBUG_AA)
@@ -4306,13 +4308,19 @@ void Andersen_AA::id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* 
 
 //------------------------------------------------------------------------------
 // Add the constraints for an indirect call.
-void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
+template <class CallInstOrInvokeInst>
+void Andersen_AA::id_ind_call(const CallInstOrInvokeInst* I)
 {
    if(DEBUG_AA)
    {
       llvm::errs() << "    id_ind_call:  ";
    }
-   auto C = CS.getCalledValue();
+#if __clang_major__ >= 11
+   auto C = I->getCalledOperand();
+#else
+   auto C = I->getCalledValue();
+#endif
+
    assert(C);
    if(llvm::isa<llvm::InlineAsm>(C))
    {
@@ -4323,7 +4331,6 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
       return;
    }
 
-   auto I = CS.getInstruction();
    // The callee may be an i2p const.expr.
    u32 vnC = get_val_node_cptr(C);
    assert(vnC && "null callee");
@@ -4333,9 +4340,9 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
    {
       llvm::errs() << "retval ";
    }
-   if(llvm::isa<llvm::PointerType>(CS.getType()))
+   if(llvm::isa<llvm::PointerType>(I->getType()))
    {
-      u32 vnI = get_val_node(CS.getInstruction());
+      u32 vnI = get_val_node(I);
       const auto& CST = add_cons(load_cons, vnI, vnC, func_node_off_ret, true);
       // Map the constraint to the insn. that created it.
       icall_cons[CST].insert(I);
@@ -4356,7 +4363,7 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
    }
    // The node offset of the next ptr arg
    u32 arg_off = func_node_off_arg0;
-   auto itA = CS.arg_begin(), ieA = CS.arg_end();
+   auto itA = I->arg_begin(), ieA = I->arg_end();
    for(; itA != ieA; ++itA, ++arg_off)
    {
       llvm::Value* AA = *itA;
@@ -4397,10 +4404,10 @@ void Andersen_AA::id_ind_call(llvm::ImmutableCallSite CS)
 //------------------------------------------------------------------------------
 // Add the constraints for the direct call of ext. function F, based on its name.
 // If F is unknown, assume it does nothing to pointers.
-void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Function* F)
+template <class CallInstOrInvokeInst>
+void Andersen_AA::id_ext_call(const CallInstOrInvokeInst* I, const llvm::Function* F)
 {
    assert(F && extinfo->is_ext(F));
-   auto I = CS.getInstruction();
    assert(I);
    if(DEBUG_AA)
    {
@@ -4429,7 +4436,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          //  to a new block, so the return will point to a copy of the object
          //  that arg0 pointed to. We can consider it to be the same object,
          //  so the return can just copy arg0's points-to.
-         if(llvm::isa<llvm::ConstantPointerNull>(CS.getArgument(0)))
+         if(llvm::isa<llvm::ConstantPointerNull>(I->getArgOperand(0)))
          {
             break;
          }
@@ -4462,7 +4469,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             llvm::errs() << "      L_A" << i_arg << "\n";
          }
-         auto src = CS.getArgument(i_arg);
+         auto src = I->getArgOperand(i_arg);
          if(llvm::isa<llvm::PointerType>(src->getType()))
          {
             u32 vnS = get_val_node_cptr(src);
@@ -4483,12 +4490,12 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             llvm::errs() << "      L_A0__A0R_A1R\n";
          }
-         add_store2_cons(CS.getArgument(0), CS.getArgument(1));
+         add_store2_cons(I->getArgOperand(0), I->getArgOperand(1));
          // memcpy returns the dest.
          if(!I->use_empty() && llvm::isa<llvm::PointerType>(I->getType()))
          {
             auto dest = get_val_node(I);
-            auto src = get_val_node_cptr(CS.getArgument(0));
+            auto src = get_val_node_cptr(I->getArgOperand(0));
             add_cons(copy_cons, dest, src);
          }
          break;
@@ -4498,7 +4505,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             llvm::errs() << "      A1R_A0R\n";
          }
-         add_store2_cons(CS.getArgument(1), CS.getArgument(0));
+         add_store2_cons(I->getArgOperand(1), I->getArgOperand(0));
          break;
       case EFT_A3R_A1R_NS:
          if(DEBUG_AA)
@@ -4506,7 +4513,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
             llvm::errs() << "      A3R_A1R_NS\n";
          }
          // These func. are never used to copy structs, so the size is 1.
-         add_store2_cons(CS.getArgument(3), CS.getArgument(1), 1);
+         add_store2_cons(I->getArgOperand(3), I->getArgOperand(1), 1);
          break;
       case EFT_A1R_A0:
       {
@@ -4514,8 +4521,8 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             llvm::errs() << "      A1R_A0\n";
          }
-         u32 vnD = get_val_node_cptr(CS.getArgument(1));
-         u32 vnS = get_val_node_cptr(CS.getArgument(0));
+         u32 vnD = get_val_node_cptr(I->getArgOperand(1));
+         u32 vnS = get_val_node_cptr(I->getArgOperand(0));
          if(vnD && vnS)
          {
             add_cons(store_cons, vnD, vnS);
@@ -4528,8 +4535,8 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             llvm::errs() << "      A2R_A1\n";
          }
-         u32 vnD = get_val_node_cptr(CS.getArgument(2));
-         u32 vnS = get_val_node_cptr(CS.getArgument(1));
+         u32 vnD = get_val_node_cptr(I->getArgOperand(2));
+         u32 vnS = get_val_node_cptr(I->getArgOperand(1));
          if(vnD && vnS)
          {
             add_cons(store_cons, vnD, vnS);
@@ -4542,8 +4549,8 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             llvm::errs() << "      A4R_A1\n";
          }
-         u32 vnD = get_val_node_cptr(CS.getArgument(4));
-         u32 vnS = get_val_node_cptr(CS.getArgument(1));
+         u32 vnD = get_val_node_cptr(I->getArgOperand(4));
+         u32 vnS = get_val_node_cptr(I->getArgOperand(1));
          if(vnD && vnS)
          {
             add_cons(store_cons, vnD, vnS);
@@ -4560,7 +4567,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
          {
             // Do the L_A0 part if the retval is used.
             u32 vnD = get_val_node(I);
-            auto src = CS.getArgument(0);
+            auto src = I->getArgOperand(0);
             if(llvm::isa<llvm::PointerType>(src->getType()))
             {
                u32 vnS = get_val_node_cptr(src);
@@ -4575,8 +4582,8 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
             }
          }
          // Do the A2R_A0 part.
-         u32 vnD = get_val_node_cptr(CS.getArgument(2));
-         u32 vnS = get_val_node_cptr(CS.getArgument(0));
+         u32 vnD = get_val_node_cptr(I->getArgOperand(2));
+         u32 vnS = get_val_node_cptr(I->getArgOperand(0));
          if(vnD && vnS)
          {
             add_cons(store_cons, vnD, vnS);
@@ -4612,7 +4619,7 @@ void Andersen_AA::id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Fun
             llvm::errs() << "      A" << i_arg << "R_NEW\n";
          }
          // X -> X/0; *argI = X
-         auto dest = CS.getArgument(i_arg);
+         auto dest = I->getArgOperand(i_arg);
          u32 vnD = get_val_node_cptr(dest);
          if(!vnD)
          {
@@ -4722,8 +4729,10 @@ void Andersen_AA::processBlock(const llvm::BasicBlock* BB, std::set<const llvm::
             id_ret_insn(I);
             break;
          case llvm::Instruction::Invoke:
+            id_call_insn(llvm::dyn_cast<llvm::InvokeInst>(I));
+            break;
          case llvm::Instruction::Call:
-            id_call_insn(I);
+            id_call_insn(llvm::dyn_cast<llvm::CallInst>(I));
             break;
          case llvm::Instruction::Alloca:
             assert(is_ptr);
@@ -6884,9 +6893,12 @@ bool Andersen_AA::solve_ls_cons(u32 n, u32 hcd_rep, const bdd& d_points_to, std:
             auto F = llvm::dyn_cast_or_null<const llvm::Function>(R->get_val());
             if(F && extinfo->is_ext(F))
             {
-               for(auto it : *I)
+               for(const auto& it : *I)
                {
-                  handle_ext(F, it);
+                  if(llvm::dyn_cast<llvm::CallInst>(it))
+                     handle_ext(F, llvm::dyn_cast<llvm::CallInst>(it));
+                  else
+                     handle_ext(F, llvm::dyn_cast<llvm::InvokeInst>(it));
                }
             }
          }
@@ -7013,7 +7025,10 @@ void Andersen_AA::solve_ls_off(const bdd& d_points_to, bool load, u32 dest, u32 
             auto F = llvm::dyn_cast_or_null<const llvm::Function>(R->get_val());
             for(auto it : *I)
             {
-               handle_ext(F, it);
+               if(llvm::dyn_cast<llvm::CallInst>(it))
+                  handle_ext(F, llvm::dyn_cast<llvm::CallInst>(it));
+               else
+                  handle_ext(F, llvm::dyn_cast<llvm::InvokeInst>(it));
             }
             continue;
          }
@@ -7257,7 +7272,8 @@ void Andersen_AA::solve_prop(u32 n, const bdd& d_points_to)
 
 //------------------------------------------------------------------------------
 // Add the edges for the indirect call (I) of ext.func (F).
-void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I)
+template <class CallInstOrInvokeInst>
+void Andersen_AA::handle_ext(const llvm::Function* F, const CallInstOrInvokeInst* I)
 {
    assert(extinfo->is_ext(F));
    std::pair<const llvm::Function*, const llvm::Instruction*> arg(F, I);
@@ -7266,7 +7282,6 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
       return;
    }
    ext_seen.insert(arg);
-   llvm::ImmutableCallSite CS(I);
    extf_t tF = extinfo->get_type(F);
    switch(tF)
    {
@@ -7318,11 +7333,11 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
          // The function pointer may point to realloc at one time
          //  and to a function with fewer args at another time;
          //  we should skip the realloc if the current call has fewer args.
-         if(CS.arg_size() < 1)
+         if(I->getNumArgOperands() < 1)
          {
             break;
          }
-         if(llvm::isa<llvm::ConstantPointerNull>(CS.getArgument(0)))
+         if(llvm::isa<llvm::ConstantPointerNull>(I->getArgOperand(0)))
          {
             if(!llvm::isa<llvm::PointerType>(I->getType()))
             {
@@ -7376,7 +7391,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
             default:
                i_arg = 0;
          }
-         if(CS.arg_size() <= i_arg)
+         if(I->getNumArgOperands() <= i_arg)
          {
             break;
          }
@@ -7384,7 +7399,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
          {
             llvm::errs() << "(L_A" << i_arg << ")";
          }
-         const llvm::Value* src = CS.getArgument(i_arg);
+         const llvm::Value* src = I->getArgOperand(i_arg);
          if(llvm::isa<llvm::PointerType>(src->getType()))
          {
             u32 vnS = get_node_rep(get_val_node(src, true));
@@ -7441,7 +7456,7 @@ void Andersen_AA::handle_ext(const llvm::Function* F, const llvm::Instruction* I
          break;
       default:
          // FIXME: support other types
-         ext_failed.insert(F->getName());
+         ext_failed.insert(F->getName().data());
    }
 }
 
@@ -8408,6 +8423,7 @@ class DFG
          return st_nodes[i - st_base].inst;
       }
       assert(0 && "noop nodes have no constraints");
+      llvm_unreachable("noop nodes have no constraints");
    }
 
    // given a node with a points-to graph, fill it with the set of
@@ -9660,9 +9676,11 @@ static const llvm::Function* calledFunction(const llvm::CallInst* ci)
    {
       return F;
    }
-
+#if __clang_major__ >= 11
+   auto v = ci->getCalledOperand();
+#else
    auto v = ci->getCalledValue();
-
+#endif
    if(auto C = llvm::dyn_cast<const llvm::ConstantExpr>(v))
    {
       if(C->getOpcode() == llvm::Instruction::BitCast)
@@ -9740,9 +9758,12 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
             fun_ret[BB->getParent()] = n;
             break;
          case llvm::Instruction::Invoke:
+            call = true;
+            id_call_insn(llvm::dyn_cast<llvm::InvokeInst>(I));
+            break;
          case llvm::Instruction::Call:
             call = true;
-            id_call_insn(I);
+            id_call_insn(llvm::dyn_cast<llvm::CallInst>(I));
             break;
          case llvm::Instruction::Alloca:
             assert(is_ptr);
@@ -9904,12 +9925,17 @@ void Staged_Flow_Sensitive_AA::processBlock(u32 parent, const llvm::BasicBlock* 
          else
          { // indirect call
             auto ci = llvm::cast<const llvm::CallInst>(I);
-            if(llvm::isa<llvm::InlineAsm>(ci->getCalledValue()))
+#if __clang_major__ >= 11
+            auto calledValue = ci->getCalledOperand();
+#else
+            auto calledValue = ci->getCalledValue();
+#endif
+            if(llvm::isa<llvm::InlineAsm>(calledValue))
             {
                continue;
             }
 
-            u32 fp = get_val_node(ci->getCalledValue(), true);
+            u32 fp = get_val_node(calledValue, true);
             if(fp)
             {
                block_call = true;
@@ -10078,7 +10104,12 @@ void Staged_Flow_Sensitive_AA::icfg_inter_edges(llvm::Module& M)
       assert(call_succ.count(n));
       u32 succ = call_succ[n];
 
-      u32 fp = get_val_node(ci->getCalledValue());
+#if __clang_major__ >= 11
+      auto calledValue = ci->getCalledOperand();
+#else
+      auto calledValue = ci->getCalledValue();
+#endif
+      u32 fp = get_val_node(calledValue);
       u32 rep = PRE.PE(fp);
       bool seen = tgts.count(rep);
 

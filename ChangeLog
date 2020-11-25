@@ -2,7 +2,7 @@
 Eighth public release of PandA framework.
 
 New features introduced:
-- Added support to CLANG/LLVM compiler versions 8 and 9.
+- Added support to CLANG/LLVM compiler versions 8, 9,10 and 11.
 - Added initial support to ASIC flow based on Yosys+OpenROAD projects (see https://theopenroadproject.org/)
 - Simplified the simulation/synthesis backends integration. In case the used simulator or synthesizer is in the system path, the configuration can be as simple as ../configure --prefix=/opt/panda
 - Added support to multi-thread simulation when Verilator version 4 is used.

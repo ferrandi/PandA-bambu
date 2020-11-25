@@ -47,7 +47,10 @@
 #if __clang_major__ >= 7
 #include "llvm/Transforms/Utils.h"
 #endif
-
+#if __clang_major__ >= 10
+#include "llvm/InitializePasses.h"
+#include "llvm/Support/CommandLine.h"
+#endif
 #include "CustomScalarReplacementOfAggregatesPass.hpp"
 #include "ExpandMemOpsPass.hpp"
 #include "GepiCanonicalizationPass.hpp"
@@ -95,9 +98,9 @@ namespace llvm
 } // namespace llvm
 
 #ifndef _WIN32
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning>> XPassFV(CLANG_VERSION_STRING(_plugin_CSROA) "FV", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation>> XPassD(CLANG_VERSION_STRING(_plugin_CSROA) "D", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining>> XPassWI(CLANG_VERSION_STRING(_plugin_CSROA) "WI", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_functionVersioning> > XPassFV(CLANG_VERSION_STRING(_plugin_CSROA) "FV", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_disaggregation> > XPassD(CLANG_VERSION_STRING(_plugin_CSROA) "D", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_CSROA) < SROA_wrapperInlining> > XPassWI(CLANG_VERSION_STRING(_plugin_CSROA) "WI", "Custom SROA", false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
 namespace llvm

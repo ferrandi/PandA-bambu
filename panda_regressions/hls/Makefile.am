@@ -1179,6 +1179,9 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test5/multipliers.c \
 ./bambu_specific_test5.sh\
 ./bambu_specific_test5_list\
+./bambu_specific_test6/sat_op.ll\
+./bambu_specific_test6.sh\
+./bambu_specific_test6_list\
 ./function_pointers.sh\
 ./function_pointers_list_bsearch\
 ./function_pointers_list_qsort\
@@ -1251,12 +1254,20 @@ clang8_regression_simple_no_expose_globals.sh\
 clang9_regression_simple_default.sh\
 clang9_regression_simple_ext_pipelined.sh\
 clang9_regression_simple_no_expose_globals.sh\
+clang10_regression_simple_default.sh\
+clang10_regression_simple_ext_pipelined.sh\
+clang10_regression_simple_no_expose_globals.sh\
+clang11_regression_simple_default.sh\
+clang11_regression_simple_ext_pipelined.sh\
+clang11_regression_simple_no_expose_globals.sh\
 softfloat-tests-clang4.sh\
 softfloat-tests-clang5.sh\
 softfloat-tests-clang6.sh\
 softfloat-tests-clang7.sh\
 softfloat-tests-clang8.sh\
 softfloat-tests-clang9.sh\
+softfloat-tests-clang10.sh\
+softfloat-tests-clang11.sh\
 libm-testsClang.sh\
 libm-testsClang4.sh\
 libm-testsClang5.sh\
@@ -1264,6 +1275,8 @@ libm-testsClang6.sh\
 libm-testsClang7.sh\
 libm-testsClang8.sh\
 libm-testsClang9.sh\
+libm-testsClang10.sh\
+libm-testsClang11.sh\
 CHStone_frontend1Clang.sh\
 gcc49_regression_simple_no_expose_globals_pretty_print.sh
 

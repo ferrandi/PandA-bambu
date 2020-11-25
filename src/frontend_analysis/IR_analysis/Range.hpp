@@ -115,7 +115,11 @@ class Range
 
    /* Arithmetic operations */
    RangeRef add(const RangeConstRef& other) const;
+   RangeRef sat_add(const RangeConstRef& other) const;
+   RangeRef usat_add(const RangeConstRef& other) const;
    RangeRef sub(const RangeConstRef& other) const;
+   RangeRef sat_sub(const RangeConstRef& other) const;
+   RangeRef usat_sub(const RangeConstRef& other) const;
    RangeRef mul(const RangeConstRef& other) const;
    RangeRef udiv(const RangeConstRef& other) const;
    RangeRef sdiv(const RangeConstRef& other) const;

@@ -38,9 +38,14 @@
 #include <llvm/Analysis/LoopInfo.h>
 #include <llvm/Analysis/ScalarEvolution.h>
 #include <llvm/Analysis/ScalarEvolutionExpressions.h>
+#if __clang_major__ < 11
+#include <llvm/IR/CallSite.h>
+#endif
 #include <llvm/IR/Constants.h>
 #include <llvm/IR/Dominators.h>
 #include <llvm/IR/GetElementPtrTypeIterator.h>
+#include <llvm/IR/InstrTypes.h>
+#include <llvm/IR/Instructions.h>
 #include <llvm/IR/Operator.h>
 #include <llvm/Transforms/Utils/Cloning.h>
 #include <llvm/Transforms/Utils/UnrollLoop.h>
@@ -145,7 +150,7 @@ void recursive_copy_lowering(llvm::Type* type, std::vector<unsigned long long> g
       llvm::GetElementPtrInst* load_gep_inst = llvm::GetElementPtrInst::CreateInBounds(nullptr, load_ptr, gepi_value_idxs, gepi_name, load_inst);
       llvm::GetElementPtrInst* store_gep_inst = llvm::GetElementPtrInst::CreateInBounds(nullptr, store_ptr, gepi_value_idxs, gepi_name, store_inst);
 
-      llvm::LoadInst* lowered_load = new llvm::LoadInst(load_gep_inst, "ccload." + gepi_name, load_inst);
+      llvm::LoadInst* lowered_load = new llvm::LoadInst(llvm::cast<llvm::PointerType>(load_gep_inst->getType())->getElementType(), load_gep_inst, "ccload." + gepi_name, load_inst);
       llvm::StoreInst* lowered_store = new llvm::StoreInst(lowered_load, store_gep_inst, store_inst);
 
       llvm::dbgs() << "Lowered load gepi: ";
@@ -443,8 +448,6 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
 
    for(const llvm::Loop* loop : LI)
    {
-      llvm::BasicBlock* header = loop->getHeader();
-
       std::vector<llvm::PHINode*> one_op_phi_vec;
       std::vector<llvm::PHINode*> two_op_phi_vec;
 
@@ -479,15 +482,8 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
 
       for(llvm::PHINode* phi_node : two_op_phi_vec)
       {
-         std::vector<llvm::GetElementPtrInst*> gepi_vector;
-
          llvm::Value* init_ptr = nullptr;  /// The initialization of the pointer iterator
          llvm::Value* other_ptr = nullptr; /// The other value of the phi node
-
-         llvm::CmpInst* cmp_inst = nullptr; /// The cmp inst in case the pointer is the indvar
-         llvm::Value* base_ptr = nullptr;
-         llvm::Value* init_val = nullptr;
-         llvm::Value* stop_val = nullptr;
 
          bool income_0_in_loop = false;
          {
@@ -648,7 +644,7 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
    for(auto& cmp_it : encountered_cmps)
    {
       llvm::CmpInst* cmp_inst = cmp_it.first;
-      std::vector<llvm::Use*>& use_vec = cmp_it.second;
+      // std::vector<llvm::Use*>& use_vec = cmp_it.second;
 
       if(cmp_inst->getOperand(0)->getType()->isPointerTy())
       {
@@ -698,11 +694,11 @@ bool ptr_iterator_simplification(llvm::Function& function, llvm::LoopInfo& LI)
       num_deletion = removed_set.size();
    } while(num_deletion > 0);
 
+   /*
    for(llvm::Instruction* inst : inst_to_remove)
    {
       // inst->eraseFromParent();
    }
-   /*
       for(llvm::PHINode* phi_node : two_op_phi_vec)
       {
          llvm::GetElementPtrInst* ind_var_gepi = nullptr;
@@ -1260,15 +1256,15 @@ bool remove_lifetime(llvm::Function& function)
 
             if(called_function)
             {
-               if(called_function->getIntrinsicID() == llvm::Intrinsic::ID::lifetime_start)
+               if(called_function->getIntrinsicID() == llvm::Intrinsic::lifetime_start)
                {
                   intrinsic_to_remove.push_back(call_inst);
                }
-               if(called_function->getIntrinsicID() == llvm::Intrinsic::ID::lifetime_end)
+               if(called_function->getIntrinsicID() == llvm::Intrinsic::lifetime_end)
                {
                   intrinsic_to_remove.push_back(call_inst);
                }
-               if(called_function->getIntrinsicID() == llvm::Intrinsic::ID::memcpy)
+               if(called_function->getIntrinsicID() == llvm::Intrinsic::memcpy)
                {
                   if(llvm::BitCastOperator* src_op = llvm::dyn_cast<llvm::BitCastOperator>(call_inst->getOperand(0)))
                   {
@@ -1329,8 +1325,8 @@ bool select_lowering(llvm::Function& function)
                            llvm::GetElementPtrInst* true_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr, select_inst->getTrueValue(), gepi_idxs, gepi->getName().str() + ".true", gepi);
                            llvm::GetElementPtrInst* false_gepi = llvm::GetElementPtrInst::CreateInBounds(nullptr, select_inst->getFalseValue(), gepi_idxs, gepi->getName().str() + ".false", gepi);
 
-                           llvm::LoadInst* true_load = new llvm::LoadInst(true_gepi, load_inst->getName().str() + ".lowered.true", gepi);
-                           llvm::LoadInst* false_load = new llvm::LoadInst(false_gepi, load_inst->getName().str() + ".lowered.false", gepi);
+                           llvm::LoadInst* true_load = new llvm::LoadInst(llvm::cast<llvm::PointerType>(true_gepi->getType())->getElementType(), true_gepi, load_inst->getName().str() + ".lowered.true", gepi);
+                           llvm::LoadInst* false_load = new llvm::LoadInst(llvm::cast<llvm::PointerType>(false_gepi->getType())->getElementType(), false_gepi, load_inst->getName().str() + ".lowered.false", gepi);
                            llvm::SelectInst* new_select_inst = llvm::SelectInst::Create(select_inst->getCondition(), true_load, false_load, select_inst->getName().str() + ".lowered", gepi);
 
                            load_inst->replaceAllUsesWith(new_select_inst);
@@ -1412,12 +1408,12 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
    }
 
    std::map<const llvm::Loop*, unsigned long long> non_const_idxs_per_loop;
-   std::map<const llvm::CallInst*, unsigned long long> non_const_idxs_per_call;
+   std::map<llvm::Instruction*, unsigned long long> non_const_idxs_per_call;
 
    for(auto pts_it : point_to_set_map)
    {
       llvm::Use* use = pts_it.first;
-      llvm::Value* base = pts_it.second;
+      // llvm::Value* base = pts_it.second;
 
       if(llvm::Instruction* user_inst = llvm::dyn_cast<llvm::Instruction>(use->getUser()))
       {
@@ -1434,7 +1430,7 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
 
                   if(loop)
                   {
-                     auto i_it = non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
+                     // auto i_it = non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
                      non_const_idxs_per_loop.at(loop) += 1;
 
                      if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(user_inst))
@@ -1498,12 +1494,16 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
    unsigned long long inlined_count = 0;
    for(auto call_it : non_const_idxs_per_call)
    {
-      llvm::CallInst* call_inst = const_cast<llvm::CallInst*>(call_it.first);
+      auto call_inst = call_it.first;
       unsigned long long idx_count = call_it.second;
 
-      if(call_inst->getCalledFunction())
+      llvm::Function* called_function = nullptr;
+      if(llvm::isa<llvm::CallInst>(call_inst))
+         called_function = llvm::dyn_cast<llvm::CallInst>(call_inst)->getCalledFunction();
+      if(llvm::isa<llvm::InvokeInst>(call_inst))
+         called_function = llvm::dyn_cast<llvm::InvokeInst>(call_inst)->getCalledFunction();
+      if(called_function)
       {
-         llvm::Function* called_function = call_inst->getCalledFunction();
          if(called_function and called_function->size() > 0)
          {
             unsigned long long inst_count = 0;
@@ -1524,7 +1524,18 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
                called_function->removeFnAttr(llvm::Attribute::NoInline);
                called_function->removeFnAttr(llvm::Attribute::OptimizeNone);
                llvm::InlineFunctionInfo IFI = llvm::InlineFunctionInfo();
-               if((llvm::isa<llvm::CallInst>(call_inst) && !llvm::InlineFunction(llvm::dyn_cast<llvm::CallInst>(call_inst), IFI)) || (llvm::isa<llvm::InvokeInst>(call_inst) && !llvm::InlineFunction(llvm::dyn_cast<llvm::InvokeInst>(call_inst), IFI)))
+               if(!(llvm::isa<llvm::CallInst>(call_inst) || llvm::isa<llvm::InvokeInst>(call_inst)))
+               {
+                  llvm::errs() << "ERR: Cannot inline function " << called_function->getName() << "\n";
+                  exit(-1);
+               }
+#if __clang_major__ >= 11
+               llvm::CallBase* CB = llvm::dyn_cast<llvm::CallBase>(call_inst);
+               if(!llvm::InlineFunction(*CB, IFI).isSuccess())
+#else
+               llvm::CallSite CS(call_inst);
+               if(!llvm::InlineFunction(CS, IFI))
+#endif
                {
                   llvm::errs() << "ERR: Cannot inline function " << called_function->getName() << "\n";
                   exit(-1);

@@ -525,7 +525,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case vec_extractodd_expr_K:     \
    case vec_interleavehigh_expr_K: \
    case vec_interleavelow_expr_K:  \
-   case extract_bit_expr_K
+   case extract_bit_expr_K:        \
+   case sat_plus_expr_K:           \
+   case sat_minus_expr_K
 
 /**
  * This macro collects all case labels for ternary_expr objects.
@@ -6119,5 +6121,17 @@ struct lut_expr : public expr_node
  * return a boolean value
  */
 CREATE_TREE_NODE_CLASS(extract_bit_expr, binary_expr);
+
+/**
+ * This struct specifies the sat_plus_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(sat_plus_expr, binary_expr);
+
+/**
+ * This struct specifies the sat_minus_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(sat_minus_expr, binary_expr);
 
 #endif

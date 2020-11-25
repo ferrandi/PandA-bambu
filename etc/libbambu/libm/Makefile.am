@@ -314,3 +314,39 @@ libm_clang9_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CL
 libm_clang9_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG9 $(common_treegccflags_clang) -C
 endif
 
+if BUILD_I386_CLANG10
+pkglib_LIBRARIES += libm_clang10.a libm_clang10_std.a
+libm_clang10_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang10_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG10
+libm_clang10_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG10 $(common_treegccflags_clang) -C
+libm_clang10_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang10_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG10
+libm_clang10_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG10 $(common_treegccflags_clang) -C
+
+pkglib_LIBRARIES += libm_clang10_subnormals.a libm_clang10_subnormals_std.a
+libm_clang10_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang10_subnormals_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG10
+libm_clang10_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG10 $(common_treegccflags_clang) -C
+libm_clang10_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang10_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG10
+libm_clang10_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG10 $(common_treegccflags_clang) -C
+endif
+
+if BUILD_I386_CLANG11
+pkglib_LIBRARIES += libm_clang11.a libm_clang11_std.a
+libm_clang11_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang11_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG11
+libm_clang11_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG11 $(common_treegccflags_clang) -C
+libm_clang11_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang11_std_a_CFLAGS = $(compiler_flags_clang_nosub) --compiler=I386_CLANG11
+libm_clang11_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG11 $(common_treegccflags_clang) -C
+
+pkglib_LIBRARIES += libm_clang11_subnormals.a libm_clang11_subnormals_std.a
+libm_clang11_subnormals_a_SOURCES = $(common_libm_src) $(common_libm_src_fr)
+libm_clang11_subnormals_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG11
+libm_clang11_subnormals_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG11 $(common_treegccflags_clang) -C
+libm_clang11_subnormals_std_a_SOURCES = $(common_libm_src) $(common_libm_src_std)
+libm_clang11_subnormals_std_a_CFLAGS = $(compiler_flags_clang) --compiler=I386_CLANG11
+libm_clang11_subnormals_std_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG11 $(common_treegccflags_clang) -C
+endif
+

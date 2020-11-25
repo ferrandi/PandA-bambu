@@ -885,6 +885,8 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
             case tree_vec_K:
             case error_mark_K:
             case extract_bit_expr_K:
+            case sat_plus_expr_K:
+            case sat_minus_expr_K:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
             case CASE_DECL_NODES:

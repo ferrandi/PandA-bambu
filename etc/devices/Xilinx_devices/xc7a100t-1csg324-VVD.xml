@@ -11684,6 +11684,356 @@
         <operation operation_name="rshift_expr" supported_types="INT:8" execution_time="2.036"/>
       </cell>
       <cell>
+        <name>sat_minus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">32</attribute>
+        <attribute name="SLICE" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:54:52</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="2.8500000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:54:49</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="0.73399999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">64</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">64</attribute>
+        <attribute name="SLICE" value_type="float64">28</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:54:54</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="3.387"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">127</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">127</attribute>
+        <attribute name="SLICE" value_type="float64">51</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">127</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:54:58</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="4.4690000000000003"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">11</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">11</attribute>
+        <attribute name="SLICE" value_type="float64">10</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">11</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:56:17</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="1.732"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">25</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">25</attribute>
+        <attribute name="SLICE" value_type="float64">18</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">25</attribute>
+        <template name="sat_minus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:56:14</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="2.919"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">34</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">34</attribute>
+        <attribute name="SLICE" value_type="float64">21</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
+        <template name="sat_minus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T15:56:18</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="3.0139999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="sat_minus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:56:21</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="0.73399999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
+        <attribute name="SLICE" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="sat_minus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T15:57:38</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="0.86199999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">49</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">49</attribute>
+        <attribute name="SLICE" value_type="float64">30</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">49</attribute>
+        <template name="sat_minus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:57:43</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="3.4199999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">64</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">64</attribute>
+        <attribute name="SLICE" value_type="float64">35</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
+        <template name="sat_minus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T15:57:46</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="3.5369999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">95</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">95</attribute>
+        <attribute name="SLICE" value_type="float64">49</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">95</attribute>
+        <template name="sat_minus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:57:51</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="4.532"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">129</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">129</attribute>
+        <attribute name="SLICE" value_type="float64">57</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
+        <template name="sat_minus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T15:59:07</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="4.6959999999999997"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">13</attribute>
+        <attribute name="SLICE" value_type="float64">8</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="sat_minus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:59:09</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="1.7490000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">18</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">18</attribute>
+        <attribute name="SLICE" value_type="float64">14</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
+        <template name="sat_minus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T15:59:10</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="2.7799999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">23</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">23</attribute>
+        <attribute name="SLICE" value_type="float64">17</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">23</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:59:17</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.7999999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:30</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="1.6659999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">46</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">46</attribute>
+        <attribute name="SLICE" value_type="float64">30</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">46</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:36</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.3780000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">95</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">95</attribute>
+        <attribute name="SLICE" value_type="float64">49</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">95</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:38</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="4.3970000000000002"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">13</attribute>
+        <attribute name="SLICE" value_type="float64">9</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:44</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">23</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">23</attribute>
+        <attribute name="SLICE" value_type="float64">17</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">23</attribute>
+        <template name="sat_plus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T15:59:17</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.7999999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">34</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">34</attribute>
+        <attribute name="SLICE" value_type="float64">21</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
+        <template name="sat_plus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T16:01:58</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="3.0139999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="sat_plus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:30</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="1.6659999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
+        <attribute name="SLICE" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="sat_plus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T16:01:58</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.86199999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">46</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">46</attribute>
+        <attribute name="SLICE" value_type="float64">30</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">46</attribute>
+        <template name="sat_plus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:36</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.3780000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">66</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">66</attribute>
+        <attribute name="SLICE" value_type="float64">33</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">66</attribute>
+        <template name="sat_plus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T16:02:08</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.6389999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">95</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">95</attribute>
+        <attribute name="SLICE" value_type="float64">49</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">95</attribute>
+        <template name="sat_plus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:38</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="4.3970000000000002"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">129</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">129</attribute>
+        <attribute name="SLICE" value_type="float64">56</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
+        <template name="sat_plus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T16:02:16</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="4.734"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">13</attribute>
+        <attribute name="SLICE" value_type="float64">9</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="sat_plus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:00:44</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="1.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">18</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">18</attribute>
+        <attribute name="SLICE" value_type="float64">14</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
+        <template name="sat_plus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T16:03:29</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="2.7799999999999998"/>
+      </cell>
+      <cell>
         <name>ternary_alu_expr_FU_0_16_16_16</name>
         <attribute name="area" value_type="float64">70</attribute>
         <attribute name="REGISTERS" value_type="float64">51</attribute>
@@ -20866,6 +21216,356 @@
         <template name="ui_rshift_expr_FU" parameter="8 8 8"/>
         <characterization_timestamp>2016-01-08T01:29:23</characterization_timestamp>
         <operation operation_name="rshift_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.9870000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">33</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">33</attribute>
+        <attribute name="SLICE" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:03:30</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.0350000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:03:34</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.73399999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">65</attribute>
+        <attribute name="SLICE" value_type="float64">30</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:03:50</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.476"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">129</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">129</attribute>
+        <attribute name="SLICE" value_type="float64">40</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:05:00</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.6130000000000004"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">10</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">10</attribute>
+        <attribute name="SLICE" value_type="float64">8</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">10</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:04:56</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.6379999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">25</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">25</attribute>
+        <attribute name="SLICE" value_type="float64">15</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">25</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:05:00</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.931"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">34</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">34</attribute>
+        <attribute name="SLICE" value_type="float64">24</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T16:05:16</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.2610000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:06:17</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.6659999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
+        <attribute name="SLICE" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T16:06:22</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.872"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">48</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">48</attribute>
+        <attribute name="SLICE" value_type="float64">23</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:06:30</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.5019999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">65</attribute>
+        <attribute name="SLICE" value_type="float64">34</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T16:06:48</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.7789999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">96</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">96</attribute>
+        <attribute name="SLICE" value_type="float64">47</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">96</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:07:51</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.4390000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">57</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T16:07:55</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7809999999999997"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">13</attribute>
+        <attribute name="SLICE" value_type="float64">10</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:07:59</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.944"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">18</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">18</attribute>
+        <attribute name="SLICE" value_type="float64">15</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T16:08:14</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.0139999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">24</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">24</attribute>
+        <attribute name="SLICE" value_type="float64">19</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">24</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:16</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:16</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.6659999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">48</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">48</attribute>
+        <attribute name="SLICE" value_type="float64">25</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:26</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.4489999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">95</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">95</attribute>
+        <attribute name="SLICE" value_type="float64">49</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">95</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:44</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.5369999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">13</attribute>
+        <attribute name="SLICE" value_type="float64">9</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:10:44</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.7350000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">24</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">24</attribute>
+        <attribute name="SLICE" value_type="float64">19</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">24</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:16</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">34</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">34</attribute>
+        <attribute name="SLICE" value_type="float64">23</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T16:10:46</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="3.161"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">2</attribute>
+        <attribute name="SLICE" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:16</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.6659999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">3</attribute>
+        <attribute name="SLICE" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T16:10:51</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.872"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">48</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">48</attribute>
+        <attribute name="SLICE" value_type="float64">25</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">48</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:26</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.4489999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">65</attribute>
+        <attribute name="SLICE" value_type="float64">34</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T16:11:12</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="3.8849999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">95</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">95</attribute>
+        <attribute name="SLICE" value_type="float64">49</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">95</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:09:44</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.5369999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">130</attribute>
+        <attribute name="SLICE" value_type="float64">58</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T16:12:04</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="4.7370000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">13</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">13</attribute>
+        <attribute name="SLICE" value_type="float64">9</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">13</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T16:10:44</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="1.7350000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">18</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="SLICE_LUTS" value_type="float64">18</attribute>
+        <attribute name="SLICE" value_type="float64">12</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T16:12:01</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="3.1400000000000001"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_16_16_16</name>

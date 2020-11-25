@@ -48,7 +48,9 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
-
+#if __clang_major__ >= 10
+#include "llvm/Support/CommandLine.h"
+#endif
 namespace llvm
 {
    cl::opt<std::string> outdir_nameGE("pandaGE-outputdir", cl::desc("Specify the directory where the gimple raw file will be written"), cl::value_desc("directory path"));

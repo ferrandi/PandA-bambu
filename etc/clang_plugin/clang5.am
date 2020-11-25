@@ -37,8 +37,10 @@ if BUILD_I386_CLANG5_ASTANALYZER_PLUGIN
 all: $(I386_CLANG5_ASTANALYZER_PLUGIN)
 endif
 
+$(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.so clang5_plugin_dumpGimpleSSA_opt.so
+clang5_plugin_dumpGimpleSSA_opt.so : clang5_plugin_dumpGimpleSSA.so
 if BUILD_PTAA
-$(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs` -lbdd';\
@@ -54,7 +56,7 @@ $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o cl
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; \
 	fi;
 else
-$(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSA.so : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -70,8 +72,11 @@ $(I386_CLANG5_SSA_PLUGIN) : clang5_plugin_dumpGimpleSSA.o clang5_dumpGimple.o cl
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSA.so ; \
 	fi;
 endif
+
+$(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.so clang5_plugin_dumpGimpleSSACpp_opt.so
+clang5_plugin_dumpGimpleSSACpp_opt.so : clang5_plugin_dumpGimpleSSACpp.so
 if BUILD_PTAA
-$(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -87,7 +92,7 @@ $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimpl
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleSSACpp.so;\
 	fi;
 else
-$(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleSSACpp.so : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -104,8 +109,10 @@ $(I386_CLANG5_SSA_PLUGINCPP) : clang5_plugin_dumpGimpleSSACpp.o clang5_dumpGimpl
 	fi;
 endif
 
+$(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.so clang5_plugin_dumpGimpleEmpty_opt.so
+clang5_plugin_dumpGimpleEmpty_opt.so : clang5_plugin_dumpGimpleEmpty.so
 if BUILD_PTAA
-$(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_HardekopfLin_AA.o clang5_RangeAnalysis.o clang5_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs` -lbdd'; \
@@ -121,7 +128,7 @@ $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang5_plugin_dumpGimpleEmpty.so; \
 	fi;
 else
-$(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
+clang5_plugin_dumpGimpleEmpty.so : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.o clang5_RangeAnalysis.o clang5_eSSA.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -138,7 +145,9 @@ $(I386_CLANG5_EMPTY_PLUGIN) : clang5_plugin_dumpGimpleEmpty.o clang5_dumpGimple.
 	fi;
 endif
 
-$(I386_CLANG5_EXPANDMEMOPS_PLUGIN) : clang5_plugin_expandMemOps.o 
+$(I386_CLANG5_EXPANDMEMOPS_PLUGIN) : clang5_plugin_expandMemOps.so clang5_plugin_expandMemOps_opt.so
+clang5_plugin_expandMemOps_opt.so : clang5_plugin_expandMemOps.so
+clang5_plugin_expandMemOps.so : clang5_plugin_expandMemOps.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -153,7 +162,9 @@ $(I386_CLANG5_EXPANDMEMOPS_PLUGIN) : clang5_plugin_expandMemOps.o
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_expandMemOps.o $$compile_options -o clang5_plugin_expandMemOps.so; \
 	fi;
 
-$(I386_CLANG5_GEPICANON_PLUGIN) : clang5_plugin_GepiCanon.o clang5_GepiCanon.o
+$(I386_CLANG5_GEPICANON_PLUGIN) : clang5_plugin_GepiCanon.so clang5_plugin_GepiCanon_opt.so
+clang5_plugin_GepiCanon_opt.so : clang5_plugin_GepiCanon.so
+clang5_plugin_GepiCanon.so : clang5_plugin_GepiCanon.o clang5_GepiCanon.o
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -168,7 +179,9 @@ $(I386_CLANG5_GEPICANON_PLUGIN) : clang5_plugin_GepiCanon.o clang5_GepiCanon.o
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_GepiCanon.o clang5_GepiCanon.o $$compile_options -o clang5_plugin_GepiCanon.so; \
 	fi;
 
-$(I386_CLANG5_CSROA_PLUGIN) : clang5_plugin_CSROA.o clang5_CSROA.o clang5_GepiCanon.o 
+$(I386_CLANG5_CSROA_PLUGIN) : clang5_plugin_CSROA.so clang5_plugin_CSROA_opt.so
+clang5_plugin_CSROA_opt.so : clang5_plugin_CSROA.so
+clang5_plugin_CSROA.so : clang5_plugin_CSROA.o clang5_CSROA.o clang5_GepiCanon.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -183,7 +196,9 @@ $(I386_CLANG5_CSROA_PLUGIN) : clang5_plugin_CSROA.o clang5_CSROA.o clang5_GepiCa
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_CSROA.o clang5_GepiCanon.o clang5_CSROA.o $$compile_options -o clang5_plugin_CSROA.so; \
 	fi;
 
-$(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.o 
+$(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.so clang5_plugin_topfname_opt.so
+clang5_plugin_topfname_opt.so : clang5_plugin_topfname.so
+clang5_plugin_topfname.so : clang5_plugin_topfname.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \
@@ -198,7 +213,8 @@ $(I386_CLANG5_TOPFNAME_PLUGIN) : clang5_plugin_topfname.o
 	  $(I386_CLANG5_PLUGIN_COMPILER) clang5_plugin_topfname.o $$compile_options -o clang5_plugin_topfname.so; \
 	fi;
 
-$(I386_CLANG5_ASTANALYZER_PLUGIN) : clang5_plugin_ASTAnalyzer.o 
+$(I386_CLANG5_ASTANALYZER_PLUGIN) : clang5_plugin_ASTAnalyzer.so
+clang5_plugin_ASTAnalyzer.so : clang5_plugin_ASTAnalyzer.o 
 	case $(host_os) in \
 	  mingw*) \
 	    compile_options='$(CLANG5_LIBS) -lversion `$(I386_LLVM_CONFIG5_EXE) --ldflags --libs --system-libs`'; \

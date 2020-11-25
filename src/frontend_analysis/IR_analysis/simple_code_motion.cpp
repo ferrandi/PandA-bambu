@@ -32,7 +32,7 @@
  */
 /**
  * @file simple_code_motion.cpp
- * @brief * @brief Analysis step that performs some simple code motions over GCC IR
+ * @brief * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -397,6 +397,8 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
       case postincrement_expr_K:
       case predecrement_expr_K:
       case preincrement_expr_K:
+      case sat_plus_expr_K:
+      case sat_minus_expr_K:
       {
          if(tree_helper::is_real(TM, ga->op1->index))
          {

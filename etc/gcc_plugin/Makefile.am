@@ -2,7 +2,7 @@
 EXTRA_DIST =   $(top_srcdir)/etc/gcc_plugin/plugin_includes.h $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleEmpty.c $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSA.c  $(top_srcdir)/etc/gcc_plugin/plugin_dumpGimpleSSAVRP.c $(top_srcdir)/etc/gcc_plugin/dumpGimple.c $(top_srcdir)/etc/gcc_plugin/dumpVrp.c $(top_srcdir)/etc/gcc_plugin/plugin_dumpRTL.c $(top_srcdir)/etc/gcc_plugin/plugin_topfname.c $(top_srcdir)/etc/gcc_plugin/cfgexpand_4_5_2.c VRP_data.h dumpVRP_common.h patched-tree-vrp.454.c patched-tree-vrp.463.c  patched-tree-vrp.472.c  patched-tree-vrp.480.c $(top_srcdir)/etc/gcc_plugin/ggc_clike_extern.h $(top_srcdir)/etc/gcc_plugin/ggc_clike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_static.h $(top_srcdir)/etc/gcc_plugin/ggc_cpplike_extern.h $(top_srcdir)/etc/gcc_plugin/gcc-4.9/dbgcnt.def $(top_srcdir)/etc/gcc_plugin/gcc-4.9/dbgcnt.h $(top_srcdir)/etc/gcc_plugin/gcc-4.9/expr.h $(top_srcdir)/etc/gcc_plugin/gcc-4.9/insn-config.h $(top_srcdir)/etc/gcc_plugin/gcc-4.9/ipa-inline.h $(top_srcdir)/etc/gcc_plugin/gcc-4.9/tree-sra.c $(top_srcdir)/etc/gcc_plugin/gcc-5/insn-config.h $(top_srcdir)/etc/gcc_plugin/gcc-5/tree-sra.c $(top_srcdir)/etc/gcc_plugin/gcc-6/tree-sra.c $(top_srcdir)/etc/gcc_plugin/gcc-7/tree-sra.c $(top_srcdir)/etc/gcc_plugin/gcc-8/tree-sra.c
 
 LD_LIBRARY_PATH=
-PANDA_PLUGIN_VERSION=0.11
+PANDA_PLUGIN_VERSION=0.12
 if ENABLE_WERROR
 WFLAGS=-Wall \
    -Werror \

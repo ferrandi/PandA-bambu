@@ -2649,6 +2649,75 @@ assign xdenom = in2;"/>
       </circuit>
     </template>
     <template>
+      <name>sat_plus_expr_FU</name>
+      <operation operation_name="sat_plus_expr" supported_types="INT:*" commutative="1"/>
+      <circuit>
+        <component_o id="sat_plus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="sat_plus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="sat_plus_expr_FU in1 in2 out1" 
+VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] add_tmp;
+wire signed [BITSIZE_out1-1:0] mask_max;
+wire signed [BITSIZE_out1-1:0] mask_min;
+wire cond1, cond2;
+assign add_tmp = in1 + in2;
+assign mask_min = {1&apos;b1, {BITSIZE_out1-1{1&apos;b0}}};
+assign mask_max = {1&apos;b0, {BITSIZE_out1-1{1&apos;b1}}};
+assign cond1 = (!in1[BITSIZE_in1-1])&amp;(!in2[BITSIZE_in2-1])&amp;add_tmp[BITSIZE_out1-1];
+assign cond2 = in1[BITSIZE_in1-1]&amp;in2[BITSIZE_in2-1]&amp;(!add_tmp[BITSIZE_out1-1]);
+assign out1 = cond2 ? mask_min : (cond1 ? mask_max : add_tmp);
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_sat_plus_expr_FU</name>
+      <operation operation_name="sat_plus_expr" supported_types="UINT:*|VECTOR_BOOL:*" commutative="1"/>
+      <circuit>
+        <component_o id="ui_sat_plus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_sat_plus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_sat_plus_expr_FU in1 in2 out1" 
+VERILOG_PROVIDED="
+wire signed [BITSIZE_out1:0] add_tmp;
+assign add_tmp = in1 + in2;
+assign out1 = add_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b1}} : add_tmp[BITSIZE_out1-1:0];
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
       <name>ternary_plus_expr_FU</name>
       <operation operation_name="ternary_plus_expr" supported_types="INT:*" commutative="1"/>
       <circuit>
@@ -3856,6 +3925,75 @@ out1 &lt;= resize_signed(in1, BITSIZE_out1) - resize_signed(in2, BITSIZE_out1);"
           </port_o>
           <NP_functionality LIBRARY="ui_minus_expr_FU in1 in2 out1" VERILOG_PROVIDED="assign out1 = in1 - in2;" VHDL_PROVIDED="begin
 out1 &lt;= resize(in1, BITSIZE_out1) - resize(in2, BITSIZE_out1);"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>sat_minus_expr_FU</name>
+      <operation operation_name="sat_minus_expr" supported_types="INT:*"/>
+      <circuit>
+        <component_o id="sat_minus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="sat_minus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="INT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="INT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="sat_minus_expr_FU in1 in2 out1" 
+VERILOG_PROVIDED="
+wire signed [BITSIZE_out1-1:0] sub_tmp;
+wire signed [BITSIZE_out1-1:0] mask_max;
+wire signed [BITSIZE_out1-1:0] mask_min;
+wire cond1, cond2;
+assign sub_tmp = in1 - in2;
+assign mask_min = {1&apos;b1, {BITSIZE_out1-1{1&apos;b0}}};
+assign mask_max = {1&apos;b0, {BITSIZE_out1-1{1&apos;b1}}};
+assign cond1 = (!in1[BITSIZE_in1-1])&amp;in2[BITSIZE_in2-1]&amp;sub_tmp[BITSIZE_out1-1];
+assign cond2 = in1[BITSIZE_in1-1]&amp;(!in2[BITSIZE_in2-1])&amp;(!sub_tmp[BITSIZE_out1-1]);
+assign out1 = cond2 ? mask_min : (cond1 ? mask_max : sub_tmp);
+"/>
+        </component_o>
+      </circuit>
+    </template>
+    <template>
+      <name>ui_sat_minus_expr_FU</name>
+      <operation operation_name="sat_minus_expr" supported_types="UINT:*|VECTOR_BOOL:*"/>
+      <circuit>
+        <component_o id="ui_sat_minus_expr_FU">
+          <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
+          <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>  
+          <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors> 
+          <license>PANDA_LGPLv3</license>
+          <structural_type_descriptor id_type="ui_sat_minus_expr_FU"/>
+          <port_o id="in1" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="in2" dir="IN">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <port_o id="out1" dir="OUT">
+            <structural_type_descriptor type="UINT" size="1"/>
+            <connected_objects/>
+          </port_o>
+          <NP_functionality LIBRARY="ui_sat_minus_expr_FU in1 in2 out1" 
+VERILOG_PROVIDED="
+wire signed [BITSIZE_out1:0] sub_tmp;
+assign sub_tmp = in1 - in2;
+assign out1 = sub_tmp[BITSIZE_out1] ? {BITSIZE_out1{1&apos;b0}} : sub_tmp[BITSIZE_out1-1:0];
+"/>
         </component_o>
       </circuit>
     </template>

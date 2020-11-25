@@ -39,6 +39,7 @@
  */
 #include "plugin_includes.hpp"
 
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -120,7 +121,7 @@ namespace llvm
       {
          if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
          {
-            return VTy->getBitWidth() / 8;
+            return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
          }
          return Type->getPrimitiveSizeInBits() / 8;
       }
@@ -347,7 +348,13 @@ namespace llvm
          LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
 
          if(AlignCanBeUsed)
+         {
+#if __clang_major__ >= 11
+            LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), llvm::MaybeAlign(Align), IsVolatile);
+#else
             LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
+#endif
+         }
          else
             LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), IsVolatile);
 

@@ -63,7 +63,13 @@
 #define GT(code) tree_codes::code
 #define LOCAL_BUFFER_LEN 512
 
-#if __clang_major__ == 9
+#if __clang_major__ == 11
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang11##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang11" #SYMBOL
+#elif __clang_major__ == 10
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang10##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang10" #SYMBOL
+#elif __clang_major__ == 9
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang9##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang9" #SYMBOL
 #elif __clang_major__ == 8
@@ -75,12 +81,14 @@
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL
+#elif __clang_major__ == 5
+#define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
 #elif __clang_major__ == 4
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang4##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang4" #SYMBOL
 #else
-#define CLANG_VERSION_SYMBOL(SYMBOL) clang5##SYMBOL
-#define CLANG_VERSION_STRING(SYMBOL) "clang5" #SYMBOL
+#error
 #endif
 
 namespace llvm
@@ -118,6 +126,7 @@ namespace llvm
 {
    class DumpGimpleRaw
    {
+      bool changed;
       bool earlyAnalysis;
       /* Serialize column control */
       const int SOL_COLUMN = 25;       /* Start of line column.  */
@@ -642,7 +651,7 @@ namespace llvm
       const void* getStatement_list(const void* t);
       const void* getGimpleScpe(const void* g);
       int getGimple_bb_index(const void* g);
-      bool gimple_has_mem_ops(const void* g) const;
+      bool gimple_has_mem_ops(const void* g);
       std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>> CurrentListofMAEntryDef;
       void serialize_vops(const void* g);
       void serialize_gimple_aliased_reaching_defs(llvm::MemoryAccess* MA, llvm::MemorySSA& MSSA, std::set<llvm::MemoryAccess*>& visited, const llvm::Function* currentFunction, const llvm::MemoryLocation* OrigLoc, const char* tag);
@@ -715,15 +724,15 @@ namespace llvm
       void dequeue_and_serialize();
 
       std::map<const llvm::Value*, llvm::Metadata*> MetaDataMap;
-      void buildMetaDataMap(llvm::Module& M);
+      void buildMetaDataMap(const llvm::Module& M);
 
       bool lowerMemIntrinsics(llvm::Module& M);
       bool RebuildConstants(llvm::Module& M);
       bool lowerIntrinsics(llvm::Module& M);
 
-      void compute_eSSA(llvm::Module& M);
+      void compute_eSSA(llvm::Module& M, bool* changed);
 
-      void computeValueRange(llvm::Module& M);
+      void computeValueRange(const llvm::Module& M);
       void ValueRangeOptimizer(llvm::Module& M);
       bool LoadStoreOptimizer(llvm::Module& M);
       void computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass);

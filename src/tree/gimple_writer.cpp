@@ -390,6 +390,20 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
          obj->op1->visit(this);
          break;
       }
+      case sat_plus_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " satplus ";
+         obj->op1->visit(this);
+         break;
+      }
+      case sat_minus_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " satminus ";
+         obj->op1->visit(this);
+         break;
+      }
       case extract_bit_expr_K:
       {
          obj->op0->visit(this);

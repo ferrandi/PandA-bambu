@@ -47,6 +47,9 @@
 #if __clang_major__ >= 7
 #include "llvm/Transforms/Utils.h"
 #endif
+#if __clang_major__ >= 10
+#include "llvm/InitializePasses.h"
+#endif
 #include "GepiCanonicalizationPass.hpp"
 
 namespace llvm
@@ -101,15 +104,15 @@ namespace llvm
 } // namespace llvm
 
 #ifndef _WIN32
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification>> XPassPS(CLANG_VERSION_STRING(_plugin_GepiCanon) "PS", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering>> XPassCOL(CLANG_VERSION_STRING(_plugin_GepiCanon) "COL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval>> XPassBVR(CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_removeLifetime>> XPassLTR(CLANG_VERSION_STRING(_plugin_GepiCanon) "LTR", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering>> XPassSL(CLANG_VERSION_STRING(_plugin_GepiCanon) "SL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs>> XPassCIDX(CLANG_VERSION_STRING(_plugin_GepiCanon) "CIDX", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_cleanLCSSA>> XPassCLCSSA(CLANG_VERSION_STRING(_plugin_GepiCanon) "CLCSSA", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation>> XPassGEXP(CLANG_VERSION_STRING(_plugin_GepiCanon) "GEXP", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_codeSimplification>> XPassCSIMPL(CLANG_VERSION_STRING(_plugin_GepiCanon) "CSIMPL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_ptrIteratorSimplification> > XPassPS(CLANG_VERSION_STRING(_plugin_GepiCanon) "PS", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_chunkOperationsLowering> > XPassCOL(CLANG_VERSION_STRING(_plugin_GepiCanon) "COL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_bitcastVectorRemoval> > XPassBVR(CLANG_VERSION_STRING(_plugin_GepiCanon) "BVR", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_removeLifetime> > XPassLTR(CLANG_VERSION_STRING(_plugin_GepiCanon) "LTR", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_selectLowering> > XPassSL(CLANG_VERSION_STRING(_plugin_GepiCanon) "SL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_canonicalIdxs> > XPassCIDX(CLANG_VERSION_STRING(_plugin_GepiCanon) "CIDX", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_cleanLCSSA> > XPassCLCSSA(CLANG_VERSION_STRING(_plugin_GepiCanon) "CLCSSA", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_gepiExplicitation> > XPassGEXP(CLANG_VERSION_STRING(_plugin_GepiCanon) "GEXP", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_GepiCanon) < SROA_codeSimplification> > XPassCSIMPL(CLANG_VERSION_STRING(_plugin_GepiCanon) "CSIMPL", "GepiCanonicalizationPass", true /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 
 // This function is of type PassManagerBuilder::ExtensionFn

@@ -24,7 +24,7 @@
 #include "llvm/IR/PatternMatch.h"
 #ifdef _WIN32
 #include "llvm/Analysis/OrderedInstructions.h"
-#elif __clang_major__ == 4
+#elif __clang_major__ == 4 || __clang_major__ >= 11
 #include "my_OrderedInstructions.hpp"
 #elif __clang_major__ > 4 && __clang_major__ < 8
 #include "llvm/Transforms/Utils/OrderedInstructions.h"
@@ -479,8 +479,7 @@ namespace eSSAInfoClasses
          else
          {
             llvm_unreachable("assume intrinsic not yet supported");
-            auto* PAssume = llvm::dyn_cast<PredicateAssume>(ValInfo);
-            assert(PAssume && "Should not have gotten here without it being an assume");
+            assert(llvm::dyn_cast<PredicateAssume>(ValInfo) && "Should not have gotten here without it being an assume");
             // llvm::IRBuilder<> B(PAssume->AssumeInst);
             // llvm::Function *IF = llvm::Intrinsic::getDeclaration(
             //                        F.getParent(), llvm::Intrinsic::ssa_copy, Op->getType());
@@ -873,9 +872,13 @@ namespace eSSAInfoClasses
 
 } // namespace eSSAInfoClasses
 
-bool eSSA::runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass)
+bool eSSA::runOnFunction(llvm::Function& fun, llvm::ModulePass* modulePass, bool* changed)
 {
+#if __clang_major__ >= 11
+   auto DT = &modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(fun, changed).getDomTree();
+#else
    auto DT = &modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(fun).getDomTree();
+#endif
    // auto AC = &modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(fun);
    auto OI = new llvm::OrderedInstructions(DT);
    DT->updateDFSNumbers();

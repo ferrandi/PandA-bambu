@@ -68,7 +68,7 @@ unsigned long get_num_elements(llvm::Type* ty, unsigned long decayed_dim_if_any 
    return non_aggregate_types;
 }
 
-Expandability compute_alloca_expandability_profit(llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL, std::string& msg)
+Expandability compute_alloca_expandability_profit(const llvm::AllocaInst* alloca_inst, const llvm::DataLayout& DL, std::string& msg)
 {
    llvm::Type* allocated_type = alloca_inst->getAllocatedType();
 
@@ -120,7 +120,7 @@ Expandability compute_operand_expandability_profit(llvm::Use* op_use, const llvm
    llvm::Type* allocated_type = op_use->get()->getType()->getPointerElementType();
 
    unsigned long num_elements = get_num_elements(allocated_type) * decayed_dim;
-   unsigned long size = DL.getTypeAllocSize(allocated_type) * decayed_dim;
+   unsigned long size = static_cast<unsigned long>(DL.getTypeAllocSize(allocated_type)) * decayed_dim;
    bool expandable_size = num_elements <= MaxNumScalarTypes and size <= MaxTypeByteSize;
 
    if(!expandable_size)
@@ -197,15 +197,15 @@ Expandability compute_function_versioning_cost(llvm::Function* function)
                {
                   inst_cost *= 0;
                }
-               else if(i.getOpcodeName() == "add" or i.getOpcodeName() == "fadd")
+               else if(i.getOpcodeName() == std::string("add") or i.getOpcodeName() == std::string("fadd"))
                {
                   inst_cost *= 1;
                }
-               else if(i.getOpcodeName() == "sub" or i.getOpcodeName() == "fsub")
+               else if(i.getOpcodeName() == std::string("sub") or i.getOpcodeName() == std::string("fsub"))
                {
                   inst_cost *= 1;
                }
-               else if(i.getOpcodeName() == "mul" or i.getOpcodeName() == "fmul")
+               else if(i.getOpcodeName() == std::string("mul") or i.getOpcodeName() == std::string("fmul"))
                {
                   inst_cost *= 100;
                }

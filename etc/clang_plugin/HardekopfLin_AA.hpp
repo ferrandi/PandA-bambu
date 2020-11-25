@@ -53,6 +53,7 @@
 #include "llvm/ADT/DenseMap.h"
 #include "llvm/ADT/DenseSet.h"
 #include "llvm/ADT/SparseBitVector.h"
+#include "llvm/ADT/StringMap.h"
 
 namespace llvm
 {
@@ -416,8 +417,10 @@ class Andersen_AA
 
  private:
    void id_call_obj(u32 vnI, const llvm::Function* F);
-   void id_dir_call(llvm::ImmutableCallSite CS, const llvm::Function* F);
-   void id_ind_call(llvm::ImmutableCallSite CS);
+   template <class CallInstOrInvokeInst>
+   void id_dir_call(const CallInstOrInvokeInst* I, const llvm::Function* F);
+   template <class CallInstOrInvokeInst>
+   void id_ind_call(const CallInstOrInvokeInst* I);
 
    void id_global(const llvm::GlobalVariable* G);
    u32 get_ret_node(const llvm::Function* F) const;
@@ -449,14 +452,16 @@ class Andersen_AA
 
  protected:
    void id_ret_insn(const llvm::Instruction* I);
-   void id_call_insn(const llvm::Instruction* I);
+   template <class CallInstOrInvokeInst>
+   void id_call_insn(const CallInstOrInvokeInst* I);
    void id_alloc_insn(const llvm::Instruction* I);
    void id_load_insn(const llvm::Instruction* I);
    void id_store_insn(const llvm::Instruction* I);
    void id_gep_insn(const llvm::User* gep);
 
  private:
-   void id_ext_call(const llvm::ImmutableCallSite& CS, const llvm::Function* F);
+   template <class CallInstOrInvokeInst>
+   void id_ext_call(const CallInstOrInvokeInst* I, const llvm::Function* F);
    void add_store2_cons(const llvm::Value* D, const llvm::Value* S, size_t sz = 0);
 
    void processBlock(const llvm::BasicBlock* BB, std::set<const llvm::BasicBlock*>& bb_seen);
@@ -491,7 +496,8 @@ class Andersen_AA
    bool solve_gep_cons(u32 n, const bdd& d_points_to, std::set<Constraint>& cons_seen, Constraint& C);
    bool add_copy_edge(u32 src, u32 dest);
    void solve_prop(u32 n, const bdd& d_points_to);
-   void handle_ext(const llvm::Function* F, const llvm::Instruction* I);
+   template <class CallInstOrInvokeInst>
+   void handle_ext(const llvm::Function* F, const CallInstOrInvokeInst* I);
    void lcd_dfs(u32 n);
 
  protected:

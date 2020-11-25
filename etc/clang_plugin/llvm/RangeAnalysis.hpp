@@ -1205,17 +1205,17 @@ namespace RangeAnalysis
       /// Adds a PhiOp in the graph.
       void addPhiOp(const llvm::PHINode* Phi, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
       // Adds a SigmaOp to the graph.
-      void addSigmaOp(const llvm::PHINode* Sigma, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
+      void addSigmaOp(const llvm::PHINode* Sigma, llvm::ModulePass* modulePass, const llvm::DataLayout* DL, bool* changed);
       /// Add LoadOp in the graph
       void addLoadOp(const llvm::LoadInst* LI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, const llvm::DataLayout* DL,
-                     llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store);
+                     llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, bool* changed);
       /// Add StoreOp in the graph
       void addStoreOp(const llvm::StoreInst* SI, Andersen_AA* PtoSets_AA, bool arePointersResolved, llvm::ModulePass* modulePass, llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store,
-                      const llvm::DataLayout* DL);
+                      const llvm::DataLayout* DL, bool* changed);
 
       /// Takes an instruction and creates an operation.
       void buildOperations(const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved,
-                           llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store);
+                           llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, bool* changed);
       void buildValueBranchMap(const llvm::BranchInst* br, const llvm::DataLayout* DL);
       void buildValueSwitchMap(const llvm::SwitchInst* sw, const llvm::DataLayout* DL);
       void buildValueMaps(const llvm::Function& F, const llvm::DataLayout* DL);
@@ -1227,7 +1227,7 @@ namespace RangeAnalysis
       llvm::APInt getFirstLessFromVector(const llvm::SmallVector<llvm::APInt, 2>& constantvector, const llvm::APInt& val);
       void buildConstantVector(const llvm::SmallPtrSet<VarNode*, 32>& component, const UseMap& compusemap);
       llvm::SmallPtrSet<const llvm::Value*, 6> ComputeConflictingStores(const llvm::StoreInst* SI, const llvm::Value* GV, const llvm::Instruction* instr, Andersen_AA* PtoSets_AA,
-                                                                        llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, llvm::ModulePass* modulePass);
+                                                                        llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, llvm::ModulePass* modulePass, bool* changed);
 
     protected:
       // Perform the widening and narrowing operations
@@ -1263,7 +1263,7 @@ namespace RangeAnalysis
       void addUnaryOp(const llvm::Instruction* I, llvm::ModulePass* modulePass, const llvm::DataLayout* DL);
       /// Iterates through all instructions in the function and builds the graph.
       void buildGraph(const llvm::Function& F, llvm::ModulePass* modulePass, const llvm::DataLayout* DL, Andersen_AA* PtoSets_AA, bool arePointersResolved,
-                      llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store);
+                      llvm::DenseMap<const llvm::Function*, llvm::SmallPtrSet<const llvm::Instruction*, 6>>& Function2Store, bool* changed);
       void buildVarNodes(const llvm::DataLayout* DL);
       void buildSymbolicIntersectMap();
       UseMap buildUseMap(const llvm::SmallPtrSet<VarNode*, 32>& component);
@@ -1390,6 +1390,8 @@ namespace RangeAnalysis
 
    class InterProceduralRACropDFSHelper : public RangeAnalysis
    {
+      bool changed;
+
     public:
       InterProceduralRACropDFSHelper()
       {
