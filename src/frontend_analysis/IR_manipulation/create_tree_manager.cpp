@@ -224,7 +224,7 @@ DesignFlowStep_Status create_tree_manager::Exec()
    else
    {
 #if !RELEASE
-      // if a XML configuration file has been specified for the GCC parameters
+      // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
          gcc_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
 #endif

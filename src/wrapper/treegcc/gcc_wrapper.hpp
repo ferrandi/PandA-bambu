@@ -292,10 +292,10 @@ class GccWrapper
     * @param original_file_name is the original file passed through command line; this information is necessary to retrieve include directory
     * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case of empty file
     * @param parameters_line are the parameters to be passed to gcc
-    * @param empty_file tells if .001.tu tree has to be produced
-    * @param enable Analyzer plugin.
+    * @param multiple_files is the true in case multiple files are considered.
+    * @param cm is the mode in which we compile
     */
-   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, GccWrapper_CompilerMode cm = GccWrapper_CompilerMode::CM_STD);
+   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, GccWrapper_CompilerMode cm);
 
    /**
     * Return the compiler for a given target

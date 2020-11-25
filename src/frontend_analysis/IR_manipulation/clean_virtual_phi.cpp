@@ -32,7 +32,7 @@
  */
 /**
  * @file clean_virtual_phi.hpp
- * @brief Manipulation step which removes virtual phi introduced by GCC
+ * @brief Manipulation step which removes virtual phi introduced by GCC/CLANG
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *

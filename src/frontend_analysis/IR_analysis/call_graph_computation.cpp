@@ -164,7 +164,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
          const auto* sl = GetPointer<const statement_list>(GET_NODE(fd->body));
          if(sl->list_of_bloc.empty())
          {
-            THROW_ERROR("We can only work on CFG provided by GCC");
+            THROW_ERROR("We can only work on CFG provided by GCC/CLANG");
          }
          else
          {

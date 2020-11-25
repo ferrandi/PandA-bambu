@@ -88,7 +88,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
    ~create_tree_manager() override;
 
    /**
-    * Creates the tree_manager data structure by invoking the GCC wrapper
+    * Creates the tree_manager data structure by invoking the GCC/CLANG wrapper
     * @return the exit status of this step
     */
    DesignFlowStep_Status Exec() override;

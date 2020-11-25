@@ -140,7 +140,7 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
    ~MultipleEntryIfReduction() override;
 
    /**
-    * Extract patterns from the GCC IR.
+    * Extract patterns from the IR.
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;

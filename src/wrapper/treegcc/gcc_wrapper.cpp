@@ -337,7 +337,7 @@ GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_Compiler
 // destructor
 GccWrapper::~GccWrapper() = default;
 
-void GccWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, GccWrapper_CompilerMode cm)
+void GccWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, GccWrapper_CompilerMode cm)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
 
@@ -550,7 +550,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                }
             }
          }
-         else
+         else if(!multiple_files) /// LTO not yet supported with GCC
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
       }
       if(compiler.is_clang)
@@ -639,12 +639,12 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       if(boost::filesystem::exists(boost::filesystem::path(gcc_output_file_name)))
       {
          CopyStdout(gcc_output_file_name);
-         THROW_ERROR_CODE(COMPILING_EC, "GCC returns an error during compilation " + boost::lexical_cast<std::string>(errno));
-         THROW_ERROR("GCC returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+         THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " + boost::lexical_cast<std::string>(errno));
+         THROW_ERROR("Front-end compiler returns an error during compilation " + boost::lexical_cast<std::string>(errno));
       }
       else
       {
-         THROW_ERROR("Error in GCC invocation");
+         THROW_ERROR("Error in front-end compiler invocation");
       }
    }
    else
@@ -657,7 +657,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 
 void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files)
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking GCC");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking front-end compiler");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
    if(source_files.size() == 0)
@@ -721,7 +721,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          {
             analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
          }
-         CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, GccWrapper_CompilerMode::CM_ANALYZER);
+         CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1, GccWrapper_CompilerMode::CM_ANALYZER);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
@@ -740,13 +740,13 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
       std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
-      CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, enable_LTO ? GccWrapper_CompilerMode::CM_LTO : GccWrapper_CompilerMode::CM_STD);
+      CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, source_files.size() > 1, enable_LTO ? GccWrapper_CompilerMode::CM_LTO : GccWrapper_CompilerMode::CM_STD);
       if(!Param->isOption(OPT_gcc_E) and !Param->isOption(OPT_gcc_S) and !enable_LTO)
       {
          if(!(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
          {
             THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
-            CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, GccWrapper_CompilerMode::CM_EMPTY);
+            CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, source_files.size() > 1, GccWrapper_CompilerMode::CM_EMPTY);
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
             leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
             if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
@@ -950,7 +950,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             }
          }
          else
-            THROW_ERROR("LTO compilation not yet implemented with GCC");
+            THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       }
       if(compiler.is_clang)
       {
@@ -977,7 +977,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          }
       }
       else
-         THROW_ERROR("LTO compilation not yet implemented with GCC");
+         THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
 
       std::string real_file_names;
       bool first_file = true;
@@ -1027,7 +1027,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          }
       }
       else
-         THROW_ERROR("LTO compilation not yet implemented with GCC");
+         THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
       std::string leaf_name = GetLeafFileName(source_files.begin()->second);
       if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
          THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix + " not found: impossible to create raw file for " + real_file_names);
@@ -1048,7 +1048,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Ended compilation of single files");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Finished GCC invoking");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Front-end compiler finished");
 }
 
 void GccWrapper::InitializeGccParameters()
@@ -1600,7 +1600,7 @@ void GccWrapper::SetBambuDefault()
 
 void GccWrapper::SetGccDefault()
 {
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting GCC defaults");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting front-end compiler defaults");
    const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
@@ -1934,7 +1934,7 @@ void GccWrapper::SetGccDefault()
       optimization_flags["use-cxa-atexit"] = false;
    }
 
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set GCC defaults");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set front-end compiler defaults");
 }
 
 GccWrapper::Compiler GccWrapper::GetCompiler() const
@@ -2712,7 +2712,7 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    if(IsError(ret))
    {
       CopyStdout(gcc_output_file_name);
-      THROW_ERROR_CODE(COMPILING_EC, "GCC returns an error during compilation " + boost::lexical_cast<std::string>(errno) + " - Command is " + command);
+      THROW_ERROR_CODE(COMPILING_EC, "Front-end compiler returns an error during compilation " + boost::lexical_cast<std::string>(errno) + " - Command is " + command);
    }
    else
    {
@@ -3551,10 +3551,10 @@ void GccWrapper::CheckGccCompatibleVersion(const std::string& gcc_version, const
       return;
    if(gcc_version_number < ConvertVersion(STR_CST_gcc_first_not_supported))
    {
-      THROW_WARNING("GCC " + gcc_version + " has not been tested with the PandA framework");
+      THROW_WARNING("GCC/CLANG " + gcc_version + " has not been tested with the PandA framework");
       return;
    }
-   THROW_ERROR("GCC " + gcc_version + " is not supported by this version of the PandA framework");
+   THROW_ERROR("GCC/CLANG " + gcc_version + " is not supported by this version of the PandA framework");
 }
 
 size_t GccWrapper::CGetPointerSize(const ParameterConstRef parameters)

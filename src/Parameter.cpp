@@ -1268,7 +1268,7 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       }
       default:
       {
-         /// next_option is not a GCC parameter
+         /// next_option is not a GCC/CLANG parameter
          return true;
       }
    }
@@ -1662,7 +1662,7 @@ void Parameter::PrintOutputOptionsUsage(std::ostream& os) const
 #if HAVE_FROM_C_BUILT
 void Parameter::PrintGccOptionsUsage(std::ostream& os) const
 {
-   os << "  GCC options:\n\n"
+   os << "  GCC/CLANG front-end compiler options:\n\n"
       << "    --compiler=<compiler_version>\n"
       << "        Specify which compiler is used.\n"
       << "        Possible values for <compiler_version> are:\n"
@@ -1729,19 +1729,19 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "        optimization flags accepted by compilers, plus some others:\n"
       << "        -O0,-O1,-O2,-O3,-Os,-O4,-O5.\n\n"
       << "    -f<option>\n"
-      << "        Enable or disable a GCC optimization option. All the -f or -fno options\n"
+      << "        Enable or disable a GCC/CLANG optimization option. All the -f or -fno options\n"
       << "        are supported. In particular, -ftree-vectorize option triggers the\n"
       << "        high-level synthesis of vectorized operations.\n\n"
       << "    -I<path>\n"
       << "        Specify a path where headers are searched for.\n\n"
       << "    -W<warning>\n"
-      << "        Specify a warning option passed to GCC. All the -W options available in\n"
-      << "        GCC are supported.\n\n"
+      << "        Specify a warning option passed to GCC/CLANG. All the -W options available in\n"
+      << "        GCC/CLANG are supported.\n\n"
       << "    -E\n"
-      << "        Enable preprocessing mode of GCC.\n\n"
+      << "        Enable preprocessing mode of GCC/CLANG.\n\n"
       << "    --std=<standard>\n"
       << "        Assume that the input sources are for <standard>. All\n"
-      << "        the --std options available in GCC are supported.\n\n"
+      << "        the --std options available in GCC/CLANG are supported.\n\n"
       << "    -D<name>\n"
       << "        Predefine name as a macro, with definition 1.\n\n"
       << "    -D<name=definition>\n"
@@ -1749,7 +1749,7 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "    -U<name>\n"
       << "        Remove existing definition for macro <name>.\n\n"
       << "    --param <name>=<value>\n"
-      << "        Set the amount <value> for the GCC parameter <name> that could be used for\n"
+      << "        Set the amount <value> for the GCC/CLANG parameter <name> that could be used for\n"
       << "        some optimizations.\n\n"
       << "    -l<library>\n"
       << "        Search the library named <library> when linking.\n\n"
@@ -1763,12 +1763,12 @@ void Parameter::PrintGccOptionsUsage(std::ostream& os) const
       << "    --read-GCC-XML=<xml_file_name>\n"
       << "        Read GCC options from a XML file.\n\n"
       << "    --write-GCC-XML=<xml_file_name>\n"
-      << "        Dump the parsed GCC compiler options into a XML file.\n\n"
+      << "        Dump the parsed GCC/CLANG compiler options into a XML file.\n\n"
 #endif
       << "    --Include-sysdir\n"
-      << "        Return the system include directory used by the wrapped GCC compiler.\n\n"
+      << "        Return the system include directory used by the wrapped GCC/CLANG compiler.\n\n"
       << "    --gcc-config\n"
-      << "        Return the GCC configuration.\n\n"
+      << "        Return the GCC/CLANG configuration.\n\n"
 #if !RELEASE
       << "    --compute-sizeof\n"
       << "        Replace sizeof with the computed valued for the considered target\n"

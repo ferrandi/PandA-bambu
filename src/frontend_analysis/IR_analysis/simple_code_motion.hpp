@@ -32,7 +32,7 @@
  */
 /**
  * @file simple_code_motion.hpp
- * @brief Analysis step that performs some simple code motions over GCC IR
+ * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$

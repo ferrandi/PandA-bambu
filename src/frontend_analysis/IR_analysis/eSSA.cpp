@@ -1354,7 +1354,7 @@ DesignFlowStep_Status eSSA::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extended SSA step");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Dominator tree computation...");
 
-   /// store the GCC BB graph ala boost::graph
+   /// store the IR BB graph ala boost::graph
    BBGraphsCollectionRef GCC_bb_graphs_collection(new BBGraphsCollection(BBGraphInfoRef(new BBGraphInfo(AppM, function_id)), parameters));
    BBGraph GCC_bb_graph(GCC_bb_graphs_collection, CFG_SELECTOR);
    CustomUnorderedMap<unsigned int, vertex> inverse_vertex_map;

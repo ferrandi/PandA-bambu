@@ -32,7 +32,7 @@
  */
 /**
  * @file phi_opt.hpp
- * @brief Analysis step that optimize the phis starting from the GCC IR
+ * @brief Analysis step that optimize the phis starting from the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
