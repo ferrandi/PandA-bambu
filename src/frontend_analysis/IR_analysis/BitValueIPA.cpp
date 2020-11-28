@@ -162,6 +162,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
    CustomOrderedSet<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    CustomOrderedSet<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
+   auto addressed_functions = CGMan->GetAddressedFunctions();
+   root_fun_ids.insert(addressed_functions.begin(), addressed_functions.end());
 
    /// In case of indirect calls (e.g., pointer to function) no Bit Value IPA can be done.
    CustomUnorderedSet<vertex> vertex_subset;
