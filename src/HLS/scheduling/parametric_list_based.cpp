@@ -354,9 +354,9 @@ void parametric_list_based::Initialize()
 
 void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
                                                           CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
-                                                          double scheduling_mux_margins, bool unbounded, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding,
-                                                          const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
-                                                          bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond)
+                                                          double scheduling_mux_margins, bool unbounded, bool unbounded_Functions, bool nonDirectLoadStore, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
+                                                          const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond,
+                                                          bool& cannotBeChained2, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and current_ASAP.find(current_vertex)->second > current_cycle;
    if(predecessorsCond)
@@ -409,12 +409,18 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    {
       return;
    }
-   nonDirectMemCond = (GET_TYPE(flow_graph, current_vertex) & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && unbounded;
+   nonDirectMemCond = (GET_TYPE(flow_graph, current_vertex) & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && unbounded_Functions;
    if(nonDirectMemCond)
    {
       return;
    }
+   unboundedFunctionsCond = (GET_TYPE(flow_graph, current_vertex) & TYPE_EXTERNAL) && nonDirectLoadStore;
+   if(unboundedFunctionsCond)
+   {
+      return;
+   }
 }
+
 const double parametric_list_based::EPSILON = 0.000000001;
 
 #define CTRL_STEP_MULTIPLIER 1000
@@ -596,13 +602,13 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    CustomUnorderedSet<vertex> RW_stmts;
    if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end())
    {
-      for(auto bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
+      for(const auto& bb2arg2stmtsR : HLSMgr->design_interface_loads.find(fname)->second)
       {
-         for(auto arg2stms : bb2arg2stmtsR.second)
+         for(const auto& arg2stms : bb2arg2stmtsR.second)
          {
             if(arg2stms.second.size() > 0)
             {
-               for(auto stmt : arg2stms.second)
+               for(const auto& stmt : arg2stms.second)
                {
                   THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition: STMT=" + STR(stmt));
                   RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
@@ -613,13 +619,13 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    }
    if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end())
    {
-      for(auto bb2arg2stmtsW : HLSMgr->design_interface_stores.find(fname)->second)
+      for(const auto& bb2arg2stmtsW : HLSMgr->design_interface_stores.find(fname)->second)
       {
-         for(auto arg2stms : bb2arg2stmtsW.second)
+         for(const auto& arg2stms : bb2arg2stmtsW.second)
          {
             if(arg2stms.second.size() > 0)
             {
-               for(auto stmt : arg2stms.second)
+               for(const auto& stmt : arg2stms.second)
                {
                   THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
                   RW_stmts.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
@@ -634,8 +640,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
       bool unbounded = false;
+      bool unbounded_Functions = false;
       bool unbounded_RW = false;
-      bool store_unbounded_check = false;
+      bool nonDirectLoadStore = false;
       unsigned int n_scheduled_ops = 0;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + std::to_string(schedule->num_scheduled()));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + std::to_string(already_sch));
@@ -838,7 +845,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "            Scheduling of Control Vertex " + GET_NAME(flow_graph, current_vertex) + " postponed to the next cycle to register the output");
                   continue;
                }
-               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded || unbounded_RW || is_live || store_unbounded_check))
+               if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end() && (unbounded_RW || is_live))
                {
                   if(black_list.find(fu_type) == black_list.end())
                   {
@@ -874,11 +881,11 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
 
-               bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond;
+               bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond;
 
                CheckSchedulabilityConditions(current_vertex, current_cycle, current_starting_time, current_ending_time, current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time, setup_hold_time, phi_extra_time,
-                                             scheduling_mux_margins, unbounded, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond,
-                                             cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond);
+                                             scheduling_mux_margins, unbounded, unbounded_Functions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0,
+                                             chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1008,7 +1015,17 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                }
                else if(nonDirectMemCond)
                {
-                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Non-direct memory access operations may conflict with unbounded operations");
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Non-direct memory access operations may conflict with unbounded function calls");
+                  if(black_list.find(fu_type) == black_list.end())
+                  {
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  }
+                  black_list.at(fu_type).insert(current_vertex);
+                  continue;
+               }
+               else if(unboundedFunctionsCond)
+               {
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Unbounded function calls may conflict with non-direct memory access operations ");
                   if(black_list.find(fu_type) == black_list.end())
                   {
                      black_list.emplace(fu_type, OpVertexSet(flow_graph));
@@ -1029,98 +1046,62 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                if(RW_stmts.find(current_vertex) != RW_stmts.end())
                {
                   auto bb_index = flow_graph->CGetOpNodeInfo(current_vertex)->bb_index;
+                  auto proc_LoadsStores = [&](const std::list<unsigned>& par2stmts) {
+                     CustomOrderedSet<vertex> OpCluster;
+                     for(const auto& stmt : par2stmts)
+                     {
+                        THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
+                        OpCluster.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
+                     }
+                     if(OpCluster.find(current_vertex) != OpCluster.end())
+                     {
+                        unsigned numReadyOrScheduled = 0;
+                        for(const auto& op : OpCluster)
+                        {
+                           if(op == current_vertex)
+                           {
+                              ++numReadyOrScheduled;
+                           }
+                           else if(schedule->is_scheduled(op))
+                           {
+                              ++numReadyOrScheduled;
+                           }
+                           else if(std::find(queue.begin(), queue.end(), op) != queue.end())
+                           {
+                              bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
+                              double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
+                              CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
+                              CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
+                                                            setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, unbounded_Functions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
+                                                            predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local,
+                                                            nonDirectMemCondLocal, unboundedFunctionsCond);
+                              if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
+                                 !nonDirectMemCondLocal && !unboundedFunctionsCond)
+                              {
+                                 ++numReadyOrScheduled;
+                              }
+                           }
+                        }
+                        // std::cerr << "Rfu_type=" << fu_type << "numReady=" << numReadyOrScheduled << "vs ops=" << HLS->allocation_information->get_number_fu(fu_type) << "\n";
+                        if(numReadyOrScheduled % HLS->allocation_information->get_number_fu(fu_type) && OpCluster.size() != numReadyOrScheduled)
+                        {
+                           restarted = true;
+                        }
+                        return;
+                     }
+                  };
                   if(HLSMgr->design_interface_loads.find(fname) != HLSMgr->design_interface_loads.end() && HLSMgr->design_interface_loads.find(fname)->second.find(bb_index) != HLSMgr->design_interface_loads.find(fname)->second.end())
                   {
-                     for(auto par2stmts : HLSMgr->design_interface_loads.find(fname)->second.find(bb_index)->second)
+                     for(const auto& par2stmts : HLSMgr->design_interface_loads.find(fname)->second.find(bb_index)->second)
                      {
-                        CustomOrderedSet<vertex> OpCluster;
-                        for(auto stmt : par2stmts.second)
-                        {
-                           THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
-                           OpCluster.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
-                        }
-                        if(OpCluster.find(current_vertex) != OpCluster.end())
-                        {
-                           unsigned numReadyOrScheduled = 0;
-                           for(auto op : OpCluster)
-                           {
-                              if(op == current_vertex)
-                              {
-                                 ++numReadyOrScheduled;
-                              }
-                              else if(schedule->is_scheduled(op))
-                              {
-                                 ++numReadyOrScheduled;
-                              }
-                              else if(std::find(queue.begin(), queue.end(), op) != queue.end())
-                              {
-                                 bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
-                                 double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
-                                 CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
-                                 CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
-                                                               setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCondLocal, pipeliningCondLocal,
-                                                               cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal);
-                                 if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
-                                    !nonDirectMemCondLocal)
-                                 {
-                                    ++numReadyOrScheduled;
-                                 }
-                              }
-                           }
-                           // std::cerr << "Rfu_type=" << fu_type << "numReady=" << numReadyOrScheduled << "vs ops=" << HLS->allocation_information->get_number_fu(fu_type) << "\n";
-                           if(numReadyOrScheduled % HLS->allocation_information->get_number_fu(fu_type) && OpCluster.size() != numReadyOrScheduled)
-                           {
-                              restarted = true;
-                           }
-                           break;
-                        }
+                        proc_LoadsStores(par2stmts.second);
                      }
                   }
                   if(HLSMgr->design_interface_stores.find(fname) != HLSMgr->design_interface_stores.end() && HLSMgr->design_interface_stores.find(fname)->second.find(bb_index) != HLSMgr->design_interface_stores.find(fname)->second.end())
                   {
-                     for(auto par2stmts : HLSMgr->design_interface_stores.find(fname)->second.find(bb_index)->second)
+                     for(const auto& par2stmts : HLSMgr->design_interface_stores.find(fname)->second.find(bb_index)->second)
                      {
-                        CustomOrderedSet<vertex> OpCluster;
-                        for(auto stmt : par2stmts.second)
-                        {
-                           THROW_ASSERT(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt) != flow_graph->CGetOpGraphInfo()->tree_node_to_operation.end(), "unexpected condition");
-                           OpCluster.insert(flow_graph->CGetOpGraphInfo()->tree_node_to_operation.find(stmt)->second);
-                        }
-                        if(OpCluster.find(current_vertex) != OpCluster.end())
-                        {
-                           unsigned numReadyOrScheduled = 0;
-                           for(auto op : OpCluster)
-                           {
-                              if(op == current_vertex)
-                              {
-                                 ++numReadyOrScheduled;
-                              }
-                              else if(schedule->is_scheduled(op))
-                              {
-                                 ++numReadyOrScheduled;
-                              }
-                              else if(std::find(queue.begin(), queue.end(), op) != queue.end())
-                              {
-                                 bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
-                                 double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
-                                 CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
-                                 CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
-                                                               setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCondLocal, pipeliningCondLocal,
-                                                               cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal);
-                                 if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
-                                    !nonDirectMemCondLocal)
-                                 {
-                                    ++numReadyOrScheduled;
-                                 }
-                              }
-                           }
-                           // std::cerr << "Wfu_type=" << fu_type << "numReady=" << numReadyOrScheduled << "vs ops=" << HLS->allocation_information->get_number_fu(fu_type) << "\n";
-                           if(numReadyOrScheduled % HLS->allocation_information->get_number_fu(fu_type) && OpCluster.size() != numReadyOrScheduled)
-                           {
-                              restarted = true;
-                           }
-                           break;
-                        }
+                        proc_LoadsStores(par2stmts.second);
                      }
                   }
                }
@@ -1145,7 +1126,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end())
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  " + GET_NAME(flow_graph, current_vertex) + " is unbounded");
-                  THROW_ASSERT(!(unbounded || is_live || store_unbounded_check), "unexpected case");
+                  THROW_ASSERT(!(is_live), "unexpected case");
                   double ex_time = HLS->allocation_information->get_execution_time(fu_type, current_vertex, flow_graph);
                   if(ex_time > clock_cycle)
                   {
@@ -1153,6 +1134,14 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                                    " of type " + flow_graph->CGetOpNodeInfo(current_vertex)->GetOperation() + "\nThis may prevent meeting the timing constraints.\n");
                   }
                   unbounded = true;
+                  if((GET_TYPE(flow_graph, current_vertex) & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type))
+                  {
+                     nonDirectLoadStore = true;
+                  }
+                  else if((GET_TYPE(flow_graph, current_vertex) & TYPE_EXTERNAL))
+                  {
+                     unbounded_Functions = true;
+                  }
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) != RW_stmts.end())
                {
@@ -1180,10 +1169,6 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                         cstep_vuses_others = 1 + ((parameters->getOption<std::string>(OPT_memory_controller_type) != "D00" && parameters->getOption<std::string>(OPT_memory_controller_type) != "D10") ? 1 : 0);
                      }
                   }
-               }
-               if((GET_TYPE(flow_graph, current_vertex) & (TYPE_LOAD | TYPE_STORE)) and not HLS->allocation_information->is_direct_access_memory_unit(fu_type))
-               {
-                  store_unbounded_check = true; /// even if it is bounded we would like to prevent non-direct memory accesses running together with unbounded operations
                }
                // if(GET_TYPE(flow_graph, current_vertex)&TYPE_EXTERNAL && !HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type))
                //   seen_cstep_has_RET_conflict=cstep_has_RET_conflict = true;
