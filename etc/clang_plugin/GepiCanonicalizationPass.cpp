@@ -1430,11 +1430,14 @@ bool code_simplification(llvm::Function& function, llvm::LoopInfo& LI, llvm::Sca
 
                   if(loop)
                   {
-                     // auto i_it = non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
+                     if(non_const_idxs_per_loop.find(loop) == non_const_idxs_per_loop.end())
+                        non_const_idxs_per_loop.insert(std::make_pair(loop, 0));
                      non_const_idxs_per_loop.at(loop) += 1;
 
                      if(llvm::CallInst* call_inst = llvm::dyn_cast<llvm::CallInst>(user_inst))
                      {
+                        if(non_const_idxs_per_call.find(call_inst) == non_const_idxs_per_call.end())
+                           non_const_idxs_per_call.insert(std::make_pair(call_inst, 0));
                         non_const_idxs_per_call[call_inst] += 1;
                      }
                   }
