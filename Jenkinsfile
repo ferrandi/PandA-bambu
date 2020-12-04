@@ -33,7 +33,7 @@ pipeline {
       }
       steps {
         withEnv(['PATH+EXTRACCACHE=/usr/lib/ccache']) {
-          sh 'make -f Makefile.init J=20 && mkdir -p build && cd build  && ../configure --prefix=$WORKSPACE/panda-bin --enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-lattice --enable-glpk --enable-release --enable-opt --with-mentor-license=2003@lmw-2d.polimi.it  && nice -n 17 make -j20  install  '
+          sh 'make -f Makefile.init J=20 && mkdir -p build && cd build  && ../configure --prefix=$WORKSPACE/panda-bin --enable-flopoco --enable-xilinx --enable-modelsim --enable-icarus --enable-verilator --enable-altera --enable-lattice --enable-glpk --enable-release --enable-opt --with-mentor-license=2003@lmw-2d.polimi.it --with-clang10=/opt/llvm10/bin/clang --with-clang11=/opt/llvm11/bin/clang && nice -n 17 make -j20  install  '
         }
       }
     }
