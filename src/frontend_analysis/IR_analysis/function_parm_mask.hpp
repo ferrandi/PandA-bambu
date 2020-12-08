@@ -63,7 +63,7 @@ class function_parm_mask : public ApplicationFrontendFlowStep
 
    std::pair<funcMask, RangeRef> tagDecode(const attribute_sequence::attribute_list& attributes, Range::bw_t bw) const;
 
-   bool fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const;
+   bool fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm32, const function_parm_mask::funcMask& fm64) const;
 
    void instrumentViewConvert(function_decl* fd, long long significand_mask, const std::vector<tree_nodeRef>& maskedParms, bool maskReturn) const;
 

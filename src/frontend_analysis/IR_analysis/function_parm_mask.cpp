@@ -196,9 +196,11 @@ std::pair<function_parm_mask::funcMask, RangeRef> function_parm_mask::tagDecode(
    return {fm, range};
 }
 
-bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm) const
+bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm_mask::funcMask& fm32, const function_parm_mask::funcMask& fm64) const
 {
    const auto TM = AppM->get_tree_manager();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                  "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
 
    Range::bw_t typeBW = 0;
    // Gather valid function parameters to mask
@@ -240,9 +242,12 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
    // Abort if no real type value is present
    if(!typeBW)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---No valid parameter found on function");
       return false;
    }
    THROW_ASSERT(typeBW == 32 || typeBW == 64, "");
+
+   const auto& fm = typeBW == 32 ? fm32 : fm64;
 
    // Decode function mask
    refcount<RealRange> rr(new RealRange(RangeRef(new Range(Regular, typeBW))));
@@ -269,10 +274,9 @@ bool function_parm_mask::fullFunctionMask(function_decl* fd, const function_parm
    // Skip if function mask is useless
    if(rr->isFullSet())
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Mask useless on function " + rr->ToString());
       return false;
    }
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                  "Full mask for function " + tree_helper::print_type(TM, fd->index, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(fd->index)->CGetBehavioralHelper()))));
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Floating-point bounds set to " + rr->ToString() + " on the following: ");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -570,10 +574,20 @@ DesignFlowStep_Status function_parm_mask::Exec()
       }
    }
 
-   const auto maskAll = funcMasks.find("@");
-   if(maskAll != funcMasks.end())
+   if(funcMasks.count("@32") || funcMasks.count("@64"))
    {
-      const auto mask = maskAll->second;
+      struct funcMask mask32;
+      mask32.sign = bit_lattice::U;
+      mask32.exp_l = -127;
+      mask32.exp_u = 128;
+      mask32.m_bits = 23;
+      mask32 = funcMasks.count("@32") ? funcMasks.at("@32") : mask32;
+      struct funcMask mask64;
+      mask64.sign = bit_lattice::U;
+      mask64.exp_l = -1023;
+      mask64.exp_u = 1024;
+      mask64.m_bits = 52;
+      mask64 = funcMasks.count("@64") ? funcMasks.at("@64") : mask64;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Global full function mask required");
       for(const auto& nameFunc : nameToFunc)
       {
@@ -582,9 +596,10 @@ DesignFlowStep_Status function_parm_mask::Exec()
             continue;
          }
          THROW_ASSERT(nameFunc.second, "");
-         modified |= fullFunctionMask(nameFunc.second, mask);
+         modified |= fullFunctionMask(nameFunc.second, mask32, mask64);
       }
-      funcMasks.erase(maskAll);
+      funcMasks.erase("@32");
+      funcMasks.erase("@64");
    }
 
    for(const auto& fm : funcMasks)
@@ -594,7 +609,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
       {
          THROW_ERROR("Required function not found: " + fm.first);
       }
-      modified |= fullFunctionMask(f->second, fm.second);
+      modified |= fullFunctionMask(f->second, fm.second, fm.second);
    }
 
    executed = true;
