@@ -84,6 +84,8 @@
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
+unsigned int soft_float_cg_ext::unique_id = 0;
+
 soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters)), modified(false)
 {
@@ -256,13 +258,23 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                         fu_name = "__int" + bitsize_str_in + "_to_float" + bitsize_str_out + "if";
                      }
                      unsigned int called_function_id = TreeM->function_index(fu_name);
+                     THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
+                     THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                     auto cloned_fun = tree_man->CloneFunction(TreeM->GetTreeReindex(called_function_id), STR(unique_id++));
+                     called_function_id = GET_INDEX_NODE(cloned_fun);
+                     THROW_ASSERT(called_function_id, "Cloned function not correctly computed");
                      std::vector<tree_nodeRef> args;
                      args.push_back(ue->op);
                      modified = true;
                      TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
-                     THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-                     THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
-                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                     if(!AppM->GetCallGraphManager()->IsVertex(called_function_id))
+                     {
+                        BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_function_id, true, parameters));
+                        FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
+                        AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, current_statement->index, FB, FunctionEdgeInfo::CallType::direct_call);
+                     }
+                     else
+                        AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
                   }
                   break;
                }
@@ -365,11 +377,21 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   unsigned int called_function_id = TreeM->function_index(fu_name);
                   THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
                   THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                  auto cloned_fun = tree_man->CloneFunction(TreeM->GetTreeReindex(called_function_id), STR(unique_id++));
+                  called_function_id = GET_INDEX_NODE(cloned_fun);
+                  THROW_ASSERT(called_function_id, "Cloned function not correctly computed");
                   std::vector<tree_nodeRef> args;
                   args.push_back(ue->op);
                   modified = true;
                   TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
-                  AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+                  if(!AppM->GetCallGraphManager()->IsVertex(called_function_id))
+                  {
+                     BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_function_id, true, parameters));
+                     FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
+                     AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, current_statement->index, FB, FunctionEdgeInfo::CallType::direct_call);
+                  }
+                  else
+                     AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
                   break;
                }
                case binfo_K:
@@ -645,12 +667,22 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                unsigned int called_function_id = TreeM->function_index(fu_name);
                THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
                THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+               auto cloned_fun = tree_man->CloneFunction(TreeM->GetTreeReindex(called_function_id), STR(unique_id++));
+               called_function_id = GET_INDEX_NODE(cloned_fun);
+               THROW_ASSERT(called_function_id, "Cloned function not correctly computed");
                std::vector<tree_nodeRef> args;
                args.push_back(be->op0);
                args.push_back(be->op1);
                modified = true;
                TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
-               AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+               if(!AppM->GetCallGraphManager()->IsVertex(called_function_id))
+               {
+                  BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_function_id, true, parameters));
+                  FunctionBehaviorRef FB = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
+                  AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, current_statement->index, FB, FunctionEdgeInfo::CallType::direct_call);
+               }
+               else
+                  AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
             }
          }
          break;

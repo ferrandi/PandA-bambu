@@ -91,7 +91,8 @@
       break;                                           \
    }
 
-unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn)
+
+unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, bool dup_function_decl)
 {
    unsigned int node_id = 0;
    switch(tn->get_kind())
@@ -217,7 +218,10 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn)
       case floor_mod_expr_K:
          CREATE_TREE_NODE_CASE_BODY(floor_mod_expr, node_id)
       case function_decl_K:
-         RET_NODE_ID_CASE_BODY(function_decl, node_id)
+         if(dup_function_decl)
+            CREATE_TREE_NODE_CASE_BODY(function_decl, node_id)
+         else
+            RET_NODE_ID_CASE_BODY(function_decl, node_id)
       case function_type_K:
          RET_NODE_ID_CASE_BODY(function_type, node_id)
       case ge_expr_K:

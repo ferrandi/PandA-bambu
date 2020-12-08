@@ -65,6 +65,7 @@
 #include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
+#include "tree_node_dup.hpp"
 #include "tree_reindex.hpp"
 #include <iostream>
 #if !HAVE_HEXFLOAT
@@ -2558,4 +2559,31 @@ tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned int numbe
       this->TreeM->create_tree_node(vector_type_id, vector_type_K, IR_schema);
    }
    return TreeM->GetTreeReindex(vector_type_id);
+}
+
+tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std::string& funNameSuffix)
+{
+   THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Type node is not a tree reindex");
+   THROW_ASSERT(GET_NODE(tn)->get_kind() == function_decl_K, "Type node is not a function_decl");
+   auto funDecl = GetPointer<function_decl>(GET_NODE(tn));
+   THROW_ASSERT(GET_NODE(funDecl->name)->get_kind() == identifier_node_K, "operator based function not supported ");
+   auto function_name = tree_helper::print_function_name(TreeM, funDecl);
+   auto function_decl_id = TreeM->function_index(function_name+funNameSuffix);
+   if(function_decl_id)
+   {
+      return TreeM->GetTreeReindex(function_decl_id);
+   }
+   auto funID_name = create_identifier_node(function_name+funNameSuffix);
+   CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
+   tree_node_dup tnd(remapping, TreeM);
+   remapping[GET_INDEX_NODE(funDecl->name)] = GET_INDEX_NODE(funID_name);
+   if(funDecl->mngl)
+   {
+      std::string function_name_mngl;
+      tree_helper::get_mangled_fname(funDecl, function_name_mngl);
+      auto funID_name_mngl = create_identifier_node(function_name_mngl+funNameSuffix);
+      remapping[GET_INDEX_NODE(funDecl->mngl)] = GET_INDEX_NODE(funID_name_mngl);
+   }
+   const unsigned int new_functionDecl = tnd.create_tree_node(GET_NODE(tn), true);
+   return TreeM->GetTreeReindex(new_functionDecl);
 }

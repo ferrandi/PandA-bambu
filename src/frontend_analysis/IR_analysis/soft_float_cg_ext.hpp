@@ -72,6 +72,8 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    /// when true IR has been modified
    bool modified;
 
+   static unsigned int unique_id;
+
    /**
     * Recursive examine tree node
     * @param current_statement is the current analyzed statement

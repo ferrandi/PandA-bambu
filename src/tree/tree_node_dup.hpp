@@ -74,7 +74,7 @@ struct tree_node_dup : public tree_node_mask
     * @param tn is the source tree node
     * @return the node_id of the created object or of tn.
     */
-   unsigned int create_tree_node(const tree_nodeRef& tn);
+   unsigned int create_tree_node(const tree_nodeRef& tn, bool dup_function_decl=false);
 
  private:
    /// remap old indexes in new indexes
