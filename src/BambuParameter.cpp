@@ -810,7 +810,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (U)\n"
       << "           min_exp   - Minimum floating-point exponent value (not considering subnormals)\n"
       << "           max_exp   - Maximum floating-point exponent value (using smaller values will remove Inf/NaN representation)\n"
-      << "           frac_bits - Number of floating-point fractional bits\n"
+      << "           frac_bits - Number of floating-point fractional bits\n\n"
       << "    --hls-div=<method>\n"
       << "        Perform the high-level synthesis of integer division and modulo\n"
       << "        operations starting from a C library based implementation or a HDL component:\n"
