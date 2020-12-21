@@ -42,10 +42,9 @@
 #include "string_manipulation.hpp"
 
 #include "exceptions.hpp"
-#include <cxxabi.h>
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
-
+#include <cxxabi.h>
 
 void add_escape(std::string& ioString, const std::string& to_be_escaped)
 {
