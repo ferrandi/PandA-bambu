@@ -154,6 +154,8 @@ std::string HLS_manager::get_constant_string(unsigned int node, unsigned int pre
       std::string C_value = rc->valr;
       if(C_value == "Inf")
          C_value = rc->valx;
+      if(C_value == "Nan" && rc->valx[0] == '-')
+         C_value = "-__Nan";
       trimmed_value = convert_fp_to_string(C_value, precision);
    }
    else if(tree_helper::is_a_vector(TM, tree_helper::get_type_index(TM, node)))
