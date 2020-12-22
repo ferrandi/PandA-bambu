@@ -970,7 +970,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
             {
                GetPointer<ssa_name>(GET_NODE(new_node))->SetDefStmt(stmt);
             }
-            if(gp and gp->res->index == old_node->index)
+            if(gp and gp->res->index == old_node->index && !GetPointer<cst_node>(GET_CONST_NODE(new_node)))
             {
                THROW_ASSERT(GET_CONST_NODE(new_node)->get_kind() == ssa_name_K, GET_CONST_NODE(new_node)->get_kind_text());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, function_debug_level, "---Setting " + STR(stmt) + " as new define statement of " + STR(new_node));
