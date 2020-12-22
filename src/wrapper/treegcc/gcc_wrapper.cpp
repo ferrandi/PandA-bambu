@@ -1334,10 +1334,7 @@ void GccWrapper::SetBambuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
    const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
-#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || HAVE_I386_CLANG4_COMPILER || \
-    HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
-#endif
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
@@ -1452,8 +1449,6 @@ void GccWrapper::SetBambuDefault()
    optimization_flags["tree-copy-prop"] = true; /// FIXME: this has been always active with gcc >= 4.6; produced c code in bambu for example gcc_regression_simple/20040307-1.c when disabled
    optimization_flags["ipa-pta"] = true;
 
-#if HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || HAVE_I386_CLANG4_COMPILER || \
-    HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
    /// NOTE: the false here is used to be sure that the first operand of the first or always exists
    if(false
 #if HAVE_I386_GCC46_COMPILER
@@ -1487,7 +1482,41 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["tree-loop-distribute-patterns"] = false;
       optimization_flags["partial-inlining"] = false; /// artificial functions are not analyzed by the plugin
    }
+   /// NOTE: the false here is used to be sure that the first operand of the first or always exists
+   if(false
+#if HAVE_I386_GCC45_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC45
 #endif
+#if HAVE_I386_GCC46_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC46
+#endif
+#if HAVE_I386_GCC47_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC47
+#endif
+#if HAVE_I386_GCC48_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+#endif
+#if HAVE_I386_GCC49_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+#endif
+#if HAVE_I386_GCC5_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+#endif
+#if HAVE_I386_GCC6_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+#endif
+#if HAVE_I386_GCC7_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+#endif
+#if HAVE_I386_GCC8_COMPILER
+      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC8
+#endif
+   )
+   {
+      if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         optimization_flags["tree-vectorize"] = false;
+   }
+
    if(false
 #if HAVE_I386_GCC5_COMPILER
       || compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
