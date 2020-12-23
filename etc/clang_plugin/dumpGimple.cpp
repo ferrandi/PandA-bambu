@@ -3821,7 +3821,10 @@ namespace llvm
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "valr: %-7s ", "\"Nan\"");
          stream << buffer;
-         snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"Nan\"");
+         if(d.isNegative())
+            snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"-Nan\"");
+         else
+            snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"Nan\"");
          stream << buffer;
       }
       else
