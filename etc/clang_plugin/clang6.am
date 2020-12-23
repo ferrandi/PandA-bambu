@@ -5,7 +5,7 @@ CLANG6_LIBSD=$(CLANG_LIBS) -lclangCrossTU
 CLANG6_SYSTEM_H=$(shell $(I386_CLANG_CPP6_EXE) -v  < /dev/null 2>&1 | grep -E -v "(\#|Configured with|Using built-in|Target|Thread model|gcc version|End of search list|ignoring nonexistent directory|cc1 -E -quiet|cc1.exe -E -quiet|COMPILER_PATH|LIBRARY_PATH|COLLECT_GCC|ignoring duplicate directory|ignoring nonexistent directory|InstalledDir|clang version|Found candidate|Selected GCC installation|Candidate multilib|Selected multilib|-cc1)" | tr '\n' ' ' | tr '\r' ' '  | sed 's/\\/\//g')
 
 if BUILD_I386_CLANG6_EMPTY_PLUGIN
-all: $(I386_CLANG6_EMPTY_PLUGIN) bambuS2S-6
+all: $(I386_CLANG6_EMPTY_PLUGIN)
 endif
 
 if BUILD_I386_CLANG6_SSA_PLUGIN

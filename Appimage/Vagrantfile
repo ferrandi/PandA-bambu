@@ -6,15 +6,17 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder '.', '/vagrant', disabled: true
   config.vm.provider "virtualbox" do |vb|
      vb.memory = "4096"
-     vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
      vb.customize [ 'modifyvm', :id, '--vram', '64']
+     vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+     vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+     vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
      vb.name = "PandA-bambu-VM_64bit-Debian9-AppImage"
   end
   config.vm.provision "shell", inline: <<-SHELL
      apt-get update -y
      DEBIAN_FRONTEND=noninteractive apt-get -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold" upgrade
-     apt-get install -y linux-headers-$(uname -r) build-essential dkms
-     apt-get install -y autoconf autoconf-archive libtool make gcc g++ gcc-multilib libcloog-ppl1 libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison flex verilator pkg-config libsuitesparse-dev libglpk-dev
+     apt-get install -y linux-headers-$(uname -r) build-essential dkms libtinfo5
+     apt-get install -y autoconf autoconf-archive automake libtool make gcc g++ gcc-multilib libcloog-ppl1 libbdd-dev libboost-all-dev libmpc-dev libmpfr-dev libxml2-dev liblzma-dev libmpfi-dev zlib1g-dev libicu-dev bison flex verilator pkg-config libsuitesparse-dev libglpk-dev
      apt-get install -y git
      apt-get autoremove -y
      wget https://releases.llvm.org/6.0.0/clang+llvm-6.0.0-x86_64-linux-gnu-debian8.tar.xz
@@ -23,17 +25,18 @@ Vagrant.configure(2) do |config|
      chmod +x appimagetool-x86_64.AppImage
      wget https://github.com/AppImage/AppImageKit/releases/download/12/AppRun-x86_64 
      chmod +x AppRun-x86_64
-     wget https://github.com/niess/python-appimage/releases/download/python3.8/python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
-     chmod +x python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
-     ./python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage --appimage-extract
-     mv squashfs-root python3.8
-     rm -f python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
-     cd python3.8
-     tar cvJf ../python3.8.tar.xz *
+     wget https://github.com/niess/python-appimage/releases/download/python3.9/python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage
+     chmod +x python3.9.2-cp39-cp39-manylinux1_x86_64.AppImage
+     ./python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage --appimage-extract
+     mv squashfs-root python3.9
+     rm -f python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage
+     cd python3.9
+     tar cvJf ../python3.9.tar.xz *
      cd ..
-     rm -rf python3.8
+     rm -rf python3.9
      git clone https://github.com/ferrandi/PandA-bambu.git
-     cd PandA-bambu     
+     cd PandA-bambu
+     git checkout panda-0.9.7-dev
      make -f Makefile.init
      mkdir build
      cd build 
@@ -42,17 +45,20 @@ Vagrant.configure(2) do |config|
      make install-strip DESTDIR=/home/vagrant/PandA-bambu/build/dist
      cd /home/vagrant/PandA-bambu/build/dist
      rm -f usr/bin/eucalyptus  usr/bin/spider  usr/bin/tree-panda-gcc
+     tar xvf ../../../python3.9.tar.xz
+     rm python3.9.1.desktop  python.png
      tar xvf ../../../clang+llvm-6.0.0-x86_64-linux-gnu-debian8.tar.xz
-     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-check clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/bugpoint clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-tidy
-     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-import-test clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/c-index-test clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-query
-     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clangd clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-refactor clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-change-namespace
-     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/find-all-symbols clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-include-fixer clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-reorder-fields
-     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-rename clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/modularize clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-func-mapping
-     rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/clang-offload-bundler clang+llvm-6.0.0-x86_64-linux-gnu-debian8/bin/sancov
+     rm -f `find . -name clang-tidy`
+     rm -f `find .  -name clang-query`
+     rm -f `find .  -name clang-change-namespace`
+     rm -f `find .  -name clang-reorder-fields`
+     rm -f `find .  -name clang-func-mapping`
+     rm -f `find .  -name sancov`
      rm -f clang+llvm-6.0.0-x86_64-linux-gnu-debian8/lib/*.a
      mkdir lib
      mkdir lib/x86_64-linux-gnu/
-     cp /lib/x86_64-linux-gnu/libtinfo.so.5 lib/x86_64-linux-gnu/libtinfo.so.5
+     cp /lib/x86_64-linux-gnu/libtinfo.so.5.* lib/x86_64-linux-gnu/
+     ln -s /lib/x86_64-linux-gnu/libtinfo.so.5.* lib/x86_64-linux-gnu/libtinfo.so.5
      cp /usr/lib/libbdd.so.0.0.0 usr/lib/libbdd.so.0.0.0
      cd usr/lib/
      ln -s libbdd.so.0.0.0 libbdd.so.0
@@ -81,7 +87,7 @@ Vagrant.configure(2) do |config|
      echo "   exit 0" >> usr/bin/bambu_wrapper.sh
      echo "fi" >> usr/bin/bambu_wrapper.sh
      chmod +x usr/bin/bambu_wrapper.sh
-     tar xvf ../../python3.8.tar.xz
+     tar xvf ../../../python3.9.tar.xz
      cd ..
      ../../appimagetool-x86_64.AppImage dist
      dd if=/dev/zero of=/EMPTY bs=1M
