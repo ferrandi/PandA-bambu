@@ -2001,8 +2001,6 @@ src/frontend_analysis/IR_analysis/extract_patterns.cpp
 src/frontend_analysis/IR_analysis/extract_patterns.hpp
 src/frontend_analysis/IR_analysis/fanout_opt.cpp
 src/frontend_analysis/IR_analysis/fanout_opt.hpp
-src/frontend_analysis/IR_analysis/function_parm_mask.cpp
-src/frontend_analysis/IR_analysis/function_parm_mask.hpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.cpp
 src/frontend_analysis/IR_analysis/hdl_function_decl_fix.hpp
 src/frontend_analysis/IR_analysis/hdl_var_decl_fix.cpp

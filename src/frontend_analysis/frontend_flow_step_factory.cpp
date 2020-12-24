@@ -152,7 +152,6 @@
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
 #include "fanout_opt.hpp"
-#include "function_parm_mask.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "FunctionPointerCallGraphComputation.hpp"
@@ -583,7 +582,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
-      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -672,10 +670,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case FIND_MAX_CFG_TRANSFORMATIONS:
       {
          return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
-      }
-      case FUNCTION_PARM_MASK:
-      {
-         return DesignFlowStepRef(new function_parm_mask(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
       case(FUNCTION_ANALYSIS):
@@ -1550,7 +1544,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
-      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT

@@ -187,7 +187,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
 #if HAVE_BAMBU_BUILT
    EXTRACT_PATTERNS,
    FIX_STRUCTS_PASSED_BY_VALUE,
-   FUNCTION_PARM_MASK,
    FUNCTION_CALL_TYPE_CLEANUP,
    FANOUT_OPT,
 #endif
