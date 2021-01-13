@@ -143,9 +143,14 @@ inline std::string NumberToBinaryString(const numeric_type number, const size_t 
 }
 
 /**
- * convert a real number stored in a string into a string o bits with a given precision
+ * convert a real number stored in a string into a string of bits with a given precision
  */
 std::string convert_fp_to_string(std::string num, unsigned int precision);
+
+/**
+ * convert a real number stored in a string into bits with a given precision
+ */
+unsigned long long convert_fp_to_bits(std::string num, unsigned int precision);
 
 /**
  * Macro returning the actual type of an object

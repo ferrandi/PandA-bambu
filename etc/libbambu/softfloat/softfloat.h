@@ -64,30 +64,34 @@ typedef struct
 /**
  * View convert expr data structures
  */
-typedef float __Tfloat32;
-typedef double __Tfloat64;
+typedef unsigned int __Tfloat32;
+typedef unsigned long long __Tfloat64;
 #ifdef FLOATX80
 typedef long double __Tfloatx80;
 #endif
 #ifdef FLOAT128
 typedef __float128 __Tfloat128;
 #endif
-typedef union {
+typedef union
+{
    __float32 b;
    __Tfloat32 f;
 } __convert32;
-typedef union {
+typedef union
+{
    __float64 b;
    __Tfloat64 f;
 } __convert64;
 #ifdef FLOATX80
-typedef union {
+typedef union
+{
    __floatx80 b;
    __Tfloatx80 f;
 } __convertx80;
 #endif
 #ifdef FLOAT128
-typedef union {
+typedef union
+{
    __float128 b;
    __Tfloat128 f;
 } __convert128;
@@ -107,16 +111,16 @@ typedef union {
       return res_c.f;                                               \
    }
 
-#define SF_ADAPTER1_ternary(fun_name, prec)                                 \
+#define SF_ADAPTER1_ternary(fun_name, prec)                                           \
    __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b, __Tfloat##prec c); \
    __Tfloat##prec fun_name##if(__Tfloat##prec a, __Tfloat##prec b, __Tfloat##prec c)  \
-   {                                                                \
-      __convert##prec a_c, b_c, c_c, res_c;                         \
-      a_c.f = a;                                                    \
-      b_c.f = b;                                                    \
-      c_c.f = c;                                                    \
-      res_c.b = fun_name(a_c.b, b_c.b, c_c.b);                      \
-      return res_c.f;                                               \
+   {                                                                                  \
+      __convert##prec a_c, b_c, c_c, res_c;                                           \
+      a_c.f = a;                                                                      \
+      b_c.f = b;                                                                      \
+      c_c.f = c;                                                                      \
+      res_c.b = fun_name(a_c.b, b_c.b, c_c.b);                                        \
+      return res_c.f;                                                                 \
    }
 
 #define SF_ADAPTER1_unary(fun_name, prec)         \

@@ -66,11 +66,11 @@ REF_FORWARD_DECL(tree_manipulation);
 REF_FORWARD_DECL(tree_node);
 //@}
 
-class FloatFormat
+struct FloatFormat
 {
  public:
-   uint8_t frac_bits;
    uint8_t exp_bits;
+   uint8_t frac_bits;
    int32_t exp_bias;
    bool has_rounding;
    bool has_nan;
@@ -78,8 +78,8 @@ class FloatFormat
    bool has_subnorm;
    bit_lattice sign;
 
-   FloatFormat(uint8_t frac_bits, uint8_t exp_bits, int32_t exp_bias, bool round = true, bool has_nan = true, bool has_one = true, bool has_subnorm = false, bit_lattice sign = bit_lattice::U)
-       : frac_bits(frac_bits), exp_bits(exp_bits), exp_bias(exp_bias), has_rounding(round), has_nan(has_nan), has_one(has_one), has_subnorm(has_subnorm), sign(sign)
+   FloatFormat(uint8_t _exp_bits, uint8_t _frac_bits, int32_t _exp_bias, bool _has_rounding = true, bool _has_nan = true, bool _has_one = true, bool _has_subnorm = false, bit_lattice _sign = bit_lattice::U)
+       : exp_bits(_exp_bits), frac_bits(_frac_bits), exp_bias(_exp_bias), has_rounding(_has_rounding), has_nan(_has_nan), has_one(_has_one), has_subnorm(_has_subnorm), sign(_sign)
    {
    }
 
@@ -95,7 +95,7 @@ class FloatFormat
 
    std::string mngl() const
    {
-      return "e" + STR(exp_bits) + "m" + STR(frac_bits) + "b" + ((exp_bias < 0) ? ("_" + STR(-exp_bias)) : STR(exp_bias)) + (has_rounding ? "r" : "") + (has_nan ? "n" : "") + (has_one ? "h" : "") + (has_subnorm ? "s" : "") +
+      return "e" + STR(+exp_bits) + "m" + STR(+frac_bits) + "b" + ((exp_bias < 0) ? ("_" + STR(-exp_bias)) : STR(exp_bias)) + (has_rounding ? "r" : "") + (has_nan ? "n" : "") + (has_one ? "h" : "") + (has_subnorm ? "s" : "") +
              (sign != bit_lattice::U ? bitstring_to_string({sign}) : "");
    }
 };
@@ -116,7 +116,7 @@ class FunctionVersion
    const CallGraph::vertex_descriptor function_vertex;
 
    // Float format required from the user
-   FloatFormat* const userRequired;
+   const refcount<FloatFormat> userRequired;
 
    // True if all function callers share this function float format
    bool internal;
@@ -127,16 +127,12 @@ class FunctionVersion
    {
    }
 
-   FunctionVersion(CallGraph::vertex_descriptor func_v, FloatFormat* userFormat = nullptr) : function_vertex(func_v), userRequired(userFormat), internal(true)
+   FunctionVersion(CallGraph::vertex_descriptor func_v, refcount<FloatFormat> userFormat = nullptr) : function_vertex(func_v), userRequired(userFormat), internal(true)
    {
    }
 
    ~FunctionVersion()
    {
-      if(userRequired)
-      {
-         delete userRequired;
-      }
    }
 
    bool std_format() const
@@ -162,6 +158,14 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    FunctionBehaviorConstRef FB;
    std::vector<tree_nodeRef> paramBinding;
    bool bindingCompleted;
+   tree_nodeRef int_type;
+   tree_nodeRef int_ptr_type;
+
+   // Real type variables to be aliased as integer type variables
+   CustomSet<ssa_name*> viewConvert;
+
+   // Real to integer view convert statements to be converted into nop statements
+   std::vector<tree_nodeRef> nopConvert;
 
    /// SSA variable which requires cast renaming from standard to user-defined float format in all but given statements
    CustomMap<ssa_name*, std::vector<unsigned int>> inputCastRename;
@@ -178,10 +182,17 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    /// when true IR has been modified
    bool modified;
 
-   FunctionVersion* _version;
+   refcount<FunctionVersion> _version;
 
-   static unsigned int unique_id;
-   static CustomMap<CallGraph::vertex_descriptor, FunctionVersion> funcFF;
+   static CustomMap<CallGraph::vertex_descriptor, refcount<FunctionVersion>> funcFF;
+
+   static tree_nodeRef float32_type;
+   static tree_nodeRef float32_ptr_type;
+   static tree_nodeRef float64_type;
+   static tree_nodeRef float64_ptr_type;
+
+   tree_nodeRef parm_int_type_for(const tree_nodeRef& type) const;
+   tree_nodeRef int_type_for(const tree_nodeRef& type) const;
 
    /**
     *
@@ -196,8 +207,45 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * Recursive examine tree node
     * @param current_statement is the current analyzed statement
     * @param current_tree_node is the current tree node
+    * @param castRename
     */
    void RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node, InterfaceType castRename);
+
+   /**
+    * Generate necessary statements to convert ssa variable from inFF to outFF and insert them after stmt in bb
+    * @param bb Generated operations will be inserted in this basic block
+    * @param stmt Generated statements will be inserted after this statement, if nullptr they will be inserted at the beginning of the BB
+    * @param ssa Real type ssa_name tree reindex to be converted from inFF to outFF
+    * @param inFF Input float format, if nullptr will be deduced as standard IEEE 754 type from ssa bitwidth
+    * @param outFF Output float format, if nullptr will be deduced as standard IEEE 754 type from ssa bitwidth
+    * @return tree_nodeRef New ssa_name tree reindex reference representing converted input ssa
+    */
+   tree_nodeRef inPlaceCastRename(blocRef bb, tree_nodeRef stmt, tree_nodeRef ssa, refcount<FloatFormat> inFF, refcount<FloatFormat> outFF) const;
+
+   /**
+    * Cast real type constant from inFF to outFF format
+    * @param in Real type constant bits represented as inFF
+    * @param inFF Input floating point format
+    * @param outFF Output floating point format
+    * @return tree_nodeRef Unsigned integer constant bits representation of input bits using outFF format
+    */
+   tree_nodeRef cstCast(uint64_t in, refcount<FloatFormat> inFF, refcount<FloatFormat> outFF) const;
+
+   /**
+    * Generate float negate operation based on given floating-point format
+    * @param op Negate operand
+    * @param ff Floating-point format
+    * @return tree_nodeRef Floating-point format related negate expression to replace negate_expr with
+    */
+   tree_nodeRef floatNegate(tree_nodeRef op, refcount<FloatFormat> ff) const;
+
+   /**
+    * Generate float absolute value operation based on given floating-point format
+    * @param op Negate operand
+    * @param ff Floating-point format
+    * @return tree_nodeRef Floating-point format related absolute value expression to replace abs_expr with
+    */
+   tree_nodeRef floatAbs(tree_nodeRef op, refcount<FloatFormat> ff) const;
 
    /**
     * Return the set of analyses in relationship with this design step

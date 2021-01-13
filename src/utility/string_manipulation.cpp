@@ -324,6 +324,53 @@ std::string convert_fp_to_string(std::string num, unsigned int precision)
    return res;
 }
 
+unsigned long long convert_fp_to_bits(std::string num, unsigned int precision)
+{
+   union
+   {
+      unsigned long long ll;
+      double d;
+      unsigned int i;
+      float f;
+   } u;
+   char* endptr = nullptr;
+
+   switch(precision)
+   {
+      case 32:
+      {
+         if(num == "__Inf")
+            u.f = 1.0f / 0.0f;
+         else if(num == "-__Inf")
+            u.f = -1.0f / 0.0f;
+         else if(num == "__Nan")
+            u.f = 0.0f / 0.0f;
+         else if(num == "-__Nan")
+            u.f = -(0.0f / 0.0f);
+         else
+            u.f = strtof(num.c_str(), &endptr);
+         return u.i;
+      }
+      case 64:
+      {
+         if(num == "__Inf")
+            u.d = 1.0 / 0.0;
+         else if(num == "-__Inf")
+            u.d = -1.0 / 0.0;
+         else if(num == "__Nan")
+            u.d = 0.0 / 0.0;
+         else if(num == "-__Nan")
+            u.d = -(0.0 / 0.0);
+         else
+            u.d = strtod(num.c_str(), &endptr);
+         return u.ll;
+      }
+      default:
+         throw std::string("not supported precision ") + STR(precision);
+   }
+   return 0;
+}
+
 unsigned int ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed)
 {
    is_fixed = false;

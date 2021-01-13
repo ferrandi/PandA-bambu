@@ -80,18 +80,34 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
+#include "var_pp_functor.hpp"
+
 /// Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-unsigned int soft_float_cg_ext::unique_id = 0;
-CustomMap<CallGraph::vertex_descriptor, FunctionVersion> soft_float_cg_ext::funcFF;
+CustomMap<CallGraph::vertex_descriptor, refcount<FunctionVersion>> soft_float_cg_ext::funcFF;
+tree_nodeRef soft_float_cg_ext::float32_type;
+tree_nodeRef soft_float_cg_ext::float32_ptr_type;
+tree_nodeRef soft_float_cg_ext::float64_type;
+tree_nodeRef soft_float_cg_ext::float64_ptr_type;
+
+static const refcount<FloatFormat> float32FF(new FloatFormat(8, 23, -127));
+static const refcount<FloatFormat> float64FF(new FloatFormat(11, 52, -1023));
 
 soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters), TreeM(_AppM->get_tree_manager()), tree_man(new tree_manipulation(TreeM, parameters)), modified(false)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+
+   if(not float32_type)
+   {
+      float32_type = tree_man->create_integer_type_with_prec(32, true);
+      float32_ptr_type = tree_man->create_pointer_type(float32_type, 32);
+      float64_type = tree_man->create_integer_type_with_prec(64, true);
+      float64_ptr_type = tree_man->create_pointer_type(float64_type, 64);
+   }
 
    if(funcFF.empty() && !parameters->getOption<std::string>(OPT_mask).empty())
    {
@@ -106,12 +122,12 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             THROW_ERROR("Malformed format request: " + opt);
          }
 
-         const auto function_id = TreeM->function_index(format[0]);
-         if(function_id == 0)
+         const auto f_id = TreeM->function_index(format[0]);
+         if(f_id == 0)
          {
             THROW_ERROR("Function " + format[0] + " does not exists.");
          }
-         const auto function_v = CGM->GetVertex(function_id);
+         const auto function_v = CGM->GetVertex(f_id);
          if(funcFF.count(function_v))
          {
             THROW_ERROR("Function " + format[0] + " already specialized.");
@@ -120,30 +136,30 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          const auto exp_bits = static_cast<uint8_t>(strtoul(format[1].data(), nullptr, 10));
          const auto frac_bits = static_cast<uint8_t>(strtoul(format[2].data(), nullptr, 10));
          const auto exp_bias = static_cast<int32_t>(strtol(format[3].data(), nullptr, 10));
-         const auto insertion = funcFF.insert({function_v, FunctionVersion(function_v, new FloatFormat(exp_bits, frac_bits, exp_bias))});
-         auto& funcVersion = insertion.first->second;
+         const auto userFF = refcount<FloatFormat>(new FloatFormat(exp_bits, frac_bits, exp_bias));
 
          if(format.size() > 4)
          {
-            funcVersion.userRequired->has_rounding = format[4] == "1";
+            userFF->has_rounding = format[4] == "1";
          }
          if(format.size() > 5)
          {
-            funcVersion.userRequired->has_nan = format[5] == "1";
+            userFF->has_nan = format[5] == "1";
          }
          if(format.size() > 6)
          {
-            funcVersion.userRequired->has_one = format[6] == "1";
+            userFF->has_one = format[6] == "1";
          }
          if(format.size() > 7)
          {
-            funcVersion.userRequired->has_subnorm = format[7] == "1";
+            userFF->has_subnorm = format[7] == "1";
          }
          if(format.size() > 8)
          {
-            funcVersion.userRequired->sign = format[8] == "U" ? bit_lattice::U : (format[8] == "1" ? bit_lattice::ONE : bit_lattice::ZERO);
+            userFF->sign = format[8] == "U" ? bit_lattice::U : (format[8] == "1" ? bit_lattice::ONE : bit_lattice::ZERO);
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function " + format[0] + " required specialized arithmetic: " + funcVersion.userRequired->mngl());
+         funcFF.insert({function_v, refcount<FunctionVersion>(new FunctionVersion(function_v, userFF))});
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function " + format[0] + " required specialized arithmetic: " + userFF->mngl());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
@@ -182,19 +198,23 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
    const auto function_v = AppM->CGetCallGraphManager()->GetVertex(function_id);
    if(static_cast<bool>(funcFF.count(function_v)))
    {
-      _version = &funcFF.at(function_v);
+      _version = funcFF.at(function_v);
    }
    else
    {
-      const auto insertion = funcFF.insert({function_v, FunctionVersion(function_v)});
+      _version = refcount<FunctionVersion>(new FunctionVersion(function_v));
+      const auto insertion = funcFF.insert({function_v, _version});
       THROW_ASSERT(insertion.second, "");
-      _version = &insertion.first->second;
    }
    const auto curr_tn = TreeM->GetTreeNode(function_id);
    fd = GetPointer<function_decl>(curr_tn);
    FB = AppM->CGetFunctionBehavior(function_id);
    paramBinding = std::vector<tree_nodeRef>(fd->list_of_args.size(), nullptr);
-   bindingCompleted = false;
+   bindingCompleted = paramBinding.size() == 0;
+   int_type = not _version->std_format() ?
+                  tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(_version->userRequired->sign == bit_lattice::U) + _version->userRequired->exp_bits + _version->userRequired->frac_bits), true) :
+                  nullptr;
+   int_ptr_type = int_type ? tree_man->create_pointer_type(int_type, GetPointer<integer_type>(GET_NODE(int_type))->algn) : nullptr;
 }
 
 soft_float_cg_ext::~soft_float_cg_ext() = default;
@@ -229,6 +249,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
+#ifndef NDEBUG
+   const auto fn_name = tree_helper::print_type(TreeM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(FB->CGetBehavioralHelper())));
+#endif
+   if(fd->builtin_flag)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built-in function " + fn_name + " does not require floating-point operations lowering");
+      return DesignFlowStep_Status::UNCHANGED;
+   }
+
    // Function using standard float formats are always internal
    if(not _version->std_format())
    {
@@ -239,7 +268,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          if(static_cast<bool>(funcFF.count(ie->m_source)))
          {
             const auto& funcV = funcFF.at(ie->m_source);
-            if(funcV.std_format() || *funcV.userRequired != *_version->userRequired)
+            if(funcV->std_format() || *(funcV->userRequired) != *(_version->userRequired))
             {
                // If a caller of current function uses a different float format, current function is not internal to the user specified float format
                _version->internal = false;
@@ -254,37 +283,213 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          }
       }
    }
+   THROW_ASSERT(not _version->std_format() || _version->internal, "An standard floating-point format function should be internal.");
 
-   auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Function " + fn_name + " is " + STR(_version->internal ? "using" : "not using") + " callers' floating-point format");
+
+   const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
    modified = false;
 
    for(const auto& block : sl->list_of_bloc)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Update recursively BB" + STR(block.first));
       // RecursiveExaminate could add statements to the statements list, thus it is necessary to iterate over a static copy of the initial statement list
       std::list<tree_nodeRef> stmtList = block.second->CGetStmtList();
       for(const auto& stmt : stmtList)
       {
          RecursiveExaminate(stmt, stmt, INTERFACE_TYPE_NONE);
       }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Updated recursively BB" + STR(block.first));
    }
+
+   // Transform real type in unsigned integer type parameters and return value
+   const auto f_type = GET_NODE(fd->type);
+   tree_list* prms = nullptr;
+   if(f_type->get_kind() == function_type_K)
+   {
+      const auto ft = GetPointer<function_type>(f_type);
+      if(GET_NODE(ft->retn)->get_kind() == real_type_K)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function return type " + GET_NODE(ft->retn)->ToString() + " requires downcast to integer type");
+         const auto int_ret = parm_int_type_for(ft->retn);
+         const auto ret_type = GetPointer<const type_node>(GET_CONST_NODE(int_ret));
+         ft->retn = int_ret;
+         ft->algn = ret_type->algn;
+         ft->qual = ret_type->qual;
+         ft->size = ret_type->size;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Return type replaced with " + ret_type->ToString() + " " + STR(tree_helper::Size(GET_NODE(int_ret))));
+      }
+      prms = ft->prms ? GetPointer<tree_list>(GET_NODE(ft->prms)) : nullptr;
+   }
+   else if(f_type->get_kind() == method_type_K)
+   {
+      const auto mt = GetPointer<method_type>(f_type);
+      if(GET_NODE(mt->retn)->get_kind() == real_type_K)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function return type " + GET_NODE(mt->retn)->ToString() + " requires downcast to integer type");
+         const auto int_ret = parm_int_type_for(mt->retn);
+         const auto ret_type = GetPointer<const type_node>(GET_CONST_NODE(int_ret));
+         mt->retn = int_ret;
+         mt->algn = ret_type->algn;
+         mt->qual = ret_type->qual;
+         mt->size = ret_type->size;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Return type replaced with " + ret_type->ToString() + " " + STR(tree_helper::Size(GET_NODE(int_ret))));
+      }
+      prms = mt->prms ? GetPointer<tree_list>(GET_NODE(mt->prms)) : nullptr;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameters binding " + STR(bindingCompleted ? "" : "partially ") + "completed on " + STR(paramBinding.size()) + " arguments");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(const auto& param : paramBinding)
+   {
+      const auto parm_type = param ? TreeM->GetTreeNode(tree_helper::CGetType(param)->index) : GET_NODE(prms->valu);
+      if((tree_helper::is_a_pointer(TreeM, parm_type->index) && tree_helper::CGetPointedType(parm_type)->get_kind() == real_type_K) || parm_type->get_kind() == real_type_K)
+      {
+         const auto int_parm_type = parm_int_type_for(parm_type);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Type downcast for input parameter of type " + parm_type->ToString());
+         prms->valu = int_parm_type;
+         if(param)
+         {
+            THROW_ASSERT(param->get_kind() == ssa_name_K, "Unexpected parameter node type (" + param->get_kind_text() + ")");
+            const auto parmSSA = GetPointer<ssa_name>(param);
+            parmSSA->type = int_parm_type;
+            if(parmSSA->var)
+            {
+               THROW_ASSERT(GET_NODE(parmSSA->var)->get_kind() == parm_decl_K, "Variable associated to parameter ssa should be an ssa_name. " + GET_NODE(parmSSA->var)->get_kind_text());
+               const auto varSSA = GetPointer<parm_decl>(GET_NODE(parmSSA->var));
+               const auto parm_int_type = GetPointer<type_node>(GET_NODE(int_parm_type));
+               varSSA->algn = parm_int_type->algn;
+               varSSA->argt = int_parm_type;
+               varSSA->packed_flag = parm_int_type->packed_flag;
+               varSSA->type = int_parm_type;
+            }
+
+            // Remove ssa variable associated to function parameter to avoid multiple type replacement
+            viewConvert.erase(parmSSA);
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Missing input parameter binding");
+         }
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter type replaced with " + GET_NODE(int_parm_type)->ToString() + " " + STR(tree_helper::Size(GET_NODE(int_parm_type))));
+         modified = true;
+      }
+      else
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter of type " + GET_NODE(prms->valu)->get_kind_text() + " does not need downcast (" + STR(param ? param->ToString() : "---") + ")");
+      }
+      prms = prms ? (prms->chan ? GetPointer<tree_list>(GET_NODE(prms->chan)) : nullptr) : nullptr;
+   }
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function signature changed:  " + fn_name + " -> " + tree_helper::print_type(TreeM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(FB->CGetBehavioralHelper()))));
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Replacing " + STR(viewConvert.size()) + " internal ssa variable types");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(const auto& ssa_var : viewConvert)
+   {
+      THROW_ASSERT(ssa_var, "");
+      const auto ssa_type = GET_NODE(ssa_var->type);
+      THROW_ASSERT((tree_helper::is_a_pointer(TreeM, ssa_type->index) && tree_helper::CGetPointedType(ssa_type)->get_kind() == real_type_K) || ssa_type->get_kind() == real_type_K,
+                   "Unexpected ssa type - " + ssa_var->ToString() + " " + ssa_type->ToString());
+      const auto vc_type = int_type_for(ssa_type);
+      THROW_ASSERT(vc_type, "");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ssa_var->ToString() + " type downcast to " + GET_NODE(vc_type)->ToString());
+
+      ssa_var->type = vc_type;
+      const auto defStmt = ssa_var->CGetDefStmt();
+      const auto def = GetPointer<gimple_assign>(GET_NODE(defStmt));
+      if(def)
+      {
+         const auto ue = GetPointer<unary_expr>(GET_NODE(def->op1));
+         if(ue)
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition statement before - " + def->ToString());
+            if(ue->get_kind() == view_convert_expr_K)
+            {
+               const auto nop = tree_man->create_unary_operation(vc_type, def->op1, "<built-in>:0:0", nop_expr_K);
+               TreeM->ReplaceTreeNode(defStmt, def->op1, nop);
+            }
+            else
+            {
+               ue->type = vc_type;
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition statement after - " + def->ToString());
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition statement - " + def->ToString());
+         }
+      }
+   }
+   modified |= static_cast<bool>(viewConvert.size());
+   viewConvert.clear();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Replacing " + STR(nopConvert.size()) + " view-convert operations");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+   for(const auto& vcStmt : nopConvert)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Before replace - " + GET_NODE(vcStmt)->ToString());
+      const auto ga = GetPointer<gimple_assign>(GET_NODE(vcStmt));
+      THROW_ASSERT(ga, "");
+      const auto vc = GetPointer<view_convert_expr>(GET_NODE(ga->op1));
+      THROW_ASSERT(vc, "");
+      const auto currType = TreeM->GetTreeReindex(tree_helper::CGetType(GET_NODE(vc->op))->index);
+      THROW_ASSERT(GET_NODE(currType)->get_kind() == integer_type_K, "At this point " + GET_NODE(vc->op)->ToString() + " should be of integer type.");
+      const auto nop = tree_man->create_unary_operation(currType, vc->op, "<built-in>:0:0", nop_expr_K);
+      TreeM->ReplaceTreeNode(vcStmt, ga->op1, nop);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After replace - " + GET_NODE(vcStmt)->ToString());
+   }
+   modified |= static_cast<bool>(nopConvert.size());
+   nopConvert.clear();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
    for(const auto& ssaExclude : inputCastRename)
    {
-      const auto* ssa = ssaExclude.first;
+      const auto* SSA = ssaExclude.first;
+      const auto ssa = TreeM->GetTreeReindex(SSA->index);
       const auto& exclude = ssaExclude.second;
 
-      // TODO: Add cast rename operations converting from standrd to user-defined float format after ssa definition statement (or at the beginning of function body for input parameters)
-      tree_nodeRef convertedSSA;
-      const auto& ssaUses = ssa->CGetUseStmts();
+      auto defStmt = SSA->CGetDefStmt();
+      const auto def = GetPointer<gimple_node>(GET_NODE(defStmt));
+      blocRef bb;
+      if(def->get_kind() == gimple_assign_K)
+      {
+         THROW_ASSERT(sl->list_of_bloc.count(def->bb_index), "BB " + STR(def->bb_index) + " not present in current function.");
+         bb = sl->list_of_bloc.at(def->bb_index);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Cast rename of " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
+      }
+      else if(def->get_kind() == gimple_phi_K)
+      {
+         THROW_ASSERT(sl->list_of_bloc.count(def->bb_index), "BB " + STR(def->bb_index) + " not present in current function.");
+         bb = sl->list_of_bloc.at(def->bb_index);
+         defStmt = nullptr;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Cast rename of phi " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
+      }
+      else
+      {
+         THROW_ASSERT(sl->list_of_bloc.at(BB_ENTRY)->list_of_succ.size() == 1, "Multiple successors after entry basic block.");
+         const auto realEntryBBIdx = sl->list_of_bloc.at(BB_ENTRY)->list_of_succ.front();
+         bb = sl->list_of_bloc.at(realEntryBBIdx);
+         defStmt = nullptr;
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Cast rename of input parameter " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
+      }
+
+      // Get ssa uses before renaming to avoid replacement in cast rename operations
+      const auto ssaUses = SSA->CGetUseStmts();
+
+      const auto convertedSSA = inPlaceCastRename(bb, defStmt, ssa, nullptr, _version->userRequired);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, SSA->ToString() + " cast-renamed to " + GET_NODE(convertedSSA)->ToString());
+
       for(const auto& ssaUse : ssaUses)
       {
          const auto& useStmt = ssaUse.first;
          if(std::find(exclude.begin(), exclude.end(), GET_INDEX_NODE(useStmt)) != exclude.end())
          {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping replacement for statement " + GET_NODE(useStmt)->ToString());
             continue;
          }
-         TreeM->ReplaceTreeNode(useStmt, TreeM->GetTreeReindex(ssa->index), convertedSSA);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
+         TreeM->ReplaceTreeNode(useStmt, ssa, convertedSSA);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + GET_NODE(useStmt)->ToString());
          modified = true;
       }
    }
@@ -292,25 +497,478 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 
    for(const auto& ssaReplace : outputCastRename)
    {
-      const auto* ssa = ssaReplace.first;
+      const auto* SSA = ssaReplace.first;
+      const auto ssa = TreeM->GetTreeReindex(SSA->index);
       const auto& useStmts = ssaReplace.second;
 
-      // TODO: Add cast rename operations converting from user-defined to standard float-format after ssa definition statement
-      tree_nodeRef convertedSSA;
+      const auto defStmt = SSA->CGetDefStmt();
+      const auto gn = GetPointer<gimple_node>(GET_NODE(defStmt));
+      THROW_ASSERT(sl->list_of_bloc.count(gn->bb_index), "BB" + STR(gn->bb_index) + " not present in current function.");
+      const auto bb = sl->list_of_bloc.at(gn->bb_index);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Cast rename of " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
+
+      const auto convertedSSA = inPlaceCastRename(bb, defStmt, ssa, _version->userRequired, nullptr);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, SSA->ToString() + " cast renamed to " + GET_NODE(convertedSSA)->ToString());
       for(const auto& stmt : useStmts)
       {
-         TreeM->ReplaceTreeNode(stmt, TreeM->GetTreeReindex(ssa->index), convertedSSA);
+         TreeM->ReplaceTreeNode(stmt, ssa, convertedSSA);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replaced in statement " + GET_NODE(stmt)->ToString());
          modified = true;
       }
    }
    outputCastRename.clear();
 
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+
    if(modified)
    {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function modified");
       function_behavior->UpdateBBVersion();
       return DesignFlowStep_Status::SUCCESS;
    }
    return DesignFlowStep_Status::UNCHANGED;
+}
+
+tree_nodeRef soft_float_cg_ext::parm_int_type_for(const tree_nodeRef& type) const
+{
+   if(tree_helper::is_a_pointer(TreeM, type->index))
+   {
+      return tree_helper::Size(tree_helper::CGetPointedType(type)) == 32 ? float32_ptr_type : float64_ptr_type;
+   }
+   if(not _version->internal || _version->std_format())
+   {
+      return tree_helper::Size(type) == 32 ? float32_type : float64_type;
+   }
+   else
+   {
+      THROW_ASSERT(int_type, "Internal integer type should have been defined before.");
+      return int_type;
+   }
+}
+
+tree_nodeRef soft_float_cg_ext::int_type_for(const tree_nodeRef& type) const
+{
+   if(tree_helper::is_a_pointer(TreeM, type->index))
+   {
+      return tree_helper::Size(tree_helper::CGetPointedType(type)) == 32 ? float32_ptr_type : float64_ptr_type;
+   }
+   if(_version->std_format())
+   {
+      return tree_helper::Size(type) == 32 ? float32_type : float64_type;
+   }
+   else
+   {
+      THROW_ASSERT(int_type, "Internal integer type should have been defined before.");
+      return int_type;
+   }
+}
+
+tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, refcount<FloatFormat> inFF, refcount<FloatFormat> outFF) const
+{
+   bool Sign = inFF->sign != bit_lattice::U ? (inFF->sign == bit_lattice::ONE) : ((bits >> (inFF->exp_bits + inFF->frac_bits)) & 1ULL);
+   uint64_t exp = (bits >> inFF->frac_bits) & ((1ULL << inFF->exp_bits) - 1ULL);
+   uint64_t frac = bits & ((1ULL << inFF->frac_bits) - 1ULL);
+
+   bool expMax = exp == ((1ULL << inFF->exp_bits) - 1ULL);
+   bool nan = expMax & (bits >> (inFF->frac_bits - 1ULL));
+   uint64_t RExp;
+   uint64_t RFrac;
+   uint64_t out_val;
+
+   bool out_nan;
+
+   int64_t exp_fix;
+   int64_t range_diff;
+   uint64_t FExp;
+
+   uint8_t bits_diff;
+   uint64_t ExpFrac;
+   uint64_t RExpFrac;
+   bool round;
+
+   if(inFF->exp_bits != outFF->exp_bits || inFF->exp_bias != outFF->exp_bias)
+   {
+      exp_fix = inFF->exp_bias - outFF->exp_bias;
+      range_diff = ((1LL << outFF->exp_bits) - 1LL) - ((1LL << inFF->exp_bits) - 1LL);
+      FExp = exp + static_cast<uint64_t>(exp_fix);
+   }
+   else
+   {
+      exp_fix = 0;
+      range_diff = 0;
+      FExp = exp;
+   }
+
+   if(inFF->frac_bits > outFF->frac_bits)
+   {
+      bits_diff = static_cast<uint8_t>(inFF->frac_bits - outFF->frac_bits);
+      ExpFrac = (FExp << outFF->frac_bits) | (frac >> bits_diff);
+      round = (frac >> (bits_diff - 1U)) & 1U;
+      RExpFrac = ExpFrac + static_cast<uint64_t>(round & (inFF->has_rounding | outFF->has_rounding));
+   }
+   else if(inFF->frac_bits < outFF->frac_bits)
+   {
+      bits_diff = static_cast<uint8_t>(outFF->frac_bits - inFF->frac_bits);
+      RExpFrac = (FExp << (outFF->frac_bits)) | frac << bits_diff;
+   }
+   else
+   {
+      RExpFrac = (FExp << outFF->frac_bits) | frac;
+   }
+
+   out_nan = (inFF->sign != outFF->sign) & ((outFF->sign == bit_lattice::ONE) != Sign);
+   out_nan |= (inFF->has_nan & expMax);
+   out_nan |= (((inFF->exp_bits != outFF->exp_bits) | (inFF->exp_bias != outFF->exp_bias)) & (((exp_fix < 0) & (static_cast<int64_t>(FExp) < 0)) | ((exp_fix > range_diff) & (FExp > ((1ULL << outFF->exp_bits) - (outFF->has_nan ? 2ULL : 1ULL))))));
+   out_nan |= (inFF->has_rounding | outFF->has_rounding) & ((!outFF->has_nan) & (RExpFrac & (1ULL << (outFF->exp_bits + outFF->frac_bits))));
+
+   RExp = out_nan ? ((1ULL << outFF->exp_bits) - 1ULL) : (RExpFrac >> outFF->frac_bits);
+   RFrac = (out_nan | ((inFF->sign != outFF->sign) & ((outFF->sign == bit_lattice::ONE) != Sign))) ? (outFF->has_nan ? (static_cast<uint64_t>(nan) << (outFF->frac_bits - 1ULL)) : ((1ULL << outFF->frac_bits) - 1ULL)) :
+                                                                                                     (RExpFrac & ((1ULL << outFF->frac_bits) - 1ULL));
+
+   out_val = (RExp << outFF->frac_bits) | RFrac;
+   if(outFF->sign == bit_lattice::U)
+   {
+      out_val = (static_cast<uint64_t>(Sign) << (outFF->exp_bits + outFF->frac_bits)) | out_val;
+   }
+   return TreeM->CreateUniqueIntegerCst(static_cast<int64_t>(out_val), GET_INDEX_NODE(tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true)));
+}
+
+tree_nodeRef soft_float_cg_ext::inPlaceCastRename(blocRef bb, tree_nodeRef stmt, tree_nodeRef ssa, refcount<FloatFormat> inFF, refcount<FloatFormat> outFF) const
+{
+#if HAVE_ASSERTS
+   const auto t_kind = tree_helper::CGetType(GET_CONST_NODE(ssa))->get_kind();
+#endif
+   THROW_ASSERT(t_kind == integer_type_K, "Cast rename should be applied on integer variables only. " + tree_node::GetString(t_kind));
+   const auto real_size = tree_helper::Size(GET_CONST_NODE(ssa));
+   if(not inFF)
+   {
+      inFF = real_size == 32 ? float32FF : float64FF;
+   }
+   if(not outFF)
+   {
+      outFF = real_size == 32 ? float32FF : float64FF;
+   }
+
+   const auto createStmt = [&](tree_nodeRef op_type, tree_nodeRef op) {
+      if(GET_NODE(op)->get_kind() != gimple_assign_K)
+      {
+         op = tree_man->CreateGimpleAssign(op_type, tree_nodeRef(), tree_nodeRef(), op, bb->number, "<built-in>:0:0");
+      }
+      if(stmt == nullptr)
+      {
+         bb->PushFront(op);
+      }
+      else
+      {
+         bb->PushAfter(op, stmt);
+      }
+      stmt = op;
+      return GetPointer<gimple_assign>(GET_NODE(op))->op0;
+   };
+
+   const auto bool_type = tree_man->create_boolean_type();
+   const auto in_type = GetPointer<ssa_name>(GET_NODE(ssa))->type;
+   THROW_ASSERT(tree_helper::Size(GET_NODE(in_type)) == static_cast<unsigned int>(static_cast<uint8_t>(inFF->sign == bit_lattice::U) + inFF->exp_bits + inFF->frac_bits), "");
+   const auto in_type_idx = GET_INDEX_NODE(in_type);
+   const auto out_type = tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
+   const auto out_type_idx = GET_INDEX_NODE(out_type);
+   const auto exp_type = tree_man->create_integer_type_with_prec(std::max(inFF->exp_bits, uint8_t(outFF->exp_bits + 1)), false);
+   const auto exp_type_idx = GET_INDEX_NODE(exp_type);
+   const auto expFrac_type = tree_man->create_integer_type_with_prec(1U + outFF->exp_bits + outFF->frac_bits, true);
+   const auto expFrac_type_idx = GET_INDEX_NODE(expFrac_type);
+
+   // Apply fractional bits mask
+   const auto fracAnd = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst((1LL << inFF->frac_bits) - 1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
+   auto Frac = createStmt(in_type, fracAnd);
+
+   // Right shift input value
+   const auto expRShift = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst(inFF->frac_bits, in_type_idx), "<built-in>:0:0", rshift_expr_K);
+   auto Exp = createStmt(in_type, expRShift);
+
+   // Apply exponent bits mask
+   const auto expAnd = tree_man->create_binary_operation(in_type, Exp, TreeM->CreateUniqueIntegerCst((1LL << inFF->exp_bits) - 1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
+   Exp = createStmt(in_type, expAnd);
+
+   // Compute out exponent bits
+   tree_nodeRef FExp;
+   if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
+   {
+      const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
+      if(biasDiff + ((int32_t(1) << outFF->exp_bits) - 1) < 0)
+      {
+         THROW_ERROR("Output float format does not intersect with input float format");
+         return nullptr;
+      }
+      // TODO: add simplified cases for exactly scaled bias values
+
+      // Cast exp bits to shrinked type
+      const auto expCast = tree_man->CreateNopExpr(Exp, exp_type, tree_nodeRef(), tree_nodeRef());
+      FExp = createStmt(exp_type, expCast);
+
+      const auto expAdd = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(biasDiff, exp_type_idx), "<built-in>:0:0", plus_expr_K);
+      FExp = createStmt(exp_type, expAdd);
+   }
+   else
+   {
+      FExp = Exp;
+   }
+
+   // Cast exponent to internal operations type
+   const auto fexpCast = tree_man->CreateNopExpr(FExp, expFrac_type, tree_nodeRef(), tree_nodeRef());
+   auto RExp = createStmt(expFrac_type, fexpCast);
+
+   // Shift exponent left
+   const auto expLShift = tree_man->create_binary_operation(expFrac_type, RExp, TreeM->CreateUniqueIntegerCst(outFF->frac_bits, expFrac_type_idx), "<built-in>:0:0", lshift_expr_K);
+   RExp = createStmt(expFrac_type, expLShift);
+
+   // Cast input significand to internal operations type
+   const auto fracCast = tree_man->CreateNopExpr(Frac, expFrac_type, tree_nodeRef(), tree_nodeRef());
+   auto RExpFrac = createStmt(expFrac_type, fracCast);
+   if(inFF->frac_bits > outFF->frac_bits)
+   {
+      // Shift input significand right
+      const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
+      const auto fracRShift = tree_man->create_binary_operation(expFrac_type, RExpFrac, TreeM->CreateUniqueIntegerCst(bits_diff, expFrac_type_idx), "<built-in>:0:0", rshift_expr_K);
+      RExpFrac = createStmt(expFrac_type, fracRShift);
+   }
+   else if(inFF->frac_bits < outFF->frac_bits)
+   {
+      // Shift input significand left
+      const auto bits_diff = outFF->frac_bits - inFF->frac_bits;
+      const auto fracLShift = tree_man->create_binary_operation(expFrac_type, RExpFrac, TreeM->CreateUniqueIntegerCst(bits_diff, expFrac_type_idx), "<built-in>:0:0", lshift_expr_K);
+      RExpFrac = createStmt(expFrac_type, fracLShift);
+   }
+
+   // Concatenate exponent and significand
+   const auto expOrFrac = tree_man->create_binary_operation(expFrac_type, RExp, RExpFrac, "<built-in>:0:0", bit_ior_expr_K);
+   RExpFrac = createStmt(expFrac_type, expOrFrac);
+
+   if(inFF->frac_bits > outFF->frac_bits && (inFF->has_rounding || outFF->has_rounding))
+   {
+      // Shift to get significand discarded msb
+      const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
+      const auto roundRShift = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(bits_diff - 1, in_type_idx), "<built-in>:0:0", rshift_expr_K);
+      auto Round = createStmt(in_type, roundRShift);
+
+      // And to keep only first bit value
+      const auto roundAnd = tree_man->create_binary_operation(in_type, Round, TreeM->CreateUniqueIntegerCst(1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
+      Round = createStmt(in_type, roundAnd);
+
+      // Cast round bit to expFrac type
+      const auto roundCast = tree_man->CreateNopExpr(Round, expFrac_type, TreeM->CreateUniqueIntegerCst(0, expFrac_type_idx), TreeM->CreateUniqueIntegerCst(1, expFrac_type_idx));
+      Round = createStmt(expFrac_type, roundCast);
+
+      // Sum rounding bit
+      const auto roundAdd = tree_man->create_binary_operation(expFrac_type, RExpFrac, Round, "<built-in>:0:0", plus_expr_K);
+      RExpFrac = createStmt(expFrac_type, roundAdd);
+   }
+
+   auto out_nan = TreeM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(bool_type));
+   tree_nodeRef sign_test;
+   if(inFF->sign != outFF->sign)
+   {
+      if(inFF->sign == bit_lattice::U)
+      {
+         // Shift input value to last bit
+         const auto signShift = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst(inFF->exp_bits + inFF->frac_bits, in_type_idx), "<built-in>:0:0", rshift_expr_K);
+         auto Sign = createStmt(in_type, signShift);
+
+         // Mask input sign bit
+         const auto signAnd = tree_man->create_binary_operation(in_type, Sign, TreeM->CreateUniqueIntegerCst(1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
+         Sign = createStmt(in_type, signAnd);
+
+         // Cast to bool
+         const auto signCast = tree_man->CreateNopExpr(Sign, bool_type, tree_nodeRef(), tree_nodeRef());
+         sign_test = createStmt(bool_type, signCast);
+
+         // Compare with fixed output sign
+         const auto signCmp = tree_man->create_binary_operation(bool_type, sign_test, TreeM->CreateUniqueIntegerCst(outFF->sign == bit_lattice::ONE ? 1 : 0, GET_INDEX_NODE(bool_type)), "<built-in>:0:0", ne_expr_K);
+         out_nan = createStmt(bool_type, signCmp);
+      }
+      else
+      {
+         THROW_ERROR("Casting from fixed " + STR(inFF->sign == bit_lattice::ONE ? "negative" : "positive") + " type to fixed " + STR(outFF->sign == bit_lattice::ONE ? "negative" : "positive") + " type will always result in a static value.");
+         return nullptr;
+      }
+   }
+
+   tree_nodeRef expMax;
+   if(inFF->has_nan)
+   {
+      // Check if input exponent is max
+      const auto expCmp = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst((1 << inFF->exp_bits) - 1, in_type_idx), "<built-in>:0:0", eq_expr_K);
+      expMax = createStmt(bool_type, expCmp);
+
+      // Or with the rest
+      const auto nanOr = tree_man->create_binary_operation(bool_type, expMax, out_nan, "<built-in>:0:0", bit_ior_expr_K);
+      out_nan = createStmt(bool_type, nanOr);
+   }
+
+   const auto expFix = inFF->exp_bias - outFF->exp_bias;
+   const auto rangeDiff = ((1LL << outFF->exp_bits) - 1) - ((1LL << inFF->exp_bits) - 1);
+   if((((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias)) && (expFix < 0 || (expFix > rangeDiff && (not outFF->has_nan)))) || ((inFF->has_rounding || outFF->has_rounding) && not outFF->has_nan))
+   {
+      // Shift right rounded exponent to last bit
+      const auto rexpRShift = tree_man->create_binary_operation(exp_type, RExpFrac, TreeM->CreateUniqueIntegerCst(outFF->exp_bits + outFF->frac_bits, exp_type_idx), "<built-in>:0:0", rshift_expr_K);
+      auto UnOvflow = createStmt(exp_type, rexpRShift);
+
+      // Mask last bit of fixed exponent
+      // TODO: maybe useless?
+      const auto fexpAnd = tree_man->create_binary_operation(exp_type, UnOvflow, TreeM->CreateUniqueIntegerCst(1, exp_type_idx), "<built-in>:0:0", bit_and_expr_K);
+      UnOvflow = createStmt(exp_type, fexpAnd);
+
+      // Cast to bool
+      const auto ufCast = tree_man->CreateNopExpr(UnOvflow, bool_type, tree_nodeRef(), tree_nodeRef());
+      UnOvflow = createStmt(bool_type, ufCast);
+
+      // Or with the rest
+      const auto nanOr = tree_man->create_binary_operation(bool_type, UnOvflow, out_nan, "<built-in>:0:0", bit_ior_expr_K);
+      out_nan = createStmt(bool_type, nanOr);
+   }
+
+   if(((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias)) && expFix > rangeDiff && outFF->has_nan)
+   {
+      // Check if fixed exponent is already greater than max output exponent value minus one
+      const auto fexpGT = tree_man->create_binary_operation(bool_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 2, tree_helper::CGetType(GET_NODE(FExp))->index), "<built-in>:0:0", gt_expr_K);
+      auto Overflow = createStmt(bool_type, fexpGT);
+
+      // Or with the rest
+      const auto nanOr = tree_man->create_binary_operation(bool_type, Overflow, out_nan, "<built-in>:0:0", bit_ior_expr_K);
+      out_nan = createStmt(bool_type, nanOr);
+   }
+
+   // Mask rounded exponent bits
+   const auto rexpMask = tree_man->create_binary_operation(expFrac_type, RExpFrac, TreeM->CreateUniqueIntegerCst(((1LL << outFF->exp_bits) - 1) << outFF->frac_bits, expFrac_type_idx), "<built-in>:0:0", bit_and_expr_K);
+   RExp = createStmt(expFrac_type, rexpMask);
+
+   // Cast rounded exponent to output type
+   const auto rexpCast = tree_man->CreateNopExpr(RExp, out_type, tree_nodeRef(), tree_nodeRef());
+   RExp = createStmt(out_type, rexpCast);
+
+   // Ternary if for exponent nan
+   const auto terRExp = tree_man->create_ternary_operation(out_type, out_nan, TreeM->CreateUniqueIntegerCst(((1LL << outFF->exp_bits) - 1) << outFF->frac_bits, out_type_idx), RExp, "<built-in>:0:0", cond_expr_K);
+   RExp = createStmt(out_type, terRExp);
+
+   if(inFF->sign != outFF->sign)
+   {
+      THROW_ASSERT(sign_test, "Sign test should have been computed here.");
+
+      // Add sign test to out_nan for significand nan test
+      const auto nanOr = tree_man->create_binary_operation(bool_type, sign_test, out_nan, "<built-in>:0:0", bit_ior_expr_K);
+      out_nan = createStmt(bool_type, nanOr);
+   }
+   tree_nodeRef NFrac;
+   if(outFF->has_nan)
+   {
+      if(inFF->has_nan)
+      {
+         THROW_ASSERT(expMax, "");
+         // Shift input significand to get msb
+         const auto nfracShift = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(inFF->frac_bits - 1, in_type_idx), "<built-in>:0:0", rshift_expr_K);
+         auto nanFrac = createStmt(in_type, nfracShift);
+
+         // Mask remaining significand bit
+         const auto nfracMask = tree_man->create_binary_operation(in_type, nanFrac, TreeM->CreateUniqueIntegerCst(1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
+         nanFrac = createStmt(in_type, nfracMask);
+
+         // Cast bit to bool
+         const auto nfracCast = tree_man->CreateNopExpr(nanFrac, bool_type, tree_nodeRef(), tree_nodeRef());
+         nanFrac = createStmt(bool_type, nfracCast);
+
+         // Check if input is NaN
+         const auto nanFracAndNan = tree_man->create_binary_operation(bool_type, nanFrac, expMax, "<built-in>:0:0", bit_ior_expr_K);
+         auto nan = createStmt(bool_type, nanFracAndNan);
+
+         // TODO: Maybe better to define multiple outputs from nan with left/right shift as 'NFrac = (((int32_t)nan << 31) >> 31) & ((1 << outFF->frac_bits) - 1)'
+         const auto nanTer = tree_man->create_ternary_operation(out_type, nan, TreeM->CreateUniqueIntegerCst((1LL << outFF->frac_bits) - 1, out_type_idx), TreeM->CreateUniqueIntegerCst(0, out_type_idx), "<built-in>:0:0", cond_expr_K);
+         NFrac = createStmt(out_type, nanTer);
+      }
+      else
+      {
+         NFrac = TreeM->CreateUniqueIntegerCst(0, out_type_idx);
+      }
+   }
+   else
+   {
+      NFrac = TreeM->CreateUniqueIntegerCst((1LL << outFF->frac_bits) - 1, out_type_idx);
+   }
+
+   // Mask rounded significand bits
+   const auto maskRFrac = tree_man->create_binary_operation(expFrac_type, RExpFrac, TreeM->CreateUniqueIntegerCst((1 << outFF->frac_bits) - 1, expFrac_type_idx), "<built-in>:0:0", bit_and_expr_K);
+   auto RFrac = createStmt(expFrac_type, maskRFrac);
+
+   // Cast rounded significand to output type
+   const auto castRFrac = tree_man->CreateNopExpr(RFrac, out_type, tree_nodeRef(), tree_nodeRef());
+   RFrac = createStmt(out_type, castRFrac);
+
+   // Ternary if for significand nan test
+   const auto terRFrac = tree_man->create_ternary_operation(out_type, out_nan, NFrac, RFrac, "<built-in>:0:0", cond_expr_K);
+   RFrac = createStmt(out_type, terRFrac);
+
+   // Pack exponent and significand
+   const auto expFracOr = tree_man->create_binary_operation(out_type, RExp, RFrac, "<built-in>:0:0", bit_ior_expr_K);
+   auto out = createStmt(out_type, expFracOr);
+   if(outFF->sign == bit_lattice::U)
+   {
+      tree_nodeRef FSign;
+      if(inFF->sign != bit_lattice::U)
+      {
+         FSign = TreeM->CreateUniqueIntegerCst(inFF->sign == bit_lattice::ONE ? (1LL << (outFF->exp_bits + outFF->frac_bits)) : 0, out_type_idx);
+      }
+      else
+      {
+         // Shift input value to last bit
+         const auto signShift = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst(inFF->exp_bits + inFF->frac_bits, in_type_idx), "<built-in>:0:0", rshift_expr_K);
+         auto Sign = createStmt(in_type, signShift);
+
+         // Cast sign to output type
+         const auto signCast = tree_man->CreateNopExpr(Sign, out_type, tree_nodeRef(), tree_nodeRef());
+         FSign = createStmt(out_type, signCast);
+
+         // Shift sign bit left in place
+         const auto signLShift = tree_man->create_binary_operation(out_type, FSign, TreeM->CreateUniqueIntegerCst(outFF->exp_bits + outFF->frac_bits, out_type_idx), "<built-in>:0:0", lshift_expr_K);
+         FSign = createStmt(out_type, signLShift);
+      }
+
+      // Pack sign
+      const auto outOr = tree_man->create_binary_operation(out_type, FSign, out, "<built-in>:0:0", bit_ior_expr_K);
+      out = createStmt(out_type, outOr);
+   }
+
+   return out;
+}
+
+tree_nodeRef soft_float_cg_ext::floatNegate(tree_nodeRef op, refcount<FloatFormat> ff) const
+{
+   if(ff->sign == bit_lattice::U)
+   {
+      const auto int_ff_type = tree_man->create_integer_type_with_prec(1U + ff->exp_bits + ff->frac_bits, true);
+      return tree_man->create_binary_operation(int_ff_type, op, TreeM->CreateUniqueIntegerCst(1LL << (ff->exp_bits + ff->frac_bits), GET_INDEX_NODE(int_ff_type)), "<built-in>:0:0", bit_xor_expr_K);
+   }
+   else
+   {
+      THROW_ERROR("Negate operation on fixed sign type will flatten all values.");
+      return nullptr;
+   }
+}
+
+tree_nodeRef soft_float_cg_ext::floatAbs(tree_nodeRef op, refcount<FloatFormat> ff) const
+{
+   if(ff->sign == bit_lattice::U)
+   {
+      const auto int_ff_type = tree_man->create_integer_type_with_prec(1U + ff->exp_bits + ff->frac_bits, true);
+      return tree_man->create_binary_operation(int_ff_type, op, TreeM->CreateUniqueIntegerCst((1LL << (ff->exp_bits + ff->frac_bits)) - 1, GET_INDEX_NODE(int_ff_type)), "<built-in>:0:0", bit_and_expr_K);
+   }
+   else if(ff->sign == bit_lattice::ONE)
+   {
+      // Fixed positive sign representation is always positive already
+      return op;
+   }
+   else
+   {
+      THROW_ERROR("Negate operation on fixed negative sign type will flatten all values.");
+      return nullptr;
+   }
 }
 
 void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, const std::vector<tree_nodeRef>& args, tree_nodeRef current_statement, tree_nodeRef current_tree_node, const std::string& current_srcp)
@@ -320,16 +978,17 @@ void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, const std::v
    THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
    if(not _version->std_format())
    {
-      const auto spec_name = fu_name + (_version->userRequired != nullptr ? _version->userRequired->mngl() : "");
-      auto spec_funcion_id = TreeM->function_index(spec_name);
+      const auto spec_suffix = (_version->userRequired != nullptr ? _version->userRequired->mngl() : "");
+      auto spec_funcion_id = TreeM->function_index(fu_name + spec_suffix);
       if(spec_funcion_id == 0)
       {
-         const auto spec_func = tree_man->CloneFunction(TreeM->GetTreeReindex(called_function_id), spec_name);
-         called_function_id = GET_INDEX_CONST_NODE(spec_func);
-         THROW_ASSERT(called_function_id, "Cloned function not correctly computed");
+         const auto spec_func = tree_man->CloneFunction(TreeM->GetTreeReindex(called_function_id), spec_suffix);
+         spec_funcion_id = GET_INDEX_CONST_NODE(spec_func);
+         THROW_ASSERT(spec_funcion_id, "Cloned function not correctly computed");
 
          // TODO: append specialization arguments to args
       }
+      called_function_id = spec_funcion_id;
    }
 
    TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
@@ -338,6 +997,7 @@ void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, const std::v
       BehavioralHelperRef helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_function_id, true, parameters));
       FunctionBehaviorRef fb = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
       AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, current_statement->index, fb, FunctionEdgeInfo::CallType::direct_call);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Call graph updated with call to " + STR(called_function_id));
    }
    else
    {
@@ -348,8 +1008,8 @@ void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, const std::v
 void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node, InterfaceType castRename)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively (" + STR(current_tree_node->index) + ") " + STR(current_tree_node));
    const tree_nodeRef curr_tn = GET_NODE(current_tree_node);
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively (" + STR(current_tree_node->index) + " " + curr_tn->get_kind_text() + ") " + STR(current_tree_node));
    const std::string current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
@@ -363,11 +1023,20 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case call_expr_K:
       case aggr_init_expr_K:
       {
-         const call_expr* ce = GetPointer<call_expr>(curr_tn);
-         const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(ce->fn));
-         THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
-         const auto& calledFV = funcFF.at(called_v);
-         const auto internal_call = calledFV.internal && _version->std_format() == calledFV.std_format();
+         const auto ce = GetPointer<call_expr>(curr_tn);
+         const auto fn = GetPointer<addr_expr>(GET_NODE(ce->fn)) ? GetPointer<addr_expr>(GET_NODE(ce->fn))->op : ce->fn;
+         const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
+         bool internal_call;
+         if(GetPointer<function_decl>(GET_NODE(fn))->builtin_flag)
+         {
+            internal_call = _version->std_format();
+         }
+         else
+         {
+            THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
+            const auto& calledFV = funcFF.at(called_v);
+            internal_call = calledFV->internal && _version->std_format() == calledFV->std_format();
+         }
          const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
@@ -380,11 +1049,20 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_call_K:
       {
-         const gimple_call* ce = GetPointer<gimple_call>(curr_tn);
-         const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(ce->fn));
-         THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
-         const auto& calledFV = funcFF.at(called_v);
-         const auto internal_call = calledFV.internal && _version->std_format() == calledFV.std_format();
+         const auto ce = GetPointer<gimple_call>(curr_tn);
+         const auto fn = GetPointer<addr_expr>(GET_NODE(ce->fn)) ? GetPointer<addr_expr>(GET_NODE(ce->fn))->op : ce->fn;
+         const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
+         bool internal_call;
+         if(GetPointer<function_decl>(GET_NODE(fn))->builtin_flag)
+         {
+            internal_call = _version->std_format();
+         }
+         else
+         {
+            THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
+            const auto& calledFV = funcFF.at(called_v);
+            internal_call = calledFV->internal && _version->std_format() == calledFV->std_format();
+         }
          const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
@@ -406,39 +1084,49 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case gimple_assign_K:
       {
-         auto* gm = GetPointer<gimple_assign>(curr_tn);
-         const auto rhs_type = GET_NODE(gm->op1)->get_kind();
+         auto* ga = GetPointer<gimple_assign>(curr_tn);
+         const auto rhs_type = GET_NODE(ga->op1)->get_kind();
          if(rhs_type == call_expr_K || rhs_type == aggr_init_expr_K)
          {
-            const call_expr* ce = GetPointer<call_expr>(curr_tn);
-            const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(ce->fn));
-            THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
-            const auto& calledFV = funcFF.at(called_v);
-            const auto internal_call = calledFV.internal && _version->std_format() == calledFV.std_format();
+            const auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+            const auto fn = GetPointer<addr_expr>(GET_NODE(ce->fn)) ? GetPointer<addr_expr>(GET_NODE(ce->fn))->op : ce->fn;
+            const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
+            bool internal_call;
+            if(GetPointer<function_decl>(GET_NODE(fn))->builtin_flag)
+            {
+               internal_call = _version->std_format();
+            }
+            else
+            {
+               THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
+               const auto& calledFV = funcFF.at(called_v);
+               internal_call = calledFV->internal && _version->std_format() == calledFV->std_format();
+            }
             // Return values associated to non-internal calls need to be cast renamed to local float format
-            RecursiveExaminate(current_statement, gm->op0, internal_call ? castRename : INTERFACE_TYPE_INPUT);
+            RecursiveExaminate(current_statement, ga->op0, internal_call ? castRename : INTERFACE_TYPE_INPUT);
          }
          else if(tree_helper::IsLoad(TreeM, current_statement, FB->get_function_mem()))
          {
             // Values loaded from memory need to be cast renamed to local float format
-            RecursiveExaminate(current_statement, gm->op0, INTERFACE_TYPE_INPUT);
+            RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_INPUT);
          }
          else
          {
-            RecursiveExaminate(current_statement, gm->op0, castRename);
+            RecursiveExaminate(current_statement, ga->op0, castRename);
          }
          if(tree_helper::IsStore(TreeM, current_statement, FB->get_function_mem()))
          {
             // Values stored to memory need to be cast renamed before the store statement
-            RecursiveExaminate(current_statement, gm->op1, INTERFACE_TYPE_OUTPUT);
+            RecursiveExaminate(current_statement, ga->op1, INTERFACE_TYPE_OUTPUT);
          }
          else
          {
-            RecursiveExaminate(current_statement, gm->op1, castRename);
+            RecursiveExaminate(current_statement, ga->op1, castRename);
          }
-         if(gm->predicate)
+         if(ga->predicate)
          {
-            RecursiveExaminate(current_statement, gm->predicate, castRename);
+            std::cout << "predicate: " << GET_NODE(ga->predicate)->ToString() << std::endl;
+            RecursiveExaminate(current_statement, ga->predicate, castRename);
          }
          break;
       }
@@ -453,10 +1141,16 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case ssa_name_K:
       {
-         auto* SSA = GetPointer<ssa_name>(GET_NODE(curr_tn));
+         auto* SSA = GetPointer<ssa_name>(curr_tn);
+         const auto ssa_type = GET_NODE(SSA->type);
+         if((tree_helper::is_a_pointer(TreeM, ssa_type->index) && tree_helper::CGetPointedType(ssa_type)->get_kind() == real_type_K) || ssa_type->get_kind() == real_type_K)
+         {
+            // Real variables must all be converted to unsigned integers after softfloat lowering operations
+            viewConvert.insert(SSA);
+         }
 
-         // Non-internal functions need to implement an input interface
-         if(not(_version->internal || bindingCompleted))
+         // Search for ssa variables associated to input parameters
+         if(not bindingCompleted)
          {
             const auto& args = fd->list_of_args;
             // If ssa_name references a parm_decl and is defined by a gimple_nop, it represents the formal function parameter inside the function body
@@ -472,7 +1166,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             }
          }
 
-         if(not _version->std_format() && tree_helper::CGetType(curr_tn)->get_kind() == real_type_K)
+         if(not _version->std_format() && ssa_type->get_kind() == real_type_K)
          {
             if((not _version->internal && std::find(paramBinding.begin(), paramBinding.end(), curr_tn) != paramBinding.end()) || castRename == INTERFACE_TYPE_INPUT)
             {
@@ -557,10 +1251,38 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   }
                   break;
                }
-               case nop_expr_K:
-               case abs_expr_K:
-               case negate_expr_K:
                case view_convert_expr_K:
+               {
+                  // TODO: this view_convert is from integer to real type, thus it will be a def statement of a real type ssa_name
+                  //       def statements of real type ssa_name variables will be correctly replaced in the next phase of this step
+                  break;
+               }
+               case abs_expr_K:
+               {
+                  const auto float_size = tree_helper::Size(GET_NODE(ue->op));
+                  THROW_ASSERT(float_size == 32 || float_size == 64, "Unhandled floating point format (size = " + STR(float_size) + ")");
+                  const auto ff = _version->std_format() ? (float_size == 32 ? float32FF : float64FF) : _version->userRequired;
+                  THROW_ASSERT(ff, "Float format should be defined here");
+                  const auto float_negate = floatAbs(ue->op, ff);
+                  TreeM->ReplaceTreeNode(current_statement, current_tree_node, float_negate);
+                  break;
+               }
+               case negate_expr_K:
+               {
+                  const auto float_size = tree_helper::Size(GET_NODE(ue->op));
+                  THROW_ASSERT(float_size == 32 || float_size == 64, "Unhandled floating point format (size = " + STR(float_size) + ")");
+                  const auto ff = _version->std_format() ? (float_size == 32 ? float32FF : float64FF) : _version->userRequired;
+                  THROW_ASSERT(ff, "Float format should be defined here");
+                  const auto float_negate = floatNegate(ue->op, ff);
+                  TreeM->ReplaceTreeNode(current_statement, current_tree_node, float_negate);
+                  break;
+               }
+               case nop_expr_K:
+               {
+                  // TODO: insert conversion operation from input type to output type of current statement
+                  THROW_ERROR("Operation not yet supported: " + GET_NODE(current_statement)->ToString());
+                  break;
+               }
                case indirect_ref_K:
                case imagpart_expr_K:
                case realpart_expr_K:
@@ -657,6 +1379,12 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   modified = true;
                   break;
                }
+               case view_convert_expr_K:
+               {
+                  // This view_convert is from real to integer type variable, thus needs to be stored in the type conversion set of statements to be converted later if necessary
+                  nopConvert.push_back(current_statement);
+                  break;
+               }
                case binfo_K:
                case block_K:
                case call_expr_K:
@@ -713,7 +1441,6 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case truth_not_expr_K:
                case unsave_expr_K:
                case va_arg_expr_K:
-               case view_convert_expr_K:
                case reduc_max_expr_K:
                case reduc_min_expr_K:
                case reduc_plus_expr_K:
@@ -932,6 +1659,35 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                modified = true;
             }
          }
+         else if(GET_NODE(be->type)->get_kind() == real_type_K)
+         {
+            if(curr_tn->get_kind() == mem_ref_K)
+            {
+               const auto mr = GetPointer<mem_ref>(curr_tn);
+               mr->type = tree_helper::Size(GET_NODE(mr->type)) == 32 ? float32_type : float64_type;
+            }
+            else
+            {
+               THROW_ERROR("Real type expression not handled: " + curr_tn->get_kind_text() + " " + curr_tn->ToString());
+            }
+         }
+         else if(tree_helper::is_a_pointer(TreeM, curr_tn->index) && tree_helper::CGetPointedType(GET_NODE(be->type))->get_kind() == real_type_K)
+         {
+            if(curr_tn->get_kind() == mem_ref_K)
+            {
+               const auto mr = GetPointer<mem_ref>(curr_tn);
+               mr->type = int_type_for(GET_NODE(mr->type));
+            }
+            else if(curr_tn->get_kind() == pointer_plus_expr_K)
+            {
+               const auto pp = GetPointer<pointer_plus_expr>(curr_tn);
+               pp->type = int_type_for(GET_NODE(pp->type));
+            }
+            else
+            {
+               THROW_ERROR("Real pointer type expression not handled: " + curr_tn->get_kind_text() + " " + curr_tn->ToString());
+            }
+         }
          break;
       }
       case CASE_TERNARY_EXPRESSION:
@@ -1100,11 +1856,17 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       case real_cst_K:
       {
-         if(_version->internal && not _version->std_format() && castRename != INTERFACE_TYPE_OUTPUT)
-         {
-            // TODO: rewrite constant value using user required float format
-            //       simply add conversion statements as if real_cst was an ssa_name with INTERFACE_TYPE_INPUT, constant propagation will do the rest
-         }
+         const auto cst = GetPointer<real_cst>(curr_tn);
+         const auto bw = tree_helper::Size(curr_tn);
+         const auto fp_str = (cst->valx.front() == '-' && cst->valr.front() != cst->valx.front()) ? ("-" + cst->valr) : cst->valr;
+         const auto cst_val = convert_fp_to_bits(fp_str, bw);
+         const auto inFF = bw == 32 ? float32FF : float64FF;
+         const auto outFF = (_version->internal && not _version->std_format() && castRename != INTERFACE_TYPE_OUTPUT) ? _version->userRequired : inFF;
+
+         // Perform static constant value cast and replace real type constant with converted unsigned integer type constant
+         const auto int_cst = cstCast(cst_val, inFF, outFF);
+         TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_cst);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_cst)->ToString());
          break;
       }
       case complex_cst_K:
