@@ -617,6 +617,7 @@ etc/libbambu/libm/math_private.h
 etc/libbambu/libm/math_private_kernels.c
 etc/libbambu/libm/math_private_kernels.h
 etc/libbambu/libm/math_privatef.h
+etc/libbambu/libm/poly_sqrt.c
 etc/libbambu/libm/poly_sqrtf.c
 etc/libbambu/libm/s_asinh.c
 etc/libbambu/libm/s_atan.c
