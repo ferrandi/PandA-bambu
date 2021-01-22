@@ -2507,7 +2507,6 @@ const tree_nodeConstRef tree_helper::CGetType(const tree_nodeConstRef node)
       {
          const auto* ce = GetPointer<const call_expr>(node);
          return GET_NODE(ce->type);
-         /*otherwise fall through*/
       }
       case gimple_asm_K:
       case gimple_bind_K:
@@ -6463,13 +6462,12 @@ unsigned int tree_helper::get_formal_ith(const tree_managerConstRef& TM, unsigne
    else if(t->get_kind() == call_expr_K || t->get_kind() == aggr_init_expr_K)
    {
       auto* ce = GetPointer<call_expr>(t);
-      unsigned int fn_type_index;
-      const tree_nodeRef fn_type = get_type_node(GET_NODE(ce->fn), fn_type_index);
+      const auto fn_type = CGetType(GET_CONST_NODE(ce->fn));
       if(fn_type->get_kind() == pointer_type_K)
       {
-         auto* pt = GetPointer<pointer_type>(fn_type);
+         const auto* pt = GetPointer<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         auto* ft = GetPointer<function_type>(GET_NODE(pt->ptd));
+         const auto* ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
          if(ft->varargs_flag)
          {
             return 0;

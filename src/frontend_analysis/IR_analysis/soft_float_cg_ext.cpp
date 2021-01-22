@@ -59,6 +59,7 @@
 /// Graph include
 #include "basic_block.hpp"
 #include "basic_blocks_graph_constructor.hpp"
+#include "op_graph.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -163,7 +164,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-      // Propagate floating-point arithmetic specialization over to called functions
+      // Propagate floating-point arithmetic specialization over to called user's functions
       /*
       const auto ACG = AppM->CGetCallGraphManager()->CGetAcyclicCallGraph();
       std::deque<CallGraph::vertex_descriptor> queue;
@@ -226,7 +227,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, CALLED_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
          break;
@@ -252,11 +252,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 #ifndef NDEBUG
    const auto fn_name = tree_helper::print_type(TreeM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(FB->CGetBehavioralHelper())));
 #endif
-   if(fd->builtin_flag)
-   {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built-in function " + fn_name + " does not require floating-point operations lowering");
-      return DesignFlowStep_Status::UNCHANGED;
-   }
+   //    if(fd->builtin_flag)
+   //    {
+   //       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Built-in function " + fn_name + " does not require floating-point operations lowering");
+   //       return DesignFlowStep_Status::UNCHANGED;
+   //    }
 
    // Function using standard float formats are always internal
    if(not _version->std_format())
@@ -293,6 +293,11 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    for(const auto& block : sl->list_of_bloc)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Update recursively BB" + STR(block.first));
+      for(const auto& phi : block.second->CGetPhiList())
+      {
+         RecursiveExaminate(phi, phi, INTERFACE_TYPE_NONE);
+      }
+
       // RecursiveExaminate could add statements to the statements list, thus it is necessary to iterate over a static copy of the initial statement list
       std::list<tree_nodeRef> stmtList = block.second->CGetStmtList();
       for(const auto& stmt : stmtList)
@@ -303,7 +308,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    }
 
    // Transform real type in unsigned integer type parameters and return value
-   const auto f_type = GET_NODE(fd->type);
+   const auto f_type = GET_NODE(fd->type)->get_kind() == pointer_type_K ? GET_NODE(GetPointer<pointer_type>(GET_NODE(fd->type))->ptd) : GET_NODE(fd->type);
    tree_list* prms = nullptr;
    if(f_type->get_kind() == function_type_K)
    {
@@ -341,12 +346,20 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    for(const auto& param : paramBinding)
    {
+      if(not param && not prms)
+      {
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Missing parameter reference");
+         continue;
+      }
       const auto parm_type = param ? TreeM->GetTreeNode(tree_helper::CGetType(param)->index) : GET_NODE(prms->valu);
       if((tree_helper::is_a_pointer(TreeM, parm_type->index) && tree_helper::CGetPointedType(parm_type)->get_kind() == real_type_K) || parm_type->get_kind() == real_type_K)
       {
          const auto int_parm_type = parm_int_type_for(parm_type);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Type downcast for input parameter of type " + parm_type->ToString());
-         prms->valu = int_parm_type;
+         if(prms)
+         {
+            prms->valu = int_parm_type;
+         }
          if(param)
          {
             THROW_ASSERT(param->get_kind() == ssa_name_K, "Unexpected parameter node type (" + param->get_kind_text() + ")");
@@ -354,13 +367,14 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             parmSSA->type = int_parm_type;
             if(parmSSA->var)
             {
-               THROW_ASSERT(GET_NODE(parmSSA->var)->get_kind() == parm_decl_K, "Variable associated to parameter ssa should be an ssa_name. " + GET_NODE(parmSSA->var)->get_kind_text());
+               THROW_ASSERT(GET_NODE(parmSSA->var)->get_kind() == parm_decl_K, "Variable associated to parameter ssa should be an parm_decl. " + GET_NODE(parmSSA->var)->get_kind_text());
                const auto varSSA = GetPointer<parm_decl>(GET_NODE(parmSSA->var));
                const auto parm_int_type = GetPointer<type_node>(GET_NODE(int_parm_type));
                varSSA->algn = parm_int_type->algn;
                varSSA->argt = int_parm_type;
                varSSA->packed_flag = parm_int_type->packed_flag;
                varSSA->type = int_parm_type;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Type downcast for associated variable declaration " + varSSA->ToString());
             }
 
             // Remove ssa variable associated to function parameter to avoid multiple type replacement
@@ -375,7 +389,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       }
       else
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter of type " + GET_NODE(prms->valu)->get_kind_text() + " does not need downcast (" + STR(param ? param->ToString() : "---") + ")");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Parameter of type " + parm_type->get_kind_text() + " does not need downcast (" + STR(param ? param->ToString() : "---") + ")");
       }
       prms = prms ? (prms->chan ? GetPointer<tree_list>(GET_NODE(prms->chan)) : nullptr) : nullptr;
    }
@@ -395,6 +409,24 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, ssa_var->ToString() + " type downcast to " + GET_NODE(vc_type)->ToString());
 
       ssa_var->type = vc_type;
+      if(ssa_var->var && GET_NODE(ssa_var->var)->get_kind() != parm_decl_K)
+      {
+         const auto vd = GetPointer<var_decl>(GET_NODE(ssa_var->var));
+         THROW_ASSERT(vd, "SSA name associated variable is espected to be a variable declaration " + GET_NODE(ssa_var->var)->get_kind_text() + " " + GET_NODE(ssa_var->var)->ToString());
+         if(GET_INDEX_NODE(vd->type) != GET_INDEX_NODE(ssa_var->type))
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable declaration before - " + vd->ToString() + " " + GET_NODE(vd->type)->ToString());
+            const auto var_int_type = GetPointer<type_node>(GET_NODE(vc_type));
+            vd->algn = var_int_type->algn;
+            vd->packed_flag = var_int_type->packed_flag;
+            vd->type = vc_type;
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable declaration after - " + vd->ToString() + " " + GET_NODE(vd->type)->ToString());
+         }
+         else
+         {
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable declaration - " + vd->ToString() + " " + GET_NODE(vd->type)->ToString());
+         }
+      }
       const auto defStmt = ssa_var->CGetDefStmt();
       const auto def = GetPointer<gimple_assign>(GET_NODE(defStmt));
       if(def)
@@ -405,7 +437,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Definition statement before - " + def->ToString());
             if(ue->get_kind() == view_convert_expr_K)
             {
-               const auto nop = tree_man->create_unary_operation(vc_type, def->op1, "<built-in>:0:0", nop_expr_K);
+               const auto nop = tree_man->create_unary_operation(vc_type, ue->op, "<built-in>:0:0", nop_expr_K);
                TreeM->ReplaceTreeNode(defStmt, def->op1, nop);
             }
             else
@@ -531,6 +563,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 
 tree_nodeRef soft_float_cg_ext::parm_int_type_for(const tree_nodeRef& type) const
 {
+   THROW_ASSERT(type, "");
    if(tree_helper::is_a_pointer(TreeM, type->index))
    {
       return tree_helper::Size(tree_helper::CGetPointedType(type)) == 32 ? float32_ptr_type : float64_ptr_type;
@@ -603,7 +636,8 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, refcount<FloatFormat> inF
    {
       bits_diff = static_cast<uint8_t>(inFF->frac_bits - outFF->frac_bits);
       ExpFrac = (FExp << outFF->frac_bits) | (frac >> bits_diff);
-      round = (frac >> (bits_diff - 1U)) & 1U;
+      // round = (frac >> (bits_diff - 1U)) & 1U;
+      round = (frac & ((1ULL << bits_diff) - 1)) != 0; // IEEE conversion rounding
       RExpFrac = ExpFrac + static_cast<uint64_t>(round & (inFF->has_rounding | outFF->has_rounding));
    }
    else if(inFF->frac_bits < outFF->frac_bits)
@@ -745,14 +779,22 @@ tree_nodeRef soft_float_cg_ext::inPlaceCastRename(blocRef bb, tree_nodeRef stmt,
 
    if(inFF->frac_bits > outFF->frac_bits && (inFF->has_rounding || outFF->has_rounding))
    {
-      // Shift to get significand discarded msb
       const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
-      const auto roundRShift = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(bits_diff - 1, in_type_idx), "<built-in>:0:0", rshift_expr_K);
-      auto Round = createStmt(in_type, roundRShift);
+      //    // Shift to get significand discarded msb
+      //    const auto roundRShift = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(bits_diff - 1, in_type_idx), "<built-in>:0:0", rshift_expr_K);
+      //    auto Round = createStmt(in_type, roundRShift);
+      //
+      //    // And to keep only first bit value
+      //    const auto roundAnd = tree_man->create_binary_operation(in_type, Round, TreeM->CreateUniqueIntegerCst(1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
+      //    Round = createStmt(in_type, roundAnd);
 
-      // And to keep only first bit value
-      const auto roundAnd = tree_man->create_binary_operation(in_type, Round, TreeM->CreateUniqueIntegerCst(1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
-      Round = createStmt(in_type, roundAnd);
+      // Mask least significant bits which will be discarded by this type conversion
+      const auto roundAnd = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst((1LL << bits_diff) - 1, in_type_idx), "<built-in>:0:0", bit_and_expr_K);
+      auto Round = createStmt(in_type, roundAnd);
+
+      // Check if discarded bits are different from zero (IEEE type conversion rounding policy)
+      const auto roundCmp = tree_man->create_binary_operation(bool_type, Round, TreeM->CreateUniqueIntegerCst(0, in_type_idx), "<built-in:0:0>", ne_expr_K);
+      Round = createStmt(bool_type, roundCmp);
 
       // Cast round bit to expFrac type
       const auto roundCast = tree_man->CreateNopExpr(Round, expFrac_type, TreeM->CreateUniqueIntegerCst(0, expFrac_type_idx), TreeM->CreateUniqueIntegerCst(1, expFrac_type_idx));
@@ -1018,6 +1060,31 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       }
       return "";
    }();
+   const auto is_internal_call = [&](const tree_nodeRef fn) -> bool {
+      static const auto mcpy_id = TreeM->function_index(MEMCPY);
+      static const auto mset_id = TreeM->function_index(MEMSET);
+      const auto fn_fd = GetPointer<function_decl>(GET_NODE(fn));
+      if(tree_helper::print_function_name(TreeM, fn_fd) == BUILTIN_WAIT_CALL)
+      {
+         if(_version->std_format())
+         {
+            return true;
+         }
+         THROW_UNREACHABLE("Function pointers not supported from user defined floating point format functions");
+         // TODO: maybe it could be possible to only warn the user here to be careful about the pointed function definition and go on
+      }
+      const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
+      if(fn_fd->builtin_flag || fn_fd->index == mcpy_id || fn_fd->index == mset_id)
+      {
+         return _version->std_format();
+      }
+      else
+      {
+         THROW_ASSERT(static_cast<bool>(funcFF.count(fn_v)), "Called function should have been already computed.");
+         const auto& fn_FF = funcFF.at(fn_v);
+         return fn_FF->internal && _version->std_format() == fn_FF->std_format();
+      }
+   };
    switch(curr_tn->get_kind())
    {
       case call_expr_K:
@@ -1025,18 +1092,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       {
          const auto ce = GetPointer<call_expr>(curr_tn);
          const auto fn = GetPointer<addr_expr>(GET_NODE(ce->fn)) ? GetPointer<addr_expr>(GET_NODE(ce->fn))->op : ce->fn;
-         const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
-         bool internal_call;
-         if(GetPointer<function_decl>(GET_NODE(fn))->builtin_flag)
-         {
-            internal_call = _version->std_format();
-         }
-         else
-         {
-            THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
-            const auto& calledFV = funcFF.at(called_v);
-            internal_call = calledFV->internal && _version->std_format() == calledFV->std_format();
-         }
+         const auto internal_call = is_internal_call(fn);
          const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
@@ -1051,18 +1107,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       {
          const auto ce = GetPointer<gimple_call>(curr_tn);
          const auto fn = GetPointer<addr_expr>(GET_NODE(ce->fn)) ? GetPointer<addr_expr>(GET_NODE(ce->fn))->op : ce->fn;
-         const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
-         bool internal_call;
-         if(GetPointer<function_decl>(GET_NODE(fn))->builtin_flag)
-         {
-            internal_call = _version->std_format();
-         }
-         else
-         {
-            THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
-            const auto& calledFV = funcFF.at(called_v);
-            internal_call = calledFV->internal && _version->std_format() == calledFV->std_format();
-         }
+         const auto internal_call = is_internal_call(fn);
          const std::vector<tree_nodeRef>& args = ce->args;
          std::vector<tree_nodeRef>::const_iterator arg, arg_end = args.end();
          unsigned int parm_index = 0;
@@ -1076,6 +1121,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case gimple_phi_K:
       {
          auto* gp = GetPointer<gimple_phi>(curr_tn);
+         RecursiveExaminate(current_statement, gp->res, castRename);
          for(const auto& de : gp->CGetDefEdgesList())
          {
             RecursiveExaminate(current_statement, de.first, castRename);
@@ -1090,18 +1136,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          {
             const auto ce = GetPointer<call_expr>(GET_NODE(ga->op1));
             const auto fn = GetPointer<addr_expr>(GET_NODE(ce->fn)) ? GetPointer<addr_expr>(GET_NODE(ce->fn))->op : ce->fn;
-            const auto called_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
-            bool internal_call;
-            if(GetPointer<function_decl>(GET_NODE(fn))->builtin_flag)
-            {
-               internal_call = _version->std_format();
-            }
-            else
-            {
-               THROW_ASSERT(static_cast<bool>(funcFF.count(called_v)), "Called function should have been already computed.");
-               const auto& calledFV = funcFF.at(called_v);
-               internal_call = calledFV->internal && _version->std_format() == calledFV->std_format();
-            }
+            const auto internal_call = is_internal_call(fn);
             // Return values associated to non-internal calls need to be cast renamed to local float format
             RecursiveExaminate(current_statement, ga->op0, internal_call ? castRename : INTERFACE_TYPE_INPUT);
          }
@@ -1125,7 +1160,6 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          }
          if(ga->predicate)
          {
-            std::cout << "predicate: " << GET_NODE(ga->predicate)->ToString() << std::endl;
             RecursiveExaminate(current_statement, ga->predicate, castRename);
          }
          break;
@@ -1204,18 +1238,17 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case CASE_UNARY_EXPRESSION:
       {
          const unary_expr* ue = GetPointer<unary_expr>(curr_tn);
+         const auto expr_type = GET_NODE(ue->type);
+         const auto op_expr_type = tree_helper::CGetType(GET_NODE(ue->op));
          // Propagate recursion with INTERFACE_TYPE_NONE to avoid cast rename of internal variables (input parameters and constant will be converted anyway)
          RecursiveExaminate(current_statement, ue->op, INTERFACE_TYPE_NONE);
-         tree_nodeRef expr_type = GET_NODE(ue->type);
-         unsigned int op_expr_type_index;
-         tree_nodeRef op_expr_type = tree_helper::get_type_node(GET_NODE(ue->op), op_expr_type_index);
          if(expr_type->get_kind() == real_type_K)
          {
             switch(curr_tn->get_kind())
             {
                case float_expr_K:
                {
-                  unsigned int bitsize_in = tree_helper::size(TreeM, op_expr_type_index);
+                  auto bitsize_in = tree_helper::Size(op_expr_type);
                   if(bitsize_in < 32)
                   {
                      bitsize_in = 32;
@@ -1224,7 +1257,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   {
                      bitsize_in = 64;
                   }
-                  unsigned int bitsize_out = tree_helper::size(TreeM, GET_INDEX_NODE(ue->type));
+                  auto bitsize_out = tree_helper::Size(expr_type);
                   if(bitsize_in < 32)
                   {
                      bitsize_in = 32;
@@ -1238,7 +1271,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   std::string fu_name;
                   if(op_expr_type->get_kind() != real_type_K)
                   {
-                     if(tree_helper::is_unsigned(TreeM, op_expr_type_index))
+                     if(tree_helper::is_unsigned(TreeM, op_expr_type->index))
                      {
                         fu_name = "__uint" + bitsize_str_in + "_to_float" + bitsize_str_out + "if";
                      }
@@ -1253,8 +1286,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                }
                case view_convert_expr_K:
                {
-                  // TODO: this view_convert is from integer to real type, thus it will be a def statement of a real type ssa_name
-                  //       def statements of real type ssa_name variables will be correctly replaced in the next phase of this step
+                  // BEAWARE: this view_convert is from integer to real type, thus it will be a def statement of a real type ssa_name
+                  //          def statements of real type ssa_name variables will be correctly replaced in the next phase of this step
                   break;
                }
                case abs_expr_K:
@@ -1279,8 +1312,20 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                }
                case nop_expr_K:
                {
-                  // TODO: insert conversion operation from input type to output type of current statement
-                  THROW_ERROR("Operation not yet supported: " + GET_NODE(current_statement)->ToString());
+                  if(_version->std_format())
+                  {
+                     const auto bitsize_in = tree_helper::Size(op_expr_type);
+                     const auto bitsize_out = tree_helper::Size(expr_type);
+                     THROW_ASSERT(bitsize_in == 32 || bitsize_in == 64, "Unhandled input floating point format (size = " + STR(bitsize_in) + ")");
+                     THROW_ASSERT(bitsize_out == 32 || bitsize_out == 64, "Unhandled output floating point format (size = " + STR(bitsize_out) + ")");
+                     const auto fu_name = "__float" + STR(bitsize_in) + "_to_float" + STR(bitsize_out) + "if";
+                     replaceWithCall(fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                     modified = true;
+                  }
+                  else
+                  {
+                     THROW_UNREACHABLE("Operation not yet supported: function with user-defined floating point format should use a unique format type.");
+                  }
                   break;
                }
                case indirect_ref_K:
@@ -1361,8 +1406,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             {
                case fix_trunc_expr_K:
                {
-                  unsigned int bitsize_in = tree_helper::size(TreeM, op_expr_type_index);
-                  unsigned int bitsize_out = tree_helper::size(TreeM, GET_INDEX_NODE(ue->type));
+                  unsigned int bitsize_in = tree_helper::Size(op_expr_type);
+                  unsigned int bitsize_out = tree_helper::Size(expr_type);
                   if(bitsize_out < 32)
                   {
                      bitsize_out = 32;
@@ -1371,7 +1416,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   {
                      bitsize_out = 64;
                   }
-                  bool is_unsigned = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(ue->type));
+                  const auto is_unsigned = tree_helper::is_unsigned(TreeM, expr_type->index);
                   std::string bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   std::string bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   std::string fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" + bitsize_str_out + "_round_to_zeroif";
@@ -1461,11 +1506,11 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case CASE_BINARY_EXPRESSION:
       {
          const binary_expr* be = GetPointer<binary_expr>(curr_tn);
+         // Get operand type before recursive examination because floating point operands may be converted to unsigned integer during during recursion
+         const auto expr_type = tree_helper::CGetType(GET_NODE(be->op0));
          // Propagate recursion with INTERFACE_TYPE_NONE to avoid cast rename of internal variables (input parameters and constant will be converted anyway)
          RecursiveExaminate(current_statement, be->op0, INTERFACE_TYPE_NONE);
          RecursiveExaminate(current_statement, be->op1, INTERFACE_TYPE_NONE);
-         unsigned int expr_type_index;
-         tree_nodeRef expr_type = tree_helper::get_type_node(GET_NODE(be->op0), expr_type_index);
          if(expr_type->get_kind() == real_type_K)
          {
             bool add_call = true;
@@ -1490,7 +1535,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                case rdiv_expr_K:
                {
                   fu_suffix = "div";
-                  unsigned int bitsize = tree_helper::size(TreeM, expr_type_index);
+                  const auto bitsize = tree_helper::Size(expr_type);
                   if(bitsize == 32 || bitsize == 64)
                   {
                      THROW_ASSERT(parameters->isOption(OPT_hls_fpdiv), "a default is expected");
@@ -1652,7 +1697,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             }
             if(add_call)
             {
-               unsigned int bitsize = tree_helper::size(TreeM, expr_type_index);
+               const auto bitsize = tree_helper::Size(expr_type);
                std::string bitsize_str = bitsize == 96 ? "x80" : STR(bitsize);
                std::string fu_name = "__float" + bitsize_str + "_" + fu_suffix + "if";
                replaceWithCall(fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
@@ -1668,7 +1713,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             }
             else
             {
-               THROW_ERROR("Real type expression not handled: " + curr_tn->get_kind_text() + " " + curr_tn->ToString());
+               THROW_UNREACHABLE("Real type expression not handled: " + curr_tn->get_kind_text() + " " + curr_tn->ToString());
             }
          }
          else if(tree_helper::is_a_pointer(TreeM, curr_tn->index) && tree_helper::CGetPointedType(GET_NODE(be->type))->get_kind() == real_type_K)
@@ -1685,7 +1730,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
             }
             else
             {
-               THROW_ERROR("Real pointer type expression not handled: " + curr_tn->get_kind_text() + " " + curr_tn->ToString());
+               THROW_UNREACHABLE("Real pointer type expression not handled: " + curr_tn->get_kind_text() + " " + curr_tn->ToString());
             }
          }
          break;

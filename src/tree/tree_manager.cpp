@@ -164,6 +164,7 @@ const tree_nodeConstRef tree_manager::CGetTreeNode(const unsigned int i) const
 {
    THROW_ASSERT(i > 0 and i < last_node_id, "(C) Expected a positive index less than the total number of tree nodes (" + STR(i) + ") (" + STR(last_node_id) + ")");
    THROW_ASSERT(tree_nodes.find(i) != tree_nodes.end(), "Tree node " + STR(i) + " does not exist");
+   THROW_ASSERT(tree_nodes.find(i)->second, "Tree node " + STR(i) + " is empty");
    return tree_nodes.find(i)->second;
 }
 
