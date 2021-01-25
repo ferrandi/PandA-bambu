@@ -65,6 +65,7 @@
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include  "string_manipulation.hpp"
 
 GimpleWriter::GimpleWriter(std::ostream& _os, const bool _use_uid) : os(_os), use_uid(_use_uid), current_node_index(0)
 {
@@ -632,6 +633,94 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
    if(obj->name)
    {
       obj->name->visit(this);
+   }
+   else
+   {
+      //try to get the type name
+      auto obj_type = obj->get_kind();
+      if(obj_type == integer_type_K)
+      {
+         auto* it = static_cast<const integer_type*>(obj);
+         if(it->unsigned_flag)
+         {
+            os << "unsigned ";
+         }
+         if(it->prec != obj->algn)
+         {
+            if(it->prec > 64)
+            {
+               os <<  "int __attribute__((vector_size(16)))";
+            }
+            else if(it->prec > 32)
+            {
+               os <<  "long long int";
+            }
+            else if(it->prec > 16)
+            {
+               os <<  "int";
+            }
+            else if(it->prec > 8)
+            {
+               os <<  "short";
+            }
+            else
+            {
+               os <<  "char";
+            }
+         }
+         else if(obj->algn == 8)
+         {
+            os <<  "char";
+         }
+         else if(obj->algn == 16)
+         {
+            os <<  "short";
+         }
+         else if(obj->algn == 32)
+         {
+            os <<  "int";
+         }
+         else if(obj->algn == 64)
+         {
+            os <<  "long long";
+         }
+         else if(obj->algn == 128)
+         {
+            os <<  "int __attribute__((vector_size(16)))";
+         }
+         else
+         {
+            THROW_ERROR(std::string("Node not yet supported: ") + obj->get_kind_text() + STR(obj->algn));
+         }
+      }
+      else if(obj_type == boolean_type_K)
+      {
+         os <<  "_Bool";
+      }
+      else if(obj_type == real_type_K)
+      {
+         auto* rt = static_cast<const real_type*>(obj);
+         if(rt->prec == 32)
+         {
+            os << "float";
+         }
+         else if(rt->prec == 64)
+         {
+            os << "double";
+         }
+         else if(rt->prec == 80)
+         {
+            os << "__float80";
+         }
+         else if(rt->prec == 128)
+         {
+            os << "__float128";
+         }
+         else
+         {
+            THROW_ERROR(std::string("Real type not yet supported "));
+         }
+      }
    }
    obj->tree_node::visit(this);
 }
