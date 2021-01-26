@@ -462,14 +462,14 @@ float ADD_BUILTIN_PREFIX(logf)(float x)
    if(fpX == 0x7F800000)
       return __builtin_inff();
    if(fpX == 0xFF800000)
-      return __builtin_nanf("");
+      return -__builtin_nanf("");
    if(e == 255)
    {
       func_in.b |= (0x7FC << 20);
       return func_in.f;
    }
    if(s == 1)
-      return __builtin_nanf("");
+      return -__builtin_nanf("");
    if(fpX == 0x3F800000)
       return 0;
 
