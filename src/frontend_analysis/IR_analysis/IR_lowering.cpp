@@ -1329,7 +1329,10 @@ tree_nodeRef IR_lowering::expand_mult_highpart(tree_nodeRef op0, unsigned long l
    long long int v0 = static_cast<long long int>(ml) & ((1LL << half_data_bitsize) - 1);
    long long int v1;
    bool unsignedp = tree_helper::is_unsigned(TM, GET_INDEX_NODE(type_expr));
-   v1 = static_cast<long long int>(ml >> half_data_bitsize);
+   if(unsignedp)
+     v1 = static_cast<long long int>(ml >> half_data_bitsize);
+   else
+      v1 = static_cast<long long int>(ml) >> half_data_bitsize;
 
    tree_nodeRef u0v0_ga_var;
    tree_nodeRef v0_node;

@@ -691,7 +691,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                         choose_multiplier(abs_d, data_bitsize, data_bitsize - 1, &ml, &post_shift, &lgup);
                         tree_nodeRef quotient_expr;
                         THROW_ASSERT(post_shift < 64 && size - 1 < 64, "unexpected condition");
-                        if(ml < 1ULL << (data_bitsize - 1))
+                        if(ml < (1ULL << (data_bitsize - 1)))
                         {
                            tree_nodeRef t1_ga_var = expand_mult_highpart(op0, ml, type_expr, data_bitsize, it_los, block.second, srcp_default);
                            THROW_ASSERT(t1_ga_var, "fail1");
