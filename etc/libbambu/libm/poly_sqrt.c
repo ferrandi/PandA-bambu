@@ -41,13 +41,13 @@
 __attribute__((always_inline)) static inline void mult64to128(unsigned long long int u, long long int v, unsigned long long int* w_0, unsigned long long int* w_1)
 
 {
-   unsigned long long int u0, u1, v0, v1, k, t;
+   unsigned long long int u0, u1, v1;
+   long long int v0, ts, ks;
+   unsigned long long int k, t;
    unsigned long long int w1, w2, w3, w_0_temp;
-   _Bool sign_v;
    u0 = u >> 32;
    u1 = u & 0xFFFFFFFF;
-   v0 = ((unsigned long long int)v) >> 32;
-   sign_v = v0 >> 31;
+   v0 = v >> 32;
    v1 = ((unsigned long long int)v) & 0xFFFFFFFF;
    t = u1 * v1;
    w3 = t & 0xFFFFFFFF;
@@ -55,12 +55,11 @@ __attribute__((always_inline)) static inline void mult64to128(unsigned long long
    t = u0 * v1 + k;
    w2 = t & 0xFFFFFFFF;
    w1 = t >> 32;
-   t = u1 * v0 + w2;
-   k = t >> 32;
-   w_0_temp = u0 * v0 + w1 + k;
-   w_0_temp = sign_v ? w_0_temp - u : w_0_temp;
+   ts = u1 * v0 + w2;
+   ks = ts >> 32;
+   w_0_temp = u0 * v0 + w1 + ks;
    *w_0 = w_0_temp;
-   *w_1 = (t << 32) + w3;
+   *w_1 = (ts << 32) + w3;
 }
 
 typedef union
@@ -564,8 +563,8 @@ int main_test_sqrt()
          }
       }
    }
-   printf("n_ones_pos=%d\n", n_ones_pos);
-   printf("n_ones_neg=%d\n", n_ones_neg);
+   printf("n_ones_pos=%lld\n", n_ones_pos);
+   printf("n_ones_neg=%lld\n", n_ones_neg);
    return 0;
 }
 
