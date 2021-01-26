@@ -9,3 +9,4 @@ bambu_specific_test2/port_swapping_test2.c bambu_specific_test2/ps_constraints.x
 bambu_specific_test2/complex_test.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/complex_test.xml --experimental-setup=BAMBU
 bambu_specific_test2/multiarray.c --generate-tb=arr1="{{{3,0},{0,0}},{{8,3},{8,0}}}",arr2="{{{5,2},{0,1}},{{7,3},{5,0}}}",arr3="{{{3,0},{7,0}},{{3,5},{0,0}}}" --std=c99 --experimental-setup=BAMBU
 bambu_specific_test2/test_without_c.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/test_without_c.xml --experimental-setup=BAMBU-BALANCED-MP
+bambu_specific_test2/mod_test.c --generate-tb=BENCHMARKS_ROOT/bambu_specific_test2/mod_test_c.xml 
