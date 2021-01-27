@@ -96,7 +96,7 @@ inline long int p_cpu_time()
    clock_t ret = times(&now);
    if(ret == static_cast<clock_t>(-1))
       // cppcheck-suppress unreadVariable
-      now.tms_utime = now.tms_stime = now.tms_cutime = now.tms_cstime = ret = 0;
+      now.tms_utime = now.tms_stime = now.tms_cutime = now.tms_cstime = 0;
    // cppcheck-suppress ConfigurationNotChecked
    t = (long(now.tms_utime) * 1000) / (TIMES_TICKS_PER_SEC) + (long(now.tms_cutime) * 1000) / (TIMES_TICKS_PER_SEC);
    return t;
