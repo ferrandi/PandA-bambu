@@ -239,6 +239,19 @@ inline T* GetPointer(const refcount<U>& t)
    return dynamic_cast<T*>(t.get());
 }
 
+/**
+ * Template function used to hide static_cast
+ * The template parameter T represents a type of an object having as a base class U.
+ * @param t is a refcount<U> containing the pointer
+ * @return the pointer casted to the T class
+ */
+template <class T, class U>
+inline T* GetPointerS(const refcount<U>& t)
+{
+   return static_cast<T*>(t.get());
+}
+
+
 #include <functional>
 #if !defined(USE_REFCOUNT_POINTERS) && BOOST_VERSION >= 103300 && __cplusplus > 199711L
 #else

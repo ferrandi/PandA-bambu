@@ -338,11 +338,11 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the pointer to t
  */
 #ifndef NDEBUG
-#define GET_NODE(t) (t ? (GetPointer<tree_reindex>(t) ? (GetPointer<tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
-#define GET_CONST_NODE(t) (t ? (GetPointer<const tree_reindex>(t) ? (GetPointer<const tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_NODE(t) (t ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_CONST_NODE(t) (t ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<const tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
 #else
-#define GET_NODE(t) (GetPointer<tree_reindex>(t))->actual_tree_node
-#define GET_CONST_NODE(t) (GetPointer<const tree_reindex>(t))->actual_tree_node
+#define GET_NODE(t) (GetPointerS<tree_reindex>(t))->actual_tree_node
+#define GET_CONST_NODE(t) (GetPointerS<const tree_reindex>(t))->actual_tree_node
 #endif
 
 /**
