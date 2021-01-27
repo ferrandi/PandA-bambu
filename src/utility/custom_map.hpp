@@ -137,13 +137,13 @@ using CustomMap = OrderedMapStd<T, U>;
 #pragma clang diagnostic pop
 #endif
 
-template <class T, class U, class Hash = absl::container_internal::hash_default_hash<T>, class Eq = absl::container_internal::hash_default_eq<T>, class Alloc = std::allocator<std::pair<const T, U>>>
+template <class T, class U, class Hash = typename absl::flat_hash_map<T, U>::hasher, class Eq =typename absl::flat_hash_map<T, U>::key_equal, class Alloc = std::allocator<std::pair<const T, U>>>
 using CustomUnorderedMap = absl::flat_hash_map<T, U, Hash, Eq, Alloc>;
 
-template <class T, class U, class Hash = absl::container_internal::hash_default_hash<T>, class Eq = absl::container_internal::hash_default_eq<T>, class Alloc = std::allocator<std::pair<const T, U>>>
+template <class T, class U, class Hash = typename absl::flat_hash_map<T, U>::hasher, class Eq = typename absl::flat_hash_map<T, U>::key_equal, class Alloc = std::allocator<std::pair<const T, U>>>
 using CustomUnorderedMapStable = absl::node_hash_map<T, U, Hash, Eq, Alloc>;
 
-template <class T, class U, class Hash = absl::container_internal::hash_default_hash<T>, class Eq = absl::container_internal::hash_default_eq<T>, class Alloc = std::allocator<std::pair<const T, U>>>
+template <class T, class U, class Hash =typename absl::flat_hash_map<T, U>::hasher, class Eq = typename absl::flat_hash_map<T, U>::key_equal, class Alloc = std::allocator<std::pair<const T, U>>>
 using CustomUnorderedMapUnstable = absl::flat_hash_map<T, U, Hash, Eq, Alloc>;
 
 template <typename T, typename U>

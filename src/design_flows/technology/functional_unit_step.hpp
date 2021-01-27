@@ -95,7 +95,7 @@ class FunctionalUnitStep : public virtual DesignFlowStep
    /**
     * Create a template instance to be specialized
     */
-   technology_nodeRef create_template_instance(const technology_nodeRef& fu_template, std::string& name, const target_deviceRef& device, unsigned int prec);
+   technology_nodeRef create_template_instance(const technology_nodeRef& fu_template, const std::string& name, const target_deviceRef& device, unsigned int prec);
 
  public:
    /**

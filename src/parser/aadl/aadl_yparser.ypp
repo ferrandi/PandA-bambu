@@ -120,7 +120,7 @@ extern void yyerror(const AadlParserDataRef data, const AadlFlexLexerRef lexer, 
 ///There are a lot of conflicts in the grammar as it has been written, but we want to use the same grammar of syntax card
 ///%expect 0
 
-%pure-parser
+%define api.pure
 %start aadl_specification
 
 %%

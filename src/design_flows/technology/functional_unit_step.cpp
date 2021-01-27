@@ -470,7 +470,7 @@ void FunctionalUnitStep::Initialize()
    }
 }
 
-technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template, std::string& name, const target_deviceRef& device, unsigned int prec)
+technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template, const std::string &name, const target_deviceRef& device, unsigned int prec)
 {
    auto* curr_fu = GetPointer<functional_unit>(fu_template);
    THROW_ASSERT(curr_fu, "Null functional unit template");

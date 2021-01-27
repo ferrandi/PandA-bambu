@@ -181,7 +181,7 @@ void yyerror
 // There should be no shift/reduce nor reduce/reduce conflicts
 %expect 0
 
-%pure-parser
+%define api.pure
 %start root
 
 %%

@@ -146,7 +146,7 @@ extern void yyerror(const xml_documentRef Root, const XmlBisonParserDataRef data
 %lex-param {const XmlFlexLexerRef lexer}
 %expect 0
 
-%pure-parser
+%define api.pure
 %start root_parser
 
 %%

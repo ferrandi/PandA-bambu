@@ -111,7 +111,7 @@ extern void yyerror(const CInitializationParserFunctorRef c_initialization_parse
 
 %expect 0
 
-%pure-parser
+%define api.pure
 %start c_initialization
 
 %%
