@@ -99,7 +99,7 @@ void vivado_flow_wrapper::create_sdc(const DesignParametersRef& dp)
 std::string vivado_flow_wrapper::get_command_line(const DesignParametersRef& dp) const
 {
    std::ostringstream s;
-   s << get_tool_exec() << " -mode batch -nojournal -nolog -source " << script_name;
+   s << "ulimit -s 131072; " << get_tool_exec() << " -mode batch -nojournal -nolog -source " << script_name;
    for(const auto& option : xml_tool_options)
    {
       if(option->checkCondition(dp))
