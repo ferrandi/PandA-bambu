@@ -67,7 +67,7 @@ AlteraWrapper::~AlteraWrapper() = default;
 void AlteraWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for(auto & var : xml_reserved_vars)
+   for(auto& var : xml_reserved_vars)
    {
       dp->assign(var->name, getStringValue(var, dp), false);
    }

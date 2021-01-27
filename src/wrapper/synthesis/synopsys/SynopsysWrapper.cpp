@@ -96,7 +96,7 @@ SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterC
 void SynopsysWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for(auto & var : xml_reserved_vars)
+   for(auto& var : xml_reserved_vars)
    {
       dp->assign(var->name, getStringValue(var, dp), false);
    }

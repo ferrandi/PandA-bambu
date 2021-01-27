@@ -3355,7 +3355,7 @@ void BambuParameter::CheckParameters()
          if(getOption<std::string>(OPT_registered_inputs) != "auto")
             THROW_ERROR("Registered inputs option cannot be set for context switch architecture");
          auto v = getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
-         bool f;                                                        // the result goes here
+         bool f;                                                // the result goes here
          f = v && !(v & (v - 1));
          if(!f)
             THROW_ERROR("Number of channel must be a power of 2");

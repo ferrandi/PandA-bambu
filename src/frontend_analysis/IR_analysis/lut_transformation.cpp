@@ -576,7 +576,7 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
 {
    auto& statements = block.second->CGetStmtList();
 
-   for(const auto & statement : statements)
+   for(const auto& statement : statements)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + statement->ToString());
       // only gimple assignments are considered
@@ -908,7 +908,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    /// whether the BB has been modified
    bool modified = false;
 
-   for(const auto & statement : statements)
+   for(const auto& statement : statements)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + statement->ToString());
 

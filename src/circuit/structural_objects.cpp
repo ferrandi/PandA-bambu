@@ -2167,7 +2167,7 @@ void signal_o::substitute_port(structural_objectRef old_conn, structural_objectR
    }
    else
    {
-      for(auto & connected_object : connected_objects)
+      for(auto& connected_object : connected_objects)
       {
          if(connected_object.lock() == old_conn)
             connected_object = new_conn;

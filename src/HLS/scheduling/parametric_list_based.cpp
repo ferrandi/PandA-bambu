@@ -1131,7 +1131,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                }
                // successors.sort();
 
-               for(auto & successor : successors)
+               for(auto& successor : successors)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering successor " + successor.first);
                   scheduled_predecessors[successor.second]++;

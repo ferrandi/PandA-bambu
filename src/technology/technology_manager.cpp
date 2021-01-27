@@ -263,7 +263,7 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          {
             const library_manager::fu_map_type& fus = LM->get_library_fu();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating library " + library_name);
-            for(const auto & fu : fus)
+            for(const auto& fu : fus)
             {
                if(library_map[library_name]->is_fu(fu.first))
                {

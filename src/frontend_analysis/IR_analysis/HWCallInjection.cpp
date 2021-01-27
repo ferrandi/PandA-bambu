@@ -239,7 +239,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
       TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
       builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-      for(const auto & arg : GC->args)
+      for(const auto& arg : GC->args)
       {
          builtinGimpleCall->AddArg(arg);
       }
@@ -294,7 +294,7 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
          builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-         for(const auto & arg : CE->args)
+         for(const auto& arg : CE->args)
          {
             builtinGimpleCall->AddArg(arg);
          }

@@ -177,7 +177,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                if(precision_pipe_param_pair[0] == "*")
                {
                   for(unsigned int prec : precision)
-                     for(const auto & pipe_param : pipe_params)
+                     for(const auto& pipe_param : pipe_params)
                         if(std::find(pipe_parameters[prec].begin(), pipe_parameters[prec].end(), pipe_param) == pipe_parameters[prec].end())
                            pipe_parameters[prec].push_back(pipe_param);
                }
@@ -194,7 +194,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                }
                else if(precision.find(boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])) != precision.end())
                {
-                  for(const auto & pipe_param : pipe_params)
+                  for(const auto& pipe_param : pipe_params)
                      if(std::find(pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].begin(), pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end(), pipe_param) ==
                         pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end())
                         pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].push_back(pipe_param);
@@ -217,13 +217,13 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                if(precision_portsize_param_pair[0] == "*")
                {
                   for(unsigned int prec : precision)
-                     for(const auto & portsize_param : portsize_params)
+                     for(const auto& portsize_param : portsize_params)
                         if(std::find(portsize_parameters[prec].begin(), portsize_parameters[prec].end(), portsize_param) == portsize_parameters[prec].end())
                            portsize_parameters[prec].push_back(portsize_param);
                }
                else if(precision.find(boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])) != precision.end())
                {
-                  for(const auto & portsize_param : portsize_params)
+                  for(const auto& portsize_param : portsize_params)
                      if(std::find(portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].begin(), portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end(), portsize_param) ==
                         portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end())
                         portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].push_back(portsize_param);
@@ -470,7 +470,7 @@ void FunctionalUnitStep::Initialize()
    }
 }
 
-technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template, const std::string &name, const target_deviceRef& device, unsigned int prec)
+technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template, const std::string& name, const target_deviceRef& device, unsigned int prec)
 {
    auto* curr_fu = GetPointer<functional_unit>(fu_template);
    THROW_ASSERT(curr_fu, "Null functional unit template");

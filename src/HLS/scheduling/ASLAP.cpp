@@ -543,7 +543,7 @@ void ASLAP::compute_ALAP_worst_case()
       if(!beh_graph->is_in_subset(level))
          continue;
       ALAP->set_execution(level, rev_levels_to_cycles.find(ALAP->get_cstep(level).second)->second -
-                                  ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(level, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
+                                     ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(level, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
       max_tot_csteps = std::max(max_tot_csteps, ALAP->get_cstep(level).second);
    }
 }

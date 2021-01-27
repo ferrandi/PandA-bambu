@@ -968,7 +968,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added inputs");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding calls connections");
-   for(auto & call : calls)
+   for(auto& call : calls)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding connections of " + call.first->get_path());
       auto isMultipleModule = GetPointer<module>(call.first->get_owner()) && GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();

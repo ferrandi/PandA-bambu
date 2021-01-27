@@ -1777,8 +1777,8 @@ void mux_connection_binding::create_connections()
 
          const generic_objRef fu_obj = HLS->Rfu->get(*op);
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
-         unsigned int index=0;
-         for(auto & num : var_read)
+         unsigned int index = 0;
+         for(auto& num : var_read)
          {
             if(std::get<0>(num) == 0)
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - " << index << ". Read: " + STR(std::get<1>(num)));

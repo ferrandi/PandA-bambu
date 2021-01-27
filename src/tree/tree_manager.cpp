@@ -653,7 +653,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                   }
 
                   // Copy the definition statement into each block the ssa variable is used in
-                  for(auto & copy_block_it : copy_bloc_to_stmt)
+                  for(auto& copy_block_it : copy_bloc_to_stmt)
                   {
                      const blocRef copy_block = list_of_bloc.find(copy_block_it.first)->second;
                      std::vector<tree_nodeRef> copy_block_use_stmts = copy_block_it.second;
@@ -689,7 +689,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                         }
 
                         // Replace the occurrences of the considered ssa variable with the newly created ssa variable
-                        for(auto & copy_block_use_stmt : copy_block_use_stmts)
+                        for(auto& copy_block_use_stmt : copy_block_use_stmts)
                         {
                            RecursiveReplaceTreeNode(copy_block_use_stmt, tn, tree_reindexRef_sn, copy_block_use_stmt, false);
                            new_sn->AddUseStmt(copy_block_use_stmt);
@@ -2262,7 +2262,7 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    }
 
    /// compute the vertexes reached from all function_decl of source_tree_manager
-   for(auto & function_decl_node : source_tree_manager->function_decl_nodes)
+   for(auto& function_decl_node : source_tree_manager->function_decl_nodes)
    {
       tree_nodeRef curr_tn = function_decl_node.second;
       auto* fd = GetPointer<function_decl>(curr_tn);

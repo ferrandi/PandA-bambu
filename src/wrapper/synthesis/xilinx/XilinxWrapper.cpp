@@ -72,7 +72,7 @@ void XilinxWrapper::generate_synthesis_script(const DesignParametersRef& dp, con
    }
 
    // Export reserved (constant) values to design parameters
-   for(auto & var : xml_reserved_vars)
+   for(auto& var : xml_reserved_vars)
    {
       // std::cerr << "setting = " << var->name << " #" << getStringValue(var, dp) << "#" << std::endl;
       dp->assign(var->name, getStringValue(var, dp), false);

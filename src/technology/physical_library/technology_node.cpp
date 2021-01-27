@@ -124,7 +124,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
       std::string supported_types_string;
       LOAD_XVFM(supported_types_string, Enode, supported_types);
       std::vector<std::string> types = SplitString(supported_types_string, "|");
-      for(const auto & type : types)
+      for(const auto& type : types)
       {
          if(type == "")
             THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" + supported_types_string + "\" [" + operation_name + "]");

@@ -52,7 +52,6 @@
 
 class ApplicationFrontendFlowStep : public FrontendFlowStep
 {
-
  public:
    /**
     * Constructor

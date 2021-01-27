@@ -448,7 +448,7 @@ void TopEntityMemoryMapped::forwardPorts(structural_managerRef SM_mm, structural
    SM_mm->add_connection(interfaceObj->find_member(START_PORT_NAME, port_o_K, interfaceObj), wrappedObj->find_member(START_PORT_NAME, port_o_K, wrappedObj));
    SM_mm->add_connection(interfaceObj->find_member(DONE_PORT_NAME, port_o_K, interfaceObj), wrappedObj->find_member(DONE_PORT_NAME, port_o_K, wrappedObj));
 
-   for(const auto & Itr : ParametersName)
+   for(const auto& Itr : ParametersName)
    {
       structural_objectRef outerPort = interfaceObj->find_member(Itr, port_o_K, interfaceObj);
       structural_objectRef innerPort = wrappedObj->find_member(Itr, port_o_K, wrappedObj);

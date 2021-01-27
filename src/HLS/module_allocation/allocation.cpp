@@ -1929,7 +1929,7 @@ DesignFlowStep_Status allocation::InternalExec()
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered functional unit: " + current_fu->get_name());
       }
-      for(auto & iter_new_fu : new_fu)
+      for(auto& iter_new_fu : new_fu)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding functional unit: " + iter_new_fu.first + " in " + lib_name);
          TM->add(iter_new_fu.second, lib_name);

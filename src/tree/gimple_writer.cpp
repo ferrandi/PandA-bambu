@@ -61,11 +61,11 @@
 
 /// Tree include
 #include "ext_tree_node.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include  "string_manipulation.hpp"
 
 GimpleWriter::GimpleWriter(std::ostream& _os, const bool _use_uid) : os(_os), use_uid(_use_uid), current_node_index(0)
 {
@@ -636,7 +636,7 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
    }
    else
    {
-      //try to get the type name
+      // try to get the type name
       auto obj_type = obj->get_kind();
       if(obj_type == integer_type_K)
       {
@@ -649,44 +649,44 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
          {
             if(it->prec > 64)
             {
-               os <<  "int __attribute__((vector_size(16)))";
+               os << "int __attribute__((vector_size(16)))";
             }
             else if(it->prec > 32)
             {
-               os <<  "long long int";
+               os << "long long int";
             }
             else if(it->prec > 16)
             {
-               os <<  "int";
+               os << "int";
             }
             else if(it->prec > 8)
             {
-               os <<  "short";
+               os << "short";
             }
             else
             {
-               os <<  "char";
+               os << "char";
             }
          }
          else if(obj->algn == 8)
          {
-            os <<  "char";
+            os << "char";
          }
          else if(obj->algn == 16)
          {
-            os <<  "short";
+            os << "short";
          }
          else if(obj->algn == 32)
          {
-            os <<  "int";
+            os << "int";
          }
          else if(obj->algn == 64)
          {
-            os <<  "long long";
+            os << "long long";
          }
          else if(obj->algn == 128)
          {
-            os <<  "int __attribute__((vector_size(16)))";
+            os << "int __attribute__((vector_size(16)))";
          }
          else
          {
@@ -695,7 +695,7 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
       }
       else if(obj_type == boolean_type_K)
       {
-         os <<  "_Bool";
+         os << "_Bool";
       }
       else if(obj_type == real_type_K)
       {

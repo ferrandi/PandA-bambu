@@ -336,7 +336,7 @@ std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_nod
 
 xml_set_variable_tRef SynthesisTool::get_reserved_parameter(const std::string& name)
 {
-   for(auto & node : xml_reserved_vars)
+   for(auto& node : xml_reserved_vars)
    {
       if(name == node->name)
       {

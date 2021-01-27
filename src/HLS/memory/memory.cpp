@@ -604,7 +604,7 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
    std::vector<std::string> current_tgt_parameters = convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
-   for(auto & current_tgt_parameter : current_tgt_parameters)
+   for(auto& current_tgt_parameter : current_tgt_parameters)
    {
       std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
       if(res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
