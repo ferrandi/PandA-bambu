@@ -1422,7 +1422,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
          /// load xml interface specification file
          for(auto source_file : AppM->input_files)
          {
-            const std::string output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+            const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
             std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
             auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".interface.xml";
             if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))

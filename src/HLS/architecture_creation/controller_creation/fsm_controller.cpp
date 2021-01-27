@@ -573,7 +573,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed conditions: " + parse);
 
             parse += " : ";
-            for(std::vector<std::string>::const_iterator in_it = in.begin(); in_it != in.end(); ++in_it)
+            for(auto in_it = in.begin(); in_it != in.end(); ++in_it)
                if(in_it == in.begin())
                   parse += *in_it;
                else

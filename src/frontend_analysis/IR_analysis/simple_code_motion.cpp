@@ -215,7 +215,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
    if(tn->get_kind() == gimple_nop_K)
       return FunctionFrontendFlowStep_Movable::MOVABLE;
 
-   gimple_assign* ga = GetPointer<gimple_assign>(tn);
+   auto* ga = GetPointer<gimple_assign>(tn);
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if " + STR(ga->index) + " - " + ga->ToString() + " can be moved in BB" + STR(bb_index));
    tree_nodeRef left = GET_NODE(ga->op0);
@@ -653,15 +653,15 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    for(it3 = list_of_bloc.begin(); it3 != it3_end; ++it3)
    {
       unsigned int curr_bb = it3->first;
-      std::vector<unsigned int>::const_iterator lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
-      for(std::vector<unsigned int>::const_iterator lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
+      auto lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
+      for(auto lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
       {
          THROW_ASSERT(inverse_vertex_map.find(*lop_it) != inverse_vertex_map.end(), "BB" + STR(*lop_it) + " (predecessor of " + STR(curr_bb) + ") does not exist");
          THROW_ASSERT(inverse_vertex_map.find(curr_bb) != inverse_vertex_map.end(), STR(curr_bb));
          GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[*lop_it], inverse_vertex_map[curr_bb], CFG_SELECTOR);
       }
-      std::vector<unsigned int>::const_iterator los_it_end = list_of_bloc[curr_bb]->list_of_succ.end();
-      for(std::vector<unsigned int>::const_iterator los_it = list_of_bloc[curr_bb]->list_of_succ.begin(); los_it != los_it_end; ++los_it)
+      auto los_it_end = list_of_bloc[curr_bb]->list_of_succ.end();
+      for(auto los_it = list_of_bloc[curr_bb]->list_of_succ.begin(); los_it != los_it_end; ++los_it)
       {
          if(*los_it == bloc::EXIT_BLOCK_ID)
             GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[*los_it], CFG_SELECTOR);
@@ -876,8 +876,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             {
                /// check if list of pred has a loop_id greater than the loop_id of curr_bb
                bool can_be_pipelined = list_of_bloc[curr_bb]->loop_id != 0;
-               const std::vector<unsigned int>::const_iterator Lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
-               for(std::vector<unsigned int>::const_iterator Lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); Lop_it != Lop_it_end && can_be_pipelined; ++Lop_it)
+               const auto Lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
+               for(auto Lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); Lop_it != Lop_it_end && can_be_pipelined; ++Lop_it)
                {
                   can_be_pipelined = list_of_bloc[curr_bb]->loop_id >= list_of_bloc[*Lop_it]->loop_id;
                }
@@ -992,8 +992,8 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
             }
             /// check if the controlling condition of curr_bb is constant
             bool is_controlling_condition_constant = true;
-            const std::vector<unsigned int>::const_iterator Lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
-            for(std::vector<unsigned int>::const_iterator Lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); Lop_it != Lop_it_end && is_controlling_condition_constant; ++Lop_it)
+            const auto Lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
+            for(auto Lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); Lop_it != Lop_it_end && is_controlling_condition_constant; ++Lop_it)
             {
                if(sl->list_of_bloc[*Lop_it]->CGetStmtList().empty())
                   is_controlling_condition_constant = false;

@@ -128,7 +128,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering test vector " + STR(v_idx));
       HLSMgr->RSim->param_address[v_idx].clear();
       // loop on the variables in memory
-      for(std::list<unsigned int>::const_iterator l = mem.begin(); l != mem.end(); ++l)
+      for(auto l = mem.begin(); l != mem.end(); ++l)
       {
          std::string param = behavioral_helper->PrintVariable(*l);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);

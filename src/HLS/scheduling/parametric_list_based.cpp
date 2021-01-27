@@ -467,7 +467,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       else
       {
          aslap->compute_ASAP(HLS->Rsch);
-         ControlStep est_upper_bound = ControlStep(static_cast<unsigned int>(operations_number));
+         auto est_upper_bound = ControlStep(static_cast<unsigned int>(operations_number));
          aslap->compute_ALAP(ASLAP::ALAP_with_partial_scheduling, HLS->Rsch, nullptr, est_upper_bound);
       }
    }
@@ -1264,7 +1264,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
 
       do_balanced_scheduling1(sub_levels, schedule, res_binding, setup_hold_time, scheduling_mux_margins, opDFG, seen_cstep_has_RET_conflict);
 
-      for(std::deque<vertex>::const_reverse_iterator vi = sub_levels.rbegin(); vi != sub_levels.rend(); ++vi)
+      for(auto vi = sub_levels.rbegin(); vi != sub_levels.rend(); ++vi)
       {
          update_starting_ending_time_asap(*vi, res_binding, opDFG, schedule);
          schedule->starting_times[flow_graph->CGetOpNodeInfo(*vi)->GetNodeId()] = starting_time[*vi];
@@ -1517,9 +1517,9 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
    std::deque<vertex> vertices;
    boost::topological_sort(*bbg, std::front_inserter(vertices));
-   std::deque<vertex>::const_iterator viend = vertices.end();
+   auto viend = vertices.end();
    ControlStep ctrl_steps = ControlStep(0u);
-   for(std::deque<vertex>::const_iterator vi = vertices.begin(); vi != viend; ++vi)
+   for(auto vi = vertices.begin(); vi != viend; ++vi)
    {
       OpVertexSet operations(op_graph);
       std::list<vertex> bb_operations = bbg->CGetBBNodeInfo(*vi)->statements_list;
@@ -1628,8 +1628,8 @@ void parametric_list_based::update_vertices_slack(vertex current_v, const Schedu
             fifo.push(boost::source(*eo, *opDFG));
       }
    }
-   const std::list<vertex>::const_iterator cl_it_end = curr_list.end();
-   for(std::list<vertex>::const_iterator cl_it = curr_list.begin(); cl_it != cl_it_end; ++cl_it)
+   const auto cl_it_end = curr_list.end();
+   for(auto cl_it = curr_list.begin(); cl_it != cl_it_end; ++cl_it)
    {
       vertices_analyzed.insert(*cl_it);
       schedule->set_slack(*cl_it, worst_slack);
@@ -1807,7 +1807,7 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
    compare_vertex_by_name vertex_by_name(opDFG);
    std::map<vertex, OpVertexSet, compare_vertex_by_name> DMAP(vertex_by_name);
    std::map<vertex, size_t, compare_vertex_by_name> D(vertex_by_name);
-   for(std::deque<vertex>::const_reverse_iterator rit = sub_levels.rbegin(); rit != sub_levels.rend(); ++rit)
+   for(auto rit = sub_levels.rbegin(); rit != sub_levels.rend(); ++rit)
    {
       vertex candidate_v = *rit;
       InEdgeIterator ei, ei_end;
@@ -1855,8 +1855,8 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
       /// check if time has unbounded vertices or the return statement
       bool has_unbounded = false;
       bool has_return = false;
-      std::deque<vertex>::const_iterator time_it_end = T.find(time)->second.end();
-      for(std::deque<vertex>::const_iterator time_it = T.find(time)->second.begin(); !has_unbounded && !has_return && time_it != time_it_end; ++time_it)
+      auto time_it_end = T.find(time)->second.end();
+      for(auto time_it = T.find(time)->second.begin(); !has_unbounded && !has_return && time_it != time_it_end; ++time_it)
       {
          vertex candidate_v = *time_it;
          unsigned int fu_type = res_binding->get_assign(candidate_v);
@@ -1877,8 +1877,8 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
             double best_starting_area = 0;
             size_t max_dependencies = 0;
             vertex best_node = NULL_VERTEX;
-            std::deque<vertex>::const_iterator ptime_it_end = T.find(ptime)->second.end();
-            for(std::deque<vertex>::const_iterator ptime_it = T.find(ptime)->second.begin(); ptime_it != ptime_it_end; ++ptime_it)
+            auto ptime_it_end = T.find(ptime)->second.end();
+            for(auto ptime_it = T.find(ptime)->second.begin(); ptime_it != ptime_it_end; ++ptime_it)
             {
                vertex candidate_v = *ptime_it;
                unsigned int fu_type = res_binding->get_assign(candidate_v);
@@ -2009,7 +2009,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
    compare_vertex_by_name vertex_by_name(opDFG);
    std::map<vertex, OpVertexSet, compare_vertex_by_name> DMAP(vertex_by_name);
    std::map<vertex, size_t, compare_vertex_by_name> D(vertex_by_name);
-   for(std::deque<vertex>::const_reverse_iterator rit = sub_levels.rbegin(); rit != sub_levels.rend(); ++rit)
+   for(auto rit = sub_levels.rbegin(); rit != sub_levels.rend(); ++rit)
    {
       vertex candidate_v = *rit;
       InEdgeIterator ei, ei_end;
@@ -2074,8 +2074,8 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
 #endif
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  let's start with the re-scheduling");
    ControlStep cycles = max_cycle - min_cycle + 1u;
-   std::map<ControlStep, std::deque<vertex>>::const_reverse_iterator t_it_end = T.rend();
-   for(std::map<ControlStep, std::deque<vertex>>::const_reverse_iterator t_it = T.rbegin(); t_it != t_it_end; ++t_it)
+   auto t_it_end = T.rend();
+   for(auto t_it = T.rbegin(); t_it != t_it_end; ++t_it)
    {
       const auto time = t_it->first;
       const auto time_clock_cycle_starting = from_strongtype_cast<double>(time) * clock_cycle;
@@ -2085,8 +2085,8 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
       ControlStep ptime = time - 1u;
       /// check if time has unbounded vertices, the return or the IF/SWITCH statements
       bool has_unbounded = false;
-      std::deque<vertex>::const_iterator time_it_end = T.find(time)->second.end();
-      for(std::deque<vertex>::const_iterator time_it = T.find(time)->second.begin(); !has_unbounded && time_it != time_it_end; ++time_it)
+      auto time_it_end = T.find(time)->second.end();
+      for(auto time_it = T.find(time)->second.begin(); !has_unbounded && time_it != time_it_end; ++time_it)
       {
          vertex candidate_v = *time_it;
          unsigned int fu_type = res_binding->get_assign(candidate_v);
@@ -2114,8 +2114,8 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
 #endif
             size_t max_dependencies = 0;
             vertex best_node = NULL_VERTEX;
-            std::deque<vertex>::const_iterator ptime_it_end = T.find(ptime)->second.end();
-            for(std::deque<vertex>::const_iterator ptime_it = T.find(ptime)->second.begin(); ptime_it != ptime_it_end; ++ptime_it)
+            auto ptime_it_end = T.find(ptime)->second.end();
+            for(auto ptime_it = T.find(ptime)->second.begin(); ptime_it != ptime_it_end; ++ptime_it)
             {
                vertex candidate_v = *ptime_it;
                unsigned int fu_type = res_binding->get_assign(candidate_v);

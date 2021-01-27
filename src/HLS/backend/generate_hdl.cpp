@@ -108,7 +108,7 @@ generate_hdl::~generate_hdl() = default;
 DesignFlowStep_Status generate_hdl::Exec()
 {
    HDL_managerRef HM = HDL_managerRef(new HDL_manager(HLSMgr, HLSMgr->get_HLS_target()->get_target_device(), parameters));
-   std::string file_name = parameters->getOption<std::string>(OPT_top_file);
+   auto file_name = parameters->getOption<std::string>(OPT_top_file);
    std::list<structural_objectRef> top_circuits;
    for(const auto top_function : HLSMgr->CGetCallGraphManager()->GetRootFunctions())
    {

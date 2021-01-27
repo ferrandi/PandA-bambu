@@ -1010,8 +1010,8 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    boost::char_separator<char> sep(" ", nullptr);
    // compute the list of states
    std::list<std::string> list_of_states;
-   std::vector<std::string>::const_iterator it_end = SplitVec.end();
-   std::vector<std::string>::const_iterator it = SplitVec.begin();
+   auto it_end = SplitVec.cend();
+   auto it = SplitVec.cbegin();
    tokenizer first_line_tokens(*it, sep);
    tokenizer::iterator tok_iter = first_line_tokens.begin();
    std::string reset_state = convert_to_identifier(writer.get(), *tok_iter);

@@ -149,7 +149,7 @@ bool HWCallInjection::isHardwareCall(tree_nodeRef expr)
       if(!result)
       {
          std::string name = tree_helper::name_function(TM, GET_INDEX_NODE(FD));
-         std::string cmdArg = Param->getOption<std::string>(OPT_additional_top);
+         auto cmdArg = Param->getOption<std::string>(OPT_additional_top);
 
          std::vector<std::string> additionalTops = SplitString(cmdArg, ",");
 

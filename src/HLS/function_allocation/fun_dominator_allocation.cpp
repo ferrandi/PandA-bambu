@@ -284,7 +284,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(cur, *cg))
       {
          vertex tgt = boost::target(eo, *cg);
-         unsigned int n_call_points = static_cast<unsigned int>(Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg)->direct_call_points.size());
+         auto n_call_points = static_cast<unsigned int>(Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg)->direct_call_points.size());
          if(num_instances.find(functions::get_function_name_cleaned(CG->get_function(tgt), HLSMgr)) == num_instances.end())
             num_instances[functions::get_function_name_cleaned(CG->get_function(tgt), HLSMgr)] = cur_instances * n_call_points;
          else
@@ -321,7 +321,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                dominator_list1.push_front(cur);
             } while(cur != top_vertex);
             ++vert_it;
-            std::list<vertex>::const_iterator last = dominator_list1.end();
+            auto last = dominator_list1.end();
             for(; vert_it != vert_it_end; ++vert_it)
             {
                std::list<vertex> dominator_list2;
@@ -333,7 +333,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
                   dominator_list2.push_front(cur);
                } while(cur != top_vertex);
                /// find the common dominator between two candidates
-               std::list<vertex>::const_iterator dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(), dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
+               auto dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(), dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
                while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it && (num_instances.at(functions::get_function_name_cleaned(CG->get_function(*dl1_it), HLSMgr)) == 1))
                {
                   cur = *dl1_it;

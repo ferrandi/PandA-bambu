@@ -232,7 +232,7 @@ DesignFlowStep_Status top_entity::InternalExec()
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
-      std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
+      auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
       if(synch_reset == "sync")
          delay_unit = flipflop_SR;
       else

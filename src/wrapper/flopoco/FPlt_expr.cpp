@@ -106,7 +106,7 @@ namespace flopoco
       /*	VHDL code description	*/
       manageCriticalPath(_target->localWireDelay() + _target->lutDelay());
       vhdl << tab << declare("nX", wE + wF + 3) << "  <= X" << range(wE + wF + 2, wE + wF + 1) << " & not(X" << of(wE + wF) << ") & X" << range(wE + wF - 1, 0) << ";" << endl;
-      FPAdderSinglePath* value_difference = new FPAdderSinglePath(_target, wE, wF, wE, wF, wE, wF);
+      auto* value_difference = new FPAdderSinglePath(_target, wE, wF, wE, wF, wE, wF);
       value_difference->changeName(getName() + "value_difference");
       oplist.push_back(value_difference);
       inPortMap(value_difference, "X", "Y");

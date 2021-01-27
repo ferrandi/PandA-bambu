@@ -426,7 +426,7 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
    open_value_file(input_values_filename);
 
    /// open file with results
-   std::string result_file = parameters->getOption<std::string>(OPT_simulation_output);
+   auto result_file = parameters->getOption<std::string>(OPT_simulation_output);
    open_result_file(result_file);
 
    /// auxiliary variables initialization
@@ -1569,7 +1569,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
    writer->write("`timescale 1ns / 1ps\n");
    writer->write_comment("CONSTANTS DECLARATION\n");
    writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " + STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + "\n\n");
-   std::string half_target_period_string = STR(target_period / 2);
+   auto half_target_period_string = STR(target_period / 2);
    // If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
    if(half_target_period_string.find(".") == std::string::npos)
       half_target_period_string += ".0";

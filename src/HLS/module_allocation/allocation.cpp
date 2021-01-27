@@ -1070,7 +1070,7 @@ bool allocation::check_for_memory_compliancy(bool Has_extern_allocated_data, tec
    }
    bool are_operations_bounded = memory_ctrl_type != "";
    const functional_unit::operation_vec& Operations = GetPointer<functional_unit>(current_fu)->get_operations();
-   const functional_unit::operation_vec::const_iterator it_o_end = Operations.end();
+   const auto it_o_end = Operations.end();
    for(auto it_o = Operations.begin(); it_o_end != it_o && are_operations_bounded; ++it_o)
       if(!GetPointer<operation>(*it_o)->is_bounded())
          are_operations_bounded = false;
@@ -2090,7 +2090,7 @@ std::string allocation::get_compliant_pipelined_unit(double clock, const std::st
    std::string fastest_pipe_parameter = "0";
    double fastest_stage_period = std::numeric_limits<double>::max();
    std::vector<std::string> pipe_parameters = SplitString(temp_pipe_parameters, ",");
-   const std::vector<std::string>::const_iterator st_end = pipe_parameters.end();
+   const auto st_end = pipe_parameters.end();
    std::vector<std::string>::const_iterator st_next;
    unsigned int skip_pipe_parameter = 0;
    if(is_flopoco_provided)

@@ -183,7 +183,7 @@ void datapath_parallel_cs::add_ports()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added standard port kernel");
    const structural_managerRef& SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   unsigned int num_thread = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto num_thread = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start adding new ports");
    SM->add_port_vector(STR(DONE_PORT_NAME) + "_accelerator", port_o::OUT, num_thread, circuit, bool_type);
@@ -310,8 +310,8 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
 
 void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_par_mod)
 {
-   unsigned int memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
-   unsigned int num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
+   auto num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
    for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_in_port_size(); j++) // resize input port
    {
       structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_in_port(j);

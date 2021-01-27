@@ -437,7 +437,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       {
          const auto* tv = GetPointer<const tree_vec>(tree_node);
          const std::vector<tree_nodeRef>& list_of_op = tv->list_of_op;
-         const std::vector<tree_nodeRef>::const_iterator op_end = list_of_op.end();
+         const auto op_end = list_of_op.end();
          for(auto op = list_of_op.begin(); op != op_end; ++op)
          {
             RecursivelyAnalyze(op_vertex, GET_CONST_NODE(*op), access_type);

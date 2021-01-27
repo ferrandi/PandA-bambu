@@ -161,8 +161,8 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
          return;
    }
    /// for each P ∈ CFG_preds(B) do >   Propagate backward
-   std::vector<unsigned int>::const_iterator lp_it_end = B->list_of_pred.end();
-   for(std::vector<unsigned int>::const_iterator lp_it = B->list_of_pred.begin(); lp_it != lp_it_end; ++lp_it)
+   auto lp_it_end = B->list_of_pred.end();
+   for(auto lp_it = B->list_of_pred.begin(); lp_it != lp_it_end; ++lp_it)
    {
       const blocRef P = sl->list_of_bloc[*lp_it];
       P->live_out.insert(v_index);
@@ -185,8 +185,8 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
       blocRef B = B_it->second;
       unsigned int B_id = B->number;
       /// for each v ∈ PhiUses(B) do > Used in the φ of a successor block
-      std::vector<unsigned int>::const_iterator ls_it_end = B->list_of_succ.end();
-      for(std::vector<unsigned int>::const_iterator ls_it = B->list_of_succ.begin(); ls_it != ls_it_end; ++ls_it)
+      auto ls_it_end = B->list_of_succ.end();
+      for(auto ls_it = B->list_of_succ.begin(); ls_it != ls_it_end; ++ls_it)
       {
          const blocRef B_succ = sl->list_of_bloc[*ls_it];
          for(auto const& phi : B_succ->CGetPhiList())

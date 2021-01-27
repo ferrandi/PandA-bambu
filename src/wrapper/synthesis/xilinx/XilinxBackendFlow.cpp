@@ -110,7 +110,7 @@ XilinxBackendFlow::XilinxBackendFlow(const ParameterConstRef _Param, const std::
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
-      std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
+      auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Importing scripts from file: " + xml_file_path);
@@ -756,9 +756,9 @@ void XilinxBackendFlow::InitDesignParameters()
       xpwr_enabled = true;
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(xpwr_enabled);
    const target_deviceRef device = target->get_target_device();
-   std::string device_name = device->get_parameter<std::string>("model");
-   std::string package = device->get_parameter<std::string>("package");
-   std::string speed_grade = device->get_parameter<std::string>("speed_grade");
+   auto device_name = device->get_parameter<std::string>("model");
+   auto package = device->get_parameter<std::string>("package");
+   auto speed_grade = device->get_parameter<std::string>("speed_grade");
    std::string device_string = device_name + package + speed_grade;
    actual_parameters->parameter_values[PARAM_target_device] = device_string;
 

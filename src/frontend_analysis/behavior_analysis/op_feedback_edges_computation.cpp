@@ -109,8 +109,8 @@ DesignFlowStep_Status op_feedback_edges_computation::InternalExec()
    const BBGraphConstRef fbb = function_behavior->GetBBGraph(FunctionBehavior::FBB);
    /// then consider loops
    std::list<LoopConstRef> loops = function_behavior->CGetLoops()->GetList();
-   std::list<LoopConstRef>::const_iterator loop_end = loops.end();
-   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; ++loop)
+   auto loop_end = loops.end();
+   for(auto loop = loops.begin(); loop != loop_end; ++loop)
    {
       if((*loop)->GetId() == 0)
          continue;

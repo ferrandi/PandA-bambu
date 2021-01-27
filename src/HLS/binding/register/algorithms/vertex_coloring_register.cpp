@@ -85,7 +85,7 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
    const std::list<vertex>& support = HLS->Rliv->get_support();
 
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);

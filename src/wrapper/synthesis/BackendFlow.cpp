@@ -241,7 +241,7 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
    {
       if(!device->has_parameter("vendor"))
          THROW_ERROR("FPGA device vendor not specified");
-      std::string vendor = device->get_parameter<std::string>("vendor");
+      auto vendor = device->get_parameter<std::string>("vendor");
       boost::algorithm::to_lower(vendor);
       if(vendor == "xilinx")
       {

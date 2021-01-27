@@ -132,8 +132,8 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    }
 
    /// analyze formal parameters
-   std::vector<tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
-   for(std::vector<tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin(); formal_it != formal_it_end; ++formal_it)
+   auto formal_it_end = fd->list_of_args.end();
+   for(auto formal_it = fd->list_of_args.begin(); formal_it != formal_it_end; ++formal_it)
       analyze_node(GET_INDEX_NODE(*formal_it), false, false, false);
 
    auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
@@ -181,8 +181,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
       auto* gn = GetPointer<gimple_node>(tn);
       if(gn->use_set)
       {
-         const std::vector<tree_nodeRef>::const_iterator usv_it_end = gn->use_set->variables.end();
-         for(std::vector<tree_nodeRef>::const_iterator usv_it = gn->use_set->variables.begin(); usv_it != usv_it_end; ++usv_it)
+         const auto usv_it_end = gn->use_set->variables.end();
+         for(auto usv_it = gn->use_set->variables.begin(); usv_it != usv_it_end; ++usv_it)
          {
             analyze_node(GET_INDEX_NODE(*usv_it), false, true, false);
          }
@@ -632,8 +632,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          }
          if(!fd->undefined_flag)
          {
-            std::vector<tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin();
-            std::vector<tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
+            auto formal_it = fd->list_of_args.begin();
+            auto formal_it_end = fd->list_of_args.end();
             if(!(is_var_args_p || fd->list_of_args.size() == args.size()))
                THROW_ERROR("In function " + function_name + " a different number of formal and actual parameters is found when function " + tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) + " - " +
                            STR(args.size()) + "\n Check the C source code since an actual parameter is passed to a function that does have the associated formal parameter");
@@ -845,8 +845,8 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          }
          if(!fd->undefined_flag)
          {
-            std::vector<tree_nodeRef>::const_iterator formal_it = fd->list_of_args.begin();
-            std::vector<tree_nodeRef>::const_iterator formal_it_end = fd->list_of_args.end();
+            auto formal_it = fd->list_of_args.begin();
+            auto formal_it_end = fd->list_of_args.end();
             if(!(is_var_args_p || fd->list_of_args.size() == args.size()))
                THROW_ERROR("In function " + function_name + " a different number of formal and actual parameters is found when function " + tree_helper::print_function_name(TM, fd) + " is called: " + STR(fd->list_of_args.size()) + " - " +
                            STR(args.size()) + "\n Check the C source code since an actual parameter is passed to a function that does have the associated formal parameter");

@@ -177,8 +177,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " +");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-      std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+      auto arg1_it = arg1_bitstring.rbegin();
+      auto arg2_it = arg2_bitstring.rbegin();
       bit_lattice carry1 = bit_lattice::ZERO;
       unsigned int max_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
 
@@ -600,8 +600,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " >");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -680,8 +680,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
          bool is_signed_var = tree_helper::is_int(TM, arg1_uid) || tree_helper::is_int(TM, arg2_uid);
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -760,8 +760,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
          bool is_signed_var = tree_helper::is_int(TM, arg1_uid) || tree_helper::is_int(TM, arg2_uid);
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -840,8 +840,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
          bool is_signed_var = tree_helper::is_int(TM, arg1_uid) || tree_helper::is_int(TM, arg2_uid);
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -919,8 +919,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " ==");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -984,8 +984,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " !=");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -1047,8 +1047,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " -");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
          bit_lattice borrow = bit_lattice::ZERO;
 
          unsigned int max_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
@@ -1275,8 +1275,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " &");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
 
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++bit_index)
          {
@@ -1318,8 +1318,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " |");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
 
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++bit_index)
          {
@@ -1403,8 +1403,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " |concat");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
          long long index = 0;
 
          for(; arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++index)
@@ -1451,8 +1451,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " ^");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
 
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++bit_index)
          {
@@ -1504,7 +1504,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = ~" + STR(arg1_uid));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " ~" + bitstring_to_string(arg1_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend(); ++arg1_it, ++bit_index)
          {
             res.push_front(bit_xor_expr_map.at(*arg1_it).at(bit_lattice::ONE));
@@ -1766,7 +1766,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          else
          {
             size_t new_lenght = arg1_bitstring.size() - static_cast<size_t>(const2->value);
-            std::deque<bit_lattice>::const_iterator arg1_it = arg1_bitstring.begin();
+            auto arg1_it = arg1_bitstring.begin();
             while(res.size() < new_lenght)
             {
                res.push_back(*arg1_it);
@@ -1827,7 +1827,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          else
          {
             size_t new_lenght = arg1_bitstring.size() - static_cast<size_t>(const2->value);
-            std::deque<bit_lattice>::const_iterator arg1_it = arg1_bitstring.begin();
+            auto arg1_it = arg1_bitstring.begin();
             while(res.size() < new_lenght)
             {
                res.push_back(*arg1_it);

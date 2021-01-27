@@ -3021,8 +3021,8 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
          n_mux_in_b_0 = n_mux_in_a_0;
          n_mux_in_b_1 = n_mux_in_a_1;
 
-         const std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator rio_it_end = regs_in_op.end();
-         for(std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator rio_it = regs_in_op.begin(); rio_it != rio_it_end; ++rio_it)
+         const auto rio_it_end = regs_in_op.end();
+         for(auto rio_it = regs_in_op.begin(); rio_it != rio_it_end; ++rio_it)
          {
             if(rio_it->first == 0)
             {
@@ -3088,8 +3088,8 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             }
          }
 
-         const std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator cio_it_end = chained_in_op.end();
-         for(std::map<unsigned int, CustomOrderedSet<unsigned int>>::const_iterator cio_it = chained_in_op.begin(); cio_it != cio_it_end; ++cio_it)
+         const auto cio_it_end = chained_in_op.end();
+         for(auto cio_it = chained_in_op.begin(); cio_it != cio_it_end; ++cio_it)
          {
             if(cio_it->first == 0)
             {
@@ -3151,8 +3151,8 @@ unsigned int mux_connection_binding::swap_p(const OpGraphConstRef data, vertex o
             }
          }
 
-         const std::map<unsigned int, CustomOrderedSet<resource_id_type>>::const_iterator mio_it_end = module_in_op.end();
-         for(std::map<unsigned int, CustomOrderedSet<resource_id_type>>::const_iterator mio_it = module_in_op.begin(); mio_it != mio_it_end; ++mio_it)
+         const auto mio_it_end = module_in_op.end();
+         for(auto mio_it = module_in_op.begin(); mio_it != mio_it_end; ++mio_it)
          {
             if(mio_it->first == 0)
             {

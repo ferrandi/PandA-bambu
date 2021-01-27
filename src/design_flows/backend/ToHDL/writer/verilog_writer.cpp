@@ -663,7 +663,7 @@ void verilog_writer::write_vector_port_binding(const structural_objectRef& port,
          if(object_bounded->get_owner()->get_kind() == port_vector_o_K || object_bounded->get_owner()->get_kind() == signal_vector_o_K)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bounded to a port of a port vector");
-            unsigned int vector_position = boost::lexical_cast<unsigned int>(object_bounded->get_id());
+            auto vector_position = boost::lexical_cast<unsigned int>(object_bounded->get_id());
             if(slice and slice->get_id() != object_bounded->get_owner()->get_id())
             {
                if(local_first_port_analyzed)
@@ -1061,7 +1061,7 @@ void verilog_writer::write_state_declaration(const structural_objectRef& cir, co
    indented_output_stream->Append(";\n");
    // indented_output_stream->Append("// synthesis attribute init of _present_state is " + reset_state + ";\n");
    // indented_output_stream->Append("// synthesis attribute use_sync_reset of _present_state is no;\n");
-   module* mod = GetPointer<module>(cir);
+   auto* mod = GetPointer<module>(cir);
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // fsm of context_switch
    {
@@ -1126,7 +1126,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
       indented_output_stream->Append("always @(posedge " + clock_port + " or posedge " + reset_port + ")\n");
    indented_output_stream->Indent();
    /// reset is needed even in case of reset_type == "no"
-   module* mod = GetPointer<module>(cir);
+   auto* mod = GetPointer<module>(cir);
    const NP_functionalityRef& np = mod->get_NP_functionality();
    if(np->exist_NP_functionality(NP_functionality::FSM_CS)) // fsm of context_switch
    {
@@ -1785,7 +1785,7 @@ bool verilog_writer::check_keyword(std::string id) const
 
 void verilog_writer::write_timing_specification(const technology_managerConstRef TM, const structural_objectRef& circ)
 {
-   module* mod_inst = GetPointer<module>(circ);
+   auto* mod_inst = GetPointer<module>(circ);
    if(mod_inst->get_internal_objects_size() > 0)
       return;
    const NP_functionalityRef& np = mod_inst->get_NP_functionality();

@@ -133,7 +133,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
          for(const auto& phi : bb_node_info->block->CGetPhiList())
          {
             const var_pp_functorConstRef svpf(new std_var_pp_functor(helper));
-            std::string res = STR(phi->index);
+            auto res = STR(phi->index);
 #if HAVE_HLS_BUILT
             if(schedule)
                res += " " + schedule->PrintTimingInformation(phi->index) + " ";
@@ -157,7 +157,7 @@ void BBWriter::operator()(std::ostream& out, const vertex& v) const
          for(const auto& statement : bb_node_info->block->CGetStmtList())
          {
             const var_pp_functorConstRef svpf(new std_var_pp_functor(helper));
-            std::string res = STR(GET_INDEX_NODE(statement));
+            auto res = STR(GET_INDEX_NODE(statement));
 #if HAVE_HLS_BUILT
             if(schedule)
                res += " " + schedule->PrintTimingInformation(statement->index) + " ";

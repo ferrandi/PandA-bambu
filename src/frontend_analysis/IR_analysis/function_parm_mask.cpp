@@ -448,7 +448,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
    }
 
    bool modified = false;
-   const std::string output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+   const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    for(const auto& source_file : AppM->input_files)
    {
       std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);

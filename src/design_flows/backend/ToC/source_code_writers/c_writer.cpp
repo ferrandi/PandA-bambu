@@ -1118,8 +1118,8 @@ void CWriter::compute_phi_nodes(const FunctionBehaviorConstRef function_behavior
       /// in case we declare the variables introduced during the phi nodes destruction
       if(!created_variables.empty())
       {
-         std::map<unsigned int, unsigned int>::const_iterator cv_it_end = created_variables.end();
-         for(std::map<unsigned int, unsigned int>::const_iterator cv_it = created_variables.begin(); cv_it != cv_it_end; ++cv_it)
+         auto cv_it_end = created_variables.end();
+         for(auto cv_it = created_variables.begin(); cv_it != cv_it_end; ++cv_it)
          {
             THROW_ASSERT(symbol_table.find(cv_it->first) != symbol_table.end(), "variable not found in symbol_table");
             unsigned real_var = cv_it->second;
@@ -1390,8 +1390,8 @@ void CWriter::insert_copies(vertex b, const BBGraphConstRef bb_domGraph, const B
 {
    std::list<unsigned int> pushed;
    /// fill the renaming table for basic block b
-   std::map<unsigned int, std::deque<std::string>>::const_iterator aos_it_end = array_of_stacks.end();
-   for(std::map<unsigned int, std::deque<std::string>>::const_iterator aos_it = array_of_stacks.begin(); aos_it != aos_it_end; ++aos_it)
+   auto aos_it_end = array_of_stacks.end();
+   for(auto aos_it = array_of_stacks.begin(); aos_it != aos_it_end; ++aos_it)
    {
       if(!aos_it->second.empty())
       {

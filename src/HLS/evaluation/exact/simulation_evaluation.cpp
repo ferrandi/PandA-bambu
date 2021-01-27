@@ -116,7 +116,7 @@ DesignFlowStep_Status SimulationEvaluation::InternalExec()
       HLSMgr->RSim->sim_tool->Clean();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cleaned up simulation files");
    }
-   std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
+   auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {

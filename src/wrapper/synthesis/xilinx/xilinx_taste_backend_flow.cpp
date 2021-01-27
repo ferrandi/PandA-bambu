@@ -138,7 +138,7 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    /// Modifying xst project adding grlib files
    if(actual_parameters->parameter_values.find(PARAM_xst_prj_file) != actual_parameters->parameter_values.end())
    {
-      const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+      const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
       std::ofstream temp_file((output_temporary_directory + "/temp_xst_prj_file0").c_str());
       temp_file << "vhdl grlib GRLIB/grlib/stdlib/version.vhd" << std::endl;
       temp_file << "vhdl grlib GRLIB/grlib/stdlib/stdlib.vhd" << std::endl;

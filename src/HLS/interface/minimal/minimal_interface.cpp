@@ -322,7 +322,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             std::ofstream init_file_a(GetPath((init_filename).c_str()));
             std::ofstream init_file_b(GetPath((+"0_" + init_filename).c_str()));
 
-            module* shared_memory_module = GetPointer<module>(shared_memory);
+            auto* shared_memory_module = GetPointer<module>(shared_memory);
             shared_memory_module->SetParameter("address_space_begin", STR(base_address));
             shared_memory_module->SetParameter("address_space_rangesize", STR(n_bytes));
             if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))
@@ -381,7 +381,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             mem_variables.sort(compareMemVarsPair);
 
             std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m_next;
-            for(std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m = mem_variables.begin(); m != mem_variables.end(); ++m)
+            for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
                init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                std::vector<std::string> splitted = SplitString(init_v, ",");

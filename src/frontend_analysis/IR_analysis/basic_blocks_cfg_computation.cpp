@@ -192,8 +192,8 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       bbgc->add_vertex(it_bb->second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
    }
-   std::map<unsigned int, blocRef>::const_iterator b_end = sl->list_of_bloc.end();
-   for(std::map<unsigned int, blocRef>::const_iterator b = sl->list_of_bloc.begin(); b != b_end; ++b)
+   auto b_end = sl->list_of_bloc.end();
+   for(auto b = sl->list_of_bloc.begin(); b != b_end; ++b)
    {
       if(b->second->number == BB_ENTRY || b->second->number == BB_EXIT)
          continue;
@@ -211,8 +211,8 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       }
       else
       {
-         std::vector<unsigned int>::const_iterator su_end = b->second->list_of_succ.end();
-         for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
+         auto su_end = b->second->list_of_succ.end();
+         for(auto su = b->second->list_of_succ.begin(); su != su_end; ++su)
          {
             if((*su) == bloc::EXIT_BLOCK_ID)
             {
@@ -245,7 +245,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                // Map between gimple_label and index of basic block
                std::map<tree_nodeRef, unsigned int> label_to_bb;
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
+               for(auto su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   THROW_ASSERT(sl->list_of_bloc[*su]->CGetStmtList().size(), "Empty Basic Block");
                   const auto first = sl->list_of_bloc[*su]->CGetStmtList().front();
@@ -278,7 +278,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             {
                // Map between gimple_label and index of basic block
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
+               for(auto su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(*su), CFG_SELECTOR, *su);
                }

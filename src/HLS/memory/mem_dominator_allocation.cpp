@@ -126,7 +126,7 @@ void mem_dominator_allocation::Initialize()
       /// load xml memory allocation file
       for(auto source_file : HLSMgr->input_files)
       {
-         const std::string output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+         const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
          std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
          auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
          if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
@@ -151,7 +151,7 @@ void mem_dominator_allocation::Initialize()
                continue;
             if(child->get_name() == "memory_allocation")
             {
-               unsigned long long int base_address = static_cast<unsigned long long int>(-1LL);
+               auto base_address = static_cast<unsigned long long int>(-1LL);
                if(CE_XVM(base_address, child))
                   LOAD_XVM(base_address, child);
                user_defined_base_address = base_address;
@@ -742,7 +742,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          else
          {
-            unsigned int n_call_points = static_cast<unsigned int>(Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*eo, *cg)->direct_call_points.size());
+            auto n_call_points = static_cast<unsigned int>(Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*eo, *cg)->direct_call_points.size());
             if(num_instances.find(tgt) == num_instances.end())
                num_instances[tgt] = cur_instances * n_call_points;
             else
@@ -753,8 +753,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
    // THROW_ASSERT(num_instances.find(top_vertex)->second == 1, "something of wrong happened");
 
    /// find the common dominator and decide where to allocate
-   const std::map<unsigned int, CustomOrderedSet<vertex>>::const_iterator it_end = var_map.end();
-   for(std::map<unsigned int, CustomOrderedSet<vertex>>::const_iterator it = var_map.begin(); it != it_end; ++it)
+   const auto it_end = var_map.end();
+   for(auto it = var_map.begin(); it != it_end; ++it)
    {
       bool multiple_top_call_graph = false;
       unsigned int funID = 0;
@@ -824,7 +824,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   dominator_list1.push_front(cur);
                } while(cur != top_vertex);
                ++vert_it;
-               std::list<vertex>::const_iterator last = dominator_list1.end();
+               auto last = dominator_list1.end();
                for(; vert_it != vert_it_end; ++vert_it)
                {
                   std::list<vertex> dominator_list2;
@@ -838,7 +838,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      dominator_list2.push_front(cur);
                   } while(cur != top_vertex);
                   /// find the common dominator between two candidates
-                  std::list<vertex>::const_iterator dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(), dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
+                  auto dl1_it = dominator_list1.begin(), dl2_it = dominator_list2.begin(), dl2_it_end = dominator_list2.end(), cur_last = dominator_list1.begin();
                   while(dl1_it != last && dl2_it != dl2_it_end && *dl1_it == *dl2_it && (num_instances.find(*dl1_it)->second == 1 || !is_written))
                   {
                      cur = *dl1_it;

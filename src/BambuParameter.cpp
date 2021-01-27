@@ -1677,7 +1677,7 @@ int BambuParameter::Exec()
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
-            std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
+            auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
             std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
             objective_string = "";
             for(const auto& objective : objective_vector)
@@ -1788,7 +1788,7 @@ int BambuParameter::Exec()
             {
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
             }
-            std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
+            auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
             std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
             /*
              * look among the objectives of the evaluation. if "CYCLES" is
@@ -2990,7 +2990,7 @@ void BambuParameter::CheckParameters()
    if(getOption<bool>(OPT_evaluation))
    {
       THROW_ASSERT(isOption(OPT_evaluation_objectives), "missing evaluation objectives");
-      std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
+      auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
       THROW_ASSERT(not objective_string.empty(), "");
       std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
 
@@ -3354,7 +3354,7 @@ void BambuParameter::CheckParameters()
             THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
          if(getOption<std::string>(OPT_registered_inputs) != "auto")
             THROW_ERROR("Registered inputs option cannot be set for context switch architecture");
-         unsigned int v = getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
+         auto v = getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
          bool f;                                                        // the result goes here
          f = v && !(v & (v - 1));
          if(!f)
@@ -3517,7 +3517,7 @@ void BambuParameter::CheckParameters()
    /// In case copy input files
    if(isOption(OPT_file_input_data))
    {
-      std::string input_data = getOption<std::string>(OPT_file_input_data);
+      auto input_data = getOption<std::string>(OPT_file_input_data);
       std::vector<std::string> splitted = SplitString(input_data, ",");
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)

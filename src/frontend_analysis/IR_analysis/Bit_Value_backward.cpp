@@ -496,9 +496,9 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " <=");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(se_output_bitstring));
 
-      std::deque<bit_lattice>::const_reverse_iterator it_output_bitstring = se_output_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator it_arg1_bitstring = arg1_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator it_arg2_bitstring = arg2_bitstring.rbegin();
+      auto it_output_bitstring = se_output_bitstring.rbegin();
+      auto it_arg1_bitstring = arg1_bitstring.rbegin();
+      auto it_arg2_bitstring = arg2_bitstring.rbegin();
 
       std::deque<bit_lattice> res_input1;
       for(; it_output_bitstring != se_output_bitstring.rend() && it_arg1_bitstring != arg1_bitstring.rend(); ++it_output_bitstring, ++it_arg1_bitstring, ++it_arg2_bitstring)
@@ -564,9 +564,9 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " <=");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(se_output_bitstring));
 
-      std::deque<bit_lattice>::const_reverse_iterator it_output_bitstring = se_output_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator it_arg1_bitstring = arg1_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator it_arg2_bitstring = arg2_bitstring.rbegin();
+      auto it_output_bitstring = se_output_bitstring.rbegin();
+      auto it_arg1_bitstring = arg1_bitstring.rbegin();
+      auto it_arg2_bitstring = arg2_bitstring.rbegin();
 
       std::deque<bit_lattice> res_input1;
 
@@ -630,8 +630,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " <=");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(se_output_bitstring));
 
-      std::deque<bit_lattice>::const_reverse_iterator it_output_bitstring = se_output_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator it_arg1_bitstring = arg1_bitstring.rbegin();
+      auto it_output_bitstring = se_output_bitstring.rbegin();
+      auto it_arg1_bitstring = arg1_bitstring.rbegin();
 
       std::deque<bit_lattice> res_input1;
       long long int index = 0;
@@ -702,8 +702,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " <=");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(se_output_bitstring));
 
-      std::deque<bit_lattice>::const_reverse_iterator it_output_bitstring = se_output_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator it_arg1_bitstring = arg1_bitstring.rbegin();
+      auto it_output_bitstring = se_output_bitstring.rbegin();
+      auto it_arg1_bitstring = arg1_bitstring.rbegin();
 
       std::deque<bit_lattice> res_input1;
 
@@ -748,8 +748,8 @@ std::deque<bit_lattice> Bit_Value::backward_transfer(const gimple_assign* ga, un
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "~" + bitstring_to_string(arg1_bitstring) + " <=");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(se_output_bitstring));
 
-      std::deque<bit_lattice>::const_reverse_iterator it_output_bitstring = se_output_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator it_arg1_bitstring = arg1_bitstring.rbegin();
+      auto it_output_bitstring = se_output_bitstring.rbegin();
+      auto it_arg1_bitstring = arg1_bitstring.rbegin();
 
       std::deque<bit_lattice> res_input1;
 

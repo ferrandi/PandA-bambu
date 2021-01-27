@@ -309,7 +309,7 @@ void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& 
 void VcdSignalSelection::SingleStepPropagateParamToSsa(const TreeNodeMap<size_t>& used_ssa, const TreeNodeSet& address_parameters)
 {
    auto ssause_it = used_ssa.begin();
-   const TreeNodeMap<size_t>::const_iterator ssause_end = used_ssa.end();
+   const auto ssause_end = used_ssa.end();
    for(; ssause_it != ssause_end; ++ssause_it)
    {
       THROW_ASSERT(ssause_it->first->get_kind() == tree_reindex_K, ssause_it->first->ToString() + " is of kind " + tree_node::GetString(ssause_it->first->get_kind()));

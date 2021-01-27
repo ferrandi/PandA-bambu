@@ -155,8 +155,8 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
          {
             bool add;
             add = true;
-            std::vector<unsigned int>::const_iterator it_end = label[vindex].end();
-            for(std::vector<unsigned int>::const_iterator it = label[vindex].begin(); it != it_end && add; ++it)
+            auto it_end = label[vindex].end();
+            for(auto it = label[vindex].begin(); it != it_end && add; ++it)
                if(*it == i)
                   add = false;
             if(add)
@@ -172,7 +172,7 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
    const std::list<vertex>& support = HLS->Rliv->get_support();
 
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);

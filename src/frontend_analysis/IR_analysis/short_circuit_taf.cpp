@@ -293,8 +293,8 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
    bool mergeable_pair_found = false;
    /// let bb1 the upper if
    THROW_ASSERT(list_of_bloc.find(merging_candidate) != list_of_bloc.end(), "merging_candidate is not included in list_of_bloc");
-   const std::vector<unsigned int>::const_iterator it_pred_end = list_of_bloc[merging_candidate]->list_of_pred.end();
-   for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[merging_candidate]->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb1_pred; ++it_bb1_pred)
+   const auto it_pred_end = list_of_bloc[merging_candidate]->list_of_pred.end();
+   for(auto it_bb1_pred = list_of_bloc[merging_candidate]->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb1_pred; ++it_bb1_pred)
    {
       bb1 = *it_bb1_pred;
       if(bb1 == bloc::ENTRY_BLOCK_ID || bb1 == merging_candidate)
@@ -310,7 +310,7 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
       else
          bb1_true = false;
       /// let search bb2, the lower if
-      for(std::vector<unsigned int>::const_iterator it_bb2_pred = list_of_bloc[merging_candidate]->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb2_pred; ++it_bb2_pred)
+      for(auto it_bb2_pred = list_of_bloc[merging_candidate]->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb2_pred; ++it_bb2_pred)
       {
          bb2 = *it_bb2_pred;
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining merging candidate nested predecessor " + boost::lexical_cast<std::string>(bb2));
@@ -592,8 +592,8 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
 {
    /// fix bb2 predecessor
    std::vector<unsigned int>::iterator pos;
-   std::vector<unsigned int>::const_iterator it_bb1_pred_end = list_of_bloc[bb1]->list_of_pred.end();
-   for(std::vector<unsigned int>::const_iterator it_bb1_pred = list_of_bloc[bb1]->list_of_pred.begin(); it_bb1_pred_end != it_bb1_pred; ++it_bb1_pred)
+   auto it_bb1_pred_end = list_of_bloc[bb1]->list_of_pred.end();
+   for(auto it_bb1_pred = list_of_bloc[bb1]->list_of_pred.begin(); it_bb1_pred_end != it_bb1_pred; ++it_bb1_pred)
    {
       list_of_bloc[bb2]->list_of_pred.push_back(*it_bb1_pred);
       pos = std::find(list_of_bloc[*it_bb1_pred]->list_of_succ.begin(), list_of_bloc[*it_bb1_pred]->list_of_succ.end(), bb1);
@@ -616,7 +616,7 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
 
 void short_circuit_taf::fix_multi_way_if(unsigned int curr_bb, std::map<unsigned int, blocRef>& list_of_bloc, unsigned int succ)
 {
-   std::vector<unsigned int>::const_iterator lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
+   auto lop_it_end = list_of_bloc[curr_bb]->list_of_pred.end();
    for(auto lop_it = list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it_end != lop_it; ++lop_it)
    {
       const auto list_of_pred_stmt = list_of_bloc[*lop_it]->CGetStmtList();

@@ -200,8 +200,8 @@ const std::tuple<const std::vector<unsigned int>&, const std::vector<unsigned in
       if(hls_target->get_target_device()->has_parameter("DSPs_x_sizes"))
       {
          THROW_ASSERT(hls_target->get_target_device()->has_parameter("DSPs_y_sizes"), "device description is not complete");
-         std::string DSPs_x_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_x_sizes");
-         std::string DSPs_y_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_y_sizes");
+         auto DSPs_x_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_x_sizes");
+         auto DSPs_y_sizes = hls_target->get_target_device()->get_parameter<std::string>("DSPs_y_sizes");
          std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
          std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
          size_t n_elements = DSPs_x_sizes_vec.size();
@@ -2136,7 +2136,7 @@ double AllocationInformation::GetPhiConnectionLatency(const unsigned int stateme
                if(def_edge.first->index && !behavioral_helper->is_a_constant(def_edge.first->index))
                   phi_inputs.insert(def_edge.first->index);
             }
-            size_t curr_in_degree = static_cast<size_t>(phi_inputs.size());
+            auto curr_in_degree = static_cast<size_t>(phi_inputs.size());
             if(curr_in_degree > 4)
                curr_in_degree = 4;
             ret_value = std::max(ret_value, curr_in_degree);

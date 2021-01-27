@@ -97,8 +97,8 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();
    /// then consider loops
    std::list<LoopConstRef> loops = function_behavior->CGetLoops()->GetList();
-   std::list<LoopConstRef>::const_iterator loop_end = loops.end();
-   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; ++loop)
+   auto loop_end = loops.end();
+   for(auto loop = loops.begin(); loop != loop_end; ++loop)
    {
       if((*loop)->GetId() == 0)
          continue;

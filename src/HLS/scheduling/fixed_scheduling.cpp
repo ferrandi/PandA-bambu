@@ -71,7 +71,7 @@ fixed_scheduling::~fixed_scheduling() = default;
 
 DesignFlowStep_Status fixed_scheduling::InternalExec()
 {
-   std::string File = parameters->getOption<std::string>("fixed_scheduling_file");
+   auto File = parameters->getOption<std::string>("fixed_scheduling_file");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reading file: " + File);
    try

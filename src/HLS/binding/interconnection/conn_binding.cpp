@@ -336,7 +336,7 @@ void conn_binding::mux_connection(const hlsRef HLS, const structural_managerRef 
    structural_objectRef circuit = SM->get_circ();
 
    // CustomOrderedSet<std::pair<std::string, std::string> > already_considered;
-   for(std::map<std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>, connection_objRef>::const_iterator i = conn_implementation.begin(); i != conn_implementation.end(); ++i)
+   for(auto i = conn_implementation.begin(); i != conn_implementation.end(); ++i)
    {
       generic_objRef src = std::get<0>(i->first);
       generic_objRef tgt = std::get<1>(i->first);
@@ -896,7 +896,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    if(selectors.find(conn_binding::IN) != selectors.end())
    {
       auto connection_binding_sets = selectors.find(conn_binding::IN)->second;
-      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
+      for(auto j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
       {
          // unit associate with selector
          const generic_objRef elem = j->first.first;
@@ -1054,7 +1054,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       auto mut = GetPointer<multi_unbounded_obj>(mu);
       const auto& ops = mut->get_ops();
       structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
-      port_o* port = GetPointer<port_o>(inOps);
+      auto* port = GetPointer<port_o>(inOps);
       auto j = 0u;
       for(const auto& op : ops)
       {
@@ -1089,7 +1089,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    if(selectors.find(conn_binding::OUT) != selectors.end())
    {
       auto connection_binding_sets = selectors.find(conn_binding::OUT)->second;
-      for(std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>::const_iterator j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
+      for(auto j = connection_binding_sets.begin(); j != connection_binding_sets.end(); ++j)
       {
          THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
          if(GetPointer<commandport_obj>(j->second)->get_command_type() == commandport_obj::SWITCH)

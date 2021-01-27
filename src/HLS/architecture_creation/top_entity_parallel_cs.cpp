@@ -210,7 +210,7 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
-      std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
+      auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
       if(synch_reset == "sync")
          delay_unit = flipflop_SR;
       else
@@ -329,7 +329,7 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
 
 void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW)
 {
-   unsigned int num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST) + "_accelerator", port_vector_o_K, controller_circuit);
    GetPointer<port_o>(controller_done_request)->add_n_ports(num_kernel, controller_done_request);
    structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME) + "_accelerator", port_vector_o_K, controller_circuit);
@@ -349,7 +349,7 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
    structural_objectRef datapath_circuit = Datapath->get_circ();
    structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   unsigned int num_slots = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto num_slots = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", loopBW));
 
    structural_objectRef controller_task_pool_end = controller_circuit->find_member(STR(TASKS_POOL_END), port_o_K, controller_circuit);

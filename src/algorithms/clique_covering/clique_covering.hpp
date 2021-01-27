@@ -851,7 +851,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
          support.insert(*ui);
          all_vertices.insert(*ui);
       }
-      cc_compatibility_graphRef completeCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
+      auto completeCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
                                                                                                   cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
 
       std::map<C_vertex, CustomOrderedSet<C_vertex>> current_partitions;
@@ -864,7 +864,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
          /// color the conflict graph projection
          int cur_level = max_level;
          int selector = 1 << cur_level;
-         cc_compatibility_graphRef filteredCG = cc_compatibility_graphRef(
+         auto filteredCG = cc_compatibility_graphRef(
              new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(selector, &clique_covering_graph_bulk), cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>(&support)));
          while(cur_level > 0)
          {
@@ -952,8 +952,8 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
 
       build_partitions(support, ds, current_partitions);
       /// and then fill the cliques
-      std::map<C_vertex, CustomOrderedSet<C_vertex>>::const_iterator cp_it_end = current_partitions.end();
-      for(std::map<C_vertex, CustomOrderedSet<C_vertex>>::const_iterator cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
+      auto cp_it_end = current_partitions.end();
+      for(auto cp_it = current_partitions.begin(); cp_it != cp_it_end; ++cp_it)
       {
          cliques.push_back(cp_it->second);
          cliques.back().insert(cp_it->first);
@@ -1319,8 +1319,8 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
          current = support.find(src);
          THROW_ASSERT(current != support.end(), "unexpected condition");
          support.erase(current);
-         const std::map<edge_descriptor, int>::const_iterator re_it_end = removed_edges.end();
-         for(std::map<edge_descriptor, int>::const_iterator re_it = removed_edges.begin(); re_it != re_it_end; ++re_it)
+         const auto re_it_end = removed_edges.end();
+         for(auto re_it = removed_edges.begin(); re_it != re_it_end; ++re_it)
          {
             (*CG)[re_it->first].selector = re_it->second;
          }
@@ -1560,7 +1560,7 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
       if(partitions.empty())
          num_cols = color_the_cc_compatibility_graph(clique_covering_graph_bulk);
       // std::cerr << "initial num_cols " << num_cols << std::endl;
-      cc_compatibility_graphRef completeCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
+      auto completeCG = cc_compatibility_graphRef(new cc_compatibility_graph(clique_covering_graph_bulk, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>(COMPATIBILITY_ALL_EDGES, &clique_covering_graph_bulk),
                                                                                                   cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>()));
 
       size_t final_num_cols = num_cols;

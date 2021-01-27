@@ -126,7 +126,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
       {
          auto* curr_op = GetPointer<operation>(*ops);
          is_commutative = is_commutative && curr_op->commutative;
-         std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it_end = curr_op->supported_types.end();
+         auto supported_type_it_end = curr_op->supported_types.end();
          if(curr_op->supported_types.begin() == curr_op->supported_types.end())
          {
             if(isTemplate)
@@ -140,7 +140,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          }
          else
          {
-            for(std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it = curr_op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
+            for(auto supported_type_it = curr_op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
             {
                auto prec_it_end = supported_type_it->second.end();
                auto prec_it = supported_type_it->second.begin();
@@ -167,8 +167,8 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          if(pipe_parameters_str != "")
          {
             std::vector<std::string> parameters_split = SplitString(pipe_parameters_str, "|");
-            const std::vector<std::string>::const_iterator pp_it_end = parameters_split.end();
-            for(std::vector<std::string>::const_iterator pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
+            const auto pp_it_end = parameters_split.end();
+            for(auto pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
                std::vector<std::string> precision_pipe_param_pair = SplitString(*pp_it, ":");
                THROW_ASSERT(precision_pipe_param_pair.size() == 2, "malformed pipe parameter string");
@@ -207,8 +207,8 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          if(portsize_parameters_str != "")
          {
             std::vector<std::string> parameters_split = SplitString(portsize_parameters_str, "|");
-            const std::vector<std::string>::const_iterator pp_it_end = parameters_split.end();
-            for(std::vector<std::string>::const_iterator pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
+            const auto pp_it_end = parameters_split.end();
+            for(auto pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
                std::vector<std::string> precision_portsize_param_pair = SplitString(*pp_it, ":");
                THROW_ASSERT(precision_portsize_param_pair.size() == 2, "malformed portsize parameter string");
@@ -457,8 +457,8 @@ void FunctionalUnitStep::Initialize()
    if(device->has_parameter("DSPs_y_sizes"))
    {
       THROW_ASSERT(device->has_parameter("DSPs_x_sizes"), "device description is not complete");
-      std::string DSPs_x_sizes = device->get_parameter<std::string>("DSPs_x_sizes");
-      std::string DSPs_y_sizes = device->get_parameter<std::string>("DSPs_y_sizes");
+      auto DSPs_x_sizes = device->get_parameter<std::string>("DSPs_x_sizes");
+      auto DSPs_y_sizes = device->get_parameter<std::string>("DSPs_y_sizes");
       std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
       std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
       for(size_t DSP_index = 0; DSP_index < DSPs_y_sizes_vec.size(); DSP_index++)
@@ -501,10 +501,10 @@ technology_nodeRef FunctionalUnitStep::create_template_instance(const technology
          new_op->time_m->set_initiation_time(ii);
       }
       new_op->commutative = op->commutative;
-      std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it_end = op->supported_types.end();
+      auto supported_type_it_end = op->supported_types.end();
       if(op->supported_types.begin() != op->supported_types.end())
       {
-         for(std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it = op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
+         for(auto supported_type_it = op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
          {
             new_op->supported_types[supported_type_it->first].push_back(prec);
          }

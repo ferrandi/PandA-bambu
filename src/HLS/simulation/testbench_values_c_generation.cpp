@@ -283,7 +283,7 @@ void TestbenchValuesCGeneration::ComputeRelationships(DesignFlowStepSet& design_
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const CBackendStepFactory* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
          CBackend::Type hls_c_backend_type;
 #if HAVE_HLS_BUILT
@@ -298,8 +298,8 @@ void TestbenchValuesCGeneration::ComputeRelationships(DesignFlowStepSet& design_
             if(parameters->isOption(OPT_pretty_print))
             {
                const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-               const CBackendStepFactory* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-               const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
+               const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+               const auto output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
                const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
                const DesignFlowStepRef c_backend_step =
                    c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());

@@ -400,8 +400,8 @@ void memory_allocation::finalize_memory_allocation()
                   THROW_ERROR("Option --aligned-access cannot be used in presence of memcpy, memcmp or memset");
             }
 
-            std::vector<HLS_manager::io_binding_type>::const_iterator vr_it_end = var_read.end();
-            for(std::vector<HLS_manager::io_binding_type>::const_iterator vr_it = var_read.begin(); vr_it != vr_it_end; ++vr_it)
+            auto vr_it_end = var_read.end();
+            for(auto vr_it = var_read.begin(); vr_it != vr_it_end; ++vr_it)
             {
                unsigned int var = std::get<0>(*vr_it);
                if(var && tree_helper::is_a_pointer(TreeM, var))

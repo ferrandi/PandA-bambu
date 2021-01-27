@@ -68,7 +68,7 @@ ASICBackendFlow::ASICBackendFlow(const ParameterConstRef _Param, const std::stri
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
-      std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
+      auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);

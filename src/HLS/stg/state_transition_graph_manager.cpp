@@ -124,7 +124,7 @@ void StateTransitionGraphManager::compute_min_max()
    ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
    CustomUnorderedMap<vertex, unsigned int> CSteps_min;
    CustomUnorderedMap<vertex, unsigned int> CSteps_max;
-   const std::list<vertex>::iterator it_sv_end = sorted_vertices.end();
+   const auto it_sv_end = sorted_vertices.end();
    for(auto it_sv = sorted_vertices.begin(); it_sv != it_sv_end; ++it_sv)
    {
       CSteps_min[*it_sv] = 0;
@@ -260,7 +260,7 @@ void StateTransitionGraphManager::specialise_mu(structural_objectRef& mu_mod, ge
    auto mut = GetPointer<multi_unbounded_obj>(mu);
    THROW_ASSERT(mut, "unexpected condition");
    structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
-   port_o* port = GetPointer<port_o>(inOps);
+   auto* port = GetPointer<port_o>(inOps);
    const auto& ops = mut->get_ops();
    auto n_in_ports = static_cast<unsigned int>(ops.size());
    port->add_n_ports(n_in_ports, inOps);

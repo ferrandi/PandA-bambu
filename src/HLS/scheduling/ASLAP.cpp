@@ -313,8 +313,8 @@ void ASLAP::add_constraints_to_ALAP()
 
    ALAP_nip.resize(levels.begin(), levels.end(), 0);
    ALAP_p.resize(levels.begin(), levels.end(), 0);
-   std::deque<vertex>::const_reverse_iterator iend = levels.rend();
-   for(std::deque<vertex>::const_reverse_iterator i = levels.rbegin(); i != iend; ++i)
+   auto iend = levels.rend();
+   for(auto i = levels.rbegin(); i != iend; ++i)
    {
       if(!beh_graph->is_in_subset(*i))
          continue;
@@ -465,8 +465,8 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
    Rev_finish_time.clear();                                 //
    Rev_finish_time.resize(levels.begin(), levels.end(), 0); //
 
-   std::deque<vertex>::const_reverse_iterator i_end = levels.rend();
-   for(std::deque<vertex>::const_reverse_iterator i = levels.rbegin(); i != i_end; ++i)
+   auto i_end = levels.rend();
+   for(auto i = levels.rbegin(); i != i_end; ++i)
    {
       if(!beh_graph->is_in_subset(*i))
          continue;
@@ -510,8 +510,8 @@ void ASLAP::compute_ALAP_worst_case()
    std::map<ControlStep, ControlStep> rev_levels_to_cycles;
    std::map<ControlStep, ControlStep> max_et;
 
-   std::deque<vertex>::const_reverse_iterator i_end = levels.rend();
-   for(std::deque<vertex>::const_reverse_iterator i = levels.rbegin(); i != i_end; ++i)
+   auto i_end = levels.rend();
+   for(auto i = levels.rbegin(); i != i_end; ++i)
    {
       if(!beh_graph->is_in_subset(*i))
          continue;

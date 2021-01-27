@@ -316,7 +316,7 @@ StateTransitionGraph::~StateTransitionGraph() = default;
 
 void StateTransitionGraph::WriteDot(const std::string& file_name, const int detail_level) const
 {
-   const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
+   const auto output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
    CustomSet<unsigned int> critical_paths;
    VertexIterator state, state_end;
    for(boost::tie(state, state_end) = boost::vertices(*this); state != state_end; state++)

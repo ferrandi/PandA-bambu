@@ -95,7 +95,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
    last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline());
    next_unique_state get_next(HLS->STG->GetStg());
 
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       // std::cerr << "current state for sv " << HLS->Rliv->get_name(*vIt) << std::endl;
@@ -113,7 +113,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
       if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       {
          std::list<vertex> running_ops = HLS->STG->GetStg()->GetStateInfo(*vIt)->executing_operations;
-         const std::list<vertex>::const_iterator opEnd = running_ops.end();
+         const auto opEnd = running_ops.end();
          vertex state_0 = get_next(start_state);
          for(auto opIt = running_ops.begin(); opIt != opEnd; ++opIt)
          {

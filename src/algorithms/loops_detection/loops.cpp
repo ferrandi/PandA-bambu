@@ -292,7 +292,7 @@ void Loops::DetectLoops()
    {
       auto& curr_list = level_vertices_rel[vl_pair.second];
       auto pos = curr_list.begin();
-      const std::list<vertex>::iterator pos_end = curr_list.end();
+      const auto pos_end = curr_list.end();
       while(pos_end != pos && dfs_order.find(vl_pair.first)->second > dfs_order.find(*pos)->second)
          ++pos;
       if(pos == pos_end)
@@ -606,7 +606,7 @@ void Loops::WriteDot(const std::string& file_name
 #endif
 ) const
 {
-   std::string output_directory = Param->getOption<std::string>(OPT_dot_directory);
+   auto output_directory = Param->getOption<std::string>(OPT_dot_directory);
    output_directory += FB->CGetBehavioralHelper()->get_function_name() + "/";
    const BBGraphRef cfg = FB->GetBBGraph(FunctionBehavior::BB);
    std::ofstream dot((output_directory + file_name).c_str());

@@ -304,7 +304,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                }
                if(called_node->get_kind() == ssa_name_K)
                {
-                  const std::string called_ssa_name = STR(called_node);
+                  const auto called_ssa_name = STR(called_node);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Indirect function call through ssa " + called_ssa_name);
                   const auto* f_ptr = GetPointer<const pointer_type>(tree_helper::CGetType(called_node));
                   THROW_ASSERT(f_ptr, "");

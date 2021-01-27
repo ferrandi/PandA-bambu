@@ -502,7 +502,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                if(parameters->isOption(OPT_pretty_print))
                {
                   const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-                  const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
+                  const auto output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
                   const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
                   const DesignFlowStepRef c_backend_step =
                       c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
@@ -561,7 +561,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                   // before this is executed. At that time the top
                   // function will be ready. The dependencies from HLS steps are
                   // added after the check on the call graph for this reason.
-                  const FrontendFlowStepFactory* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+                  const auto* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
                   const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef cg_design_flow_step =
@@ -577,7 +577,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                   const auto top_funs = call_graph_manager->GetRootFunctions();
                   THROW_ASSERT(top_funs.size() == 1, "");
                   const auto top_fu_id = *top_funs.begin();
-                  const HLSFlowStepFactory* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
+                  const auto* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
 
                   const vertex hls_top_function = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), top_fu_id));
                   const DesignFlowStepRef hls_top_function_step = hls_top_function ? design_flow_graph->CGetDesignFlowStepInfo(hls_top_function)->design_flow_step : hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, top_fu_id);

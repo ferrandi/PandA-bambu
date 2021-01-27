@@ -1362,8 +1362,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       /// topologically sort vertex of CD_EDGE based graph
       std::deque<size_t> Csorted_vertices;
       topological_based_sorting(*CD_chained_graph, c2s, sdg, std::front_inserter(Csorted_vertices));
-      std::deque<size_t>::const_iterator sv_it_end = Csorted_vertices.end();
-      for(std::deque<size_t>::const_iterator sv_it = Csorted_vertices.begin(); sv_it != sv_it_end; ++sv_it)
+      auto sv_it_end = Csorted_vertices.end();
+      for(auto sv_it = Csorted_vertices.begin(); sv_it != sv_it_end; ++sv_it)
       {
          cd_levels[*sv_it] = 0;
          cdfc_in_edge_iterator ie, ie_end;
@@ -1408,8 +1408,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found a loop");
                   /// remove the loop
-                  const std::deque<cdfc_edge>::const_iterator ce_it_end = candidate_edges.end();
-                  std::deque<cdfc_edge>::const_iterator ce_it = candidate_edges.begin();
+                  const auto ce_it_end = candidate_edges.end();
+                  auto ce_it = candidate_edges.begin();
                   cdfc_edge cand_e = *ce_it;
                   ++ce_it;
                   cdfc_vertex cand_src = boost::source(cand_e, *CG);

@@ -151,8 +151,8 @@ void RTLCharacterization::fix_muxes()
    bitsizes.push_back(16);
    bitsizes.push_back(32);
    bitsizes.push_back(64);
-   const std::vector<unsigned int>::const_iterator b_it_end = bitsizes.end();
-   for(std::vector<unsigned int>::const_iterator b_it = bitsizes.begin(); b_it != b_it_end; ++b_it)
+   const auto b_it_end = bitsizes.end();
+   for(auto b_it = bitsizes.begin(); b_it != b_it_end; ++b_it)
    {
       std::string test_mul_mux_name =
           std::string(TEST_MUL_MUX_8) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it) + "_" + STR(*b_it);

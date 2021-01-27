@@ -289,8 +289,8 @@ void fu_binding::kill_proxy_memory_units(std::map<unsigned int, unsigned int>& m
 {
    /// compute the set of killing vars
    OrderedSetStd<unsigned int> killing_vars;
-   const std::map<unsigned int, unsigned int>::const_iterator it_mu_end = memory_units.end();
-   for(std::map<unsigned int, unsigned int>::const_iterator it_mu = memory_units.begin(); it_mu != it_mu_end; ++it_mu)
+   const auto it_mu_end = memory_units.end();
+   for(auto it_mu = memory_units.begin(); it_mu != it_mu_end; ++it_mu)
    {
       killing_vars.insert(it_mu->second);
       reverse_memory_units[it_mu->second] = it_mu->first;
@@ -321,8 +321,8 @@ void fu_binding::kill_proxy_function_units(std::map<unsigned int, std::string>& 
 {
    /// compute the set of killing functions
    OrderedSetStd<std::string> killing_funs;
-   const std::map<unsigned int, std::string>::const_iterator it_mu_end = wrapped_units.end();
-   for(std::map<unsigned int, std::string>::const_iterator it_mu = wrapped_units.begin(); it_mu != it_mu_end; ++it_mu)
+   const auto it_mu_end = wrapped_units.end();
+   for(auto it_mu = wrapped_units.begin(); it_mu != it_mu_end; ++it_mu)
    {
       killing_funs.insert(it_mu->second);
       reverse_wrapped_units[it_mu->second] = it_mu->first;
@@ -546,7 +546,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLS->registered_inputs && in_chain == start_port)
          {
             technology_nodeRef delay_unit;
-            std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
+            auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
             if(synch_reset == "sync")
                delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_SR, LIBRARY_STD);
             else
@@ -637,7 +637,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          if(HLS->registered_inputs && in_chain == start_port)
          {
             technology_nodeRef delay_unit;
-            std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
+            auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
             if(synch_reset == "sync")
                delay_unit = HLS->HLS_T->get_technology_manager()->get_fu(flipflop_SR, LIBRARY_STD);
             else
@@ -1084,8 +1084,8 @@ void fu_binding::check_parametrization(structural_objectRef curr_gate)
    {
       std::vector<std::string> param;
       np->get_library_parameters(param);
-      std::vector<std::string>::const_iterator it_end = param.end();
-      for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
+      auto it_end = param.end();
+      for(auto it = param.begin(); it != it_end; ++it)
          THROW_ASSERT(curr_gate->find_member(*it, port_o_K, curr_gate) || curr_gate->find_member(*it, port_vector_o_K, curr_gate) || curr_gate->ExistsParameter(*it), "parameter not yet specialized: " + *it + " for module " + GET_TYPE_NAME(curr_gate));
    }
 }
@@ -1184,8 +1184,8 @@ void fu_binding::manage_memory_ports_chained(const structural_managerRef SM, con
          }
       }
    }
-   std::map<std::string, structural_objectRef>::const_iterator po_end = primary_outs.end();
-   for(std::map<std::string, structural_objectRef>::const_iterator po = primary_outs.begin(); po != po_end; ++po)
+   auto po_end = primary_outs.end();
+   for(auto po = primary_outs.begin(); po != po_end; ++po)
    {
       THROW_ASSERT(from_ports.find(po->first.substr(0, 1) + po->first.substr(5)) != from_ports.end(), "Port source not present");
       SM->add_connection(po->second, from_ports.find(po->first.substr(0, 1) + po->first.substr(5))->second);
@@ -1446,7 +1446,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    unsigned int bus_tag_bitsize = 0;
    if(HLS->Param->isOption(OPT_context_switch))
       bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
-   module* fu_module = GetPointer<module>(fu_obj);
+   auto* fu_module = GetPointer<module>(fu_obj);
    const technology_nodeRef fu_tech_obj = allocation_information->get_fu(fu);
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Specializing " + fu_obj->get_path() + " of type " + GET_TYPE_NAME(fu_obj));
    std::map<unsigned int, unsigned int> required_variables;
@@ -1643,8 +1643,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             {
                std::vector<std::string> param;
                np->get_library_parameters(param);
-               std::vector<std::string>::const_iterator it_end = param.end();
-               for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
+               auto it_end = param.end();
+               for(auto it = param.begin(); it != it_end; ++it)
                {
                   if(*it == "LSB_PARAMETER" && op_name == "pointer_plus_expr")
                   {
@@ -1714,7 +1714,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      else if(op1->get_kind() == integer_cst_K)
                      {
                         const integer_cst* int_const = GetPointer<integer_cst>(op1);
-                        unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
+                        auto offset_value = static_cast<unsigned long long int>(int_const->value);
                         if(offset_value)
                         {
                            auto tailZeros = 0u;
@@ -1748,7 +1748,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                      const bit_ior_concat_expr* ce = GetPointer<bit_ior_concat_expr>(GET_NODE(ga->op1));
                      const tree_nodeRef offset_node = GET_NODE(ce->op2);
                      const integer_cst* int_const = GetPointer<integer_cst>(offset_node);
-                     unsigned long long int offset_value = static_cast<unsigned long long int>(int_const->value);
+                     auto offset_value = static_cast<unsigned long long int>(int_const->value);
                      fu_module->SetParameter("OFFSET_PARAMETER", STR(offset_value));
                   }
                   if(*it == "unlock_address" && op_name == BUILTIN_WAIT_CALL)
@@ -1818,8 +1818,8 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
                {
                   std::vector<std::string> param;
                   np->get_library_parameters(param);
-                  std::vector<std::string>::const_iterator it_end = param.end();
-                  for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
+                  auto it_end = param.end();
+                  for(auto it = param.begin(); it != it_end; ++it)
                   {
                      if(*it == "PRECISION")
                      {
@@ -2292,8 +2292,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
       case constructor_K:
       {
          auto* co = GetPointer<constructor>(init_node);
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator i = co->list_of_idx_valu.begin();
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator vend = co->list_of_idx_valu.end();
+         auto i = co->list_of_idx_valu.begin();
+         auto vend = co->list_of_idx_valu.end();
          bool designated_initializers_used = false;
          bool is_struct = false;
          bool is_union = false;
@@ -2321,8 +2321,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             }
             else
                THROW_ERROR("expected a record_type or a union_type");
-            std::vector<tree_nodeRef>::const_iterator flend = field_list->end();
-            std::vector<tree_nodeRef>::const_iterator fli = field_list->begin();
+            auto flend = field_list->end();
+            auto fli = field_list->begin();
             for(; fli != flend && i != vend; ++i, ++fli)
             {
                if(i->first && GET_INDEX_NODE(i->first) != GET_INDEX_NODE(*fli))
@@ -2336,8 +2336,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          if(designated_initializers_used)
          {
             THROW_ASSERT(field_list, "something of wrong happen");
-            std::vector<tree_nodeRef>::const_iterator flend = field_list->end();
-            std::vector<tree_nodeRef>::const_iterator fli = field_list->begin();
+            auto flend = field_list->end();
+            auto fli = field_list->begin();
             std::vector<tree_nodeRef>::const_iterator inext;
             i = co->list_of_idx_valu.begin();
             for(; fli != flend; ++fli)

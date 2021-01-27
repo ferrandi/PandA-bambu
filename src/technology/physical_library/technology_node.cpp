@@ -141,7 +141,7 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
          {
             std::vector<std::string> precs = SplitString(type_name_to_precs[1], ",");
             ;
-            for(std::vector<std::string>::const_iterator single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
+            for(auto single_prec = precs.begin(); single_prec != precs.end() && *single_prec != ""; ++single_prec)
             {
                auto type_uint = boost::lexical_cast<unsigned int>(*single_prec);
                type_precs.push_back(type_uint);
@@ -220,8 +220,8 @@ void operation::xwrite(xml_element* rootnode, const technology_nodeRef, const Pa
       WRITE_XVM(bounded, Enode);
 
    /// supported types
-   std::map<std::string, std::vector<unsigned int>>::const_iterator it_end = supported_types.end();
-   std::map<std::string, std::vector<unsigned int>>::const_iterator it_begin = supported_types.begin();
+   auto it_end = supported_types.end();
+   auto it_begin = supported_types.begin();
    std::string supported_types_string;
    for(auto it = it_begin; it != it_end; ++it)
    {

@@ -2698,7 +2698,7 @@ std::function<OpNode*(NodeContainer*)> PhiOpNode::opCtorGenerator(const tree_nod
       // Create the sink.
       VarNode* sink = NC->addVarNode(phi->res, function_id);
       auto BI = ValueRangeRef(new ValueRange(getGIMPLE_range(stmt)));
-      PhiOpNode* phiOp = new PhiOpNode(BI, sink, stmt);
+      auto* phiOp = new PhiOpNode(BI, sink, stmt);
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, NodeContainer::debug_level, "---Added PhiOp with range " + BI->ToString() + " and " + STR(phi->CGetDefEdgesList().size()) + " sources");
 

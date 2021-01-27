@@ -282,7 +282,7 @@ std::string xml_set_entry_t::get_xml_name() const
 
 xml_nodeRef xml_set_entry_t::create_xml_node() const
 {
-   xml_element* node = new xml_element(get_xml_name());
+   auto* node = new xml_element(get_xml_name());
    node->set_attribute("value", value);
    if(condition)
    {
@@ -371,7 +371,7 @@ std::string xml_set_variable_t::get_xml_name() const
 
 xml_nodeRef xml_set_variable_t::create_xml_node() const
 {
-   xml_element* node = new xml_element(get_xml_name());
+   auto* node = new xml_element(get_xml_name());
    node->set_attribute("name", name);
    if(singleValue)
    {
@@ -487,7 +487,7 @@ std::string xml_parameter_t::get_xml_name() const
 
 xml_nodeRef xml_parameter_t::create_xml_node() const
 {
-   xml_element* node = new xml_element(get_xml_name());
+   auto* node = new xml_element(get_xml_name());
    if(name)
    {
       node->set_attribute("name", *name);
@@ -597,7 +597,7 @@ std::string xml_command_t::get_xml_name() const
 
 xml_nodeRef xml_command_t::create_xml_node() const
 {
-   xml_element* node = new xml_element(get_xml_name());
+   auto* node = new xml_element(get_xml_name());
    if(name)
    {
       node->set_attribute("name", *name);
@@ -707,7 +707,7 @@ std::string xml_shell_t::get_xml_name() const
 
 xml_nodeRef xml_shell_t::create_xml_node() const
 {
-   xml_element* node = new xml_element(get_xml_name());
+   auto* node = new xml_element(get_xml_name());
    if(name)
    {
       node->set_attribute("name", *name);
@@ -818,7 +818,7 @@ std::string xml_ite_block_t::get_xml_name() const
 
 xml_nodeRef xml_ite_block_t::create_xml_node() const
 {
-   xml_element* node = new xml_element(get_xml_name());
+   auto* node = new xml_element(get_xml_name());
    node->set_attribute("condition", condition);
    xml_element* thenElement = node->add_child_element("then");
    for(const auto& child : thenNodes)
@@ -891,7 +891,7 @@ std::string xml_foreach_t::get_xml_name() const
 
 xml_nodeRef xml_foreach_t::create_xml_node() const
 {
-   xml_element* node = new xml_element(get_xml_name());
+   auto* node = new xml_element(get_xml_name());
    NOT_YET_IMPLEMENTED();
    return xml_nodeRef(node);
 }

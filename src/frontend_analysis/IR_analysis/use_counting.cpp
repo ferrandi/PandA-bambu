@@ -340,7 +340,7 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       {
          auto* c = GetPointer<constructor>(curr_tn);
          std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = c->list_of_idx_valu;
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator vend = list_of_idx_valu.end();
+         auto vend = list_of_idx_valu.end();
          for(auto i = list_of_idx_valu.begin(); i != vend; ++i)
          {
             analyze_node(i->second, ssa_uses);

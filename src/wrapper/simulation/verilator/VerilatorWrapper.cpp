@@ -105,7 +105,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    bool generate_vcd_output =
        (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) || (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
 
-   const std::string output_directory = Param->getOption<std::string>(OPT_output_directory);
+   const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
 #if HAVE_EXPERIMENTAL
 #ifdef _WIN32

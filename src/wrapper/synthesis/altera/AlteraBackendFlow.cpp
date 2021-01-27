@@ -98,7 +98,7 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
-      std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
+      auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);
@@ -244,7 +244,7 @@ void AlteraBackendFlow::CheckSynthesisResults()
 void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing flow configuration");
-   std::string device_string = Param->getOption<std::string>(OPT_device_string);
+   auto device_string = Param->getOption<std::string>(OPT_device_string);
    std::string setupscr;
    if(STR(QUARTUS_SETTINGS) != "0" and device_string.find("EP2C") == std::string::npos)
    {
@@ -299,7 +299,7 @@ void AlteraBackendFlow::InitDesignParameters()
 {
    const target_deviceRef device = target->get_target_device();
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
-   std::string device_family = device->get_parameter<std::string>("family");
+   auto device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)
       device_family = device_family.substr(0, device_family.find('-'));
    actual_parameters->parameter_values[PARAM_target_family] = device_family;

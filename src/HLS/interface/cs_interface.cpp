@@ -183,8 +183,8 @@ void cs_interface::instantiate_component_parallel(const structural_managerRef SM
 
 void cs_interface::resize_memory_ctrl_ports(structural_objectRef mem_ctrl_mod)
 {
-   unsigned int memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
-   unsigned int num_banks = parameters->getOption<unsigned int>(OPT_memory_banks_number);
+   auto memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
+   auto num_banks = parameters->getOption<unsigned int>(OPT_memory_banks_number);
    for(unsigned int j = 0; j < GetPointer<module>(mem_ctrl_mod)->get_in_port_size(); j++) // resize input port
    {
       structural_objectRef port_i = GetPointer<module>(mem_ctrl_mod)->get_in_port(j);
@@ -234,7 +234,7 @@ void cs_interface::manage_extern_global_port_top(const structural_managerRef SM,
 {
    structural_objectRef cir_port;
    structural_objectRef memory_ctrl_port;
-   unsigned int num_channel = parameters->getOption<unsigned int>(OPT_channels_number);
+   auto num_channel = parameters->getOption<unsigned int>(OPT_channels_number);
    structural_objectRef memory_ctrl = circuit->find_member("memory_ctrl_top", component_o_K, circuit);
    THROW_ASSERT(memory_ctrl, "NULL, memmory_ctrl");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Connecting memory_port of memory_ctrl");

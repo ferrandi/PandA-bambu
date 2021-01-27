@@ -78,7 +78,7 @@ GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlow
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(parameters->getOption<std::string>(OPT_component_name) != "all")
    {
-      std::string to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
+      auto to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
       const auto splitted = SplitString(to_be_splitted, ",");
       for(const auto& component_to_be_characterized : splitted)
       {

@@ -269,7 +269,7 @@ void DesignCompilerWrapper::set_target_libraries(const DesignParametersRef)
 {
    if(device->has_parameter("target_library"))
    {
-      std::string target_library = device->get_parameter<std::string>("target_library");
+      auto target_library = device->get_parameter<std::string>("target_library");
       target_libs = convert_string_to_vector<std::string>(target_library, ";");
    }
 
@@ -469,7 +469,7 @@ void DesignCompilerWrapper::parse_cell_reports()
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "** Cell Report **");
       unsigned int cell_count = 0;
-      for(std::map<std::string, unsigned int>::iterator c = cell_frequency.begin(); c != cell_frequency.end(); ++c)
+      for(auto c = cell_frequency.begin(); c != cell_frequency.end(); ++c)
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "  * Cell: " << c->first << " - Frequency: " << c->second);
          cell_count += c->second;
@@ -510,7 +510,7 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
             std::string token("data arrival time");
             std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
             boost::trim(tk);
-            double a_time = boost::lexical_cast<double>(tk);
+            auto a_time = boost::lexical_cast<double>(tk);
             is_path_element = false;
             if(a_time < 0)
                a_time = -a_time;
@@ -756,7 +756,7 @@ std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_
       WRITE_XNVM(design_name, design_name, designRoot);
 
       xml_element* timingRoot = designRoot->add_child_element("timing_path");
-      std::string number_of_elements = boost::lexical_cast<std::string>(timing_path.size());
+      auto number_of_elements = boost::lexical_cast<std::string>(timing_path.size());
       WRITE_XNVM(number_of_elements, number_of_elements, timingRoot);
       std::string type = "POST_SYNTHESIS";
       WRITE_XNVM(type, type, timingRoot);
@@ -765,7 +765,7 @@ std::string DesignCompilerWrapper::write_timing_paths(const std::string& design_
          xml_element* Enode = timingRoot->add_child_element("path_element");
          std::string path = timing_path[l];
          WRITE_XNVM(path, path, Enode);
-         std::string element = boost::lexical_cast<std::string>(l);
+         auto element = boost::lexical_cast<std::string>(l);
          WRITE_XNVM(element, element, Enode);
       }
 

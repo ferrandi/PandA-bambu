@@ -92,7 +92,7 @@ CallGraph::~CallGraph() = default;
 
 void CallGraph::WriteDot(const std::string& file_name) const
 {
-   const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
+   const auto output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
    if(!boost::filesystem::exists(output_directory))
       boost::filesystem::create_directories(output_directory);
    const std::string full_name = output_directory + file_name;

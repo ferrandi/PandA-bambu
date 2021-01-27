@@ -446,7 +446,7 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship, 
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         const FrontendFlowStepFactory* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+         const auto* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
 
          const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
 
@@ -463,7 +463,7 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship, 
          if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
             return;
 
-         const CBackendStepFactory* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
+         const auto* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 
          const bool is_discrepancy = (parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw));
          CBackend::Type hls_c_backend_type = is_discrepancy ? CBackend::CB_DISCREPANCY_ANALYSIS : CBackend::CB_HLS;

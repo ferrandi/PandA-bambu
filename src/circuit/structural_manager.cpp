@@ -622,7 +622,7 @@ void structural_manager::add_NP_functionality(structural_objectRef cir, NP_funct
 void structural_manager::SetParameter(const std::string& name, const std::string& value)
 {
    THROW_ASSERT((get_circ()->get_kind() == component_o_K), "Only components can have a Non SystemC functionality");
-   module* com = GetPointer<module>(get_circ());
+   auto* com = GetPointer<module>(get_circ());
    com->SetParameter(name, value);
 }
 
@@ -867,7 +867,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
 
 void structural_manager::WriteDot(const std::string& file_name, circuit_graph_type gt, graph* g) const
 {
-   const std::string output_directory = Param->getOption<std::string>(OPT_dot_directory);
+   const auto output_directory = Param->getOption<std::string>(OPT_dot_directory);
    std::ofstream f((output_directory + file_name).c_str());
 
    if(g == nullptr)

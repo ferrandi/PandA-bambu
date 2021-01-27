@@ -108,10 +108,10 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    refcount<clique_covering<CG_vertex_descriptor>> register_clique = clique_covering<CG_vertex_descriptor>::create_solver(clique_covering_algorithm);
    create_compatibility_graph();
 
-   std::vector<CG_vertex_descriptor>::const_iterator v_it_end = verts.end();
+   auto v_it_end = verts.end();
    unsigned int vertex_index = 0;
    unsigned int num_registers = 0;
-   for(std::vector<CG_vertex_descriptor>::const_iterator v_it = verts.begin(); v_it != v_it_end; ++v_it, ++vertex_index)
+   for(auto v_it = verts.begin(); v_it != v_it_end; ++v_it, ++vertex_index)
       register_clique->add_vertex(*v_it, STR(vertex_index));
    if(vertex_index > 0)
    {
@@ -152,7 +152,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
       const std::list<vertex>& support = HLS->Rliv->get_support();
 
-      const std::list<vertex>::const_iterator vEnd = support.end();
+      const auto vEnd = support.end();
       for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
       {
          const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);

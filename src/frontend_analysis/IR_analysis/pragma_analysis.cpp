@@ -138,7 +138,7 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
       auto vd_init = GET_NODE(vd->init);
       if(vd_init->get_kind() == constructor_K)
       {
-         const constructor* co = GetPointer<const constructor>(vd_init);
+         const auto* co = GetPointer<const constructor>(vd_init);
          for(auto idx_valu : co->list_of_idx_valu)
          {
             auto valu = GET_NODE(idx_valu.second);

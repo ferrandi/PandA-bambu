@@ -479,7 +479,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
             {
                /// load xml memory allocation file
                auto source_file = real_file_name;
-               const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+               const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
                std::string leaf_name = GetLeafFileName(source_file);
                auto XMLfilename = output_temporary_directory + "/" + leaf_name + ".memory_allocation.xml";
                if((boost::filesystem::exists(boost::filesystem::path(XMLfilename))))
@@ -659,7 +659,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking front-end compiler");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
-   const std::string output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
+   const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
    if(source_files.size() == 0)
       THROW_ERROR("No files specified for parsing");
 
@@ -694,7 +694,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          std::string analyzing_compiling_parameters;
          if(Param->isOption(OPT_gcc_standard))
          {
-            std::string standard = Param->getOption<std::string>(OPT_gcc_standard);
+            auto standard = Param->getOption<std::string>(OPT_gcc_standard);
             analyzing_compiling_parameters += "--std=" + standard + " ";
          }
          if(Param->isOption(OPT_gcc_defines))
@@ -1195,7 +1195,7 @@ void GccWrapper::InitializeGccParameters()
    /// Adding standard
    if(Param->isOption(OPT_gcc_standard))
    {
-      std::string standard = Param->getOption<std::string>(OPT_gcc_standard);
+      auto standard = Param->getOption<std::string>(OPT_gcc_standard);
       gcc_compiling_parameters += "--std=" + standard + " ";
    }
 
@@ -3588,7 +3588,7 @@ void GccWrapper::CheckGccCompatibleVersion(const std::string& gcc_version, const
 
 size_t GccWrapper::CGetPointerSize(const ParameterConstRef parameters)
 {
-   const std::string gcc_m32_mx32 = parameters->getOption<std::string>(OPT_gcc_m32_mx32);
+   const auto gcc_m32_mx32 = parameters->getOption<std::string>(OPT_gcc_m32_mx32);
    if(gcc_m32_mx32 == "-m32" or gcc_m32_mx32 == "-m32 -mno-sse2")
    {
       return 32;

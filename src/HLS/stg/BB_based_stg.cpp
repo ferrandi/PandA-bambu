@@ -144,7 +144,7 @@ void BB_based_stg::Initialize()
 static void add_in_sched_order(std::list<vertex>& statement_list, vertex stmt, const ScheduleConstRef sch, const OpGraphConstRef ASSERT_PARAMETER(dfg))
 {
    THROW_ASSERT(sch->is_scheduled(stmt), "First vertex is not scheduled");
-   std::list<vertex>::const_iterator it_end = statement_list.end();
+   auto it_end = statement_list.end();
    std::list<vertex>::iterator it;
    THROW_ASSERT(std::find(statement_list.begin(), statement_list.end(), stmt) == statement_list.end(), "Statement already ordered: " + GET_NAME(dfg, stmt));
 
@@ -310,8 +310,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          vertex bb_src = boost::source(*ie, *fbb);
          if(bb_src == bb_entry)
          {
-            std::list<vertex>::const_iterator stmt_it_end = ordered_operations.end();
-            for(std::list<vertex>::const_iterator stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
+            auto stmt_it_end = ordered_operations.end();
+            for(auto stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
             {
                if(has_registered_inputs || (GET_TYPE(dfgRef, *stmt_it) & TYPE_PHI))
                {
@@ -342,8 +342,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       ControlStep max_cstep = ControlStep(0u);
       ControlStep min_cstep = ControlStep(std::numeric_limits<unsigned int>::max());
 
-      std::list<vertex>::const_iterator stmt_it_end = ordered_operations.end();
-      for(std::list<vertex>::const_iterator stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
+      auto stmt_it_end = ordered_operations.end();
+      for(auto stmt_it = ordered_operations.begin(); stmt_it_end != stmt_it; ++stmt_it)
       {
          vertex op = *stmt_it;
          if(GET_TYPE(dfgRef, op) & (TYPE_GOTO))

@@ -530,7 +530,7 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
              "   epp_trace_reg <= epp_trace_memory[next_epp_trace_offset];\n"
              "end\n\n";
 
-   const std::string reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
+   const auto reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
    if(reset_type == "no" || reset_type == "sync")
       result += "always @(posedge " CLOCK_PORT_NAME ")\n";
    else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))

@@ -174,7 +174,7 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    }
 
    /// now remove the clobber gimple_assign
-   const std::map<unsigned int, CustomOrderedSet<tree_nodeRef>>::iterator stbr_it_end = stmt_to_be_removed.end();
+   const auto stbr_it_end = stmt_to_be_removed.end();
    for(auto stbr_it = stmt_to_be_removed.begin(); stbr_it != stbr_it_end; ++stbr_it)
    {
       unsigned int curr_bb = stbr_it->first;

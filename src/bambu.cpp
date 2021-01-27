@@ -264,7 +264,7 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         std::string outFileName = parameters->getOption<std::string>(OPT_pretty_print);
+         auto outFileName = parameters->getOption<std::string>(OPT_pretty_print);
          const DesignFlowStepRef c_backend = GetPointer<const CBackendStepFactory>(c_backend_step_factory)->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
          design_flow_manager->AddStep(c_backend);
       }

@@ -74,7 +74,7 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
-      std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
+      auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);
@@ -201,7 +201,7 @@ void BashBackendFlow::InitDesignParameters()
       pwr_enabled = true;
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(pwr_enabled);
    const target_deviceRef device = target->get_target_device();
-   std::string device_name = device->get_parameter<std::string>("model");
+   auto device_name = device->get_parameter<std::string>("model");
    actual_parameters->parameter_values[PARAM_target_device] = device_name;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];

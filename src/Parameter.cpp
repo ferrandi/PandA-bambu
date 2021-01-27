@@ -257,14 +257,14 @@ Parameter::Parameter(const Parameter& other) : argc(other.argc), argv(other.argv
 
 void Parameter::CheckParameters()
 {
-   const std::string temporary_directory = getOption<std::string>(OPT_output_temporary_directory);
+   const auto temporary_directory = getOption<std::string>(OPT_output_temporary_directory);
    if(boost::filesystem::exists(temporary_directory))
    {
       boost::filesystem::remove_all(temporary_directory);
    }
    boost::filesystem::create_directory(temporary_directory);
    /// Output directory is not removed since it can be the current one
-   const std::string output_directory = getOption<std::string>(OPT_output_directory);
+   const auto output_directory = getOption<std::string>(OPT_output_directory);
    if(!boost::filesystem::exists(output_directory))
    {
       boost::filesystem::create_directory(output_directory);
@@ -273,7 +273,7 @@ void Parameter::CheckParameters()
       THROW_ERROR("not able to create directory " + output_directory);
    if(getOption<bool>(OPT_print_dot))
    {
-      const std::string dot_directory = getOption<std::string>(OPT_dot_directory);
+      const auto dot_directory = getOption<std::string>(OPT_dot_directory);
       if(boost::filesystem::exists(dot_directory))
       {
          boost::filesystem::remove_all(dot_directory);
@@ -353,7 +353,7 @@ void Parameter::write_xml_configuration_file(const std::string& filename)
 
    xml_element* parameters = document.create_root_node("parameters");
 
-   for(OptionMap::const_iterator Op = Options.begin(); Op != Options.end(); ++Op)
+   for(auto Op = Options.begin(); Op != Options.end(); ++Op)
    {
       xml_element* node = parameters->add_child_element(Op->first);
       WRITE_XNVM2("value", Op->second, node);
@@ -1784,7 +1784,7 @@ template <>
 const CustomSet<std::string> Parameter::getOption(const enum enum_option name) const
 {
    CustomSet<std::string> ret;
-   const std::string to_be_splitted = getOption<std::string>(name);
+   const auto to_be_splitted = getOption<std::string>(name);
    std::vector<std::string> splitted = SplitString(to_be_splitted, STR_CST_string_separator);
    size_t i_end = splitted.size();
    for(size_t i = 0; i < i_end; i++)
@@ -1798,7 +1798,7 @@ template <>
 const std::list<std::string> Parameter::getOption(const enum enum_option name) const
 {
    std::list<std::string> ret;
-   const std::string to_be_splitted = getOption<std::string>(name);
+   const auto to_be_splitted = getOption<std::string>(name);
    std::vector<std::string> splitted = SplitString(to_be_splitted, STR_CST_string_separator);
    size_t i_end = splitted.size();
    for(size_t i = 0; i < i_end; i++)

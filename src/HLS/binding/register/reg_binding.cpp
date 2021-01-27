@@ -176,7 +176,7 @@ void reg_binding::compute_is_without_enable()
    std::map<unsigned int, unsigned int> n_in;
    std::map<unsigned int, unsigned int> n_out;
    const std::list<vertex>& support_set = HLS->Rliv->get_support();
-   const std::list<vertex>::const_iterator ss_it_end = support_set.end();
+   const auto ss_it_end = support_set.end();
    for(auto ss_it = support_set.begin(); ss_it != ss_it_end; ++ss_it)
    {
       vertex v = *ss_it;
@@ -334,7 +334,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
    std::string register_type_name;
-   std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+   auto synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
    if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       register_type_name = register_STD;
    else if(synch_reset == "no")

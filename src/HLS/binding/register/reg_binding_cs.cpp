@@ -66,7 +66,7 @@ std::string reg_binding_cs::CalculateRegisterName(unsigned int)
 void reg_binding_cs::specialise_reg(structural_objectRef& reg, unsigned int r)
 {
    reg_binding::specialise_reg(reg, r);
-   unsigned int mem_dimension = HLS->Param->getOption<unsigned int>(OPT_context_switch);
+   auto mem_dimension = HLS->Param->getOption<unsigned int>(OPT_context_switch);
    int dimension = ceil_log2(HLS->Param->getOption<unsigned long long int>(OPT_context_switch));
    if(!dimension)
       dimension = 1;

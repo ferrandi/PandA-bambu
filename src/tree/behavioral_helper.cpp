@@ -246,8 +246,8 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
          auto* constr = GetPointer<constructor>(node);
          bool designated_initializers_needed = false;
          res += '{';
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator i = constr->list_of_idx_valu.begin();
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator vend = constr->list_of_idx_valu.end();
+         auto i = constr->list_of_idx_valu.begin();
+         auto vend = constr->list_of_idx_valu.end();
          /// check if designated initializers are really needed
          tree_nodeRef firstnode = i != vend ? constr->list_of_idx_valu.begin()->first : tree_nodeRef();
          if(firstnode && GET_NODE(firstnode)->get_kind() == field_decl_K)
@@ -261,8 +261,8 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
                field_list = GetPointer<union_type>(scpe)->list_of_flds;
             else
                THROW_ERROR("expected a record_type or a union_type");
-            std::vector<tree_nodeRef>::const_iterator flend = field_list.end();
-            std::vector<tree_nodeRef>::const_iterator fli = field_list.begin();
+            auto flend = field_list.end();
+            auto fli = field_list.begin();
             for(; fli != flend && i != vend; ++i, ++fli)
             {
                if(i->first && GET_INDEX_NODE(i->first) != GET_INDEX_NODE(*fli))
@@ -5267,8 +5267,8 @@ unsigned int BehavioralHelper::GetInit(unsigned int var, CustomUnorderedSet<unsi
       case constructor_K:
       {
          auto* co = GetPointer<constructor>(TM->get_tree_node_const(var));
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator vend = co->list_of_idx_valu.end();
-         for(std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator i = co->list_of_idx_valu.begin(); i != vend; ++i)
+         auto vend = co->list_of_idx_valu.end();
+         for(auto i = co->list_of_idx_valu.begin(); i != vend; ++i)
          {
             tree_helper::get_used_variables(true, i->second, list_of_variables);
          }

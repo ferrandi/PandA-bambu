@@ -2868,8 +2868,8 @@ void module::get_NP_library_parameters(structural_objectRef _owner, std::vector<
 {
    std::vector<std::string> param;
    NP_descriptions->get_library_parameters(param);
-   std::vector<std::string>::const_iterator it_end = param.end();
-   for(std::vector<std::string>::const_iterator it = param.begin(); it != it_end; ++it)
+   auto it_end = param.end();
+   for(auto it = param.begin(); it != it_end; ++it)
    {
       structural_objectRef obj = find_member(*it, port_vector_o_K, _owner);
       computed_parameters.push_back(std::make_pair(*it, obj));
@@ -4201,8 +4201,8 @@ void channel_o::xwrite(xml_element* rootnode)
    xml_element* Enode = rootnode->add_child_element(get_kind_text());
    module::xwrite(Enode);
    xml_element* Enode_II = Enode->add_child_element("impl_interfaces");
-   std::map<unsigned int, std::string>::const_iterator it_end = impl_interfaces.end();
-   for(std::map<unsigned int, std::string>::const_iterator it = impl_interfaces.begin(); it != it_end; ++it)
+   auto it_end = impl_interfaces.end();
+   for(auto it = impl_interfaces.begin(); it != it_end; ++it)
    {
       WRITE_XNVM2("II" + boost::lexical_cast<std::string>(it->first), it->second, Enode_II);
    }

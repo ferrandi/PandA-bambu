@@ -259,7 +259,7 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    structural_objectRef irqPort = SM->add_port_vector(WB_IRQ_PORT_NAME, port_o::OUT, static_cast<unsigned int>(slaves.size()), interfaceObj, b_type);
 
    unsigned int idx = 0;
-   for(std::vector<structural_objectRef>::const_iterator itr = slaves.begin(), end = slaves.end(); itr != end; ++itr, ++idx)
+   for(auto itr = slaves.begin(), end = slaves.end(); itr != end; ++itr, ++idx)
    {
       // Input ports
       auto* currentModule = GetPointer<module>(*itr);

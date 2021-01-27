@@ -189,7 +189,7 @@ unsigned long long vcd_utility::GetClockPeriod(const vcd_parser::vcd_trace_t& vc
 {
    std::string top_scope = Discr->unfolded_v_to_scope.at(Discr->unfolded_root_v);
    const std::string controller_scope = top_scope + "Controller_i" + STR(HIERARCHY_SEPARATOR);
-   const std::string clock_signal_name = STR(CLOCK_PORT_NAME);
+   const auto clock_signal_name = STR(CLOCK_PORT_NAME);
    const std::list<sig_variation>& clock_sig_variations = get_signal_variations(vcd_trace, controller_scope, clock_signal_name);
    auto clock_var_it = clock_sig_variations.begin();
    const auto clock_var_beg = clock_var_it;
