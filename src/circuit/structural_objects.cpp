@@ -2167,13 +2167,13 @@ void signal_o::substitute_port(structural_objectRef old_conn, structural_objectR
    }
    else
    {
-      for(unsigned int i = 0; i < connected_objects.size(); i++)
+      for(auto & connected_object : connected_objects)
       {
-         if(connected_objects[i].lock() == old_conn)
-            connected_objects[i] = new_conn;
+         if(connected_object.lock() == old_conn)
+            connected_object = new_conn;
          else
          {
-            THROW_ASSERT(GetPointer<port_o>(connected_objects[i].lock()), "Expected port");
+            THROW_ASSERT(GetPointer<port_o>(connected_object.lock()), "Expected port");
          }
       }
    }

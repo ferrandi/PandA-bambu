@@ -330,9 +330,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
       for(block_it = blocks.begin(); block_it != block_it_end; ++block_it)
       {
          const auto& stmt_list = block_it->second->CGetStmtList();
-         for(auto stmt = stmt_list.begin(); stmt != stmt_list.end(); stmt++)
+         for(const auto & stmt : stmt_list)
          {
-            auto gn = GetPointer<gimple_node>(GET_NODE(*stmt));
+            auto gn = GetPointer<gimple_node>(GET_NODE(stmt));
             THROW_ASSERT(gn->vovers.empty() || gn->vdef, "unexpected condition");
             for(auto vo : gn->vovers)
             {

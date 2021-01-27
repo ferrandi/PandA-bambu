@@ -604,9 +604,9 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
       tgt->get_circ()->AddParameter(MEMORY_PARAMETER, "");
    }
    std::vector<std::string> current_tgt_parameters = convert_string_to_vector<std::string>(tgt->get_circ()->GetParameter(MEMORY_PARAMETER), ";");
-   for(unsigned int l = 0; l < current_tgt_parameters.size(); l++)
+   for(auto & current_tgt_parameter : current_tgt_parameters)
    {
-      std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameters[l], "=");
+      std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
       if(res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
          THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
       res_parameters[current_parameter[0]] = current_parameter[1];

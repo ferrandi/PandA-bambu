@@ -1777,12 +1777,14 @@ void mux_connection_binding::create_connections()
 
          const generic_objRef fu_obj = HLS->Rfu->get(*op);
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(HLS->functionId, *op);
-         for(unsigned int num = 0; num < var_read.size(); num++)
+         unsigned int index=0;
+         for(auto & num : var_read)
          {
-            if(std::get<0>(var_read[num]) == 0)
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - " << num << ". Read: " + STR(std::get<1>(var_read[num])));
+            if(std::get<0>(num) == 0)
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - " << index << ". Read: " + STR(std::get<1>(num)));
             else
-               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - " << num << ". Read: " + behavioral_helper->PrintVariable(std::get<0>(var_read[num])));
+               PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "     - " << index << ". Read: " + behavioral_helper->PrintVariable(std::get<0>(num)));
+            ++index;
          }
          if(GET_TYPE(data, *op) & (TYPE_LOAD | TYPE_STORE))
          {

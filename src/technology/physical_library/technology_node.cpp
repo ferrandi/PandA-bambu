@@ -124,18 +124,18 @@ void operation::xload(const xml_element* Enode, const technology_nodeRef fu, con
       std::string supported_types_string;
       LOAD_XVFM(supported_types_string, Enode, supported_types);
       std::vector<std::string> types = SplitString(supported_types_string, "|");
-      for(std::vector<std::string>::const_iterator type = types.begin(); type != types.end(); ++type)
+      for(const auto & type : types)
       {
-         if(*type == "")
+         if(type == "")
             THROW_ERROR("wrong XML syntax for supported_types attribute: null type description in \"" + supported_types_string + "\" [" + operation_name + "]");
          std::string type_name;
          std::vector<unsigned int> type_precs;
-         std::vector<std::string> type_name_to_precs = SplitString(*type, ":");
+         std::vector<std::string> type_name_to_precs = SplitString(type, ":");
          if(type_name_to_precs.size() != 2)
-            THROW_ERROR("wrong XML syntax for supported_types attribute around \":\" \"" + *type + "\" [" + operation_name + "]");
+            THROW_ERROR("wrong XML syntax for supported_types attribute around \":\" \"" + type + "\" [" + operation_name + "]");
          type_name = type_name_to_precs[0];
          if(type_name == "")
-            THROW_ERROR("wrong XML syntax for supported_types attribute: missing the supported type - \"" + *type + "\" [" + operation_name + "]");
+            THROW_ERROR("wrong XML syntax for supported_types attribute: missing the supported type - \"" + type + "\" [" + operation_name + "]");
 
          if(type_name_to_precs[1] != "*")
          {

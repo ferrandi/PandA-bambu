@@ -65,9 +65,8 @@ NanoXploreWrapper::~NanoXploreWrapper() = default;
 void NanoXploreWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   for(auto & var : xml_reserved_vars)
    {
-      const xml_set_variable_tRef& var = (*it);
       dp->assign(var->name, getStringValue(var, dp), false);
    }
 

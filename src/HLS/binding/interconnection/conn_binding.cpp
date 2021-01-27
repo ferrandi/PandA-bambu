@@ -968,35 +968,35 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added inputs");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding calls connections");
-   for(auto c = calls.begin(); c != calls.end(); ++c)
+   for(auto & call : calls)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding connections of " + c->first->get_path());
-      auto isMultipleModule = GetPointer<module>(c->first->get_owner()) && GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity();
-      if(c->second.size() == 1 && !isMultipleModule)
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding connections of " + call.first->get_path());
+      auto isMultipleModule = GetPointer<module>(call.first->get_owner()) && GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
+      if(call.second.size() == 1 && !isMultipleModule)
       {
-         SM->add_connection(c->first, c->second.front());
+         SM->add_connection(call.first, call.second.front());
       }
       else
       {
          if(isMultipleModule)
          {
-            THROW_ASSERT(start_to_vertex.find(c->first) != start_to_vertex.end(), "unexpected condition");
-            THROW_ASSERT(c->first->get_kind() == port_vector_o_K, "unexpected condition");
+            THROW_ASSERT(start_to_vertex.find(call.first) != start_to_vertex.end(), "unexpected condition");
+            THROW_ASSERT(call.first->get_kind() == port_vector_o_K, "unexpected condition");
             std::map<structural_objectRef, std::list<structural_objectRef>> toOred;
-            auto ports_it = c->second.begin();
-            for(auto v : start_to_vertex.find(c->first)->second)
+            auto ports_it = call.second.begin();
+            for(auto v : start_to_vertex.find(call.first)->second)
             {
                technology_nodeRef tn = HLS->allocation_information->get_fu(HLS->Rfu->get_assign(v));
                auto index = HLS->Rfu->get_index(v);
 #if HAVE_ASSERTS
-               auto multiplicity = GetPointer<module>(c->first->get_owner())->get_multi_unit_multiplicity();
+               auto multiplicity = GetPointer<module>(call.first->get_owner())->get_multi_unit_multiplicity();
 #endif
-               THROW_ASSERT(multiplicity == GetPointer<port_o>(c->first)->get_ports_size(), "unexpected condition");
+               THROW_ASSERT(multiplicity == GetPointer<port_o>(call.first)->get_ports_size(), "unexpected condition");
                THROW_ASSERT(index < multiplicity, "unexpected condition");
-               auto sp_i = GetPointer<port_o>(c->first)->get_port(index);
+               auto sp_i = GetPointer<port_o>(call.first)->get_port(index);
                toOred[sp_i].push_back(*ports_it);
 
-               THROW_ASSERT(ports_it != c->second.end(), "unexpected condition");
+               THROW_ASSERT(ports_it != call.second.end(), "unexpected condition");
                ++ports_it;
             }
             for(auto pp_pair : toOred)
@@ -1027,22 +1027,22 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
          {
             const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
             std::string library = TM->get_library(OR_GATE_STD);
-            structural_objectRef or_gate = SM->add_module_from_technology_library("or_" + c->first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library, SM->get_circ(), TM);
-            structural_objectRef sig = SM->add_sign("s_" + c->first->get_owner()->get_id() + STR(unique_id), SM->get_circ(), boolean_port_type);
+            structural_objectRef or_gate = SM->add_module_from_technology_library("or_" + call.first->get_owner()->get_id() + STR(unique_id), OR_GATE_STD, library, SM->get_circ(), TM);
+            structural_objectRef sig = SM->add_sign("s_" + call.first->get_owner()->get_id() + STR(unique_id), SM->get_circ(), boolean_port_type);
             ++unique_id;
             SM->add_connection(sig, or_gate->find_member("out1", port_o_K, or_gate));
-            SM->add_connection(sig, c->first);
+            SM->add_connection(sig, call.first);
             structural_objectRef in = or_gate->find_member("in", port_vector_o_K, or_gate);
             auto* port = GetPointer<port_o>(in);
-            port->add_n_ports(static_cast<unsigned int>(c->second.size()), in);
+            port->add_n_ports(static_cast<unsigned int>(call.second.size()), in);
             unsigned int num = 0;
-            for(auto a = c->second.begin(); a != c->second.end(); ++a, ++num)
+            for(auto a = call.second.begin(); a != call.second.end(); ++a, ++num)
             {
                SM->add_connection(*a, port->get_port(num));
             }
          }
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added connections of " + c->first->get_path());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added connections of " + call.first->get_path());
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added calls connections");
    std::map<structural_objectRef, structural_objectRef> sig;

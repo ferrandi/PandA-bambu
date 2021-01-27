@@ -1979,8 +1979,8 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       tree_helper::get_array_dim_and_bitsize(TreeM, type_index, dims, elts_size);
       THROW_ASSERT(dims.size(), "something of wrong happen");
       vec_size = 1;
-      for(std::vector<unsigned int>::const_iterator it = dims.begin(); it != dims.end(); ++it)
-         vec_size *= *it;
+      for(unsigned int dim : dims)
+         vec_size *= dim;
    }
    else if(GetPointer<integer_type>(array_type_node) || GetPointer<real_type>(array_type_node) || GetPointer<enumeral_type>(array_type_node) || GetPointer<pointer_type>(array_type_node) || GetPointer<reference_type>(array_type_node) ||
            GetPointer<record_type>(array_type_node) || GetPointer<union_type>(array_type_node) || GetPointer<complex_type>(array_type_node))
@@ -2567,8 +2567,8 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
          THROW_ASSERT(size_of_data == elmt_bitsize, "something of wrong happen");
          unsigned int num_elements = 1;
          std::string value;
-         for(std::vector<unsigned int>::const_iterator it = dims.begin(); it != dims.end(); ++it)
-            num_elements *= *it;
+         for(unsigned int dim : dims)
+            num_elements *= dim;
          if(num_elements < (string_value.size() + 1))
             THROW_ERROR("C description not supported: string with undefined size or not correctly initialized " + STR(string_value.size() + 1) + "-" + STR(num_elements));
          num_elements = num_elements - static_cast<unsigned int>(string_value.size() + 1);

@@ -306,16 +306,16 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       tree_nodeRef rf = TM->get_tree_node_const(root_function);
       rf->visit(&fdr_visitor);
    }
-   for(CustomUnorderedSet<unsigned int>::const_iterator Itr = allFunctions.begin(), End = allFunctions.end(); Itr != End; ++Itr)
+   for(unsigned int allFunction : allFunctions)
    {
-      std::string functionName = tree_helper::name_function(TM, *Itr);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(*Itr) + " " + functionName);
-      tree_nodeRef function = TM->get_tree_node_const(*Itr);
+      std::string functionName = tree_helper::name_function(TM, allFunction);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(allFunction) + " " + functionName);
+      tree_nodeRef function = TM->get_tree_node_const(allFunction);
       auto* funDecl = GetPointer<function_decl>(function);
       std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
       if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" && !boost::algorithm::starts_with(functionName, "__pragma__"))
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
-      typeToDeclaration[type].insert(*Itr);
+      typeToDeclaration[type].insert(allFunction);
    }
    for(const auto& block : stmtList->list_of_bloc)
    {

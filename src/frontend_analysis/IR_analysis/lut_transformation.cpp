@@ -576,16 +576,16 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
 {
    auto& statements = block.second->CGetStmtList();
 
-   for(auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement)
+   for(const auto & statement : statements)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + (*currentStatement)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + statement->ToString());
       // only gimple assignments are considered
-      if(GET_NODE(*currentStatement)->get_kind() != gimple_assign_K)
+      if(GET_NODE(statement)->get_kind() != gimple_assign_K)
       {
          continue;
       }
 
-      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
+      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(statement));
       enum kind code = GET_NODE(gimpleAssign->op1)->get_kind();
 
       if(code == lut_expr_K)
@@ -908,9 +908,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    /// whether the BB has been modified
    bool modified = false;
 
-   for(auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement)
+   for(const auto & statement : statements)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*currentStatement)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + statement->ToString());
 
 #ifndef NDEBUG
       if(!AppM->ApplyNewTransformation())
@@ -920,13 +920,13 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       }
 #endif
 
-      if(GET_NODE(*currentStatement)->get_kind() != gimple_assign_K)
+      if(GET_NODE(statement)->get_kind() != gimple_assign_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a gimple assign");
          continue;
       }
 
-      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
+      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(statement));
       enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing code " + GET_NODE(gimpleAssign->op1)->get_kind_text());
 
@@ -981,7 +981,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1045,7 +1045,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1109,7 +1109,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1206,7 +1206,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1317,8 +1317,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             klut_e.create_po_v(res);
 
             unsigned int index = 0;
-            std::for_each(res.begin(), res.end(), [&currentStatement, &pos, &pos_offset, &index](auto op) {
-               pos.push_back(*currentStatement);
+            std::for_each(res.begin(), res.end(), [&statement, &pos, &pos_offset, &index](auto op) {
+               pos.push_back(statement);
                pos_offset.push_back(index);
                ++index;
             });

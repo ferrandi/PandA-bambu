@@ -184,20 +184,20 @@ void ASLAP::add_constraints_to_ASAP()
    ASAP_nip.resize(levels.begin(), levels.end(), 0);
    ASAP_p.resize(levels.begin(), levels.end(), 0);
 
-   for(std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+   for(auto level : levels)
    {
-      if(!beh_graph->is_in_subset(*i))
+      if(!beh_graph->is_in_subset(level))
          continue;
       // Updating ASAP_p information
-      p_update_check vis(*i, beh_graph->CGetOpNodeInfo(*i)->GetOperation(), ASAP_p, beh_graph);
+      p_update_check vis(level, beh_graph->CGetOpNodeInfo(level)->GetOperation(), ASAP_p, beh_graph);
       std::vector<boost::default_color_type> color_vec(boost::num_vertices(*beh_graph));
-      boost::depth_first_visit(*beh_graph, *i, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), *beh_graph), boost::white_color));
-      ASAP_nip[*i] = ASAP_p[*i];
-      for(boost::tie(ei, ei_end) = boost::in_edges(*i, *beh_graph); ei != ei_end; ei++)
+      boost::depth_first_visit(*beh_graph, level, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), *beh_graph), boost::white_color));
+      ASAP_nip[level] = ASAP_p[level];
+      for(boost::tie(ei, ei_end) = boost::in_edges(level, *beh_graph); ei != ei_end; ei++)
       {
          v = boost::source(*ei, *beh_graph);
-         if(beh_graph->CGetOpNodeInfo(v)->GetOperation() == beh_graph->CGetOpNodeInfo(*i)->GetOperation())
-            ASAP_nip[*i]--;
+         if(beh_graph->CGetOpNodeInfo(v)->GetOperation() == beh_graph->CGetOpNodeInfo(level)->GetOperation())
+            ASAP_nip[level]--;
       }
    }
 
@@ -255,13 +255,13 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
    min_tot_csteps = ControlStep(0u);
    if(partial_schedule)
    {
-      for(std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+      for(auto level : levels)
       {
-         if(!beh_graph->is_in_subset(*i))
+         if(!beh_graph->is_in_subset(level))
             continue;
-         if(partial_schedule && partial_schedule->is_scheduled(*i))
+         if(partial_schedule && partial_schedule->is_scheduled(level))
          {
-            ASAP->set_execution(*i, partial_schedule->get_cstep(*i).second);
+            ASAP->set_execution(level, partial_schedule->get_cstep(level).second);
          }
       }
    }
@@ -272,27 +272,27 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
       add_constraints_to_ASAP();
    }
 
-   for(std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+   for(auto level : levels)
    {
-      if(!beh_graph->is_in_subset(*i))
+      if(!beh_graph->is_in_subset(level))
          continue;
-      const auto op_cycles = GetCycleLatency(*i, Allocation_MinMax::MIN);
+      const auto op_cycles = GetCycleLatency(level, Allocation_MinMax::MIN);
       cur_start = 0.0;
 
-      for(boost::tie(ei, ei_end) = boost::in_edges(*i, *beh_graph); ei != ei_end; ei++)
+      for(boost::tie(ei, ei_end) = boost::in_edges(level, *beh_graph); ei != ei_end; ei++)
       {
          vi = boost::source(*ei, *beh_graph);
          cur_start = finish_time[vi] < cur_start ? cur_start : finish_time[vi];
-         //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, vi) + " -> " +GET_NAME(beh_graph, *i) + " cur_start " + boost::lexical_cast<std::string>(cur_start));
+         //       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, vi) + " -> " +GET_NAME(beh_graph, level) + " cur_start " + boost::lexical_cast<std::string>(cur_start));
       }
 
-      finish_time[*i] = cur_start + from_strongtype_cast<double>(op_cycles);
-      ControlStep curr_asap = ASAP->is_scheduled(*i) ? ASAP->get_cstep(*i).second : ControlStep(0u);
+      finish_time[level] = cur_start + from_strongtype_cast<double>(op_cycles);
+      ControlStep curr_asap = ASAP->is_scheduled(level) ? ASAP->get_cstep(level).second : ControlStep(0u);
       curr_asap = ControlStep(static_cast<unsigned int>(cur_start / ctrl_step_multiplier)) > curr_asap ? ControlStep(static_cast<unsigned int>(cur_start / ctrl_step_multiplier)) : curr_asap;
-      ASAP->set_execution(*i, curr_asap);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, *i) + " cur_start " + boost::lexical_cast<std::string>(cur_start) + " finish_time[*i] " + boost::lexical_cast<std::string>(finish_time[*i]));
+      ASAP->set_execution(level, curr_asap);
+      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, GET_NAME(beh_graph, level) + " cur_start " + boost::lexical_cast<std::string>(cur_start) + " finish_time[level] " + boost::lexical_cast<std::string>(finish_time[level]));
       min_tot_csteps = min_tot_csteps < curr_asap ? curr_asap : min_tot_csteps;
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, *i) + " - " + STR(ASAP->get_cstep(*i).second));
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ASAP->get_cstep(level).second));
    }
    ASAP->set_csteps(min_tot_csteps + 1u);
 }
@@ -367,11 +367,11 @@ void ASLAP::add_constraints_to_ALAP()
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Reverse ALAP:");
-      for(std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+      for(auto level : levels)
       {
-         if(!beh_graph->is_in_subset(*i))
+         if(!beh_graph->is_in_subset(level))
             continue;
-         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, *i) + " - " + STR(ALAP->get_cstep(*i).second));
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "end");
    }
@@ -435,13 +435,13 @@ void ASLAP::update_ALAP(const ControlStep maxc, bool* feasible, const ScheduleCo
    max_tot_csteps = maxc;
    if(partial_schedule)
    {
-      for(std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+      for(auto level : levels)
       {
-         if(!beh_graph->is_in_subset(*i))
+         if(!beh_graph->is_in_subset(level))
             continue;
-         if(partial_schedule && partial_schedule->is_scheduled(*i))
+         if(partial_schedule && partial_schedule->is_scheduled(level))
          {
-            ALAP->set_execution(*i, max_tot_csteps - partial_schedule->get_cstep(*i).second);
+            ALAP->set_execution(level, max_tot_csteps - partial_schedule->get_cstep(level).second);
          }
       }
    }
@@ -487,16 +487,16 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
    }
 
    PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "ALAP fast");
-   for(std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+   for(auto level : levels)
    {
-      if(!beh_graph->is_in_subset(*i))
+      if(!beh_graph->is_in_subset(level))
          continue;
-      ALAP->set_execution(*i, max_tot_csteps - ALAP->get_cstep(*i).second);
+      ALAP->set_execution(level, max_tot_csteps - ALAP->get_cstep(level).second);
       if(feasible && *feasible)
       {
-         *feasible = ALAP->get_cstep(*i) >= ASAP->get_cstep(*i);
+         *feasible = ALAP->get_cstep(level) >= ASAP->get_cstep(level);
       }
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, *i) + " - " + STR(ALAP->get_cstep(*i).second));
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
    }
 }
 
@@ -533,18 +533,18 @@ void ASLAP::compute_ALAP_worst_case()
           std::pair<ControlStep, ControlStep>(ALAP->get_cstep(*i).second, std::max(max_et.find(ALAP->get_cstep(*i).second)->second,
                                                                                    ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(*i, Allocation_MinMax::MAX)) / static_cast<double>(ctrl_step_multiplier)))))));
    }
-   auto level = max_rev_level - 1u;
+   auto levelr = max_rev_level - 1u;
    do
    {
-      rev_levels_to_cycles.find(level)->second += std::max(rev_levels_to_cycles.find(level + 1u)->second, max_et.find(level + 1u)->second);
-   } while(level != 0u);
-   for(std::deque<vertex>::const_iterator i = levels.begin(); i != levels.end(); ++i)
+      rev_levels_to_cycles.find(levelr)->second += std::max(rev_levels_to_cycles.find(levelr + 1u)->second, max_et.find(levelr + 1u)->second);
+   } while(levelr != 0u);
+   for(auto level : levels)
    {
-      if(!beh_graph->is_in_subset(*i))
+      if(!beh_graph->is_in_subset(level))
          continue;
-      ALAP->set_execution(*i, rev_levels_to_cycles.find(ALAP->get_cstep(*i).second)->second -
-                                  ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(*i, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
-      max_tot_csteps = std::max(max_tot_csteps, ALAP->get_cstep(*i).second);
+      ALAP->set_execution(level, rev_levels_to_cycles.find(ALAP->get_cstep(level).second)->second -
+                                  ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(level, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
+      max_tot_csteps = std::max(max_tot_csteps, ALAP->get_cstep(level).second);
    }
 }
 

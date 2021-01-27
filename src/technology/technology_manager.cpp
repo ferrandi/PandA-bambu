@@ -263,37 +263,37 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
          {
             const library_manager::fu_map_type& fus = LM->get_library_fu();
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating library " + library_name);
-            for(auto f = fus.begin(); f != fus.end(); ++f)
+            for(const auto & fu : fus)
             {
-               if(library_map[library_name]->is_fu(f->first))
+               if(library_map[library_name]->is_fu(fu.first))
                {
                   /// First part of the condition is for skip template
-                  if(not GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) or
-                     GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp <= GetPointer<const functional_unit>(f->second)->characterization_timestamp)
+                  if(not GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first)) or
+                     GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first))->characterization_timestamp <= GetPointer<const functional_unit>(fu.second)->characterization_timestamp)
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Updating " + f->first +
-                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ?
-                                             " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " +
-                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp) :
+                                    "-->Updating " + fu.first +
+                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first)) ?
+                                             " characterized at " + STR(GetPointer<const functional_unit>(fu.second)->characterization_timestamp) + " - Previous characterization is at " +
+                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first))->characterization_timestamp) :
                                              ""));
-                     library_map[library_name]->update(f->second);
+                     library_map[library_name]->update(fu.second);
                   }
                   else
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "-->Not updating " + f->first +
-                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first)) ?
-                                             " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) + " - Previous characterization is at " +
-                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(f->first))->characterization_timestamp) :
+                                    "-->Not updating " + fu.first +
+                                        (GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first)) ?
+                                             " characterized at " + STR(GetPointer<const functional_unit>(fu.second)->characterization_timestamp) + " - Previous characterization is at " +
+                                                 STR(GetPointer<const functional_unit>(library_map[library_name]->get_fu(fu.first))->characterization_timestamp) :
                                              ""));
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                }
                else
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loading " + f->first + (GetPointer<const functional_unit>(f->second) ? " characterized at " + STR(GetPointer<const functional_unit>(f->second)->characterization_timestamp) : ""));
-                  library_map[library_name]->add(f->second);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loading " + fu.first + (GetPointer<const functional_unit>(fu.second) ? " characterized at " + STR(GetPointer<const functional_unit>(fu.second)->characterization_timestamp) : ""));
+                  library_map[library_name]->add(fu.second);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                }
             }

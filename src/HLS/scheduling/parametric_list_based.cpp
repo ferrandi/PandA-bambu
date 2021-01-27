@@ -1131,24 +1131,24 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                }
                // successors.sort();
 
-               for(auto s = successors.begin(); s != successors.end(); ++s)
+               for(auto & successor : successors)
                {
-                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering successor " + s->first);
-                  scheduled_predecessors[s->second]++;
-                  if(current_ASAP.find(s->second) != current_ASAP.end())
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering successor " + successor.first);
+                  scheduled_predecessors[successor.second]++;
+                  if(current_ASAP.find(successor.second) != current_ASAP.end())
                   {
-                     current_ASAP.at(s->second) = std::max(ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))), current_ASAP.find(s->second)->second);
+                     current_ASAP.at(successor.second) = std::max(ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))), current_ASAP.find(successor.second)->second);
                   }
                   else
                   {
-                     current_ASAP.emplace(s->second, ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))));
+                     current_ASAP.emplace(successor.second, ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))));
                   }
                   /// check if to_v should be considered as ready
-                  if(boost::in_degree(s->second, *flow_graph) == scheduled_predecessors(s->second))
+                  if(boost::in_degree(successor.second, *flow_graph) == scheduled_predecessors(successor.second))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Become ready");
-                     ready_vertices.insert(s->second);
-                     add_to_priority_queues(priority_queues, ready_resources, s->second);
+                     ready_vertices.insert(successor.second);
+                     add_to_priority_queues(priority_queues, ready_resources, successor.second);
                   }
                }
             }
@@ -1253,13 +1253,13 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   compute vertices slack");
       /// compute the vertices slack
       OpVertexSet vertices_analyzed(opDFG);
-      for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
+      for(auto sub_level : sub_levels)
       {
-         if(vertices_analyzed.find(*vi) != vertices_analyzed.end())
+         if(vertices_analyzed.find(sub_level) != vertices_analyzed.end())
          {
             continue;
          }
-         update_vertices_slack(*vi, schedule, vertices_analyzed, setup_hold_time, opDFG);
+         update_vertices_slack(sub_level, schedule, vertices_analyzed, setup_hold_time, opDFG);
       }
 
       do_balanced_scheduling1(sub_levels, schedule, res_binding, setup_hold_time, scheduling_mux_margins, opDFG, seen_cstep_has_RET_conflict);
@@ -1827,9 +1827,8 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
    ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
    ControlStep max_cycle = ControlStep(0u);
    double total_resource_area = 0;
-   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
+   for(auto current_op : sub_levels)
    {
-      vertex current_op = *vi;
       const auto curr_cs = schedule->get_cstep(current_op).second;
       min_cycle = std::min(min_cycle, curr_cs);
       max_cycle = std::max(max_cycle, curr_cs);
@@ -1988,13 +1987,13 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
       }
    }
    OpVertexSet vertices_analyzed(opDFG);
-   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
+   for(auto sub_level : sub_levels)
    {
-      if(vertices_analyzed.find(*vi) != vertices_analyzed.end())
+      if(vertices_analyzed.find(sub_level) != vertices_analyzed.end())
       {
          continue;
       }
-      update_vertices_slack(*vi, schedule, vertices_analyzed, setup_hold_time, opDFG);
+      update_vertices_slack(sub_level, schedule, vertices_analyzed, setup_hold_time, opDFG);
    }
 }
 
@@ -2033,9 +2032,8 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
    std::map<unsigned int, std::map<ControlStep, double>> T_obj;
    ControlStep min_cycle = ControlStep(std::numeric_limits<unsigned int>::max());
    ControlStep max_cycle = ControlStep(0u);
-   for(std::deque<vertex>::const_iterator vi = sub_levels.begin(); vi != sub_levels.end(); ++vi)
+   for(auto current_op : sub_levels)
    {
-      vertex current_op = *vi;
       const auto curr_cs = schedule->get_cstep(current_op).second;
       min_cycle = std::min(min_cycle, curr_cs);
       max_cycle = std::max(max_cycle, curr_cs);

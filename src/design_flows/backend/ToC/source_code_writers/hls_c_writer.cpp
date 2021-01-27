@@ -973,10 +973,9 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                   } while(boost::filesystem::exists(candidate_out_file_name));
                   output_parameter_initialization_filename = candidate_out_file_name;
                   std::ofstream parameter_init_file(output_parameter_initialization_filename.c_str());
-                  for(unsigned int i = 0; i < splitted.size(); i++)
+                  for(auto initial_string : splitted)
                   {
-                     THROW_ASSERT(splitted[i] != "", "Not well formed test vector: " + test_v);
-                     std::string initial_string = splitted[i];
+                     THROW_ASSERT(initial_string != "", "Not well formed test vector: " + test_v);
                      printed_bytes += WriteBinaryMemoryInitToFile(parameter_init_file, initial_string, static_cast<unsigned int>(initial_string.size()), bits_offset);
                   }
                   indented_output_stream->Append("{\n");

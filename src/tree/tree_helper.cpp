@@ -1287,9 +1287,9 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
       case constructor_K:
       {
          auto* co = GetPointer<constructor>(t);
-         for(auto i = co->list_of_idx_valu.begin(); i != co->list_of_idx_valu.end(); ++i)
+         for(auto & i : co->list_of_idx_valu)
          {
-            get_used_variables(first_level_only, i->second, list_of_variable);
+            get_used_variables(first_level_only, i.second, list_of_variable);
          }
          break;
       }
@@ -1470,12 +1470,12 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef tn)
 #endif
       if(rt)
       {
-         for(auto x = rt->list_of_fncs.begin(); x != rt->list_of_fncs.end(); ++x)
+         for(auto & list_of_fnc : rt->list_of_fncs)
          {
-            auto* fd = GetPointer<function_decl>(GET_NODE(*x));
+            auto* fd = GetPointer<function_decl>(GET_NODE(list_of_fnc));
             if(fd && GET_INDEX_NODE(fd->type) == function_type)
             {
-               return *x;
+               return list_of_fnc;
             }
          }
       }
@@ -8424,11 +8424,11 @@ bool tree_helper::is_a_nop_function_decl(function_decl* fd)
             return true;
          }
          blocRef single_bb;
-         for(auto lob_it = sl->list_of_bloc.begin(); lob_it != sl->list_of_bloc.end(); ++lob_it)
+         for(auto & lob_it : sl->list_of_bloc)
          {
-            if(lob_it->first != bloc::ENTRY_BLOCK_ID && lob_it->first != bloc::EXIT_BLOCK_ID)
+            if(lob_it.first != bloc::ENTRY_BLOCK_ID && lob_it.first != bloc::EXIT_BLOCK_ID)
             {
-               single_bb = lob_it->second;
+               single_bb = lob_it.second;
             }
          }
          THROW_ASSERT(single_bb, "unexpected condition");

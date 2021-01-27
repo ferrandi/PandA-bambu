@@ -239,9 +239,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
       TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
       builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-      for(std::vector<tree_nodeRef>::const_iterator argItr = GC->args.begin(), argEnd = GC->args.end(); argItr != argEnd; ++argItr)
+      for(const auto & arg : GC->args)
       {
-         builtinGimpleCall->AddArg(*argItr);
+         builtinGimpleCall->AddArg(arg);
       }
 
       builtinGimpleCall->memuse = GC->memuse;
@@ -294,9 +294,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
          builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-         for(std::vector<tree_nodeRef>::const_iterator argItr = CE->args.begin(), argEnd = CE->args.end(); argItr != argEnd; ++argItr)
+         for(const auto & arg : CE->args)
          {
-            builtinGimpleCall->AddArg(*argItr);
+            builtinGimpleCall->AddArg(arg);
          }
 
          if(auto* ssaRet = GetPointer<ssa_name>(GET_NODE(GA->op0)))

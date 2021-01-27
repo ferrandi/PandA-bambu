@@ -177,9 +177,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                if(precision_pipe_param_pair[0] == "*")
                {
                   for(unsigned int prec : precision)
-                     for(std::vector<std::string>::const_iterator param_it = pipe_params.begin(), param_it_end = pipe_params.end(); param_it != param_it_end; ++param_it)
-                        if(std::find(pipe_parameters[prec].begin(), pipe_parameters[prec].end(), *param_it) == pipe_parameters[prec].end())
-                           pipe_parameters[prec].push_back(*param_it);
+                     for(const auto & pipe_param : pipe_params)
+                        if(std::find(pipe_parameters[prec].begin(), pipe_parameters[prec].end(), pipe_param) == pipe_parameters[prec].end())
+                           pipe_parameters[prec].push_back(pipe_param);
                }
                else if(precision_pipe_param_pair[0] == "DSPs_y_sizes")
                {
@@ -194,10 +194,10 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                }
                else if(precision.find(boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])) != precision.end())
                {
-                  for(std::vector<std::string>::const_iterator param_it = pipe_params.begin(), param_it_end = pipe_params.end(); param_it != param_it_end; ++param_it)
-                     if(std::find(pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].begin(), pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end(), *param_it) ==
+                  for(const auto & pipe_param : pipe_params)
+                     if(std::find(pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].begin(), pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end(), pipe_param) ==
                         pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end())
-                        pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].push_back(*param_it);
+                        pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].push_back(pipe_param);
                }
                else
                   THROW_ERROR("malformed pipe parameter string");
@@ -217,16 +217,16 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                if(precision_portsize_param_pair[0] == "*")
                {
                   for(unsigned int prec : precision)
-                     for(std::vector<std::string>::const_iterator param_it = portsize_params.begin(), param_it_end = portsize_params.end(); param_it != param_it_end; ++param_it)
-                        if(std::find(portsize_parameters[prec].begin(), portsize_parameters[prec].end(), *param_it) == portsize_parameters[prec].end())
-                           portsize_parameters[prec].push_back(*param_it);
+                     for(const auto & portsize_param : portsize_params)
+                        if(std::find(portsize_parameters[prec].begin(), portsize_parameters[prec].end(), portsize_param) == portsize_parameters[prec].end())
+                           portsize_parameters[prec].push_back(portsize_param);
                }
                else if(precision.find(boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])) != precision.end())
                {
-                  for(std::vector<std::string>::const_iterator param_it = portsize_params.begin(), param_it_end = portsize_params.end(); param_it != param_it_end; ++param_it)
-                     if(std::find(portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].begin(), portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end(), *param_it) ==
+                  for(const auto & portsize_param : portsize_params)
+                     if(std::find(portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].begin(), portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end(), portsize_param) ==
                         portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end())
-                        portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].push_back(*param_it);
+                        portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].push_back(portsize_param);
                }
                else
                   THROW_ERROR("malformed portsize parameter string");
