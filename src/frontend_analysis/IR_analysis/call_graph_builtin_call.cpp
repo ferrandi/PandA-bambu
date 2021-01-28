@@ -255,11 +255,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::F
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         break;
-      }
       case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }

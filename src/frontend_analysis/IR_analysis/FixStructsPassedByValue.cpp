@@ -432,6 +432,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLING_FUNCTIONS));
+         relationships.insert(std::make_pair(REBUILD_INITIALIZATION, CALLING_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

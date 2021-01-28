@@ -95,7 +95,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
    {
-      case(DEPENDENCE_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -103,7 +103,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP):
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
