@@ -912,13 +912,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + statement->ToString());
 
-#ifndef NDEBUG
       if(!AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
          continue;
       }
-#endif
 
       if(GET_NODE(statement)->get_kind() != gimple_assign_K)
       {
@@ -1355,13 +1353,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       std::vector<tree_nodeRef> prev_stmts_to_add;
       for(auto lut : luts)
       {
-#ifndef NDEBUG
          if(!AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
             continue;
          }
-#endif
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---index: " + STR(lut.index));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- po_index: " + STR(lut.po_index));
@@ -1494,10 +1490,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
                }
             }
-
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), po_stmpt);
-#endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Modified statement " + GET_NODE(po_stmpt)->ToString());
          }
          else

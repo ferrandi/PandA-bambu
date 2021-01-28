@@ -1025,13 +1025,11 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because cannot be moved");
                continue;
             }
-#ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of CFG transformations");
                continue;
             }
-#endif
 
             /// finally we found something of meaningful
 
@@ -1067,9 +1065,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
                continue;
             }
             modified = true;
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), *statement);
-#endif
 
             /// add predication in case is required
             if(tn->get_kind() == gimple_assign_K && (GET_NODE(GetPointer<gimple_assign>(tn)->op0)->get_kind() == mem_ref_K || GET_NODE(GetPointer<gimple_assign>(tn)->op1)->get_kind() == mem_ref_K))

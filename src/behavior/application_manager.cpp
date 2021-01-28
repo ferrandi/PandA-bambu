@@ -80,9 +80,7 @@ application_manager::application_manager(const FunctionExpanderConstRef function
 #if HAVE_PRAGMA_BUILT
       PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
 #endif
-#ifndef NDEBUG
       cfg_transformations(0),
-#endif
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 #if HAVE_FROM_DISCREPANCY_BUILT
       ,
@@ -331,22 +329,34 @@ void application_manager::add_written_object(unsigned int node_id)
    written_objects.insert(node_id);
 }
 
-#ifndef NDEBUG
 bool application_manager::ApplyNewTransformation() const
 {
+#ifndef PNDEBUG
    return cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations);
+#else
+   return true;
+#endif
 }
 
-void application_manager::RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn)
+void application_manager::RegisterTransformation(const std::string&
+//#ifndef NDEBUG
+                                                 step
+//#endif
+                                                 , const tree_nodeConstRef
+//#ifndef NDEBUG
+                                                 new_tn
+//#endif
+                                                 )
 {
+//#ifndef NDEBUG
    THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : ""));
    cfg_transformations++;
    if(Param->getOption<size_t>(OPT_cfg_max_transformations) != std::numeric_limits<size_t>::max())
    {
       INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + (new_tn ? new_tn->ToString() : ""));
    }
+//#endif
 }
-#endif
 
 bool application_manager::isParmUsed(unsigned parm_index) const
 {

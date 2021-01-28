@@ -217,13 +217,11 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
       for(const auto& stmt : list_of_stmt)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of CFG transformations");
             continue;
          }
-#endif
          if(GetPointer<gimple_node>(GET_NODE(stmt))->keep)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because the statement has been annotated with the keep tag");
@@ -261,9 +259,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                         else if(condition->get_kind() == integer_cst_K)
                         {
@@ -286,9 +282,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                         else
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---nothing more can be done");
@@ -308,9 +302,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                            restart_dead_code = true;
                         }
-#ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), stmt);
-#endif
                      }
                      else if(GetPointer<ssa_name>(GET_NODE(ga->op1)))
                      {
@@ -327,9 +319,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                            restart_dead_code = true;
                         }
-#ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), stmt);
-#endif
                      }
                      else if(GET_NODE(ga->op1)->get_kind() == view_convert_expr_K)
                      {
@@ -381,9 +371,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                  restart_dead_code = true;
                               }
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                         }
                      }
@@ -487,9 +475,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Bit Value Opt: " + std::string(GET_NODE(ga->op1)->get_kind_text()) + " optimized, nbits = " + STR(trailing_zero));
                            INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
                            modified = true;
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                            unsigned int type_index0 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
                            tree_nodeRef op0_op_type = TM->GetTreeReindex(type_index0);
@@ -585,9 +571,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                            restart_dead_code = true;
                         }
-#ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), stmt);
-#endif
                      };
                      c_BVO();
                   }
@@ -607,9 +591,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                            restart_dead_code = true;
                         }
-#ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), stmt);
-#endif
                      };
                      cst_node_BVO();
                   }
@@ -662,9 +644,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                  restart_dead_code = true;
                               }
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                         }
                      };
@@ -705,9 +685,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         if(!isSigned && GET_NODE(ga->op1)->get_kind() == mult_expr_K && (data_bitsize_in0 == 1 || data_bitsize_in1 == 1))
                         {
                            modified = true;
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            tree_nodeRef constNE0 = TM->CreateUniqueIntegerCst(0, type_index);
                            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                            tree_nodeRef bt = IRman->create_boolean_type();
@@ -775,9 +753,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            if(trailing_zero_op0 != 0 || trailing_zero_op1 != 0)
                            {
                               modified = true;
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "-->Bit Value Opt: mult_expr/widen_mult_expr optimized, nbits = " + STR(trailing_zero_op0 + trailing_zero_op1));
                               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
                               const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
@@ -849,9 +825,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               TM->ReplaceTreeNode(stmt, ga->op1, TM->CreateUniqueIntegerCst(0, type_index));
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Statement transformed in " + GET_NODE(stmt)->ToString());
                               modified = true;
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                            else
                            {
@@ -861,9 +835,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               TM->ReplaceTreeNode(stmt, ga->op1, op_expr);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Statement transformed in " + GET_NODE(stmt)->ToString());
                               modified = true;
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                            return;
                         }
@@ -949,9 +921,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                         else if(is_op1_null)
                         {
@@ -968,16 +938,12 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                         else if(trailing_zero_op0 != 0 || trailing_zero_op1 != 0)
                         {
                            modified = true;
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                            const bool is_first_max = trailing_zero_op0 > trailing_zero_op1;
                            const unsigned int shift_const = is_first_max ? trailing_zero_op0 : trailing_zero_op1;
@@ -1245,9 +1211,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               tree_nodeRef res_expr = IRman->create_unary_operation(ga_op_type, me->op1, srcp_default, negate_expr_K);
                               TM->ReplaceTreeNode(stmt, ga->op1, res_expr);
                               modified = true;
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                         }
                      };
@@ -1291,9 +1255,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                         else if(is_op1_zero && GET_NODE(ga->op1)->get_kind() == ne_expr_K && op0_size == 1)
                         {
@@ -1324,10 +1286,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  ga->op1 = IRman->create_unary_operation(ga_op_type, me->op0, srcp_default, nop_expr_K);
                                  modified = true;
                               }
-
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                            else
                            {
@@ -1344,9 +1303,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               tree_nodeRef ga_nop = IRman->CreateNopExpr(op0_ga_var, TM->CGetTreeReindex(type_id), tree_nodeRef(), tree_nodeRef());
                               B->PushBefore(ga_nop, stmt);
                               modified = true;
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), ga_nop);
-#endif
                               tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                               TM->ReplaceTreeNode(stmt, ga->op1, nop_ga_var);
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
@@ -1409,9 +1366,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---Bit Value Opt: " + std::string(GET_NODE(ga->op1)->get_kind_text()) + " optimized, nbits = " + STR(trailing_zero));
                               modified = true;
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                               const std::string srcp_default = ga->include_name + ":" + STR(ga->line_number) + ":" + STR(ga->column_number);
                               unsigned int type_index0 = tree_helper::get_type_index(TM, GET_INDEX_NODE(me->op0));
                               tree_nodeRef op0_op_type = TM->GetTreeReindex(type_index0);
@@ -1510,21 +1465,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                           restart_dead_code = true;
                                        }
-#ifndef NDEBUG
                                        AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                     }
                                  }
                               }
                            }
                         }
-#ifndef NDEBUG
                         if(not AppM->ApplyNewTransformation())
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
                            return;
                         }
-#endif
                         tree_nodeRef op0 = GET_NODE(me->op1);
                         tree_nodeRef op1 = GET_NODE(me->op2);
                         tree_nodeRef condition = GET_NODE(me->op0);
@@ -1544,9 +1495,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                         else if(condition->get_kind() == integer_cst_K)
                         {
@@ -1569,9 +1518,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                         else
                         {
@@ -1682,9 +1629,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  TM->ReplaceTreeNode(stmt, ga->op0, ssa_vd);
                                  B->PushAfter(curr_ga, stmt);
                                  modified = true;
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), stmt);
-#endif
                               }
                               else if(precision == 1 && s0 == "1" && s1 == "0")
                               {
@@ -1692,9 +1637,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  tree_nodeRef ga_nop = IRman->CreateNopExpr(me->op0, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type, ssa->min, ssa->max);
                                  B->PushBefore(ga_nop, stmt);
                                  modified = true;
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), ga_nop);
-#endif
                                  tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
 
                                  const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
@@ -1710,9 +1653,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                     restart_dead_code = true;
                                  }
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), stmt);
-#endif
                               }
                               else if(precision == 1 and s0 == "0" and s1 == "1")
                               {
@@ -1737,9 +1678,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                     restart_dead_code = true;
                                  }
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), stmt);
-#endif
                               }
                            }
                            else if(GetPointer<integer_cst>(op0) && GetPointer<integer_cst>(op1))
@@ -1754,9 +1693,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                                                             TM->CreateUniqueIntegerCst(1, GetPointer<ternary_expr>(GET_NODE(ga->op1))->type->index));
                                  B->PushBefore(ga_nop, stmt);
                                  modified = true;
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), ga_nop);
-#endif
                                  tree_nodeRef nop_ga_var = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                                  TM->ReplaceTreeNode(stmt, ga->op1, nop_ga_var);
                               }
@@ -1789,9 +1726,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                      };
                      tne_BVO();
@@ -1836,9 +1771,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                      };
                      tae_BVO();
@@ -1883,9 +1816,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                      };
                      toe_BVO();
@@ -1925,9 +1856,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                  restart_dead_code = true;
                               }
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                         }
                      };
@@ -1955,9 +1884,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                  restart_dead_code = true;
                               }
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                            else if(GetPointer<ssa_name>(GET_NODE(ppe->op0)))
                            {
@@ -1985,9 +1912,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           restart_dead_code = true;
                                        }
                                        modified = true;
-#ifndef NDEBUG
                                        AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                     }
                                  }
                               }
@@ -2027,9 +1952,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                        restart_dead_code = true;
                                     }
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                               }
                            }
@@ -2070,9 +1993,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                  modified = true;
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), stmt);
-#endif
                               }
                               else
                               {
@@ -2091,9 +2012,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                     restart_dead_code = true;
                                  }
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), stmt);
-#endif
                               }
                            }
                            else if(tree_helper::is_bool(TM, GET_INDEX_NODE(ebe->op0)))
@@ -2111,9 +2030,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                  restart_dead_code = true;
                               }
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                            else
                            {
@@ -2135,9 +2052,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                           modified = true;
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                        else
                                        {
@@ -2155,9 +2070,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                              restart_dead_code = true;
                                           }
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                     }
                                     else
@@ -2177,9 +2090,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                              TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                              modified = true;
-#ifndef NDEBUG
                                              AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                           }
                                           else
                                           {
@@ -2198,9 +2109,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                                 TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                                 INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                                 modified = true;
-#ifndef NDEBUG
                                                 AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                              }
                                              else
                                              {
@@ -2219,9 +2128,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                                    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                                    restart_dead_code = true;
                                                 }
-#ifndef NDEBUG
                                                 AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                              }
                                           }
                                        }
@@ -2250,9 +2157,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                           modified = true;
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                        else
                                        {
@@ -2271,9 +2176,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                              restart_dead_code = true;
                                           }
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                     }
                                  }
@@ -2292,9 +2195,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                     modified = true;
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                                  else if(prev_code1 == lshift_expr_K)
                                  {
@@ -2315,9 +2216,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                           modified = true;
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                        else
                                        {
@@ -2336,9 +2235,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                              restart_dead_code = true;
                                           }
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                     }
                                  }
@@ -2360,9 +2257,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                        TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                        modified = true;
-#ifndef NDEBUG
                                        AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                     }
                                     else if(GET_NODE(rse->op0)->get_kind() == integer_cst_K)
                                     {
@@ -2422,9 +2317,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                           modified = true;
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                        else
                                        {
@@ -2433,9 +2326,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           TM->ReplaceTreeNode(stmt, ga->op1, zero_node);
                                           INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                           modified = true;
-#ifndef NDEBUG
                                           AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                        }
                                     }
                                  }
@@ -2451,9 +2342,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     TM->ReplaceTreeNode(stmt, ga->op1, negating);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                     modified = true;
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                                  else if(prev_code1 == bit_and_expr_K)
                                  {
@@ -2471,9 +2360,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     TM->ReplaceTreeNode(stmt, ga->op1, anding);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                     modified = true;
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                                  else if(prev_code1 == bit_ior_expr_K)
                                  {
@@ -2491,9 +2378,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     TM->ReplaceTreeNode(stmt, ga->op1, anding);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                     modified = true;
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                                  else if(prev_code1 == bit_xor_expr_K)
                                  {
@@ -2511,9 +2396,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     TM->ReplaceTreeNode(stmt, ga->op1, anding);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                     modified = true;
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                                  else if(prev_code1 == cond_expr_K)
                                  {
@@ -2531,9 +2414,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     TM->ReplaceTreeNode(stmt, ga->op1, ceRes);
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                     modified = true;
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                                  else if(prev_code1 == plus_expr_K)
                                  {
@@ -2599,9 +2480,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                        TM->ReplaceTreeNode(stmt, ga->op1, sum);
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                        modified = true;
-#ifndef NDEBUG
                                        AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                     }
                                  }
                               }
@@ -2636,9 +2515,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                               restart_dead_code = true;
                            }
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), stmt);
-#endif
                         }
                      };
                      extract_bit_expr_BVO();
@@ -2664,9 +2541,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Restarted dead code");
                                  restart_dead_code = true;
                               }
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), stmt);
-#endif
                            }
                            else
                            {
@@ -2688,9 +2563,7 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                     TM->ReplaceTreeNode(stmt, ga->op1, masking); /// replaced with redundant code to restart lut_transformation
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace extract_bit_expr usage after: " + stmt->ToString());
                                     modified = true;
-#ifndef NDEBUG
                                     AppM->RegisterTransformation(GetName(), stmt);
-#endif
                                  }
                               }
                            }

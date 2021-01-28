@@ -954,9 +954,7 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
    tree_nodeRef bt = tree_man->create_boolean_type();
    tree_nodeRef cond_op0 = tree_man->create_binary_operation(bt, op0, const0, srcp_default, lt_expr_K);
    tree_nodeRef signmask_ga = tree_man->CreateGimpleAssign(type, TM->CreateUniqueIntegerCst(0, bt->index), TM->CreateUniqueIntegerCst(1, bt->index), cond_op0, block->number, srcp_default);
-#ifndef NDEBUG
    AppM->RegisterTransformation(GetName(), signmask_ga);
-#endif
    block->PushBefore(signmask_ga, stmt);
    tree_nodeRef signmask_var = GetPointer<gimple_assign>(GET_NODE(signmask_ga))->op0;
 
@@ -967,33 +965,25 @@ tree_nodeRef IR_lowering::expand_smod_pow2(tree_nodeRef op0, unsigned long long 
 
    tree_nodeRef temp = tree_man->create_binary_operation(type, op0, signmask_var, srcp_default, bit_xor_expr_K);
    tree_nodeRef temp_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), temp, block->number, srcp_default);
-#ifndef NDEBUG
    AppM->RegisterTransformation(GetName(), temp_ga);
-#endif
    block->PushBefore(temp_ga, stmt);
    tree_nodeRef temp_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
 
    temp = tree_man->create_binary_operation(type, temp_var, signmask_var, srcp_default, minus_expr_K);
    temp_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), temp, block->number, srcp_default);
-#ifndef NDEBUG
    AppM->RegisterTransformation(GetName(), temp_ga);
-#endif
    block->PushBefore(temp_ga, stmt);
    temp_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
 
    temp = tree_man->create_binary_operation(type, temp_var, Constmasklow, srcp_default, bit_and_expr_K);
    temp_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), temp, block->number, srcp_default);
-#ifndef NDEBUG
    AppM->RegisterTransformation(GetName(), temp_ga);
-#endif
    block->PushBefore(temp_ga, stmt);
    temp_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
 
    temp = tree_man->create_binary_operation(type, temp_var, signmask_var, srcp_default, bit_xor_expr_K);
    temp_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), temp, block->number, srcp_default);
-#ifndef NDEBUG
    AppM->RegisterTransformation(GetName(), temp_ga);
-#endif
    block->PushBefore(temp_ga, stmt);
    temp_var = GetPointer<gimple_assign>(GET_NODE(temp_ga))->op0;
 
@@ -1051,6 +1041,8 @@ tree_nodeRef IR_lowering::expand_sdiv_pow2(tree_nodeRef op0, unsigned long long 
 
 tree_nodeRef IR_lowering::expand_MC(tree_nodeRef op0, integer_cst* ic_node, tree_nodeRef old_target, const tree_nodeRef stmt, const blocRef block, tree_nodeRef& type_expr, const std::string& srcp_default)
 {
+   if(not AppM->ApplyNewTransformation())
+      return old_target;
    long long int ext_op1 = tree_helper::get_integer_cst_value(ic_node);
    short int mult_plus_ratio = 3;
    unsigned int data_bitsize = tree_helper::Size(GET_NODE(op0));
@@ -1552,13 +1544,8 @@ tree_nodeRef IR_lowering::array_ref_lowering(array_ref* AR, const std::string& s
    return tree_man->create_binary_operation(type, pp_vd, offset, srcp_default, mem_ref_K);
 }
 
-bool IR_lowering::reached_max_transformation_limit(tree_nodeRef
-#ifndef NDEBUG
-                                                       stmt
-#endif
-)
+bool IR_lowering::reached_max_transformation_limit(tree_nodeRef stmt)
 {
-#ifndef NDEBUG
    if(stmt)
    {
       const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(stmt));
@@ -1578,6 +1565,5 @@ bool IR_lowering::reached_max_transformation_limit(tree_nodeRef
    }
    if(not AppM->ApplyNewTransformation())
       return true;
-#endif
    return false;
 }

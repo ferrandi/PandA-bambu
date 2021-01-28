@@ -232,13 +232,9 @@ DesignFlowStep_Status PhiOpt::InternalExec()
    }
    for(auto block_to_be_removed : blocks_to_be_removed)
    {
-#ifndef NDEBUG
       if(AppM->ApplyNewTransformation())
-#endif
       {
-#ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
          MergePhi(block_to_be_removed);
          if(debug_level >= DEBUG_LEVEL_PEDANTIC)
          {
@@ -255,13 +251,9 @@ DesignFlowStep_Status PhiOpt::InternalExec()
    {
       if(block.second->list_of_pred.size() == 1 and block.second->CGetPhiList().size())
       {
-#ifndef NDEBUG
          if(AppM->ApplyNewTransformation())
-#endif
          {
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
             SinglePhiOptimization(block.first);
             bb_modified = true;
          }
@@ -290,13 +282,9 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             auto succ_block = block.second->list_of_succ.front();
             if(sl->list_of_bloc[succ_block]->list_of_pred.size() == 1 and sl->list_of_bloc[succ_block]->list_of_pred.front() != bloc::ENTRY_BLOCK_ID)
             {
-#ifndef NDEBUG
                if(AppM->ApplyNewTransformation())
-#endif
                {
-#ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
                   ChainOptimization(block.first);
                   bb_modified = true;
                }
@@ -369,14 +357,12 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             }
          }
 #endif
-#ifndef NDEBUG
          if(not(AppM->ApplyNewTransformation()))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached limit of cfg transformations");
             continue;
          }
          AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Basic block is not Exit");
          if(debug_level >= DEBUG_LEVEL_PEDANTIC)
          {
@@ -498,13 +484,9 @@ DesignFlowStep_Status PhiOpt::InternalExec()
             THROW_ASSERT(sl->list_of_bloc.find(succ_block) != sl->list_of_bloc.end(), "Successor block BB" + STR(succ_block) + " does not exist");
             if(sl->list_of_bloc[succ_block]->list_of_pred.size() == 1)
             {
-#ifndef NDEBUG
                if(AppM->ApplyNewTransformation())
-#endif
                {
-#ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
                   ChainOptimization(block.first);
                   bb_modified = true;
                }
@@ -526,9 +508,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
          {
             continue;
          }
-#ifndef NDEBUG
          if(AppM->ApplyNewTransformation())
-#endif
          {
             auto virtual_ssa = GetPointer<ssa_name>(GET_NODE(gn->vdef));
             THROW_ASSERT(virtual_ssa, "unexpected condition");
@@ -547,9 +527,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                to_be_removeds.insert(stmt);
-#ifndef NDEBUG
                AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
             }
             else
             {
@@ -595,9 +573,7 @@ DesignFlowStep_Status PhiOpt::InternalExec()
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing gimple nop " + STR(gn->index));
                   to_be_removeds.insert(stmt);
-#ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
                }
             }
          }

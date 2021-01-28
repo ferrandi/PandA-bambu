@@ -222,13 +222,11 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Looking for feasible blocs");
    for(auto block : sl->list_of_bloc)
    {
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping remaining transformations because of reached limit of cfg transformations");
          break;
       }
-#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if a bloc has just 2 incoming and 1 outcoming");
       // The block should have 2 inc arcs from if and then BB and one outgoing to EXIT
       if(block.second->list_of_succ.size() == 1 and block.second->list_of_pred.size() == 2)
@@ -324,9 +322,7 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                         }
 
                         bb_modified = true;
-#ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), last_stmt);
-#endif
                      }
                   }
                   else

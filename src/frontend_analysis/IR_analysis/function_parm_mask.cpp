@@ -83,10 +83,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
-         {
-            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -305,12 +301,10 @@ void function_parm_mask::instrumentViewConvert(function_decl* fd, long long sign
    std::vector<const ssa_name*> ssaParms;
 
    auto instrumentOp = [&](blocRef BB, tree_nodeRef stmt, tree_nodeRef old_ssa, bool afterBefore) {
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          return;
       }
-#endif
       THROW_ASSERT(GET_CONST_NODE(old_ssa)->get_kind() == ssa_name_K, "");
       const auto type_expr = GetPointer<const ssa_name>(GET_CONST_NODE(old_ssa))->type;
       const auto mask = TM->CreateUniqueIntegerCst(significand_mask, GET_INDEX_CONST_NODE(type_expr));
@@ -343,9 +337,7 @@ void function_parm_mask::instrumentViewConvert(function_decl* fd, long long sign
          BB->PushAfter(ga, stmt);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-#ifndef NDEBUG
       AppM->RegisterTransformation(GetName(), ga);
-#endif
    };
    auto instrumentOpAfter = [&](blocRef BB, tree_nodeRef stmt, tree_nodeRef old_ssa) { instrumentOp(BB, stmt, old_ssa, false); };
    auto instrumentOpBefore = [&](blocRef BB, tree_nodeRef stmt, tree_nodeRef old_ssa) { instrumentOp(BB, stmt, old_ssa, true); };

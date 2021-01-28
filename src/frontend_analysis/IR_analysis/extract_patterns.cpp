@@ -139,10 +139,8 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
       auto it_los = list_of_stmt.begin();
       while(it_los != it_los_end)
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
             break;
-#endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
          if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
@@ -193,9 +191,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                            B->RemoveStmt(*it_los);
                            it_los = list_of_stmt.begin();
                            it_los_end = list_of_stmt.end();
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), statement_node);
-#endif
                            continue;
                         }
                      }

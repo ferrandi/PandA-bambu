@@ -185,12 +185,10 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
       const auto& list_of_stmt = block.second->CGetStmtList();
       for(auto stmt = list_of_stmt.begin(); stmt != list_of_stmt.end(); stmt++)
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-#endif
 
          std::list<tree_nodeRef> new_tree_nodes;
 
@@ -421,9 +419,7 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          block.second->Replace(*stmt, TM->GetTreeReindex(root_gimple_node_id), true);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---After " + (*stmt)->ToString());
          new_tree_nodes.push_back(TM->GetTreeReindex(root_gimple_node_id));
-#ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(root_gimple_node_id));
-#endif
 
          /// Check that the second cond expr is actually dead
          THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(second_ga->op0))->CGetUseStmts().size() == 0, "");

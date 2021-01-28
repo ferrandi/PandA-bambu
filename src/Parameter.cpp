@@ -503,13 +503,11 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          setOption(STR_OPT_benchmark_fake_parameters, optarg_param);
          break;
       }
-#ifndef NDEBUG
       case INPUT_OPT_CFG_MAX_TRANSFORMATIONS:
       {
          setOption(OPT_cfg_max_transformations, optarg_param);
          break;
       }
-#endif
       case INPUT_OPT_CONFIGURATION_NAME:
       {
          setOption(OPT_configuration_name, optarg_param);

@@ -1239,12 +1239,7 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
-   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
-#ifndef NDEBUG
-                ,
-                int debug_level, application_managerRef AppM
-#endif
-   );
+   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager, int debug_level,  application_managerRef AppM);
 
    /// Pretty print.
    void print(std::ostream& OS) const;
@@ -1277,12 +1272,11 @@ void VarNode::init(bool outside)
    }
 }
 
-int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager
+int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager, int
 #ifndef NDEBUG
-                      ,
-                      int debug_level, application_managerRef AppM
+                      debug_level
 #endif
-)
+                      , application_managerRef AppM)
 {
    const auto ssa_node = TM->GetTreeReindex(GET_INDEX_CONST_NODE(V));
    auto* SSA = GetPointer<ssa_name>(GET_NODE(ssa_node));
@@ -1326,12 +1320,10 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       {
          return ut_None;
       }
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          return ut_None;
       }
-#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Modified range " + SSA->range->ToString() + " to " + interval->ToString() + " for " + SSA->ToString() + " " + GET_CONST_NODE(SSA->type)->get_kind_text());
    }
    else
@@ -1367,12 +1359,10 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
             return ut_None;
          }
       }
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          return ut_None;
       }
-#endif
       //    const auto hasBetterSuper = [&]() {
       //       if(SSA->min && SSA->max)
       //       {
@@ -1457,11 +1447,11 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       const auto useStmts = SSA->CGetUseStmts();
       for(const auto& use : useStmts)
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
+#ifndef NDEBUG
          auto dbg_conversion = GET_CONST_NODE(use.first)->ToString() + " -> ";
 #endif
          tree_nodeRef lhs = nullptr;
@@ -1483,15 +1473,11 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
          TM->ReplaceTreeNode(use.first, ssa_node, cst_node);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, dbg_conversion + GET_CONST_NODE(use.first)->ToString());
 
-#ifndef NDEBUG
          AppM->RegisterTransformation("RangeAnalysis", use.first);
-#endif
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-#ifndef NDEBUG
       if(AppM->ApplyNewTransformation())
-#endif
          if(SSA->CGetUseStmts().empty())
             if(const auto def = SSA->CGetDefStmt())
             {
@@ -1508,9 +1494,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                      bb->RemoveStmt(def);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + ga->ToString());
                      dead_code_elimination::fix_sdc_motion(design_flow_manager, function_id, def);
-#ifndef NDEBUG
                      AppM->RegisterTransformation("RangeAnalysis", def);
-#endif
                   }
                }
                else if(const auto* gp = GetPointer<const gimple_phi>(GET_CONST_NODE(def)))
@@ -1522,9 +1506,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                   auto bb = sl->list_of_bloc.at(gp->bb_index);
                   bb->RemovePhi(def);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Removed definition " + gp->ToString());
-#ifndef NDEBUG
                   AppM->RegisterTransformation("RangeAnalysis", def);
-#endif
                }
             }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1602,12 +1584,10 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
 #endif
    }
 
-#ifndef NDEBUG
    if(not AppM->ApplyNewTransformation())
    {
       return ut_None;
    }
-#endif
 
    SSA->range = RangeRef(interval->clone());
 #ifdef BITVALUE_UPDATE
@@ -1616,9 +1596,7 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 #endif
 
-#ifndef NDEBUG
    AppM->RegisterTransformation("RangeAnalysis", V);
-#endif
 
    if(const auto* gp = GetPointer<const gimple_phi>(GET_NODE(SSA->CGetDefStmt())))
    {
@@ -7205,6 +7183,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          }
          relationships.insert(std::make_pair(FUNCTION_PARM_MASK, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
@@ -7438,12 +7417,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
             break;
          }
 #endif
-         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm
-#ifndef NDEBUG
-                                                     ,
-                                                     debug_level, AppM
-#endif
-                                                     ))
+         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm,debug_level, AppM))
          {
             const auto funID = varNode.second->getFunctionId();
             modifiedFunctions[funID] |= ut;

@@ -465,12 +465,10 @@ DesignFlowStep_Status CSE::InternalExec()
       for(const auto& stmt : B->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + GET_NODE(stmt)->ToString());
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-#endif
          tree_nodeRef eq_tn = hash_check(GET_NODE(stmt), bb, unique_table);
          if(eq_tn)
          {
@@ -534,9 +532,7 @@ DesignFlowStep_Status CSE::InternalExec()
                }
                to_be_removed.insert(stmt);
             }
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), stmt);
-#endif
             IR_changed = true;
             ++n_equiv_stmt;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated/Removed duplicated statement " + STR(dead_ga->op0));

@@ -139,18 +139,14 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
       const auto old_basic_block = movement[1];
       const auto new_basic_block = movement[2];
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving " + STR(TM->GetTreeReindex(statement_index)) + " from BB" + STR(old_basic_block) + " to BB" + STR(new_basic_block));
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
          continue;
       }
-#endif
       list_of_bloc[old_basic_block]->RemoveStmt(TM->GetTreeReindex(statement_index));
       list_of_bloc[new_basic_block]->PushBack(TM->GetTreeReindex(statement_index));
-#ifndef NDEBUG
       AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(statement_index));
-#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved " + STR(statement_index));
    }
    function_behavior->UpdateBBVersion();

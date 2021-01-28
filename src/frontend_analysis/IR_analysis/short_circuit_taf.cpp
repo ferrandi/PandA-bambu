@@ -249,17 +249,13 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
          merging_candidate = *it_mc;
          mergeable_pair_found = check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc);
       }
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          break;
       }
-#endif
       if(mergeable_pair_found)
       {
-#ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
          if(create_gimple_cond(bb1, bb2, bb1_true, list_of_bloc, bb2_true, merging_candidate))
          {
             something_change = true;

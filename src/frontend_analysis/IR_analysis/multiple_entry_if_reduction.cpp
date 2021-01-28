@@ -219,13 +219,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
    {
       const auto block = bb_cfg->CGetBBNodeInfo(*basic_block)->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block->number));
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached max cfg transformations");
          continue;
       }
-#endif
       /// Analyze if a basic block is a possible candidate
       if(block->CGetStmtList().empty())
       {
@@ -933,9 +931,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended duplicated " + STR(block->number));
       sl->list_of_bloc.erase(block->number);
       executed_iteration++;
-#ifndef NDEBUG
       AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
       break;
    } /// endfor-list_of_bloc
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

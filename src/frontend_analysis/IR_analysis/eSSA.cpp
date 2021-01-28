@@ -1263,14 +1263,12 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          // ends up with predicateinfo.
          if(!Result.Def)
          {
-#ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                return modified;
             }
-#endif
             Result.Def = materializeStack(RenameStack, function_id, sl, Op->getOperand(), PredicateMap, DT, TM, tree_man, interBranchBBs, DFSInfos
 #ifndef NDEBUG
                                           ,
@@ -1294,9 +1292,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT, but in CFG only");
          }
 #endif
-#ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), VD.U->getUser());
-#endif
          VD.U->set(phi->res, TM);
          modified = true;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

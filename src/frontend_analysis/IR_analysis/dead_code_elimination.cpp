@@ -348,10 +348,8 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          std::list<tree_nodeRef> stmts_to_be_removed;
          for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
          {
-#ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
                break;
-#endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
             /// find out if it is a gimple_assign
             if(GET_NODE(*stmt)->get_kind() == gimple_assign_K)
@@ -379,9 +377,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      THROW_ERROR("unexpected condition");
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
                   stmts_to_be_removed.push_back(*stmt);
-#ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), *stmt);
-#endif
                }
                else
                {
@@ -418,9 +414,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                            if(ga->vdef)
                               add_gimple_nop(ga, TM, *stmt, (block_it)->second);
                            stmts_to_be_removed.push_back(*stmt);
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), *stmt);
-#endif
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
                         }
                      }
@@ -481,9 +475,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                              if(ga->vdef)
                                                 add_gimple_nop(ga, TM, *stmt, (block_it)->second);
                                              stmts_to_be_removed.push_back(*stmt);
-#ifndef NDEBUG
                                              AppM->RegisterTransformation(GetName(), *stmt);
-#endif
                                           }
                                           else
                                           {
@@ -546,9 +538,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                }
                                                                THROW_ASSERT(ssa_used_op0->CGetNumberUses() == 0, "unexpected condition");
                                                                stmts_to_be_removed.push_back(*curr_stmt);
-#ifndef NDEBUG
                                                                AppM->RegisterTransformation(GetName(), *curr_stmt);
-#endif
                                                             }
                                                          }
                                                       }
@@ -726,9 +716,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      add_gimple_nop(gc, TM, *stmt, (block_it)->second);
 
                      stmts_to_be_removed.push_back(*stmt);
-#ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), *stmt);
-#endif
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
                   }
                }
@@ -793,10 +781,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing phis");
          for(auto phi = phi_list.rbegin(); phi != phi_list.rend(); phi++)
          {
-#ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
                break;
-#endif
+
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*phi)->ToString());
             THROW_ASSERT(GET_NODE(*phi)->get_kind() == gimple_phi_K, GET_NODE(*phi)->ToString() + " is of kind " + tree_node::GetString(GET_NODE(*phi)->get_kind()));
             auto gphi = GetPointer<gimple_phi>(GET_NODE(*phi));
@@ -807,9 +794,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             if(ssa->CGetNumberUses() == 0 and ssa->CGetDefStmts().size() == 1)
             {
                phis_to_be_removed.push_back(*phi);
-#ifndef NDEBUG
                AppM->RegisterTransformation(GetName(), *phi);
-#endif
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phi");
          }

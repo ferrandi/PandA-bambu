@@ -376,11 +376,7 @@ static unsigned long long int choose_multiplier(unsigned long long int d, int n,
 }
 
 void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign* ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string& srcp_default,
-                                         const std::string&
-#ifndef NDEBUG
-                                             step_name
-#endif
-)
+                                         const std::string&step_name)
 {
    auto* cn = GetPointer<cst_node>(GET_NODE(op1));
    tree_nodeRef op0 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op0;
@@ -390,6 +386,8 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
    long long int ext_op1 = tree_helper::get_integer_cst_value(static_cast<integer_cst*>(cn));
    bool rem_flag = code1 == trunc_mod_expr_K;
 
+   if(not AppM->ApplyNewTransformation())
+      return;
    /// very special case op1 == 1
    if(ext_op1 == 1)
    {
@@ -549,9 +547,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                            else
                               quotient_expr = t2_ga_var;
                         }
-#ifndef NDEBUG
                         AppM->RegisterTransformation(step_name, *it_los);
-#endif
                         if(rem_flag)
                         {
                            tree_nodeRef quotient_ga = tree_man->CreateGimpleAssign(type_expr, tree_nodeRef(), tree_nodeRef(), quotient_expr, block.first, srcp_default);
@@ -564,9 +560,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                            /// restrict if needed the input bit-widths
                            tree_nodeRef sub_expr;
                            if(
-#ifndef NDEBUG
                                AppM->ApplyNewTransformation() and
-#endif
                                static_cast<unsigned int>(data_bitsize) > tree_helper::Size(GET_NODE(ga->op0)))
                            {
                               unsigned long long int masklow = (static_cast<unsigned long long int>(1) << tree_helper::Size(GET_NODE(ga->op0))) - 1;
@@ -581,9 +575,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                               tree_nodeRef temp_op1_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_op1_ga))->op0;
                               tree_nodeRef temp_sub_expr = tree_man->create_binary_operation(type_expr, temp_op0_ga_var, temp_op1_ga_var, srcp_default, minus_expr_K);
                               tree_nodeRef temp_sub_expr_ga = tree_man->CreateGimpleAssign(type_expr, tree_nodeRef(), tree_nodeRef(), temp_sub_expr, block.first, srcp_default);
-#ifndef NDEBUG
                               AppM->RegisterTransformation(step_name, temp_sub_expr_ga);
-#endif
                               block.second->PushBefore(temp_sub_expr_ga, *it_los);
                               tree_nodeRef temp_sub_expr_ga_var = GetPointer<gimple_assign>(GET_NODE(temp_sub_expr_ga))->op0;
                               sub_expr = tree_man->create_binary_operation(type_expr, temp_sub_expr_ga_var, Constmasklow, srcp_default, bit_and_expr_K);
@@ -621,9 +613,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                   unsigned int size = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type_expr)));
                   if(abs_d == static_cast<unsigned long long int>(1) << (size - 1))
                   {
-#ifndef NDEBUG
                      if(AppM->ApplyNewTransformation())
-#endif
                      {
                         tree_nodeRef quotient_expr = tree_man->create_binary_operation(type_expr, op0, op1, srcp_default, eq_expr_K);
                         if(rem_flag)
@@ -640,17 +630,13 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                         }
                         else
                            ga->op1 = quotient_expr;
-#ifndef NDEBUG
                         AppM->RegisterTransformation(step_name, *it_los);
-#endif
                         restart_analysis = true;
                      }
                   }
                   else if(EXACT_POWER_OF_2_OR_ZERO_P(abs_d))
                   {
-#ifndef NDEBUG
                      if(AppM->ApplyNewTransformation())
-#endif
                      {
                         if(rem_flag)
                         {
@@ -670,9 +656,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                            }
                            ga->op1 = new_op1;
                         }
-#ifndef NDEBUG
                         AppM->RegisterTransformation(step_name, *it_los);
-#endif
                         restart_analysis = true;
                      }
                   }
@@ -680,9 +664,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                   {
                      int data_bitsize = static_cast<int>(tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type_expr))));
                      if(
-#ifndef NDEBUG
                          AppM->ApplyNewTransformation() and
-#endif
                          data_bitsize <= 64)
                      {
                         unsigned long long int ml;
@@ -762,9 +744,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                         }
                         else
                            ga->op1 = quotient_expr;
-#ifndef NDEBUG
                         AppM->RegisterTransformation(step_name, *it_los);
-#endif
                         restart_analysis = true;
                      }
                   }
@@ -789,9 +769,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                tree_nodeRef quotient_expr = tree_man->create_binary_operation(type_expr, t1_ga_var, ml_node, srcp_default, mult_expr_K);
 
                ga->op1 = quotient_expr;
-#ifndef NDEBUG
                AppM->RegisterTransformation(step_name, *it_los);
-#endif
                restart_analysis = true;
                break;
             }
@@ -2107,12 +2085,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   };
                   ce_expr1();
                }
-#ifndef NDEBUG
                else if(reached_max_transformation_limit(*it_los))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations (" + GET_CONST_NODE(ga->op1)->get_kind_text() + ")");
                }
-#endif
                else
                {
                   if(code1 == bit_field_ref_K)
@@ -2142,9 +2118,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                            tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                            block.second->PushBefore(new_ga, *it_los);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), new_ga);
-#endif
                            tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
                            tree_nodeRef mr = tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
                            unsigned int size_tp = tree_helper::Size(GET_NODE(type));
@@ -2275,12 +2249,10 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               unsigned int prev_index = GET_INDEX_NODE(ga->op1);
                               ga->op1 = expand_MC(op0, cn, ga->op1, *it_los, block.second, type_expr, srcp_default);
                               restart_analysis = restart_analysis || (prev_index != GET_INDEX_NODE(ga->op1));
-#ifndef NDEBUG
                               if(prev_index != GET_INDEX_NODE(ga->op1))
                               {
                                  AppM->RegisterTransformation(GetName(), *it_los);
                               }
-#endif
                            }
                         }
                         /// if the previous transformation still give a multiplication let's check if this multiplication is actually widen_mult_expr
@@ -2307,9 +2279,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                  tree_nodeRef op0_type = TM->GetTreeReindex(type_index);
                                  ga->op1 = tree_man->create_binary_operation(op0_type, GetPointer<binary_expr>(GET_NODE(ga->op1))->op0, GetPointer<binary_expr>(GET_NODE(ga->op1))->op1, srcp_default, widen_mult_expr_K);
                                  restart_analysis = true;
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), *it_los);
-#endif
                               }
                            }
                         }
@@ -2335,10 +2305,8 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               unsigned int prev_index = GET_INDEX_NODE(ga->op1);
                               ga->op1 = expand_MC(op0, static_cast<integer_cst*>(cn), ga->op1, *it_los, block.second, type_expr, srcp_default);
                               restart_analysis = restart_analysis || (prev_index != GET_INDEX_NODE(ga->op1));
-#ifndef NDEBUG
                               if(prev_index != GET_INDEX_NODE(ga->op1))
                                  AppM->RegisterTransformation(GetName(), *it_los);
-#endif
                            }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Expanded");
                         }
@@ -2351,9 +2319,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               if(ga_nop)
                               {
                                  be->op0 = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), ga_nop);
-#endif
                                  block.second->PushBefore(ga_nop, *it_los);
                                  restart_analysis = true;
                               }
@@ -2374,9 +2340,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               {
                                  be->op1 = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                                  block.second->PushBefore(ga_nop, *it_los);
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), ga_nop);
-#endif
                                  restart_analysis = true;
                               }
                               else
@@ -2448,9 +2412,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                                  tree_nodeRef ga_nop = tree_man->CreateGimpleAssign(be->type, tree_nodeRef(), tree_nodeRef(), ne, block.first, srcp_default);
                                  block.second->PushBefore(ga_nop, *it_los);
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(ga_nop)->ToString());
-#ifndef NDEBUG
                                  AppM->RegisterTransformation(GetName(), ga_nop);
-#endif
                                  ga->op1 = GetPointer<gimple_assign>(GET_NODE(ga_nop))->op0;
                                  restart_analysis = true;
                               }
@@ -2593,9 +2555,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      ga->op1 = mr;
                      block.second->PushBefore(new_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-#ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), new_ga);
-#endif
                      restart_analysis = true;
                   }
                }
@@ -2959,14 +2919,12 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   ga->op0 = manage_imagpart(ga->op0, tree_nodeRef());
                   restart_analysis = true;
                }
-#ifndef NDEBUG
                else if(reached_max_transformation_limit(*it_los))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
                   it_los++;
                   continue;
                }
-#endif
                if(code0 == bit_field_ref_K)
                {
                   auto bit_field_ref0 = [&] {
@@ -2993,9 +2951,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                      tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                      block.second->PushBefore(new_ga, *it_los);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-#ifndef NDEBUG
                      AppM->RegisterTransformation(GetName(), new_ga);
-#endif
 
                      tree_nodeRef offset = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(pt));
                      tree_nodeRef mr = tree_man->create_binary_operation(type, ssa_vd, offset, srcp_default, mem_ref_K);
@@ -3133,9 +3089,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   ga->op0 = mr;
                   block.second->PushBefore(new_ga, *it_los);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding statement " + GET_NODE(new_ga)->ToString());
-#ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), new_ga);
-#endif
                   restart_analysis = true;
                }
                else if(code0 == result_decl_K && code1 == ssa_name_K)
@@ -3165,22 +3119,18 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                   tree_nodeRef ssa_vd = GetPointer<gimple_assign>(GET_NODE(new_ga))->op0;
                   ga->op1 = ssa_vd;
                   block.second->PushBefore(new_ga, *it_los);
-#ifndef NDEBUG
                   AppM->RegisterTransformation(GetName(), new_ga);
-#endif
                   restart_analysis = true;
                }
             }
             else if(GET_NODE(*it_los)->get_kind() == gimple_cond_K)
             {
-#ifndef NDEBUG
                if(reached_max_transformation_limit(*it_los))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
                   it_los++;
                   continue;
                }
-#endif
                auto gc0 = [&] {
                   auto* gc = GetPointer<gimple_cond>(GET_NODE(*it_los));
                   const std::string srcp_default = gc->include_name + ":" + STR(gc->line_number) + ":" + STR(gc->column_number);
@@ -3280,9 +3230,7 @@ DesignFlowStep_Status IR_lowering::InternalExec()
                               tree_nodeRef cond_op_ga = tree_man->CreateGimpleAssign(le->type, tree_nodeRef(), tree_nodeRef(), gc->op0, block.first, srcp_default);
                               block.second->PushBefore(cond_op_ga, *it_los);
                               tree_nodeRef cond_ga_var = GetPointer<gimple_assign>(GET_NODE(cond_op_ga))->op0;
-#ifndef NDEBUG
                               AppM->RegisterTransformation(GetName(), cond_op_ga);
-#endif
                               gc->op0 = cond_ga_var;
                               restart_analysis = true;
                            }

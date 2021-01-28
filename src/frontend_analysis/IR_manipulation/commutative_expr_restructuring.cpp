@@ -188,12 +188,10 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
       const auto& list_of_stmt = block.second->CGetStmtList();
       for(auto stmt = list_of_stmt.begin(); stmt != list_of_stmt.end(); stmt++)
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-#endif
 
          std::list<tree_nodeRef> new_tree_nodes;
 
@@ -365,9 +363,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          GetPointer<gimple_assign>(TM->get_tree_node_const(root_gimple_node_id))->orig = second_stmt;
          block.second->Replace(*stmt, TM->GetTreeReindex(root_gimple_node_id), true);
          new_tree_nodes.push_back(TM->GetTreeReindex(root_gimple_node_id));
-#ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(root_gimple_node_id));
-#endif
 
          /// Check that the second commutative expression is actually dead
          THROW_ASSERT(GetPointer<const ssa_name>(GET_CONST_NODE(second_ga->op0))->CGetUseStmts().size() == 0, "");

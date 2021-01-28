@@ -366,9 +366,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
          }
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
             WriteBBGraphDot("BB_After_" + GetName() + "_BB" + STR(basic_block.first) + ".dot");
-#ifndef NDEBUG
          if(AppM->ApplyNewTransformation())
-#endif
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing switch");
             /// create the gimple_multi_way_if node
@@ -442,9 +440,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             new_gwi->add_cond(tree_nodeRef(), default_bb);
             basic_block.second->RemoveStmt(basic_block.second->CGetStmtList().back());
             basic_block.second->PushBack(TM->GetTreeReindex(gimple_multi_way_if_id));
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(gimple_multi_way_if_id));
-#endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          }
          if(debug_level >= DEBUG_LEVEL_PEDANTIC)

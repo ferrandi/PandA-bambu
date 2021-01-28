@@ -294,14 +294,12 @@ DesignFlowStep_Status multi_way_if::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because it contains an if");
          continue;
       }
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached limit of cfg transformations");
          continue;
       }
       AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
       /// check for short circuit conditions: i.e., if they have at least a successor in common
       /// if so we add a basic block on the shortest path (e.g., predecessor --> common successor)
       /// In this way in the produced gimple_multi_way_if there cannot be multiple conditions with the same next bb
