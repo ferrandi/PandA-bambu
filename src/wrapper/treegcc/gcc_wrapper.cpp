@@ -405,7 +405,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       static int empty_counter = 0;
       const std::string temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" + boost::lexical_cast<std::string>(empty_counter++) + ".c";
       CopyFile(original_file_name, temp_file_name);
-      const std::string append_command = "`echo -e \"\\nvoid __empty_function__(){}\" >> " + temp_file_name + "`";
+      const std::string append_command = R"(`echo -e "\nvoid __empty_function__(){}" >> )" + temp_file_name + "`";
       int ret = PandaSystem(Param, append_command);
       if(IsError(ret))
       {

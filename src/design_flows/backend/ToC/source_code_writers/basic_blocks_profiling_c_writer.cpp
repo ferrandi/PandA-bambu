@@ -142,9 +142,9 @@ void BasicBlocksProfilingCWriter::WriteGlobalDeclarations()
       const auto fd = GetPointer<const function_decl>(TM->CGetTreeNode(function));
       const auto sl = GetPointer<statement_list>(GET_NODE(fd->body));
       const auto biggest_bb_number = sl->list_of_bloc.rbegin()->first;
-      indented_output_stream->Append("fprintf(h_file, \"Function %d\\n\", " + STR(function) + ");\n");
+      indented_output_stream->Append(R"(fprintf(h_file, "Function %d\n", )" + STR(function) + ");\n");
       indented_output_stream->Append("for(i = 0; i < " + STR(biggest_bb_number + 1) + "; i++)\n");
-      indented_output_stream->Append("   fprintf(h_file, \"%d %d\\n\", i, " + function_name + "_counter[i]);\n");
+      indented_output_stream->Append(R"(   fprintf(h_file, "%d %d\n", i, )" + function_name + "_counter[i]);\n");
    }
    indented_output_stream->Append("fclose(h_file);\n");
 

@@ -788,7 +788,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-         writer->write("_r_ = $fscanf(file,\"%b\\n\", paddr" + input_name + "); ");
+         writer->write(R"(_r_ = $fscanf(file,"%b\n", paddr)" + input_name + "); ");
          writer->write_comment("expected format: bbb...b (example: 00101110)\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));

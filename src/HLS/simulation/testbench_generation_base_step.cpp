@@ -753,7 +753,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                writer->write("begin\n");
                {
                   writer->write("compare_outputs = 1;\n");
-                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+                  writer->write(R"(_r_ = $fscanf(file,"%b\n", )" + output_name + "); ");
                   writer->write_comment("expected format: bbb...b (example: 00101110)\n");
 
                   writer->write("if (_r_ != 1)\n");
@@ -802,7 +802,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
                         {
-                           writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                           writer->write(R"($display(" FP error %f \n", compute_ulp)" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
                            for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                            {
                               if(bitsize_index)
@@ -894,7 +894,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                {
                   writer->write("compare_outputs = 1;\n");
                   writer->write("_ch_ = $fgetc(file);\n");
-                  writer->write("while (_ch_ == \"\\n\" || _ch_ == \"0\" || _ch_ == \"1\") ");
+                  writer->write(R"(while (_ch_ == "\n" || _ch_ == "0" || _ch_ == "1") )");
                   writer->write("_ch_ = $fgetc(file);\n");
                   writer->write("_i_ = _i_ + 1;\n");
                }
@@ -952,7 +952,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                writer->write("begin\n");
                {
                   writer->write("compare_outputs = 1;\n");
-                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+                  writer->write(R"(_r_ = $fscanf(file,"%b\n", )" + output_name + "); ");
                   writer->write_comment("expected format: bbb...b (example: 00101110)\n");
                   writer->write("if (_r_ != 1)\n");
                   writer->write(STR(STD_OPENING_CHAR));
@@ -981,13 +981,13 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      if(GET_TYPE_SIZE(portInst) == 32)
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", bits32_to_real64(" + port_to_be_compared + "), bits32_to_real64(" + output_name + "));\n");
-                        writer->write("$display(\" FP error %f \\n\", compute_ulp32(" + port_to_be_compared + ", " + output_name + "));\n");
+                        writer->write(R"($display(" FP error %f \n", compute_ulp32()" + port_to_be_compared + ", " + output_name + "));\n");
                         writer->write("if (compute_ulp32(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else if(GET_TYPE_SIZE(portInst) == 64)
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
-                        writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + port_to_be_compared + ", " + output_name + "));\n");
+                        writer->write(R"($display(" FP error %f \n", compute_ulp64()" + port_to_be_compared + ", " + output_name + "));\n");
                         writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
@@ -1091,7 +1091,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                writer->write("begin\n");
                {
                   writer->write("compare_outputs = 1;\n");
-                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+                  writer->write(R"(_r_ = $fscanf(file,"%b\n", )" + output_name + "); ");
                   writer->write_comment("expected format: bbb...b (example: 00101110)\n");
                   writer->write("if (_r_ != 1)\n");
                   writer->write(STR(STD_OPENING_CHAR));
@@ -1120,13 +1120,13 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      if(GET_TYPE_SIZE(portInst) == 32)
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", bits32_to_real64(" + port_to_be_compared + "), bits32_to_real64(" + output_name + "));\n");
-                        writer->write("$display(\" FP error %f \\n\", compute_ulp32(" + port_to_be_compared + ", " + output_name + "));\n");
+                        writer->write(R"($display(" FP error %f \n", compute_ulp32()" + port_to_be_compared + ", " + output_name + "));\n");
                         writer->write("if (compute_ulp32(" + port_to_be_compared + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else if(GET_TYPE_SIZE(portInst) == 64)
                      {
                         writer->write("$display(\" " + orig_name + " = %20.20f   expected = %20.20f \", $bitstoreal(" + port_to_be_compared + "), $bitstoreal(" + output_name + "));\n");
-                        writer->write("$display(\" FP error %f \\n\", compute_ulp64(" + port_to_be_compared + ", " + output_name + "));\n");
+                        writer->write(R"($display(" FP error %f \n", compute_ulp64()" + port_to_be_compared + ", " + output_name + "));\n");
                         writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
@@ -1230,7 +1230,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                writer->write("begin\n");
                {
                   writer->write("compare_outputs = 1;\n");
-                  writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+                  writer->write(R"(_r_ = $fscanf(file,"%b\n", )" + output_name + "); ");
                   writer->write_comment("expected format: bbb...b (example: 00101110)\n");
 
                   writer->write("if (_r_ != 1)\n");
@@ -1288,7 +1288,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                      {
                         if(output_level > OUTPUT_LEVEL_MINIMUM)
                         {
-                           writer->write("$display(\" FP error %f \\n\", compute_ulp" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
+                           writer->write(R"($display(" FP error %f \n", compute_ulp)" + (bitsize == 32 ? STR(32) : STR(64)) + "({");
                            for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                            {
                               if(bitsize_index)
@@ -1382,7 +1382,7 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          writer->write("begin\n");
          {
             writer->write("compare_outputs = 1;\n");
-            writer->write("_r_ = $fscanf(file,\"%b\\n\", " + output_name + "); ");
+            writer->write(R"(_r_ = $fscanf(file,"%b\n", )" + output_name + "); ");
             writer->write_comment("expected format: bbb...b (example: 00101110)\n");
 
             writer->write("if (_r_ != 1)\n");
@@ -1412,13 +1412,13 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                if(GET_TYPE_SIZE(return_port) == 32)
                {
                   writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", bits32_to_real64(registered_" + std::string(RETURN_PORT_NAME) + "), bits32_to_real64(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
-                  writer->write("$display(\" FP error %f \\n\", compute_ulp32(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
+                  writer->write(R"($display(" FP error %f \n", compute_ulp32(registered_)" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
                   writer->write("if (compute_ulp32(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > " + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                }
                else if(GET_TYPE_SIZE(return_port) == 64)
                {
                   writer->write("$display(\" " + std::string(RETURN_PORT_NAME) + " = %20.20f   expected = %20.20f \", $bitstoreal(registered_" + std::string(RETURN_PORT_NAME) + "), $bitstoreal(ex_" + std::string(RETURN_PORT_NAME) + "));\n");
-                  writer->write("$display(\" FP error %f \\n\", compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
+                  writer->write(R"($display(" FP error %f \n", compute_ulp64(registered_)" + std::string(RETURN_PORT_NAME) + ", " + output_name + "));\n");
                   writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                }
                else
@@ -1994,7 +1994,7 @@ void TestbenchGenerationBaseStep::reading_base_memory_address_from_file() const
       writer->write("if (_ch_ == \"b\")\n");
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
-      writer->write("_r_ = $fscanf(file,\"%b\\n\", base_addr); ");
+      writer->write(R"(_r_ = $fscanf(file,"%b\n", base_addr); )");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
       writer->write("else\n");
@@ -2134,7 +2134,7 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string& 
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-         writer->write("_r_ = $fscanf(file,\"%b\\n\", " + input_name + "); ");
+         writer->write(R"(_r_ = $fscanf(file,"%b\n", )" + input_name + "); ");
          writer->write_comment("expected format: bbb...b (example: 00101110)\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));

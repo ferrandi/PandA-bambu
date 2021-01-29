@@ -125,7 +125,7 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
       boost::replace_all(vertex_print, "|", "\\|");
       boost::replace_all(vertex_print, ">", "&gt;");
       boost::replace_all(vertex_print, "<", "&lt;");
-      boost::replace_all(vertex_print, "\\\\\"", "&#92;&quot;");
+      boost::replace_all(vertex_print, R"(\\")", "&#92;&quot;");
       boost::replace_all(vertex_print, "\\\"", "&quot;");
       boost::replace_all(vertex_print, ":", "&#58;");
       boost::replace_all(vertex_print, "\\n", "");
@@ -161,7 +161,7 @@ void StateInfo::print(std::ostream& os, const int detail_level) const
          boost::replace_all(vertex_print, "|", "\\|");
          boost::replace_all(vertex_print, ">", "&gt;");
          boost::replace_all(vertex_print, "<", "&lt;");
-         boost::replace_all(vertex_print, "\\\\\"", "&#92;&quot;");
+         boost::replace_all(vertex_print, R"(\\")", "&#92;&quot;");
          boost::replace_all(vertex_print, "\\\"", "&quot;");
          boost::replace_all(vertex_print, "\\n", "");
          boost::replace_all(vertex_print, ":", "&#58;");
