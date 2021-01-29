@@ -251,7 +251,6 @@ inline T* GetPointerS(const refcount<U>& t)
    return static_cast<T*>(t.get());
 }
 
-
 #include <functional>
 #if !defined(USE_REFCOUNT_POINTERS) && BOOST_VERSION >= 103300 && __cplusplus > 199711L
 #else

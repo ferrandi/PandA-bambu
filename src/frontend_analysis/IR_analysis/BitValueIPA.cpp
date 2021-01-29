@@ -856,7 +856,6 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
             AppM->RegisterTransformation(GetName(), pd);
 
-
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Propagated bitvalue through parameter " + STR(GET_NODE(pd)) + " of function " + fu_name + " parm id: " + STR(pd_id));
          }
          else

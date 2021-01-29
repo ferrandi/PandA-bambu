@@ -376,7 +376,7 @@ static unsigned long long int choose_multiplier(unsigned long long int d, int n,
 }
 
 void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>& block, std::list<tree_nodeRef>::const_iterator& it_los, gimple_assign* ga, tree_nodeRef op1, enum kind code1, bool& restart_analysis, const std::string& srcp_default,
-                                         const std::string&step_name)
+                                         const std::string& step_name)
 {
    auto* cn = GetPointer<cst_node>(GET_NODE(op1));
    tree_nodeRef op0 = GetPointer<binary_expr>(GET_NODE(ga->op1))->op0;
@@ -559,9 +559,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                            tree_nodeRef mul_ga_var = GetPointer<gimple_assign>(GET_NODE(mul_ga))->op0;
                            /// restrict if needed the input bit-widths
                            tree_nodeRef sub_expr;
-                           if(
-                               AppM->ApplyNewTransformation() and
-                               static_cast<unsigned int>(data_bitsize) > tree_helper::Size(GET_NODE(ga->op0)))
+                           if(AppM->ApplyNewTransformation() and static_cast<unsigned int>(data_bitsize) > tree_helper::Size(GET_NODE(ga->op0)))
                            {
                               unsigned long long int masklow = (static_cast<unsigned long long int>(1) << tree_helper::Size(GET_NODE(ga->op0))) - 1;
                               tree_nodeRef Constmasklow = TM->CreateUniqueIntegerCst(static_cast<long long int>(masklow), GET_INDEX_NODE(type_expr));
@@ -663,9 +661,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
                   else
                   {
                      int data_bitsize = static_cast<int>(tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type_expr))));
-                     if(
-                         AppM->ApplyNewTransformation() and
-                         data_bitsize <= 64)
+                     if(AppM->ApplyNewTransformation() and data_bitsize <= 64)
                      {
                         unsigned long long int ml;
                         int post_shift;

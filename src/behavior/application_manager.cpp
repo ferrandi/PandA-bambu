@@ -331,7 +331,7 @@ void application_manager::add_written_object(unsigned int node_id)
 
 bool application_manager::ApplyNewTransformation() const
 {
-#ifndef PNDEBUG
+#ifndef NDEBUG
    return cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations);
 #else
    return true;
@@ -339,23 +339,24 @@ bool application_manager::ApplyNewTransformation() const
 }
 
 void application_manager::RegisterTransformation(const std::string&
-//#ifndef NDEBUG
-                                                 step
-//#endif
-                                                 , const tree_nodeConstRef
-//#ifndef NDEBUG
-                                                 new_tn
-//#endif
-                                                 )
+#ifndef NDEBUG
+                                                     step
+#endif
+                                                 ,
+                                                 const tree_nodeConstRef
+#ifndef NDEBUG
+                                                     new_tn
+#endif
+)
 {
-//#ifndef NDEBUG
+#ifndef NDEBUG
    THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : ""));
    cfg_transformations++;
    if(Param->getOption<size_t>(OPT_cfg_max_transformations) != std::numeric_limits<size_t>::max())
    {
       INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + (new_tn ? new_tn->ToString() : ""));
    }
-//#endif
+#endif
 }
 
 bool application_manager::isParmUsed(unsigned parm_index) const

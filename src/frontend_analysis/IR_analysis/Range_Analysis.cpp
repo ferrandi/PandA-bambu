@@ -1239,7 +1239,7 @@ class VarNode
    // The possible states are '0', '+', '-' and '?'.
    void storeAbstractState();
 
-   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager, int debug_level,  application_managerRef AppM);
+   int updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager, int debug_level, application_managerRef AppM);
 
    /// Pretty print.
    void print(std::ostream& OS) const;
@@ -1272,11 +1272,13 @@ void VarNode::init(bool outside)
    }
 }
 
-int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager, int
+int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tree_man, const DesignFlowManagerConstRef& design_flow_manager,
+                      int
 #ifndef NDEBUG
-                      debug_level
+                          debug_level
 #endif
-                      , application_managerRef AppM)
+                      ,
+                      application_managerRef AppM)
 {
    const auto ssa_node = TM->GetTreeReindex(GET_INDEX_CONST_NODE(V));
    auto* SSA = GetPointer<ssa_name>(GET_NODE(ssa_node));
@@ -7417,7 +7419,7 @@ bool RangeAnalysis::finalize(ConstraintGraphRef CG)
             break;
          }
 #endif
-         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm,debug_level, AppM))
+         if(const auto ut = varNode.second->updateIR(TM, tree_man, dfm, debug_level, AppM))
          {
             const auto funID = varNode.second->getFunctionId();
             modifiedFunctions[funID] |= ut;
