@@ -454,7 +454,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
-         parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], 0);
+         parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], false);
 
          std::list<EdgeDescriptor> sorted;
          EdgeDescriptor default_edge;

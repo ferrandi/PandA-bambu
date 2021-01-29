@@ -518,7 +518,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             res = temp_res;
          }
       };
-      if(1)
+      if(true)
          mult1();
    }
 #endif

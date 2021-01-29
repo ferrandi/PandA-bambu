@@ -507,7 +507,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                             if(curr_stmt != stmt_list.rbegin())
                                                             {
                                                                --curr_stmt;
-                                                               while(1)
+                                                               while(true)
                                                                {
                                                                   const auto gn_curr = GetPointer<gimple_node>(GET_NODE(*curr_stmt));
                                                                   if(GET_INDEX_NODE(*curr_stmt) == GET_INDEX_NODE(use.first))
