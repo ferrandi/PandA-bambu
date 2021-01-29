@@ -482,7 +482,7 @@ double ADD_BUILTIN_PREFIX(sqrt)(double x)
    return res_fp.f;
 }
 
-double __hide_ieee754_sqrtf(double x)
+double __hide_ieee754_sqrt(double x)
 {
    return ADD_BUILTIN_PREFIX(sqrt)(x);
 }
