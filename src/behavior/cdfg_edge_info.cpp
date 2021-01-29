@@ -47,28 +47,36 @@
 bool CdfgEdgeInfo::CdgEdgeT() const
 {
    if(labels.find(CDG_SELECTOR) == labels.end())
+   {
       return false;
+   }
    return labels.find(CDG_SELECTOR)->second.find(T_COND) != labels.find(CDG_SELECTOR)->second.end();
 }
 
 bool CdfgEdgeInfo::CdgEdgeF() const
 {
    if(labels.find(CDG_SELECTOR) == labels.end())
+   {
       return false;
+   }
    return labels.find(CDG_SELECTOR)->second.find(F_COND) != labels.find(CDG_SELECTOR)->second.end();
 }
 
 bool CdfgEdgeInfo::CfgEdgeT() const
 {
    if(labels.find(CFG_SELECTOR) == labels.end())
+   {
       return false;
+   }
    return labels.find(CFG_SELECTOR)->second.find(T_COND) != labels.find(CFG_SELECTOR)->second.end();
 }
 
 bool CdfgEdgeInfo::CfgEdgeF() const
 {
    if(labels.find(CFG_SELECTOR) == labels.end())
+   {
       return false;
+   }
    return labels.find(CFG_SELECTOR)->second.find(F_COND) != labels.find(CFG_SELECTOR)->second.end();
 }
 
@@ -80,14 +88,18 @@ bool CdfgEdgeInfo::Switch() const
 const std::string CdfgEdgeInfo::PrintLabels(const int selector, const BehavioralHelperConstRef BH) const
 {
    if(labels.find(selector) == labels.end())
+   {
       return "";
+   }
    std::string ret;
    const CustomOrderedSet<unsigned int>& labels_to_be_printed = labels.find(selector)->second;
    CustomOrderedSet<unsigned int>::const_iterator label, label_end = labels_to_be_printed.end();
    for(label = labels_to_be_printed.begin(); label != label_end; ++label)
    {
       if(label != labels_to_be_printed.begin())
+      {
          ret += ", ";
+      }
       if(*label == T_COND)
       {
          ret = "T";
@@ -117,6 +129,8 @@ const CustomOrderedSet<unsigned int>& CdfgEdgeInfo::get_nodeID(const int selecto
 {
    static CustomOrderedSet<unsigned int> null_set;
    if(labels.find(selector) != labels.end())
+   {
       return labels.find(selector)->second;
+   }
    return null_set;
 }

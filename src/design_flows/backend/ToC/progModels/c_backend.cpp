@@ -151,7 +151,9 @@ DesignFlowStep_Status CBackend::Exec()
    indented_output_stream->Append(" - Date " + TimeStamp::GetCurrentTimeStamp());
    indented_output_stream->Append("\n");
    if(parameters->isOption(OPT_cat_args))
+   {
       indented_output_stream->Append(" * " + parameters->getOption<std::string>(OPT_program_name) + " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
+   }
    indented_output_stream->Append(" */\n");
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CBackend: written panda header");
    // write cwriter specific header
@@ -175,7 +177,9 @@ void CBackend::Initialize()
 {
    writer->Initialize();
    if(boost::filesystem::exists(file_name))
+   {
       boost::filesystem::remove_all(file_name);
+   }
    already_visited.clear();
    if(c_backend_type == CB_HLS)
    {
@@ -241,10 +245,14 @@ void CBackend::writeImplementations()
    {
       const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(it)->CGetBehavioralHelper();
       if(BH->function_has_to_be_printed(it))
+      {
          writer->WriteFunctionImplementation(it);
+      }
    }
    if(AppM->CGetCallGraphManager()->ExistsAddressedFunction())
+   {
       writer->WriteBuiltinWaitCall();
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written implementations");
 }
 
@@ -487,7 +495,9 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                // be computed again after the call graph computation.
                const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
                if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+               {
                   break;
+               }
 
                const auto* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
 
@@ -573,7 +583,9 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                   // be computed again after the call graph computation.
                   const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
                   if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+                  {
                      break;
+                  }
                   const auto top_funs = call_graph_manager->GetRootFunctions();
                   THROW_ASSERT(top_funs.size() == 1, "");
                   const auto top_fu_id = *top_funs.begin();

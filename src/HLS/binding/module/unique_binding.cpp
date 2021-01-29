@@ -78,13 +78,21 @@ DesignFlowStep_Status unique_binding::InternalExec()
    {
       unsigned int fu = HLS->Rfu->get_assign(*vIt);
       if(HLS->Rfu->get_index(*vIt) != INFINITE_UINT)
+      {
          black_list[fu].insert(HLS->Rfu->get_index(*vIt));
+      }
       else if(HLS->allocation_information->is_vertex_bounded(fu) || HLS->allocation_information->is_memory_unit(fu))
+      {
          HLS->Rfu->bind(*vIt, fu, 0);
+      }
       else
+      {
          fu_ops[fu].push_back(std::make_pair(GET_NAME(data, *vIt), *vIt));
+      }
       if(black_list.find(fu) == black_list.end())
+      {
          black_list[fu] = CustomOrderedSet<unsigned int>();
+      }
    }
    for(auto& fu_op : fu_ops)
    {
@@ -102,6 +110,8 @@ DesignFlowStep_Status unique_binding::InternalExec()
       }
    }
    if(debug_level >= DEBUG_LEVEL_VERBOSE)
+   {
       HLS->Rsch->print(HLS->Rfu);
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

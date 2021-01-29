@@ -62,12 +62,16 @@ static void RecursivelyUnfold(const UnfoldedVertexDescriptor caller_v, UnfoldedC
    // if this function does not call other functions we're done
    const auto caller = call_sites_info->fu_id_to_call_ids.find(caller_id);
    if(caller == call_sites_info->fu_id_to_call_ids.cend())
+   {
       return;
+   }
 
    for(const unsigned int call_id : caller->second) // loop on the calls performed by function caller_id
    {
-      if(call_id == 0) // this should happen only for artificial calls
+      if(call_id == 0)
+      { // this should happen only for artificial calls
          continue;
+      }
       bool is_direct = call_sites_info->indirect_calls.find(call_id) == call_sites_info->indirect_calls.end() and call_sites_info->taken_addresses.find(call_id) == call_sites_info->taken_addresses.end();
       for(auto called_id : call_sites_info->call_id_to_called_id.at(call_id)) // loop on the function called by call_id
       {

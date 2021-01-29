@@ -84,7 +84,9 @@ struct NodeInfo
    friend std::ostream& operator<<(std::ostream& os, const NodeInfoRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 };

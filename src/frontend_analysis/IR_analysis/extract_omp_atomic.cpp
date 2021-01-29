@@ -155,7 +155,9 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
             for(const auto& use : sn->CGetUseStmts())
             {
                if(GET_NODE(use.first)->get_kind() != gimple_phi_K)
+               {
                   to_be_removeds.insert(use);
+               }
             }
             for(const auto& to_be_removed : to_be_removeds)
             {
@@ -165,7 +167,9 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
                }
                GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->vuses.erase(gn->memdef);
                if(GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->memuse->index == gn->memdef->index)
+               {
                   GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->memuse = tree_nodeRef();
+               }
             }
          }
          block->RemoveStmt(gimple_to_be_removed);

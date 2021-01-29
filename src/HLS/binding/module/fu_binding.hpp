@@ -252,9 +252,13 @@ class fu_binding
    {
       auto it = allocation_map.find(unit);
       if(it != allocation_map.end())
+      {
          return it->second;
+      }
       else
+      {
          return 0;
+      }
    }
 
    /**

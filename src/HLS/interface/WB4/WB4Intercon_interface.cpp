@@ -121,7 +121,9 @@ static unsigned int get_addr_bus_bitsize(const HLS_managerRef HLSMgr)
    unsigned long long int allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
+   {
       ++parameter_addr_bit;
+   }
 
    return std::max(parameter_addr_bit, addr_bus_bitsize);
 }
@@ -193,13 +195,21 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
       {
          size_t position = 0;
          if((position = portId.find("_om")) != std::string::npos)
+         {
             portId.replace(position, 3, "_is");
+         }
          else if((position = portId.find("_im")) != std::string::npos)
+         {
             portId.replace(position, 3, "_os");
+         }
          else if((position = portId.find("_os")) != std::string::npos)
+         {
             portId.replace(position, 3, "_im");
+         }
          else if((position = portId.find("_is")) != std::string::npos)
+         {
             portId.replace(position, 3, "_om");
+         }
 
          structural_objectRef destPort = interfaceObj->find_member(portId, port_o_K, interfaceObj);
          auto* portPtr = GetPointer<port_o>(port);
@@ -229,7 +239,9 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
    baseAddressFile << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_first_address(HLS->functionId)) << '\n' << std::bitset<8 * sizeof(unsigned int)>(HLSMgr->Rmem->get_last_address(HLS->functionId, HLSMgr)) << '\n';
 
    if(wrappedObj->find_member(WB_CYCOM_PORT_NAME, port_o_K, wrappedObj))
+   {
       masters.push_back(wrappedObj);
+   }
 
    const CustomOrderedSet<unsigned int> additionalTops = HLSMgr->CGetCallGraphManager()->GetAddressedFunctions();
    for(unsigned int itr : additionalTops)
@@ -250,7 +262,9 @@ static void buildCircuit(structural_managerRef SM, structural_objectRef wrappedO
 
       slaves.push_back(additionalTop);
       if(additionalTop->find_member(WB_CYCOM_PORT_NAME, port_o_K, additionalTop))
+      {
          masters.push_back(additionalTop);
+      }
    }
 
    baseAddressFile.close();

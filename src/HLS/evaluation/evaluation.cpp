@@ -134,9 +134,11 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   }
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "AREA")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
+                  }
                   else if(objective == "AREAxTIME")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
@@ -145,35 +147,47 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "BRAMS")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
                   else if(objective == "CLOCK_SLACK")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
+                  }
                   else if(objective == "CYCLES" || objective == "TOTAL_CYCLES")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
+                  }
                   else if(objective == "DSPS")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #endif
 #if HAVE_EXPERIMENTAL
-                  else if(objective == "EDGES_REDUCTION_EVALUATION")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+                     else if(objective == "EDGES_REDUCTION_EVALUATION") ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
+                  }
                   else if(objective == "FREQUENCY")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
                   else if(objective == "PERIOD")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
                   else if(objective == "REGISTERS")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
 #endif
 #if HAVE_EXPERIMENTAL
-                  else if(objective == "NUM_AF_EDGES")
-                     ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+                     else if(objective == "NUM_AF_EDGES") ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
+                  }
                   else if(objective == "TIME" || objective == "TOTAL_TIME")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
@@ -181,7 +195,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   }
 #endif
                   else
+                  {
                      THROW_ERROR("Evaluaton objective not yet supported " + objective);
+                  }
                }
                break;
             }
@@ -203,7 +219,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+         {
             ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
 #endif
          break;
       }
@@ -334,9 +352,13 @@ DesignFlowStep_Status Evaluation::Exec()
          /// get the used resources from the wrapper
          double reg = evaluation;
          if(reg > 0.0)
+         {
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Registers                : " + STR(reg));
+         }
          else
+         {
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---(no registers)");
+         }
       }
    }
 
@@ -401,7 +423,9 @@ DesignFlowStep_Status Evaluation::Exec()
                bench_name += FB->CGetBehavioralHelper()->get_function_name();
             }
             else
+            {
                bench_name += ":" + FB->CGetBehavioralHelper()->get_function_name();
+            }
 
             bench_name += "_" + boost::lexical_cast<std::string>(progressive - 1);
          }
@@ -449,7 +473,9 @@ DesignFlowStep_Status Evaluation::Exec()
          for(auto const single_evaluation : local_evaluations)
          {
             if(value != "")
+            {
                value += ",";
+            }
             value += STR(single_evaluation);
          }
       }

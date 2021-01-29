@@ -159,7 +159,9 @@ void BBGraph::WriteDot(const std::string& file_name, const CustomUnorderedSet<ve
    const auto function_name = bb_graph_info->AppM->CGetFunctionBehavior(bb_graph_info->function_index)->CGetBehavioralHelper()->get_function_name();
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + function_name + "/";
    if(not boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef bb_writer(new BBWriter(this, annotated));
    const EdgeWriterConstRef bb_edge_writer(new BBEdgeWriter(this));
@@ -199,9 +201,13 @@ bool BBEdgeInfo::switch_p() const
 const CustomOrderedSet<unsigned int> BBEdgeInfo::get_labels(const int selector) const
 {
    if(labels.find(selector) != labels.end())
+   {
       return labels.find(selector)->second;
+   }
    else
+   {
       return CustomOrderedSet<unsigned int>();
+   }
 }
 
 #if !HAVE_UNORDERED

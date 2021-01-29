@@ -212,19 +212,33 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
          auto* gm = GetPointer<gimple_assign>(tn);
          tree_nodeRef op0 = GET_NODE(gm->op0);
          if(gm->init_assignment || gm->clobber)
+         {
             break;
+         }
          else if(op0->get_kind() == array_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == indirect_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == misaligned_indirect_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == mem_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == target_mem_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == target_mem_ref461_K)
+         {
             break;
+         }
          else
          {
             return GET_INDEX_NODE(gm->op0);
@@ -239,12 +253,18 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
             auto tl = GetPointer<tree_list>(GET_NODE(ga->out));
             /// only the first output and so only single output gimple_asm are supported
             if(tl->valu)
+            {
                return GET_INDEX_NODE(tl->valu);
+            }
             else
+            {
                THROW_ERROR("unexpected condition");
+            }
          }
          else
+         {
             return 0;
+         }
          break;
       }
       case binfo_K:
@@ -376,7 +396,9 @@ void application_manager::setSSAFromParm(unsigned int parm_index, unsigned ssa_i
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
    THROW_ASSERT(ssa_index, "unexpected null ssa_name index");
    if(Parm2SSA_map.find(parm_index) == Parm2SSA_map.end())
+   {
       Parm2SSA_map[parm_index] = ssa_index;
+   }
    else
    {
       THROW_ASSERT(Parm2SSA_map.find(parm_index)->second == ssa_index, "unexpected condition");

@@ -161,7 +161,9 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
          THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, op));
          structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
          if(!CM)
+         {
             continue;
+         }
          structural_objectRef top = CM->get_circ();
          THROW_ASSERT(top, "expected");
          auto* fu_module = GetPointer<module>(top);

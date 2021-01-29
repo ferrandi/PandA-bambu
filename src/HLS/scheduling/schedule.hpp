@@ -342,9 +342,13 @@ class Schedule
    double get_slack(vertex op) const
    {
       if(op_slack.find(op) != op_slack.end())
+      {
          return op_slack.find(op)->second;
+      }
       else
+      {
          return 0.0;
+      }
    }
 
    /**

@@ -94,9 +94,13 @@ DesignFlowStep_Status top_entity_cs::InternalExec()
    {
       bool found = false;
       if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+      {
          found = true;
+      }
       if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+      {
          found = true;
+      }
       if(found) // function with selector
       {
          add_context_switch_port();
@@ -120,7 +124,9 @@ void top_entity_cs::add_context_switch_port()
 
    int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
+   {
       num_slots = 1;
+   }
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
    structural_objectRef selector_obj = SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
@@ -146,7 +152,9 @@ void top_entity_cs::add_context_switch_port_kernel()
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
+   {
       num_slots = 1;
+   }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding selector register file connection");
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));

@@ -106,11 +106,15 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
    // base address
    std::map<unsigned long long int, unsigned int> address;
    for(const auto& m : mem_vars)
+   {
       address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
+   }
 
    std::list<unsigned int> mem;
    for(const auto& ma : address)
+   {
       mem.push_back(ma.second);
+   }
 
    const std::list<unsigned int>& func_parameters = behavioral_helper->get_parameters();
    for(const auto& p : func_parameters)
@@ -118,7 +122,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
       // if the function has some pointer func_parameters some memory needs to be
       // reserved for the place where they point to
       if(behavioral_helper->is_a_pointer(p) && mem_vars.find(p) == mem_vars.end())
+      {
          mem.push_back(p);
+      }
    }
 
    // loop on the test vectors
@@ -133,7 +139,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          std::string param = behavioral_helper->PrintVariable(*l);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
          if(param[0] == '"')
+         {
             param = "@" + STR(*l);
+         }
          bool is_memory = false;
          std::string test_v = "0";
          if(mem_vars.find(*l) != mem_vars.end() && std::find(func_parameters.begin(), func_parameters.end(), *l) == func_parameters.end())
@@ -155,7 +163,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
          if(reserved_bytes == 0)
+         {
             reserved_bytes = 1;
+         }
 
          if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
          {
@@ -165,24 +175,40 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             {
                unsigned int ptd_base_type = 0;
                if(pt_node->get_kind() == pointer_type_K)
+               {
                   ptd_base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
+               }
                else if(pt_node->get_kind() == reference_type_K)
+               {
                   ptd_base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
+               }
                else
+               {
                   THROW_ERROR("A pointer type is expected");
+               }
                unsigned int base_type_byte_size;
 
                if(behavioral_helper->is_a_struct(ptd_base_type))
+               {
                   base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+               }
                else if(behavioral_helper->is_an_array(ptd_base_type))
+               {
                   base_type_byte_size = tree_helper::get_array_data_bitsize(TM, ptd_base_type) / 8;
+               }
                else if(tree_helper::size(TM, ptd_base_type) == 1)
+               {
                   base_type_byte_size = 1;
+               }
                else
+               {
                   base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
+               }
 
                if(base_type_byte_size == 0)
+               {
                   base_type_byte_size = 1;
+               }
                std::vector<std::string> splitted = SplitString(test_v, ",");
                reserved_bytes = (static_cast<unsigned int>(splitted.size())) * base_type_byte_size;
             }

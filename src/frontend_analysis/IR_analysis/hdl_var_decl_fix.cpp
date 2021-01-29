@@ -190,7 +190,9 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    else
    {
       for(auto arg : fd->list_of_args)
+      {
          recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+      }
    }
 
    VarDeclFix::InternalExec();

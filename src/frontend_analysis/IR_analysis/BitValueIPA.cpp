@@ -166,14 +166,18 @@ DesignFlowStep_Status BitValueIPA::Exec()
    /// In case of indirect calls (e.g., pointer to function) no Bit Value IPA can be done.
    CustomUnorderedSet<vertex> vertex_subset;
    for(auto cvertex : reached_body_fun_ids)
+   {
       vertex_subset.insert(CGMan->GetVertex(cvertex));
+   }
    const CallGraphConstRef subgraph = CGMan->CGetCallSubGraph(vertex_subset);
    EdgeIterator e_it, e_it_end;
    for(boost::tie(e_it, e_it_end) = boost::edges(*subgraph); e_it != e_it_end; ++e_it)
    {
       const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*e_it, *subgraph);
       if(info->indirect_call_points.size())
+      {
          return DesignFlowStep_Status::UNCHANGED;
+      }
    }
 
    // ---- initialization phase ----
@@ -329,7 +333,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
                const auto tmp_it = reached_body_fun_ids.find(caller_id);
                if(tmp_it == reached_body_fun_ids.cend())
+               {
                   continue;
+               }
                const std::string caller_name = AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name();
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining caller \"" + caller_name + "\": id = " + STR(caller_id));
                const tree_nodeRef tn = TM->get_tree_node_const(caller_id);
@@ -395,11 +401,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined call point " + STR(i));
                   if(hard_break)
+                  {
                      break;
+                  }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined caller \"" + caller_name + "\": id = " + STR(caller_id));
                if(hard_break)
+               {
                   break;
+               }
             }
 
             update_current(res, fu_id);
@@ -505,11 +515,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(stmt));
                   if(hard_break)
+                  {
                      break;
+                  }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(B->number));
                if(hard_break)
+               {
                   break;
+               }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed return statements in all BBs");
 
@@ -681,7 +695,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
                   const auto tmp_it = reached_body_fun_ids.find(caller_id);
                   if(tmp_it == reached_body_fun_ids.cend())
+                  {
                      continue;
+                  }
                   const std::string caller_name = AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name();
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining caller \"" + caller_name + "\": id = " + STR(caller_id));
                   const tree_nodeRef tn = TM->get_tree_node_const(caller_id);
@@ -837,11 +853,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "param id: " + STR(pd_id) + " bitstring: " + bitstring_to_string(res));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined call point " + STR(i));
                      if(hard_break)
+                     {
                         break;
+                     }
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined caller \"" + caller_name + "\": id = " + STR(caller_id));
                   if(hard_break)
+                  {
                      break;
+                  }
                }
 
                update_current(res, pd_id);
@@ -921,7 +941,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
       if(old_bitvalue->empty())
       {
          if(new_bitvalue != bitstring_to_string(create_u_bitstring(size)))
+         {
             restart = true;
+         }
       }
       else if(*old_bitvalue != new_bitvalue)
       {
@@ -943,7 +965,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
             const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
             const auto tmp_it = reached_body_fun_ids.find(caller_id);
             if(tmp_it == reached_body_fun_ids.cend())
+            {
                continue;
+            }
             const FunctionEdgeInfoConstRef call_edge_info = cg->CGetFunctionEdgeInfo(*ie_it);
             if(not call_edge_info->direct_call_points.empty())
             {

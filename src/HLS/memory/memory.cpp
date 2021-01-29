@@ -101,14 +101,18 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
    unsigned int max_bus_size = 2 * max_bram;
    external_base_address_alignment = internal_base_address_alignment = max_bus_size / 8;
    if(null_pointer_check && !initial_internal_address_p)
+   {
       next_base_address = internal_base_address_start = max_bus_size / 8;
+   }
    else if(initial_internal_address_p && initial_internal_address != 0)
    {
       align(initial_internal_address, internal_base_address_alignment);
       next_base_address = internal_base_address_start = initial_internal_address;
    }
    else
+   {
       next_base_address = internal_base_address_start = 0;
+   }
 }
 
 memory::~memory() = default;
@@ -117,9 +121,13 @@ memoryRef memory::create_memory(const ParameterConstRef _parameters, const tree_
                                 unsigned int initial_internal_address, const unsigned int& _address_bitsize)
 {
    if(_parameters->isOption(OPT_context_switch))
+   {
       return memoryRef(new memory_cs(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+   }
    else
+   {
       return memoryRef(new memory(_TreeM, _off_base_address, max_bram, _null_pointer_check, initial_internal_address_p, initial_internal_address, _address_bitsize));
+   }
 }
 
 std::map<unsigned int, memory_symbolRef> memory::get_ext_memory_variables() const
@@ -210,16 +218,24 @@ bool memory::is_read_only_variable(unsigned var) const
 void memory::add_internal_symbol(unsigned int funID_scope, unsigned int var, const memory_symbolRef m_sym)
 {
    if(external.find(var) != external.end())
+   {
       THROW_WARNING("The variable " + STR(var) + " has been already allocated out of the module");
+   }
    if(parameter.find(var) != parameter.end())
+   {
       THROW_WARNING("The variable " + STR(var) + " has been already set as a parameter");
+   }
    THROW_ASSERT(in_vars.find(var) == in_vars.end() || is_private_memory(var), "variable already allocated inside this module");
 
    internal[funID_scope][var] = m_sym;
    if(GetPointer<gimple_call>(TreeM->get_tree_node_const(var)))
+   {
       callSites[var] = m_sym;
+   }
    else
+   {
       in_vars[var] = m_sym;
+   }
 
    if(is_private_memory(var))
    {
@@ -243,8 +259,12 @@ unsigned int memory::count_non_private_internal_symbols() const
 {
    unsigned int n_non_private = 0;
    for(auto iv_pair : in_vars)
+   {
       if(!is_private_memory(iv_pair.first))
+      {
          ++n_non_private;
+      }
+   }
    return n_non_private;
 }
 
@@ -258,9 +278,13 @@ void memory::add_external_variable(unsigned int var, const std::string& var_name
 void memory::add_external_symbol(unsigned int var, const memory_symbolRef m_sym)
 {
    if(in_vars.find(var) != in_vars.end())
+   {
       THROW_WARNING("The variable " + STR(var) + " has been already internally allocated");
+   }
    if(parameter.find(var) != parameter.end())
+   {
       THROW_WARNING("The variable " + STR(var) + " has been already set as a parameter");
+   }
    external[var] = m_sym;
    unsigned long long int address = m_sym->get_address();
    compute_next_base_address(address, var, external_base_address_alignment);
@@ -298,9 +322,13 @@ void memory::add_parameter(unsigned int funID_scope, unsigned int var, const std
 void memory::add_parameter_symbol(unsigned int funID_scope, unsigned int var, const memory_symbolRef m_sym)
 {
    if(external.find(var) != external.end())
+   {
       THROW_WARNING("The variable " + STR(var) + " has been already allocated out of the module");
+   }
    if(in_vars.find(var) != in_vars.end())
+   {
       THROW_WARNING("The variable " + STR(var) + " has been already internally allocated");
+   }
    /// allocation of the parameters
    params[var] = parameter[funID_scope][var] = m_sym;
    unsigned long long int address = m_sym->get_address();
@@ -373,14 +401,18 @@ unsigned long long int memory::get_parameter_base_address(unsigned int funId, un
 std::map<unsigned int, memory_symbolRef> memory::get_function_vars(unsigned int funID_scope) const
 {
    if(internal.find(funID_scope) == internal.end())
+   {
       return std::map<unsigned int, memory_symbolRef>();
+   }
    return internal.find(funID_scope)->second;
 }
 
 std::map<unsigned int, memory_symbolRef> memory::get_function_parameters(unsigned int funID_scope) const
 {
    if(parameter.find(funID_scope) == parameter.end())
+   {
       return std::map<unsigned int, memory_symbolRef>();
+   }
    return parameter.find(funID_scope)->second;
 }
 
@@ -403,7 +435,9 @@ bool memory::has_parameter_base_address(unsigned int var, unsigned int funId) co
 {
    auto itr = parameter.find(funId);
    if(itr == parameter.end())
+   {
       return false;
+   }
    return itr->second.find(var) != itr->second.end();
 }
 
@@ -438,7 +472,9 @@ unsigned long long int memory::get_first_address(unsigned int funId) const
    {
       unsigned int var = internalVar.first;
       if(internalVar.second && !is_private_memory(var) && !has_parameter_base_address(var, funId))
+      {
          minAddress = std::min(minAddress, internalVar.second->get_address());
+      }
    }
    if(minAddress == UINT_MAX)
    {
@@ -447,7 +483,9 @@ unsigned long long int memory::get_first_address(unsigned int funId) const
       {
          unsigned int var = itr.first;
          if(!is_private_memory(var))
+         {
             minAddress = std::min(minAddress, itr.second->get_address());
+         }
       }
    }
    return minAddress;
@@ -490,9 +528,13 @@ memory_symbolRef memory::get_symbol(unsigned int var, unsigned int funId) const
 {
    THROW_ASSERT(has_base_address(var), "Variable not yet allocated: @" + STR(var));
    if(has_callSite_base_address(var))
+   {
       return callSites.find(var)->second;
+   }
    if(has_internal_base_address(var))
+   {
       return in_vars.find(var)->second;
+   }
    if(funId && has_parameter_base_address(var, funId))
    {
       auto itr = parameter.find(funId);
@@ -608,18 +650,24 @@ void memory::propagate_memory_parameters(const structural_objectRef src, const s
    {
       std::vector<std::string> current_parameter = convert_string_to_vector<std::string>(current_tgt_parameter, "=");
       if(res_parameters.find(current_parameter[0]) != res_parameters.end() && res_parameters[current_parameter[0]] != current_parameter[1])
+      {
          THROW_ERROR("The parameter \"" + current_parameter[0] + "\" has been set with (at least) two different values");
+      }
       res_parameters[current_parameter[0]] = current_parameter[1];
    }
 
    if(res_parameters.size() == 0)
+   {
       return;
+   }
 
    std::string memory_parameters;
    for(auto& res_parameter : res_parameters)
    {
       if(memory_parameters.size())
+      {
          memory_parameters += ";";
+      }
       memory_parameters += res_parameter.first + "=" + res_parameter.second;
    }
    tgt->get_circ()->SetParameter(MEMORY_PARAMETER, memory_parameters);
@@ -640,7 +688,9 @@ void memory::add_memory_parameter(const structural_managerRef SM, const std::str
       if(current_parameter[0] == name)
       {
          if(value == current_parameter[1])
+         {
             return;
+         }
          THROW_ERROR("The parameter \"" + name + "\" has been set with (at least) two different values: " + value + " != " + current_parameter[1]);
       }
    }
@@ -697,7 +747,9 @@ void memory::xwrite(xml_element* node)
          for(auto iIt = internal.begin(); iIt != internal.end(); ++iIt)
          {
             if(internal.find(iIt->first) != internal.end())
+            {
                continue;
+            }
             xml_element* ScopeNode = IntNode->add_child_element("scope");
             std::string id = "@" + STR(iIt->first);
             WRITE_XVM(id, ScopeNode);
@@ -738,126 +790,222 @@ void memory::xwrite(xml_element* node)
 bool memory::notEQ(refcount<memory> ref) const
 {
    if(!ref)
+   {
       return true;
+   }
    auto neEQMapSymbolRef = [](const std::map<unsigned int, memory_symbolRef>& ref1, const std::map<unsigned int, memory_symbolRef>& ref2) -> bool {
       if(ref1.size() != ref2.size())
+      {
          return true;
+      }
       else
       {
          std::map<unsigned int, memory_symbolRef>::const_iterator i_it, j_it;
          for(i_it = ref1.begin(), j_it = ref2.begin(); i_it != ref1.end(); ++i_it, ++j_it)
          {
             if(i_it->first != j_it->first)
+            {
                return true;
+            }
             if((i_it->second)->notEQ(*(j_it->second)))
+            {
                return true;
+            }
          }
       }
       return false;
    };
    auto neEQ2MapSymbolRef = [&neEQMapSymbolRef](const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref1, const std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>& ref2) -> bool {
       if(ref1.size() != ref2.size())
+      {
          return true;
+      }
       else
       {
          std::map<unsigned int, std::map<unsigned int, memory_symbolRef>>::const_iterator i_it, j_it;
          for(i_it = ref1.begin(), j_it = ref2.begin(); i_it != ref1.end(); ++i_it, ++j_it)
          {
             if(i_it->first != j_it->first)
+            {
                return true;
+            }
             if(neEQMapSymbolRef(i_it->second, j_it->second))
+            {
                return true;
+            }
          }
       }
       return false;
    };
    if(neEQMapSymbolRef(external, ref->external))
+   {
       return true;
+   }
    if(neEQ2MapSymbolRef(internal, ref->internal))
+   {
       return true;
+   }
    if(internal_variable_proxy != ref->internal_variable_proxy)
+   {
       return true;
+   }
    if(proxied_variables != ref->proxied_variables)
+   {
       return true;
+   }
    if(read_only_vars != ref->read_only_vars)
+   {
       return true;
+   }
    if(neEQMapSymbolRef(in_vars, ref->in_vars))
+   {
       return true;
+   }
    if(rangesize != ref->rangesize)
+   {
       return true;
+   }
    if(neEQ2MapSymbolRef(parameter, ref->parameter))
+   {
       return true;
+   }
    if(neEQMapSymbolRef(params, ref->params))
+   {
       return true;
+   }
    if(neEQMapSymbolRef(callSites, ref->callSites))
+   {
       return true;
+   }
    if(private_memories != ref->private_memories)
+   {
       return true;
+   }
    if(same_data_size_accesses != ref->same_data_size_accesses)
+   {
       return true;
+   }
    // may oscillate
    //   if(source_values != ref->source_values)
    //      return true;
    if(parm_decl_copied != ref->parm_decl_copied)
+   {
       return true;
+   }
    if(parm_decl_stored != ref->parm_decl_stored)
+   {
       return true;
+   }
    if(actual_parm_loaded != ref->actual_parm_loaded)
+   {
       return true;
+   }
    if(next_base_address != ref->next_base_address)
+   {
       return true;
+   }
    if(internal_base_address_start != ref->internal_base_address_start)
+   {
       return true;
+   }
    if(maximum_private_memory_size != ref->maximum_private_memory_size)
+   {
       return true;
+   }
    if(total_amount_of_private_memory != ref->total_amount_of_private_memory)
+   {
       return true;
+   }
    if(total_amount_of_parameter_memory != ref->total_amount_of_parameter_memory)
+   {
       return true;
+   }
    if(off_base_address != ref->off_base_address)
+   {
       return true;
+   }
    if(next_off_base_address != ref->next_off_base_address)
+   {
       return true;
+   }
    if(bus_data_bitsize != ref->bus_data_bitsize)
+   {
       return true;
+   }
    if(bus_size_bitsize != ref->bus_size_bitsize)
+   {
       return true;
+   }
    if(bram_bitsize != ref->bram_bitsize)
+   {
       return true;
+   }
    if(maxbram_bitsize != ref->maxbram_bitsize)
+   {
       return true;
+   }
    if(intern_shared_data != ref->intern_shared_data)
+   {
       return true;
+   }
    if(use_unknown_addresses != ref->use_unknown_addresses)
+   {
       return true;
+   }
    if(pointer_conversion != ref->pointer_conversion)
+   {
       return true;
+   }
    if(unaligned_accesses != ref->unaligned_accesses)
+   {
       return true;
+   }
    if(all_pointers_resolved != ref->all_pointers_resolved)
+   {
       return true;
+   }
    if(implicit_memcpy != ref->implicit_memcpy)
+   {
       return true;
+   }
    if(internal_base_address_alignment != ref->internal_base_address_alignment)
+   {
       return true;
+   }
    if(external_base_address_alignment != ref->external_base_address_alignment)
+   {
       return true;
+   }
    if(parameter_alignment != ref->parameter_alignment)
+   {
       return true;
+   }
    // if(n_mem_operations_per_var != ref->n_mem_operations_per_var)
    //   return true;
    if(null_pointer_check != ref->null_pointer_check)
+   {
       return true;
+   }
    if(maximum_references != ref->maximum_references)
+   {
       return true;
+   }
    if(maximum_loads != ref->maximum_loads)
+   {
       return true;
+   }
    if(need_bus != ref->need_bus)
+   {
       return true;
+   }
    if(packed_vars != ref->packed_vars)
+   {
       return true;
+   }
    if(bus_addr_bitsize != ref->bus_addr_bitsize)
+   {
       return true;
+   }
 
    return false;
 }

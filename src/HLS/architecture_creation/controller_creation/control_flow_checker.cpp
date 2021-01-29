@@ -117,9 +117,13 @@ static bool is_one_hot(const HLS_managerRef HLSMgr, unsigned int function_id)
    }
    bool one_hot_encoding = false;
    if(HLSMgr->get_parameter()->getOption<std::string>(OPT_fsm_encoding) == "one-hot")
+   {
       one_hot_encoding = true;
+   }
    else if(HLSMgr->get_parameter()->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" && HLSMgr->get_HLS(function_id)->STG->get_number_of_states() < 256)
+   {
       one_hot_encoding = true;
+   }
 
    return one_hot_encoding;
 }
@@ -129,7 +133,9 @@ static unsigned int comp_state_bitsize(bool one_hot_encoding, const HLS_managerR
    unsigned int n_states = HLSMgr->get_HLS(f_id)->STG->get_number_of_states();
    unsigned int bitsnumber = language_writer::bitnumber(n_states - 1);
    if(max_value != n_states - 1)
+   {
       bitsnumber = language_writer::bitnumber(max_value);
+   }
 
    unsigned int state_bitsize = one_hot_encoding ? (max_value + 1) : bitsnumber;
 
@@ -280,7 +286,9 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
    const auto encode_one_hot = [](unsigned int nstates, unsigned int val) -> std::string {
       std::string res;
       for(unsigned int i = 0; i < nstates; ++i)
+      {
          res = (val == i ? "1" : "0") + res;
+      }
       return res;
    };
    const auto compute_state_string = [one_hot_encoding, max_value, state_bitsize, encode_one_hot](unsigned int state_id) -> std::string {
@@ -299,7 +307,9 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       {
          const std::string state_string = compute_state_string(s_id);
          if(not is_first)
+         {
             result += ',';
+         }
          result += "\n   " + state_string;
          is_first = false;
       }
@@ -325,7 +335,9 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
       BOOST_FOREACH(vertex state, boost::vertices(*stg))
       {
          if(state == fsm_entry_node or state == fsm_exit_node)
+         {
             continue;
+         }
          bool a = true;
          BOOST_FOREACH(EdgeDescriptor out_edge, boost::out_edges(state, *stg))
          {
@@ -348,7 +360,9 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
                   const std::string state_string = compute_state_string(dst_id);
 
                   if(not a)
+                  {
                      result += ",\n";
+                  }
 
                   a = false;
 
@@ -393,12 +407,16 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
          const vertex src = boost::source(e, *stg);
          const vertex dst = boost::target(e, *stg);
          if(src == fsm_entry_node or dst == fsm_exit_node)
+         {
             continue;
+         }
          const auto src_id = stg_info->vertex_to_state_id.at(src);
          const auto dst_id = stg_info->vertex_to_state_id.at(dst);
          const auto increment_val = eppstg->CGetTransitionInfo(e)->get_epp_increment();
          if(increment_val != 0)
+         {
             present_to_next_to_increment[src_id][dst_id] = increment_val;
+         }
       }
       for(const auto& e : discr_info->fu_id_to_reset_edges.at(f_id))
       {
@@ -420,10 +438,14 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
          const auto increment_val = eppstg->CGetTransitionInfo(epp_edge_to_exit)->get_epp_increment();
 
          if(reset_val != 0)
+         {
             next_to_resetval_to_present[dst_id][reset_val].insert(src_id);
+         }
 
          if(increment_val != 0)
+         {
             present_to_next_to_increment[src_id][dst_id] = increment_val;
+         }
       }
    }
 
@@ -462,9 +484,13 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
             for(const auto present : r2p.second)
             {
                if(initial == false)
+               {
                   result += ",\n";
+               }
                else
+               {
                   initial = false;
+               }
 
                result += "      " + compute_state_string(present);
             }
@@ -532,16 +558,26 @@ static std::string create_control_flow_checker(size_t epp_trace_bitsize, const u
 
    const auto reset_type = HLSMgr->get_parameter()->getOption<std::string>(OPT_sync_reset);
    if(reset_type == "no" || reset_type == "sync")
+   {
       result += "always @(posedge " CLOCK_PORT_NAME ")\n";
+   }
    else if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+   {
       result += "always @(posedge " CLOCK_PORT_NAME " or negedge " RESET_PORT_NAME ")\n";
+   }
    else
+   {
       result += "always @(posedge " CLOCK_PORT_NAME " or posedge " RESET_PORT_NAME ")\n";
+   }
 
    if(!HLSMgr->get_parameter()->getOption<bool>(OPT_level_reset))
+   {
       result += "if (" RESET_PORT_NAME " == 1'b0)\n";
+   }
    else
+   {
       result += "if (" RESET_PORT_NAME " == 1'b1)\n";
+   }
 
    result += "  begin\n"
              "   prev_epp_counter <= 0;\n"
@@ -677,7 +713,9 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
 {
    const HWDiscrepancyInfoConstRef discr_info = HLSMgr->RDiscr->hw_discrepancy_info;
    if(discr_info->fu_id_control_flow_skip.find(funId) != discr_info->fu_id_control_flow_skip.end())
+   {
       return DesignFlowStep_Status::SUCCESS;
+   }
    HLS->control_flow_checker = structural_managerRef(new structural_manager(HLS->Param));
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const std::string f_name = FB->CGetBehavioralHelper()->get_function_name();
@@ -695,7 +733,9 @@ DesignFlowStep_Status ControlFlowChecker::InternalExec()
    const auto& stg_info = stg->CGetStateTransitionGraphInfo();
    unsigned max_value = 0;
    for(const auto& s : stg_info->state_id_to_vertex)
+   {
       max_value = std::max(max_value, s.first);
+   }
    const unsigned int state_bitsize = comp_state_bitsize(one_hot_encoding, HLSMgr, funId, max_value);
 
    size_t epp_trace_bitsize = discr_info->fu_id_to_epp_trace_bitsize.at(funId);

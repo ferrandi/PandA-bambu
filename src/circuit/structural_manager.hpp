@@ -409,7 +409,9 @@ class structural_manager
    friend std::ostream& operator<<(std::ostream& os, const structural_managerRef s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
    /**

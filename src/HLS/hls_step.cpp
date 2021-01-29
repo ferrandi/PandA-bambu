@@ -445,7 +445,9 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
             design_flow_step_set.insert(cg_design_flow_step);
             /// Root function cannot be computed at the beginning
             if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+            {
                break;
+            }
             for(const auto top_function : call_graph_manager->GetRootFunctions())
             {
                vertex hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), top_function));

@@ -350,7 +350,9 @@ class tree_manager
    friend std::ostream& operator<<(std::ostream& os, const tree_managerRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 

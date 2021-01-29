@@ -161,13 +161,19 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   {
       return false;
+   }
    if(tree_helper::is_int(TM, GET_INDEX_NODE((be->op0))) || tree_helper::is_int(TM, GET_INDEX_NODE((be->op1))))
+   {
       return false;
+   }
    return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
 bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
@@ -175,14 +181,20 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   {
       return false;
+   }
    bool is_simple_case = [&]() -> bool {
       if(GET_CONST_NODE(be->op1)->get_kind() != integer_cst_K)
+      {
          return false;
+      }
       auto* int_const = GetPointer<integer_cst>(GET_CONST_NODE(be->op1));
       auto k = be->get_kind();
       return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
@@ -194,13 +206,19 @@ bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
    auto c0 = tree_helper::CGetType(GET_CONST_NODE(ce->op1));
    auto type_id0 = c0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    auto c1 = tree_helper::CGetType(GET_CONST_NODE(ce->op2));
    auto type_id1 = c1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   {
       return false;
+   }
    if(tree_helper::is_int(TM, GET_INDEX_NODE((ce->op1))) || tree_helper::is_int(TM, GET_INDEX_NODE((ce->op2))))
+   {
       return false;
+   }
    return tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1;
 }
 bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
@@ -208,9 +226,13 @@ bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
    auto c0 = tree_helper::CGetType(GET_CONST_NODE(ne->op));
    auto type_id0 = c0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    if(tree_helper::is_int(TM, GET_INDEX_NODE((ne->op))))
+   {
       return false;
+   }
    return (tree_helper::Size(GET_NODE((ne)->op)) == 1);
 }
 
@@ -246,9 +268,13 @@ class klut_network_ext : public mockturtle::klut_network
          for(size_t i = 0; i < niter; ++i)
          {
             if(signedValues)
+            {
                b->push_back(b->at(msbPos));
+            }
             else
+            {
                b->push_back(this->get_constant(false));
+            }
          }
       }
       else if(a->size() < b->size())
@@ -258,9 +284,13 @@ class klut_network_ext : public mockturtle::klut_network
          for(size_t i = 0; i < niter; ++i)
          {
             if(signedValues)
+            {
                a->push_back(a->at(msbPos));
+            }
             else
+            {
                a->push_back(this->get_constant(false));
+            }
          }
       }
    }
@@ -362,7 +392,9 @@ class klut_network_ext : public mockturtle::klut_network
    {
       std::vector<signal> outputs;
       for(auto b : bits)
+      {
          outputs.push_back(b == false ? this->get_constant(false) : this->create_not(this->get_constant(false)));
+      }
 
       return outputs;
    }
@@ -378,7 +410,9 @@ class klut_network_ext : public mockturtle::klut_network
    signal create_lut(std::vector<signal> s, uint64_t f)
    {
       if(f == static_cast<uint64_t>(-1LL))
+      {
          return this->create_not(this->get_constant(false));
+      }
       kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
       std::stringstream resHex;
       resHex << std::hex << f;
@@ -386,10 +420,14 @@ class klut_network_ext : public mockturtle::klut_network
       if(tt.num_vars() > 1)
       {
          while((res0.size() << 2) < tt.num_bits())
+         {
             res0 = "0" + res0;
+         }
       }
       while((res0.size() << 2) > tt.num_bits() && tt.num_vars() > 1)
+      {
          res0 = res0.substr(1);
+      }
 
       kitty::create_from_hex_string(tt, res0);
       return create_node(s, tt);
@@ -408,7 +446,9 @@ class klut_network_ext : public mockturtle::klut_network
    {
       std::vector<signal> outputs;
       for(auto s : a)
+      {
          outputs.push_back(this->create_not(s));
+      }
       return outputs;
    }
 
@@ -554,13 +594,19 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
 {
    auto ssa = GetPointer<ssa_name>(GET_NODE(in));
    if(!ssa)
+   {
       THROW_ERROR("expected as in a ssa variable");
+   }
    tree_nodeRef def_stmt = GET_NODE(ssa->CGetDefStmt());
    if(def_stmt->get_kind() != gimple_assign_K)
+   {
       return true;
+   }
    auto* gaDef = GetPointer<gimple_assign>(def_stmt);
    if(gaDef->bb_index != BB_index)
+   {
       return true;
+   }
    return cannotBeLUT(gaDef->op1);
 }
 
@@ -653,9 +699,13 @@ bool lut_transformation::CheckIfPO(gimple_assign* gimpleAssign)
       {
          auto* childGimpleAssign = GetPointer<gimple_assign>(GET_NODE(node.first));
          if(!childGimpleAssign)
+         {
             return true;
+         }
          if(cannotBeLUT(childGimpleAssign->op1))
+         {
             return true;
+         }
       }
    }
    return false;
@@ -696,7 +746,9 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
 {
    std::vector<bool> bits;
    for(size_t i = 0; i < size; ++i)
+   {
       bits.push_back((n & (1ULL << i)) ? true : false);
+   }
    return bits;
 }
 
@@ -964,7 +1016,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   pis_offset.push_back(0);
                }
                else
+               {
                   THROW_ERROR("unexpected condition: " + GET_NODE(op)->ToString());
+               }
 
                nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                ops.push_back(kop);
@@ -1028,7 +1082,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   pis_offset.push_back(0);
                }
                else
+               {
                   THROW_ERROR("unexpected condition");
+               }
 
                nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                ops.push_back(kop);
@@ -1092,7 +1148,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   pis_offset.push_back(0);
                }
                else
+               {
                   THROW_ERROR("unexpected condition: " + GET_NODE(op)->ToString());
+               }
 
                nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                ops.push_back(kop);
@@ -1168,7 +1226,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
             }
             else
+            {
                THROW_ERROR("unexpected condition");
+            }
          }
 
          // if the second operand has already been processed then the previous signal is used
@@ -1194,7 +1254,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
             }
             else
+            {
                THROW_ERROR("unexpected condition");
+            }
          }
 
          res = (klut_e.*nodeCreateFn)(op1, op2);
@@ -1308,7 +1370,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          res = (klut_e.*nodeCreateFn)(op1, op2, isSigned);
          nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
          if(res.size() == 1)
+         {
             nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res.at(0);
+         }
          if(this->CheckIfPO(gimpleAssign))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
@@ -1400,26 +1464,46 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                }
             }
             else if(internal_nets.find(in) != internal_nets.end())
+            {
                operand = internal_nets.find(in)->second;
+            }
             else
+            {
                THROW_ERROR("unexpected condition" + STR(p_index));
+            }
 
             if(p_index == 1)
+            {
                op1 = operand;
+            }
             else if(p_index == 2)
+            {
                op2 = operand;
+            }
             else if(p_index == 3)
+            {
                op3 = operand;
+            }
             else if(p_index == 4)
+            {
                op4 = operand;
+            }
             else if(p_index == 5)
+            {
                op5 = operand;
+            }
             else if(p_index == 6)
+            {
                op6 = operand;
+            }
             else if(p_index == 7)
+            {
                op7 = operand;
+            }
             else if(p_index == 8)
+            {
                op8 = operand;
+            }
             else
             {
                THROW_ERROR("unexpected number of inputs");
@@ -1446,7 +1530,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             auto* ssa_ga_op0 = GetPointer<ssa_name>(ga_op0);
             THROW_ASSERT(ssa_ga_op0, "unexpected condition");
             if(!lut.is_constant)
+            {
                internal_nets[lut.index] = gimpleAssign->op0;
+            }
 
             if(lut.is_constant)
             {
@@ -1605,7 +1691,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
          if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+         }
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
          break;
@@ -1638,7 +1726,11 @@ bool lut_transformation::HasToBeExecuted() const
    THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
    auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
    if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
+   {
       return FunctionFrontendFlowStep::HasToBeExecuted();
+   }
    else
+   {
       return false;
+   }
 }

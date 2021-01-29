@@ -76,9 +76,13 @@ void ComputeReservedMemory::GoNext()
 {
    /// For compatibility with old initialization (without parentheses)
    if(depth_level == 0)
+   {
       elements_number++;
+   }
    if(depth_level == 1)
+   {
       elements_number++;
+   }
 }
 
 void ComputeReservedMemory::GoUp()

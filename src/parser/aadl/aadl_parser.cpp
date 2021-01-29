@@ -107,7 +107,9 @@ DesignFlowStep_Status AadlParser::Exec()
    fileIO_istreamRef sname = fileIO_istream_open(file_name);
    const auto directory = GetDirectory(file_name);
    if(sname->fail())
+   {
       THROW_ERROR(std::string("FILE does not exist: ") + file_name);
+   }
    const AadlFlexLexerRef lexer(new AadlFlexLexer(parameters, sname.get(), nullptr));
    const AadlParserDataRef data(new AadlParserData(parameters));
    YYParse(data, lexer);
@@ -171,7 +173,9 @@ DesignFlowStep_Status AadlParser::Exec()
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found parameter " + feature.first);
             aadl_parameter.asn_type = feature.second.find(STR_CST_aadl_parameter_type)->second;
             if(aadl_parameter.asn_type.find(STR_CST_aadl_data_view) == 0)
+            {
                aadl_parameter.asn_type = aadl_parameter.asn_type.substr(std::string(STR_CST_aadl_data_view).size());
+            }
             THROW_ASSERT(feature.second.find(STR_CST_aadl_parameter_direction) != feature.second.end(), "");
             THROW_ASSERT(feature.second.find(STR_CST_aadl_parameter_endianess) != feature.second.end(), "");
             aadl_parameter.direction = AadlInformation::AadlParameter::GetDirection(feature.second.find(STR_CST_aadl_parameter_direction)->second);

@@ -141,9 +141,13 @@ void VIVADO_xsim_wrapper::GenerateScript(std::ostringstream& script, const std::
    }
 
    if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
+   {
       script << "xelab --debug all --rangecheck -L work -L unifast_ver -L unisims_ver -L unimacro_ver -L secureip --snapshot " + top_filename + "tb_behav --prj " + project_file + " work." + top_filename + "_tb_top -O2 -nolog -stat -R";
+   }
    else
+   {
       script << "xelab --debug off -L work -L unifast_ver -L unisims_ver -L unimacro_ver -L secureip --snapshot " + top_filename + "tb_behav --prj " + project_file + " work." + top_filename + "_tb_top -O3 -nolog -stat -R";
+   }
    script << " 2>&1 | tee " << log_file << std::endl << std::endl;
 }
 

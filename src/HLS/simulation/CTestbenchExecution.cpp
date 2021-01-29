@@ -151,63 +151,97 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 
 #if HAVE_I386_CLANG4_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG6)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG7)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG8)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG9)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 #if HAVE_I386_CLANG10_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG10)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
    if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11)
+   {
       compiler_flags = "-fwrapv -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
+   }
 #endif
 
    if(!parameters->isOption(OPT_input_format) || parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C || parameters->isOption(OPT_pretty_print))
+   {
 #if HAVE_I386_CLANG4_COMPILER
       if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG4)
+      {
 #endif
 #if HAVE_I386_CLANG5_COMPILER
          if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG5)
+         {
 #endif
 #if HAVE_I386_CLANG6_COMPILER
             if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG6)
+            {
 #endif
 #if HAVE_I386_CLANG7_COMPILER
                if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG7)
+               {
 #endif
 #if HAVE_I386_CLANG8_COMPILER
                   if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG8)
+                  {
 #endif
 #if HAVE_I386_CLANG9_COMPILER
                      if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG9)
+                     {
 #endif
 #if HAVE_I386_CLANG10_COMPILER
                         if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG10)
+                        {
 #endif
 #if HAVE_I386_CLANG11_COMPILER
                            if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG11)
+                           {
 #endif
                               compiler_flags += " -fexcess-precision=standard ";
+                           }
+                        }
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
    {
       compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
@@ -375,7 +409,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
    // set some parameters for redirection of discrepancy statistics
    std::string c_stdout_file = "";
    if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+   {
       c_stdout_file = output_directory + "dynamic_discrepancy_stats";
+   }
    // executing the test to generate inputs and expected outputs values
    if((parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy)) or (parameters->isOption(OPT_discrepancy_hw) and parameters->getOption<bool>(OPT_discrepancy_hw)))
    {
@@ -461,7 +497,9 @@ void CTestbenchExecution::ComputeRelationships(DesignFlowStepSet& relationship, 
          // be computed again after the call graph computation.
          const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
          if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+         {
             return;
+         }
 
          const auto* c_backend_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
 

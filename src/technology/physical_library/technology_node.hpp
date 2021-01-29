@@ -352,7 +352,9 @@ struct technology_node
    friend std::ostream& operator<<(std::ostream& os, const technology_nodeRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 
@@ -600,7 +602,9 @@ struct functional_unit : public technology_node
       {
          auto del = std::find(list_of_operation.begin(), list_of_operation.end(), op_name_to_op[curr->get_name()]);
          if(del != list_of_operation.end())
+         {
             list_of_operation.erase(del);
+         }
       }
       list_of_operation.push_back(curr);
       op_name_to_op[curr->get_name()] = curr;

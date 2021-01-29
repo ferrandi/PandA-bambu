@@ -141,7 +141,9 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
          if(toadd)
          {
             if(Cget_edge_info<OpEdgeInfo>(*o, *cfg) && CFG_TRUE_CHECK(cfg, *o))
+            {
                then = next;
+            }
             /// Vertex can be added to list
             if(next != then)
             {

@@ -148,7 +148,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
 
             unsigned int ptd_type_size = tree_helper::Size(p_type);
             if(ptd_type_size % 8)
+            {
                ptd_type_size += 8;
+            }
             ptd_type_size /= 8;
 
             // create new var_decl
@@ -253,7 +255,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
          }
 
          if(has_param_types)
+         {
             p_type_head = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head))->chan;
+         }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed parameter " + STR(p_decl) + " with type " + STR(p_type));
       }
@@ -381,7 +385,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   THROW_ASSERT(static_cast<bool>(has_param_types) == static_cast<bool>(p_type_head),
                                "function " + called_fu_name + " has " + STR(called_fd->list_of_args.size()) + " parameters, but argument " + STR(param_n) + " (" + STR(p_decl) + ") has not a corresponding underlying type in function_type");
                   if(has_param_types)
+                  {
                      p_type_head = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head))->chan;
+                  }
 
                   if(tree_helper::is_an_union(TM, p_type->index) or tree_helper::is_a_struct(TM, p_type->index))
                   {

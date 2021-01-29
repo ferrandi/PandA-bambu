@@ -118,7 +118,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
          }
          else
+         {
             relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+         }
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          break;
@@ -130,7 +132,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             case DesignFlowStep_Status::SUCCESS:
             {
                if(restart_dead_code)
+               {
                   relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+               }
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -271,9 +275,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
                               if(ull_value)
+                              {
                                  TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
+                              }
                               else
+                              {
                                  TM->ReplaceTreeNode(use.first, ga->op0, me->op2);
+                              }
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
                               modified = true;
                            }
@@ -285,7 +293,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            AppM->RegisterTransformation(GetName(), stmt);
                         }
                         else
+                        {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---nothing more can be done");
+                        }
                      }
                      else if(GetPointer<cst_node>(GET_NODE(ga->op1)))
                      {
@@ -356,7 +366,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  val = tree_man->CreateRealCst(vce->type, static_cast<long double>(__conv_union.dest), data_value_id);
                               }
                               else
+                              {
                                  THROW_ERROR("not supported floating point bitwidth");
+                              }
 
                               const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                               for(const auto& use : StmtUses)
@@ -436,14 +448,22 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
 
                      std::string s0, s1;
                      if(GetPointer<ssa_name>(op0))
+                     {
                         s0 = GetPointer<ssa_name>(op0)->bit_values;
+                     }
                      if(GetPointer<ssa_name>(op1))
+                     {
                         s1 = GetPointer<ssa_name>(op1)->bit_values;
+                     }
                      unsigned int precision;
                      if(s0.size() && s1.size())
+                     {
                         precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
+                     }
                      else
+                     {
                         precision = static_cast<unsigned int>(std::max(s0.size(), s1.size()));
+                     }
 
                      if(precision)
                      {
@@ -462,13 +482,19 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         }
                         precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
                         if(precision == 0)
+                        {
                            precision = 1;
+                        }
                         for(auto s0it = s0.rbegin(), s1it = s1.rbegin(), s0end = s0.rend(), s1end = s1.rend(); s0it != s0end && s1it != s1end; ++s0it, ++s1it)
                         {
                            if((*s0it == *s1it && (*s1it == '0' || *s1it == '1')) || *s0it == 'X' || *s1it == 'X')
+                           {
                               ++trailing_zero;
+                           }
                            else
+                           {
                               break;
+                           }
                         }
                         if(trailing_zero)
                         {
@@ -500,9 +526,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               auto* int_const = GetPointer<integer_cst>(op0);
                               if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
+                              {
                                  TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index0));
+                              }
                               else
+                              {
                                  TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index0));
+                              }
                            }
                            if(GetPointer<ssa_name>(op1))
                            {
@@ -522,9 +552,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               auto* int_const = GetPointer<integer_cst>(op1);
                               if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op1)))
+                              {
                                  TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index1));
+                              }
                               else
+                              {
                                  TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index1));
+                              }
                            }
                         }
                      }
@@ -539,20 +573,28 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                         for(auto current_el : boost::adaptors::reverse(bit_values))
                         {
                            if(current_el == '1')
+                           {
                               const_value |= 1ULL << index_val;
+                           }
                            ++index_val;
                         }
                         /// in case do sign extension
                         if(tree_helper::is_int(TM, output_uid) && bit_values[0] == '1')
                         {
                            for(; index_val < 64; ++index_val)
+                           {
                               const_value |= 1ULL << index_val;
+                           }
                         }
                         tree_nodeRef val;
                         if(GetPointer<integer_cst>(GET_NODE(ga->op1)))
+                        {
                            val = ga->op1;
+                        }
                         else
+                        {
                            val = TM->CreateUniqueIntegerCst(static_cast<long long int>(const_value), type_index);
+                        }
                         const TreeNodeMap<size_t> StmtUses = ssa->CGetUseStmts();
                         for(const auto& use : StmtUses)
                         {
@@ -618,9 +660,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            for(const auto& use : StmtUses)
                            {
                               if(GET_NODE(use.first)->get_kind() == gimple_assign_K && GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)->get_kind() == ssa_name_K)
+                              {
                                  max_bw = std::max(max_bw, BitLatticeManipulator::Size(GET_NODE(GetPointer<gimple_assign>(GET_NODE(use.first))->op1)));
+                              }
                               else
+                              {
                                  max_bw = bw_op1;
+                              }
                            }
                            if(max_bw < bw_op1)
                            {
@@ -710,9 +756,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               for(auto current_el : boost::adaptors::reverse(bit_values_op0))
                               {
                                  if(current_el == '0' || current_el == 'X')
+                                 {
                                     ++trailing_zero_op0;
+                                 }
                                  else
+                                 {
                                     break;
+                                 }
                               }
                            }
                            else if(GetPointer<integer_cst>(op0))
@@ -722,9 +772,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               for(unsigned int index = 0; index < 64 && value_int != 0; ++index)
                               {
                                  if(value_int & (1ULL << index))
+                                 {
                                     break;
+                                 }
                                  else
+                                 {
                                     ++trailing_zero_op0;
+                                 }
                               }
                            }
                            if(GetPointer<ssa_name>(op1))
@@ -733,9 +787,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               for(auto current_el : boost::adaptors::reverse(bit_values_op1))
                               {
                                  if(current_el == '0' || current_el == 'X')
+                                 {
                                     ++trailing_zero_op1;
+                                 }
                                  else
+                                 {
                                     break;
+                                 }
                               }
                            }
                            else if(GetPointer<integer_cst>(op1))
@@ -745,9 +803,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               for(unsigned int index = 0; index < 64 && value_int != 0; ++index)
                               {
                                  if(value_int & (1ULL << index))
+                                 {
                                     break;
+                                 }
                                  else
+                                 {
                                     ++trailing_zero_op1;
+                                 }
                               }
                            }
                            if(trailing_zero_op0 != 0 || trailing_zero_op1 != 0)
@@ -854,12 +916,18 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            for(auto current_el : boost::adaptors::reverse(bit_values_op0))
                            {
                               if(current_el == '0' || current_el == 'X')
+                              {
                                  ++trailing_zero_op0;
+                              }
                               else
+                              {
                                  break;
+                              }
                            }
                            if(bit_values_op0 == "0")
+                           {
                               is_op0_null = true;
+                           }
                         }
                         else if(GetPointer<integer_cst>(op0) && GET_NODE(ga->op1)->get_kind() == plus_expr_K)
                         {
@@ -868,12 +936,18 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            for(unsigned int index = 0; index < 64 && value_int != 0; ++index)
                            {
                               if(value_int & (1ULL << index))
+                              {
                                  break;
+                              }
                               else
+                              {
                                  ++trailing_zero_op0;
+                              }
                            }
                            if(int_const->value == 0)
+                           {
                               is_op0_null = true;
+                           }
                         }
 
                         if(GetPointer<ssa_name>(op1))
@@ -883,12 +957,18 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            for(auto current_el : boost::adaptors::reverse(bit_values_op1))
                            {
                               if(current_el == '0' || current_el == 'X')
+                              {
                                  ++trailing_zero_op1;
+                              }
                               else
+                              {
                                  break;
+                              }
                            }
                            if(bit_values_op1 == "0")
+                           {
                               is_op1_null = true;
+                           }
                         }
                         else if(GetPointer<integer_cst>(op1))
                         {
@@ -897,12 +977,18 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            for(unsigned int index = 0; index < 64 && value_int != 0; ++index)
                            {
                               if(value_int & (1ULL << index))
+                              {
                                  break;
+                              }
                               else
+                              {
                                  ++trailing_zero_op1;
+                              }
                            }
                            if(int_const->value == 0)
+                           {
                               is_op1_null = true;
+                           }
                         }
 
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Trailing zeros op0=" + STR(trailing_zero_op0) + ", trailing zeros op1=" + STR(trailing_zero_op1));
@@ -965,13 +1051,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
                               {
                                  if(static_cast<long long int>(int_const->value >> shift_const) == 0)
+                                 {
                                     is_op0_null = GET_NODE(ga->op1)->get_kind() == plus_expr_K; // TODO: true?
+                                 }
                                  TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> shift_const), op0_type_id));
                               }
                               else
                               {
                                  if(static_cast<unsigned long long int>(int_const->value >> shift_const) == 0)
+                                 {
                                     is_op0_null = GET_NODE(ga->op1)->get_kind() == plus_expr_K; // TODO: true?
+                                 }
                                  TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> shift_const), op0_type_id));
                               }
                            }
@@ -981,11 +1071,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               THROW_ASSERT(GetPointer<ssa_name>(op0), "expected an SSA name");
 
                               if((GetPointer<ssa_name>(op0)->bit_values.size() - shift_const) > 0)
+                              {
                                  resulting_bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, GetPointer<ssa_name>(op0)->bit_values.size() - shift_const);
+                              }
                               else if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
+                              {
                                  resulting_bit_values = GetPointer<ssa_name>(op0)->bit_values.substr(0, 1);
+                              }
                               else
+                              {
                                  resulting_bit_values = "0";
+                              }
 
                               if(resulting_bit_values == "0" && GET_NODE(ga->op1)->get_kind() == plus_expr_K)
                               {
@@ -1025,13 +1121,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op1)))
                               {
                                  if(static_cast<long long int>(int_const->value >> shift_const) == 0)
+                                 {
                                     is_op1_null = true;
+                                 }
                                  TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> shift_const), op1_type_id));
                               }
                               else
                               {
                                  if(static_cast<unsigned long long int>(int_const->value >> shift_const) == 0)
+                                 {
                                     is_op1_null = true;
+                                 }
                                  TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> shift_const), op1_type_id));
                               }
                            }
@@ -1041,11 +1141,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               THROW_ASSERT(GetPointer<ssa_name>(op1), "expected an SSA name");
 
                               if((GetPointer<ssa_name>(op1)->bit_values.size() - shift_const) > 0)
+                              {
                                  resulting_bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, GetPointer<ssa_name>(op1)->bit_values.size() - shift_const);
+                              }
                               else if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op1)))
+                              {
                                  resulting_bit_values = GetPointer<ssa_name>(op1)->bit_values.substr(0, 1);
+                              }
                               else
+                              {
                                  resulting_bit_values = "0";
+                              }
 
                               if(resulting_bit_values == "0")
                               {
@@ -1124,7 +1230,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            auto* lshift_ssa = GetPointer<ssa_name>(GET_NODE(lshift_ga_var));
                            lshift_ssa->bit_values = ssa->bit_values.substr(0, ssa->bit_values.size() - shift_const);
                            while(lshift_ssa->bit_values.size() < ssa->bit_values.size())
+                           {
                               lshift_ssa->bit_values.push_back('0');
+                           }
                            constrainSSA(lshift_ssa, TM);
                            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Var_uid: " + AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->PrintVariable(GET_INDEX_NODE(lshift_ga_var)) + " bitstring: " + STR(lshift_ssa->bit_values));
 
@@ -1139,7 +1247,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               }
                               n_iter++;
                               if(n_iter == shift_const)
+                              {
                                  break;
+                              }
                            }
 
                            if(do_final_or)
@@ -1186,7 +1296,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  {
                                     band_ssa->bit_values = cur_bit + band_ssa->bit_values;
                                     if(band_ssa->bit_values.size() == shift_const)
+                                    {
                                        break;
+                                    }
                                  }
                                  band_ssa->bit_values = "0" + band_ssa->bit_values;
                                  constrainSSA(band_ssa, TM);
@@ -1235,7 +1347,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            auto* ic = GetPointer<integer_cst>(op1);
                            auto ull_value = static_cast<unsigned long long int>(tree_helper::get_integer_cst_value(ic));
                            if(ull_value == 0)
+                           {
                               is_op1_zero = true;
+                           }
                         }
 
                         if(op0 == op1)
@@ -1331,14 +1445,22 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
 
                         std::string s0, s1;
                         if(GetPointer<ssa_name>(op0))
+                        {
                            s0 = GetPointer<ssa_name>(op0)->bit_values;
+                        }
                         if(GetPointer<ssa_name>(op1))
+                        {
                            s1 = GetPointer<ssa_name>(op1)->bit_values;
+                        }
                         unsigned int precision;
                         if(s0.size() && s1.size())
+                        {
                            precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
+                        }
                         else
+                        {
                            precision = static_cast<unsigned int>(std::max(s0.size(), s1.size()));
+                        }
 
                         if(precision)
                         {
@@ -1358,9 +1480,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            for(auto s0it = s0.rbegin(), s1it = s1.rbegin(), s0end = s0.rend(), s1end = s1.rend(); s0it != s0end && s1it != s1end; ++s0it, ++s1it)
                            {
                               if((expr_kind == bit_and_expr_K && (*s0it == '0' || *s1it == '0')) || *s0it == 'X' || *s1it == 'X')
+                              {
                                  ++trailing_zero;
+                              }
                               else
+                              {
                                  break;
+                              }
                            }
                            if(trailing_zero)
                            {
@@ -1391,9 +1517,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               {
                                  auto* int_const = GetPointer<integer_cst>(op0);
                                  if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
+                                 {
                                     TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index0));
+                                 }
                                  else
+                                 {
                                     TM->ReplaceTreeNode(stmt, me->op0, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index0));
+                                 }
                               }
                               if(GetPointer<ssa_name>(op1))
                               {
@@ -1413,9 +1543,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               {
                                  auto* int_const = GetPointer<integer_cst>(op1);
                                  if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op1)))
+                                 {
                                     TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_zero), type_index1));
+                                 }
                                  else
+                                 {
                                     TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_zero), type_index1));
+                                 }
                               }
 
                               tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
@@ -1507,9 +1641,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage before: " + use.first->ToString());
                               if(ull_value)
+                              {
                                  TM->ReplaceTreeNode(use.first, ga->op0, me->op1);
+                              }
                               else
+                              {
                                  TM->ReplaceTreeNode(use.first, ga->op0, me->op2);
+                              }
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---replace var usage after: " + use.first->ToString());
                               modified = true;
                            }
@@ -1525,9 +1663,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            THROW_ASSERT(op0 != op1, "unexpected condition");
                            std::string s0, s1;
                            if(GetPointer<ssa_name>(op0))
+                           {
                               s0 = GetPointer<ssa_name>(op0)->bit_values;
+                           }
                            if(GetPointer<ssa_name>(op1))
+                           {
                               s1 = GetPointer<ssa_name>(op1)->bit_values;
+                           }
                            unsigned int precision;
                            precision = static_cast<unsigned int>(std::max(s0.size(), s1.size()));
                            if(GetPointer<integer_cst>(op0))
@@ -1550,13 +1692,19 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                               unsigned int minimum_precision = static_cast<unsigned int>(std::min(s0.size(), s1.size()));
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bit_value strings are " + s0 + " and " + s1);
                               if(precision == 0)
+                              {
                                  precision = 1;
+                              }
                               for(unsigned int index = 0; index < (minimum_precision - 1); ++index)
                               {
                                  if((s0[s0.size() - index - 1] == '0' || s0[s0.size() - index - 1] == 'X') && (s1[s1.size() - index - 1] == '0' || s1[s1.size() - index - 1] == 'X'))
+                                 {
                                     ++trailing_eq;
+                                 }
                                  else
+                                 {
                                     break;
+                                 }
                               }
                               if(trailing_eq)
                               {
@@ -1587,9 +1735,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  {
                                     auto* int_const = GetPointer<integer_cst>(op0);
                                     if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op0)))
+                                    {
                                        TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_eq), type_index0));
+                                    }
                                     else
+                                    {
                                        TM->ReplaceTreeNode(stmt, me->op1, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_eq), type_index0));
+                                    }
                                  }
                                  if(GetPointer<ssa_name>(op1))
                                  {
@@ -1609,9 +1761,13 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                  {
                                     auto* int_const = GetPointer<integer_cst>(op1);
                                     if(tree_helper::is_int(TM, GET_INDEX_NODE(me->op2)))
+                                    {
                                        TM->ReplaceTreeNode(stmt, me->op2, TM->CreateUniqueIntegerCst(static_cast<long long int>(int_const->value >> trailing_eq), type_index1));
+                                    }
                                     else
+                                    {
                                        TM->ReplaceTreeNode(stmt, me->op2, TM->CreateUniqueIntegerCst(static_cast<long long int>(static_cast<unsigned long long int>(int_const->value) >> trailing_eq), type_index1));
+                                    }
                                  }
                                  tree_nodeRef ssa_vd = IRman->create_ssa_name(tree_nodeRef(), ga_op_type, tree_nodeRef(), tree_nodeRef());
                                  auto* sn = GetPointer<ssa_name>(GET_NODE(ssa_vd));
@@ -1833,13 +1989,17 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                            {
                               auto* int_const = GetPointer<integer_cst>(GET_NODE(bie->op0));
                               if(int_const->value == 0)
+                              {
                                  val = bie->op1;
+                              }
                            }
                            else
                            {
                               auto* int_const = GetPointer<integer_cst>(GET_NODE(bie->op1));
                               if(int_const->value == 0)
+                              {
                                  val = bie->op0;
+                              }
                            }
                            if(val)
                            {
@@ -2142,7 +2302,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                        auto bae_op0 = bae->op0;
                                        auto bae_op1 = bae->op1;
                                        if(GET_NODE(bae->op0)->get_kind() == integer_cst_K)
+                                       {
                                           std::swap(bae_op0, bae_op1);
+                                       }
                                        auto bae_mask_value = GetPointer<integer_cst>(GET_NODE(bae_op1))->value;
                                        auto masked_value = (bae_mask_value & (1ll << pos_value));
                                        if(masked_value && GET_NODE(bae_op0)->get_kind() != integer_cst_K)
@@ -2280,7 +2442,9 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                           unsigned int precision = BitLatticeManipulator::Size(ebe_op0_ssa->type);
                                           unsigned int log2;
                                           for(log2 = 1; precision > (1u << log2); ++log2)
+                                          {
                                              ;
+                                          }
                                           tree_nodeRef op1, op2, op3, op4, op5, op6, op7, op8;
                                           for(auto i = 0u; i < log2; ++i)
                                           {
@@ -2291,19 +2455,33 @@ void Bit_Value_opt::optimize(statement_list* sl, tree_managerRef TM, tree_manipu
                                              B->PushBefore(eb_ga, stmt);
                                              auto eb_ga_ssa_var = GetPointer<gimple_assign>(GET_NODE(eb_ga))->op0;
                                              if(i == 0)
+                                             {
                                                 op1 = eb_ga_ssa_var;
+                                             }
                                              else if(i == 1)
+                                             {
                                                 op2 = eb_ga_ssa_var;
+                                             }
                                              else if(i == 2)
+                                             {
                                                 op3 = eb_ga_ssa_var;
+                                             }
                                              else if(i == 3)
+                                             {
                                                 op4 = eb_ga_ssa_var;
+                                             }
                                              else if(i == 4)
+                                             {
                                                 op5 = eb_ga_ssa_var;
+                                             }
                                              else if(i == 5)
+                                             {
                                                 op6 = eb_ga_ssa_var;
+                                             }
                                              else
+                                             {
                                                 THROW_ERROR("unexpected condition");
+                                             }
                                           }
                                           const auto LutConstType = IRman->CreateDefaultUnsignedLongLongInt();
 

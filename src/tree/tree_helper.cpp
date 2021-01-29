@@ -1239,19 +1239,33 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
          get_used_variables(first_level_only, le->op0, list_of_variable);
          get_used_variables(first_level_only, le->op1, list_of_variable);
          if(le->op2)
+         {
             get_used_variables(first_level_only, le->op2, list_of_variable);
+         }
          if(le->op3)
+         {
             get_used_variables(first_level_only, le->op3, list_of_variable);
+         }
          if(le->op4)
+         {
             get_used_variables(first_level_only, le->op4, list_of_variable);
+         }
          if(le->op5)
+         {
             get_used_variables(first_level_only, le->op5, list_of_variable);
+         }
          if(le->op6)
+         {
             get_used_variables(first_level_only, le->op6, list_of_variable);
+         }
          if(le->op7)
+         {
             get_used_variables(first_level_only, le->op7, list_of_variable);
+         }
          if(le->op8)
+         {
             get_used_variables(first_level_only, le->op8, list_of_variable);
+         }
          break;
       }
       case gimple_switch_K:
@@ -5274,7 +5288,9 @@ void tree_helper::get_array_dimensions(const tree_managerConstRef& TM, const uns
       dims.push_back(range_domain);
    }
    else
+   {
       dims.push_back(0); // variable size array may fall in this case
+   }
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);
    if(elts->get_kind() == array_type_K)
@@ -5351,7 +5367,9 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
    const tree_nodeRef varnode = TM->get_tree_node_const(var);
    const auto* vd = GetPointer<var_decl>(varnode);
    if(vd)
+   {
       return vd->algn < 8 ? 1 : (vd->algn / 8);
+   }
    return 1;
 }
 
@@ -6185,10 +6203,14 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
          {
             lnode = GetPointer<tree_list>(GET_NODE(lnode->chan));
             if(!GetPointer<void_type>(GET_NODE(lnode->valu)))
+            {
                prmtrs.push_back(lnode->valu);
+            }
          }
          for(auto valu : prmtrs)
+         {
             res += "," + print_type(TM, GET_INDEX_NODE(valu), global, print_qualifiers);
+         }
          break;
       }
       case template_type_parm_K:
@@ -7848,7 +7870,9 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, CustomOr
          compute_ssa_uses_rec_ptr(le->op0, ssa_uses);
          compute_ssa_uses_rec_ptr(le->op1, ssa_uses);
          if(le->op2)
+         {
             compute_ssa_uses_rec_ptr(le->op2, ssa_uses);
+         }
          if(le->op3)
          {
             compute_ssa_uses_rec_ptr(le->op3, ssa_uses);
@@ -8188,7 +8212,9 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t>& ssa
          ComputeSsaUses(le->op0, ssa_uses);
          ComputeSsaUses(le->op1, ssa_uses);
          if(le->op2)
+         {
             ComputeSsaUses(le->op2, ssa_uses);
+         }
          if(le->op3)
          {
             ComputeSsaUses(le->op3, ssa_uses);
@@ -8552,19 +8578,33 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
          get_required_values(TM, required, GET_NODE(le->op0), GET_INDEX_NODE(le->op0));
          get_required_values(TM, required, GET_NODE(le->op1), GET_INDEX_NODE(le->op1));
          if(le->op2)
+         {
             get_required_values(TM, required, GET_NODE(le->op2), GET_INDEX_NODE(le->op2));
+         }
          if(le->op3)
+         {
             get_required_values(TM, required, GET_NODE(le->op3), GET_INDEX_NODE(le->op3));
+         }
          if(le->op4)
+         {
             get_required_values(TM, required, GET_NODE(le->op4), GET_INDEX_NODE(le->op4));
+         }
          if(le->op5)
+         {
             get_required_values(TM, required, GET_NODE(le->op5), GET_INDEX_NODE(le->op5));
+         }
          if(le->op6)
+         {
             get_required_values(TM, required, GET_NODE(le->op6), GET_INDEX_NODE(le->op6));
+         }
          if(le->op7)
+         {
             get_required_values(TM, required, GET_NODE(le->op7), GET_INDEX_NODE(le->op7));
+         }
          if(le->op8)
+         {
             get_required_values(TM, required, GET_NODE(le->op8), GET_INDEX_NODE(le->op8));
+         }
          break;
       }
       case gimple_cond_K:
@@ -8804,7 +8844,9 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
             tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
          } while(tl);
          for(auto tl_current0 : tl_list)
+         {
             required.emplace_back(GET_INDEX_NODE(tl_current0->valu), 0);
+         }
          break;
       }
       case component_ref_K:

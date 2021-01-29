@@ -94,7 +94,9 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
          os.width(0);
       }
       else
+      {
          os << it->first;
+      }
    }
    /**
     * Function that prints the class vertex2obj.
@@ -108,12 +110,18 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
          print_rowHead(os, data, i);
          print_el(os, data, i);
          if(data)
+         {
             os << std::endl;
+         }
          else
+         {
             os << " ";
+         }
       }
       if(!data)
+      {
          os << std::endl;
+      }
    }
 
    const data_obj operator()(const vertex& __k) const
@@ -125,7 +133,9 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    void resize(Iterator left, Iterator right, data_type val)
    {
       for(; left != right; left++)
+      {
          this->operator[](*left) = val;
+      }
    }
 
    /**
@@ -145,7 +155,9 @@ struct vertex2obj : public CustomUnorderedMapUnstable<vertex, data_obj>
    friend std::ostream& operator<<(std::ostream& os, const vertex2obj* s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 };

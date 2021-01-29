@@ -84,7 +84,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #endif
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+         {
             ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
 #endif
          break;
       }
@@ -177,7 +179,9 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double brams = 0;
          if(GetPointer<clb_model>(area_m))
+         {
             brams = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::BRAM);
+         }
          HLSMgr->evaluations["BRAMS"] = std::vector<double>(1, brams);
       }
       else if(objective == "CLOCK_SLACK")
@@ -207,7 +211,9 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double dsps = 0;
          if(GetPointer<clb_model>(area_m))
+         {
             dsps = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::DSP);
+         }
          HLSMgr->evaluations["DSPS"] = std::vector<double>(1, dsps);
       }
       else if(objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
@@ -225,7 +231,9 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double reg = 0;
          if(GetPointer<clb_model>(area_m))
+         {
             reg = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::REGISTERS);
+         }
          HLSMgr->evaluations["REGISTERS"] = std::vector<double>(1, reg);
       }
    }

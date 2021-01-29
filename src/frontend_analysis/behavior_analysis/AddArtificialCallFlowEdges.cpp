@@ -121,9 +121,13 @@ DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
                   continue;
                }
                if(previous)
+               {
                   function_behavior->ogc->AddEdge(other_stmt, stmt, FLG_SELECTOR);
+               }
                else
+               {
                   function_behavior->ogc->AddEdge(stmt, other_stmt, FLG_SELECTOR);
+               }
             }
          }
       }

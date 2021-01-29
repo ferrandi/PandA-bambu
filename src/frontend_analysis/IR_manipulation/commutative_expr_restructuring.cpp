@@ -139,12 +139,16 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
 {
    const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
    if(not ga)
+   {
       return false;
+   }
    auto opKind = GET_NODE(ga->op1)->get_kind();
    unsigned int type_index;
    auto Type = tree_helper::get_type_node(GET_NODE(ga->op0), type_index);
    if(not GetPointer<integer_type>(Type))
+   {
       return false;
+   }
    return opKind == mult_expr_K || opKind == widen_mult_expr_K || opKind == widen_sum_expr_K || opKind == bit_ior_expr_K || opKind == bit_xor_expr_K || opKind == bit_and_expr_K || opKind == eq_expr_K || opKind == ne_expr_K || opKind == plus_expr_K;
 }
 
@@ -156,22 +160,38 @@ tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeCons
    const auto other_operand = first ? GET_NODE(be->op1) : GET_NODE(be->op0);
    const auto sn = GetPointer<const ssa_name>(operand);
    if(tree_helper::is_constant(TM, other_operand->index))
+   {
       return tree_nodeRef();
+   }
    if(not sn)
+   {
       return tree_nodeRef();
+   }
    if(sn->CGetNumberUses() > 1)
+   {
       return tree_nodeRef();
+   }
    const auto def = GetPointer<const gimple_assign>(GET_NODE(sn->CGetDefStmt()));
    if(not def)
+   {
       return tree_nodeRef();
+   }
    if(def->bb_index != ga->bb_index)
+   {
       return tree_nodeRef();
+   }
    if(GET_NODE(def->op1)->get_kind() != GET_NODE(ga->op1)->get_kind())
+   {
       return tree_nodeRef();
+   }
    if(schedule->GetStartingTime(ga->index) == schedule->GetEndingTime(def->index) or (schedule->get_cstep_end(def->index).second + 1) == schedule->get_cstep(ga->index).second)
+   {
       return sn->CGetDefStmt();
+   }
    else
+   {
       return tree_nodeRef();
+   }
 }
 
 DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
@@ -304,7 +324,9 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          auto first_value = first_operand_of_second ? second_be->op1 : second_be->op0;
          auto second_value = first_operand_of_first ? first_be->op1 : first_be->op0;
          if(not first_operand_of_first)
+         {
             std::swap(first_value, second_value);
+         }
          comm_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
          comm_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          comm_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_value->index);
@@ -437,7 +459,9 @@ void commutative_expr_restructuring::Initialize()
 bool commutative_expr_restructuring::HasToBeExecuted() const
 {
    if(!FunctionFrontendFlowStep::HasToBeExecuted())
+   {
       return false;
+   }
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)

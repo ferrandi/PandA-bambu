@@ -137,7 +137,9 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
                         auto* node = GetPointer<tree_list>(elem);
                         paramList = node->chan;
                         if(GET_NODE(node->valu)->get_kind() != void_type_K)
+                        {
                            count_param++;
+                        }
                      }
                      if(fd->list_of_args.size() == 0 && count_param == 0)
                      {
@@ -182,7 +184,9 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
                            auto* node = GetPointer<tree_list>(elem);
                            paramList = node->chan;
                            if(GET_NODE(node->valu)->get_kind() != void_type_K)
+                           {
                               count_param++;
+                           }
                         }
                         if(fd->list_of_args.size() == 0 && count_param == 0)
                         {

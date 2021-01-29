@@ -113,7 +113,9 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
             {
                auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
                if(GET_NODE(ae->op)->get_kind() == parm_decl_K)
+               {
                   parm_decl_addr.insert(GET_INDEX_NODE(ae->op));
+               }
             }
          }
       }

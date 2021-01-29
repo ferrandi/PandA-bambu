@@ -169,7 +169,9 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       bool virtual_flag = false;
       ssa_IR_schema[TOK(TOK_TYPE)] = STR(type_index);
       if(ssa_var->var)
+      {
          ssa_IR_schema[TOK(TOK_VAR)] = STR(GET_INDEX_NODE(ssa_var->var));
+      }
       ssa_IR_schema[TOK(TOK_VERS)] = STR(vers);
       ssa_IR_schema[TOK(TOK_VOLATILE)] = STR(volatile_flag);
       ssa_IR_schema[TOK(TOK_VIRTUAL)] = STR(virtual_flag);
@@ -186,7 +188,9 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       {
          source_bb = it->second;
          if(source_bb->number != bb_source)
+         {
             continue;
+         }
          if(replace.find(std::pair<unsigned int, unsigned int>(bb_source, bb_block->number)) != replace.end())
          {
             bb_source = replace[std::pair<unsigned int, unsigned int>(bb_source, bb_block->number)];

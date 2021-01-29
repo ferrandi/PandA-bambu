@@ -613,9 +613,13 @@ void glpk_solver::add_row(std::map<int, double>& i_coeffs, double i_rhs, ilp_sig
    THROW_ASSERT(lp, "the matrix must exist");
    int row_index = glp_add_rows(lp, 1);
    if(name.length() < 255)
+   {
       glp_set_row_name(lp, row_index, const_cast<char*>(name.c_str()));
+   }
    else
+   {
       glp_set_row_name(lp, row_index, const_cast<char*>((name.substr(0, 252) + "...").c_str()));
+   }
    glp_set_mat_row(lp, row_index, static_cast<int>(i_coeffs.size()), int_buffer - 1, real_buffer - 1);
    switch(i_sign)
    {

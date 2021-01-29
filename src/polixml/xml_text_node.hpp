@@ -71,17 +71,23 @@ class xml_text_node : public xml_node
          // remove \t \n \r and spaces at the beginning
          size_t len_index = escaped.length();
          while(len_index > 0 && (escaped[len_index - 1] == ' ' || escaped[len_index - 1] == '\t' || escaped[len_index - 1] == '\r' || escaped[len_index - 1] == '\n'))
+         {
             len_index--;
+         }
          if(len_index > 0)
          {
             unsigned int index = 0;
             while(escaped[index] == ' ' || escaped[index] == '\t' || escaped[index] == '\r' || escaped[index] == '\n')
+            {
                index++;
+            }
             os << escaped.substr(index, len_index - index);
          }
       }
       else
+      {
          os << escaped;
+      }
    }
 
    /** Get the text of this content node.

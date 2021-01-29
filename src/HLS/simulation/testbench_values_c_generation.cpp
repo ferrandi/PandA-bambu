@@ -89,7 +89,9 @@ TestbenchValuesCGeneration::TestbenchValuesCGeneration(const ParameterConstRef _
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
 }
 
 TestbenchValuesCGeneration::~TestbenchValuesCGeneration()
@@ -126,9 +128,13 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
    std::string compiler_flags = "-fwrapv -ffloat-store -flax-vector-conversions -msse2 -mfpmath=sse -D'__builtin_bambu_time_start()=' -D'__builtin_bambu_time_stop()=' ";
    if(!parameters->isOption(OPT_input_format) || parameters->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_C || parameters->isOption(OPT_pretty_print))
+   {
       compiler_flags += " -fexcess-precision=standard ";
+   }
    if(parameters->isOption(OPT_testbench_extra_gcc_flags))
+   {
       compiler_flags += " " + parameters->getOption<std::string>(OPT_testbench_extra_gcc_flags) + " ";
+   }
    if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {
       if(false
@@ -239,7 +245,9 @@ DesignFlowStep_Status TestbenchValuesCGeneration::Exec()
    // set some parameters for redirection of discrepancy statistics
    std::string c_stdout_file = "";
    if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+   {
       c_stdout_file = output_directory + "dynamic_discrepancy_stats";
+   }
    // executing the test to generate inputs and executed outputs values
    if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
    {

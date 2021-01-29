@@ -311,7 +311,9 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       auto* funDecl = GetPointer<function_decl>(function);
       std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
       if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" && !boost::algorithm::starts_with(functionName, "__pragma__"))
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
+      }
       typeToDeclaration[type].insert(allFunction);
    }
    for(const auto& block : stmtList->list_of_bloc)
@@ -348,7 +350,9 @@ static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr)
       pt = GetPointer<pointer_type>(GET_NODE(var->type));
    }
    else
+   {
       pt = GetPointer<pointer_type>(GET_NODE(sa->type));
+   }
 
    THROW_ASSERT(pt, "Declaration node has not information about pointer_type");
    THROW_ASSERT(GetPointer<function_type>(GET_NODE(pt->ptd)), "Pointer type has not information about pointed function_type");

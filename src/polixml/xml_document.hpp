@@ -75,10 +75,14 @@ class xml_document : public xml_child
    {
       os << "<?xml version=\"" << version << "\"";
       if(encoding != "")
+      {
          os << " encoding=\"" << encoding << "\"";
+      }
       os << "?>";
       if(!formatted || !pp)
+      {
          os << "\n";
+      }
       xml_child::print(os, formatted, pp);
       os << "\n";
    }

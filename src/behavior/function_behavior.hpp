@@ -646,7 +646,9 @@ class FunctionBehavior
    friend std::ostream& operator<<(std::ostream& os, const FunctionBehaviorRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 

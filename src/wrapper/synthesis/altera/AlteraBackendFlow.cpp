@@ -100,7 +100,9 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
    {
       auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
+      {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
+      }
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);
       parser = XMLDomParserRef(new XMLDomParser(xml_file_path));
    }
@@ -109,11 +111,17 @@ AlteraBackendFlow::AlteraBackendFlow(const ParameterConstRef _Param, const std::
       std::string device_string;
       target_deviceRef device = target->get_target_device();
       if(device->has_parameter("family"))
+      {
          device_string = device->get_parameter<std::string>("family");
+      }
       else
+      {
          device_string = "CycloneII";
+      }
       if(default_data.find(device_string) == default_data.end())
+      {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/altera/") + default_data[device_string]));
    }
@@ -139,7 +147,9 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC)
+            {
                continue;
+            }
 
             if(EnodeC->get_name() == "application")
             {
@@ -148,13 +158,17 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
                {
                   const auto* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS)
+                  {
                      continue;
+                  }
 
                   if(nodeS->get_name() == "section")
                   {
                      std::string stringID;
                      if(CE_XVM(stringID, nodeS))
+                     {
                         LOAD_XVM(stringID, nodeS);
+                     }
                      if(stringID == "QUARTUS_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
@@ -162,10 +176,14 @@ void AlteraBackendFlow::xparse_utilization(const std::string& fn)
                         {
                            const auto* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item")
+                           {
                               continue;
+                           }
 
                            if(CE_XVM(stringID, nodeIt))
+                           {
                               LOAD_XVM(stringID, nodeIt);
+                           }
 
                            std::string value;
                            if(CE_XVM(value, nodeIt))
@@ -211,14 +229,22 @@ void AlteraBackendFlow::CheckSynthesisResults()
    THROW_ASSERT(design_values.find(ALTERA_LE) != design_values.end(), "Missing logic elements");
    area_m = area_model::create_model(TargetDevice_Type::FPGA, Param);
    if(design_values[ALTERA_LE] != 0.0)
+   {
       area_m->set_area_value(design_values[ALTERA_LE]);
+   }
    else
+   {
       area_m->set_area_value(design_values[ALTERA_ALM]);
+   }
    auto* area_clb_model = GetPointer<clb_model>(area_m);
    if(design_values[ALTERA_LE] != 0.0)
+   {
       area_clb_model->set_resource_value(clb_model::LOGIC_ELEMENTS, design_values[ALTERA_LE]);
+   }
    else
+   {
       area_clb_model->set_resource_value(clb_model::ALMS, design_values[ALTERA_ALM]);
+   }
 
    area_clb_model->set_resource_value(clb_model::REGISTERS, design_values[ALTERA_REGISTERS]);
    area_clb_model->set_resource_value(clb_model::DSP, design_values[ALTERA_DSP]);
@@ -228,11 +254,17 @@ void AlteraBackendFlow::CheckSynthesisResults()
    auto* lut_m = GetPointer<LUT_model>(time_m);
    const auto combinational_delay = [&]() -> double {
       if(design_values[ALTERA_FMAX] != 0.0)
+      {
          return 1000 / design_values[ALTERA_FMAX];
+      }
       else if(design_values.find("SLACK") != design_values.end())
+      {
          return Param->getOption<double>(OPT_clock_period) - design_values.find("SLACK")->second;
+      }
       else
+      {
          return 0.0;
+      }
    }();
    lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, combinational_delay);
    if(combinational_delay > Param->getOption<double>(OPT_clock_period))
@@ -258,9 +290,13 @@ void AlteraBackendFlow::WriteFlowConfiguration(std::ostream& script)
    {
       script << "#configuration" << std::endl;
       if(boost::algorithm::starts_with(setupscr, "export"))
+      {
          script << setupscr + " >& /dev/null; ";
+      }
       else
+      {
          script << ". " << setupscr << " >& /dev/null; ";
+      }
       script << std::endl << std::endl;
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written flow configuration");
@@ -287,10 +323,14 @@ void AlteraBackendFlow::create_sdc(const DesignParametersRef dp)
       sdc_file << "derive_clock_uncertainty\n";
    }
    else
+   {
       sdc_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+   }
 
    if(Param->isOption(OPT_backend_sdc_extensions))
+   {
       sdc_file << "source " + Param->getOption<std::string>(OPT_backend_sdc_extensions) + "\n";
+   }
    sdc_file.close();
    dp->parameter_values[PARAM_sdc_file] = sdc_filename;
 }
@@ -301,7 +341,9 @@ void AlteraBackendFlow::InitDesignParameters()
    actual_parameters->parameter_values[PARAM_target_device] = device->get_parameter<std::string>("model");
    auto device_family = device->get_parameter<std::string>("family");
    if(device_family.find('-') != std::string::npos)
+   {
       device_family = device_family.substr(0, device_family.find('-'));
+   }
    actual_parameters->parameter_values[PARAM_target_family] = device_family;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
@@ -310,13 +352,19 @@ void AlteraBackendFlow::InitDesignParameters()
    bool has_vhdl_library = Param->isOption(OPT_VHDL_library);
    std::string vhdl_library;
    if(has_vhdl_library)
+   {
       vhdl_library = Param->getOption<std::string>(OPT_VHDL_library);
+   }
    for(const auto& v : file_list)
    {
       if(has_vhdl_library)
+      {
          sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + " -library " + vhdl_library + "\n";
+      }
       else
+      {
          sources_macro_list += "set_global_assignment -name SOURCE_FILE " + v + "\n";
+      }
    }
    actual_parameters->parameter_values[PARAM_sources_macro_list] = sources_macro_list;
 

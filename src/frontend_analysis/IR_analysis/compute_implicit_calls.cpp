@@ -146,7 +146,9 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
    for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end; ++it_bb)
    {
       if(it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
+      {
          continue;
+      }
       max_loop_id = std::max(max_loop_id, it_bb->second->loop_id);
       for(const auto& stmt : it_bb->second->CGetStmtList())
       {
@@ -168,7 +170,9 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             {
                auto* bfr = GetPointer<bit_field_ref>(op1);
                if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
+               {
                   is_a_vector_bitfield = true;
+               }
             }
 
             bool load_candidate = (op1->get_kind() == bit_field_ref_K && !is_a_vector_bitfield) || op1->get_kind() == component_ref_K || op1->get_kind() == indirect_ref_K || op1->get_kind() == misaligned_indirect_ref_K || op1->get_kind() == mem_ref_K ||
@@ -178,9 +182,13 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                enum kind code1 = GET_NODE(GetPointer<unary_expr>(op1)->op)->get_kind();
                if((code1 == bit_field_ref_K && !is_a_vector_bitfield) || code1 == component_ref_K || code1 == indirect_ref_K || code1 == bit_field_ref_K || code1 == misaligned_indirect_ref_K || code1 == mem_ref_K || code1 == array_ref_K ||
                   code1 == target_mem_ref_K || code1 == target_mem_ref461_K)
+               {
                   load_candidate = true;
+               }
                if(code1 == var_decl_K)
+               {
                   load_candidate = true;
+               }
             }
             bool store_candidate = op0->get_kind() == bit_field_ref_K || op0->get_kind() == component_ref_K || op0->get_kind() == indirect_ref_K || op0->get_kind() == misaligned_indirect_ref_K || op0->get_kind() == mem_ref_K ||
                                    op0->get_kind() == array_ref_K || op0->get_kind() == target_mem_ref_K || op0->get_kind() == target_mem_ref461_K;
@@ -188,9 +196,13 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
             {
                enum kind code0 = GET_NODE(GetPointer<unary_expr>(op0)->op)->get_kind();
                if(code0 == component_ref_K || code0 == indirect_ref_K || code0 == bit_field_ref_K || code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K || code0 == target_mem_ref_K || code0 == target_mem_ref461_K)
+               {
                   store_candidate = true;
+               }
                if(code0 == var_decl_K)
+               {
                   store_candidate = true;
+               }
             }
             if(!gm->clobber && !gm->init_assignment && op0_type && op1_type &&
                ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K && op1->get_kind() != view_convert_expr_K) ||
@@ -225,7 +237,9 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
                      }
                   }
                   if(do_lowering)
+                  {
                      to_be_lowered_memset.push_front(std::make_pair(stmt, it_bb->second->number));
+                  }
                   else
                   {
                      unsigned int memset_function_id = TM->function_index("__internal_bambu_memset");
@@ -325,7 +339,9 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       auto algn = GetPointer<const type_node>(type_node1)->algn;
       THROW_ASSERT(type_node1->get_kind() == array_type_K, "unexpected condition");
       while(type_node1->get_kind() == array_type_K)
+      {
          type_node1 = tree_helper::CGetElements(type_node1);
+      }
       tree_nodeRef offset_type = tree_man->create_size_type();
       tree_nodeRef pt = tree_man->create_pointer_type(type_node1, algn);
 
@@ -434,6 +450,8 @@ DesignFlowStep_Status compute_implicit_calls::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed " + STR(stmt_bb_pair.first));
    }
    if(debug_level >= DEBUG_LEVEL_PEDANTIC && parameters->getOption<bool>(OPT_print_dot))
+   {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("compute_implicit_calls" + GetSignature() + ".dot");
+   }
    return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

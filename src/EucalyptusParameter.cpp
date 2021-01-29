@@ -169,15 +169,20 @@ int EucalyptusParameter::Exec()
          case 'w':
          {
             if(std::string(optarg) == "V")
+            {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
 #if HAVE_EXPERIMENTAL
-            else if(std::string(optarg) == "S")
-               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
+               else if(std::string(optarg) == "S") setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
 #endif
+            }
             else if(std::string(optarg) == "H")
+            {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VHDL));
+            }
             else
+            {
                throw "BadParameters: backend language not correctly specified";
+            }
             break;
          }
          case 0:

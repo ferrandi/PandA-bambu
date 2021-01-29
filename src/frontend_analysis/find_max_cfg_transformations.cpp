@@ -91,7 +91,9 @@ bool FindMaxCFGTransformations::ExecuteBambu(const size_t cfg_max_transformation
    const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    const auto new_directory = temp_directory + "/" + STR(cfg_max_transformations);
    if(boost::filesystem::exists(new_directory))
+   {
       boost::filesystem::remove_all(new_directory);
+   }
    boost::filesystem::create_directory(new_directory);
    const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/bambu_execution_output");
    if(IsError(ret))

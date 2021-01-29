@@ -136,21 +136,33 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    /// if def(v) ∈ B (φ excluded) then return > Killed in the block, stop
    auto* v_ssa_name = GetPointer<ssa_name>(GET_NODE(v));
    if(!v_ssa_name)
+   {
       return;
+   }
    if(v_ssa_name->volatile_flag)
+   {
       return;
+   }
    THROW_ASSERT(v_ssa_name->CGetDefStmts().size() == 1, "SSA " + v_ssa_name->ToString() + " (" + STR(v_ssa_name->index) + ") is not in SSA form");
    unsigned int def_stmt = GET_INDEX_NODE(v_ssa_name->CGetDefStmt());
    if(((GET_NODE(v_ssa_name->CGetDefStmt()))->get_kind() == gimple_nop_K && GET_NODE(v_ssa_name->var)->get_kind() == parm_decl_K))
+   {
       return;
+   }
 
    for(const auto& stmt : B->CGetStmtList())
+   {
       if(def_stmt == GET_INDEX_NODE(stmt))
+      {
          return;
+      }
+   }
    /// if v ∈ LiveIn(B) then return >    Propagation already done, stop
    unsigned int v_index = GET_INDEX_NODE(v);
    if(B->live_in.find(v_index) != B->live_in.end())
+   {
       return;
+   }
    /// LiveIn(B) = LiveIn(B) ∪ {v}
    B->live_in.insert(v_index);
    /// if v ∈ PhiDefs(B) then return >   Do not propagate φ definitions
@@ -158,7 +170,9 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    {
       auto* pn = GetPointer<gimple_phi>(GET_NODE(phi));
       if(GET_INDEX_NODE(pn->res) == v_index)
+      {
          return;
+      }
    }
    /// for each P ∈ CFG_preds(B) do >   Propagate backward
    auto lp_it_end = B->list_of_pred.end();

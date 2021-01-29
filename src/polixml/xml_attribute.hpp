@@ -87,7 +87,9 @@ class xml_attribute : public xml_node
       /// replace '\n' character with the escaped version "\\n"
       std::string::size_type lPos = 0;
       while((lPos = escaped.find("\n", lPos)) != std::string::npos)
+      {
          escaped.replace(lPos++, 1, "\\n");
+      }
       os << get_name() << "=\"" << escaped << "\"";
    }
 
@@ -159,9 +161,13 @@ struct attribute_sequence
    xml_attribute* get_attribute(const std::string& name) const
    {
       if(a_map.find(name) == a_map.end())
+      {
          return nullptr;
+      }
       else
+      {
          return a_map.find(name)->second.get();
+      }
    }
    /** Remove the attribute with this name.
     * @param name The name of the attribute to be removed

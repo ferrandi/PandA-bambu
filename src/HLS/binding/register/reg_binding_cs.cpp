@@ -69,7 +69,9 @@ void reg_binding_cs::specialise_reg(structural_objectRef& reg, unsigned int r)
    auto mem_dimension = HLS->Param->getOption<unsigned int>(OPT_context_switch);
    int dimension = ceil_log2(HLS->Param->getOption<unsigned long long int>(OPT_context_switch));
    if(!dimension)
+   {
       dimension = 1;
+   }
    structural_objectRef selector_port = reg->find_member(SELECTOR_REGISTER_FILE, port_o_K, reg);
    if(selector_port != nullptr)
    {

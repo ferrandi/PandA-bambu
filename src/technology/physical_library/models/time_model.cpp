@@ -170,7 +170,9 @@ unsigned int time_model::xload_timing_path(xml_element* node)
    {
       auto* Enode = GetPointer<xml_element>(info);
       if(!Enode)
+      {
          continue;
+      }
 
       if(Enode->get_name() == "path_element")
       {

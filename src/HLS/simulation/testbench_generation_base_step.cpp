@@ -114,7 +114,9 @@ TestbenchGenerationBaseStep::TestbenchGenerationBaseStep(const ParameterConstRef
       c_testbench_basename(std::move(_c_testbench_basename))
 {
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    flag_cpp = _HLSMgr->get_tree_manager()->is_CPP() && !_parameters->isOption(OPT_pretty_print) &&
               (!_parameters->isOption(OPT_discrepancy) || !_parameters->getOption<bool>(OPT_discrepancy) || !_parameters->isOption(OPT_discrepancy_hw) || !_parameters->getOption<bool>(OPT_discrepancy_hw));
 }
@@ -185,7 +187,9 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    tree_nodeRef init_node;
    auto* vd = GetPointer<var_decl>(tn);
    if(vd && vd->init)
+   {
       init_node = GET_NODE(vd->init);
+   }
 
    if(init_node && (!GetPointer<constructor>(init_node) || GetPointer<constructor>(init_node)->list_of_idx_valu.size()))
    {
@@ -208,7 +212,9 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
          {
             value = "";
             for(unsigned int i = 0; i < data_bitsize; i++)
+            {
                value += "0";
+            }
             init_els.push_back(value);
          }
       }
@@ -217,7 +223,9 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
          unsigned int data_bitsize = tree_helper::size(TreeM, var);
          std::string value;
          for(unsigned int i = 0; i < data_bitsize; i++)
+         {
             value += "0";
+         }
          init_els.push_back(value);
       }
    }
@@ -225,7 +233,9 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    for(unsigned int l = 0; l < init_els.size(); l++)
    {
       if(l)
+      {
          init += ",";
+      }
       init += init_els[l];
    }
    return init;
@@ -234,13 +244,17 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
 std::string TestbenchGenerationBaseStep::verilator_testbench() const
 {
    if(not parameters->getOption<bool>(OPT_generate_testbench))
+   {
       return "";
+   }
    std::string simulation_values_path = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
 
    PRINT_DBG_MEX(DEBUG_LEVEL_MINIMUM, debug_level, "  . Generation of the Verilator testbench");
 
    if(not boost::filesystem::exists(simulation_values_path))
+   {
       THROW_ERROR("Error in generating Verilator testbench, values file missing!");
+   }
 
    std::string fileName = write_verilator_testbench(simulation_values_path);
 
@@ -340,7 +354,9 @@ std::string TestbenchGenerationBaseStep::write_verilator_testbench(const std::st
 std::string TestbenchGenerationBaseStep::create_HDL_testbench(bool xilinx_isim) const
 {
    if(!parameters->getOption<bool>(OPT_generate_testbench))
+   {
       return "";
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating HDL testbench");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
@@ -415,7 +431,9 @@ void TestbenchGenerationBaseStep::write_initial_block(const std::string& simulat
             std::string sigscope = sig_scope.first;
             boost::replace_all(sigscope, STR(HIERARCHY_SEPARATOR), ".");
             for(const std::string& signame : sig_scope.second)
+            {
                writer->write("$dumpvars(1, " + sigscope + signame + ");\n");
+            }
          }
       }
 #endif
@@ -512,19 +530,27 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
                         unsigned bitsize = 0;
                         if(port_bitwidth <= 512)
+                        {
                            bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+                        }
                         else
                         {
                            if(port_bitwidth % 8)
+                           {
                               bitsize = 8 * (port_bitwidth / 8) + 8;
+                           }
                            else
+                           {
                               bitsize = port_bitwidth;
+                           }
                         }
                         mem_aggregated = "{";
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               mem_aggregated += ", ";
+                           }
                            mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name.substr(0, port_name.size() - 1) + "0 + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + " + port_addr->get_id() + "*" +
                                              STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
                         }
@@ -565,7 +591,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   continue;
                }
                else
+               {
                   portInst = structural_objectRef();
+               }
             }
          }
          if(!portInst)
@@ -590,19 +618,27 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
                         unsigned bitsize = 0;
                         if(port_bitwidth <= 512)
+                        {
                            bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+                        }
                         else
                         {
                            if(port_bitwidth % 8)
+                           {
                               bitsize = 8 * (port_bitwidth / 8) + 8;
+                           }
                            else
+                           {
                               bitsize = port_bitwidth;
+                           }
                         }
                         mem_aggregated = "{";
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               mem_aggregated += ", ";
+                           }
                            mem_aggregated += "_bambu_testbench_mem_[paddr" + port_name.substr(0, port_name.size() - 1) + "0 + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + " + port_addr->get_id() + "*" +
                                              STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
                         }
@@ -633,7 +669,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   continue;
                }
                else
+               {
                   portInst = structural_objectRef();
+               }
             }
          }
          THROW_ASSERT(portInst, "unexpected condition: " + par);
@@ -722,7 +760,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
          {
             if(GetPointer<port_o>(portInst)->get_is_memory() || (GetPointer<port_o>(portInst)->get_is_extern() && GetPointer<port_o>(portInst)->get_is_global()) || !portInst->get_typeRef()->treenode ||
                !tree_helper::is_a_pointer(TreeM, portInst->get_typeRef()->treenode))
+            {
                continue;
+            }
 
             std::string unmangled_name = portInst->get_id();
             std::string port_name = HDL_manager::convert_to_identifier(writer.get(), unmangled_name);
@@ -772,7 +812,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   size_t escaped_pos = port_name.find('\\');
                   std::string nonescaped_name = port_name;
                   if(escaped_pos != std::string::npos)
+                  {
                      nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+                  }
                   if(is_real)
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
@@ -785,7 +827,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               writer->write(", ");
+                           }
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("} == " + output_name + ", ");
@@ -793,7 +837,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               writer->write(", ");
+                           }
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
@@ -806,7 +852,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                            {
                               if(bitsize_index)
+                              {
                                  writer->write(", ");
+                              }
                               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                            }
                            writer->write("}, " + output_name);
@@ -816,14 +864,18 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               writer->write(", ");
+                           }
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
                         writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
+                     {
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
+                     }
                   }
                   else
                   {
@@ -971,7 +1023,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write("begin\n");
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+                     {
                         writer->write("$display(\"Value found for output " + orig_name + ": %b\", " + output_name + ");\n");
+                     }
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
                   writer->write("end\n");
@@ -991,14 +1045,20 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
+                     {
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
+                     }
                   }
                   else
                   {
                      if(GET_TYPE_SIZE(portInst) > 64)
+                     {
                         writer->write("$display(\" " + orig_name + " = %x   expected = %x \\n\", " + port_to_be_compared + ", " + output_name + ");\n");
+                     }
                      else
+                     {
                         writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + port_to_be_compared + ", " + output_name + ");\n");
+                     }
                      writer->write("if (" + port_to_be_compared + " !== " + output_name + ")\n");
                   }
                   writer->write(STR(STD_OPENING_CHAR));
@@ -1057,13 +1117,19 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
                unsigned bitsize = 0;
                if(port_bitwidth <= 512)
+               {
                   bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+               }
                else
                {
                   if(port_bitwidth % 8)
+                  {
                      bitsize = 8 * (port_bitwidth / 8) + 8;
+                  }
                   else
+                  {
                      bitsize = port_bitwidth;
+                  }
                }
                auto port_addr = mod->find_member(orig_name + "_address0", port_o_K, cir);
                THROW_ASSERT(port_addr && GetPointer<port_o>(port_addr)->get_port_interface() == port_o::port_interface::PI_ADDRESS, "inconsistent interface");
@@ -1072,7 +1138,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                {
                   if(bitsize_index)
+                  {
                      port_to_be_compared += ", ";
+                  }
                   port_to_be_compared += "_bambu_testbench_mem_[paddr" + port_name + " + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr + _i_*" + STR(GetPointer<port_o>(port_addr)->get_port_alignment()) + "]";
                }
                port_to_be_compared += "}";
@@ -1110,7 +1178,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write("begin\n");
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+                     {
                         writer->write("$display(\"Value found for output " + orig_name + ": %b\", " + output_name + ");\n");
+                     }
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
                   writer->write("end\n");
@@ -1130,14 +1200,20 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         writer->write("if (compute_ulp64(" + port_to_be_compared + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
+                     {
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(portInst)));
+                     }
                   }
                   else
                   {
                      if(GET_TYPE_SIZE(portInst) > 64)
+                     {
                         writer->write("$display(\" " + orig_name + " = %x   expected = %x \\n\", " + port_to_be_compared + ", " + output_name + ");\n");
+                     }
                      else
+                     {
                         writer->write("$display(\" " + orig_name + " = %d   expected = %d \\n\", " + port_to_be_compared + ", " + output_name + ");\n");
+                     }
                      writer->write("if (" + port_to_be_compared + " !== " + output_name + ")\n");
                   }
                   writer->write(STR(STD_OPENING_CHAR));
@@ -1185,7 +1261,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("end\n");
          }
          else
+         {
             THROW_ERROR("not supported port interface type");
+         }
       }
    }
    else if(interface_type == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
@@ -1250,7 +1328,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write("begin\n");
                   {
                      if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+                     {
                         writer->write("$display(\"Value found for output " + variableName + ": %b\", " + output_name + ");\n");
+                     }
                   }
                   writer->write(STR(STD_CLOSING_CHAR));
                   writer->write("end\n");
@@ -1258,7 +1338,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   size_t escaped_pos = port_name.find('\\');
                   std::string nonescaped_name = port_name;
                   if(escaped_pos != std::string::npos)
+                  {
                      nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+                  }
                   if(is_real)
                   {
                      if(output_level > OUTPUT_LEVEL_MINIMUM)
@@ -1271,7 +1353,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               writer->write(", ");
+                           }
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("} == " + output_name + ", ");
@@ -1279,7 +1363,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               writer->write(", ");
+                           }
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write(std::string("}), ") + (bitsize == 32 ? "bits32_to_real64" : "$bitstoreal") + "(" + output_name + "));\n");
@@ -1292,7 +1378,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                            for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                            {
                               if(bitsize_index)
+                              {
                                  writer->write(", ");
+                              }
                               writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                            }
                            writer->write("}, " + output_name);
@@ -1302,14 +1390,18 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                         for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
                         {
                            if(bitsize_index)
+                           {
                               writer->write(", ");
+                           }
                            writer->write("_bambu_testbench_mem_[" + port_name + " + _i_*" + boost::lexical_cast<std::string>(bitsize / 8) + " + " + boost::lexical_cast<std::string>((bitsize - bitsize_index) / 8 - 1) + " - base_addr]");
                         }
                         writer->write("}, " + output_name);
                         writer->write(") > " + std::string(bitsize == 64 ? "64'd" : "") + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                      }
                      else
+                     {
                         THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(bitsize));
+                     }
                   }
                   else
                   {
@@ -1402,7 +1494,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
             writer->write("begin\n");
             {
                if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+               {
                   writer->write("$display(\"Value found for output " + output_name + ": %b\", " + output_name + ");\n");
+               }
             }
             writer->write(STR(STD_CLOSING_CHAR));
             writer->write("end\n");
@@ -1422,7 +1516,9 @@ void TestbenchGenerationBaseStep::write_output_checks(const tree_managerConstRef
                   writer->write("if (compute_ulp64(registered_" + std::string(RETURN_PORT_NAME) + ", " + output_name + ") > 64'd" + STR(parameters->getOption<double>(OPT_max_ulp)) + ")\n");
                }
                else
+               {
                   THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "floating point precision not yet supported: " + STR(GET_TYPE_SIZE(return_port)));
+               }
             }
             else
             {
@@ -1541,7 +1637,9 @@ void TestbenchGenerationBaseStep::write_underlying_testbench(const std::string s
    write_file_reading_operations();
    end_file_reading_operation();
    if(withMemory)
+   {
       write_memory_handler();
+   }
    write_interface_handler();
    write_call(hasMultiIrq);
    write_output_checks(TreeM);
@@ -1572,17 +1670,27 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
    auto half_target_period_string = STR(target_period / 2);
    // If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
    if(half_target_period_string.find(".") == std::string::npos)
+   {
       half_target_period_string += ".0";
+   }
    writer->write("`define HALF_CLOCK_PERIOD " + half_target_period_string + "\n\n");
    writer->write("`define CLOCK_PERIOD (2*`HALF_CLOCK_PERIOD)\n\n");
    if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" && parameters->getOption<std::string>(OPT_bram_high_latency) == "_3")
+   {
       writer->write("`define MEM_DELAY_READ 3\n\n");
+   }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) != "" && parameters->getOption<std::string>(OPT_bram_high_latency) == "_4")
+   {
       writer->write("`define MEM_DELAY_READ 4\n\n");
+   }
    else if(parameters->getOption<std::string>(OPT_bram_high_latency) == "")
+   {
       writer->write("`define MEM_DELAY_READ " + parameters->getOption<std::string>(OPT_mem_delay_read) + "\n\n");
+   }
    else
+   {
       THROW_ERROR("unexpected bram high latency delay");
+   }
    writer->write("`define MEM_DELAY_WRITE " + parameters->getOption<std::string>(OPT_mem_delay_write) + "\n\n");
 }
 
@@ -1613,7 +1721,9 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
    writer->write_comment("MODULE INSTANTIATION AND PORTS BINDING\n");
    auto module_name = HDL_manager::get_mod_typename(target_writer.get(), cir);
    if(module_name[0] == '\\' and target_language == HDLWriter_Language::VHDL)
+   {
       module_name = "\\" + module_name;
+   }
    writer->write_module_instance_begin(cir, module_name, !xilinx_isim);
    std::string prefix = "";
    if(mod->get_in_port_size())
@@ -1621,18 +1731,28 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
       for(unsigned int i = 0; i < mod->get_in_port_size(); i++)
       {
          if(i == 0)
+         {
             prefix = ".";
+         }
          else
+         {
             prefix = ", .";
+         }
 
          auto port_name_formal = HDL_manager::convert_to_identifier(writer.get(), mod->get_in_port(i)->get_id());
          auto port_name_actual = port_name_formal;
          if(parameters->isOption(OPT_clock_name) && port_name_actual == parameters->getOption<std::string>(OPT_clock_name))
+         {
             port_name_actual = CLOCK_PORT_NAME;
+         }
          else if(parameters->isOption(OPT_reset_name) && port_name_actual == parameters->getOption<std::string>(OPT_reset_name))
+         {
             port_name_actual = RESET_PORT_NAME;
+         }
          else if(parameters->isOption(OPT_start_name) && port_name_actual == parameters->getOption<std::string>(OPT_start_name))
+         {
             port_name_actual = START_PORT_NAME;
+         }
          writer->write(prefix + port_name_formal + "(" + port_name_actual + ")");
       }
    }
@@ -1643,7 +1763,9 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
          auto port_name_formal = HDL_manager::convert_to_identifier(writer.get(), mod->get_out_port(i)->get_id());
          auto port_name_actual = port_name_formal;
          if(parameters->isOption(OPT_done_name) && port_name_actual == parameters->getOption<std::string>(OPT_done_name))
+         {
             port_name_actual = DONE_PORT_NAME;
+         }
          writer->write(prefix + port_name_formal + "(" + port_name_actual + ")");
       }
    }
@@ -1651,14 +1773,18 @@ void TestbenchGenerationBaseStep::write_module_instantiation(bool xilinx_isim) c
    writer->write_module_instance_end(cir);
 
    if(xilinx_isim)
+   {
       writer->write("glbl #(" + STR(target_period / 2 * 1000) + ", 0) glbl();");
+   }
 }
 
 void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
 {
    unsigned long long int testbench_memsize = HLSMgr->Rmem->get_memory_address() - parameters->getOption<unsigned long long int>(OPT_base_address);
    if(testbench_memsize == 0)
+   {
       testbench_memsize = 1;
+   }
    writer->write("parameter MEMSIZE = " + STR(testbench_memsize));
 
    /// writing memory-related parameters
@@ -1740,7 +1866,9 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          }
       }
       if(writeP)
+      {
          writer->write("\n");
+      }
    }
    writer->write("reg [7:0] _bambu_testbench_mem_ [0:MEMSIZE-1];\n\n");
    writer->write("reg [7:0] _bambu_databyte_;\n\n");
@@ -1826,16 +1954,26 @@ void TestbenchGenerationBaseStep::initialize_input_signals(const tree_managerCon
          const structural_objectRef& port_obj = mod->get_in_port(i);
          auto port_name = port_obj->get_id();
          if(parameters->isOption(OPT_clock_name) && port_name == parameters->getOption<std::string>(OPT_clock_name))
+         {
             port_name = CLOCK_PORT_NAME;
+         }
          else if(parameters->isOption(OPT_reset_name) && port_name == parameters->getOption<std::string>(OPT_reset_name))
+         {
             port_name = RESET_PORT_NAME;
+         }
          else if(parameters->isOption(OPT_start_name) && port_name == parameters->getOption<std::string>(OPT_start_name))
+         {
             port_name = START_PORT_NAME;
+         }
 
          if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_name)
+         {
             continue;
+         }
          if(CLOCK_PORT_NAME != port_name && START_PORT_NAME != port_name && RESET_PORT_NAME != port_name)
+         {
             writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + " = 0;\n");
+         }
          if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
          {
             writer->write("ex_" + port_name + " = 0;\n");
@@ -1869,26 +2007,38 @@ void TestbenchGenerationBaseStep::testbench_controller_machine() const
    writer->write("  begin\n");
    writer->write("     start_results_comparison = 0;\n");
    if(!parameters->getOption<bool>(OPT_level_reset))
+   {
       writer->write("     " + std::string(RESET_PORT_NAME) + " = 1;\n");
+   }
    else
+   {
       writer->write("     " + std::string(RESET_PORT_NAME) + " = 0;\n");
+   }
    writer->write("     start_next_sim = 0;\n");
    writer->write("     next_start_port = 0;\n");
    writer->write("     case (__state)\n");
    writer->write("       0:\n");
    writer->write("         begin\n");
    if(!parameters->getOption<bool>(OPT_level_reset))
+   {
       writer->write("            " + std::string(RESET_PORT_NAME) + " = 0;\n");
+   }
    else
+   {
       writer->write("            " + std::string(RESET_PORT_NAME) + " = 1;\n");
+   }
    writer->write("            __next_state = 1;\n");
    writer->write("         end\n");
    writer->write("       1:\n");
    writer->write("         begin\n");
    if(!parameters->getOption<bool>(OPT_level_reset))
+   {
       writer->write("            " + std::string(RESET_PORT_NAME) + " = 0;\n");
+   }
    else
+   {
       writer->write("            " + std::string(RESET_PORT_NAME) + " = 1;\n");
+   }
    writer->write("            __next_state = 2;\n");
    writer->write("         end\n");
    writer->write("       2:\n");
@@ -2090,7 +2240,9 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string& 
       writer->write("\n");
       writer->write_comment("Read a value for " + input_name + " --------------------------------------------------------------\n");
       if(!first_valid_input)
+      {
          writer->write("_ch_ = $fgetc(file);\n");
+      }
 
       writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\")\n");
       writer->write(STR(STD_OPENING_CHAR));
@@ -2180,7 +2332,9 @@ void TestbenchGenerationBaseStep::read_input_value_from_file(const std::string& 
          size_t escaped_pos = input_name.find('\\');
          std::string nonescaped_name = input_name;
          if(escaped_pos != std::string::npos)
+         {
             nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+         }
          if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
          {
             writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");

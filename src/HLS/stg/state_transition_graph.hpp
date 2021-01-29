@@ -490,7 +490,9 @@ class last_intermediate_state
    vertex operator()(vertex top, vertex bottom)
    {
       if(not pipeline)
+      {
          return top;
+      }
       graph::in_edge_iterator in_edge, in_edge_end;
 #if HAVE_ASSERTS
       bool multiple_in_edges = false;

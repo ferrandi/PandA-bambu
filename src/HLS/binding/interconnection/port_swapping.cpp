@@ -91,14 +91,22 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          if(HLSMgr->get_HLS(funId))
          {
             if(HLSMgr->GetFunctionBehavior(funId)->build_simple_pipeline())
+            {
                ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_MODULE_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
             else
+            {
                ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->module_binding_algorithm, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+            }
          }
          if(HLSMgr->GetFunctionBehavior(funId)->build_simple_pipeline())
+         {
             ret.insert(std::make_tuple(HLSFlowStep_Type::UNIQUE_REGISTER_BINDING, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
          else
+         {
             ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -142,14 +150,22 @@ void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, si
             }
          }
          for(auto lvl : vset)
+         {
             if(lvl.v == set.v)
+            {
                flag = false;
+            }
+         }
          if(flag)
          {
             if(set.level % 2 == 0)
+            {
                set.belongs = SET_A;
+            }
             else
+            {
                set.belongs = SET_B;
+            }
             vset.push_back(set);
          }
          flag = false;
@@ -201,10 +217,16 @@ int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, P
             }
          }
          for(auto lvl : vset)
+         {
             if(lvl.v == set.v)
+            {
                flag = false;
+            }
+         }
          if(flag)
+         {
             vset.push_back(set);
+         }
          flag = false;
       }
    }
@@ -218,11 +240,13 @@ port_swapping::PSVertex port_swapping::find_max_degree(CustomOrderedSet<std::pai
    long unsigned int max = 0;
    PSVertex v = 0;
    for(auto e : dSet)
+   {
       if(e.second > max)
       {
          max = e.second;
          v = e.first;
       }
+   }
    return v;
 }
 
@@ -230,16 +254,24 @@ void port_swapping::update_degree(PSGraph g2, CustomOrderedSet<std::pair<PSVerte
 {
    auto g2_vertices = boost::vertices(g2);
    for(auto iterator = g2_vertices.first; iterator != g2_vertices.second; ++iterator)
+   {
       dSet.insert(std::make_pair(*iterator, boost::out_degree(*iterator, g2)));
+   }
 }
 
 port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, std::vector<PSE>& e)
 {
    for(auto ed : e)
+   {
       if(v == ed.second)
+      {
          return ed.first;
+      }
       else if(v == ed.first)
+      {
          return ed.second;
+      }
+   }
    return v;
 }
 
@@ -259,6 +291,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    for(size_t count = 1; count < num_components; count++)
    {
       for(size_t i = 0; i < num_vertices_g; i++)
+      {
          if(component[i] == count)
          {
             auto connection_ver_2 = PSVertex(i);
@@ -266,6 +299,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
             connection_ver_1 = connection_ver_2;
             break;
          }
+      }
    }
 
    boost::random_spanning_tree(g, generator, boost::root_vertex(root).predecessor_map(boost::make_iterator_property_map(p.begin(), boost::get(boost::vertex_index, g))));
@@ -292,7 +326,9 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    auto edge = boost::edges(g);
    std::vector<PSE> g_edges;
    for(auto iterator = edge.first; iterator != edge.second; ++iterator)
+   {
       g_edges.push_back(PSE(source(*iterator, g), target(*iterator, g)));
+   }
 
    //
    // Calculating the levels of the various vertices in the
@@ -306,9 +342,13 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    for(auto e : g_edges)
    {
       if(find(spt_edges.begin(), spt_edges.end(), PSE(source(e, g), target(e, g))) != spt_edges.end() || find(spt_edges.begin(), spt_edges.end(), PSE(target(e, g), source(e, g))) != spt_edges.end())
+      {
          continue;
+      }
       else
+      {
          co_tree_edges.push_back(PSE(source(e, g), target(e, g)));
+      }
    }
 
    //
@@ -320,12 +360,16 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    {
       loop_size.clear();
       if(vertex_distance(spt_edges, e.first, e.second, loop_size) % 2 != 0)
+      {
          odd_co_tree_edges.push_back(e);
+      }
    }
 
    PSGraph g2(num_vertices_g);
    for(auto e : odd_co_tree_edges)
+   {
       add_edge(e.first, e.second, g2);
+   }
 
    CustomOrderedSet<std::pair<PSVertex, unsigned int>> degree_set;
    CustomOrderedSet<PSVertex> cover_set;
@@ -355,7 +399,9 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    std::vector<PSVSet> temp_set;
    PSVSet v;
    for(auto vs : vset)
+   {
       temp_set.push_back(vs);
+   }
 
    vset.clear();
 
@@ -370,7 +416,9 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
          abCardinality++;
       }
       else
+      {
          vset.push_back(set);
+      }
    }
 
    PSMultiStart run;
@@ -398,15 +446,19 @@ std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_s
    long unsigned int max = boost::num_vertices(g);
    PSMultiStart best_candidate;
    for(auto vset : vector_sets)
+   {
       if(vset.cardinality < max)
       {
          max = vset.cardinality;
          best_candidate = vset;
       }
+   }
 
    std::vector<std::pair<PSVertex, unsigned int>> return_values;
    for(auto vertex_set : best_candidate.vset)
+   {
       return_values.push_back(std::make_pair(vertex_set.v, vertex_set.belongs));
+   }
    return return_values;
 }
 
@@ -421,7 +473,9 @@ unsigned int port_swapping::get_results(PSVertex operand, std::vector<std::pair<
    for(auto res : results)
    {
       if(res.first == operand)
+      {
          return res.second;
+      }
    }
    return 0;
 }
@@ -507,9 +561,13 @@ DesignFlowStep_Status port_swapping::InternalExec()
                         {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained operand");
                            if(HLS->Rfu->get_index(def_op) != INFINITE_UINT)
+                           {
                               key_value = std::make_tuple(2, HLS->Rfu->get_assign(def_op), HLS->Rfu->get_index(def_op));
+                           }
                            else
+                           {
                               key_value = std::make_tuple(2, 0, tree_var);
+                           }
                         }
                         else if(HLS->storage_value_information->is_a_storage_value(state, tree_var))
                         {
@@ -519,7 +577,9 @@ DesignFlowStep_Status port_swapping::InternalExec()
                            key_value = std::make_tuple(3, 0, r_index);
                         }
                         else
+                        {
                            THROW_UNREACHABLE("unexpected");
+                        }
                      }
                      else
                      {
@@ -610,7 +670,11 @@ DesignFlowStep_Status port_swapping::InternalExec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "<--");
    }
    if(changed)
+   {
       return DesignFlowStep_Status::SUCCESS;
+   }
    else
+   {
       return DesignFlowStep_Status::UNCHANGED;
+   }
 }

@@ -113,9 +113,13 @@ struct cdfc_graph_vertex_selector
    bool operator()(const vertex_descriptor& v) const
    {
       if(all)
+      {
          return true;
+      }
       else
+      {
          return support->find(v) != support->end();
+      }
    }
 
  private:
@@ -287,9 +291,13 @@ class CdfcGraphsCollection : public graphs_collection
    inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
    {
       if(ExistsEdge(source, target))
+      {
          return AddSelector(source, target, selector);
+      }
       else
+      {
          return InternalAddEdge(source, target, selector, EdgeInfoRef(new CdfcEdgeInfo(0)));
+      }
    }
 };
 using CdfcGraphsCollectionRef = std::shared_ptr<CdfcGraphsCollection>;

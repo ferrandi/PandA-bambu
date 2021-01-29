@@ -82,26 +82,38 @@ bool chordal_coloring_register::lex_compare_gt(const std::vector<unsigned int>& 
    */
    size_t v1_size = v1.size();
    if(v1_size == 0)
+   {
       return false;
+   }
    else
    {
       size_t v2_size = v2.size();
       if(v2_size == 0)
+      {
          return true;
+      }
       else
       {
          for(unsigned int index = 0; index < v1_size && index < v2_size; ++index)
          {
             if(v1[index] > v2[index])
+            {
                return true;
+            }
             else if(v1[index] < v2[index])
+            {
                return false;
+            }
          }
          /// they are equal with respect to the short string
          if(v1_size > v2_size)
+         {
             return true;
+         }
          else
+         {
             return false;
+         }
       }
    }
 }
@@ -110,7 +122,9 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       START_TIME(step_time);
+   }
    create_conflict_graph();
    unsigned int cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    const unsigned int NO_ORDER = std::numeric_limits<unsigned int>::max();
@@ -157,10 +171,16 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
             add = true;
             auto it_end = label[vindex].end();
             for(auto it = label[vindex].begin(); it != it_end && add; ++it)
+            {
                if(*it == i)
+               {
                   add = false;
+               }
+            }
             if(add)
+            {
                label[vindex].push_back(i); // append the label
+            }
          }
       }
    }
@@ -185,19 +205,29 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
    }
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       STOP_TIME(step_time);
+   }
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + STR(num_colors) + " registers" +
                       (num_colors == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
       HLS->Rreg->print();
+   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

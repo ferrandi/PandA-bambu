@@ -607,7 +607,9 @@ class Parameter
    bool removeOption(const enum enum_option name)
    {
       if(!isOption(name))
+      {
          return false;
+      }
       enum_options.erase(name);
       return true;
    }
@@ -630,7 +632,9 @@ class Parameter
    bool removeOption(const std::string& name)
    {
       if(!isOption(name))
+      {
          return false;
+      }
       Options.erase(name);
       return true;
    }

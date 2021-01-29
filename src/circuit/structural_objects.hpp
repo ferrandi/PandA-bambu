@@ -271,7 +271,9 @@ struct structural_type_descriptor
    friend std::ostream& operator<<(std::ostream& os, const structural_type_descriptorRef o)
    {
       if(o)
+      {
          o->print(os);
+      }
       return os;
    }
 
@@ -598,7 +600,9 @@ class structural_object
    friend std::ostream& operator<<(std::ostream& os, const structural_objectRef o)
    {
       if(o)
+      {
          o->print(os);
+      }
       return os;
    }
 
@@ -1149,9 +1153,13 @@ struct port_o : public structural_object
    std::string get_kind_text() const override
    {
       if(port_type == port_vector_o_K)
+      {
          return "port_vector_o";
+      }
       else
+      {
          return "port_o";
+      }
    }
    /**
     * return the type of the class
@@ -1820,9 +1828,13 @@ class signal_o : public structural_object
    std::string get_kind_text() const override
    {
       if(signal_type == signal_vector_o_K)
+      {
          return "signal_vector_o";
+      }
       else
+      {
          return "signal_o";
+      }
    }
    /**
     * return the type of the class

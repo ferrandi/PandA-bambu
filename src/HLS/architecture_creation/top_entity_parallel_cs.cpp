@@ -212,16 +212,24 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
       std::string delay_unit;
       auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
       if(synch_reset == "sync")
+      {
          delay_unit = flipflop_SR;
+      }
       else
+      {
          delay_unit = flipflop_AR;
+      }
       structural_objectRef delay_gate = SM->add_module_from_technology_library("done_delayed_REG", delay_unit, LIBRARY_STD, circuit, TM);
       structural_objectRef port_ck = delay_gate->find_member(CLOCK_PORT_NAME, port_o_K, delay_gate);
       if(port_ck)
+      {
          SM->add_connection(clock_obj, port_ck);
+      }
       structural_objectRef port_rst = delay_gate->find_member(RESET_PORT_NAME, port_o_K, delay_gate);
       if(port_rst)
+      {
          SM->add_connection(reset_obj, port_rst);
+      }
 
       structural_objectRef done_signal_in = SM->add_sign("done_delayed_REG_signal_in", circuit, GetPointer<module>(delay_gate)->get_in_port(2)->get_typeRef());
       SM->add_connection(GetPointer<module>(delay_gate)->get_in_port(2), done_signal_in);
@@ -231,7 +239,9 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
       SM->add_connection(done_obj, done_signal_out);
    }
    else
+   {
       SM->add_connection(controller_done, done_obj);
+   }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tDone signal added!");
 
    /// add entry in in_port_map between port id and port index

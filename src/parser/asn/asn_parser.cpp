@@ -78,7 +78,9 @@ DesignFlowStep_Status AsnParser::Exec()
 {
    fileIO_istreamRef sname = fileIO_istream_open(file_name);
    if(sname->fail())
+   {
       THROW_ERROR(std::string("FILE does not exist: ") + file_name);
+   }
    const AsnFlexLexerRef lexer(new AsnFlexLexer(parameters, sname.get(), nullptr));
    const AsnParserDataRef data(new AsnParserData(GetPointer<HLS_manager>(AppM)->aadl_information, parameters));
    YYParse(data, lexer);

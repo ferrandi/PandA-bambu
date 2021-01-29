@@ -96,20 +96,28 @@ ASLAP::ASLAP(const HLS_managerConstRef _hls_manager, const hlsRef HLS, const boo
       ctrl_step_multiplier(_ctrl_step_multiplier)
 {
    if(speculation)
+   {
       beh_graph = _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::SG, operations);
+   }
    else
+   {
       beh_graph = _hls_manager->CGetFunctionBehavior(HLS->functionId)->CGetOpGraph(FunctionBehavior::FLSAODG, operations);
+   }
    VertexIterator it, end_it;
    for(boost::tie(it, end_it) = boost::vertices(*beh_graph); !has_branching_blocks && it != end_it; it++)
    {
       if(GET_TYPE(beh_graph, *it) & (TYPE_IF | TYPE_SWITCH | TYPE_WHILE | TYPE_FOR))
+      {
          has_branching_blocks = true;
+      }
    }
    const std::deque<vertex>& ls = _hls_manager->CGetFunctionBehavior(HLS->functionId)->get_levels();
    for(auto l : ls)
    {
       if(operations.find(l) != operations.end())
+      {
          levels.push_back(l);
+      }
    }
 }
 
@@ -164,7 +172,9 @@ struct p_update_check : public boost::dfs_visitor<>
    void discover_vertex(Vertex v, const Graph&) const
    {
       if(v != s && beh_graph->CGetOpNodeInfo(v)->GetOperation() == op_name)
+      {
          ASAP_p[v]++;
+      }
    }
 };
 
@@ -187,7 +197,9 @@ void ASLAP::add_constraints_to_ASAP()
    for(auto level : levels)
    {
       if(!beh_graph->is_in_subset(level))
+      {
          continue;
+      }
       // Updating ASAP_p information
       p_update_check vis(level, beh_graph->CGetOpNodeInfo(level)->GetOperation(), ASAP_p, beh_graph);
       std::vector<boost::default_color_type> color_vec(boost::num_vertices(*beh_graph));
@@ -197,7 +209,9 @@ void ASLAP::add_constraints_to_ASAP()
       {
          v = boost::source(*ei, *beh_graph);
          if(beh_graph->CGetOpNodeInfo(v)->GetOperation() == beh_graph->CGetOpNodeInfo(level)->GetOperation())
+         {
             ASAP_nip[level]--;
+         }
       }
    }
 
@@ -207,12 +221,16 @@ void ASLAP::add_constraints_to_ASAP()
    {
       v = *vi;
       if(ASAP_p[v] == 0)
+      {
          continue;
+      }
       m_k = allocation_information->max_number_of_resources(v);
       cur_et = ControlStep(static_cast<unsigned int>(ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN)) / static_cast<double>(ctrl_step_multiplier))) *
                            std::max(static_cast<unsigned int>(ceil(static_cast<double>(ASAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ASAP_nip[v]) / m_k)))));
       if(cur_et > 0u)
+      {
          --cur_et;
+      }
       min_tot_csteps = min_tot_csteps < cur_et ? cur_et : min_tot_csteps;
       const auto schedule = ASAP->get_cstep(v).second < cur_et ? cur_et : ASAP->get_cstep(v).second;
       ASAP->set_execution(v, schedule);
@@ -224,7 +242,9 @@ void ASLAP::add_constraints_to_ASAP()
       for(vertex2int::const_iterator i = ASAP_p.begin(); i != i_end; ++i)
       {
          if(!beh_graph->is_in_subset(i->first))
+         {
             continue;
+         }
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
@@ -234,7 +254,9 @@ void ASLAP::add_constraints_to_ASAP()
       for(vertex2int::const_iterator ai = ASAP_nip.begin(); ai != ai_end; ++ai)
       {
          if(!beh_graph->is_in_subset(ai->first))
+         {
             continue;
+         }
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
@@ -258,7 +280,9 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
       for(auto level : levels)
       {
          if(!beh_graph->is_in_subset(level))
+         {
             continue;
+         }
          if(partial_schedule && partial_schedule->is_scheduled(level))
          {
             ASAP->set_execution(level, partial_schedule->get_cstep(level).second);
@@ -275,7 +299,9 @@ void ASLAP::compute_ASAP(const ScheduleConstRef partial_schedule)
    for(auto level : levels)
    {
       if(!beh_graph->is_in_subset(level))
+      {
          continue;
+      }
       const auto op_cycles = GetCycleLatency(level, Allocation_MinMax::MIN);
       cur_start = 0.0;
 
@@ -317,7 +343,9 @@ void ASLAP::add_constraints_to_ALAP()
    for(auto i = levels.rbegin(); i != iend; ++i)
    {
       if(!beh_graph->is_in_subset(*i))
+      {
          continue;
+      }
       p_update_check vis(*i, beh_graph->CGetOpNodeInfo(*i)->GetOperation(), ALAP_p, beh_graph);
       std::vector<boost::default_color_type> color_vec(boost::num_vertices(R));
       boost::depth_first_visit(R, *i, vis, boost::make_iterator_property_map(color_vec.begin(), boost::get(boost::vertex_index_t(), R), boost::white_color));
@@ -326,7 +354,9 @@ void ASLAP::add_constraints_to_ALAP()
       {
          v = boost::target(*ei, *beh_graph);
          if(beh_graph->CGetOpNodeInfo(v)->GetOperation() == beh_graph->CGetOpNodeInfo(*i)->GetOperation())
+         {
             ALAP_nip[*i]--;
+         }
       }
    }
    ControlStep cur_et = ControlStep(0u);
@@ -335,7 +365,9 @@ void ASLAP::add_constraints_to_ALAP()
    {
       v = *vi;
       if(ALAP_p(v) == 0)
+      {
          continue;
+      }
       m_k = allocation_information->min_number_of_resources(v);
       cur_et = ControlStep(static_cast<unsigned int>((ceil(from_strongtype_cast<double>(GetCycleLatency(v, Allocation_MinMax::MIN)) / static_cast<double>(ctrl_step_multiplier))) *
                                                      std::max(static_cast<unsigned int>(ceil(static_cast<double>(ALAP_p[v]) / m_k)), (1 + static_cast<unsigned int>(ceil(static_cast<double>(ALAP_nip[v]) / m_k))))));
@@ -351,7 +383,9 @@ void ASLAP::add_constraints_to_ALAP()
       for(vertex2int::const_iterator i = ALAP_p.begin(); i != i_end; ++i)
       {
          if(!beh_graph->is_in_subset(i->first))
+         {
             continue;
+         }
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, i->first) + " - " + boost::lexical_cast<std::string>(i->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
@@ -361,7 +395,9 @@ void ASLAP::add_constraints_to_ALAP()
       for(vertex2int::const_iterator ai = ALAP_nip.begin(); ai != ai_end; ++ai)
       {
          if(!beh_graph->is_in_subset(ai->first))
+         {
             continue;
+         }
          PRINT_DBG_STRING(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, ai->first) + " - " + boost::lexical_cast<std::string>(ai->second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
@@ -370,7 +406,9 @@ void ASLAP::add_constraints_to_ALAP()
       for(auto level : levels)
       {
          if(!beh_graph->is_in_subset(level))
+         {
             continue;
+         }
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "end");
@@ -406,7 +444,9 @@ void ASLAP::compute_ALAP(ALAP_method met, const ScheduleConstRef partial_schedul
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Computing alap starting from list based minus one");
          THROW_ASSERT(partial_schedule, "ASLAP::compute_ALAP - partial_schedule expected");
          if(partial_schedule->get_csteps() < 2u)
+         {
             *feasible = false;
+         }
          else
          {
             max_tot_csteps = partial_schedule->get_csteps() - 2u;
@@ -438,7 +478,9 @@ void ASLAP::update_ALAP(const ControlStep maxc, bool* feasible, const ScheduleCo
       for(auto level : levels)
       {
          if(!beh_graph->is_in_subset(level))
+         {
             continue;
+         }
          if(partial_schedule && partial_schedule->is_scheduled(level))
          {
             ALAP->set_execution(level, max_tot_csteps - partial_schedule->get_cstep(level).second);
@@ -452,7 +494,9 @@ void ASLAP::update_ALAP(const ControlStep maxc, bool* feasible, const ScheduleCo
    }
    compute_ALAP_fast(feasible);
    if(feasible && *feasible && max_tot_csteps > maxc)
+   {
       *feasible = false;
+   }
 }
 
 void ASLAP::compute_ALAP_fast(bool* feasible)
@@ -469,7 +513,9 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
    for(auto i = levels.rbegin(); i != i_end; ++i)
    {
       if(!beh_graph->is_in_subset(*i))
+      {
          continue;
+      }
       const auto op_cycles = GetCycleLatency(*i, Allocation_MinMax::MIN);
       cur_rev_start = 0.0;
       for(boost::tie(ei, ei_end) = boost::out_edges(*i, *beh_graph); ei != ei_end; ei++)
@@ -490,7 +536,9 @@ void ASLAP::compute_ALAP_fast(bool* feasible)
    for(auto level : levels)
    {
       if(!beh_graph->is_in_subset(level))
+      {
          continue;
+      }
       ALAP->set_execution(level, max_tot_csteps - ALAP->get_cstep(level).second);
       if(feasible && *feasible)
       {
@@ -514,7 +562,9 @@ void ASLAP::compute_ALAP_worst_case()
    for(auto i = levels.rbegin(); i != i_end; ++i)
    {
       if(!beh_graph->is_in_subset(*i))
+      {
          continue;
+      }
       for(boost::tie(ei, ei_end) = boost::out_edges(*i, *beh_graph); ei != ei_end; ei++)
       {
          vi = boost::target(*ei, *beh_graph);
@@ -541,7 +591,9 @@ void ASLAP::compute_ALAP_worst_case()
    for(auto level : levels)
    {
       if(!beh_graph->is_in_subset(level))
+      {
          continue;
+      }
       ALAP->set_execution(level, rev_levels_to_cycles.find(ALAP->get_cstep(level).second)->second -
                                      ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(level, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
       max_tot_csteps = std::max(max_tot_csteps, ALAP->get_cstep(level).second);

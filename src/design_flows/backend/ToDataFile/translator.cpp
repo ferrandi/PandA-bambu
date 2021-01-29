@@ -1361,16 +1361,24 @@ std::string Translator::get_exponential_notation(const std::string& input) const
    std::string exponent = result.substr(result.find('e') + 1);
    std::string::size_type pos = 1;
    while(exponent[pos] == '0')
+   {
       pos++;
+   }
    if(pos != exponent.size())
    {
       if(exponent[0] == '-')
+      {
          exponent = exponent[0] + exponent.substr(pos);
+      }
       else
+      {
          exponent = exponent.substr(pos);
+      }
    }
    else
+   {
       exponent = "0";
+   }
    return mantissa + " \\cdot 10^{" + exponent + "}";
 }
 

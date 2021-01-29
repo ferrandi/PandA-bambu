@@ -414,7 +414,9 @@ void DesignFlowManager::Exec()
       const size_t initial_number_edges = boost::num_vertices(*feedback_design_flow_graph);
       long before_time = 0;
       if(parameters->IsParameter("dfm_statistics"))
+      {
          START_TIME(before_time);
+      }
       step_counter++;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Ready steps are");
 #ifndef NDEBUG
@@ -586,7 +588,9 @@ void DesignFlowManager::Exec()
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "-->Starting execution of " + step->GetName());
          long step_execution_time = 0;
          if(OUTPUT_LEVEL_VERY_PEDANTIC <= output_level || parameters->IsParameter("profile_steps"))
+         {
             START_TIME(step_execution_time);
+         }
          step->Initialize();
          if(step->CGetDebugLevel() >= DEBUG_LEVEL_VERY_PEDANTIC)
          {
@@ -642,7 +646,9 @@ void DesignFlowManager::Exec()
       }
       long after_time = 0;
       if(parameters->IsParameter("dfm_statistics"))
+      {
          START_TIME(after_time);
+      }
       bool invalidations = false;
       if(not parameters->IsParameter("disable-invalidations"))
       {
@@ -929,9 +935,13 @@ void DesignFlowManager::DeExecute(const vertex starting_vertex, const bool force
       case DesignFlowStep_Status::SKIPPED:
       {
          if(force_execution)
+         {
             design_flow_step_info->status = DesignFlowStep_Status::UNEXECUTED;
+         }
          else
+         {
             design_flow_step_info->status = DesignFlowStep_Status::UNNECESSARY;
+         }
          break;
       }
       case DesignFlowStep_Status::UNNECESSARY:

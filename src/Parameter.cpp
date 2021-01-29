@@ -270,7 +270,9 @@ void Parameter::CheckParameters()
       boost::filesystem::create_directory(output_directory);
    }
    if(!boost::filesystem::exists(output_directory))
+   {
       THROW_ERROR("not able to create directory " + output_directory);
+   }
    if(getOption<bool>(OPT_print_dot))
    {
       const auto dot_directory = getOption<std::string>(OPT_dot_directory);
@@ -280,7 +282,9 @@ void Parameter::CheckParameters()
       }
       boost::filesystem::create_directory(dot_directory);
       if(!boost::filesystem::exists(dot_directory))
+      {
          THROW_ERROR("not able to create directory " + dot_directory);
+      }
    }
 }
 
@@ -294,12 +298,18 @@ void Parameter::load_xml_configuration_file_rec(const xml_element* node)
    {
       const auto* EnodeC = GetPointer<const xml_element>(iter);
       if(!EnodeC)
+      {
          continue;
+      }
       /// general options
       if(CE_XVM(value, EnodeC))
+      {
          Options[GET_NODE_NAME(EnodeC)] = GET_STRING_VALUE(EnodeC);
+      }
       if(EnodeC->get_children().size())
+      {
          load_xml_configuration_file_rec(EnodeC);
+      }
    }
 }
 
@@ -320,12 +330,18 @@ void Parameter::load_xml_configuration_file(const std::string& filename)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter);
             if(!EnodeC)
+            {
                continue;
+            }
             /// general options
             if(CE_XVM(value, EnodeC))
+            {
                Options[GET_NODE_NAME(EnodeC)] = GET_STRING_VALUE(EnodeC);
+            }
             if(EnodeC->get_children().size())
+            {
                load_xml_configuration_file_rec(EnodeC);
+            }
          }
       }
    }
@@ -374,9 +390,13 @@ void Parameter::SetCommonDefaults()
 
    setOption(OPT_no_clean, false);
    if(revision_hash == "")
+   {
       setOption(OPT_revision, "unknown-trunk");
+   }
    else
+   {
       setOption(OPT_revision, revision_hash + (branch_name != "" ? "-" + branch_name : ""));
+   }
    setOption(OPT_seed, 0);
 
    setOption(OPT_cfg_max_transformations, std::numeric_limits<size_t>::max());
@@ -402,11 +422,17 @@ int Parameter::get_class_debug_level(const std::string& class_name, int _debug_l
    auto temp = class_name;
    temp.erase(std::remove(temp.begin(), temp.end(), '_'), temp.end());
    if(debug_classes.find(boost::to_upper_copy(temp)) != debug_classes.end() or debug_classes.find(STR_CST_debug_all) != debug_classes.end())
+   {
       return DEBUG_LEVEL_INFINITE;
+   }
    else if(_debug_level < 0)
+   {
       return getOption<int>(OPT_debug_level);
+   }
    else
+   {
       return _debug_level;
+   }
 }
 
 int Parameter::GetFunctionDebugLevel(const std::string& class_name, const std::string& function_name) const
@@ -442,9 +468,13 @@ void Parameter::PrintFullHeader(std::ostream& os) const
    os << "                Copyright (C) 2004-2020 Politecnico di Milano" << std::endl;
    std::string version = PrintVersion();
    if(version.size() < 80)
+   {
       os << std::string(40 - (version.size() / 2), ' ') << version << std::endl;
+   }
    else
+   {
       os << version << std::endl;
+   }
    os << std::endl;
 }
 
@@ -642,7 +672,9 @@ bool Parameter::ManageDefaultOptions(int next_option, char* optarg_param, bool& 
          {
             std::string gcc_extra_options = "-dN";
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -734,19 +766,27 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          std::string defines;
          if(isOption(OPT_gcc_defines))
+         {
             defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
+         }
          if(std::string(optarg_param).find('=') != std::string::npos)
          {
             bool has_parenthesis = std::string(optarg_param).find('(') != std::string::npos && std::string(optarg_param).find(')') != std::string::npos;
             std::string temp_var = std::string(optarg_param);
             boost::replace_first(temp_var, "=", "=\'");
             if(has_parenthesis)
+            {
                defines += "\'" + temp_var + "\'" + "\'";
+            }
             else
+            {
                defines += temp_var + "\'";
+            }
          }
          else
+         {
             defines += std::string(optarg_param);
+         }
          setOption(OPT_gcc_defines, defines);
          break;
       }
@@ -773,7 +813,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
          {
             std::string optimizations;
             if(isOption(OPT_gcc_optimizations))
+            {
                optimizations = getOption<std::string>(OPT_gcc_optimizations) + STR_CST_string_separator;
+            }
             THROW_ASSERT(optarg_param != nullptr && optarg_param[0] != 0, "-f alone not allowed");
             setOption(OPT_gcc_optimizations, optimizations + optarg_param);
             break;
@@ -970,7 +1012,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          std::string gcc_warnings;
          if(isOption(OPT_gcc_warnings))
+         {
             gcc_warnings = getOption<std::string>(OPT_gcc_warnings) + STR_CST_string_separator;
+         }
          setOption(OPT_gcc_warnings, gcc_warnings + optarg_param);
          break;
       }
@@ -983,7 +1027,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          std::string includes = "-I " + GetPath(std::string(optarg));
          if(isOption(OPT_gcc_includes))
+         {
             includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
+         }
          setOption(OPT_gcc_includes, includes);
          break;
       }
@@ -991,7 +1037,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          std::string libraries;
          if(isOption(OPT_gcc_libraries))
+         {
             libraries = getOption<std::string>(OPT_gcc_libraries) + STR_CST_string_separator;
+         }
          setOption(OPT_gcc_libraries, libraries + optarg_param);
          break;
       }
@@ -999,7 +1047,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          std::string library_directories;
          if(isOption(OPT_gcc_library_directories))
+         {
             library_directories = getOption<std::string>(OPT_gcc_library_directories) + STR_CST_string_separator;
+         }
          setOption(OPT_gcc_library_directories, library_directories + GetPath(optarg_param));
          break;
       }
@@ -1054,26 +1104,36 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
             }
          }
          else
+         {
             setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O1);
+         }
          break;
       }
       case 'U':
       {
          std::string undefines;
          if(isOption(OPT_gcc_undefines))
+         {
             undefines = getOption<std::string>(OPT_gcc_undefines) + STR_CST_string_separator;
+         }
          if(std::string(optarg_param).find('=') != std::string::npos)
          {
             bool has_parenthesis = std::string(optarg_param).find('(') != std::string::npos && std::string(optarg_param).find(')') != std::string::npos;
             std::string temp_var = std::string(optarg_param);
             boost::replace_first(temp_var, "=", "=\'");
             if(has_parenthesis)
+            {
                undefines += "\'" + temp_var + "\'" + "\'";
+            }
             else
+            {
                undefines += temp_var + "\'";
+            }
          }
          else
+         {
             setOption(OPT_gcc_undefines, undefines + optarg_param);
+         }
          break;
       }
       case INPUT_OPT_CUSTOM_OPTIONS:
@@ -1240,7 +1300,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          std::string parameters;
          if(isOption(OPT_gcc_parameters))
+         {
             parameters = getOption<std::string>(OPT_gcc_parameters) + STR_CST_string_separator;
+         }
          setOption(OPT_gcc_parameters, parameters + optarg_param);
          break;
       }
@@ -1810,7 +1872,9 @@ const std::vector<std::string> Parameter::CGetArgv() const
 {
    std::vector<std::string> ret;
    for(int arg = 0; arg < argc; arg++)
+   {
       ret.push_back(std::string(argv[arg]));
+   }
    return ret;
 }
 

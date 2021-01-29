@@ -71,8 +71,12 @@ void discrepancy_instruction_writer::declareFunction(const unsigned int function
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = not tree_helper::is_static(TM, function_id) and not tree_helper::is_extern(TM, function_id) and (funName != "main");
    if(prepend_static)
+   {
       GetPointer<function_decl>(node_fun)->static_flag = true;
+   }
    HLSInstructionWriter::declareFunction(function_id);
    if(prepend_static)
+   {
       GetPointer<function_decl>(node_fun)->static_flag = false;
+   }
 }

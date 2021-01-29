@@ -86,7 +86,9 @@ void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef
             break;
          }
          if(!BH->is_a_constant(var))
+         {
             list_of_variables.insert(var);
+         }
       }
    }
 }

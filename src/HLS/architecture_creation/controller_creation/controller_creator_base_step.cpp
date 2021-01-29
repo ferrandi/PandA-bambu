@@ -187,7 +187,9 @@ void ControllerCreatorBaseStep::add_command_ports(structural_objectRef circuit, 
          {
             /// operations signals have not to be added at this point
             if(GetPointer<commandport_obj>(j.second)->get_command_type() == commandport_obj::OPERATION)
+            {
                continue;
+            }
             /// they represent commands to multiplexers or write enables to registers
             structural_objectRef sel_obj = SM->add_port(j.second->get_structural_obj()->get_id(), port_o::OUT, circuit, bool_type);
             GetPointer<commandport_obj>(j.second)->set_controller_obj(sel_obj);

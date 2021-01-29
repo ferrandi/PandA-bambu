@@ -200,19 +200,29 @@ class xml_node
    {
       std::string::size_type lPos = 0;
       while((lPos = ioString.find("&amp;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 5, "&");
+      }
       lPos = 0;
       while((lPos = ioString.find("&lt;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 4, "<");
+      }
       lPos = 0;
       while((lPos = ioString.find("&gt;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 4, ">");
+      }
       lPos = 0;
       while((lPos = ioString.find("&apos;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 6, "\'");
+      }
       lPos = 0;
       while((lPos = ioString.find("&quot;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 6, "\"");
+      }
    }
 };
 

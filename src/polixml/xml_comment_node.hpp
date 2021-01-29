@@ -68,7 +68,9 @@ class xml_comment_node : public xml_node
       std::string escaped(get_name());
       convert_unescaped(escaped);
       if(formatted && pp)
+      {
          (*pp)(os, "\n");
+      }
       os << "<!--" << escaped << "-->";
    }
 

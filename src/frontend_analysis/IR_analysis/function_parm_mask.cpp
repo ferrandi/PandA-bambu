@@ -470,7 +470,9 @@ DesignFlowStep_Status function_parm_mask::Exec()
                      std::string key = attr->get_name();
                      std::string value = attr->get_value();
                      if(key == "id")
+                     {
                         fname = value;
+                     }
                   }
 
                   if(fname == "")

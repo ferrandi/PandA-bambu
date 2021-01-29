@@ -164,7 +164,9 @@ info_object* get_raw_edge_info(typename boost::graph_traits<Graph>::edge_descrip
    /// Note: reference has to be used since we want to modify the info associated with the edge
    EdgeInfoRef& info = g[e];
    if(!info)
+   {
       info = EdgeInfoRef(new info_object);
+   }
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr, "Function get_raw_edge_info: the edges associated with the graph used are not derived from info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
    return GetPointer<info_object>(info);
 }
@@ -420,7 +422,9 @@ struct graphs_collection : public boost_graphs_collection
          }
       }
       for(auto e0 : toBeRemoved)
+      {
          boost::remove_edge(e0, *this);
+      }
    }
 };
 
@@ -501,7 +505,9 @@ NodeInfoRef& Cget_node_infoRef(typename boost::graph_traits<Graph>::vertex_descr
 {
    NodeInfoRef& info = g[v];
    if(!info)
+   {
       info = NodeInfoRef(new info_object);
+   }
    return info;
 }
 
@@ -535,7 +541,9 @@ info_object* get_node_info(typename boost::graph_traits<Graph>::vertex_descripto
 {
    NodeInfoRef& info = g[v];
    if(!info)
+   {
       info = NodeInfoRef(new info_object);
+   }
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr, "Function get_node_info: the vertices associated with the graph used are not derived from info_object\n\tCheck the actual type of info_object and the type of the node of Graph");
    return GetPointer<info_object>(info);
 }
@@ -572,7 +580,9 @@ info_object* get_edge_info(typename boost::graph_traits<Graph>::edge_descriptor 
    /// Note: reference has to be used since we want to modify the info associated with the edge
    EdgeInfoRef& info = g[e].info;
    if(!info)
+   {
       info = EdgeInfoRef(new info_object);
+   }
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr, "Function get_edge_info: the edges associated with the graph used are not derived from info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
    return GetPointer<info_object>(info);
 }
@@ -632,7 +642,9 @@ struct SelectVertex
    bool operator()(const typename boost::graph_traits<Graph>::vertex_descriptor& v) const
    {
       if(all)
+      {
          return true;
+      }
       else
       {
          return (subset.find(v) != subset.end());
@@ -687,16 +699,22 @@ struct SelectEdge
    bool operator()(const Edge& e) const
    {
       if(subgraph_vertices.empty())
+      {
          return selector & (*g)[e].selector;
+      }
       else
       {
          typename boost::graph_traits<Graph>::vertex_descriptor u, v;
          u = boost::source(e, *g);
          v = boost::target(e, *g);
          if(subgraph_vertices.find(v) != subgraph_vertices.end() && subgraph_vertices.find(u) != subgraph_vertices.end())
+         {
             return selector & (*g)[e].selector;
+         }
          else
+         {
             return false;
+         }
       }
    }
 };
@@ -933,7 +951,9 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
          {
             const boost::graph_traits<graphs_collection>::vertex_descriptor target = boost::target(*oe, *this);
             if(target == y)
+            {
                return true;
+            }
             if(encountered_vertices.find(target) == encountered_vertices.end())
             {
                encountered_vertices.insert(target);
@@ -1185,9 +1205,13 @@ struct ltedge
    bool operator()(const typename boost::graph_traits<Graph>::edge_descriptor first, const typename boost::graph_traits<Graph>::edge_descriptor second) const
    {
       if(boost::source(first, *g) < boost::source(second, *g))
+      {
          return true;
+      }
       if(boost::source(first, *g) > boost::source(second, *g))
+      {
          return false;
+      }
       return boost::target(first, *g) < boost::target(second, *g);
    }
 };
@@ -1281,9 +1305,13 @@ void ADD_UEDGE(typename boost::graph_traits<Graph>::vertex_descriptor A, typenam
    bool inserted;
    boost::tie(e, inserted) = boost::edge(A, B, g);
    if(inserted)
+   {
       g[e].selector = g[e].selector | selector;
+   }
    else
+   {
       boost::add_edge(A, B, selector, g);
+   }
 }
 
 /**

@@ -103,7 +103,9 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       START_TIME(step_time);
+   }
    const CliqueCovering_Algorithm clique_covering_algorithm = GetPointer<const WeightedCliqueRegisterBindingSpecialization>(hls_flow_step_specialization)->clique_covering_algorithm;
    refcount<clique_covering<CG_vertex_descriptor>> register_clique = clique_covering<CG_vertex_descriptor>::create_solver(clique_covering_algorithm);
    create_compatibility_graph();
@@ -112,7 +114,9 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    unsigned int vertex_index = 0;
    unsigned int num_registers = 0;
    for(auto v_it = verts.begin(); v_it != v_it_end; ++v_it, ++vertex_index)
+   {
       register_clique->add_vertex(*v_it, STR(vertex_index));
+   }
    if(vertex_index > 0)
    {
       HLS->Rreg->set_used_regs(num_registers);
@@ -128,7 +132,9 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
          const auto functionName = FB->CGetBehavioralHelper()->get_function_name();
          const auto output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "/" + functionName + "/";
          if(!boost::filesystem::exists(output_directory))
+         {
             boost::filesystem::create_directories(output_directory);
+         }
          const auto file_name = output_directory + "HLS_RegisterBinding.dot";
          register_clique->writeDot(file_name);
       }
@@ -171,19 +177,29 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    }
    HLS->Rreg->set_used_regs(num_registers);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       STOP_TIME(step_time);
+   }
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Register binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level,
                   std::string("---Register allocation algorithm obtains ") + (num_registers == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + STR(num_registers) + " registers" +
                       (num_registers == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
       HLS->Rreg->print();
+   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

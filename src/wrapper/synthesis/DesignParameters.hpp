@@ -108,7 +108,9 @@ struct DesignParameters
          THROW_ERROR("Parameter \"" + name + "\" not yet defined");
       }
       else
+      {
          parameter_values[name] = value;
+      }
    }
 
    /**

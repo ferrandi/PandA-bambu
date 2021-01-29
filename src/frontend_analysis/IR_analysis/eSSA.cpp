@@ -116,7 +116,9 @@ class OrderedBasicBlock
          Inst = GetPointer<const gimple_node>(GET_CONST_NODE(*II));
          NumberedInsts[Inst] = NextInstPos++;
          if(Inst == A || Inst == B)
+         {
             break;
+         }
       }
 
       THROW_ASSERT(II != IE, "Instruction not found?");

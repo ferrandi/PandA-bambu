@@ -233,7 +233,9 @@ unsigned int tree_manager::function_index_mngl(const std::string& function_name)
          {
             auto* in = GetPointer<identifier_node>(mangled_id_name);
             if(!in->operator_flag)
+            {
                mangled_name = in->strg;
+            }
          }
       }
       std::string name = tree_helper::print_function_name(TM, fd);
@@ -463,7 +465,9 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
          collapse_into(funID, stmt_to_bloc, le->op0, removed_nodes);
          collapse_into(funID, stmt_to_bloc, le->op1, removed_nodes);
          if(le->op2)
+         {
             collapse_into(funID, stmt_to_bloc, le->op2, removed_nodes);
+         }
          if(le->op3)
          {
             collapse_into(funID, stmt_to_bloc, le->op3, removed_nodes);
@@ -1115,7 +1119,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          RecursiveReplaceTreeNode(le->op0, old_node, new_node, stmt, false);
          RecursiveReplaceTreeNode(le->op1, old_node, new_node, stmt, false);
          if(le->op2)
+         {
             RecursiveReplaceTreeNode(le->op2, old_node, new_node, stmt, false);
+         }
          if(le->op3)
          {
             RecursiveReplaceTreeNode(le->op3, old_node, new_node, stmt, false);
@@ -1397,7 +1403,9 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
          erase_usage_info(le->op0, stmt);
          erase_usage_info(le->op1, stmt);
          if(le->op2)
+         {
             erase_usage_info(le->op2, stmt);
+         }
          if(le->op3)
          {
             erase_usage_info(le->op3, stmt);
@@ -1611,7 +1619,9 @@ void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef&
          insert_usage_info(le->op0, stmt);
          insert_usage_info(le->op1, stmt);
          if(le->op2)
+         {
             insert_usage_info(le->op2, stmt);
+         }
          if(le->op3)
          {
             insert_usage_info(le->op3, stmt);

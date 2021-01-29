@@ -71,9 +71,13 @@ struct cc_compatibility_graph_vertex_selector
    bool operator()(const vertex_descriptor& v) const
    {
       if(all)
+      {
          return true;
+      }
       else
+      {
          return support->find(v) != support->end();
+      }
    }
 
  private:
@@ -114,9 +118,13 @@ struct cc_compatibility_graph_edge_selector
    bool operator()(const Edge& e) const
    {
       if(all)
+      {
          return true;
+      }
       else
+      {
          return selector & (*g)[e].selector;
+      }
    }
 };
 

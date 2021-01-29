@@ -94,7 +94,9 @@ void CallGraph::WriteDot(const std::string& file_name) const
 {
    const auto output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory);
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef function_writer(new FunctionWriter(this));
    const EdgeWriterConstRef function_edge_writer(new FunctionEdgeWriter(this));
@@ -138,11 +140,17 @@ void FunctionEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) 
    const CustomOrderedSet<unsigned int>& function_addresses = Cget_edge_info<FunctionEdgeInfo, graph>(e, *printing_graph)->function_addresses;
    std::string color;
    if(STD_SELECTOR & printing_graph->GetSelector(e))
+   {
       color = "blue";
+   }
    else if(FEEDBACK_SELECTOR & printing_graph->GetSelector(e))
+   {
       color = "red";
+   }
    else
+   {
       THROW_ERROR(std::string("InconsistentDataStructure"));
+   }
 
    out << "[color=" << color << ", label=\"";
    if(direct_call_points.size())
@@ -156,7 +164,9 @@ void FunctionEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) 
    if(indirect_call_points.size())
    {
       if(direct_call_points.size())
+      {
          out << "\\n";
+      }
       out << "INDIRECT: ";
       for(const auto& call : indirect_call_points)
       {
@@ -166,7 +176,9 @@ void FunctionEdgeWriter::operator()(std::ostream& out, const EdgeDescriptor& e) 
    if(function_addresses.size())
    {
       if(direct_call_points.size() or indirect_call_points.size())
+      {
          out << "\\n";
+      }
       out << "TAKE ADDRESS: ";
       for(const auto& call : function_addresses)
       {

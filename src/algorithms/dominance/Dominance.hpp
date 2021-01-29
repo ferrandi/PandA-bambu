@@ -211,10 +211,14 @@ class dom_info
 
          /* Fill the DFS tree info calculatable _before_ recursing.  */
          if(bb != en_block)
+         {
             my_i = dfs_order[index_map[bb]];
+         }
          else
+         {
             // In this way dfs_parent of entry is itself
             my_i = dfs_order[last_basic_block];
+         }
          // Computed a new dfs index for this Vertex
          child_i = dfs_order[index_map[bn]] = dfsnum++;
          dfs_to_bb[child_i] = bn;
@@ -241,7 +245,9 @@ class dom_info
       {
          compress(parent);
          if(key[path_min[parent]] < key[path_min[v]])
+         {
             path_min[v] = path_min[parent];
+         }
          set_chain[v] = set_chain[parent];
       }
    }
@@ -271,9 +277,13 @@ class dom_info
       }
 
       if(key[path_min[rep]] >= key[path_min[v]])
+      {
          return path_min[v];
+      }
       else
+      {
          return path_min[rep];
+      }
    }
 
    /**
@@ -392,11 +402,15 @@ class dom_info
             b = *vi;
             // skip entry
             if(en_block == b)
+            {
                continue;
+            }
             if(boost::in_degree(b, g) > 0)
             {
                if(dfs_order[index_map[b]] == 0)
+               {
                   saw_unconnected = true;
+               }
                continue;
             }
             fake_exit_edge.insert(index_map[b]);
@@ -414,9 +428,13 @@ class dom_info
                b = *vi;
                // skip entry
                if(en_block == b)
+               {
                   continue;
+               }
                if(dfs_order[index_map[b]])
+               {
                   continue;
+               }
                fake_exit_edge.insert(index_map[b]);
                dfs_order[index_map[b]] = dfsnum;
                dfs_to_bb[dfsnum] = b;
@@ -503,18 +521,26 @@ class dom_info
                einext++;
 
                if(b == en_block)
+               {
                   k1 = dfs_order[last_basic_block];
+               }
                else
+               {
                   k1 = dfs_order[index_map[b]];
+               }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predecessor is " + boost::lexical_cast<std::string>(k1) + " v_" + boost::lexical_cast<std::string>(b));
             /* Call eval() only if really needed.  If k1 is above V in DFS tree,
             then we know, that eval(k1) == k1 and key[k1] == k1.  */
             // k1 is the dfs index of the predecessor, v is the dfs of this Vertex
             if(k1 > v)
+            {
                k1 = key[eval(k1)];
+            }
             if(k1 < k)
+            {
                k = k1;
+            }
 
             ei = einext;
          }
@@ -660,7 +686,9 @@ class dominance
    void calculate_dominance_info(enum dominance::cdi_direction dir)
    {
       if(dom_computed == DOM_OK)
+      {
          return;
+      }
       if(dom_computed == DOM_NONE)
       {
          bool reverse = (dir == CDI_POST_DOMINATORS) ? true : false;

@@ -171,7 +171,9 @@ int main(int argc, char* argv[])
 
       auto output_level = parameters->getOption<int>(OPT_output_level);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
+      {
          parameters->PrintFullHeader(std::cerr);
+      }
 
       // Include sysdir
       if(parameters->getOption<bool>(OPT_gcc_include_sysdir))
@@ -295,12 +297,14 @@ int main(int argc, char* argv[])
       {
          std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
          for(auto files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+         {
             for(auto file : files)
             {
                std::cerr << "File name: " << file << "\n";
                std::ifstream ifile(file, std::ios::in);
                ofile << ifile.rdbuf();
             }
+         }
       }
       return EXIT_SUCCESS; // Bambu tool has completed execution without errors
    }
@@ -309,25 +313,33 @@ int main(int argc, char* argv[])
    catch(const char* str)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << str << std::endl;
    }
    catch(const std::string& str)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << str << std::endl;
    }
    catch(std::exception& e)
    {
       std::cerr << e.what() << std::endl;
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
    }
    catch(...)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << "Unknown error type" << std::endl;
    }
 
@@ -341,7 +353,9 @@ int main(int argc, char* argv[])
       case EXIT_FAILURE:
       {
          if(parameters)
+         {
             parameters->PrintBugReport(std::cout);
+         }
          break;
       }
       default:

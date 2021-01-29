@@ -373,7 +373,9 @@ class technology_manager
    friend std::ostream& operator<<(std::ostream& os, const technology_managerRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
    //@}

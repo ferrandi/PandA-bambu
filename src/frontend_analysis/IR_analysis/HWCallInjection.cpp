@@ -138,7 +138,9 @@ bool HWCallInjection::isHardwareCall(tree_nodeRef expr)
 
    // When the instruction is not a function call return false.
    if(!FD)
+   {
       return false;
+   }
 
    bool result = false;
    if(GET_NODE(FD)->get_kind() == function_decl_K)
@@ -334,7 +336,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          }
 
          if(!retVar)
+         {
             retVar = GET_INDEX_NODE(GA->op0);
+         }
 
          unsigned int addrExprReturnValue = TM->new_tree_node_id();
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;

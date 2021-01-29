@@ -140,9 +140,13 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
    for(const auto& basic_block : basic_blocks)
    {
       if(bb_modified)
+      {
          break;
+      }
       if(basic_block == cfg_bb_graph->CGetBBGraphInfo()->entry_vertex or basic_block == cfg_bb_graph->CGetBBGraphInfo()->exit_vertex)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(cfg_bb_graph->CGetBBNodeInfo(basic_block)->block->number));
       const auto bb_node_info = cfg_bb_graph->CGetBBNodeInfo(basic_block)->block;
       if(not bb_node_info->loop_id)
@@ -216,7 +220,9 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
             {
                const auto source = boost::source(*ie, *cfg_bb_graph);
                if(!function_behavior->CheckBBReachability(basic_block, source))
+               {
                   continue;
+               }
                if(source == true_bb or function_behavior->CheckBBReachability(true_bb, source))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Inserting BB" + STR(cfg_bb_graph->CGetBBNodeInfo(source)->block->number) + " into then part");
@@ -242,9 +248,13 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                true_bb_block->list_of_succ.erase(std::find(true_bb_block->list_of_succ.begin(), true_bb_block->list_of_succ.end(), end_if_id));
                true_bb_block->list_of_succ.push_back(new_block->number);
                if(true_bb_block->true_edge == end_if_id)
+               {
                   true_bb_block->true_edge = new_block->number;
+               }
                else if(true_bb_block->false_edge == end_if_id)
+               {
                   true_bb_block->false_edge = new_block->number;
+               }
                new_block->list_of_pred.push_back(true_bb_block->number);
                end_if_block->list_of_pred.erase(std::find(end_if_block->list_of_pred.begin(), end_if_block->list_of_pred.end(), true_bb_block->number));
             }
@@ -289,7 +299,9 @@ DesignFlowStep_Status SerializeMutualExclusions::InternalExec()
                ssa_schema[TOK(TOK_VOLATILE)] = STR(false);
                ssa_schema[TOK(TOK_VIRTUAL)] = STR(gp->virtual_flag);
                if(GetPointer<ssa_name>(GET_NODE(gp->res))->var)
+               {
                   ssa_schema[TOK(TOK_VAR)] = STR(GetPointer<ssa_name>(GET_NODE(gp->res))->var->index);
+               }
                TM->create_tree_node(ssa_node_nid, ssa_name_K, ssa_schema);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created " + STR(TM->CGetTreeNode(ssa_node_nid)));
 

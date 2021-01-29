@@ -100,11 +100,15 @@ static bool is_large_integer(const unsigned int t_id, const tree_managerConstRef
    auto* tn = GetPointer<type_node>(node_type);
    THROW_ASSERT(tn, "type_id " + STR(t_id) + " is not a type");
    if(node_type->get_kind() != integer_type_K)
+   {
       return false;
+   }
    auto* it = GetPointer<integer_type>(node_type);
    THROW_ASSERT(it, "type " + STR(t_id) + " is not an integer type");
    if((it->prec != tn->algn and it->prec > 64) or (tn->algn == 128))
+   {
       return true;
+   }
 
    return false;
 }
@@ -126,7 +130,9 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
    const OpNodeInfoConstRef node_info = instrGraph->CGetOpNodeInfo(statement);
    const unsigned int st_tn_id = node_info->GetNodeId();
    if(st_tn_id == 0 || st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
+   {
       return;
+   }
    const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
    const auto kind = curr_tn->get_kind();
    if(kind == gimple_return_K)
@@ -153,7 +159,9 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
       }
       const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
       if(BH->has_implementation() and BH->function_has_to_be_printed(called_id))
+      {
          indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CALL_ID " + STR(st_tn_id) + "\\n\");\n");
+      }
    }
    else if(kind == gimple_assign_K)
    {
@@ -166,7 +174,9 @@ void DiscrepancyAnalysisCWriter::writePreInstructionInfo(const FunctionBehaviorC
          const unsigned int called_id = *node_info->called.begin();
          const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper();
          if(BH->has_implementation() and BH->function_has_to_be_printed(called_id))
+         {
             indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"CALL_ID " + STR(st_tn_id) + "\\n\");\n");
+         }
       }
    }
    return;
@@ -185,10 +195,14 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
    const OpGraphConstRef instrGraph = fun_behavior->CGetOpGraph(FunctionBehavior::FCFG);
    const unsigned int st_tn_id = instrGraph->CGetOpNodeInfo(statement)->GetNodeId();
    if(st_tn_id == 0 || st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
+   {
       return;
+   }
    const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
    if(curr_tn->get_kind() != gimple_assign_K and curr_tn->get_kind() != gimple_phi_K)
+   {
       return;
+   }
 
    const BehavioralHelperConstRef BH = fun_behavior->CGetBehavioralHelper();
    if(Param->isOption(OPT_discrepancy_only))
@@ -196,7 +210,9 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       const auto discrepancy_functions = Param->getOption<const CustomSet<std::string>>(OPT_discrepancy_only);
       std::string fu_name = BH->get_function_name();
       if(not discrepancy_functions.empty() and discrepancy_functions.find(fu_name) == discrepancy_functions.end())
+      {
          return;
+      }
    }
    const unsigned int funId = BH->get_function_index();
    const hlsConstRef hls = hls_c_backend_information->HLSMgr->get_HLS(funId);
@@ -206,7 +222,9 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
 
    const operation* oper = GetPointer<operation>(op_tech_n);
    if(!oper)
+   {
       return;
+   }
 
    const auto* g_as_node = GetPointer<const gimple_assign>(curr_tn);
    const auto* g_phi_node = GetPointer<const gimple_phi>(curr_tn);
@@ -319,11 +337,17 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       CustomOrderedSet<unsigned int> end_state_ids;
 
       for(const auto& s : STGMan->get_starting_states(statement))
+      {
          init_state_ids.insert(stg_info->vertex_to_state_id.at(s));
+      }
       for(const auto& s : STGMan->get_execution_states(statement))
+      {
          exec_state_ids.insert(stg_info->vertex_to_state_id.at(s));
+      }
       for(const auto& s : STGMan->get_ending_states(statement))
+      {
          end_state_ids.insert(stg_info->vertex_to_state_id.at(s));
+      }
 
       THROW_ASSERT(not init_state_ids.empty(), "operation not properly scheduled: "
                                                "number of init states = " +
@@ -339,13 +363,19 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
        */
       indented_output_stream->Append("fprintf(__bambu_discrepancy_fp, \"SCHED start");
       for(const auto& s : init_state_ids)
+      {
          indented_output_stream->Append(" " + STR(s));
+      }
       indented_output_stream->Append("; exec");
       for(const auto& s : exec_state_ids)
+      {
          indented_output_stream->Append(" " + STR(s));
+      }
       indented_output_stream->Append("; end");
       for(const auto& s : end_state_ids)
+      {
          indented_output_stream->Append(" " + STR(s));
+      }
       indented_output_stream->Append(";\\n\");\n");
 
       const unsigned int type_id = tree_helper::get_type_index(TM, ssa_node_index);
@@ -409,14 +439,22 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
       }
 
       if(is_real)
+      {
          indented_output_stream->Append("R ");
+      }
       else
+      {
          indented_output_stream->Append("NR ");
+      }
 
       if(is_discrepancy_address)
+      {
          indented_output_stream->Append("A");
+      }
       else
+      {
          indented_output_stream->Append("NA");
+      }
 
       indented_output_stream->Append("\\n\");\n");
 
@@ -559,7 +597,9 @@ void DiscrepancyAnalysisCWriter::WriteGlobalDeclarations()
    {
       indented_output_stream->Append("fputs(\"DISCREPANCY REPORT\\n\", stdout);\n");
       if(Param->isOption(OPT_cat_args))
+      {
          indented_output_stream->Append("fputs(\"" + Param->getOption<std::string>(OPT_program_name) + " executed with: " + Param->getOption<std::string>(OPT_cat_args) + "\\n\", stdout);\n");
+      }
       indented_output_stream->Append("fprintf(stdout, "
                                      "\"Assigned ssa = %llu\\nChecked ssa = %llu\\nLost ssa = %llu\\n\", "
                                      "__bambu_discrepancy_tot_assigned_ssa, __bambu_discrepancy_tot_check_ssa, __bambu_discrepancy_tot_lost_ssa);\n");
@@ -669,10 +709,14 @@ void DiscrepancyAnalysisCWriter::WriteFunctionImplementation(unsigned int functi
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = not tree_helper::is_static(TM, function_index) and not tree_helper::is_extern(TM, function_index) and (funName != "main");
    if(prepend_static)
+   {
       GetPointer<function_decl>(node_fun)->static_flag = true;
+   }
    CWriter::WriteFunctionImplementation(function_index);
    if(prepend_static)
+   {
       GetPointer<function_decl>(node_fun)->static_flag = false;
+   }
 }
 
 void DiscrepancyAnalysisCWriter::WriteBBHeader(const unsigned int bb_number, const unsigned int function_index)
@@ -689,10 +733,14 @@ void DiscrepancyAnalysisCWriter::WriteFunctionDeclaration(const unsigned int fun
    THROW_ASSERT(GetPointer<function_decl>(node_fun), "expected a function decl");
    bool prepend_static = not tree_helper::is_static(TM, funId) and not tree_helper::is_extern(TM, funId) and (funName != "main");
    if(prepend_static)
+   {
       GetPointer<function_decl>(node_fun)->static_flag = true;
+   }
    HLSCWriter::WriteFunctionDeclaration(funId);
    if(prepend_static)
+   {
       GetPointer<function_decl>(node_fun)->static_flag = false;
+   }
 }
 
 void DiscrepancyAnalysisCWriter::WriteBuiltinWaitCall()

@@ -800,9 +800,13 @@ int treeVocabularyTokenTypes::check_tokens(const char* tok) const
 {
    auto el = token_map.find(tok);
    if(el == token_map.end())
+   {
       return -1;
+   }
    else
+   {
       return bisontokens[el->second];
+   }
 }
 TreeVocabularyTokenTypes_TokenEnum treeVocabularyTokenTypes::bison2token(int bison) const
 {

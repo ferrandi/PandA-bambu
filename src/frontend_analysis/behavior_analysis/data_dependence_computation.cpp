@@ -111,7 +111,9 @@ static void ordered_dfs(unsigned u, const OpGraphConstRef avg, CustomUnorderedMa
    {
       auto vi = boost::target(*ei, *avg);
       if(pos.find(vi) != pos.end())
+      {
          to.insert(pos.find(vi)->second);
+      }
    }
    for(auto dest : to)
    {
@@ -158,8 +160,12 @@ void DataDependenceComputation::do_dependence_reduction()
          {
             ordered_dfs(posIndex, avg, pos, rev_pos, vis, keep);
             for(unsigned posIndex0 = posIndex + 1; posIndex0 < n_stmts; ++posIndex0)
+            {
                if(vis.at(posIndex0))
+               {
                   vis[posIndex0] = false;
+               }
+            }
          }
       }
       for(const auto statement : bb_node_info->statements_list)

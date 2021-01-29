@@ -116,7 +116,9 @@ std::string functions::get_function_name_cleaned(const std::string& original_fun
       return original_function_name.substr(0, original_function_name.find(STR_CST_interface_parameter_keyword) + std::string(STR_CST_interface_parameter_keyword).length());
    }
    else
+   {
       return original_function_name;
+   }
 }
 
 std::string functions::get_function_name_cleaned(unsigned int funID, const HLS_managerRef HLSMgr)

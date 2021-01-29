@@ -105,25 +105,41 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 static kind ternary_operation_type0(kind operation_kind1, kind operation_kind2)
 {
    if(operation_kind1 == plus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_plus_expr_K;
+   }
    else if(operation_kind1 == plus_expr_K && operation_kind2 == minus_expr_K)
+   {
       return ternary_pm_expr_K;
+   }
    else if(operation_kind1 == minus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_mp_expr_K;
-   else // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
+   }
+   else
+   { // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
       return ternary_mm_expr_K;
+   }
 }
 
 static kind ternary_operation_type1(kind operation_kind1, kind operation_kind2)
 {
    if(operation_kind1 == plus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_plus_expr_K;
+   }
    else if(operation_kind1 == plus_expr_K && operation_kind2 == minus_expr_K)
+   {
       return ternary_mm_expr_K;
+   }
    else if(operation_kind1 == minus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_pm_expr_K;
-   else // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
+   }
+   else
+   { // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
       return ternary_mp_expr_K;
+   }
 }
 
 void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM)
@@ -140,7 +156,9 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
       while(it_los != it_los_end)
       {
          if(not AppM->ApplyNewTransformation())
+         {
             break;
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
          if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
@@ -183,10 +201,14 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                            }
                            auto sn0 = GetPointer<ssa_name>(GET_NODE(binop0->op0));
                            if(sn0)
+                           {
                               sn0->AddUseStmt(statement_node);
+                           }
                            auto sn1 = GetPointer<ssa_name>(GET_NODE(binop0->op1));
                            if(sn1)
+                           {
                               sn1->AddUseStmt(statement_node);
+                           }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement removed " + GET_NODE(*it_los)->ToString());
                            B->RemoveStmt(*it_los);
                            it_los = list_of_stmt.begin();

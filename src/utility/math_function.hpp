@@ -93,23 +93,41 @@ Integer LeastCommonMultiple(const Integer first, const Integer second)
 inline unsigned int resize_to_1_8_16_32_64_128_256_512(unsigned int value)
 {
    if(value == 1)
+   {
       return 1;
+   }
    else if(value <= 8)
+   {
       return 8;
+   }
    else if(value <= 16)
+   {
       return 16;
+   }
    else if(value <= 32)
+   {
       return 32;
+   }
    else if(value <= 64)
+   {
       return 64;
+   }
    else if(value <= 128)
+   {
       return 128;
+   }
    else if(value <= 256)
+   {
       return 256;
+   }
    else if(value <= 512)
+   {
       return 512;
+   }
    else
+   {
       THROW_ERROR("not expected size " + boost::lexical_cast<std::string>(value));
+   }
    return 0;
 }
 
@@ -127,20 +145,34 @@ inline int floor_log2(unsigned long long int x)
    int t = 0;
 
    if(x == 0)
+   {
       return -1;
+   }
 
    if(x >= (static_cast<unsigned long long int>(1)) << (t + 32))
+   {
       t += 32;
+   }
    if(x >= (static_cast<unsigned long long int>(1)) << (t + 16))
+   {
       t += 16;
+   }
    if(x >= (static_cast<unsigned long long int>(1)) << (t + 8))
+   {
       t += 8;
+   }
    if(x >= (static_cast<unsigned long long int>(1)) << (t + 4))
+   {
       t += 4;
+   }
    if(x >= (static_cast<unsigned long long int>(1)) << (t + 2))
+   {
       t += 2;
+   }
    if(x >= (static_cast<unsigned long long int>(1)) << (t + 1))
+   {
       t += 1;
+   }
 
    return t;
 }
@@ -150,7 +182,9 @@ inline int floor_log2(unsigned long long int x)
 inline int exact_log2(unsigned long long int x)
 {
    if(x != (x & -x))
+   {
       return -1;
+   }
    return floor_log2(x);
 }
 

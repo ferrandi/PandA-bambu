@@ -146,7 +146,9 @@ std::string PragmaAnalysis::get_call_parameter(unsigned int tree_node, unsigned 
             auto ic = GetPointer<const integer_cst>(valu);
             char val = static_cast<char>(ic->value);
             if(!val)
+            {
                break;
+            }
             string_arg.push_back(val);
          }
       }
@@ -425,9 +427,13 @@ void PragmaAnalysis::create_omp_pragma(const unsigned int tree_node) const
    tree_node_schema[TOK(TOK_PRAGMA_DIRECTIVE)] = boost::lexical_cast<std::string>(directive_idx);
    tree_node_schema[TOK(TOK_BB_INDEX)] = boost::lexical_cast<std::string>(gc->bb_index);
    if(gc->memuse)
+   {
       tree_node_schema[TOK(TOK_MEMUSE)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(gc->memuse));
+   }
    if(gc->memdef)
+   {
       tree_node_schema[TOK(TOK_MEMDEF)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(gc->memdef));
+   }
    TM->create_tree_node(tree_node, gimple_pragma_K, tree_node_schema);
    GetPointer<gimple_pragma>(TM->get_tree_node_const(tree_node))->vuses = gc->vuses;
    GetPointer<gimple_pragma>(TM->get_tree_node_const(tree_node))->vdef = gc->vdef;
@@ -496,7 +502,9 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
       const tree_nodeRef curr_tn = TM->get_tree_node_const(function);
       auto* fd = GetPointer<function_decl>(curr_tn);
       if(not fd->body)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining function " + STR(function));
       auto* sl = GetPointer<statement_list>(GET_NODE(fd->body));
       std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
@@ -539,9 +547,13 @@ DesignFlowStep_Status PragmaAnalysis::Exec()
                      {
                         std::string scope = get_call_parameter(GET_INDEX_NODE(*it2), 0);
                         if(scope == STR_CST_pragma_keyword_omp)
+                        {
                            create_omp_pragma(GET_INDEX_NODE(*it2));
+                        }
                         else if(scope == STR_CST_pragma_keyword_map)
+                        {
                            create_map_pragma(GET_INDEX_NODE(*it2));
+                        }
                      }
                      else
                      {

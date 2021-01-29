@@ -140,7 +140,9 @@ bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
 {
    const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
    if(not ga)
+   {
       return false;
+   }
    return GET_NODE(ga->op1)->get_kind() == cond_expr_K;
 }
 
@@ -152,23 +154,39 @@ tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, 
    const auto other_operand = first ? GET_NODE(ce->op2) : GET_NODE(ce->op1);
    const auto sn = GetPointer<const ssa_name>(operand);
    if(tree_helper::is_constant(TM, other_operand->index))
+   {
       return tree_nodeRef();
+   }
    if(not sn)
+   {
       return tree_nodeRef();
+   }
    if(sn->CGetNumberUses() > 1)
+   {
       return tree_nodeRef();
+   }
    const auto def = GetPointer<const gimple_assign>(GET_NODE(sn->CGetDefStmt()));
    if(not def)
+   {
       return tree_nodeRef();
+   }
    if(def->bb_index != ga->bb_index)
+   {
       return tree_nodeRef();
+   }
    const auto chain_ce = GetPointer<const cond_expr>(GET_NODE(def->op1));
    if(not chain_ce)
+   {
       return tree_nodeRef();
+   }
    if(schedule->GetStartingTime(ga->index) == schedule->GetEndingTime(def->index) or (schedule->get_cstep_end(def->index).second + 1) == schedule->get_cstep(ga->index).second)
+   {
       return sn->CGetDefStmt();
+   }
    else
+   {
       return tree_nodeRef();
+   }
 }
 
 DesignFlowStep_Status CondExprRestructuring::InternalExec()
@@ -300,7 +318,9 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          auto first_value = first_operand_of_second ? second_ce->op2 : second_ce->op1;
          auto second_value = first_operand_of_first ? first_ce->op2 : first_ce->op1;
          if(not first_operand_of_first)
+         {
             std::swap(first_value, second_value);
+         }
          cond_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
          cond_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          cond_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_ce->op0->index);
@@ -378,13 +398,21 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
             auto DefaultUnsignedLongLongInt = tree_man->CreateDefaultUnsignedLongLongInt();
             long long int lut_val;
             if(!first_operand_of_first && !first_operand_of_second)
+            {
                lut_val = 1;
+            }
             else if(!first_operand_of_first && first_operand_of_second)
+            {
                lut_val = 2;
+            }
             else if(first_operand_of_first && !first_operand_of_second)
+            {
                lut_val = 4;
+            }
             else
+            {
                lut_val = 8;
+            }
             lut_constant_node = TM->CreateUniqueIntegerCst(lut_val, GET_INDEX_NODE(DefaultUnsignedLongLongInt));
             auto boolType = tree_man->create_boolean_type();
             tree_nodeRef op3, op4, op5, op6, op7, op8;
@@ -491,7 +519,9 @@ void CondExprRestructuring::Initialize()
 bool CondExprRestructuring::HasToBeExecuted() const
 {
    if(!FunctionFrontendFlowStep::HasToBeExecuted())
+   {
       return false;
+   }
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
       GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch)

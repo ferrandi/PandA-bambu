@@ -70,7 +70,9 @@ void conflict_based_register::create_conflict_graph()
 
    unsigned int cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    for(unsigned int vi = 0; vi < cg_num_vertices; ++vi)
+   {
       boost::add_vertex(cg);
+   }
    color_vec.resize(cg_num_vertices);
    color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, cg));
    /// conflict graph creation
@@ -102,6 +104,7 @@ void conflict_based_register::create_conflict_graph()
    }
    /// variables of different size are in conflict
    for(unsigned int vj = 1; vj < cg_num_vertices; ++vj)
+   {
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
          if(!HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
@@ -112,4 +115,5 @@ void conflict_based_register::create_conflict_graph()
             THROW_ASSERT(in1, "unable to add edge");
          }
       }
+   }
 }

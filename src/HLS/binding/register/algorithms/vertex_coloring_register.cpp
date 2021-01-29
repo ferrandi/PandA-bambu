@@ -76,7 +76,9 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       START_TIME(step_time);
+   }
    create_conflict_graph();
    /// coloring based on DSATUR 2 heuristic
    cg_vertices_size_type num_colors = dsatur2_coloring(cg, color);
@@ -98,19 +100,29 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
    }
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       STOP_TIME(step_time);
+   }
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
                   std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + std::to_string(num_colors) + " registers" +
                       (num_colors == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
       HLS->Rreg->print();
+   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "<--");
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

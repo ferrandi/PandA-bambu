@@ -146,7 +146,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
    const tree_managerRef TreeM = AppM->get_tree_manager();
 
    if(!parameters->isOption(OPT_input_file))
+   {
       THROW_ERROR("At least one source file has to be passed to the tool");
+   }
 
    /// parsing of archive files
    if(parameters->isOption(OPT_archive_files))
@@ -184,7 +186,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
             TreeM->merge_tree_managers(TM_new);
          }
          if(not(parameters->getOption<bool>(OPT_no_clean)))
+         {
             boost::filesystem::remove_all(temp_path_obtained);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + archive_file);
       }
    }

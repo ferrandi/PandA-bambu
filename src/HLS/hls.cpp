@@ -141,13 +141,17 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode || Enode->get_name() != "scheduling")
+      {
          continue;
+      }
       const xml_node::node_list list1 = Enode->get_children();
       for(const auto& iter1 : list1)
       {
          const auto* EnodeC = GetPointer<const xml_element>(iter1);
          if(!EnodeC)
+         {
             continue;
+         }
          if(EnodeC->get_name() == "scheduling_constraints")
          {
             std::string vertex_name;
@@ -155,11 +159,17 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
             LOAD_XVM(vertex_name, EnodeC);
             THROW_ASSERT(vertex_name != "", "bad formed xml file: vertex_name expected in a hls specification");
             if(CE_XVM(cstep, EnodeC))
+            {
                LOAD_XVM(cstep, EnodeC);
+            }
             else
+            {
                THROW_ERROR("bad formed xml file: cstep expected in a hls specification for operation " + vertex_name);
+            }
             if(cstep > tot_cstep)
+            {
                tot_cstep = cstep;
+            }
 
             unsigned int fu_index;
             LOAD_XVM(fu_index, EnodeC);
@@ -168,7 +178,9 @@ void hls::xload(const xml_element* node, const OpGraphConstRef data)
             std::string library = LIBRARY_STD;
             LOAD_XVM(fu_name, EnodeC);
             if(CE_XVM(library, EnodeC))
+            {
                LOAD_XVM(library, EnodeC);
+            }
             unsigned int fu_type;
             if(allocation_information->is_artificial_fu(String2Id[std::make_pair(fu_name, library)].front()) || allocation_information->is_assign(String2Id[std::make_pair(fu_name, library)].front()))
             {
@@ -211,7 +223,9 @@ void hls::xwrite(xml_element* rootnode, const OpGraphConstRef data)
       WRITE_XVM(fu_name, EnodeC);
       WRITE_XVM(fu_index, EnodeC);
       if(library != LIBRARY_STD)
+      {
          WRITE_XVM(library, EnodeC);
+      }
    }
 
    if(datapath)
@@ -239,13 +253,19 @@ static void computeResources(const structural_objectRef circ, const technology_m
       const structural_objectRef obj = mod->get_internal_object(l);
       const structural_type_descriptorRef id_type = obj->get_typeRef();
       if(obj->get_kind() != component_o_K)
+      {
          continue;
+      }
       computeResources(obj, TM, resources);
       if(obj->get_id() == "Controller_i" || obj->get_id() == "Datapath_i")
+      {
          continue;
+      }
       std::string library = TM->get_library(id_type->id_type);
       if(library == WORK_LIBRARY || library == PROXY_LIBRARY)
+      {
          continue;
+      }
       resources[id_type->id_type]++;
    }
 }
@@ -257,7 +277,9 @@ void hls::PrintResources() const
    const technology_managerRef TM = HLS_T->get_technology_manager();
    computeResources(datapath->get_circ(), TM, resources);
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Summary of resources:");
    for(auto r = resources.begin(); r != resources.end(); ++r)
    {

@@ -257,12 +257,16 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             PrintTreeManager(false);
          }
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         {
             WriteBBGraphDot("BB_After_" + GetName() + "_BB" + STR(basic_block.first) + ".dot");
+         }
          CustomUnorderedSet<unsigned int> to_be_fixed;
          for(const auto succ : basic_block.second->list_of_succ)
          {
             if(list_of_block.find(succ)->second->list_of_pred.size() > 1)
+            {
                to_be_fixed.insert(succ);
+            }
          }
          CustomUnorderedSet<unsigned int>::const_iterator t, t_end = to_be_fixed.end();
          for(t = to_be_fixed.begin(); t != t_end; ++t)
@@ -365,7 +369,9 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             PrintTreeManager(false);
          }
          if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+         {
             WriteBBGraphDot("BB_After_" + GetName() + "_BB" + STR(basic_block.first) + ".dot");
+         }
          if(AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Removing switch");
@@ -433,7 +439,9 @@ DesignFlowStep_Status SwitchFix::InternalExec()
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                }
                if(cond)
+               {
                   new_gwi->add_cond(cond, succ);
+               }
                list_of_block.find(succ)->second->RemoveStmt(list_of_block.find(succ)->second->CGetStmtList().front());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered successor BB" + STR(succ));
             }

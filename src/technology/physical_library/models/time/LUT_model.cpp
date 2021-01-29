@@ -68,6 +68,8 @@ bool LUT_model::is_timing_value(value_t val) const
 double LUT_model::get_timing_value(value_t val) const
 {
    if(!is_timing_value(val))
+   {
       return 0;
+   }
    return timing_results.find(val)->second;
 }

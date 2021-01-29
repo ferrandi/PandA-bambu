@@ -113,7 +113,9 @@ bool technology_manager::can_implement(const std::string& fu_name, const std::st
 {
    technology_nodeRef node = get_fu(fu_name, Library);
    if(!node)
+   {
       return false;
+   }
    return GetPointer<functional_unit>(node)->get_operation(op_name) ? true : false;
 }
 
@@ -121,7 +123,9 @@ technology_nodeRef technology_manager::get_fu(const std::string& fu_name, const 
 {
    THROW_ASSERT(Library.size(), "Library not specified for component " + fu_name);
    if(library_map.find(Library) != library_map.end() and library_map.find(Library)->second->is_fu(fu_name))
+   {
       return library_map.find(Library)->second->get_fu(fu_name);
+   }
    return technology_nodeRef();
 }
 
@@ -211,7 +215,9 @@ void technology_manager::add(const technology_nodeRef curr, const std::string& L
    {
       bool std = true;
       if(Library == CG_LIBRARY || Library == DESIGN)
+      {
          std = false;
+      }
       library_managerRef lib(new library_manager(Library, Param, std));
       library_map[Library] = lib;
       libraries.push_back(Library);
@@ -230,7 +236,9 @@ void technology_manager::xload(const xml_element* node, const target_deviceRef d
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode)
+      {
          continue;
+      }
       if(Enode->get_name() == "information")
       {
          const attribute_sequence::attribute_list& attr_list = Enode->get_attributes();
@@ -360,7 +368,9 @@ void technology_manager::xwrite(xml_element* rootnode, TargetDevice_Type dv_type
    for(const auto& library : sorted_libraries)
    {
       if(library == "design")
+      {
          continue;
+      }
       if(_libraries.empty() || _libraries.count(library))
       {
          if(get_library_manager(library)->get_library_fu().size())
@@ -460,7 +470,9 @@ std::string technology_manager::get_library(const std::string& Name) const
       Library = librarie;
       THROW_ASSERT(library_map.find(Library) != library_map.end(), "Library " + Library + " not found");
       if(library_map.find(Library)->second->is_fu(Name))
+      {
          return Library;
+      }
    }
    /// empty string. it means that the cell is not contained into any library
    return "";
@@ -470,7 +482,9 @@ std::string technology_manager::get_library(const std::string& Name) const
 size_t technology_manager::get_library_count(const std::string& Name) const
 {
    if(std::find(libraries.begin(), libraries.end(), Name) != libraries.end() && library_map.find(Name) != library_map.end())
+   {
       return library_map.find(Name)->second->get_gate_count();
+   }
 
    return 0;
 }
@@ -491,7 +505,9 @@ void technology_manager::erase_library(const std::string& Name)
 {
    library_map.erase(Name);
    if(std::find(libraries.begin(), libraries.end(), Name) != libraries.end())
+   {
       libraries.erase(std::find(libraries.begin(), libraries.end(), Name));
+   }
 }
 
 #if HAVE_CIRCUIT_BUILT
@@ -519,16 +535,22 @@ const functional_unit* technology_manager::CGetSetupHoldFU() const
 {
    const technology_nodeConstRef f_unit_as = get_fu("ASSIGN_SINGLE_UNSIGNED_FU", LIBRARY_STD_FU);
    if(f_unit_as)
+   {
       return GetPointer<const functional_unit>(f_unit_as);
+   }
    else
+   {
       return nullptr;
+   }
 }
 
 double technology_manager::CGetSetupHoldTime() const
 {
    const auto fu_as = CGetSetupHoldFU();
    if(!fu_as)
+   {
       return 0.1;
+   }
    const technology_nodeConstRef op_as_node = fu_as->get_operation("ASSIGN_SINGLE");
    const auto op_ASSIGN = GetPointer<const operation>(op_as_node);
    THROW_ASSERT(op_ASSIGN->time_m->get_execution_time() > 0.0, "expected a setup time greater than zero");
@@ -539,7 +561,11 @@ TimeStamp technology_manager::CGetSetupHoldTimeStamp() const
 {
    auto fu = CGetSetupHoldFU();
    if(fu)
+   {
       return CGetSetupHoldFU()->characterization_timestamp;
+   }
    else
+   {
       return TimeStamp();
+   }
 }

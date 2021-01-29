@@ -155,12 +155,16 @@ void HostProfiling::normalize(const application_managerRef AppM, const CustomUno
          unsigned int loop_id = (*loop)->GetId();
          /// FIXME: zero loop
          if(loop_id == 0)
+         {
             continue;
+         }
          long double avg_number = 0.0L;
          long double abs_execution = 0.0L;
          PathProfilingInformation& path_profiling = FB->profiling_information->path_profiling;
          if(path_profiling.find(loop_id) == path_profiling.end())
+         {
             continue;
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loop: " + boost::lexical_cast<std::string>(loop_id));
          const auto& elements = path_profiling.find(loop_id)->second;
          for(const auto& element : elements)

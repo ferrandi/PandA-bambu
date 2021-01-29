@@ -160,7 +160,9 @@ namespace boost
          {
             node1 = get(vertex_index, G, *v);
             if(!ColorAdj(node1, color))
+            {
                ColorCount[node1]++;
+            }
             ColorAdj(node1, color) = true;
             DegreeCount[node1]--;
             // assert(DegreeCount[node1] >= 0);
@@ -188,7 +190,9 @@ namespace boost
                }
             }
             if(j <= max_color)
+            {
                continue;
+            }
             /// not able to color so we have to increase the maximum color available
             max_color++;
             put(CM, boost::vertex(v, G), max_color);
@@ -208,7 +212,9 @@ namespace boost
 
       const size_type num_node = num_vertices(G);
       if(num_node == 0)
+      {
          return 0;
+      }
       dsatur2_coloring_helper<VertexListGraph, ColorMap, size_type> MDCH(G, color, num_node);
 
       return MDCH.SeqColor();

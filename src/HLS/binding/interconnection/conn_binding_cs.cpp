@@ -116,7 +116,9 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    {
       structural_objectRef curr_gate = GetPointer<module>(circuit)->get_internal_object(i);
       if(curr_gate->find_member(STR(SUSPENSION), port_o_K, curr_gate) != nullptr and curr_gate->get_id() != "scheduler_kernel")
+      {
          ++num_suspension;
+      }
    }
 
    if(num_suspension == 0 && !addedLoad && !addedStore && !andStartMemOp_required)
@@ -135,9 +137,13 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    SM->add_connection(port_out_or, out_or_sign);
 
    if(GetPointer<port_o>(port_in_or)->get_ports_size() != 0)
+   {
       THROW_ERROR("Or start with more than 0 input port");
+   }
    else
+   {
       GetPointer<port_o>(port_in_or)->add_n_ports(2, port_in_or);
+   }
    for(unsigned int j = 0; j < GetPointer<module>(circuit)->get_in_port_size(); j++)
    {
       structural_objectRef port_i = GetPointer<module>(circuit)->get_in_port(j);
@@ -163,9 +169,13 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
    SM->add_connection(port_out_and, out_and_sign);
 
    if(GetPointer<port_o>(port_in_and)->get_ports_size() != 0)
+   {
       THROW_ERROR("And start with more than 0 input port");
+   }
    else
+   {
       GetPointer<port_o>(port_in_and)->add_n_ports(2, port_in_and);
+   }
 
    SM->add_connection(out_or_sign, GetPointer<port_o>(port_in_and)->get_port(0)); // connected out or
 
@@ -189,9 +199,13 @@ void conn_binding_cs::instantiate_suspension_component(const HLS_managerRef HLSM
 
    // search in module and find one with suspension
    if(GetPointer<port_o>(port_in_or_glo)->get_ports_size() != 0)
+   {
       THROW_ERROR("Or start with more than 0 input port");
+   }
    else
+   {
       GetPointer<port_o>(port_in_or_glo)->add_n_ports(1 + num_suspension, port_in_or_glo);
+   }
    SM->add_connection(out_and_sign, GetPointer<port_o>(port_in_or_glo)->get_port(0));
 
    if(num_suspension > 0)

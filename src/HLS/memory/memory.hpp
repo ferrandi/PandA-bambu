@@ -200,7 +200,9 @@ class memory
    void align(unsigned long long int& address, unsigned int alignment)
    {
       if(address % alignment != 0)
+      {
          address = ((address / alignment) + 1) * alignment;
+      }
    }
 
  public:
@@ -442,9 +444,13 @@ class memory
    void increment_n_mem_operations(unsigned int var)
    {
       if(n_mem_operations_per_var.find(var) == n_mem_operations_per_var.end())
+      {
          n_mem_operations_per_var[var] = 1;
+      }
       else
+      {
          ++n_mem_operations_per_var[var];
+      }
    }
 
    /**

@@ -105,11 +105,17 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
                   THROW_ASSERT(omp_functions, "OMP_functions must not be null");
                   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+                  {
                      found = true;
+                  }
                   if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+                  {
                      found = true;
+                  }
                   if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+                  {
                      found = true;
+                  }
                   if(found) // use new top_entity
                   {
                      const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
@@ -280,7 +286,9 @@ void module_interface::AddConstant(const structural_managerRef SM, const structu
       THROW_ASSERT(port, port_name + " is not in " + component->get_path());
       size = GetPointer<port_o>(port)->get_port_size();
       if(size < constant_size)
+      {
          GetPointer<port_o>(port)->type_resize(constant_size);
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Binding " + constant_value + " to " + component->get_id() + "::" + port_name);
    structural_objectRef constant(new constant_o(parameters->getOption<int>(OPT_debug_level), SM->get_circ(), constant_value));

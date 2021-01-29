@@ -72,23 +72,35 @@ void system_verilog_writer::write_NP_functionalities(const structural_objectRef&
    if(!parameters->getOption<bool>(OPT_level_reset))
    {
       if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or negedge " + std::string(RESET_PORT_NAME));
+      }
       else
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "");
+      }
       boost::replace_all(beh_desc, "1RESET_VALUE", std::string(RESET_PORT_NAME) + " == 1'b0");
    }
    else
    {
       if(parameters->getOption<std::string>(OPT_sync_reset) == "async")
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "or posedge " + std::string(RESET_PORT_NAME));
+      }
       else
+      {
          boost::replace_all(beh_desc, "1RESET_EDGE", "");
+      }
       boost::replace_all(beh_desc, "1RESET_VALUE", std::string(RESET_PORT_NAME) + " == 1'b1");
    }
    if(parameters->getOption<bool>(OPT_reg_init_value))
+   {
       boost::replace_all(beh_desc, "1INIT_ZERO_VALUE", "=0");
+   }
    else
+   {
       boost::replace_all(beh_desc, "1INIT_ZERO_VALUE", "");
+   }
    indented_output_stream->Append(beh_desc);
 }
 

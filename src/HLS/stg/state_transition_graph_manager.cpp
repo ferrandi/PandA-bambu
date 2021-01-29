@@ -119,7 +119,9 @@ void StateTransitionGraphManager::compute_min_max()
 {
    StateTransitionGraphInfoRef info = STG_graph->GetStateTransitionGraphInfo();
    if(!info->is_a_dag)
+   {
       return;
+   }
    std::list<vertex> sorted_vertices;
    ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
    CustomUnorderedMap<vertex, unsigned int> CSteps_min;
@@ -137,9 +139,13 @@ void StateTransitionGraphManager::compute_min_max()
          vertex src = boost::source(*ie, *ACYCLIC_STG_graph);
          CSteps_max[*it_sv] = std::max(CSteps_max[*it_sv], 1 + CSteps_max[src]);
          if(ie == ie_first)
+         {
             CSteps_min[*it_sv] = 1 + CSteps_min[src];
+         }
          else
+         {
             CSteps_min[*it_sv] = std::min(CSteps_min[*it_sv], 1 + CSteps_max[src]);
+         }
       }
    }
    THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");

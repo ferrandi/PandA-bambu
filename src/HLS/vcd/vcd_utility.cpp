@@ -197,7 +197,9 @@ unsigned long long vcd_utility::GetClockPeriod(const vcd_parser::vcd_trace_t& vc
    const auto same_value = [clock_var_beg](const sig_variation& v) { return v.value == clock_var_beg->value; };
    clock_var_it = std::find_if(std::next(clock_var_it), clock_var_end, same_value);
    if(clock_var_it == clock_var_end)
+   {
       THROW_ERROR("clock signal for top function does not complete a cycle");
+   }
    unsigned long long clock_period = clock_var_it->time_stamp - clock_var_beg->time_stamp;
    THROW_ASSERT(clock_period > 0, "clock period is 0\n");
    return clock_period;
@@ -215,9 +217,13 @@ DesignFlowStep_Status vcd_utility::Exec()
    auto isOneHot = [&](unsigned int funId) -> bool {
       auto one_hot_encoding = false;
       if(parameters->getOption<std::string>(OPT_fsm_encoding) == "one-hot")
+      {
          one_hot_encoding = true;
+      }
       else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" && HLSMgr->get_HLS(funId)->STG->get_number_of_states() < 256)
+      {
          one_hot_encoding = true;
+      }
       return one_hot_encoding;
    };
 
@@ -236,30 +242,40 @@ DesignFlowStep_Status vcd_utility::Exec()
    std::string disc_stat_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/dynamic_discrepancy_stats";
    disc_stat_file.open(disc_stat_filename, std::ofstream::app);
    if(not disc_stat_file.is_open())
+   {
       THROW_ERROR("can't open file " + disc_stat_filename);
+   }
 
    std::string vcd_filename = parameters->getOption<std::string>(OPT_output_directory) + "/simulation/test.vcd";
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing vcd file " + vcd_filename);
    long vcd_parse_time = 0;
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
+   {
       START_TIME(vcd_parse_time);
+   }
    /* create vcd parser obj */
    vcd_parser vcd_parser(parameters);
    /* parse the selected signals */
    vcd_parser::vcd_trace_t vcd_trace = vcd_parser.parse_vcd(vcd_filename, HLSMgr->RDiscr->selected_vcd_signals);
 
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
+   {
       STOP_TIME(vcd_parse_time);
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed vcd file " + vcd_filename + " in " + print_cpu_time(vcd_parse_time) + " seconds");
    /* parse the discrepancy trace coming from C execution */
    const std::string& discrepancy_data_filename = HLSMgr->RDiscr->c_trace_filename;
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsing C trace file " + discrepancy_data_filename);
    long ctrace_parse_time = 0;
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
+   {
       START_TIME(ctrace_parse_time);
+   }
    parse_discrepancy(discrepancy_data_filename, Discr);
    if(output_level >= OUTPUT_LEVEL_VERBOSE)
+   {
       STOP_TIME(ctrace_parse_time);
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Parsed C trace file " + discrepancy_data_filename + " in " + print_cpu_time(ctrace_parse_time) + " seconds");
 
    auto& c_op_trace = Discr->c_op_trace;
@@ -286,7 +302,9 @@ DesignFlowStep_Status vcd_utility::Exec()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Starting discrepancy analysis");
    long discrepancy_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM)
+   {
       START_TIME(discrepancy_time);
+   }
    for(const auto& c : c_op_trace)
    {
       const DiscrepancyOpInfo& op_info = c.first;
@@ -300,7 +318,9 @@ DesignFlowStep_Status vcd_utility::Exec()
       THROW_ASSERT(Discr->f_id_to_scope.find(op_info.stg_fun_id) != Discr->f_id_to_scope.end(), "no scope for function " + STR(op_info.stg_fun_id));
       const auto& scope_set = Discr->f_id_to_scope.at(op_info.stg_fun_id);
       if(not scope_set.empty())
+      {
          op_id_to_scope_to_vcd_head[op_info.op_id];
+      }
       for(const std::string& scope : scope_set)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing scope " + scope);
@@ -407,7 +427,9 @@ DesignFlowStep_Status vcd_utility::Exec()
    }
 
    if(output_level >= OUTPUT_LEVEL_MINIMUM)
+   {
       STOP_TIME(discrepancy_time);
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Discrepancy analysis executed in " + print_cpu_time(discrepancy_time) + " seconds");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Possibly lost address checks = " + STR(possibly_lost_address));
 
@@ -436,7 +458,9 @@ DesignFlowStep_Status vcd_utility::Exec()
                         "|       HARD DISCREPANCIES       |\n"
                         "\\--------------------------------/");
          for(const auto& l : discr_list)
+         {
             print_discrepancy(l, isOneHot(l.fun_id), OUTPUT_LEVEL_NONE);
+         }
       }
       if(not soft_discr_list.empty())
       {
@@ -446,7 +470,9 @@ DesignFlowStep_Status vcd_utility::Exec()
                         "|       SOFT DISCREPANCIES       |\n"
                         "\\--------------------------------/");
          for(const auto& l : soft_discr_list)
+         {
             print_discrepancy(l, isOneHot(l.fun_id), OUTPUT_LEVEL_NONE);
+         }
       }
       first_discrepancy_print = false;
    }
@@ -654,7 +680,9 @@ bool vcd_utility::detect_mismatch_simple(const vcd_trace_head& t, const uint64_t
 
    auto vcd_first_bit = first_c_bit;
    if(vcd.size() > c_val.size())
+   {
       vcd_first_bit += vcd.size() - c_val.size();
+   }
 
    const std::string& resized_vcd_val = resized ? vcd.substr(vcd_first_bit, c_size) : vcd;
 
@@ -762,9 +790,13 @@ bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const s
    else if(std::isinf(c) and std::isinf(e))
    {
       if(std::signbit(c) != std::signbit(e))
+      {
          return true;
+      }
       else
+      {
          return false;
+      }
    }
    else if(std::isinf(c) or std::isinf(e) or std::isnan(c) or std::isnan(e))
    {
@@ -773,9 +805,13 @@ bool vcd_utility::detect_binary_float_mismatch(const std::string& c_val, const s
    else
    {
       if(e == 0.0f)
+      {
          ulp = std::fabs(c - e) / std::ldexp(1.0f, -(FLT_MANT_DIG - 1));
+      }
       else
+      {
          ulp = std::fabs(c - e) / std::ldexp(1.0f, std::ilogb(e) - (FLT_MANT_DIG - 1));
+      }
 
       return static_cast<double>(ulp) > parameters->getOption<double>(OPT_max_ulp);
    }
@@ -808,9 +844,13 @@ bool vcd_utility::detect_binary_double_mismatch(const std::string& c_val, const 
    else if(std::isinf(c) and std::isinf(e))
    {
       if(std::signbit(c) != std::signbit(e))
+      {
          return true;
+      }
       else
+      {
          return false;
+      }
    }
    else if(std::isinf(c) or std::isinf(e) or std::isnan(c) or std::isnan(e))
    {
@@ -819,9 +859,13 @@ bool vcd_utility::detect_binary_double_mismatch(const std::string& c_val, const 
    else
    {
       if(e == 0.0)
+      {
          ulp = std::fabs(c - e) / std::ldexp(1.0, -(DBL_MANT_DIG - 1));
+      }
       else
+      {
          ulp = std::fabs(c - e) / std::ldexp(1.0, std::ilogb(e) - (DBL_MANT_DIG - 1));
+      }
 
       return ulp > parameters->getOption<double>(OPT_max_ulp);
    }
@@ -834,19 +878,25 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
    THROW_ASSERT(context_it != Discr->c_addr_map.end(), "no address map found for context " + STR(c_context));
    const auto var_id_to_base_address_it = context_it->second.find(base_index);
    if(var_id_to_base_address_it == context_it->second.end())
+   {
       return false;
+   }
 
    uint64_t c_addr = std::stoull(c_val.c_str(), nullptr, 2);
    uint64_t c_base_addr = var_id_to_base_address_it->second;
    bool c_offset_is_negative = c_addr < c_base_addr;
    uint64_t c_addr_offset = c_addr - c_base_addr;
    if(c_offset_is_negative)
+   {
       c_addr_offset = c_base_addr - c_addr;
+   }
    /* don't detect mismatch for out of bounds address */
    const uint64_t memory_area_bitsize = std::max(8u, tree_helper::size(TM, tree_helper::get_type_index(TM, base_index)));
    THROW_ASSERT(memory_area_bitsize % 8 == 0, "bitsize of a variable in memory must be multiple of 8 --> is " + STR(memory_area_bitsize));
    if(c_offset_is_negative or ((memory_area_bitsize / 8) <= (c_addr - c_base_addr)))
+   {
       return false;
+   }
    /*
     * if the value of the hw address is retrieved with a load, the vcd signal
     * representing the pointer can be wider than 32 bits. in that case we take
@@ -857,18 +907,26 @@ bool vcd_utility::detect_fixed_address_mismatch(const DiscrepancyOpInfo& op_info
     * detect a mismatch if some of the resized address bits are not zeros or ones
     */
    if(resized_vcd_val.find_first_not_of("01") != std::string::npos)
+   {
       return true;
+   }
    uint64_t vcd_addr = std::stoull(resized_vcd_val.c_str(), nullptr, 2);
    uint64_t vcd_base_addr = HLSMgr->Rmem->get_base_address(base_index, op_info.stg_fun_id);
    bool vcd_offset_is_negative = vcd_addr < vcd_base_addr;
    uint64_t vcd_addr_offset = vcd_addr - vcd_base_addr;
    if(vcd_offset_is_negative)
+   {
       vcd_addr_offset = vcd_base_addr - vcd_addr;
+   }
    /* if the vcd is out of range even if the address in C is in range, we have a mismatch */
    if(vcd_offset_is_negative or ((memory_area_bitsize / 8) <= (vcd_addr - vcd_base_addr)))
+   {
       return true;
+   }
    else
+   {
       return c_addr_offset != vcd_addr_offset;
+   }
 }
 
 bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, const uint64_t c_context, const std::string& c_val, const std::string& vcd_val, unsigned int& base_index)
@@ -897,7 +955,9 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
                at_least_one_pointed_variable_is_in_scope = true;
 #endif
                if(detect_fixed_address_mismatch(op_info, c_context, c_val, vcd_val, base_index))
+               {
                   return true;
+               }
             }
          }
          THROW_ASSERT(at_least_one_pointed_variable_is_in_scope == true, "no pointed variable are in scope for opid = " + STR(op_info.op_id));
@@ -914,8 +974,12 @@ bool vcd_utility::detect_address_mismatch(const DiscrepancyOpInfo& op_info, cons
             addrSet.insert(addr.second);
          }
          for(auto it_set = addrSet.rbegin(); it_set != addrSet.rend(); ++it_set)
+         {
             if(c_addr <= *it_set)
+            {
                base_index = addr2base_index.at(*it_set);
+            }
+         }
 
          if(base_index)
          {
@@ -952,13 +1016,17 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
       if(c_val.length() == 32)
       {
          if(resized_vcd_val.find_first_not_of("01") != std::string::npos)
+         {
             return allow_uninitialized;
+         }
          return detect_binary_float_mismatch(c_val, resized_vcd_val);
       }
       else if(c_val.length() == 64)
       {
          if(resized_vcd_val.find_first_not_of("01") != std::string::npos)
+         {
             return allow_uninitialized;
+         }
          return detect_binary_double_mismatch(c_val, resized_vcd_val);
       }
       else
@@ -977,14 +1045,20 @@ bool vcd_utility::detect_regular_mismatch(const vcd_trace_head& t, const std::st
       std::string bitvalue = GetPointer<const ssa_name>(GET_NODE(TM->CGetTreeReindex(t.op_info.ssa_name_node_id)))->bit_values;
       auto first_not_x_pos = bitvalue.find_first_not_of("xX");
       if(first_not_x_pos == std::string::npos)
+      {
          return false;
+      }
       if(bitvalue.size() < vcd_val.size())
+      {
          first_not_x_pos += vcd_val.size() - bitvalue.size();
+      }
       const std::string vcd_trimmed_val = vcd_val.substr(first_not_x_pos);
       const std::string& longer = (vcd_trimmed_val.length() <= c_val.length()) ? c_val : vcd_trimmed_val;
       const std::string& shorter = (vcd_trimmed_val.length() <= c_val.length()) ? vcd_trimmed_val : c_val;
       if(longer.find_first_not_of("01") != std::string::npos or shorter.find_first_not_of("01") != std::string::npos)
+      {
          return allow_uninitialized;
+      }
       return shorter != longer.substr(longer.length() - shorter.length());
    }
 }
@@ -1065,7 +1139,9 @@ void vcd_utility::print_discrepancy(const DiscrepancyLog& l, bool one_hot_encodi
 
       std::string resized_vcd_val;
       if(l.c_val.length() < l.vcd_val.length())
+      {
          resized_vcd_val = l.vcd_val.substr(l.vcd_val.length() - l.c_val.length());
+      }
       const std::string& vcd = resized_vcd_val.empty() ? l.vcd_val : resized_vcd_val;
       if(vcd.find_first_not_of("01") == std::string::npos)
       {

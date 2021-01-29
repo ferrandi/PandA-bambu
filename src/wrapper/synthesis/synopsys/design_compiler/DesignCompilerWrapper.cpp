@@ -156,14 +156,18 @@ void DesignCompilerWrapper::EvaluateVariables(const DesignParametersRef dp)
       if(xml_script_node->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_area")
       {
          if(!GetPointer<xml_command_t>(xml_script_node)->output)
+         {
             THROW_ERROR("output file not specified for command \"report_area\"");
+         }
          report_files[REPORT_AREA] = *(GetPointer<xml_command_t>(xml_script_node)->output);
          replace_parameters(dp, report_files[REPORT_AREA]);
       }
       if(xml_script_node->nodeType == NODE_COMMAND && *(GetPointer<xml_command_t>(xml_script_node)->name) == "report_timing")
       {
          if(!GetPointer<xml_command_t>(xml_script_node)->output)
+         {
             THROW_ERROR("output file not specified for command \"report_timing\"");
+         }
          report_files[REPORT_TIME] = *(GetPointer<xml_command_t>(xml_script_node)->output);
          replace_parameters(dp, report_files[REPORT_TIME]);
       }
@@ -212,25 +216,33 @@ DesignCompilerWrapper::~DesignCompilerWrapper()
 void DesignCompilerWrapper::add_link_library(const std::vector<std::string>& link_library)
 {
    for(const auto& l : link_library)
+   {
       add_link_library(l);
+   }
 }
 
 void DesignCompilerWrapper::add_link_library(const std::string& link_library)
 {
    if(std::find(link_libs.begin(), link_libs.end(), link_library) == link_libs.end())
+   {
       link_libs.push_back(link_library);
+   }
 }
 
 void DesignCompilerWrapper::add_target_library(const std::vector<std::string>& target_library)
 {
    for(const auto& l : target_library)
+   {
       add_target_library(l);
+   }
 }
 
 void DesignCompilerWrapper::add_target_library(const std::string& target_library)
 {
    if(std::find(target_libs.begin(), target_libs.end(), target_library) == target_libs.end())
+   {
       target_libs.push_back(target_library);
+   }
 }
 
 void DesignCompilerWrapper::add_dont_use_cells(const std::string& local_top_module, const std::string& dont_use_cells)
@@ -298,11 +310,17 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
       boost::filesystem::path verilog(v);
       std::string extension = boost::filesystem::extension(verilog);
       if(extension == ".v" || extension == ".verilog")
+      {
          language = HDLWriter_Language::VERILOG;
+      }
       else if(extension == ".vhd" || extension == ".vhdl")
+      {
          language = HDLWriter_Language::VHDL;
+      }
       else
+      {
          THROW_ERROR("Format of file \"" + v + "\" is not compliant with Design Compiler's wrapper");
+      }
       if(top.size() == 0)
       {
          std::string name_v = GetLeafFileName(verilog);
@@ -314,11 +332,17 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
    xml_set_variable_tRef var_top_type = get_reserved_parameter(dc_top_filetype);
    var_top_type->clean();
    if(language == HDLWriter_Language::VERILOG)
+   {
       var_top_type->singleValue = new std::string("verilog");
+   }
    else if(language == HDLWriter_Language::VHDL)
+   {
       var_top_type->singleValue = new std::string("vhdl");
+   }
    else
+   {
       THROW_ERROR("Input language not supported!");
+   }
 
    return output_dir + "/output/" + target;
 }
@@ -330,7 +354,9 @@ void DesignCompilerWrapper::set_constraints(const DesignParametersRef dp)
 
    std::string top = dp->component_name;
    if(!top.length() && this->top_module.length())
+   {
       top = this->top_module;
+   }
 
    xml_set_variable_tRef var_constraint_file = get_reserved_parameter(dc_constraint_file);
    var_constraint_file->clean();
@@ -346,9 +372,13 @@ void DesignCompilerWrapper::set_constraints(const DesignParametersRef dp)
    xml_set_variable_tRef var_zero_int_delay = get_reserved_parameter(dc_zero_interconnect_delay);
    var_zero_int_delay->clean();
    if(Param->getOption<bool>("compound-gates") && !Param->getOption<bool>(OPT_has_complete_characterization))
+   {
       var_zero_int_delay->singleValue = new std::string("1");
+   }
    else
+   {
       var_zero_int_delay->singleValue = new std::string("0");
+   }
 
    xml_set_variable_tRef var_dont_use = get_reserved_parameter(dc_dont_use);
    var_dont_use->clean();
@@ -387,7 +417,9 @@ void DesignCompilerWrapper::perform_optimization(const DesignParametersRef)
    {
       unsigned int effort = MEDIUM;
       if(Param->isOption(OPT_design_compiler_effort))
+      {
          effort = Param->getOption<unsigned int>(OPT_design_compiler_effort);
+      }
       switch(effort)
       {
          case MEDIUM:
@@ -437,7 +469,9 @@ void DesignCompilerWrapper::write_reports(const DesignParametersRef)
 void DesignCompilerWrapper::parse_cell_reports()
 {
    if(report_files.find(REPORT_CELL) == report_files.end() || !boost::filesystem::exists(report_files[REPORT_CELL]))
+   {
       return;
+   }
    std::string time_report = report_files[REPORT_CELL];
    std::ifstream output_file(time_report.c_str());
    if(output_file.is_open())
@@ -460,7 +494,9 @@ void DesignCompilerWrapper::parse_cell_reports()
             boost::trim(tk);
             tk = tk.substr(0, tk.find_first_of(' '));
             if(cell_frequency.find(tk) == cell_frequency.end())
+            {
                cell_frequency[tk] = 0;
+            }
             cell_frequency[tk]++;
          }
       }
@@ -513,7 +549,9 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
             auto a_time = boost::lexical_cast<double>(tk);
             is_path_element = false;
             if(a_time < 0)
+            {
                a_time = -a_time;
+            }
             arrival_time.push_back(a_time);
             if(critical_cell.size())
             {
@@ -576,7 +614,9 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
       {
          PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "* " << a << ". Arrival time          : " << arrival_time[a]);
          if(arrival_time[a] > max_arrival_time)
+         {
             max_arrival_time = arrival_time[a];
+         }
       }
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "*****************");
 
@@ -674,7 +714,9 @@ area_modelRef DesignCompilerWrapper::parse_area_reports()
          if(line.size() and line.find("Total area:") != std::string::npos)
          {
             if(line.find("undefined") != std::string::npos)
+            {
                continue;
+            }
             std::string token("Total area:");
             std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
             boost::trim(tk);
@@ -683,7 +725,9 @@ area_modelRef DesignCompilerWrapper::parse_area_reports()
          if(line.size() and line.find("Net Interconnect area:") != std::string::npos)
          {
             if(line.find("undefined") != std::string::npos)
+            {
                continue;
+            }
             std::string token("Net Interconnect area:");
             std::string tk = line.substr(line.find(token) + token.size() + 1, line.size());
             boost::trim(tk);
@@ -799,35 +843,45 @@ double DesignCompilerWrapper::get_synthesis_time() const
 std::map<unsigned int, double> DesignCompilerWrapper::get_area_values() const
 {
    if(area.size() == 0)
+   {
       return std::map<unsigned int, double>();
+   }
    return area;
 }
 
 std::vector<double> DesignCompilerWrapper::get_arrival_time() const
 {
    if(arrival_time.size() == 0)
+   {
       return std::vector<double>();
+   }
    return arrival_time;
 }
 
 std::map<unsigned int, double> DesignCompilerWrapper::get_power_values() const
 {
    if(power.size() == 0)
+   {
       return std::map<unsigned int, double>();
+   }
    return power;
 }
 
 std::vector<std::vector<std::string>> DesignCompilerWrapper::get_critical_cells() const
 {
    if(critical_cells.size() == 0)
+   {
       return std::vector<std::vector<std::string>>();
+   }
    return critical_cells;
 }
 
 std::map<std::string, unsigned int> DesignCompilerWrapper::get_cell_frequency() const
 {
    if(cell_frequency.size() == 0)
+   {
       return std::map<std::string, unsigned int>();
+   }
    return cell_frequency;
 }
 

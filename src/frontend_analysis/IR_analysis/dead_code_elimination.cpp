@@ -113,7 +113,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 bool dead_code_elimination::HasToBeExecuted() const
 {
    if(FunctionFrontendFlowStep::HasToBeExecuted())
+   {
       return true;
+   }
    std::map<unsigned int, bool> cur_writing_memory;
    std::map<unsigned int, bool> cur_reading_memory;
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
@@ -349,7 +351,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          for(auto stmt = stmt_list.rbegin(); stmt != stmt_list.rend(); stmt++)
          {
             if(not AppM->ApplyNewTransformation())
+            {
                break;
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*stmt)->ToString());
             /// find out if it is a gimple_assign
             if(GET_NODE(*stmt)->get_kind() == gimple_assign_K)
@@ -374,7 +378,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      kill_uses(TM, ga->op0);
                   }
                   else
+                  {
                      THROW_ERROR("unexpected condition");
+                  }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
                   stmts_to_be_removed.push_back(*stmt);
                   AppM->RegisterTransformation(GetName(), *stmt);
@@ -402,7 +408,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                               THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
                               auto fdCalled = GetPointer<function_decl>(fu_decl_node);
                               if(fdCalled->writing_memory || !fdCalled->body)
+                              {
                                  is_a_writing_memory_call = true;
+                              }
                            }
                            else
                            {
@@ -412,14 +420,18 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         if(!is_a_writing_memory_call)
                         {
                            if(ga->vdef)
+                           {
                               add_gimple_nop(ga, TM, *stmt, (block_it)->second);
+                           }
                            stmts_to_be_removed.push_back(*stmt);
                            AppM->RegisterTransformation(GetName(), *stmt);
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead code found");
                         }
                      }
                      else
+                     {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS ssa used: " + STR(ssa->CGetNumberUses()) + "-" + STR(ssa->CGetDefStmts().size()));
+                     }
                   }
                   else if(op0->get_kind() == mem_ref_K && !ga->artificial && !tree_helper::is_a_vector(TM, op1_type_index))
                   {
@@ -428,7 +440,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                      auto type_w_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga->op1));
                      auto written_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_w_index));
                      if(written_bw == 1)
+                     {
                         written_bw = 8;
+                     }
                      if(GetPointer<integer_cst>(GET_NODE(mr->op1))->value == 0)
                      {
                         THROW_ASSERT(GET_NODE(mr->op0)->get_kind() == ssa_name_K, "unexpected condition");
@@ -473,7 +487,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                           {
                                              INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Dead Store found");
                                              if(ga->vdef)
+                                             {
                                                 add_gimple_nop(ga, TM, *stmt, (block_it)->second);
+                                             }
                                              stmts_to_be_removed.push_back(*stmt);
                                              AppM->RegisterTransformation(GetName(), *stmt);
                                           }
@@ -496,7 +512,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                          auto type_r_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(ga_used->op0));
                                                          auto read_bw = resize_to_1_8_16_32_64_128_256_512(tree_helper::size(TM, type_r_index));
                                                          if(read_bw == 1)
+                                                         {
                                                             read_bw = 8;
+                                                         }
                                                          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---read_bw: " + STR(read_bw) + " written_bw: " + STR(written_bw));
                                                          if(GET_INDEX_NODE(mr->op0) == GET_INDEX_NODE(mr_used->op0) && written_bw == read_bw)
                                                          {
@@ -518,11 +536,17 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                                                   if(!found_load && gn_curr->vdef &&
                                                                      (ga_used->vuses.find(gn_curr->vdef) != ga_used->vuses.end() ||
                                                                       (vdefvover_map.find(ssaDefIndex) != vdefvover_map.end() && vdefvover_map.find(ssaDefIndex)->second.find(GET_INDEX_NODE(gn_curr->vdef)) != vdefvover_map.find(ssaDefIndex)->second.end())))
+                                                                  {
                                                                      break;
+                                                                  }
                                                                   if(curr_stmt == stmt_list.rbegin())
+                                                                  {
                                                                      break;
+                                                                  }
                                                                   else
+                                                                  {
                                                                      --curr_stmt;
+                                                                  }
                                                                }
                                                             }
                                                             if(found_load)
@@ -553,25 +577,39 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                                        }
                                     }
                                     else
+                                    {
                                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---non local variable");
+                                    }
                                  }
                                  else
+                                 {
                                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---non var decl");
+                                 }
                               }
                               else
+                              {
                                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not supported pattern1");
+                              }
                            }
                            else
+                           {
                               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not supported pattern2");
+                           }
                         }
                         else
+                        {
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---not supported pattern3");
+                        }
                      }
                      else
+                     {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---non-null offset in the mem_ref");
+                     }
                   }
                   else
+                  {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---LHS not ssa");
+                  }
                }
             }
             else if(GET_NODE(*stmt)->get_kind() == gimple_cond_K)
@@ -655,7 +693,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                         if(GET_NODE(cond.first)->get_kind() == integer_cst_K)
                         {
                            if(!blocks[cond.second]->CGetStmtList().empty())
+                           {
                               do0ConstantCondRemoval = true;
+                           }
                         }
                         else if(condIndex2BBdest.find(GET_INDEX_NODE(cond.first)) == condIndex2BBdest.end())
                         {
@@ -710,7 +750,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                {
                   bool is_a_writing_memory_call = false;
                   if(fdCalled->writing_memory or !fdCalled->body)
+                  {
                      is_a_writing_memory_call = true;
+                  }
                   if(tree_helper::is_a_nop_function_decl(fdCalled) or !is_a_writing_memory_call)
                   {
                      add_gimple_nop(gc, TM, *stmt, (block_it)->second);
@@ -722,7 +764,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                }
             }
             else
+            {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not gimple_assign statement");
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed statement");
          }
          if(not stmts_to_be_removed.empty())
@@ -782,7 +826,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
          for(auto phi = phi_list.rbegin(); phi != phi_list.rend(); phi++)
          {
             if(not AppM->ApplyNewTransformation())
+            {
                break;
+            }
 
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*phi)->ToString());
             THROW_ASSERT(GET_NODE(*phi)->get_kind() == gimple_phi_K, GET_NODE(*phi)->ToString() + " is of kind " + tree_node::GetString(GET_NODE(*phi)->get_kind()));
@@ -843,7 +889,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             if(BB_reached.find(bb_pair.first) == BB_reached.end())
             {
                if(bb_pair.first != bloc::EXIT_BLOCK_ID)
+               {
                   bb_to_remove.insert(bb_pair.first);
+               }
             }
          }
          if(not bb_to_remove.empty())
@@ -864,9 +912,13 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   THROW_ASSERT(res->get_kind() == ssa_name_K, res->ToString() + " is of kind " + tree_node::GetString(res->get_kind()));
                   const ssa_name* ssa = GetPointer<ssa_name>(res);
                   if(ssa->virtual_flag)
+                  {
                      kill_vdef(TM, gphi->res);
+                  }
                   else
+                  {
                      kill_uses(TM, gphi->res);
+                  }
                   phis_to_be_removed.push_back(*phi);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed phi");
                }
@@ -904,7 +956,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   {
                      auto ga = GetPointer<gimple_assign>(node_stmt);
                      if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
+                     {
                         kill_uses(TM, ga->op0);
+                     }
                   }
                   stmts_to_be_removed.push_back(*stmt);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed stmt " + (*stmt)->ToString());
@@ -954,7 +1008,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                for(auto sblock : blocks.at(bb)->list_of_succ)
                {
                   if(sblock == bloc::EXIT_BLOCK_ID)
+                  {
                      continue;
+                  }
                   THROW_ASSERT(blocks.find(sblock) != blocks.end(), "Already removed BB" + STR(sblock));
                   auto succ_block = blocks.at(sblock);
                   succ_block->list_of_pred.erase(std::find(succ_block->list_of_pred.begin(), succ_block->list_of_pred.end(), bb));
@@ -1007,7 +1063,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
                   THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
                   auto fdCalled = GetPointer<function_decl>(fu_decl_node);
                   if(fdCalled->writing_memory || !fdCalled->body)
+                  {
                      ;
+                  }
                   else
                   {
                      if(gn->vdef && !is_single_write_memory)
@@ -1065,7 +1123,9 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             if(fdCalled)
             {
                if(fdCalled->writing_memory || !fdCalled->body)
+               {
                   ;
+               }
                else
                {
                   if(gn->vdef && !is_single_write_memory)

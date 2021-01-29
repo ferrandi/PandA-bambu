@@ -231,9 +231,13 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
             }
          }
          if(next_stmt != list_of_stmt.end())
+         {
             PushBefore(new_stmt, *next_stmt);
+         }
          else
+         {
             PushBack(new_stmt);
+         }
          break;
       }
    }
@@ -354,9 +358,13 @@ void bloc::ReorderLUTs()
                   auto ssa_node = GET_NODE(u.first);
                   auto ssa = GetPointer<ssa_name>(ssa_node);
                   if(ssa->virtual_flag || GetPointer<gimple_node>(GET_NODE(ssa->CGetDefStmt()))->bb_index != number)
+                  {
                      current_uses.insert(u.first);
+                  }
                   else
+                  {
                      return false;
+                  }
                }
             }
             return true;
@@ -397,7 +405,9 @@ void bloc::ReorderLUTs()
                      break;
                   }
                   else
+                  {
                      ++posPostponed;
+                  }
                }
             } while(restart_postponed);
             pos = next_stmt;
@@ -414,7 +424,9 @@ void bloc::AddPhi(const tree_nodeRef phi)
 {
    /// This check is necessary since during parsing of statement list statement has not yet been filled
    if(GET_NODE(phi) and GetPointer<gimple_phi>(GET_NODE(phi)))
+   {
       GetPointer<gimple_phi>(GET_NODE(phi))->bb_index = number;
+   }
    if(updated_ssa_uses)
    {
       const auto& uses = tree_helper::ComputeSsaUses(phi);

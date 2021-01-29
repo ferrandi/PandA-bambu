@@ -174,13 +174,21 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
             {
                std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
                if(std::get<0>(var_read[0]) == var1)
+               {
                   op_succ_of_v1_port0.insert(succ_id);
+               }
                else if(std::get<0>(var_read[1]) == var1)
+               {
                   op_succ_of_v1_port1.insert(succ_id);
+               }
                else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var1)
+               {
                   op_succ_of_v1_port2.insert(succ_id);
+               }
                else
+               {
                   THROW_ERROR("unexpected case:" + STR(succ_id) + "|" + STR(std::get<0>(var_read[0])) + ":" + STR(std::get<0>(var_read[1])));
+               }
             }
          });
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
@@ -198,13 +206,21 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
             {
                std::vector<HLS_manager::io_binding_type> var_read = HLS_mgr->get_required_values(function_id, succ);
                if(std::get<0>(var_read[0]) == var2)
+               {
                   op_succ_of_v2_port0.insert(succ_id);
+               }
                else if(std::get<0>(var_read[1]) == var2)
+               {
                   op_succ_of_v2_port1.insert(succ_id);
+               }
                else if(var_read.size() == 3 && std::get<0>(var_read[2]) == var2)
+               {
                   op_succ_of_v2_port2.insert(succ_id);
+               }
                else
+               {
                   THROW_ERROR("unexpected case");
+               }
             }
          });
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
@@ -221,11 +237,17 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, 0, "<--");
          if(P0cond)
+         {
             return 6;
+         }
          else if(P1cond)
+         {
             return 7;
+         }
          else if(P2cond)
+         {
             return 8;
+         }
          else
          {
             THROW_ERROR("unexpected condition");
@@ -239,13 +261,17 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
    if(is_a_phi1)
    {
       if(ssa_read1.find(var2) != ssa_read1.end())
+      {
          return 5;
+      }
    }
    const CustomSet<unsigned int>& ssa_read2 = data->CGetOpNodeInfo(v2)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
    if(is_a_phi2)
    {
       if(ssa_read2.find(var1) != ssa_read2.end())
+      {
          return 5;
+      }
    }
    if(fu.lock())
    {
@@ -258,9 +284,13 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
             /*unsigned int base_index1= tree_helper::get_base_index(HLSMgr->get_tree_manager(), var1);
             unsigned int base_index2= tree_helper::get_base_index(HLSMgr->get_tree_manager(), var2);*/
             if(fu.lock()->get_index(v1) == fu.lock()->get_index(v2) /* || base_index1 == base_index2*/)
+            {
                return 5;
+            }
             else
+            {
                return 1;
+            }
          }
          bool they_have_common_inputs = false;
          auto it1_end = ssa_read1.end();
@@ -288,15 +318,23 @@ int StorageValueInformation::get_compatibility_weight(unsigned int storage_value
                   }
                }
                if(they_have_common_inputs)
+               {
                   break;
+               }
             }
          }
          if(they_have_common_inputs)
+         {
             return 4;
+         }
          if(ssa_read1.find(var2) != ssa_read1.end())
+         {
             return 3;
+         }
          if(ssa_read2.find(var1) != ssa_read2.end())
+         {
             return 3;
+         }
          return 2;
       }
    }

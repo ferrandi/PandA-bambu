@@ -145,7 +145,9 @@ void VcdSignalSelection::SelectInitialAddrParam(const CustomOrderedSet<unsigned 
       {
          THROW_ASSERT(GET_NODE(parm_decl_node)->get_kind() == parm_decl_K, parm_decl_node->ToString() + " is of kind " + tree_node::GetString(parm_decl_node->get_kind()));
          if(IsAddressType(tree_helper::get_type_index(TM, GET_INDEX_NODE(parm_decl_node))))
+         {
             address_parameters[fun_id].insert(GET_NODE(parm_decl_node));
+         }
       }
    }
    return;
@@ -158,7 +160,9 @@ void VcdSignalSelection::InitialSsaIsAddress(const tree_nodeConstRef& tn, const 
    /* check if the left value is an ssa_name_K */
    const tree_nodeRef ssa_node = GET_NODE(g_as_node->op0);
    if(ssa_node->get_kind() != ssa_name_K)
+   {
       return;
+   }
    // complexes and reals are never marked as addresses
    if(tree_helper::is_real(TM, ssa_node->index) or tree_helper::is_a_complex(TM, ssa_node->index))
    {
@@ -195,8 +199,12 @@ void VcdSignalSelection::InitialSsaIsAddress(const tree_nodeConstRef& tn, const 
        */
       THROW_ASSERT(call_id_to_called_id.find(tn->index) != call_id_to_called_id.end(), "call id " + STR(tn->index) + " does not call any function");
       for(unsigned int i : call_id_to_called_id.at(tn->index))
+      {
          if(addr_fun_ids.find(i) != addr_fun_ids.end())
+         {
             Discr->address_ssa.insert(ssa_node);
+         }
+      }
       return;
    }
    /*
@@ -225,7 +233,9 @@ void VcdSignalSelection::InitialSsaIsAddress(const tree_nodeConstRef& tn, const 
    }
 
    if(IsAddressType(rhs_type_index))
+   {
       Discr->address_ssa.insert(ssa_node);
+   }
 
    return;
 }
@@ -257,15 +267,21 @@ void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& 
       {
          const unsigned int st_tn_id = op_graph->CGetOpNodeInfo(*vi)->GetNodeId();
          if(st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
+         {
             continue;
+         }
          THROW_ASSERT(st_tn_id, "operation vertex has id = 0");
          const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
          const unsigned int assigned_tree_node_id = HLSMgr->get_produced_value(fid, *vi);
          if(assigned_tree_node_id == 0)
+         {
             continue;
+         }
          const tree_nodeRef assigned_ssa_tree_node = TM->get_tree_node_const(assigned_tree_node_id);
          if(assigned_ssa_tree_node->get_kind() != ssa_name_K)
+         {
             continue;
+         }
          /*
           * if the ssa_name is never used it should be skipped. if we don't do this
           * the vcd signal selector will try to select the output signal. but if the
@@ -277,7 +293,9 @@ void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& 
          {
             Discr->ssa_to_skip.insert(assigned_ssa_tree_node);
             if(IsAddressType(tree_helper::get_type_index(TM, assigned_tree_node_id)))
+            {
                Discr->address_ssa.insert(assigned_ssa_tree_node);
+            }
             continue;
          }
          /*
@@ -288,7 +306,9 @@ void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& 
           * are more rare than with integers, so for now I make this assumption.
           */
          if(tree_helper::is_a_complex(TM, assigned_tree_node_id) or tree_helper::is_real(TM, assigned_tree_node_id))
+         {
             continue;
+         }
          /*
           * check the type of the ssa variable.
           */
@@ -298,9 +318,13 @@ void VcdSignalSelection::SelectInitialSsa(const CustomOrderedSet<unsigned int>& 
             continue;
          }
          if(curr_tn->get_kind() == gimple_assign_K)
+         {
             InitialSsaIsAddress(curr_tn, addr_fun_ids, call_id_to_called_id);
+         }
          else if(curr_tn->get_kind() == gimple_phi_K)
+         {
             InitialPhiResIsAddress(curr_tn);
+         }
       }
    }
    return;
@@ -316,7 +340,9 @@ void VcdSignalSelection::SingleStepPropagateParamToSsa(const TreeNodeMap<size_t>
       const tree_nodeRef ssa_node = GET_NODE(ssause_it->first);
       const auto* ssa = GetPointer<const ssa_name>(ssa_node);
       if(!ssa->var)
+      {
          continue;
+      }
       THROW_ASSERT(ssa->var->get_kind() == tree_reindex_K, ssa->var->ToString() + " is of kind " + tree_node::GetString(ssa->var->get_kind()));
       if(address_parameters.find(ssa->var) != address_parameters.end())
       {
@@ -339,7 +365,9 @@ void VcdSignalSelection::PropagateAddrParamToSsa(const CustomUnorderedMap<unsign
       const CustomUnorderedMap<unsigned int, TreeNodeSet>::const_iterator addrp_it = address_parameters.find(fid);
       bool has_addr_param = (addrp_it != address_parameters.end());
       if(not has_addr_param)
+      {
          continue;
+      }
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(fid);
       const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
       const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
@@ -349,7 +377,9 @@ void VcdSignalSelection::PropagateAddrParamToSsa(const CustomUnorderedMap<unsign
          const OpNodeInfoConstRef op_info = op_graph->CGetOpNodeInfo(*vi);
          const unsigned int st_tn_id = op_info->GetNodeId();
          if(st_tn_id == ENTRY_ID || st_tn_id == EXIT_ID)
+         {
             continue;
+         }
          THROW_ASSERT(st_tn_id, "operation vertex has id = 0");
          const tree_nodeConstRef curr_tn = TM->CGetTreeNode(st_tn_id);
          if(curr_tn->get_kind() == gimple_assign_K)
@@ -394,7 +424,9 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
          {
             const auto* bfr = GetPointer<const bit_field_ref>(rhs);
             if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
+            {
                is_a_vector_bitfield = true;
+            }
          }
 
          bool rhs_is_load_candidate = (rhs_kind == bit_field_ref_K && !is_a_vector_bitfield) || rhs_kind == component_ref_K || rhs_kind == indirect_ref_K || rhs_kind == misaligned_indirect_ref_K || rhs_kind == mem_ref_K || rhs_kind == array_ref_K ||
@@ -405,13 +437,19 @@ void VcdSignalSelection::SingleStepPropagateAddrSsa(const tree_nodeRef& curr_tn)
             const auto* vc = GetPointer<const view_convert_expr>(rhs);
             const auto vc_kind = tree_helper::get_type_node(GET_NODE(vc->op))->get_kind();
             if(vc_kind == record_type_K || vc_kind == union_type_K)
+            {
                rhs_is_load_candidate = true;
+            }
             if(vc_kind == array_type_K && ssa_node->get_kind() == vector_type_K)
+            {
                rhs_is_load_candidate = true;
+            }
          }
 
          if((not rhs_is_comparison) and (not rhs_is_load_candidate) and not(rhs_kind == call_expr_K))
+         {
             Discr->address_ssa.insert(ssa_node);
+         }
       }
    }
    else if(tn->get_kind() == gimple_phi_K)
@@ -440,7 +478,9 @@ void VcdSignalSelection::PropagateAddrSsa()
       {
          THROW_ASSERT(addr->get_kind() == ssa_name_K, addr->ToString() + " is of kind " + tree_node::GetString(addr->get_kind()));
          for(const auto& stmt_using_ssa : GetPointer<const ssa_name>(addr)->CGetUseStmts())
+         {
             SingleStepPropagateAddrSsa(stmt_using_ssa.first);
+         }
       }
    } while(previous_address_ssa_size != static_cast<size_t>(Discr->address_ssa.size()));
    return;
@@ -451,7 +491,9 @@ void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned in
    for(const unsigned int i : reached_body_functions)
    {
       if(addr_fun_ids.find(i) != addr_fun_ids.end())
+      {
          continue;
+      }
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(i);
       const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
       const vertex exit_vertex = op_graph->CGetOpGraphInfo()->exit_vertex;
@@ -460,7 +502,9 @@ void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned in
          const vertex& op = boost::source(edge, *op_graph);
          const unsigned int node_id = op_graph->CGetOpNodeInfo(op)->GetNodeId();
          if(node_id == ENTRY_ID or node_id == EXIT_ID)
+         {
             continue;
+         }
          const tree_nodeConstRef tn = TM->CGetTreeNode(node_id);
          if(tn->get_kind() == gimple_return_K)
          {
@@ -679,7 +723,9 @@ void VcdSignalSelection::SelectAddrSsa(const CustomUnorderedMap<unsigned int, Un
       const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
       const unsigned int return_type_index = BH->GetFunctionReturnType(f_id);
       if(return_type_index and IsAddressType(return_type_index))
+      {
          addr_fun_ids.insert(f_id);
+      }
    }
 
    /*
@@ -734,7 +780,9 @@ void VcdSignalSelection::SelectInternalSignals(CustomUnorderedMap<unsigned int, 
        * in vcd, because there will not be C assignments to compare them with
        */
       if(not FB->CGetBehavioralHelper()->has_implementation() or not FB->CGetBehavioralHelper()->function_has_to_be_printed(f_id))
+      {
          continue;
+      }
       fun_id_to_sig_names[f_id];
       // get the opgraph and information on binding and allocation of this function
       const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::FCFG);
@@ -746,13 +794,19 @@ void VcdSignalSelection::SelectInternalSignals(CustomUnorderedMap<unsigned int, 
       {
          const unsigned int op_node_id = op_graph->CGetOpNodeInfo(*op_vi)->GetNodeId();
          if(op_node_id == ENTRY_ID or op_node_id == EXIT_ID)
+         {
             continue;
+         }
          const unsigned int assigned_tree_node_id = HLSMgr->get_produced_value(f_id, *op_vi);
          if(assigned_tree_node_id == 0)
+         {
             continue;
+         }
          const tree_nodeRef assigned_var_tree_node = TM->get_tree_node_const(assigned_tree_node_id);
          if(assigned_var_tree_node->get_kind() != ssa_name_K or Discr->ssa_to_skip.find(assigned_var_tree_node) != ssa_to_skip_end)
+         {
             continue;
+         }
          const tree_nodeRef op_node = TM->get_tree_node_const(op_node_id);
          if(op_node->get_kind() == gimple_assign_K)
          {
@@ -839,13 +893,17 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
       const unsigned int f_id = Cget_node_info<UnfoldedFunctionInfo>(vs.first, Discr->DiscrepancyCallGraph)->f_id;
       const BehavioralHelperConstRef BH = Cget_node_info<UnfoldedFunctionInfo>(vs.first, Discr->DiscrepancyCallGraph)->behavior->CGetBehavioralHelper();
       if(not BH->has_implementation() or not BH->function_has_to_be_printed(f_id))
+      {
          continue;
+      }
       const std::string& scope = vs.second;
       auto& datapath_scope = Discr->selected_vcd_signals[scope + datapath_str];
       auto& controller_scope = Discr->selected_vcd_signals[scope + controller_str];
       THROW_ASSERT(not controller_scope.empty() or datapath_scope.empty(), "controller_scope size " + STR(controller_scope.size()) + " datapath_scope size " + STR(datapath_scope.size()));
-      if(not controller_scope.empty()) // this scope was already added by another vertex
+      if(not controller_scope.empty())
+      { // this scope was already added by another vertex
          continue;
+      }
       // select start, done and present_state signals in the fsm
       controller_scope.insert(START_PORT_NAME);
       controller_scope.insert(DONE_PORT_NAME);
@@ -899,7 +957,9 @@ DesignFlowStep_Status VcdSignalSelection::Exec()
          pointers_n++;
          const unsigned int ssa_base_index = tree_helper::get_base_index(TM, ssa_index);
          if((ssa_base_index != 0 and HLSMgr->Rmem->has_base_address(ssa_base_index)) or ssa->use_set->is_fully_resolved())
+         {
             fully_resolved_n++;
+         }
       }
       else
       {

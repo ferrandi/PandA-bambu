@@ -602,19 +602,33 @@ tree_nodeRef tree_manipulation::create_lut_expr(const tree_nodeRef& type, const 
    IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(op0));
    IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(op1));
    if(op2)
+   {
       IR_schema[TOK(TOK_OP2)] = STR(GET_INDEX_NODE(op2));
+   }
    if(op3)
+   {
       IR_schema[TOK(TOK_OP3)] = STR(GET_INDEX_NODE(op3));
+   }
    if(op4)
+   {
       IR_schema[TOK(TOK_OP4)] = STR(GET_INDEX_NODE(op4));
+   }
    if(op5)
+   {
       IR_schema[TOK(TOK_OP5)] = STR(GET_INDEX_NODE(op5));
+   }
    if(op6)
+   {
       IR_schema[TOK(TOK_OP6)] = STR(GET_INDEX_NODE(op6));
+   }
    if(op7)
+   {
       IR_schema[TOK(TOK_OP7)] = STR(GET_INDEX_NODE(op7));
+   }
    if(op8)
+   {
       IR_schema[TOK(TOK_OP8)] = STR(GET_INDEX_NODE(op8));
+   }
    IR_schema[TOK(TOK_SRCP)] = srcp;
 
    this->TreeM->create_tree_node(node_nid, lut_expr_K, IR_schema);
@@ -1475,9 +1489,13 @@ tree_nodeRef tree_manipulation::create_ssa_name(const tree_nodeConstRef& var, co
       IR_schema[TOK(TOK_VAR)] = STR(var->index);
    }
    if(min)
+   {
       IR_schema[TOK(TOK_MIN)] = STR(min->index);
+   }
    if(max)
+   {
       IR_schema[TOK(TOK_MAX)] = STR(max->index);
+   }
    IR_schema[TOK(TOK_VERS)] = STR(vers);
    IR_schema[TOK(TOK_VOLATILE)] = STR(volatile_flag);
    IR_schema[TOK(TOK_VIRTUAL)] = STR(virtual_flag);
@@ -2120,7 +2138,9 @@ tree_nodeRef tree_manipulation::create_function_decl(const std::string& function
       ++Pindex;
    }
    if(!with_body)
+   {
       fd->undefined_flag = true;
+   }
    TreeM->add_function(function_decl_id, GET_NODE(function_decl_res));
    return function_decl_res;
 }

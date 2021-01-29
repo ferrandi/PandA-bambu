@@ -57,7 +57,9 @@
 void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, CustomUnorderedMap<vertex, vertex>& i2o, CustomUnorderedMap<vertex, vertex>& o2i)
 {
    if(boost::num_vertices(*input) == 0)
+   {
       return;
+   }
    // creating maps
    THROW_ASSERT(i2o.size() == o2i.size(), "Different map sizes");
    if(i2o.size() == 0)
@@ -76,7 +78,9 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, Cu
    CustomUnorderedMap<vertex, unsigned int> sorted_nodes;
    unsigned int counter = 0;
    for(auto& level : levels)
+   {
       sorted_nodes[level] = ++counter;
+   }
 
    dominance<graph> dm(*input, start, end, param);
    dm.calculate_dominance_info(dominance<graph>::CDI_POST_DOMINATORS);
@@ -94,9 +98,13 @@ void weak_dominance::calculate_weak_dominance_info(graphs_collection* output, Cu
          while(current_node && current_node != A && current_node != post_dominators.at(A))
          {
             if(sorted_nodes[current_node] > sorted_nodes[A])
+            {
                add_edge(i2o[A], i2o[current_node], output);
+            }
             else
+            {
                break;
+            }
             current_node = post_dominators.at(current_node);
          }
       }
@@ -111,7 +119,11 @@ weak_dominance::weak_dominance(const graph* _input, vertex _start, vertex _end, 
 void weak_dominance::add_edge(vertex source, vertex target, graphs_collection* output)
 {
    if(output->ExistsEdge(source, target))
+   {
       output->AddSelector(source, target, selector);
+   }
    else
+   {
       output->InternalAddEdge(source, target, selector, EdgeInfoRef());
+   }
 }

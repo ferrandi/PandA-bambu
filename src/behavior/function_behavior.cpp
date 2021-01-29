@@ -204,9 +204,13 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       simple_pipeline = decl_node->is_simple_pipeline();
       initiation_time = decl_node->get_initiation_time();
       if(pipeline_enabled && simple_pipeline)
+      {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+      }
       else if(pipeline_enabled)
+      {
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+      }
    }
    else
    {
@@ -247,9 +251,13 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
 FunctionBehavior::~FunctionBehavior()
 {
    if(dominators)
+   {
       delete dominators;
+   }
    if(post_dominators)
+   {
       delete post_dominators;
+   }
 }
 
 OpGraphRef FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt)
@@ -702,14 +710,18 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    for(unsigned int funParam : funParams)
    {
       if(vars.find(funParam) != vars.end())
+      {
          vars.erase(funParam);
+      }
    }
 
    const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
    for(unsigned int gblVariable : gblVariables)
    {
       if(vars.find(gblVariable) != vars.end())
+      {
          vars.erase(gblVariable);
+      }
    }
    return vars;
 }

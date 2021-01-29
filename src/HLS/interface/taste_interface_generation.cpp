@@ -256,11 +256,15 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    unsigned long long int addr_range = aadl_information->exposed_memory_sizes[function_name];
    unsigned int index;
    for(index = 1; addr_range >= (1ull << index); ++index)
+   {
       ;
+   }
    const auto relative_address_bitsize = index;
    unsigned long long int address_mask = 0;
    for(index = 0; index < relative_address_bitsize; index++)
+   {
       address_mask += 1ull << index;
+   }
 
    /// Preparing masked version of address
    const auto filtered_address = SM_taste_interface->add_module_from_technology_library("filtered_address", "ui_bit_and_expr_FU", TM->get_library("ui_bit_and_expr_FU"), taste_interface_circuit, TM);
@@ -387,7 +391,9 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
 
       unsigned int bus_tag_bitsize = 0;
       if(HLS->Param->isOption(OPT_context_switch))
+      {
          bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
+      }
 
       const unsigned long long int n_elements = aadl_information->internal_memory_sizes[function_name] / bus_data_bytesize + ((aadl_information->internal_memory_sizes[function_name] % bus_data_bytesize) ? 1 : 0);
 
@@ -413,9 +419,13 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       {
          structural_objectRef port = GetPointer<module>(memory)->get_in_port(i);
          if(port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
+         {
             GetPointer<port_o>(port)->add_n_ports(2, port);
+         }
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+         {
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
+         }
       }
 
       const auto in1_port = memory->find_member("in1", port_vector_o_K, memory);
@@ -434,9 +444,13 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
       {
          structural_objectRef port = GetPointer<module>(memory)->get_out_port(i);
          if(port->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
+         {
             GetPointer<port_o>(port)->add_n_ports(2, port);
+         }
          if(GetPointer<port_o>(port)->get_is_data_bus() || GetPointer<port_o>(port)->get_is_addr_bus() || GetPointer<port_o>(port)->get_is_size_bus() || GetPointer<port_o>(port)->get_is_tag_bus())
+         {
             port_o::resize_busport(bus_size_bitsize, bus_addr_bitsize, bus_data_bitsize, bus_tag_bitsize, port);
+         }
       }
 
       CustomSet<std::pair<std::string, std::string>> mem_signals;
@@ -555,7 +569,9 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
    AddSignal(SM_taste_interface, reg_status, "out1", output_multiplexer, "reg_status", "reg_status_output");
    const auto return_port = minimal_interface->find_member(RETURN_PORT_NAME, port_o_K, minimal_interface);
    if(return_port)
+   {
       AddSignal(SM_taste_interface, minimal_interface, RETURN_PORT_NAME, output_multiplexer, "function_return_port", "return_port_output");
+   }
    if(with_memory)
    {
       AddSignal(SM_taste_interface, memory, "out1[0]", output_multiplexer, "from_memory", "from_memory_output");
@@ -602,19 +618,33 @@ void TasteInterfaceGeneration::ComputeRelationships(DesignFlowStepSet& relations
    module_interface::ComputeRelationships(relationship, relationship_type);
    const auto function_name = HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name();
    if(function_name.find(STR_CST_taste_data_size) != std::string::npos)
+   {
       return;
+   }
    if(function_name.find(STR_CST_taste_memory_enabling) != std::string::npos)
+   {
       return;
+   }
    if(function_name.find(STR_CST_taste_address_translation) != std::string::npos)
+   {
       return;
+   }
    if(function_name.find(STR_CST_taste_endianess_check) != std::string::npos)
+   {
       return;
+   }
    if(function_name.find(STR_CST_taste_endianess_inversion) != std::string::npos)
+   {
       return;
+   }
    if(function_name.find(STR_CST_taste_reg_status) != std::string::npos)
+   {
       return;
+   }
    if(function_name.find(STR_CST_taste_output_multiplexer) != std::string::npos)
+   {
       return;
+   }
    if(relationship_type == DesignFlowStep::DEPENDENCE_RELATIONSHIP)
    {
       const auto hls_flow_step_factory = GetPointer<const HLSFlowStepFactory>(CGetDesignFlowStepFactory());
@@ -687,18 +717,32 @@ bool TasteInterfaceGeneration::HasToBeExecuted() const
 {
    const auto function_name = HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name();
    if(function_name.find(STR_CST_taste_data_size) != std::string::npos)
+   {
       return false;
+   }
    if(function_name.find(STR_CST_taste_memory_enabling) != std::string::npos)
+   {
       return false;
+   }
    if(function_name.find(STR_CST_taste_address_translation) != std::string::npos)
+   {
       return false;
+   }
    if(function_name.find(STR_CST_taste_endianess_check) != std::string::npos)
+   {
       return false;
+   }
    if(function_name.find(STR_CST_taste_endianess_inversion) != std::string::npos)
+   {
       return false;
+   }
    if(function_name.find(STR_CST_taste_reg_status) != std::string::npos)
+   {
       return false;
+   }
    if(function_name.find(STR_CST_taste_output_multiplexer) != std::string::npos)
+   {
       return false;
+   }
    return module_interface::HasToBeExecuted();
 }

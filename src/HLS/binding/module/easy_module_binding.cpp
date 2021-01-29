@@ -136,7 +136,9 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       START_TIME(step_time);
+   }
    const auto TM = HLSMgr->get_tree_manager();
    // resource binding and allocation  info
    fu_binding& fu = *(HLS->Rfu);
@@ -152,17 +154,27 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    {
       const auto id = sdg->CGetOpNodeInfo(operation)->GetNodeId();
       if(id == ENTRY_ID or id == EXIT_ID)
+      {
          continue;
+      }
       fu_unit = fu.get_assign(operation);
       if(allocation_information->is_vertex_bounded(fu_unit))
+      {
          continue;
+      }
       if(n_shared_fu.find(fu_unit) == n_shared_fu.end())
+      {
          n_shared_fu[fu_unit] = 1;
+      }
       else
+      {
          n_shared_fu[fu_unit] = 1 + n_shared_fu[fu_unit];
+      }
    }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    /// check easy binding and compute the list of vertices for which a sharing is possible
    if(HLSMgr->GetFunctionBehavior(funId)->build_simple_pipeline())
@@ -172,10 +184,14 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       for(const auto op : sdg->CGetOperations())
       {
          if(fu.get_index(op) != INFINITE_UINT)
+         {
             continue;
+         }
          fu_unit = fu.get_assign(op);
          if(fu_instances.find(fu_unit) == fu_instances.end())
+         {
             fu_instances.insert(std::pair<unsigned int, unsigned int>(fu_unit, 0));
+         }
          fu.bind(op, fu_unit, fu_instances[fu_unit]);
          fu_instances[fu_unit]++;
          bound_vertices.insert(op);
@@ -193,7 +209,9 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
       for(const auto op : sdg->CGetOperations())
       {
          if(fu.get_index(op) != INFINITE_UINT)
+         {
             continue;
+         }
          fu_unit = fu.get_assign(op);
          if(allocation_information->is_vertex_bounded(fu_unit) ||
             (allocation_information->is_memory_unit(fu_unit) &&
@@ -220,6 +238,8 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

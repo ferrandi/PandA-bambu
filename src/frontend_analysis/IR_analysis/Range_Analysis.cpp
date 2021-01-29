@@ -1480,7 +1480,9 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       if(AppM->ApplyNewTransformation())
+      {
          if(SSA->CGetUseStmts().empty())
+         {
             if(const auto def = SSA->CGetDefStmt())
             {
                if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(def)))
@@ -1511,6 +1513,8 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
                   AppM->RegisterTransformation("RangeAnalysis", def);
                }
             }
+         }
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
       updateState = ut_Constant;
@@ -6225,7 +6229,9 @@ class ConstraintGraph : public NodeContainer
       {
          const auto& V = varNode->getValue();
          if(const auto* ssa = GetPointer<const ssa_name>(GET_CONST_NODE(V)))
+         {
             if(const auto* phi_def = GetPointer<const gimple_phi>(GET_CONST_NODE(ssa->CGetDefStmt())))
+            {
                if(phi_def->CGetDefEdgesList().size() == 1)
                {
                   auto dit = getDefs().find(V);
@@ -6241,6 +6247,8 @@ class ConstraintGraph : public NodeContainer
                      }
                   }
                }
+            }
+         }
          if(!varNode->getRange()->isUnknown())
          {
             entryPoints.insert(V);
@@ -6327,10 +6335,12 @@ class ConstraintGraph : public NodeContainer
       tree_nodeRef fun_node = nullptr;
 
       if(const auto* ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn)))
+      {
          if(const auto* ce = GetPointer<const call_expr>(GET_CONST_NODE(ga->op1)))
          {
             fun_node = ce->fn;
          }
+      }
       if(const auto* ce = GetPointer<const gimple_call>(GET_CONST_NODE(tn)))
       {
          fun_node = ce->fn;
@@ -6909,11 +6919,15 @@ static void ParmAndRetValPropagation(unsigned int function_id, const application
          const auto& stmt_list = idxBB.second->CGetStmtList();
 
          if(stmt_list.size())
+         {
             if(const auto* gr = GetPointer<const gimple_return>(GET_CONST_NODE(stmt_list.back())))
+            {
                if(gr->op != nullptr) // Compiler defined return statements may be without argument
                {
                   returnVars.push_back(CG->addVarNode(gr->op, function_id));
                }
+            }
+         }
       }
    }
    if(returnVars.empty() && !noReturn)

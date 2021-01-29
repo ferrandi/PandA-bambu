@@ -149,7 +149,9 @@ inline void CopyStdout(const std::string& filename)
    {
       size_t wBytes = fwrite(buffer, 1, nBytes, stdout);
       if(wBytes < nBytes)
+      {
          break;
+      }
    }
    fclose(filese);
 }
@@ -247,9 +249,13 @@ inline std::string GetCurrentPath()
 {
    std::string current_dir;
    if(getenv("OWD"))
+   {
       current_dir = getenv("OWD");
+   }
    else
+   {
       current_dir = boost::filesystem::current_path().string();
+   }
 #ifdef _WIN32
    boost::replace_all(current_dir, "\\", "/");
 #endif
@@ -260,7 +266,9 @@ inline std::string GetPath(const std::string& path)
 {
    boost::filesystem::path local_path_file = path;
    if(local_path_file.is_relative())
+   {
       local_path_file = boost::filesystem::path(GetCurrentPath()) / local_path_file;
+   }
    return local_path_file.string();
 }
 
@@ -281,7 +289,9 @@ inline std::string relocate_compiler_path(const std::string& path)
       return "c:/msys64/" + path;
 #else
    else
+   {
       return path;
+   }
 #endif
 }
 inline bool ExistFile(const std::string& file)
@@ -307,7 +317,9 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
       }
    }
    else
+   {
       boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+   }
 }
 
 /**

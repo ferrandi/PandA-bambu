@@ -96,7 +96,9 @@ class language_writer
    {
       std::string res;
       for(unsigned int i = 0; i < n_states; ++i)
+      {
          res = (val == i ? "1" : "0") + res;
+      }
       return res;
    }
 

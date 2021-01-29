@@ -97,31 +97,45 @@ std::string XilinxTasteBackendFlow::GenerateSynthesisScripts(const std::string&,
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(false);
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(true);
    if(Param->isOption(OPT_clock_name))
+   {
       actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   }
    else
+   {
       actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   }
    bool connect_iob = false;
    if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
+   {
       connect_iob = true;
+   }
    actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
    if(Param->isOption(OPT_top_design_name))
+   {
       actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
+   }
    else
+   {
       actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
+   }
    if(Param->isOption(OPT_backend_script_extensions))
    {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
       actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
    }
    else
+   {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
+   }
    if(Param->isOption(OPT_VHDL_library))
    {
       actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(true);
       actual_parameters->parameter_values[PARAM_VHDL_library] = Param->getOption<std::string>(OPT_VHDL_library);
    }
    else
+   {
       actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(false);
+   }
 
    InitDesignParameters();
 

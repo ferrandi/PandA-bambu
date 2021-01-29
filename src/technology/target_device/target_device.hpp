@@ -153,7 +153,9 @@ class target_device
    G get_parameter(const std::string& key) const
    {
       if(parameters.find(key) == parameters.end())
+      {
          THROW_ERROR("Parameter \"" + key + "\" not found in target device parameters' list");
+      }
       return boost::lexical_cast<G>(parameters.find(key)->second);
    }
 

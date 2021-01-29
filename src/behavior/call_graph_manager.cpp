@@ -121,7 +121,9 @@ void CallGraphManager::AddCallPoint(unsigned int caller_id, unsigned int called_
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding call with id: " + STR(call_id) + " from fun id: " + STR(caller_id) + " to fun id: " + STR(called_id));
    if(IsCallPoint(caller_id, called_id, call_id, call_type))
+   {
       return;
+   }
    THROW_ASSERT(not IsCallPoint(caller_id, called_id, call_id, FunctionEdgeInfo::CallType::call_any),
                 "call id " + STR(call_id) + " from function " + STR(caller_id) + " function " + STR(called_id) + " was already in the call graph with the same call type");
    THROW_ASSERT(IsVertex(caller_id), "caller function should be already added to the call_graph");
@@ -289,7 +291,9 @@ void CallGraphManager::RemoveCallPoint(EdgeDescriptor e, const unsigned int call
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "There are still " + STR(direct_calls.size()) + " direct calls, " + STR(indirect_calls.size()) + " indirect calls, and " + STR(function_addresses.size()) + " places where the address is taken");
    }
    if(indirect_calls.empty() and function_addresses.empty())
+   {
       addressed_functions.erase(called_id);
+   }
 }
 
 void CallGraphManager::RemoveCallPoint(const unsigned int caller_id, const unsigned int called_id, const unsigned int call_id)
@@ -337,8 +341,12 @@ void CallGraphManager::ReplaceCallPoint(const EdgeDescriptor e, const unsigned i
 bool CallGraphManager::ExistsAddressedFunction() const
 {
    for(const auto i : addressed_functions)
+   {
       if(reached_body_functions.find(i) != reached_body_functions.end())
+      {
          return true;
+      }
+   }
    return false;
 }
 
@@ -379,17 +387,25 @@ unsigned int CallGraphManager::get_function(vertex node) const
 {
    const auto end = functionID_vertex_map.cend();
    for(auto i = functionID_vertex_map.cbegin(); i != end; i++)
+   {
       if(i->second == node)
+      {
          return i->first;
+      }
+   }
    return 0;
 }
 
 const CustomOrderedSet<unsigned int> CallGraphManager::get_called_by(unsigned int index) const
 {
    if(called_by.find(index) != called_by.end())
+   {
       return called_by.at(index);
+   }
    else
+   {
       return CustomOrderedSet<unsigned int>();
+   }
 }
 
 const CustomUnorderedSet<unsigned int> CallGraphManager::get_called_by(const OpGraphConstRef cfg, const vertex& caller) const
@@ -554,7 +570,11 @@ void CalledFunctionsVisitor::finish_vertex(const vertex& u, const CallGraph& g)
 {
    unsigned int function_id = Cget_node_info<FunctionInfo, graph>(u, g)->nodeID;
    if(g.CGetCallGraphInfo()->behaviors.find(function_id)->second->CGetBehavioralHelper()->has_implementation())
+   {
       body_functions.insert(function_id);
+   }
    else
+   {
       library_functions.insert(function_id);
+   }
 }

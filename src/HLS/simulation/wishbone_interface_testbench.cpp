@@ -104,11 +104,17 @@ void WishboneInterfaceTestbench::write_wishbone_input_signal_declaration(const t
       {
          const structural_objectRef& port_obj = mod->get_in_port(i);
          if(CLOCK_PORT_NAME == port_obj->get_id())
+         {
             writer->write("input ");
+         }
          else if(GetPointer<port_o>(port_obj)->get_is_memory() || WB_ACKIM_PORT_NAME == port_obj->get_id())
+         {
             writer->write("wire ");
+         }
          else
+         {
             writer->write("reg ");
+         }
 
          writer->write(writer->type_converter(port_obj->get_typeRef()) + writer->type_converter_size(port_obj));
          if(port_obj->get_kind() != port_o_K && port_obj->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
@@ -171,9 +177,13 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    if(!parameters->getOption<bool>(OPT_level_reset))
+   {
       writer->write("if (" + std::string(RESET_PORT_NAME) + " == 1'b0)\n");
+   }
    else
+   {
       writer->write("if (" + std::string(RESET_PORT_NAME) + " == 1'b1)\n");
+   }
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    writer->write("call_state <= 8'd0;\n");
@@ -237,9 +247,13 @@ void WishboneInterfaceTestbench::write_call(bool hasMultiIrq) const
    }
    writer->write("8'd" + boost::lexical_cast<std::string>(++state) + ":\n");
    if(hasMultiIrq)
+   {
       writer->write("if (irq[0] == 1'b1)\n");
+   }
    else
+   {
       writer->write("if (irq == 1'b1)\n");
+   }
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    writer->write("next_call_state = 8'd" + boost::lexical_cast<std::string>(state + 1) + ";\n");
@@ -402,9 +416,13 @@ void WishboneInterfaceTestbench::write_memory_handler() const
    writer->write(STR(STD_OPENING_CHAR));
    writer->write("begin\n");
    if(!parameters->getOption<bool>(OPT_level_reset))
+   {
       writer->write("if (" + std::string(RESET_PORT_NAME) + " == 1'b0)" + STR(STD_OPENING_CHAR) + "\n");
+   }
    else
+   {
       writer->write("if (" + std::string(RESET_PORT_NAME) + " == 1'b1)" + STR(STD_OPENING_CHAR) + "\n");
+   }
    writer->write("ack_delayed <= 1'b0;" + STR(STD_CLOSING_CHAR) + "\n");
    writer->write("else" + STR(STD_OPENING_CHAR) + "\n");
    writer->write("ack_delayed <= stb_om & cyc_om & !ack_im;");
@@ -499,7 +517,9 @@ void WishboneInterfaceTestbench::write_wishbone_output_signal_declaration(bool& 
          std::string portId = mod->get_out_port(i)->get_id();
          writer->write("wire " + writer->type_converter(mod->get_out_port(i)->get_typeRef()) + writer->type_converter_size(mod->get_out_port(i)));
          if(portId == "irq" && mod->get_out_port(i)->get_kind() == port_vector_o_K)
+         {
             hasMultiIrq |= GetPointer<port_o>(mod->get_out_port(i))->get_ports_size() > 1;
+         }
 
          if(mod->get_out_port(i)->get_kind() != port_o_K && mod->get_out_port(i)->get_typeRef()->type != structural_type_descriptor::VECTOR_BOOL)
          {
@@ -612,7 +632,9 @@ void WishboneInterfaceTestbench::write_file_reading_operations() const
       }
    }
    if(not first_valid_input)
+   {
       writer->write("_ch_ = $fgetc(file);\n");
+   }
 }
 
 void WishboneInterfaceTestbench::init_extra_signals(bool) const

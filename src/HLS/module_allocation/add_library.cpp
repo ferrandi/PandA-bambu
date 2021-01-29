@@ -131,11 +131,17 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   else
                   {
                      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+                     {
                         found = true;
+                     }
                      if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+                     {
                         found = true;
+                     }
                      if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+                     {
                         found = true;
+                     }
                      if(found) // use new top_entity
                      {
                         const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
@@ -204,7 +210,9 @@ DesignFlowStep_Status add_library::InternalExec()
                                        GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY) :
                                        "";
    if(module_parameters.find(" ") != std::string::npos)
+   {
       module_parameters = module_parameters.substr(module_parameters.find(" "));
+   }
    fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, module_name + module_parameters);
    if(!add_library_specialization->interfaced)
    {
@@ -224,7 +232,9 @@ DesignFlowStep_Status add_library::InternalExec()
          {
             const structural_objectRef& port_obj = mod->get_in_port(i);
             if(GetPointer<port_o>(port_obj)->get_is_memory())
+            {
                is_bounded = false; /// functions accessing memory are classified as unbounded
+            }
          }
          if(is_bounded)
          {
@@ -258,9 +268,13 @@ DesignFlowStep_Status add_library::InternalExec()
          unsigned int min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
          unsigned int max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
          if(min_cycles > 1)
+         {
             exec_time = clk * (min_cycles - 1) + call_delay;
+         }
          else
+         {
             exec_time = call_delay;
+         }
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {
@@ -277,15 +291,23 @@ DesignFlowStep_Status add_library::InternalExec()
                const ControlStep ii(max_cycles + 1);
                const ControlStep jj(1);
                if(not simple_pipeline)
+               {
                   op->time_m->set_initiation_time(ii);
+               }
                else
+               {
                   op->time_m->set_initiation_time(jj);
+               }
             }
          }
          else
+         {
             op->time_m->set_stage_period(0.0);
+         }
          if(min_cycles <= 1 && (HLSMgr->Rmem->get_allocated_space() + HLSMgr->Rmem->get_allocated_parameters_memory()) == 0)
+         {
             fu->logical_type = functional_unit::COMBINATIONAL;
+         }
       }
       else
       {

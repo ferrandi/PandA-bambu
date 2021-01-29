@@ -221,12 +221,16 @@ void memory_allocation::finalize_memory_allocation()
       const std::list<unsigned int>& function_parameters = BH->get_parameters();
 
       if(FB->get_dereference_unknown_addr())
+      {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---This function uses unknown addresses deref: " + BH->get_function_name());
+      }
 
       use_unknown_address |= FB->get_dereference_unknown_addr();
 
       if(FB->get_pointer_type_conversion())
+      {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---This function performs pointer conversions: " + BH->get_function_name());
+      }
 
       pointer_conversion_happen |= FB->get_pointer_type_conversion();
 
@@ -234,7 +238,9 @@ void memory_allocation::finalize_memory_allocation()
       {
          INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---This function performs unaligned accesses: " + BH->get_function_name());
          if(assume_aligned_access_p)
+         {
             THROW_ERROR("Option --aligned-access have been specified on a function with unaligned accesses");
+         }
       }
 
       has_unaligned_accesses |= FB->get_unaligned_accesses();
@@ -268,7 +274,9 @@ void memory_allocation::finalize_memory_allocation()
       bool is_interfaced = HLSMgr->hasToBeInterfaced(behavioral_helper->get_function_index());
       bool is_inferred_interface = parameters->isOption(OPT_interface_type) && parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION;
       if(function_behavior->get_has_globals() && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
+      {
          has_intern_shared_data = true;
+      }
       if(!is_inferred_interface)
       {
          const std::list<unsigned int>& function_parameters = behavioral_helper->get_parameters();
@@ -287,7 +295,9 @@ void memory_allocation::finalize_memory_allocation()
          }
       }
       if(function_behavior->has_packed_vars())
+      {
          has_misaligned_indirect_ref = true;
+      }
       const CustomOrderedSet<unsigned int>& parm_decl_stored = function_behavior->get_parm_decl_stored();
       for(unsigned int p : parm_decl_stored)
       {
@@ -341,7 +351,9 @@ void memory_allocation::finalize_memory_allocation()
       for(boost::tie(v, v_end) = boost::vertices(*g); v != v_end; ++v)
       {
          if(RW_stmts.find(*v) != RW_stmts.end())
+         {
             continue;
+         }
          std::string current_op = g->CGetOpNodeInfo(*v)->GetOperation();
          std::vector<HLS_manager::io_binding_type> var_read = HLSMgr->get_required_values(fun_id, *v);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + GET_NAME(g, *v));
@@ -353,15 +365,23 @@ void memory_allocation::finalize_memory_allocation()
             unsigned int var = 0;
             unsigned int expr_index;
             if(GET_TYPE(g, *v) | TYPE_STORE)
+            {
                expr_index = GET_INDEX_NODE(me->op0);
+            }
             else
+            {
                expr_index = GET_INDEX_NODE(me->op1);
+            }
             var = tree_helper::get_base_index(TreeM, expr_index);
             if(tree_helper::is_a_misaligned_vector(TreeM, expr_index))
+            {
                has_misaligned_indirect_ref = true;
+            }
             /// check for packed struct/union accesses
             if(!has_misaligned_indirect_ref)
+            {
                has_misaligned_indirect_ref = tree_helper::is_packed_access(TreeM, expr_index);
+            }
 
             /// check if a global variable may be accessed from an external component
             if(!has_intern_shared_data && var && function_behavior->is_variable_mem(var) && !HLSMgr->Rmem->is_private_memory(var) && (!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals)))
@@ -369,7 +389,9 @@ void memory_allocation::finalize_memory_allocation()
                const tree_nodeRef var_tn = TreeM->get_tree_node_const(var);
                auto* vd = GetPointer<var_decl>(var_tn);
                if(vd && (((!vd->scpe || GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K) && !vd->static_flag) || tree_helper::is_volatile(TreeM, var) || call_graph_manager->ExistsAddressedFunction()))
+               {
                   has_intern_shared_data = true; /// an external component can access the var possibly (global and volatile vars)
+               }
             }
             unsigned int value_bitsize;
             if(GET_TYPE(g, *v) & TYPE_STORE)
@@ -387,7 +409,9 @@ void memory_allocation::finalize_memory_allocation()
                PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "load with value_bitsize=" + STR(value_bitsize));
             }
             if(!(function_behavior->is_variable_mem(var) && HLSMgr->Rmem->is_private_memory(var)))
+            {
                maximum_bus_size = std::max(maximum_bus_size, value_bitsize);
+            }
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, " with maximum_bus_size=" + STR(maximum_bus_size) + " " + curr_tn->ToString());
          }
          else
@@ -397,7 +421,9 @@ void memory_allocation::finalize_memory_allocation()
                use_databus_width = true;
                maximum_bus_size = std::max(maximum_bus_size, 8u);
                if(assume_aligned_access_p)
+               {
                   THROW_ERROR("Option --aligned-access cannot be used in presence of memcpy, memcmp or memset");
+               }
             }
 
             auto vr_it_end = var_read.end();
@@ -411,11 +437,17 @@ void memory_allocation::finalize_memory_allocation()
                   const tree_nodeRef type_node = tree_helper::get_type_node(var_node, type_index);
                   tree_nodeRef type_node_ptd;
                   if(type_node->get_kind() == pointer_type_K)
+                  {
                      type_node_ptd = GetPointer<pointer_type>(type_node)->ptd;
+                  }
                   else if(type_node->get_kind() == reference_type_K)
+                  {
                      type_node_ptd = GetPointer<reference_type>(type_node)->refd;
+                  }
                   else
+                  {
                      THROW_ERROR("A pointer type is expected");
+                  }
                   unsigned bitsize = 1;
                   tree_helper::accessed_greatest_bitsize(TreeM, GET_NODE(type_node_ptd), GET_INDEX_NODE(type_node_ptd), bitsize);
                   maximum_bus_size = std::max(maximum_bus_size, bitsize);
@@ -433,17 +465,25 @@ void memory_allocation::finalize_memory_allocation()
       {
          unsigned int addr_bus_bitsize;
          if(parameters->isOption(OPT_addr_bus_bitsize))
+         {
             addr_bus_bitsize = parameters->getOption<unsigned int>(OPT_addr_bus_bitsize);
+         }
          else
+         {
             addr_bus_bitsize = 32;
+         }
          for(auto par : behavioral_helper->get_parameters())
          {
             unsigned int type_index = tree_helper::get_type_index(TreeM, par);
             bool is_a_struct_union = tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
             if(is_a_struct_union)
+            {
                maximum_bus_size = std::max(addr_bus_bitsize, maximum_bus_size);
+            }
             else
+            {
                maximum_bus_size = std::max(tree_helper::size(TreeM, par), maximum_bus_size);
+            }
          }
          const unsigned int function_return = behavioral_helper->GetFunctionReturnType(fun_id);
          if(function_return)
@@ -465,9 +505,13 @@ void memory_allocation::finalize_memory_allocation()
    if(has_misaligned_indirect_ref || has_unaligned_accesses)
    {
       if(maximum_bus_size > bram_bitsize_max)
+      {
          THROW_ERROR("Unsupported data bus size. In case, try a device supporting this BRAM BITSIZE: " + STR(maximum_bus_size) + " available maximum BRAM BITSIZE: " + STR(bram_bitsize_max));
+      }
       else
+      {
          bram_bitsize = maximum_bus_size;
+      }
    }
    else if(maximum_bus_size / 2 > bram_bitsize_max)
    {
@@ -479,19 +523,31 @@ void memory_allocation::finalize_memory_allocation()
    }
 
    if(bram_bitsize < bram_bitsize_min)
+   {
       bram_bitsize = bram_bitsize_min;
+   }
 
    if(bram_bitsize < 8)
+   {
       bram_bitsize = 8;
+   }
 
    if(parameters->isOption(OPT_addr_bus_bitsize))
+   {
       addr_bus_bitsize = parameters->getOption<unsigned int>(OPT_addr_bus_bitsize);
+   }
    else if(use_unknown_address)
+   {
       addr_bus_bitsize = 32;
+   }
    else if(has_intern_shared_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM)
+   {
       addr_bus_bitsize = 32;
+   }
    else if(HLSMgr->Rmem->get_memory_address() - HLSMgr->base_address > 0)
+   {
       addr_bus_bitsize = 32;
+   }
    else
    {
       unsigned long long int addr_range = HLSMgr->Rmem->get_max_address();
@@ -502,19 +558,27 @@ void memory_allocation::finalize_memory_allocation()
       }
       unsigned int index;
       for(index = 1; addr_range >= (1ull << index); ++index)
+      {
          ;
+      }
       addr_bus_bitsize = index;
       if(HLSMgr->Rmem->count_non_private_internal_symbols() == 1)
+      {
          ++addr_bus_bitsize;
+      }
    }
 
    HLSMgr->set_address_bitsize(addr_bus_bitsize);
    if(needMemoryMappedRegisters)
+   {
       maximum_bus_size = std::max(maximum_bus_size, addr_bus_bitsize);
+   }
    data_bus_bitsize = maximum_bus_size;
    HLSMgr->Rmem->set_bus_data_bitsize(data_bus_bitsize);
    for(size_bus_bitsize = 4; data_bus_bitsize >= (1u << size_bus_bitsize); ++size_bus_bitsize)
+   {
       ;
+   }
    HLSMgr->Rmem->set_bus_size_bitsize(size_bus_bitsize);
 
    HLSMgr->Rmem->set_bram_bitsize(bram_bitsize);
@@ -532,7 +596,9 @@ void memory_allocation::finalize_memory_allocation()
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ADDRESS bus bitsize: " + STR(addr_bus_bitsize));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---SIZE bus bitsize: " + STR(size_bus_bitsize));
    if(HLSMgr->Rmem->has_all_pointers_resolved())
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ALL pointers have been resolved");
+   }
 #if 0
    if(pointer_conversion_happen)
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "At least one pointer conversion has been performed into the code");
@@ -540,9 +606,13 @@ void memory_allocation::finalize_memory_allocation()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "No pointer recast into the code");
 #endif
    if(has_unaligned_accesses)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Code has LOADs or STOREs with unaligned accesses");
+   }
    if(HLSMgr->Rmem->get_allocated_parameters_memory())
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Total amount of memory allocated for memory mapped parameters: " + STR(HLSMgr->Rmem->get_allocated_parameters_memory()));
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Internally allocated memory (no private memories): " + STR(HLSMgr->Rmem->get_allocated_intern_memory()));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Internally allocated memory: " + STR(HLSMgr->Rmem->get_allocated_space()));
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
@@ -591,7 +661,9 @@ void memory_allocation::allocate_parameters(unsigned int functionId)
 bool memory_allocation::HasToBeExecuted() const
 {
    if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
+   {
       return true;
+   }
    std::map<unsigned int, unsigned int> cur_bb_ver;
    // std::map<unsigned int, unsigned int> cur_bitvalue_ver;
    const CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();

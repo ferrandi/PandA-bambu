@@ -100,7 +100,9 @@ struct variable2obj : public std::map<unsigned int, data_obj>
    void resize(Iterator left, Iterator right, int val)
    {
       for(; left != right; left++)
+      {
          this->operator[](*left) = val;
+      }
    }
 
    /**
@@ -120,7 +122,9 @@ struct variable2obj : public std::map<unsigned int, data_obj>
    friend std::ostream& operator<<(std::ostream& os, const variable2obj* s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 };

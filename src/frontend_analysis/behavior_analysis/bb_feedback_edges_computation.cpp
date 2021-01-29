@@ -101,7 +101,9 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
    for(auto loop = loops.begin(); loop != loop_end; ++loop)
    {
       if((*loop)->GetId() == 0)
+      {
          continue;
+      }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing loop " + STR((*loop)->GetId()));
       for(auto sp_back_edge : (*loop)->get_sp_back_edges())

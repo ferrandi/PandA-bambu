@@ -152,7 +152,9 @@ int tree_panda_gcc_parameter::Exec()
 
       // no more options are available
       if(next_option == -1)
+      {
          break;
+      }
 
       switch(next_option)
       {
@@ -181,9 +183,13 @@ int tree_panda_gcc_parameter::Exec()
                ///
                std::string parameter(optarg);
                if(boost::algorithm::starts_with(parameter, "td="))
+               {
                   setOption(OPT_gcc_standard, parameter.substr(parameter.find("=") + 1));
+               }
                else
+               {
                   THROW_ERROR("unexpected parameter: " + parameter);
+               }
             }
             break;
          }
@@ -191,11 +197,17 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options;
             if(optarg != nullptr)
+            {
                gcc_extra_options = "-M" + std::string(optarg);
+            }
             else
+            {
                gcc_extra_options = "-M";
+            }
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -210,7 +222,9 @@ int tree_panda_gcc_parameter::Exec()
                std::string gcc_extra_options;
                gcc_extra_options = "-i" + std::string(optarg);
                if(isOption(OPT_gcc_extra_options))
+               {
                   gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+               }
                setOption(OPT_gcc_extra_options, gcc_extra_options);
             }
             break;
@@ -219,7 +233,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-include " + std::string(optarg);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -228,7 +244,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-n" + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -242,7 +260,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MF " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -251,7 +271,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MT " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -260,7 +282,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MQ " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -268,7 +292,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-x " + std::string(optarg);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -276,7 +302,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-t";
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -306,9 +334,13 @@ int tree_panda_gcc_parameter::Exec()
             bool exit_success = false;
             bool res = ManageGccOptions(next_option, optarg);
             if(res)
+            {
                res = ManageDefaultOptions(next_option, optarg, exit_success);
+            }
             if(exit_success)
+            {
                return EXIT_SUCCESS;
+            }
             if(res)
             {
                return PARAMETER_NOTPARSED;

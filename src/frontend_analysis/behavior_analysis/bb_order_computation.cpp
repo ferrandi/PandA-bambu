@@ -145,7 +145,9 @@ DesignFlowStep_Status BBOrderComputation::InternalExec()
          if(toadd)
          {
             if(ebb->CGetBBEdgeInfo(*o)->cfg_edge_T())
+            {
                then = next;
+            }
             /// Vertex can be added to list
             if(next != then)
             {

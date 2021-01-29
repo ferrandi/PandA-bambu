@@ -62,10 +62,16 @@ static bool is_all_8zeros(const std::string& str)
 {
    size_t size = str.size();
    if(size % 8 != 0 || size == 8)
+   {
       return false;
+   }
    for(size_t i = 0; i < size; ++i)
+   {
       if(str.at(i) != '0')
+      {
          return false;
+      }
+   }
    return true;
 }
 

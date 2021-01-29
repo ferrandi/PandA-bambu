@@ -194,7 +194,9 @@ void GenerateFuList::AnalyzeCell(functional_unit* fu, const unsigned int, const 
    {
       has_first_synthesis_id = constPort;
       if(current_list != "")
+      {
          cells.insert(current_list);
+      }
       current_list = component + "-" + fu->get_name();
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + fu->get_name());

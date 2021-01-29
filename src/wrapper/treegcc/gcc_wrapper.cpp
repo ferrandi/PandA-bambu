@@ -351,9 +351,13 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
       bool flag_cpp;
       if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+      {
          flag_cpp = true;
+      }
       else
+      {
          flag_cpp = false;
+      }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
       command = flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
@@ -401,7 +405,9 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    if(cm == GccWrapper_CompilerMode::CM_EMPTY)
    {
       if(original_file_name == "-")
+      {
          THROW_ERROR("Reading from standard input which does not contain any function definition");
+      }
       static int empty_counter = 0;
       const std::string temp_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + "/empty_" + boost::lexical_cast<std::string>(empty_counter++) + ".c";
       CopyFile(original_file_name, temp_file_name);
@@ -413,9 +419,13 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
       real_file_name = temp_file_name;
       if(compiler.is_clang)
+      {
          command += " -c -fplugin=" + compiler.empty_plugin_obj + " -mllvm -pandaGE-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory) + " -mllvm -pandaGE-infile=" + real_file_name;
+      }
       else
+      {
          command += " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+      }
    }
    else if(cm == GccWrapper_CompilerMode::CM_ANALYZER)
    {
@@ -439,16 +449,20 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                  Param->getOption<std::string>(OPT_output_temporary_directory);
 
       if(addTopFName)
+      {
          command += " -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang -topfname -Xclang -plugin-arg-" + compiler.ASTAnalyzer_plugin_name + " -Xclang " + fname;
+      }
    }
    else if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
+   {
       ;
 #if HAVE_FROM_RTL_BUILT
-   else if(Param->getOption<bool>(OPT_use_rtl))
-   {
-      command += " -c -fplugin=" + compiler.rtl_plugin;
-   }
+      else if(Param->getOption<bool>(OPT_use_rtl))
+      {
+         command += " -c -fplugin=" + compiler.rtl_plugin;
+      }
 #endif
+   }
    else if(cm == GccWrapper_CompilerMode::CM_STD)
    {
       std::string fname;
@@ -500,19 +514,25 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                   {
                      const xml_element* child = GetPointer<xml_element>(l);
                      if(!child)
+                     {
                         continue;
+                     }
                      if(child->get_name() == "memory_allocation")
                      {
                         for(const auto& it : child->get_children())
                         {
                            const xml_element* mem_node = GetPointer<xml_element>(it);
                            if(!mem_node)
+                           {
                               continue;
+                           }
                            if(mem_node->get_name() == "object")
                            {
                               std::string is_internal;
                               if(!CE_XVM(is_internal, mem_node))
+                              {
                                  THROW_ERROR("expected the is_internal attribute");
+                              }
                               LOAD_XVM(is_internal, mem_node);
                               if(is_internal == "T")
                               {
@@ -520,13 +540,17 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                               else if(is_internal == "F")
                               {
                                  if(!CE_XVM(name, mem_node))
+                                 {
                                     THROW_ERROR("expected the name attribute");
+                                 }
                                  std::string name;
                                  LOAD_XVM(name, mem_node);
                                  extern_symbols = extern_symbols + name + ",";
                               }
                               else
+                              {
                                  THROW_ERROR("unexpected value for is_internal attribute");
+                              }
                            }
                         }
                      }
@@ -539,7 +563,9 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                command += " -mllvm -panda-ESL=" + extern_symbols;
             }
             if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
+            {
                command += " -mllvm -panda-Internalize";
+            }
             if(Param->IsParameter("enable-CSROA") && Param->GetParameter<int>("enable-CSROA") == 1 && !compiler.CSROA_plugin_obj.empty() && !compiler.expandMemOps_plugin_obj.empty())
             {
                command += " -fplugin=" + compiler.CSROA_plugin_obj + " -mllvm -panda-KN=" + fname;
@@ -550,8 +576,10 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
                }
             }
          }
-         else if(!multiple_files) /// LTO not yet supported with GCC
+         else if(!multiple_files)
+         { /// LTO not yet supported with GCC
             command += " -fplugin=" + compiler.topfname_plugin_obj + " -fplugin-arg-" + compiler.topfname_plugin_name + "-topfname=" + fname;
+         }
       }
       if(compiler.is_clang)
       {
@@ -562,12 +590,18 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          }
       }
       else
+      {
          command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
+      }
    }
    else if(cm == GccWrapper_CompilerMode::CM_LTO)
+   {
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + GetBaseName(real_file_name) + ".o ";
+   }
    else
+   {
       THROW_ERROR("compilation mode not yet implemented");
+   }
 
    std::string temporary_file_run_o;
    if(cm != GccWrapper_CompilerMode::CM_LTO)
@@ -599,7 +633,9 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
 
    if(!(Param->getOption<bool>(OPT_compute_size_of)))
+   {
       command += " -D\"" + std::string(STR_CST_panda_sizeof) + "(arg)=" + STR_CST_string_sizeof + "(#arg)\"";
+   }
    command += " " + local_parameters_line;
    if(original_file_name == "-" or original_file_name == "/dev/null")
    {
@@ -611,7 +647,9 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       std::string extension = GetExtension(file_path);
       /// assembler files are not allowed so in some cases we pass a C file renamed with extension .S
       if(extension == "S")
+      {
          command += "-x c ";
+      }
       command += "\"" + real_file_name + "\"";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Invoke: " + command);
@@ -632,7 +670,9 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 #endif
 
    if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)) or cm == GccWrapper_CompilerMode::CM_LTO))
+   {
       std::remove(temporary_file_run_o.c_str());
+   }
    if(IsError(ret))
    {
       PRINT_OUT_MEX(OUTPUT_LEVEL_NONE, 0, "Error in compilation");
@@ -650,7 +690,9 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    else
    {
       if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      {
          CopyStdout(gcc_output_file_name);
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
@@ -661,7 +703,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
    const auto output_temporary_directory = Param->getOption<std::string>(OPT_output_temporary_directory);
    if(source_files.size() == 0)
+   {
       THROW_ERROR("No files specified for parsing");
+   }
 
    /// check for aligned option
    const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
@@ -671,17 +715,23 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
       {
          bool assume_aligned_access_p = Param->isOption(OPT_aligned_access) && Param->getOption<bool>(OPT_aligned_access);
          if(assume_aligned_access_p)
+         {
             THROW_ERROR("Option --aligned-access cannot be used with -O3 or -ftree-vectorize");
+         }
       }
    }
    const Compiler compiler = GetCompiler();
 
    bool disable_pragma_parsing = false;
    if(Param->IsParameter("disable-pragma-parsing") && Param->GetParameter<int>("disable-pragma-parsing") == 1)
+   {
       disable_pragma_parsing = true;
+   }
    if(disable_pragma_parsing ||
       !(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER))
+   {
       THROW_WARNING("pragma analysis requires CLANG");
+   }
    else
    {
       for(auto& source_file : source_files)
@@ -750,7 +800,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
             leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
             if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
+            {
                THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix + " not found: impossible to create raw file for " + source_file.second);
+            }
             rename_file(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix, output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Renaming " + source_file.second + STR_CST_gcc_empty_suffix + " in " + source_file.second + STR_CST_gcc_tree_suffix);
          }
@@ -787,7 +839,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
       {
          std::string leaf_name = source_file.second == "-" ? "stdin-" : GetBaseName(GetLeafFileName(source_file.second));
          if((boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o"))))
+         {
             object_files += boost::filesystem::path(output_temporary_directory + "/" + leaf_name + ".o").string() + " ";
+         }
       }
       auto temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
       std::string command = compiler.llvm_link.string() + " " + object_files + " -o " + temporary_file_o_bc;
@@ -822,7 +876,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          addTFNPlugin = top_functions_names.size() == 1 && !Param->isOption(OPT_top_design_name);
          fname = top_functions_names.front();
          if(fname == "main" && !compiler.is_clang)
+         {
             addTFNPlugin = false;
+         }
       }
 
       if(addTFNPlugin)
@@ -849,7 +905,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
                {
                   auto source_file = GetLeafFileName(entry.path().string());
                   if(source_file.find(".memory_allocation.xml") != std::string::npos)
+                  {
                      xml_files.push_back(source_file);
+                  }
                }
             }
             for(auto XMLfilename : xml_files)
@@ -865,19 +923,25 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
                   {
                      const xml_element* child = GetPointer<xml_element>(l);
                      if(!child)
+                     {
                         continue;
+                     }
                      if(child->get_name() == "memory_allocation")
                      {
                         for(const auto& it : child->get_children())
                         {
                            const xml_element* mem_node = GetPointer<xml_element>(it);
                            if(!mem_node)
+                           {
                               continue;
+                           }
                            if(mem_node->get_name() == "object")
                            {
                               std::string is_internal;
                               if(!CE_XVM(is_internal, mem_node))
+                              {
                                  THROW_ERROR("expected the is_internal attribute");
+                              }
                               LOAD_XVM(is_internal, mem_node);
                               if(is_internal == "T")
                               {
@@ -885,13 +949,17 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
                               else if(is_internal == "F")
                               {
                                  if(!CE_XVM(name, mem_node))
+                                 {
                                     THROW_ERROR("expected the name attribute");
+                                 }
                                  std::string name;
                                  LOAD_XVM(name, mem_node);
                                  extern_symbols = extern_symbols + name + ",";
                               }
                               else
+                              {
                                  THROW_ERROR("unexpected value for is_internal attribute");
+                              }
                            }
                         }
                      }
@@ -905,7 +973,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             }
 
             if(isWholeProgram || Param->getOption<bool>(OPT_do_not_expose_globals))
+            {
                command += " -panda-Internalize";
+            }
             command += " -" + compiler.topfname_plugin_name;
             command += " " + temporary_file_o_bc;
             temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
@@ -950,7 +1020,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             }
          }
          else
+         {
             THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
+         }
       }
       if(compiler.is_clang)
       {
@@ -977,7 +1049,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          }
       }
       else
+      {
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
+      }
 
       std::string real_file_names;
       bool first_file = true;
@@ -989,7 +1063,9 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
             first_file = false;
          }
          else
+         {
             real_file_names = real_file_names + "," + fsname.second;
+         }
       }
       if(compiler.is_clang)
       {
@@ -1027,10 +1103,14 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          }
       }
       else
+      {
          THROW_ERROR("LTO compilation not yet implemented for the chosen front-end compiler");
+      }
       std::string leaf_name = GetLeafFileName(source_files.begin()->second);
       if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
+      {
          THROW_ERROR(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix + " not found: impossible to create raw file for " + real_file_names);
+      }
       boost::filesystem::path obj = boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix);
       tree_managerRef TreeM = ParseTreeFile(Param, obj.string());
 #if !NPROFILE
@@ -1172,11 +1252,17 @@ void GccWrapper::InitializeGccParameters()
                {
                   /// sanitize CLANG/LLVM options by removing unsupported GCC options
                   if(optimization_flags.find("tree-pre") != optimization_flags.end())
+                  {
                      optimization_flags.erase(optimization_flags.find("tree-pre"));
+                  }
                   if(optimization_flags.find("ipa-cp-clone") != optimization_flags.end())
+                  {
                      optimization_flags.erase(optimization_flags.find("ipa-cp-clone"));
+                  }
                   if(optimization_flags.find("ipa-cp") != optimization_flags.end())
+                  {
                      optimization_flags.erase(optimization_flags.find("ipa-cp"));
+                  }
                }
             }
 #endif
@@ -1200,9 +1286,13 @@ void GccWrapper::InitializeGccParameters()
    }
 
    if(Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E))
+   {
       gcc_compiling_parameters += "-E ";
+   }
    if(Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S))
+   {
       gcc_compiling_parameters += "-S ";
+   }
    /// Adding defines
    if(Param->isOption(OPT_gcc_defines))
    {
@@ -1338,9 +1428,13 @@ void GccWrapper::SetBambuDefault()
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+   {
       flag_cpp = true;
+   }
    else
+   {
       flag_cpp = false;
+   }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
    if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
@@ -1351,7 +1445,9 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
       if(!flag_cpp)
+      {
          optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
+      }
       return;
    }
 #endif
@@ -1364,7 +1460,9 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
       if(!flag_cpp)
+      {
          optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
+      }
       return;
    }
 #endif
@@ -1377,7 +1475,9 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["builtin-memcpy"] = false;
       optimization_flags["builtin-memmove"] = false;
       if(!flag_cpp)
+      {
          optimization_flags["unroll-loops"] = false; // it is preferable to have unrolling disabled by default as with GCC
+      }
       return;
    }
 #endif
@@ -1514,7 +1614,9 @@ void GccWrapper::SetBambuDefault()
    )
    {
       if(Param->isOption(OPT_interface_type) && Param->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+      {
          optimization_flags["tree-vectorize"] = false;
+      }
    }
 
    if(false
@@ -1952,9 +2054,13 @@ void GccWrapper::SetGccDefault()
 #endif
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+   {
       flag_cpp = true;
+   }
    else
+   {
       flag_cpp = false;
+   }
    /// in case we are compiling C++ code
    if(flag_cpp)
    {
@@ -1982,9 +2088,13 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
     HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP && !Param->isOption(OPT_pretty_print))
+   {
       flag_cpp = true;
+   }
    else
+   {
       flag_cpp = false;
+   }
 #endif
 
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
@@ -1992,7 +2102,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
     HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
+   {
       gcc_extra_options = Param->getOption<std::string>(OPT_gcc_extra_options);
+   }
 #endif
 
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
@@ -2160,7 +2272,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " -msse2 -mfpmath=sse";
       }
       else
+      {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC48_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC48_EMPTY_PLUGIN;
       if(optimization_flags.find("tree-vrp") != optimization_flags.end() && optimization_flags.find("tree-vrp")->second)
@@ -2197,7 +2311,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " -msse2 -mfpmath=sse";
       }
       else
+      {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC49_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC49_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC49_SSA_PLUGINCPP : I386_GCC49_SSA_PLUGIN) + plugin_ext;
@@ -2226,7 +2342,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " -msse2 -mfpmath=sse";
       }
       else
+      {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC5_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC5_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC5_SSA_PLUGINCPP : I386_GCC5_SSA_PLUGIN) + plugin_ext;
@@ -2256,7 +2374,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " -msse2 -mfpmath=sse";
       }
       else
+      {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC6_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC6_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC6_SSA_PLUGINCPP : I386_GCC6_SSA_PLUGIN) + plugin_ext;
@@ -2286,7 +2406,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " -msse2 -mfpmath=sse";
       }
       else
+      {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC7_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC7_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC7_SSA_PLUGINCPP : I386_GCC7_SSA_PLUGIN) + plugin_ext;
@@ -2316,7 +2438,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
          compiler.extra_options += " -msse2 -mfpmath=sse";
       }
       else
+      {
          compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      }
       compiler.empty_plugin_obj = gcc_plugin_dir + I386_GCC8_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_GCC8_EMPTY_PLUGIN;
       compiler.ssa_plugin_obj = gcc_plugin_dir + (flag_cpp ? I386_GCC8_SSA_PLUGINCPP : I386_GCC8_SSA_PLUGIN) + plugin_ext;
@@ -2623,7 +2747,9 @@ void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
       }
    }
    else
+   {
       THROW_ERROR("Error in retrieving gcc system include");
+   }
 
    std::remove(GetPath(STR_CST_gcc_include).c_str());
 
@@ -2693,7 +2819,9 @@ void GccWrapper::CreateExecutable(const CustomSet<std::string>& file_names, cons
 {
    std::list<std::string> sorted_file_names;
    for(const auto& file_name : file_names)
+   {
       sorted_file_names.push_back(file_name);
+   }
    CreateExecutable(sorted_file_names, executable_name, extra_gcc_options, no_gcc_compiling_parameters);
 }
 void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters) const
@@ -2703,7 +2831,9 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    for(const auto& file_name : file_names)
    {
       if(Param->GetFileFormat(file_name, false) == Parameters_FileFormat::FF_CPP)
+      {
          has_cpp_file = true;
+      }
       file_names_string += file_name + " ";
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Creating executable " + executable_name + " from " + file_names_string);
@@ -2716,13 +2846,17 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
 
    command += (no_gcc_compiling_parameters ? "" : gcc_compiling_parameters) + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
    if(!has_cpp_file && command.find("--std=c++14") != std::string::npos)
+   {
       boost::replace_all(command, "--std=c++14", "");
+   }
 
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
    std::string local_compiler_extra_options = no_gcc_compiling_parameters ? "" : compiler.extra_options;
    if(extra_gcc_options.find("-m32") != std::string::npos)
+   {
       boost::replace_all(local_compiler_extra_options, "-mx32", "");
+   }
 
 #ifdef _WIN32
    if(local_compiler_extra_options.find("-m32") != std::string::npos)
@@ -2746,7 +2880,9 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    else
    {
       if(output_level >= OUTPUT_LEVEL_VERBOSE)
+      {
          CopyStdout(gcc_output_file_name);
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 }
@@ -2847,21 +2983,33 @@ std::string GccWrapper::WriteOptimizationsString()
    bool strict_aliasing = optimization_flags.find("strict-aliasing") != optimization_flags.end() and optimization_flags.find("strict-aliasing")->second;
    std::map<std::string, bool>::const_iterator it, it_end = optimization_flags.end();
    if(strict_aliasing)
+   {
       optimizations += std::string("-Wstrict-aliasing ");
+   }
    for(it = optimization_flags.begin(); it != it_end; ++it)
    {
       /*argument aliasing should be treated in a different way*/
       if(it->first == "argument-alias" and (argument_noalias or argument_noalias_global or argument_noalias_anything))
+      {
          continue;
+      }
       else if(it->first == "argument-noalias" and (argument_noalias_global or argument_noalias_anything))
+      {
          continue;
+      }
       else if(it->first == "argument-noalias-global" and (argument_noalias_anything))
+      {
          continue;
+      }
       THROW_ASSERT(it->first != "", "unexpected condition");
       if(it->second)
+      {
          optimizations += std::string("-f") + it->first + " "; // enable optimizations set to true
+      }
       else
+      {
          optimizations += std::string("-fno-") + it->first + " "; // disable optimizations set to false
+      }
    }
    std::map<std::string, int>::const_iterator it2, it2_end = optimization_values.end();
    for(it2 = optimization_values.begin(); it2 != it2_end; ++it2)
@@ -2892,7 +3040,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
          {
             const auto* root_child_element = GetPointer<const xml_element>(*root_child);
             if(not root_child_element)
+            {
                continue;
+            }
             if(root_child_element->get_name() == STR_XML_gcc_optimizations)
             {
                const xml_node::node_list optimizations_children = root_child_element->get_children();
@@ -2901,7 +3051,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   const auto* optimizations_child_element = GetPointer<const xml_element>(*optimizations_child);
                   if(not optimizations_child_element)
+                  {
                      continue;
+                  }
                   if(optimizations_child_element->get_name() == STR_XML_gcc_parameter_values)
                   {
                      const xml_node::node_list parameter_values_children = optimizations_child_element->get_children();
@@ -2910,7 +3062,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                      {
                         const auto* parameter_value_element = GetPointer<const xml_element>(*parameter_value);
                         if(not parameter_value_element)
+                        {
                            continue;
+                        }
                         if(not(parameter_value_element->get_attribute(STR_XML_gcc_name) and parameter_value_element->get_attribute(STR_XML_gcc_value)))
                         {
                            THROW_ERROR("Parameter value node without name or value");
@@ -2926,7 +3080,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                      {
                         const auto* optimization_flag_element = GetPointer<const xml_element>(*optimization_flag);
                         if(not optimization_flag_element)
+                        {
                            continue;
+                        }
                         if(not(optimization_flag_element->get_attribute(STR_XML_gcc_name) and optimization_flag_element->get_attribute(STR_XML_gcc_value)))
                         {
                            THROW_ERROR("Optimization flag node without name or value");
@@ -2942,7 +3098,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                      {
                         const auto* optimization_value_element = GetPointer<const xml_element>(*optimization_value);
                         if(not optimization_value_element)
+                        {
                            continue;
+                        }
                         if(not(optimization_value_element->get_attribute(STR_XML_gcc_name) and optimization_value_element->get_attribute(STR_XML_gcc_value)))
                         {
                            THROW_ERROR("Optimization value node without name or value");
@@ -2970,7 +3128,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   const auto* define_element = GetPointer<const xml_element>(*define);
                   if(not define_element)
+                  {
                      continue;
+                  }
                   if(not define_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
@@ -2986,7 +3146,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   const auto* undefine_element = GetPointer<const xml_element>(*undefine);
                   if(not undefine_element)
+                  {
                      continue;
+                  }
                   if(not undefine_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
@@ -3002,7 +3164,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   const auto* warning_element = GetPointer<const xml_element>(*warning);
                   if(not warning_element)
+                  {
                      continue;
+                  }
                   if(not warning_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
@@ -3018,7 +3182,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   const auto* include_element = GetPointer<const xml_element>(*include);
                   if(not include_element)
+                  {
                      continue;
+                  }
                   if(not include_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
@@ -3034,7 +3200,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   const auto* library_element = GetPointer<const xml_element>(*library);
                   if(not library_element)
+                  {
                      continue;
+                  }
                   if(not library_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
@@ -3050,7 +3218,9 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   const auto* library_directory_element = GetPointer<const xml_element>(*library_directory);
                   if(not library_directory_element)
+                  {
                      continue;
+                  }
                   if(not library_directory_element->get_attribute(STR_XML_gcc_value))
                   {
                      THROW_ERROR("Optimization value node without name or value");
@@ -3123,7 +3293,9 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
       boost::replace_all(new_path, "\\", "/");
 #endif
       if(gcc_compiling_parameters.find(new_path) == std::string::npos and includes.find(new_path) == std::string::npos)
+      {
          includes += new_path;
+      }
    }
    return includes;
 }
@@ -3559,8 +3731,10 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
       recipe += " -loop-unroll -simplifycfg ";
    }
    else
+   {
 #endif
       THROW_ERROR("Clang compiler not yet supported");
+   }
    return " " + recipe + " ";
 }
 
@@ -3577,7 +3751,9 @@ void GccWrapper::CheckGccCompatibleVersion(const std::string& gcc_version, const
       THROW_ERROR("Plugin version not correct. Plugin version supported has to be in this range: [" + std::string(STR_CST_gcc_min_plugin_version) + "-" + std::string(STR_CST_gcc_max_plugin_version) + "]");
    }
    if(std::string(STR_CST_gcc_supported_versions).find(gcc_version) != std::string::npos)
+   {
       return;
+   }
    if(gcc_version_number < ConvertVersion(STR_CST_gcc_first_not_supported))
    {
       THROW_WARNING("GCC/CLANG " + gcc_version + " has not been tested with the PandA framework");

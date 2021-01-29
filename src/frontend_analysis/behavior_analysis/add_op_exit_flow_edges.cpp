@@ -101,7 +101,9 @@ void AddOpExitFlowEdges::Initialize()
          for(boost::tie(edge, edge_end) = boost::edges(*flg); edge != edge_end; edge++)
          {
             if((GET_TYPE(flg, boost::target(*edge, *flg)) & TYPE_LAST_OP) != 0)
+            {
                function_behavior->ogc->RemoveSelector(*edge, FLG_SELECTOR);
+            }
          }
       }
    }

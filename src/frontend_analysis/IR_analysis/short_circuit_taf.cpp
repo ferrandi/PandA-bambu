@@ -179,7 +179,9 @@ bool short_circuit_taf::check_phis(unsigned int curr_bb, std::map<unsigned int, 
    {
       auto* cb_phi = GetPointer<gimple_phi>(GET_NODE(phi));
       if(cb_phi->virtual_flag)
+      {
          return false;
+      }
    }
    return true;
 }
@@ -199,10 +201,14 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
    for(it = list_of_bloc.begin(); it != it_end; ++it)
    {
       if(it->first == bloc::ENTRY_BLOCK_ID || it->first == bloc::EXIT_BLOCK_ID)
+      {
          continue;
+      }
       unsigned int n_pred_bb = 0;
       if(it->second->list_of_pred.size() <= 1)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing BB" + STR(it->first));
       for(auto const pred : it->second->list_of_pred)
       {
@@ -228,9 +234,13 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
       }
    }
    if(!merging_candidates.empty())
+   {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Merging candidate number " + boost::lexical_cast<std::string>(merging_candidates.size()));
+   }
    else
+   {
       return DesignFlowStep_Status::UNCHANGED;
+   }
 
    /// find the first to merge
    unsigned int bb1 = static_cast<unsigned int>(-1), bb2 = static_cast<unsigned int>(-1), merging_candidate = 0;
@@ -262,13 +272,19 @@ DesignFlowStep_Status short_circuit_taf::InternalExec()
             restructure_CFG(bb1, bb2, merging_candidate, list_of_bloc);
             merging_candidates.erase(bb1);
             if(!check_merging_candidate(bb1, bb2, merging_candidate, bb1_true, bb2_true, list_of_bloc))
+            {
                merging_candidates.erase(merging_candidate);
+            }
             if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
+            {
                WriteBBGraphDot("BB_After_" + GetName() + "_merge_" + STR(merge_n) + ".dot");
+            }
             merge_n++;
          }
-         else /// cond expr not completely collapsed
+         else
+         { /// cond expr not completely collapsed
             merging_candidates.erase(merging_candidate);
+         }
       }
    } while(mergeable_pair_found);
    function_behavior->UpdateBBVersion();
@@ -294,61 +310,99 @@ bool short_circuit_taf::check_merging_candidate(unsigned int& bb1, unsigned int&
    {
       bb1 = *it_bb1_pred;
       if(bb1 == bloc::ENTRY_BLOCK_ID || bb1 == merging_candidate)
+      {
          continue;
+      }
       if(list_of_bloc[bb1]->CGetStmtList().empty())
+      {
          continue;
+      }
       if(GET_NODE(list_of_bloc[bb1]->CGetStmtList().back())->get_kind() != gimple_cond_K)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining merging candidate predecessor BB" + STR(bb1));
       THROW_ASSERT(list_of_bloc[bb1]->true_edge > 0, "bb1 has to be an if statement " + boost::lexical_cast<std::string>(bb1) + " " + boost::lexical_cast<std::string>(merging_candidate));
       if(list_of_bloc[bb1]->true_edge == merging_candidate)
+      {
          bb1_true = true;
+      }
       else
+      {
          bb1_true = false;
+      }
       /// let search bb2, the lower if
       for(auto it_bb2_pred = list_of_bloc[merging_candidate]->list_of_pred.begin(); !mergeable_pair_found && it_pred_end != it_bb2_pred; ++it_bb2_pred)
       {
          bb2 = *it_bb2_pred;
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Examining merging candidate nested predecessor " + boost::lexical_cast<std::string>(bb2));
          if(bb2 == bloc::ENTRY_BLOCK_ID || bb2 == merging_candidate)
+         {
             continue;
+         }
          if(list_of_bloc[bb2]->list_of_pred.size() > 1)
+         {
             continue;
+         }
          if(list_of_bloc[bb2]->CGetStmtList().size() != 1)
+         {
             continue;
+         }
          if(list_of_bloc[bb2]->CGetPhiList().size() != 0)
+         {
             continue;
+         }
          if(GET_NODE(list_of_bloc[bb2]->CGetStmtList().back())->get_kind() != gimple_cond_K)
+         {
             continue;
+         }
          THROW_ASSERT(list_of_bloc[bb2]->true_edge > 0, "bb2 has to be an if statement " + boost::lexical_cast<std::string>(bb2) + " " + boost::lexical_cast<std::string>(merging_candidate));
          // This check is needed for empty while loop with short circuit (e. g. 20000314-1.c)
          if(list_of_bloc[bb2]->true_edge == bb1 || list_of_bloc[bb2]->false_edge == bb1)
+         {
             continue;
+         }
          if(bb1_true && list_of_bloc[bb1]->false_edge == bb2)
          {
             if(list_of_bloc[bb2]->true_edge == merging_candidate)
+            {
                bb2_true = true;
+            }
             else
+            {
                bb2_true = false;
+            }
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pair found: " << boost::lexical_cast<std::string>(bb1) << " and " << boost::lexical_cast<std::string>(bb2));
             mergeable_pair_found = true;
             if(bb2_true)
+            {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 T " + boost::lexical_cast<std::string>(bb1) + " bb2 T " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+            }
             else
+            {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 T " + boost::lexical_cast<std::string>(bb1) + " bb2 F " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+            }
          }
          else if(!bb1_true && list_of_bloc[bb1]->true_edge == bb2)
          {
             if(list_of_bloc[bb2]->true_edge == merging_candidate)
+            {
                bb2_true = true;
+            }
             else
+            {
                bb2_true = false;
+            }
             mergeable_pair_found = true;
             PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Pair found: " << boost::lexical_cast<std::string>(bb1) << " and " << boost::lexical_cast<std::string>(bb2));
             if(bb2_true)
+            {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 F " + boost::lexical_cast<std::string>(bb1) + " bb2 T " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+            }
             else
+            {
                PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "bb1 F " + boost::lexical_cast<std::string>(bb1) + " bb2 F " + boost::lexical_cast<std::string>(bb2) + " MC " + boost::lexical_cast<std::string>(merging_candidate));
+            }
          }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Examined mergin candidate predecessor BB" + STR(bb1));
@@ -364,7 +418,9 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating new cond expr: " + boost::lexical_cast<std::string>(bb1) + " is the first basic block, " + boost::lexical_cast<std::string>(bb2) + " is the second basic block");
    /// If there are more than one statements in the basic block containing cond2, then do not merge conditions (in case speculation step should manage the code motion)
    if(list_of_bloc[bb2]->CGetStmtList().size() != 1)
+   {
       return false;
+   }
    const auto list_of_stmt_cond2 = list_of_bloc[bb2]->CGetStmtList();
 
    /// identify the first gimple_cond
@@ -416,16 +472,22 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          for(const auto& def_edge : mc_phi->CGetDefEdgesList())
          {
             if(def_edge.second == bb1)
+            {
                def_edge_to_be_removed = def_edge;
+            }
             else if(def_edge.second == bb2)
+            {
                def_edge_to_be_updated = def_edge;
+            }
          }
          THROW_ASSERT(def_edge_to_be_removed.first != tree_nodeRef(), "unexpected condition");
          THROW_ASSERT(def_edge_to_be_updated.first != tree_nodeRef(), "unexpected condition");
          unsigned int op1 = GET_INDEX_NODE(def_edge_to_be_removed.first);
          unsigned int op2 = GET_INDEX_NODE(def_edge_to_be_updated.first);
          if(!bb1_true)
+         {
             std::swap(op1, op2);
+         }
 
          unsigned int res_type_index = tree_helper::get_type_index(TM, GET_INDEX_NODE(mc_phi->res));
 
@@ -549,9 +611,13 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
    unsigned int expr_index = TM->new_tree_node_id();
    if(or_type)
+   {
       TM->create_tree_node(expr_index, truth_or_expr_K, IR_schema);
+   }
    else
+   {
       TM->create_tree_node(expr_index, truth_and_expr_K, IR_schema);
+   }
    IR_schema.clear();
    /// The expression contained in ce2 must now be the newly created expression,
    /// identified by expr_index
@@ -595,9 +661,13 @@ void short_circuit_taf::restructure_CFG(unsigned int bb1, unsigned int bb2, unsi
       pos = std::find(list_of_bloc[*it_bb1_pred]->list_of_succ.begin(), list_of_bloc[*it_bb1_pred]->list_of_succ.end(), bb1);
       *pos = bb2;
       if(list_of_bloc[*it_bb1_pred]->true_edge == bb1)
+      {
          list_of_bloc[*it_bb1_pred]->true_edge = bb2;
+      }
       else if(list_of_bloc[*it_bb1_pred]->false_edge == bb1)
+      {
          list_of_bloc[*it_bb1_pred]->false_edge = bb2;
+      }
    }
    pos = std::find(list_of_bloc[bb2]->list_of_pred.begin(), list_of_bloc[bb2]->list_of_pred.end(), bb1);
    list_of_bloc[bb2]->list_of_pred.erase(pos);
@@ -622,8 +692,12 @@ void short_circuit_taf::fix_multi_way_if(unsigned int curr_bb, std::map<unsigned
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(cond_statement_node);
          for(auto& cond : gmwi->list_of_cond)
+         {
             if(cond.second == curr_bb)
+            {
                cond.second = succ;
+            }
+         }
       }
    }
 }

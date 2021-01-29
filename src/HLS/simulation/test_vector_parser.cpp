@@ -100,9 +100,13 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
    for(auto it = local_string.begin(), it_end = local_string.end(); it != it_end; ++it)
    {
       if(*it == ',')
+      {
          last_comma = it;
+      }
       else if(*it == '=' && last_comma != it_end)
+      {
          *last_comma = '$';
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
    test_vectors.push_back(std::map<std::string, std::string>());
@@ -144,12 +148,16 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
       for(const auto function_parameter : behavioral_helper->get_parameters())
       {
          if(behavioral_helper->is_a_pointer(function_parameter))
+         {
             continue;
+         }
          std::string param = behavioral_helper->PrintVariable(function_parameter);
 
          long long int value = (rand() % 20);
          if(behavioral_helper->is_bool(function_parameter))
+         {
             value = value % 2;
+         }
          node->set_attribute(param, boost::lexical_cast<std::string>(value));
       }
 
@@ -169,7 +177,9 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
             const auto* Enode = GetPointer<const xml_element>(iter);
 
             if(!Enode || Enode->get_name() != "testbench")
+            {
                continue;
+            }
 
             std::map<std::string, std::string> test_vector;
 

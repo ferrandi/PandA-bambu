@@ -175,7 +175,9 @@ class AugmentedVector
       for(size_t index = 0; index < _size; index++)
       {
          if(this->internal_vector[index] < this->internal_vector[min])
+         {
             min = index;
+         }
       }
    }
 
@@ -192,9 +194,13 @@ class AugmentedVector
       for(size_t index = 0; index < _size; index++)
       {
          if(this->internal_vector[index] > this->internal_vector[max])
+         {
             max = index;
+         }
          if(this->internal_vector[index] < this->internal_vector[min])
+         {
             min = index;
+         }
       }
    }
 
