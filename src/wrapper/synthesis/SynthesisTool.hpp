@@ -89,8 +89,7 @@ class SynthesisTool
 {
  public:
    /// supported synthesis tools
-   typedef enum
-   {
+   using type_t = enum {
       UNKNOWN = 0,
       DESIGN_COMPILER,
 #if HAVE_EXPERIMENTAL
@@ -118,7 +117,7 @@ class SynthesisTool
       LATTICE_FLOW,
       NXPYTHON_FLOW,
       BASH_FLOW
-   } type_t;
+   };
 
  protected:
    /// class containing information about the target device
@@ -260,6 +259,6 @@ class SynthesisTool
    virtual std::string get_tool_exec() const;
 };
 /// refcount definition of the class
-typedef refcount<SynthesisTool> SynthesisToolRef;
+using SynthesisToolRef = std::shared_ptr<SynthesisTool>;
 
 #endif

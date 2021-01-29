@@ -94,8 +94,8 @@ struct FunctionEdgeInfo : public EdgeInfo
     */
    FunctionEdgeInfo();
 };
-typedef refcount<FunctionEdgeInfo> FunctionEdgeInfoRef;
-typedef refcount<const FunctionEdgeInfo> FunctionEdgeInfoConstRef;
+using FunctionEdgeInfoRef = std::shared_ptr<FunctionEdgeInfo>;
+using FunctionEdgeInfoConstRef = std::shared_ptr<const FunctionEdgeInfo>;
 
 /**
  * The info associated with the call graph
@@ -107,8 +107,8 @@ struct CallGraphInfo : public GraphInfo
    std::map<unsigned int, FunctionBehaviorRef> behaviors;
 };
 /// The refcount definition for CallGraphInfo
-typedef refcount<CallGraphInfo> CallGraphInfoRef;
-typedef refcount<const CallGraphInfo> CallGraphInfoConstRef;
+using CallGraphInfoRef = std::shared_ptr<CallGraphInfo>;
+using CallGraphInfoConstRef = std::shared_ptr<const CallGraphInfo>;
 
 /**
  * This class collects information concerning the set of functions that will be analyzed by the PandA framework
@@ -144,8 +144,8 @@ class CallGraphsCollection : public graphs_collection
    }
 };
 /// The refcount definition for CallGraphInfo
-typedef refcount<CallGraphsCollection> CallGraphsCollectionRef;
-typedef refcount<const CallGraphsCollection> CallGraphsCollectionConstRef;
+using CallGraphsCollectionRef = std::shared_ptr<CallGraphsCollection>;
+using CallGraphsCollectionConstRef = std::shared_ptr<const CallGraphsCollection>;
 
 /**
  * This class is the view of a call graph
@@ -207,8 +207,8 @@ class CallGraph : public graph
    void WriteDot(const std::string& file_name) const;
 };
 /// The refcount definition for CallGraph
-typedef refcount<CallGraph> CallGraphRef;
-typedef refcount<const CallGraph> CallGraphConstRef;
+using CallGraphRef = std::shared_ptr<CallGraph>;
+using CallGraphConstRef = std::shared_ptr<const CallGraph>;
 
 /**
  * Functor used by write_graphviz to write the label of the vertices of a function graph

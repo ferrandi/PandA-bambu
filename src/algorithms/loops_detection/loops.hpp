@@ -105,7 +105,7 @@ class Loops
    std::list<LoopRef> modifiable_loops_list;
    std::list<LoopConstRef> const_loops_list;
 
-   typedef std::pair<vertex, vertex> vertex_pair;
+   using vertex_pair = std::pair<vertex, vertex>;
 
    bool is_edge_in_list(CustomUnorderedSet<vertex_pair>& l, vertex source, vertex target);
 

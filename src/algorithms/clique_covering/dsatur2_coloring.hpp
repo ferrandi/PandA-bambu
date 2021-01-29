@@ -117,8 +117,8 @@ namespace boost
    class dsatur2_coloring_helper
    {
     private:
-      typedef graph_traits<VertexListGraph> GraphTraits;
-      typedef typename GraphTraits::vertex_descriptor Vertex;
+      using GraphTraits = graph_traits<VertexListGraph>;
+      using Vertex = typename GraphTraits::vertex_descriptor;
       const size_type num_node;
       std::vector<bool> valid;
       typename boost::numeric::ublas::matrix<bool> ColorAdj;
@@ -204,7 +204,7 @@ namespace boost
    template <typename VertexListGraph, typename ColorMap>
    typename property_traits<ColorMap>::value_type dsatur2_coloring(const VertexListGraph& G, ColorMap color)
    {
-      typedef typename property_traits<ColorMap>::value_type size_type;
+      using size_type = typename property_traits<ColorMap>::value_type;
 
       const size_type num_node = num_vertices(G);
       if(num_node == 0)

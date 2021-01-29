@@ -119,6 +119,6 @@ class funit_obj : public generic_obj
    }
 };
 
-typedef refcount<funit_obj> funit_objRef;
+using funit_objRef = std::shared_ptr<funit_obj>;
 
 #endif

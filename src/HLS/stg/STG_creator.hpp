@@ -66,6 +66,6 @@ class STG_creator : public HLSFunctionStep
    ~STG_creator() override;
 };
 /// refcount definition of the class
-typedef refcount<STG_creator> STG_creatorRef;
+using STG_creatorRef = std::shared_ptr<STG_creator>;
 
 #endif

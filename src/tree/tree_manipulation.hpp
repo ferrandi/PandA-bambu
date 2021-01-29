@@ -663,7 +663,7 @@ class tree_manipulation
    tree_nodeRef CreateVectorBooleanType(const unsigned int number_of_elements) const;
 };
 
-typedef refcount<tree_manipulation> tree_manipulationRef;
-typedef refcount<const tree_manipulation> tree_manipulationConstRef;
+using tree_manipulationRef = std::shared_ptr<tree_manipulation>;
+using tree_manipulationConstRef = std::shared_ptr<const tree_manipulation>;
 
 #endif /* TREE_MANIPULATION_HPP */

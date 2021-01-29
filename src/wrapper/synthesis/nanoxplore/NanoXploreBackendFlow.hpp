@@ -94,6 +94,6 @@ class NanoXploreBackendFlow : public BackendFlow
    void ExecuteSynthesis() override;
 };
 /// Refcount definition for the class
-typedef refcount<NanoXploreBackendFlow> NanoXploreBackendFlowRef;
+using NanoXploreBackendFlowRef = std::shared_ptr<NanoXploreBackendFlow>;
 
 #endif

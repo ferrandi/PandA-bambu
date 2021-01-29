@@ -109,5 +109,5 @@ class moduleGenerator
 
    void create_generic_module(const std::string fuName, const std::string libraryId, const technology_managerRef TM, const std::string new_fu_name, TargetDevice_Type dv_type, const application_managerRef AppM);
 };
-typedef refcount<moduleGenerator> moduleGeneratorRef;
+using moduleGeneratorRef = std::shared_ptr<moduleGenerator>;
 #endif

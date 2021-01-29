@@ -68,7 +68,7 @@ struct DesignParameters
    std::string chain_name;
 
    /// Parameters map type
-   typedef std::map<std::string, std::string> map_t;
+   using map_t = std::map<std::string, std::string>;
 
    /// Map between the name of the parameter and the corresponding string-based value
    map_t parameter_values;
@@ -127,6 +127,6 @@ struct DesignParameters
    }
 };
 /// refcount definition of the class
-typedef refcount<DesignParameters> DesignParametersRef;
+using DesignParametersRef = std::shared_ptr<DesignParameters>;
 
 #endif

@@ -461,7 +461,7 @@ class GccWrapper
 };
 
 /// Refcount definition for the GccWrapper class
-typedef refcount<GccWrapper> GccWrapperRef;
-typedef refcount<const GccWrapper> GccWrapperConstRef;
+using GccWrapperRef = std::shared_ptr<GccWrapper>;
+using GccWrapperConstRef = std::shared_ptr<const GccWrapper>;
 
 #endif

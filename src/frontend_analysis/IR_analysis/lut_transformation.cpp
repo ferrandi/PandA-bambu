@@ -535,13 +535,13 @@ struct klut_network_node
  * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`s
  * and returns a `mockturtle::klut_network::signal`.
  */
-typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
+using klut_network_fn = mockturtle::klut_network::signal (klut_network_ext::*)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
 
 /**
  * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `std::vector<mockturtle::klut_network::signal>`s
  * and returns a `std::vector<mockturtle::klut_network::signal>`.
  */
-typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_network_fn_v)(std::vector<mockturtle::klut_network::signal> const&, std::vector<mockturtle::klut_network::signal> const&, bool);
+using klut_network_fn_v = std::vector<mockturtle::klut_network::signal> (klut_network_ext::*)(const std::vector<mockturtle::klut_network::signal>&, const std::vector<mockturtle::klut_network::signal>&, bool);
 
 #pragma endregion
 

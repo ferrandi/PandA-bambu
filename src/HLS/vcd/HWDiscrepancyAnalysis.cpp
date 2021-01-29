@@ -639,7 +639,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             continue;
          }
       }
-      typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+      using tokenizer = boost::tokenizer<boost::char_separator<char>>;
       boost::char_separator<char> sep("/", nullptr);
       tokenizer module_path_tokens(scope, sep);
       tokenizer::iterator tok_iter;

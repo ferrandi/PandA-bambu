@@ -57,12 +57,7 @@ CONSTREF_FORWARD_DECL(technology_manager);
 class LUT_model : public time_model
 {
  public:
-   typedef enum
-   {
-      COMBINATIONAL_DELAY,
-      MINIMUM_PERIOD_POST_MAP,
-      MINIMUM_PERIOD_POST_PAR
-   } value_t;
+   using value_t = enum { COMBINATIONAL_DELAY, MINIMUM_PERIOD_POST_MAP, MINIMUM_PERIOD_POST_PAR };
 
  protected:
    /// timing characterization
@@ -102,6 +97,6 @@ class LUT_model : public time_model
    double get_timing_value(value_t val) const;
 };
 
-typedef refcount<LUT_model> LUT_modelRef;
+using LUT_modelRef = std::shared_ptr<LUT_model>;
 
 #endif

@@ -132,5 +132,5 @@ class ChainingInformation
    void add_chained_vertices_out(vertex op1, vertex tgt);
 };
 /// refcount definition of the class
-typedef refcount<ChainingInformation> ChainingInformationRef;
+using ChainingInformationRef = std::shared_ptr<ChainingInformation>;
 #endif

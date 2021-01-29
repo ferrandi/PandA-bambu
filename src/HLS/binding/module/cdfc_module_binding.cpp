@@ -187,7 +187,7 @@ struct topological_based_sorting_visitor : public boost::dfs_visitor<>
 template <typename VertexListGraph, typename OutputIterator, typename P, typename T, typename R>
 void topological_based_sorting(const VertexListGraph& g, std::vector<vertex>& c2s, const OpGraphConstRef sdg, OutputIterator result, const boost::bgl_named_params<P, T, R>& params)
 {
-   typedef topological_based_sorting_visitor<OutputIterator> TopoVisitor;
+   using TopoVisitor = topological_based_sorting_visitor<OutputIterator>;
    boost::depth_first_search(g, params.visitor(TopoVisitor(c2s, sdg, result)));
 }
 
@@ -1045,13 +1045,13 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       boost::graph_traits<graph>::vertices_size_type n_vert = boost::num_vertices(*fdfg);
       std::vector<boost::graph_traits<OpGraph>::vertices_size_type> rank_map(n_vert);
       std::vector<vertex> pred_map(n_vert);
-      typedef boost::property_map<OpGraph, boost::vertex_index_t>::const_type const_vertex_index_pmap_t;
+      using const_vertex_index_pmap_t = boost::property_map<OpGraph, boost::vertex_index_t>::const_type;
       const_vertex_index_pmap_t cindex_pmap = boost::get(boost::vertex_index_t(), *fdfg);
       /// rank property map definition
-      typedef boost::iterator_property_map<std::vector<boost::graph_traits<OpGraph>::vertices_size_type>::iterator, const_vertex_index_pmap_t> op_rank_pmap_type;
+      using op_rank_pmap_type = boost::iterator_property_map<std::vector<boost::graph_traits<OpGraph>::vertices_size_type>::iterator, const_vertex_index_pmap_t>;
       op_rank_pmap_type rank_pmap = boost::make_iterator_property_map(rank_map.begin(), cindex_pmap, rank_map[0]);
       /// parent property map definition
-      typedef boost::iterator_property_map<std::vector<vertex>::iterator, const_vertex_index_pmap_t> op_pred_pmap_type;
+      using op_pred_pmap_type = boost::iterator_property_map<std::vector<vertex>::iterator, const_vertex_index_pmap_t>;
       op_pred_pmap_type pred_pmap = boost::make_iterator_property_map(pred_map.begin(), cindex_pmap, pred_map[0]);
       boost::disjoint_sets<op_rank_pmap_type, op_pred_pmap_type> ds(rank_pmap, pred_pmap);
       VertexIterator vi, vi_end;

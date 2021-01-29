@@ -65,7 +65,7 @@ class DesignFlowStepSet : public CustomUnorderedSet<DesignFlowStepRef>
 };
 #else
 #include <functional> // for binary_function
-#include <set> // for set
+#include <set>        // for set
 class DesignFlowStepSorter : std::binary_function<vertex, vertex, bool>
 {
  public:
@@ -224,7 +224,7 @@ class DesignFlowStep
     */
    virtual void PrintFinalIR() const;
 };
-typedef refcount<DesignFlowStep> DesignFlowStepRef;
-typedef refcount<const DesignFlowStep> DesignFlowStepConstRef;
+using DesignFlowStepRef = std::shared_ptr<DesignFlowStep>;
+using DesignFlowStepConstRef = std::shared_ptr<const DesignFlowStep>;
 
 #endif

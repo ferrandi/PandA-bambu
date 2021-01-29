@@ -66,9 +66,9 @@ class compatibility_based_register : public reg_binding_creator
       }
    };
 
-   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, edge_compatibility_property> compatibility_graph;
-   typedef boost::graph_traits<compatibility_graph>::vertex_descriptor CG_vertex_descriptor;
-   typedef boost::graph_traits<compatibility_graph>::vertices_size_type CG_vertices_size_type;
+   using compatibility_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, edge_compatibility_property>;
+   using CG_vertex_descriptor = boost::graph_traits<compatibility_graph>::vertex_descriptor;
+   using CG_vertices_size_type = boost::graph_traits<compatibility_graph>::vertices_size_type;
 
    /// compatibility graph
    compatibility_graph CG;
@@ -100,6 +100,6 @@ class compatibility_based_register : public reg_binding_creator
    bool is_compatible(unsigned int sv1, unsigned int sv2) const;
 };
 /// refcount definition of the class
-typedef refcount<compatibility_based_register> compatibility_based_registerRef;
+using compatibility_based_registerRef = std::shared_ptr<compatibility_based_register>;
 
 #endif

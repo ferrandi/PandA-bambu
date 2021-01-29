@@ -161,6 +161,6 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    void add_command_ports(structural_objectRef circuit, structural_managerRef SM);
 };
 /// refcount definition for the class
-typedef refcount<ControllerCreatorBaseStep> ControllerCreatorBaseStepRef;
+using ControllerCreatorBaseStepRef = std::shared_ptr<ControllerCreatorBaseStep>;
 
 #endif

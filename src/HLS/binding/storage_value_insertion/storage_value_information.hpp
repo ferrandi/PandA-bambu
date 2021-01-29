@@ -139,5 +139,5 @@ class StorageValueInformation
     */
    bool are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 };
-typedef refcount<StorageValueInformation> StorageValueInformationRef;
+using StorageValueInformationRef = std::shared_ptr<StorageValueInformation>;
 #endif

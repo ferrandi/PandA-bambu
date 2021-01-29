@@ -78,7 +78,7 @@ struct AadlParserData
     */
    explicit AadlParserData(const ParameterConstRef parameters);
 };
-typedef refcount<AadlParserData> AadlParserDataRef;
+using AadlParserDataRef = std::shared_ptr<AadlParserData>;
 
 class AadlParser : public ParserFlowStep
 {

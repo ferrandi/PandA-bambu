@@ -99,6 +99,6 @@ class ISE_isim_wrapper : public SimulationTool
    void CheckExecution() override;
 };
 /// Refcount definition for the class
-typedef refcount<ISE_isim_wrapper> ISE_isim_wrapperRef;
+using ISE_isim_wrapperRef = std::shared_ptr<ISE_isim_wrapper>;
 
 #endif

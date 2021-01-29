@@ -108,8 +108,8 @@ class target_manager
    const target_deviceRef get_target_device() const;
 };
 /// refcount definition of the class
-typedef refcount<target_manager> target_managerRef;
+using target_managerRef = std::shared_ptr<target_manager>;
 /// constant refcount definition of the class
-typedef refcount<const target_manager> target_managerConstRef;
+using target_managerConstRef = std::shared_ptr<const target_manager>;
 
 #endif

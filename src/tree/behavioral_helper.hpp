@@ -74,7 +74,7 @@ REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);
 //@}
 
-typedef unsigned int tree_class;
+using tree_class = unsigned int;
 
 #define INTERNAL "internal_"
 
@@ -752,7 +752,7 @@ class BehavioralHelper
 /**
  * RefCount type definition of the tree_to_graph class structure
  */
-typedef refcount<BehavioralHelper> BehavioralHelperRef;
-typedef refcount<const BehavioralHelper> BehavioralHelperConstRef;
+using BehavioralHelperRef = std::shared_ptr<BehavioralHelper>;
+using BehavioralHelperConstRef = std::shared_ptr<const BehavioralHelper>;
 
 #endif

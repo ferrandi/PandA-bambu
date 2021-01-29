@@ -288,6 +288,6 @@ class HLS_constraints
    }
 };
 /// refcount definition of the class
-typedef refcount<HLS_constraints> HLS_constraintsRef;
+using HLS_constraintsRef = std::shared_ptr<HLS_constraints>;
 
 #endif

@@ -62,13 +62,12 @@ class target_technology
 {
  public:
    /// target technologies currently implemented
-   typedef enum
-   {
+   using target_t = enum {
 #if HAVE_CMOS_BUILT
       CMOS = 0, /// integrated circuits through CMOS technology
 #endif
       FPGA = 1 /// FPGA devices
-   } target_t;
+   };
 
  protected:
    /// Class containing all the parameters
@@ -160,6 +159,6 @@ class target_technology
 };
 
 /// refcount definition for the class
-typedef refcount<target_technology> target_technologyRef;
+using target_technologyRef = std::shared_ptr<target_technology>;
 
 #endif

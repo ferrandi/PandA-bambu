@@ -72,8 +72,8 @@ struct CallSitesInfo
    CustomUnorderedSet<unsigned int> taken_addresses;
 };
 
-typedef refcount<CallSitesInfo> CallSitesInfoRef;
-typedef refcount<const CallSitesInfo> CallSitesInfoConstRef;
+using CallSitesInfoRef = std::shared_ptr<CallSitesInfo>;
+using CallSitesInfoConstRef = std::shared_ptr<const CallSitesInfo>;
 
 struct HWDiscrepancyInfo
 {
@@ -119,8 +119,8 @@ struct HWDiscrepancyInfo
    CustomUnorderedSet<unsigned int> fu_id_control_flow_skip;
 };
 
-typedef refcount<HWDiscrepancyInfo> HWDiscrepancyInfoRef;
-typedef refcount<const HWDiscrepancyInfo> HWDiscrepancyInfoConstRef;
+using HWDiscrepancyInfoRef = std::shared_ptr<HWDiscrepancyInfo>;
+using HWDiscrepancyInfoConstRef = std::shared_ptr<const HWDiscrepancyInfo>;
 
 struct Discrepancy
 {
@@ -228,6 +228,6 @@ struct Discrepancy
    }
 };
 
-typedef refcount<Discrepancy> DiscrepancyRef;
-typedef refcount<const Discrepancy> DiscrepancyConstRef;
+using DiscrepancyRef = std::shared_ptr<Discrepancy>;
+using DiscrepancyConstRef = std::shared_ptr<const Discrepancy>;
 #endif

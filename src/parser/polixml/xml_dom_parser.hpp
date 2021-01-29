@@ -103,5 +103,5 @@ class XMLDomParser
     */
    const xml_documentRef get_document() const;
 };
-typedef refcount<XMLDomParser> XMLDomParserRef;
+using XMLDomParserRef = std::shared_ptr<XMLDomParser>;
 #endif

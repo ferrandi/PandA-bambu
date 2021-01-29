@@ -224,5 +224,5 @@ class HDL_manager
 #endif
 };
 /// refcount definition of the class
-typedef refcount<HDL_manager> HDL_managerRef;
+using HDL_managerRef = std::shared_ptr<HDL_manager>;
 #endif

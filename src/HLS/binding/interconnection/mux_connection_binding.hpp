@@ -73,7 +73,7 @@ class mux_connection_binding : public conn_binding_creator
 {
  private:
    /// type representing a resource identifier
-   typedef std::pair<unsigned int, unsigned int> resource_id_type;
+   using resource_id_type = std::pair<unsigned int, unsigned int>;
 
    /// store the registers for each resource and for each port
    std::map<resource_id_type, std::map<unsigned int, CustomOrderedSet<unsigned int>>> regs_in;

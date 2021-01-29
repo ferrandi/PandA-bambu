@@ -279,8 +279,8 @@ class CallGraphManager
     */
    CustomOrderedSet<unsigned int> GetAddressedFunctions() const;
 };
-typedef refcount<CallGraphManager> CallGraphManagerRef;
-typedef refcount<const CallGraphManager> CallGraphManagerConstRef;
+using CallGraphManagerRef = std::shared_ptr<CallGraphManager>;
+using CallGraphManagerConstRef = std::shared_ptr<const CallGraphManager>;
 
 /**
  * Visitor to identify the list of called functions

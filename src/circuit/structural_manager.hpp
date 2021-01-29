@@ -429,6 +429,6 @@ class structural_manager
 /**
  * RefCount type definition of the structural_manager class structure
  */
-typedef refcount<structural_manager> structural_managerRef;
+using structural_managerRef = std::shared_ptr<structural_manager>;
 
 #endif

@@ -84,6 +84,6 @@ class objective_function
    virtual ~objective_function();
 };
 
-typedef refcount<objective_function> objective_functionRef;
+using objective_functionRef = std::shared_ptr<objective_function>;
 
 #endif

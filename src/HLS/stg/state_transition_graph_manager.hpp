@@ -209,8 +209,8 @@ class StateTransitionGraphManager
    void add_to_SM(structural_objectRef clock_port, structural_objectRef reset_port);
 };
 /// refcount definition to allocate the class
-typedef refcount<StateTransitionGraphManager> StateTransitionGraphManagerRef;
-typedef refcount<const StateTransitionGraphManager> StateTransitionGraphManagerConstRef;
+using StateTransitionGraphManagerRef = std::shared_ptr<StateTransitionGraphManager>;
+using StateTransitionGraphManagerConstRef = std::shared_ptr<const StateTransitionGraphManager>;
 
 /// state name prefix
 #define STATE_NAME_PREFIX "S_"

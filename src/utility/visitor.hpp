@@ -131,8 +131,8 @@ template <class T, class visitor_obj>
 class for_each_functor : public std::unary_function<const refcount<T>&, void>
 {
    /// visitor type definition
-   typedef visitor_obj* const visitor_type;
-   typedef void (T::*const visitor_function_type)(visitor_type) const;
+   using visitor_type = visitor_obj* const;
+   using visitor_function_type = void (T::*const)(visitor_type) const;
 
  public:
    /// constructor

@@ -143,5 +143,5 @@ class ActorGraphBackend
     */
    virtual const ActorGraphWriterRef GetActorGraphWriter() = 0;
 };
-typedef refcount<ActorGraphBackend> ActorGraphBackendRef;
+using ActorGraphBackendRef = std::shared_ptr<ActorGraphBackend>;
 #endif

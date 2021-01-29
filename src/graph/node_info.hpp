@@ -92,5 +92,5 @@ struct NodeInfo
 /**
  * RefCount type definition of the NodeInfo class structure
  */
-typedef refcount<NodeInfo> NodeInfoRef;
+using NodeInfoRef = std::shared_ptr<NodeInfo>;
 #endif

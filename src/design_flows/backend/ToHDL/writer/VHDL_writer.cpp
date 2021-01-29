@@ -1258,7 +1258,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
    auto* mod = GetPointer<module>(cir);
    boost::char_separator<char> state_sep(":", nullptr);
    boost::char_separator<char> sep(" ", nullptr);
-   typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+   using tokenizer = boost::tokenizer<boost::char_separator<char>>;
 
    /// get the default output of the reset state
 

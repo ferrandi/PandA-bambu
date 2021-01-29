@@ -1018,8 +1018,8 @@ class AllocationInformation : public HLSFunctionIR
     */
    bool CanBeChained(const vertex first_statement, const vertex second_statement) const;
 };
-typedef refcount<AllocationInformation> AllocationInformationRef;
-typedef refcount<const AllocationInformation> AllocationInformationConstRef;
+using AllocationInformationRef = std::shared_ptr<AllocationInformation>;
+using AllocationInformationConstRef = std::shared_ptr<const AllocationInformation>;
 
 /**
  * @struct updatecopy_HLS_constraints_functor

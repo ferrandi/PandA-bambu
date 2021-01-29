@@ -84,7 +84,7 @@ CONSTREF_FORWARD_DECL(UVertexWriter);
 CONSTREF_FORWARD_DECL(VertexWriter);
 //@}
 
-typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, NodeInfoRef>, EdgeInfoRef, GraphInfoRef> boost_raw_graph;
+using boost_raw_graph = boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, NodeInfoRef>, EdgeInfoRef, GraphInfoRef>;
 
 struct RawGraph : public boost_raw_graph
 {
@@ -223,11 +223,11 @@ struct EdgeProperty
    }
 };
 #if BOOST_VERSION >= 104600
-typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>
-    boost_graphs_collection;
+using boost_graphs_collection =
+    boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>;
 
-typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>
-    undirected_boost_graphs_collection;
+using undirected_boost_graphs_collection =
+    boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>;
 
 #define boost_CGetOpGraph_property(graph_arg) (graph_arg)[boost::graph_bundle]
 
@@ -424,7 +424,7 @@ struct graphs_collection : public boost_graphs_collection
    }
 };
 
-typedef refcount<graphs_collection> graphs_collectionRef;
+using graphs_collectionRef = std::shared_ptr<graphs_collection>;
 
 /**
  * bulk graph. All the edge of a graph are store in this object
@@ -487,7 +487,7 @@ struct undirected_graphs_collection : public undirected_boost_graphs_collection
    }
 };
 
-typedef refcount<undirected_graphs_collection> undirected_graphs_collectionRef;
+using undirected_graphs_collectionRef = std::shared_ptr<undirected_graphs_collection>;
 
 /**
  * Function returning the reference to the edge information associated with the specified edge.
@@ -1023,13 +1023,13 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
    }
 
 #if BOOST_VERSION >= 104200
-   typedef boost::edge_property_type<graphs_collection>::type edge_property_type;
-   typedef boost::vertex_property_type<graphs_collection>::type vertex_property_type;
-   typedef boost::graph_property_type<graphs_collection>::type graph_property_type;
+   using edge_property_type = boost::edge_property_type<graphs_collection>::type;
+   using vertex_property_type = boost::vertex_property_type<graphs_collection>::type;
+   using graph_property_type = boost::graph_property_type<graphs_collection>::type;
 #endif
 };
-typedef refcount<graph> graphRef;
-typedef refcount<const graph> graphConstRef;
+using graphRef = std::shared_ptr<graph>;
+using graphConstRef = std::shared_ptr<const graph>;
 
 #if BOOST_VERSION >= 104600
 namespace boost
@@ -1041,22 +1041,22 @@ namespace boost
          template <class FilteredGraph, class Property, class Tag>
          struct bind_
          {
-            typedef typename FilteredGraph::graph_type Graph;
-            typedef property_map<Graph, Tag> Map;
-            typedef typename Map::type type;
-            typedef typename Map::const_type const_type;
+            using Graph = typename FilteredGraph::graph_type;
+            using Map = property_map<Graph, Tag>;
+            using type = typename Map::type;
+            using const_type = typename Map::const_type;
          };
       };
    } // namespace detail
    template <>
    struct vertex_property_selector<filtered_graph_tag>
    {
-      typedef detail::filtered_graph_property_selector type;
+      using type = detail::filtered_graph_property_selector;
    };
    template <>
    struct edge_property_selector<filtered_graph_tag>
    {
-      typedef detail::filtered_graph_property_selector type;
+      using type = detail::filtered_graph_property_selector;
    };
 
 } // namespace boost
@@ -1153,13 +1153,13 @@ struct ugraph : public boost::filtered_graph<undirected_boost_graphs_collection,
    }
 
 #if BOOST_VERSION >= 104200
-   typedef boost::edge_property_type<undirected_graphs_collection>::type edge_property_type;
-   typedef boost::vertex_property_type<undirected_graphs_collection>::type vertex_property_type;
-   typedef boost::graph_property_type<undirected_graphs_collection>::type graph_property_type;
+   using edge_property_type = boost::edge_property_type<undirected_graphs_collection>::type;
+   using vertex_property_type = boost::vertex_property_type<undirected_graphs_collection>::type;
+   using graph_property_type = boost::graph_property_type<undirected_graphs_collection>::type;
 #endif
 };
 
-typedef refcount<ugraph> ugraphRef;
+using ugraphRef = std::shared_ptr<ugraph>;
 
 /**
  * Functor used to sort edges
@@ -1193,20 +1193,20 @@ struct ltedge
 };
 
 /// vertex definition.
-typedef boost::graph_traits<graph>::vertex_descriptor vertex;
+using vertex = boost::graph_traits<graph>::vertex_descriptor;
 /// null vertex definition
 #define NULL_VERTEX boost::graph_traits<graph>::null_vertex()
 /// vertex_iterator definition.
-typedef boost::graph_traits<graph>::vertex_iterator VertexIterator;
+using VertexIterator = boost::graph_traits<graph>::vertex_iterator;
 
 /// in_edge_iterator definition.
-typedef boost::graph_traits<graph>::in_edge_iterator InEdgeIterator;
+using InEdgeIterator = boost::graph_traits<graph>::in_edge_iterator;
 /// out_edge_iterator definition.
-typedef boost::graph_traits<graph>::out_edge_iterator OutEdgeIterator;
+using OutEdgeIterator = boost::graph_traits<graph>::out_edge_iterator;
 /// edge_iterator definition.
-typedef boost::graph_traits<graph>::edge_iterator EdgeIterator;
+using EdgeIterator = boost::graph_traits<graph>::edge_iterator;
 /// edge definition.
-typedef boost::graph_traits<graph>::edge_descriptor EdgeDescriptor;
+using EdgeDescriptor = boost::graph_traits<graph>::edge_descriptor;
 
 /**
  * Definition of hash function for EdgeDescriptor
@@ -1232,25 +1232,25 @@ H AbslHashValue(H h, const EdgeDescriptor& m)
    return H::combine(std::move(h), m.m_source, m.m_target);
 }
 /// vertex definition.
-typedef boost::graph_traits<ugraph>::vertex_descriptor uvertex;
+using uvertex = boost::graph_traits<ugraph>::vertex_descriptor;
 /// null vertex definition
 #define NULL_UVERTEX boost::graph_traits<ugraph>::null_vertex()
 
 /// vertex definition for undirected_graphs_collection.
-typedef boost::graph_traits<undirected_graphs_collection>::vertex_descriptor UGCvertex;
+using UGCvertex = boost::graph_traits<undirected_graphs_collection>::vertex_descriptor;
 #define NULL_UGCVERTEX boost::graph_traits<undirected_graphs_collection>::null_vertex()
 
 /// vertex_iterator definition.
-typedef boost::graph_traits<ugraph>::vertex_iterator UVertexIterator;
+using UVertexIterator = boost::graph_traits<ugraph>::vertex_iterator;
 
 /// in_edge_iterator definition.
-typedef boost::graph_traits<ugraph>::in_edge_iterator UInEdgeIterator;
+using UInEdgeIterator = boost::graph_traits<ugraph>::in_edge_iterator;
 /// out_edge_iterator definition.
-typedef boost::graph_traits<ugraph>::out_edge_iterator UOutEdgeIterator;
+using UOutEdgeIterator = boost::graph_traits<ugraph>::out_edge_iterator;
 /// edge_iterator definition.
-typedef boost::graph_traits<ugraph>::edge_iterator UEdgeIterator;
+using UEdgeIterator = boost::graph_traits<ugraph>::edge_iterator;
 /// edge definition.
-typedef boost::graph_traits<ugraph>::edge_descriptor UEdgeDescriptor;
+using UEdgeDescriptor = boost::graph_traits<ugraph>::edge_descriptor;
 
 /**
  * Given a filtered graph and an index returns the vertex exploiting the boost::vertex applied on the original graph.

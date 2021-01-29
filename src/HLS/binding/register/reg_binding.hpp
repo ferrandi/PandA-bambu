@@ -67,11 +67,7 @@ class register_obj;
 class reg_binding : public variable2obj<generic_objRef>
 {
  public:
-   typedef enum
-   {
-      STG = 0,
-      CDFG
-   } type_t;
+   using type_t = enum { STG = 0, CDFG };
 
  protected:
    /// level of the verbosity during the debugging
@@ -225,6 +221,6 @@ class reg_binding : public variable2obj<generic_objRef>
 /**
  * RefCount type definition of the reg_binding class structure
  */
-typedef refcount<reg_binding> reg_bindingRef;
+using reg_bindingRef = std::shared_ptr<reg_binding>;
 
 #endif

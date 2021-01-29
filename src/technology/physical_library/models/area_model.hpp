@@ -55,20 +55,9 @@ enum class TargetDevice_Type;
 class area_model
 {
  public:
-   typedef enum
-   {
-      PRE_TECHNOLOGY_MAPPING,
-      POST_TECHNOLOGY_MAPPING
-   } chacterization_t;
+   using chacterization_t = enum { PRE_TECHNOLOGY_MAPPING, POST_TECHNOLOGY_MAPPING };
 
-   typedef enum
-   {
-      COMBINATIONAL_AREA,
-      NONCOMBINATIONAL_AREA,
-      CELL_AREA,
-      INTERCONNECT_AREA,
-      TOTAL_AREA
-   } element_t;
+   using element_t = enum { COMBINATIONAL_AREA, NONCOMBINATIONAL_AREA, CELL_AREA, INTERCONNECT_AREA, TOTAL_AREA };
 
  protected:
    /// class containing all the parameters
@@ -115,6 +104,6 @@ class area_model
    static const double area_DEFAULT;
 };
 /// refcount definition of the class
-typedef refcount<area_model> area_modelRef;
+using area_modelRef = std::shared_ptr<area_model>;
 
 #endif

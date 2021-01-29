@@ -75,6 +75,6 @@ class lattice_flow_wrapper : public LatticeWrapper
    ~lattice_flow_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<lattice_flow_wrapper> lattice_flow_wrapperRef;
+using lattice_flow_wrapperRef = std::shared_ptr<lattice_flow_wrapper>;
 
 #endif

@@ -224,7 +224,7 @@ class pragma_manager
 };
 
 /// Refcount definition for the class
-typedef refcount<const pragma_manager> pragma_managerConstRef;
-typedef refcount<pragma_manager> pragma_managerRef;
+using pragma_managerConstRef = std::shared_ptr<const pragma_manager>;
+using pragma_managerRef = std::shared_ptr<pragma_manager>;
 
 #endif

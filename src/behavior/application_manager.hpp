@@ -327,8 +327,8 @@ class application_manager
    void clearParm2SSA();
 };
 /// refcount definition of the class
-typedef refcount<application_manager> application_managerRef;
+using application_managerRef = std::shared_ptr<application_manager>;
 /// constant refcount definition of the class
-typedef refcount<const application_manager> application_managerConstRef;
+using application_managerConstRef = std::shared_ptr<const application_manager>;
 
 #endif

@@ -60,11 +60,11 @@ class fu_binding;
 class module_register_binding_spec
 {
  private:
-   typedef CustomUnorderedMap<unsigned int, std::size_t> tree_index_rank_t;
-   typedef CustomUnorderedMapUnstable<unsigned int, unsigned int> tree_index_parent_t;
-   typedef boost::associative_property_map<tree_index_rank_t> tree_index_rank_map_t;
-   typedef boost::associative_property_map<tree_index_parent_t> tree_index_parent_map_t;
-   typedef boost::disjoint_sets<tree_index_rank_map_t, tree_index_parent_map_t> tree_index_dsets_t;
+   using tree_index_rank_t = CustomUnorderedMap<unsigned int, std::size_t>;
+   using tree_index_parent_t = CustomUnorderedMapUnstable<unsigned int, unsigned int>;
+   using tree_index_rank_map_t = boost::associative_property_map<tree_index_rank_t>;
+   using tree_index_parent_map_t = boost::associative_property_map<tree_index_parent_t>;
+   using tree_index_dsets_t = boost::disjoint_sets<tree_index_rank_map_t, tree_index_parent_map_t>;
 
    tree_index_rank_t tree_index_rank_map;
    tree_index_parent_t tree_index_parent_map;

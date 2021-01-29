@@ -104,7 +104,7 @@ class CSE : public FunctionFrontendFlowStep
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /// define the type of the unique table key
-   typedef std::pair<enum kind, std::vector<unsigned int>> CSE_tuple_key_type;
+   using CSE_tuple_key_type = std::pair<enum kind, std::vector<unsigned int>>;
 
    /// check if the statement has an equivalent in the unique table
    tree_nodeRef hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table);

@@ -94,6 +94,6 @@ class AlteraBackendFlow : public BackendFlow
    void ExecuteSynthesis() override;
 };
 /// Refcount definition for the class
-typedef refcount<AlteraBackendFlow> AlteraBackendFlowRef;
+using AlteraBackendFlowRef = std::shared_ptr<AlteraBackendFlow>;
 
 #endif

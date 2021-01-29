@@ -85,6 +85,6 @@ class DataXmlParser
    void Parse(const CustomSet<std::string>& file_names, std::map<std::string, CustomMap<std::string, std::string>>& output) const;
 };
 /// Refcount definition for the class ParseProfilingAnalysis
-typedef refcount<const DataXmlParser> DataXmlParserConstRef;
-typedef refcount<DataXmlParser> DataXmlParserRef;
+using DataXmlParserConstRef = std::shared_ptr<const DataXmlParser>;
+using DataXmlParserRef = std::shared_ptr<DataXmlParser>;
 #endif

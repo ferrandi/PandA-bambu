@@ -111,7 +111,7 @@ class xml_attribute : public xml_node
 
 struct attribute_sequence
 {
-   typedef std::list<xml_attribute*> attribute_list;
+   using attribute_list = std::list<xml_attribute*>;
    /**
     * Print the class.
     * @param os is the stream.

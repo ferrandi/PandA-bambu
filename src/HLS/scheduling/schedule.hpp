@@ -397,6 +397,6 @@ class Schedule
    void AddConnectionTimes(unsigned int first_operation, unsigned int second_operation, const double value);
 };
 /// Refcount definition of the class
-typedef refcount<Schedule> ScheduleRef;
-typedef refcount<const Schedule> ScheduleConstRef;
+using ScheduleRef = std::shared_ptr<Schedule>;
+using ScheduleConstRef = std::shared_ptr<const Schedule>;
 #endif

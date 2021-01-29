@@ -71,8 +71,7 @@ class commandport_obj : public generic_obj
 {
  public:
    /// Available command types
-   typedef enum
-   {
+   using command_type = enum {
       OPERATION = 0,   /// operation enable
       CONDITION,       /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes to the datapath
       SWITCH,          /// switch value, it represents the value of the switch statement
@@ -82,11 +81,11 @@ class commandport_obj : public generic_obj
       UNBOUNDED,       /// signal representing a communication for an unbounded object (function call)
       MULTI_UNBOUNDED, /// signal representing when a multi unbounded call ends
       WRENABLE         /// enable for register writing
-   } command_type;
+   };
 
-   typedef std::pair<unsigned int, vertex> data_operation_pair;
+   using data_operation_pair = std::pair<unsigned int, vertex>;
    /// describe a transition from a source state to the target state plus the tree_node of the data transferred and the operation vertex where the computation is performed
-   typedef std::tuple<vertex, vertex, data_operation_pair> transition;
+   using transition = std::tuple<vertex, vertex, data_operation_pair>;
 
  private:
    /// TODO: substitute with a functor

@@ -77,6 +77,6 @@ class nxpython_flow_wrapper : public NanoXploreWrapper
    ~nxpython_flow_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<nxpython_flow_wrapper> nxpython_flow_wrapperRef;
+using nxpython_flow_wrapperRef = std::shared_ptr<nxpython_flow_wrapper>;
 
 #endif

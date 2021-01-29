@@ -1006,7 +1006,7 @@ void HDL_manager::write_fsm(const language_writerRef writer, const structural_ob
    std::vector<std::string> SplitVec = SplitString(fsm_desc, ";");
    THROW_ASSERT(SplitVec.size() > 1, "Expected more than one ';' in the fsm specification (the first is the reset)");
 
-   typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+   using tokenizer = boost::tokenizer<boost::char_separator<char>>;
    boost::char_separator<char> sep(" ", nullptr);
    // compute the list of states
    std::list<std::string> list_of_states;

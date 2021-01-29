@@ -88,5 +88,5 @@ class AadlFlexLexer : public yyFlexLexer
       return 1;
    }
 };
-typedef refcount<AadlFlexLexer> AadlFlexLexerRef;
+using AadlFlexLexerRef = std::shared_ptr<AadlFlexLexer>;
 #endif

@@ -74,8 +74,8 @@ struct var_pp_functor
     */
    virtual std::string operator()(unsigned int var) const = 0;
 };
-typedef refcount<var_pp_functor> var_pp_functorRef;
-typedef refcount<const var_pp_functor> var_pp_functorConstRef;
+using var_pp_functorRef = std::shared_ptr<var_pp_functor>;
+using var_pp_functorConstRef = std::shared_ptr<const var_pp_functor>;
 
 /**
  * Standard functor that returns the name of a variable

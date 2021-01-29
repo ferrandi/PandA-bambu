@@ -92,5 +92,5 @@ class CInitializationFlexLexer : public yyFlexLexer
       return 1;
    }
 };
-typedef refcount<CInitializationFlexLexer> CInitializationFlexLexerRef;
+using CInitializationFlexLexerRef = std::shared_ptr<CInitializationFlexLexer>;
 #endif

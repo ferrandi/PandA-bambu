@@ -90,6 +90,6 @@ class BashBackendFlow : public BackendFlow
    ~BashBackendFlow() override;
 };
 /// Refcount definition for the class
-typedef refcount<BashBackendFlow> BashBackendFlowRef;
+using BashBackendFlowRef = std::shared_ptr<BashBackendFlow>;
 
 #endif

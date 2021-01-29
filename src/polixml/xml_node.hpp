@@ -89,7 +89,7 @@ class xml_node
    }
 
    /// type for list of xml nodes
-   typedef std::list<xml_nodeRef> node_list;
+   using node_list = std::list<xml_nodeRef>;
 
    /**
     * Print the class.

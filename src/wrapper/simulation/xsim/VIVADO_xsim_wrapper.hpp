@@ -101,6 +101,6 @@ class VIVADO_xsim_wrapper : public SimulationTool
    void Clean() const override;
 };
 /// Refcount definition for the class
-typedef refcount<VIVADO_xsim_wrapper> VIVADO_xsim_wrapperRef;
+using VIVADO_xsim_wrapperRef = std::shared_ptr<VIVADO_xsim_wrapper>;
 
 #endif

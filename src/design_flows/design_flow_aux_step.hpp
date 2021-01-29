@@ -48,11 +48,10 @@
 #include <string>               // for string
 
 /// Identifier of the auxiliary design flow steps
-typedef enum
-{
+using AuxDesignFlowStepType = enum {
    DESIGN_FLOW_ENTRY, //! Entry point for the design flow
    DESIGN_FLOW_EXIT   //! Exit point for the design flow
-} AuxDesignFlowStepType;
+};
 
 /**
  * Class describing auxiliary steps in design flow

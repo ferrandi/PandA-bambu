@@ -104,6 +104,6 @@ class register_obj : public generic_obj
 };
 
 /// RefCount definition for register_obj class
-typedef refcount<register_obj> register_objRef;
+using register_objRef = std::shared_ptr<register_obj>;
 
 #endif

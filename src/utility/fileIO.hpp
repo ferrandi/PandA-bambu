@@ -69,13 +69,13 @@
 /**
  * RefCount type definition for the input stream object.
  */
-typedef refcount<std::istream> fileIO_istreamRef;
-typedef refcount<const std::istream> fileIO_istreamConstRef;
+using fileIO_istreamRef = std::shared_ptr<std::istream>;
+using fileIO_istreamConstRef = std::shared_ptr<const std::istream>;
 
 /**
  * RefCount type definition for the input stream object.
  */
-typedef refcount<std::ostream> fileIO_ostreamRef;
+using fileIO_ostreamRef = std::shared_ptr<std::ostream>;
 
 /**
  * this function returns an istream compressed or not.

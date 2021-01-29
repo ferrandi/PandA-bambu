@@ -91,6 +91,6 @@ class modelsimWrapper : public SimulationTool
    void Clean() const override;
 };
 /// Refcount definition for the modelsimWrapper class
-typedef refcount<modelsimWrapper> modelsimWrapperRef;
+using modelsimWrapperRef = std::shared_ptr<modelsimWrapper>;
 
 #endif

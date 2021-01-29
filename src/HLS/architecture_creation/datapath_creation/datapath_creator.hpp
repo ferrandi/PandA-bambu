@@ -77,6 +77,6 @@ class datapath_creator : public HLSFunctionStep
    ~datapath_creator() override;
 };
 /// refcount definition of the class
-typedef refcount<datapath_creator> datapath_creatorRef;
+using datapath_creatorRef = std::shared_ptr<datapath_creator>;
 
 #endif

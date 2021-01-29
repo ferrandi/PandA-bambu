@@ -88,5 +88,5 @@ class DesignFlowStepFactory
     */
    virtual DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
 };
-typedef refcount<DesignFlowStepFactory> DesignFlowStepFactoryRef;
+using DesignFlowStepFactoryRef = std::shared_ptr<DesignFlowStepFactory>;
 #endif

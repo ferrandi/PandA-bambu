@@ -67,7 +67,7 @@ struct AsnParserData
     */
    AsnParserData(const AadlInformationRef aadl_information, const ParameterConstRef parameters);
 };
-typedef refcount<AsnParserData> AsnParserDataRef;
+using AsnParserDataRef = std::shared_ptr<AsnParserData>;
 
 class AsnParser : public ParserFlowStep
 {

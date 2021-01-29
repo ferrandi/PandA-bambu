@@ -102,22 +102,13 @@ class Translator
    {
     public:
       /// Text format
-      typedef enum
-      {
-         BOOST_PP_SEQ_FOR_EACH(TF_ENUM, BOOST_PP_EMPTY, TEXT_FORMAT)
-      } TextFormat;
+      using TextFormat = enum { BOOST_PP_SEQ_FOR_EACH(TF_ENUM, BOOST_PP_EMPTY, TEXT_FORMAT) };
 
       /// Comparison operator
-      typedef enum
-      {
-         BOOST_PP_SEQ_FOR_EACH(CO_ENUM, BOOST_PP_EMPTY, COMPARISON_OPERATOR)
-      } ComparisonOperator;
+      using ComparisonOperator = enum { BOOST_PP_SEQ_FOR_EACH(CO_ENUM, BOOST_PP_EMPTY, COMPARISON_OPERATOR) };
 
       /// Total format
-      typedef enum
-      {
-         BOOST_PP_SEQ_FOR_EACH(TOF_ENUM, BOOST_PP_EMPTY, TOTAL_FORMAT)
-      } TotalFormat;
+      using TotalFormat = enum { BOOST_PP_SEQ_FOR_EACH(TOF_ENUM, BOOST_PP_EMPTY, TOTAL_FORMAT) };
 
     private:
       /// Map string->enum for text format
@@ -294,5 +285,5 @@ class Translator
    static void AggregateAndClean(std::map<std::string, std::map<std::string, long double>>& data, CustomOrderedSet<std::string>& column_names, const ParameterConstRef param);
 };
 
-typedef refcount<const Translator> TranslatorConstRef;
+using TranslatorConstRef = std::shared_ptr<const Translator>;
 #endif

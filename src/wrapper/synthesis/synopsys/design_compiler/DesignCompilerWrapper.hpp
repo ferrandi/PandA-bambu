@@ -86,30 +86,11 @@ REF_FORWARD_DECL(time_model);
 class DesignCompilerWrapper : public SynopsysWrapper
 {
  public:
-   typedef enum
-   {
-      REPORT_AREA = 0,
-      REPORT_TIME,
-      REPORT_POWER,
-      REPORT_CELL,
-      SYNTHESIS_RESULT,
-      SYNTHESIS_LOG,
-      SDC_CONSTRAINTS
-   } report_t;
+   using report_t = enum { REPORT_AREA = 0, REPORT_TIME, REPORT_POWER, REPORT_CELL, SYNTHESIS_RESULT, SYNTHESIS_LOG, SDC_CONSTRAINTS };
 
-   typedef enum
-   {
-      MEDIUM = 0,
-      HIGH,
-      ULTRA
-   } opt_level_t;
+   using opt_level_t = enum { MEDIUM = 0, HIGH, ULTRA };
 
-   typedef enum
-   {
-      AREA = 0,
-      TIME,
-      POWER
-   } constraint_t;
+   using constraint_t = enum { AREA = 0, TIME, POWER };
 
  protected:
    /**
@@ -343,6 +324,6 @@ class DesignCompilerWrapper : public SynopsysWrapper
    std::string get_report_file(unsigned int report_type) const;
 };
 /// Refcount definition for the class
-typedef refcount<DesignCompilerWrapper> DesignCompilerWrapperRef;
+using DesignCompilerWrapperRef = std::shared_ptr<DesignCompilerWrapper>;
 
 #endif

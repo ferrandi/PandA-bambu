@@ -298,6 +298,6 @@ class ASLAP
    const OpGraphConstRef CGetOpGraph() const;
 };
 
-typedef refcount<ASLAP> ASLAPRef;
+using ASLAPRef = std::shared_ptr<ASLAP>;
 
 #endif

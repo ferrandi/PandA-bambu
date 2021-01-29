@@ -151,6 +151,6 @@ class ToolManager
 };
 
 /// Refcount definition for the class
-typedef refcount<ToolManager> ToolManagerRef;
+using ToolManagerRef = std::shared_ptr<ToolManager>;
 
 #endif

@@ -82,5 +82,5 @@ class StorageValueInformationFsm : public StorageValueInformation
    void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) override;
 };
 
-typedef refcount<StorageValueInformationFsm> StorageValueInformationFsmRef;
+using StorageValueInformationFsmRef = std::shared_ptr<StorageValueInformationFsm>;
 #endif

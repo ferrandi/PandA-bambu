@@ -75,7 +75,7 @@ class OpVertexSet;
 //@}
 
 #if HAVE_UNORDERED
-typedef std::vector<rehashed_heap<int>> PriorityQueues;
+using PriorityQueues = std::vector<rehashed_heap<int>>;
 #else
 /// Sorter for connection
 struct PrioritySorter : public std::binary_function<vertex, vertex, bool>

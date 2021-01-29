@@ -436,8 +436,8 @@ struct OpNodeInfo : public TypedNodeInfo
     */
    void Print(std::ostream& stream, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format) const;
 };
-typedef refcount<OpNodeInfo> OpNodeInfoRef;
-typedef refcount<const OpNodeInfo> OpNodeInfoConstRef;
+using OpNodeInfoRef = std::shared_ptr<OpNodeInfo>;
+using OpNodeInfoConstRef = std::shared_ptr<const OpNodeInfo>;
 
 /**
  * Macro returning the index of the basic block which the node belongs to
@@ -557,8 +557,8 @@ class OpEdgeInfo : public CdfgEdgeInfo
    bool FlgEdgeF() const;
 };
 /// Refcount definition for OpEdgeInfo
-typedef refcount<OpEdgeInfo> OpEdgeInfoRef;
-typedef refcount<const OpEdgeInfo> OpEdgeInfoConstRef;
+using OpEdgeInfoRef = std::shared_ptr<OpEdgeInfo>;
+using OpEdgeInfoConstRef = std::shared_ptr<const OpEdgeInfo>;
 
 /**
  * information associated with the whole graph
@@ -595,8 +595,8 @@ struct OpGraphInfo : public GraphInfo
 };
 
 /// Refcount definition for OpGraphInfo
-typedef refcount<OpGraphInfo> OpGraphInfoRef;
-typedef refcount<const OpGraphInfo> OpGraphInfoConstRef;
+using OpGraphInfoRef = std::shared_ptr<OpGraphInfo>;
+using OpGraphInfoConstRef = std::shared_ptr<const OpGraphInfo>;
 
 #if HAVE_UNORDERED
 /**
@@ -780,7 +780,7 @@ class OpGraphsCollection : public graphs_collection
 };
 
 /// Refcount definition for OpGraphsCollectionRef
-typedef refcount<OpGraphsCollection> OpGraphsCollectionRef;
+using OpGraphsCollectionRef = std::shared_ptr<OpGraphsCollection>;
 
 /**
  * Class used to describe a particular graph with operations as nodes
@@ -922,7 +922,7 @@ struct OpGraph : public graph
 #endif
 };
 /// refcount definition of the class
-typedef refcount<OpGraph> OpGraphRef;
-typedef refcount<const OpGraph> OpGraphConstRef;
+using OpGraphRef = std::shared_ptr<OpGraph>;
+using OpGraphConstRef = std::shared_ptr<const OpGraph>;
 
 #endif

@@ -433,12 +433,12 @@ DesignFlowStep_Status port_swapping::InternalExec()
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
 
-   typedef struct
+   using Operands = struct
    {
       vertex op;
       PSVertex first_op;
       PSVertex second_op;
-   } Operands;
+   };
 
    std::map<std::pair<unsigned int, unsigned int>, std::vector<vertex>> fu_map;
    std::map<std::tuple<unsigned int, unsigned int, unsigned int>, PSVertex> op_vertex_map;

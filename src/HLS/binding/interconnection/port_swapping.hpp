@@ -52,24 +52,24 @@
 class port_swapping : public HLSFunctionStep
 {
  private:
-   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_color_t, boost::default_color_type>> PSGraph;
-   typedef boost::graph_traits<PSGraph>::edge_descriptor PSEdge;
-   typedef boost::graph_traits<PSGraph>::vertex_descriptor PSVertex;
-   typedef std::pair<unsigned int, unsigned int> PSE;
-   typedef struct
+   using PSGraph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS, boost::no_property, boost::property<boost::edge_color_t, boost::default_color_type>>;
+   using PSEdge = boost::graph_traits<PSGraph>::edge_descriptor;
+   using PSVertex = boost::graph_traits<PSGraph>::vertex_descriptor;
+   using PSE = std::pair<unsigned int, unsigned int>;
+   using PSVSet = struct
    {
       PSVertex v;
       int belongs;
       int level;
-   } PSVSet;
-   typedef struct
+   };
+   using PSMultiStart = struct
    {
       std::vector<PSVSet> vset;
       std::vector<PSE> spt_vector_edges;
       std::vector<PSE> co_tree_vector_edges;
       std::vector<PSE> odd_co_tree_vector_edges;
       long unsigned int cardinality;
-   } PSMultiStart;
+   };
 
  protected:
    /**

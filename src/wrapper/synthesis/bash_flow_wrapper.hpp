@@ -90,6 +90,6 @@ class bash_flow_wrapper : public SynthesisTool
    ~bash_flow_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<bash_flow_wrapper> bash_flow_wrapperRef;
+using bash_flow_wrapperRef = std::shared_ptr<bash_flow_wrapper>;
 
 #endif

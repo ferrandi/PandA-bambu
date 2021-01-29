@@ -208,8 +208,8 @@ class tree_node
 /**
  * RefCount type definition of the tree_node class structure
  */
-typedef refcount<tree_node> tree_nodeRef;
-typedef refcount<const tree_node> tree_nodeConstRef;
+using tree_nodeRef = std::shared_ptr<tree_node>;
+using tree_nodeConstRef = std::shared_ptr<const tree_node>;
 
 /**
  * A set of const tree node
@@ -979,7 +979,7 @@ struct PointToInformation
     */
    ~PointToInformation();
 };
-typedef refcount<PointToInformation> PointToInformationRef;
+using PointToInformationRef = std::shared_ptr<PointToInformation>;
 
 /**
  * struct definition of the common part of an expression
@@ -1084,7 +1084,7 @@ struct PointToSolution
       GETID(variables) = 0
    };
 };
-typedef refcount<PointToSolution> PointToSolutionRef;
+using PointToSolutionRef = std::shared_ptr<PointToSolution>;
 
 /**
  * struct definition of the common part of a gimple  with virtual operands
@@ -3761,10 +3761,10 @@ struct gimple_phi : public gimple_node
    friend class parm2ssa;
 
    /// The type of the def edge
-   typedef std::pair<tree_nodeRef, unsigned int> DefEdge;
+   using DefEdge = std::pair<tree_nodeRef, unsigned int>;
 
    /// The type of the def edge list
-   typedef std::list<DefEdge> DefEdgeList;
+   using DefEdgeList = std::list<DefEdge>;
 
  private:
    /** store the list pairs: <def, edge>. Each tuple contains the incoming reaching

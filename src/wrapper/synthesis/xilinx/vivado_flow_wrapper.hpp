@@ -82,6 +82,6 @@ class vivado_flow_wrapper : public XilinxWrapper
    ~vivado_flow_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<vivado_flow_wrapper> vivado_flow_wrapperRef;
+using vivado_flow_wrapperRef = std::shared_ptr<vivado_flow_wrapper>;
 
 #endif

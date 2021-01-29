@@ -87,6 +87,6 @@ class map_wrapper : public XilinxWrapper
    ~map_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<map_wrapper> map_wrapperRef;
+using map_wrapperRef = std::shared_ptr<map_wrapper>;
 
 #endif

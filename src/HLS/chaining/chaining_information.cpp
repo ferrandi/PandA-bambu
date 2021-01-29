@@ -51,9 +51,9 @@
 
 struct ChainingSet
 {
-   typedef boost::property_map<OpGraph, boost::vertex_index_t>::const_type const_vertex_index_pmap_t;
-   typedef boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map, std::vector<std::size_t>::value_type> rank_pmap_type;
-   typedef boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map, std::vector<std::size_t>::value_type> pred_pmap_type;
+   using const_vertex_index_pmap_t = boost::property_map<OpGraph, boost::vertex_index_t>::const_type;
+   using rank_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map, std::vector<std::size_t>::value_type>;
+   using pred_pmap_type = boost::iterator_property_map<std::vector<std::size_t>::iterator, boost::identity_property_map, std::vector<std::size_t>::value_type>;
 
    const_vertex_index_pmap_t cindex_pmap;
 

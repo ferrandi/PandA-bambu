@@ -154,6 +154,6 @@ class PragmaParser
 };
 
 /// Refcount definition for the PragmaParser class
-typedef refcount<PragmaParser> PragmaParserRef;
+using PragmaParserRef = std::shared_ptr<PragmaParser>;
 
 #endif

@@ -200,6 +200,6 @@ class NP_functionality
 /**
  * RefCount type definition of the connection class structure.
  */
-typedef refcount<NP_functionality> NP_functionalityRef;
+using NP_functionalityRef = std::shared_ptr<NP_functionality>;
 
 #endif

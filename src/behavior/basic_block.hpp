@@ -171,8 +171,8 @@ struct BBNodeInfo : public NodeInfo
    const CustomOrderedSet<unsigned int>& get_live_out() const;
 };
 /// refcount definition of the class
-typedef refcount<BBNodeInfo> BBNodeInfoRef;
-typedef refcount<const BBNodeInfo> BBNodeInfoConstRef;
+using BBNodeInfoRef = std::shared_ptr<BBNodeInfo>;
+using BBNodeInfoConstRef = std::shared_ptr<const BBNodeInfo>;
 
 /**
  * Information associated with a basic block edge
@@ -238,8 +238,8 @@ struct BBEdgeInfo : public CdfgEdgeInfo
    unsigned long long get_epp_value() const;
 };
 /// refcount definition of the class
-typedef refcount<BBEdgeInfo> BBEdgeInfoRef;
-typedef refcount<const BBEdgeInfo> BBEdgeInfoConstRef;
+using BBEdgeInfoRef = std::shared_ptr<BBEdgeInfo>;
+using BBEdgeInfoConstRef = std::shared_ptr<const BBEdgeInfo>;
 
 /**
  * Information associated with the whole basic-block graph
@@ -268,8 +268,8 @@ struct BBGraphInfo : public GraphInfo
    BBGraphInfo(const application_managerConstRef AppM, const unsigned int function_index);
 };
 /// refcount definition of the class
-typedef refcount<BBGraphInfo> BBGraphInfoRef;
-typedef refcount<const BBGraphInfo> BBGraphInfoConstRef;
+using BBGraphInfoRef = std::shared_ptr<BBGraphInfo>;
+using BBGraphInfoConstRef = std::shared_ptr<const BBGraphInfo>;
 
 /**
  * This structure defines graphs where nodes are basic_blocks.
@@ -311,8 +311,8 @@ class BBGraphsCollection : public graphs_collection
    }
 };
 /// refcount definition of the class
-typedef refcount<BBGraphsCollection> BBGraphsCollectionRef;
-typedef refcount<const BBGraphsCollection> BBGraphsCollectionConstRef;
+using BBGraphsCollectionRef = std::shared_ptr<BBGraphsCollection>;
+using BBGraphsCollectionConstRef = std::shared_ptr<const BBGraphsCollection>;
 
 /**
  * Class used to describe a particular graph with basic blocks as nodes
@@ -415,8 +415,8 @@ struct BBGraph : public graph
    }
 };
 /// refcount definition of the class
-typedef refcount<BBGraph> BBGraphRef;
-typedef refcount<const BBGraph> BBGraphConstRef;
+using BBGraphRef = std::shared_ptr<BBGraph>;
+using BBGraphConstRef = std::shared_ptr<const BBGraph>;
 
 #if !HAVE_UNORDERED
 class BBVertexSorter : std::binary_function<vertex, vertex, bool>

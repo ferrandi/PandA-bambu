@@ -65,7 +65,7 @@ REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(XMLDomParser);
 class xml_element;
-typedef refcount<std::istream> fileIO_istreamRef;
+using fileIO_istreamRef = std::shared_ptr<std::istream>;
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
@@ -91,14 +91,13 @@ struct BackendStep
    /// output directory
    std::string out_dir;
 };
-typedef refcount<BackendStep> BackendStepRef;
+using BackendStepRef = std::shared_ptr<BackendStep>;
 
 class BackendFlow
 {
  public:
    /// implemented flow
-   typedef enum
-   {
+   using type_t = enum {
       UNKNOWN,
       ASIC,
       XILINX_FPGA,
@@ -109,7 +108,7 @@ class BackendFlow
       LATTICE_FPGA,
       NANOXPLORE_FPGA,
       GENERIC,
-   } type_t;
+   };
 
  protected:
    /// class containing all the parameters
@@ -277,6 +276,6 @@ class BackendFlow
    time_modelRef get_timing_results() const;
 };
 /// refcount definition of the class
-typedef refcount<BackendFlow> BackendFlowRef;
+using BackendFlowRef = std::shared_ptr<BackendFlow>;
 
 #endif

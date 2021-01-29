@@ -146,8 +146,7 @@ class CBackend : public DesignFlowStep
 
  public:
    /// The types of backend
-   typedef enum
-   {
+   using Type = enum {
 #if HAVE_HOST_PROFILING_BUILT
       CB_BBP, /** Sequential c with instrumentation for basic block profiling */
 #endif
@@ -177,7 +176,7 @@ class CBackend : public DesignFlowStep
       CB_PARALLEL, /**< Parallel c without instrumentation */
 #endif
       CB_SEQUENTIAL, /**< Sequential c without instrumentation */
-   } Type;
+   };
 
    /// The type of this instance
    const Type c_backend_type;
@@ -253,6 +252,6 @@ class CBackend : public DesignFlowStep
     */
    const CWriterRef GetCWriter() const;
 };
-typedef refcount<CBackend> CBackendRef;
-typedef refcount<const CBackend> CBackendConstRef;
+using CBackendRef = std::shared_ptr<CBackend>;
+using CBackendConstRef = std::shared_ptr<const CBackend>;
 #endif

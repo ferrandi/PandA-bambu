@@ -57,6 +57,6 @@ class UnfoldedCallInfo : public EdgeInfo
    ~UnfoldedCallInfo() override = default;
 };
 
-typedef refcount<UnfoldedCallInfo> UnfoldedCallInfoRef;
-typedef refcount<const UnfoldedCallInfo> UnfoldedCallInfoConstRef;
+using UnfoldedCallInfoRef = std::shared_ptr<UnfoldedCallInfo>;
+using UnfoldedCallInfoConstRef = std::shared_ptr<const UnfoldedCallInfo>;
 #endif

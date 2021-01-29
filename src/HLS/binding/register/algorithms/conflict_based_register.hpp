@@ -50,10 +50,10 @@
 class conflict_based_register : public reg_binding_creator
 {
  protected:
-   typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> conflict_graph;
-   typedef boost::graph_traits<conflict_graph>::vertex_descriptor cg_vertex_descriptor;
-   typedef boost::graph_traits<conflict_graph>::vertices_size_type cg_vertices_size_type;
-   typedef boost::property_map<conflict_graph, boost::vertex_index_t>::const_type cg_vertex_index_map;
+   using conflict_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>;
+   using cg_vertex_descriptor = boost::graph_traits<conflict_graph>::vertex_descriptor;
+   using cg_vertices_size_type = boost::graph_traits<conflict_graph>::vertices_size_type;
+   using cg_vertex_index_map = boost::property_map<conflict_graph, boost::vertex_index_t>::const_type;
 
    /// conflict graph
    conflict_graph cg;

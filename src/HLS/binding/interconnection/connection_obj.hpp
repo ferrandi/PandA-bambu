@@ -60,11 +60,7 @@ class connection_obj
 {
  public:
    /// resource type
-   typedef enum
-   {
-      DIRECT_CONN,
-      BY_MUX
-   } element_t;
+   using element_t = enum { DIRECT_CONN, BY_MUX };
 
  protected:
    /// type of the connection
@@ -116,6 +112,6 @@ class connection_obj
 };
 
 /// RefCount definition for connection_obj class
-typedef refcount<connection_obj> connection_objRef;
+using connection_objRef = std::shared_ptr<connection_obj>;
 
 #endif

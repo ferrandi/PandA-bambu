@@ -108,5 +108,5 @@ class CInitializationParserFunctor
     */
    virtual void FinalizeFileInit() = 0;
 };
-typedef refcount<CInitializationParserFunctor> CInitializationParserFunctorRef;
+using CInitializationParserFunctorRef = std::shared_ptr<CInitializationParserFunctor>;
 #endif

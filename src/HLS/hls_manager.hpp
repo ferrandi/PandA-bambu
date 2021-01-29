@@ -65,7 +65,7 @@ class HLS_manager : public application_manager
 {
  public:
    /// tuple set used to represent the required values or the constant default value associated with the inputs of a node
-   typedef std::tuple<unsigned int, unsigned int> io_binding_type;
+   using io_binding_type = std::tuple<unsigned int, unsigned int>;
 
  private:
    /// information about the target device/technology for the synthesis
@@ -217,7 +217,7 @@ class HLS_manager : public application_manager
    unsigned int UpdateMemVersion();
 };
 /// refcount definition of the class
-typedef refcount<HLS_manager> HLS_managerRef;
-typedef refcount<const HLS_manager> HLS_managerConstRef;
+using HLS_managerRef = std::shared_ptr<HLS_manager>;
+using HLS_managerConstRef = std::shared_ptr<const HLS_manager>;
 
 #endif

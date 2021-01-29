@@ -109,41 +109,11 @@ class flopoco_wrapper
    /// Pretty print functor object used to indent the generated code
    simple_indent PP;
    /// Port types
-   typedef enum
-   {
-      port_in,
-      port_out,
-      clk,
-      rst
-   } port_type;
+   using port_type = enum { port_in, port_out, clk, rst };
    /// Component types
-   typedef enum
-   {
-      top,
-      wrapped,
-      in_wrap,
-      out_wrap
-   } component_type;
+   using component_type = enum { top, wrapped, in_wrap, out_wrap };
    /// unit type
-   typedef enum
-   {
-      UT_ADD,
-      UT_SUB,
-      UT_MULT,
-      UT_DIV,
-      UT_FF_CONV,
-      UT_ADDSUB,
-      UT_UFIX2FP,
-      UT_IFIX2FP,
-      UT_FP2UFIX,
-      UT_FP2IFIX,
-      UT_EXP,
-      UT_SQRT,
-      UT_compare_expr,
-      UT_LOG,
-      UT_POW,
-      UT_UNKNOWN
-   } unit_type;
+   using unit_type = enum { UT_ADD, UT_SUB, UT_MULT, UT_DIV, UT_FF_CONV, UT_ADDSUB, UT_UFIX2FP, UT_IFIX2FP, UT_FP2UFIX, UT_FP2IFIX, UT_EXP, UT_SQRT, UT_compare_expr, UT_LOG, UT_POW, UT_UNKNOWN };
 
    unit_type type;
 
@@ -295,6 +265,6 @@ class flopoco_wrapper
 };
 
 /// Refcount definition for the flopoco_wrapper class
-typedef refcount<flopoco_wrapper> flopoco_wrapperRef;
+using flopoco_wrapperRef = std::shared_ptr<flopoco_wrapper>;
 
 #endif /* FLOPOCOWRAPPER_H */

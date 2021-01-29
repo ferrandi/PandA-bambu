@@ -49,7 +49,7 @@ REF_FORWARD_DECL(tree_node);
 class CallGraphBuiltinCall : public FunctionFrontendFlowStep
 {
  private:
-   typedef std::map<std::string, CustomOrderedSet<unsigned int>> TypeDeclarationMap;
+   using TypeDeclarationMap = std::map<std::string, CustomOrderedSet<unsigned int>>;
    bool modified;
 
    /**

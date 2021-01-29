@@ -107,6 +107,6 @@ class XilinxWrapper : public SynthesisTool
    std::string getStringValue(const xml_script_node_tRef node, const DesignParametersRef& dp) const override;
 };
 /// Refcount definition for the class
-typedef refcount<XilinxWrapper> XilinxWrapperRef;
+using XilinxWrapperRef = std::shared_ptr<XilinxWrapper>;
 
 #endif

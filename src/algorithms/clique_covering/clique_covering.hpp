@@ -323,13 +323,13 @@ template <typename Graph>
 class TTT_maximal_weighted_clique
 {
    /// vertex iterator
-   typedef typename boost::graph_traits<Graph>::vertex_iterator vertex_iterator;
+   using vertex_iterator = typename boost::graph_traits<Graph>::vertex_iterator;
    /// vertex object
-   typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex;
+   using vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
    /// adjacency iterator
-   typedef typename boost::graph_traits<Graph>::adjacency_iterator adjacency_iterator;
+   using adjacency_iterator = typename boost::graph_traits<Graph>::adjacency_iterator;
    /// out edge iterator
-   typedef typename boost::graph_traits<Graph>::out_edge_iterator edge_iterator;
+   using edge_iterator = typename boost::graph_traits<Graph>::out_edge_iterator;
 
    /// set of vertices of the current clique
    CustomUnorderedSet<vertex> Q;
@@ -499,13 +499,13 @@ template <typename Graph>
 class TTT_maximal_weighted_clique_fast
 {
    /// vertex iterator
-   typedef typename boost::graph_traits<Graph>::vertex_iterator vertex_iterator;
+   using vertex_iterator = typename boost::graph_traits<Graph>::vertex_iterator;
    /// vertex object
-   typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex;
+   using vertex = typename boost::graph_traits<Graph>::vertex_descriptor;
    /// adjacency iterator
-   typedef typename boost::graph_traits<Graph>::adjacency_iterator adjacency_iterator;
+   using adjacency_iterator = typename boost::graph_traits<Graph>::adjacency_iterator;
    /// out edge iterator
-   typedef typename boost::graph_traits<Graph>::out_edge_iterator edge_iterator;
+   using edge_iterator = typename boost::graph_traits<Graph>::out_edge_iterator;
 
    /// set of vertices of the current clique
    CustomUnorderedSet<vertex> Q;
@@ -740,16 +740,16 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
 
    virtual void do_clique_covering(const cc_compatibility_graphRef filteredCG, boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, CustomUnorderedSet<C_vertex>&, const CustomUnorderedSet<C_vertex>&, const filter_clique<vertex_type>&)
    {
-      typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS> conflict_graph;
-      typedef boost::graph_traits<conflict_graph>::vertices_size_type cg_vertices_size_type;
-      typedef boost::property_map<conflict_graph, boost::vertex_index_t>::const_type cg_vertex_index_map;
+      using conflict_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>;
+      using cg_vertices_size_type = boost::graph_traits<conflict_graph>::vertices_size_type;
+      using cg_vertex_index_map = boost::property_map<conflict_graph, boost::vertex_index_t>::const_type;
       boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&> color;
 
       std::vector<cg_vertices_size_type> color_vec;
       /// conflict graph
       conflict_graph cg;
 
-      typedef boost::graph_traits<conflict_graph>::vertex_descriptor vertex_descriptor_cg;
+      using vertex_descriptor_cg = boost::graph_traits<conflict_graph>::vertex_descriptor;
       std::map<C_vertex, vertex_descriptor_cg> vmap;
       std::vector<C_vertex> reverse_map;
 
@@ -839,7 +839,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       rank_pmap_type rank_pmap = boost::make_iterator_property_map(rank_map.begin(), cindex_pmap, rank_map[0]);
       pred_pmap_type pred_pmap = boost::make_iterator_property_map(pred_map.begin(), cindex_pmap, pred_map[0]);
       boost::disjoint_sets<rank_pmap_type, pred_pmap_type> ds(rank_pmap, pred_pmap);
-      typedef boost::graph_traits<boost_cc_compatibility_graph>::vertex_iterator u_vertex_iterator;
+      using u_vertex_iterator = boost::graph_traits<boost_cc_compatibility_graph>::vertex_iterator;
       CustomUnorderedSet<C_vertex> support;
       CustomUnorderedSet<C_vertex> all_vertices;
 
@@ -1148,7 +1148,7 @@ class TTT_based_clique_covering : public coloring_based_clique_covering<vertex_t
 template <typename vertex_type>
 class TS_based_clique_covering : public coloring_based_clique_covering<vertex_type>
 {
-   typedef boost::graph_traits<cc_compatibility_graph>::edge_descriptor edge_descriptor;
+   using edge_descriptor = boost::graph_traits<cc_compatibility_graph>::edge_descriptor;
 
    bool is_non_compliant(C_vertex src, C_vertex tgt, const cc_compatibility_graph& subgraph, const CustomUnorderedSet<C_vertex>& all_vertices, typename boost::disjoint_sets<rank_pmap_type, pred_pmap_type>& ds, const filter_clique<vertex_type>& fc)
    {
@@ -1346,7 +1346,7 @@ class TS_based_clique_covering : public coloring_based_clique_covering<vertex_ty
 template <typename vertex_type>
 class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
 {
-   typedef boost::graph_traits<cc_compatibility_graph>::edge_descriptor edge_descriptor;
+   using edge_descriptor = boost::graph_traits<cc_compatibility_graph>::edge_descriptor;
 
    size_t compute_cost(std::vector<CustomOrderedSet<C_vertex>>& curr_cliques, const filter_clique<vertex_type>& fc)
    {
@@ -1454,8 +1454,8 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    /// the maximum size of these sets is the number of the cliques used to cover the graph
    size_t color_the_cc_compatibility_graph(const boost_cc_compatibility_graph& CG)
    {
-      typedef boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type cg_vertices_size_type;
-      typedef boost::property_map<boost_cc_compatibility_graph, boost::vertex_index_t>::const_type cg_vertex_index_map;
+      using cg_vertices_size_type = boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type;
+      using cg_vertex_index_map = boost::property_map<boost_cc_compatibility_graph, boost::vertex_index_t>::const_type;
       boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&> color;
 
       std::vector<cg_vertices_size_type> color_vec;

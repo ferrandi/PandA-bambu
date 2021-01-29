@@ -397,6 +397,6 @@ class Loop
    friend class add_loop_nop;
 };
 /// refcount definition of the class
-typedef refcount<Loop> LoopRef;
+using LoopRef = std::shared_ptr<Loop>;
 
 #endif // LOOP_HPP

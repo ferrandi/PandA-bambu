@@ -105,6 +105,6 @@ class xst_wrapper : public XilinxWrapper
    ~xst_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<xst_wrapper> xst_wrapperRef;
+using xst_wrapperRef = std::shared_ptr<xst_wrapper>;
 
 #endif

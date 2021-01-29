@@ -96,6 +96,6 @@ class IcarusWrapper : public SimulationTool
 #endif
 };
 /// Refcount definition for the IcarusWrapper class
-typedef refcount<IcarusWrapper> IcarusWrapperRef;
+using IcarusWrapperRef = std::shared_ptr<IcarusWrapper>;
 
 #endif

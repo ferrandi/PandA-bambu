@@ -70,12 +70,7 @@ class AadlInformation
    /// Strucutre containing the characteristics of a parameter
    struct AadlParameter
    {
-      typedef enum
-      {
-         BIG_ENDIANESS,
-         LITTLE_ENDIANESS,
-         NATIVE_ENDIANESS
-      } EndianessType;
+      using EndianessType = enum { BIG_ENDIANESS, LITTLE_ENDIANESS, NATIVE_ENDIANESS };
 
       /// The name of the parameter;
       std::string name;
@@ -86,12 +81,7 @@ class AadlInformation
       /// The endianess
       EndianessType endianess;
 
-      typedef enum
-      {
-         IN,
-         OUT,
-         INOUT
-      } Direction;
+      using Direction = enum { IN, OUT, INOUT };
 
       /// The direction of the parameter
       Direction direction;
@@ -146,6 +136,6 @@ class AadlInformation
     */
    AsnTypeRef CGetAsnType(const std::string& name) const;
 };
-typedef refcount<AadlInformation> AadlInformationRef;
-typedef refcount<const AadlInformation> AadlInformationConstRef;
+using AadlInformationRef = std::shared_ptr<AadlInformation>;
+using AadlInformationConstRef = std::shared_ptr<const AadlInformation>;
 #endif

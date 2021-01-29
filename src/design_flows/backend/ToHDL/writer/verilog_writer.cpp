@@ -1152,7 +1152,7 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
 void verilog_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port,
                                                        const std::string& clock_port, std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys)
 {
-   typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+   using tokenizer = boost::tokenizer<boost::char_separator<char>>;
    const char soc[3] = {STD_OPENING_CHAR, '\n', '\0'};
    const char scc[3] = {STD_CLOSING_CHAR, '\n', '\0'};
    const char soc1[2] = {STD_OPENING_CHAR, '\0'};

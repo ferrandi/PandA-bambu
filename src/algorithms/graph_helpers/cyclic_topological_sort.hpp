@@ -67,7 +67,7 @@ struct cyclic_topological_sort_visitor : public boost::dfs_visitor<>
 template <typename VertexListGraph, typename OutputIterator, typename P, typename T, typename R>
 void cyclic_topological_sort(VertexListGraph& g, OutputIterator result, const boost::bgl_named_params<P, T, R>& params)
 {
-   typedef cyclic_topological_sort_visitor<OutputIterator> TopoVisitor;
+   using TopoVisitor = cyclic_topological_sort_visitor<OutputIterator>;
    boost::depth_first_search(g, params.visitor(TopoVisitor(result)));
 }
 

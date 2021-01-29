@@ -105,7 +105,7 @@ class dominance;
 class ParallelRegionsGraphsCollection;
 class sequence_info;
 class xml_element;
-typedef unsigned int tree_class;
+using tree_class = unsigned int;
 //@}
 
 /// Struct representing memory information
@@ -119,7 +119,7 @@ struct memory_access
 
    memory_access(unsigned int _node_id, unsigned int _base_address, unsigned int _offset = 0);
 };
-typedef refcount<memory_access> memory_accessRef;
+using memory_accessRef = std::shared_ptr<memory_access>;
 
 /// The access type to a variable
 enum class FunctionBehavior_VariableAccessType
@@ -930,8 +930,8 @@ class FunctionBehavior
    unsigned int UpdateBitValueVersion();
 };
 
-typedef refcount<FunctionBehavior> FunctionBehaviorRef;
-typedef refcount<const FunctionBehavior> FunctionBehaviorConstRef;
+using FunctionBehaviorRef = std::shared_ptr<FunctionBehavior>;
+using FunctionBehaviorConstRef = std::shared_ptr<const FunctionBehavior>;
 
 /**
  * The key comparison function for vertices set based on levels

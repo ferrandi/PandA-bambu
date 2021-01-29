@@ -80,7 +80,7 @@
 #include <boost/version.hpp>
 
 /// Type of Basic Block aka TBB. In this case each basic block is represented with its index.
-typedef unsigned long int TBB;
+using TBB = unsigned long;
 
 /**
  * Store the intermediate information used to compute dominator or post dominator information.
@@ -93,15 +93,15 @@ class dom_info
    /// The algorithm uses two different indices for each Vertex: a generic index given by boost and the index in the dfs search
  private:
    /// Definition of Vertex
-   typedef typename boost::graph_traits<const GraphObj>::vertex_descriptor Vertex;
+   using Vertex = typename boost::graph_traits<const GraphObj>::vertex_descriptor;
    /// edge_iterator definition.
-   typedef typename boost::graph_traits<const GraphObj>::in_edge_iterator in_edge_iterator;
+   using in_edge_iterator = typename boost::graph_traits<const GraphObj>::in_edge_iterator;
    /// edge_iterator definition.
-   typedef typename boost::graph_traits<const GraphObj>::out_edge_iterator out_edge_iterator;
+   using out_edge_iterator = typename boost::graph_traits<const GraphObj>::out_edge_iterator;
    /// edge definition.
-   typedef typename boost::graph_traits<const GraphObj>::edge_descriptor edge;
+   using edge = typename boost::graph_traits<const GraphObj>::edge_descriptor;
    /// Vertex iterator definition
-   typedef typename boost::graph_traits<const GraphObj>::vertex_iterator Vertex_iterator;
+   using Vertex_iterator = typename boost::graph_traits<const GraphObj>::vertex_iterator;
 
    /// The parent of a node in the DFS tree.
    std::vector<TBB> dfs_parent;
@@ -613,10 +613,10 @@ class dominance
    //@}
 
    /// Definition of Vertex
-   typedef typename boost::graph_traits<const GraphObj>::vertex_descriptor Vertex;
+   using Vertex = typename boost::graph_traits<const GraphObj>::vertex_descriptor;
 
    /// Vertex_iterator definition.
-   typedef typename boost::graph_traits<const GraphObj>::vertex_iterator Vertex_iterator;
+   using Vertex_iterator = typename boost::graph_traits<const GraphObj>::vertex_iterator;
 
    /**
     * This variable store the direction for which the calculus is done
@@ -734,7 +734,7 @@ class dominance
          // for(domBeg = this->dom.begin(), domEnd = this->dom.end(); domBeg != domEnd; domBeg++)
          for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
          {
-            typedef typename CustomUnorderedMapStable<Vertex, CustomOrderedSet<Vertex>>::iterator mSetIter;
+            using mSetIter = typename CustomUnorderedMapStable<Vertex, CustomOrderedSet<Vertex>>::iterator;
             mSetIter mSetBeg, mSetEnd;
             for(mSetBeg = dominated.begin(), mSetEnd = dominated.end(); mSetBeg != mSetEnd; ++mSetBeg)
             {

@@ -88,6 +88,6 @@ class trce_wrapper : public XilinxWrapper
    ~trce_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<trce_wrapper> trce_wrapperRef;
+using trce_wrapperRef = std::shared_ptr<trce_wrapper>;
 
 #endif
