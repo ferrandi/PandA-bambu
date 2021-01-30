@@ -4135,8 +4135,11 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("description is missing for " + EnodeC->get_name());
          }
-         description = text->get_content();
-         xml_node::convert_escaped(description);
+         else
+         {
+            description = text->get_content();
+            xml_node::convert_escaped(description);
+         }
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(copyright))
       {
@@ -4145,8 +4148,11 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("copyright is missing for " + EnodeC->get_name());
          }
-         copyright = text->get_content();
-         xml_node::convert_escaped(copyright);
+         else
+         {
+            copyright = text->get_content();
+            xml_node::convert_escaped(copyright);
+         }
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(authors))
       {
@@ -4155,8 +4161,11 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("authors are missing for " + EnodeC->get_name());
          }
-         authors = text->get_content();
-         xml_node::convert_escaped(authors);
+         else
+         {
+            authors = text->get_content();
+            xml_node::convert_escaped(authors);
+         }
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(license))
       {
@@ -4165,8 +4174,10 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("license is missing for " + EnodeC->get_name());
          }
-         license = text->get_content();
-         xml_node::convert_escaped(license);
+         {
+            license = text->get_content();
+            xml_node::convert_escaped(license);
+         }
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(specialized))
       {
@@ -4175,8 +4186,11 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("specialization identifier is missing for " + EnodeC->get_name());
          }
-         specialized = text->get_content();
-         xml_node::convert_escaped(specialized);
+         else
+         {
+            specialized = text->get_content();
+            xml_node::convert_escaped(specialized);
+         }
       }
       else if(EnodeC->get_name() == GET_CLASS_NAME(multi_unit_multiplicity))
       {
@@ -4185,9 +4199,11 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("multi_unit_multiplicity identifier is missing for " + EnodeC->get_name());
          }
-         std::string multi_unit_multiplicitySTR = text->get_content();
-         xml_node::convert_escaped(specialized);
-         multi_unit_multiplicity = boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
+         {
+            std::string multi_unit_multiplicitySTR = text->get_content();
+            xml_node::convert_escaped(specialized);
+            multi_unit_multiplicity = boost::lexical_cast<unsigned>(multi_unit_multiplicitySTR);
+         }
       }
       else
       {
