@@ -2131,6 +2131,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    const std::string clang_plugin_dir = (Param->isOption(OPT_gcc_plugindir) ? Param->getOption<std::string>(OPT_gcc_plugindir) + "/../clang_plugin" : relocate_compiler_path(CLANG_PLUGIN_DIR)) + "/";
    const std::string plugin_ext = ".so";
 #endif
+#if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER ||  HAVE_I386_GCC49_COMPILER ||  HAVE_I386_GCC5_COMPILER ||  HAVE_I386_GCC6_COMPILER ||  HAVE_I386_GCC7_COMPILER ||  HAVE_I386_GCC8_COMPILER
    auto fillASTAnalyzer_plugin = [&] {
 #if HAVE_I386_CLANG11_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG11_ASTANALYZER_PLUGIN + plugin_ext;
@@ -2158,7 +2159,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
    };
-
+#endif
 #if HAVE_I386_GCC45_COMPILER
    if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
    {
