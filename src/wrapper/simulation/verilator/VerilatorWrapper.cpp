@@ -48,6 +48,7 @@
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_L2_NAME.hpp"
 #include "config_HAVE_THREADS.hpp"
+#include "config_USE_PARALLEL_VERILATOR.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -125,9 +126,16 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
 #endif
+#if USE_PARALLEL_VERILATOR
    unsigned int nThreads = std::thread::hardware_concurrency();
+#else
+   unsigned int nThreads = 1;
+#endif
 #if HAVE_THREADS
-   script << " --threads " << nThreads;
+   if(nThreads>1)
+   {
+      script << " --threads " << nThreads;
+   }
 #endif
    if(generate_vcd_output)
    {
