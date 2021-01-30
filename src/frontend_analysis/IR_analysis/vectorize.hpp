@@ -53,7 +53,7 @@ CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
 
 /// Enum used to classify the statement according to the required transformation
-using Transformation = enum {
+using Transformation = enum Transformation {
    NONE,     /**No transformation is required */
    COND_CON, /**Statement is the condition of the loop; it can remain a scalar since all the destinations are the same, but operand can be a vector */
    COND_DIV, /**Statement is the condition of the loop */

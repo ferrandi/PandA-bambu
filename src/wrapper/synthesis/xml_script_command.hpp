@@ -72,7 +72,7 @@ REF_FORWARD_DECL(xml_ite_block_t);
 #define TAG_FOREACH "foreach"
 
 /// Node types.
-using xml_script_node_enum_t = enum { NODE_UNKNOWN = 0, NODE_ENTRY = 1, NODE_VARIABLE = 2, NODE_PARAMETER = 3, NODE_COMMAND = 4, NODE_SHELL = 5, NODE_ITE_BLOCK = 6, NODE_FOREACH = 7 };
+using xml_script_node_enum_t = enum xml_script_node_enum_t { NODE_UNKNOWN = 0, NODE_ENTRY = 1, NODE_VARIABLE = 2, NODE_PARAMETER = 3, NODE_COMMAND = 4, NODE_SHELL = 5, NODE_ITE_BLOCK = 6, NODE_FOREACH = 7 };
 
 /** \class xml_script_node_t
  * This is the abstract class which describes a generic synthesis script node,

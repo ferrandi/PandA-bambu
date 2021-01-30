@@ -48,7 +48,7 @@
 /// Superclass include
 #include "design_flow_step.hpp"
 
-using ParserFlowStep_Type = enum {
+using ParserFlowStep_Type = enum ParserFlowStep_Type {
 #if HAVE_FROM_AADL_ASN_BUILT
    AADL,
    ASN,

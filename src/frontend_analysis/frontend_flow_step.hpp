@@ -75,7 +75,7 @@ REF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(ArchManager);
 REF_FORWARD_DECL(DesignFlowManager);
 
-using FrontendFlowStepType = enum {
+using FrontendFlowStepType = enum FrontendFlowStepType {
 /// Application frontend flow steps
 #if HAVE_HOST_PROFILING_BUILT
    BASIC_BLOCKS_PROFILING,
