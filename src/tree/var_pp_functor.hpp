@@ -183,7 +183,7 @@ struct isolated_var_pp_functor : public var_pp_functor
 
  public:
    /// Constructor
-   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, std::string _var_string) : BH(_BH), repl_var(_repl_var), var_string(std::move(_var_string))
+   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, const std::string& _var_string) : BH(_BH), repl_var(_repl_var), var_string(_var_string)
    {
    }
 

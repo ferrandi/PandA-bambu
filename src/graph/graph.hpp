@@ -220,7 +220,7 @@ struct EdgeProperty
     * Constructor with selector and property
     * @param _info is the property to be associated with the edge
     */
-   EdgeProperty(const int _selector, EdgeInfoRef _info) : selector(_selector), info(std::move(_info))
+   EdgeProperty(const int _selector, EdgeInfoRef _info) : selector(_selector), info(_info)
    {
    }
 };
@@ -630,7 +630,7 @@ struct SelectVertex
     * Constructor
     * @param _subset is the set of vertices to be considered
     */
-   explicit SelectVertex(CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> _subset) : all(false), subset(std::move(_subset))
+   explicit SelectVertex(const CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor>& _subset) : all(false), subset(_subset)
    {
    }
 
@@ -691,7 +691,7 @@ struct SelectEdge
     * @param _g is the graph
     * @param _subgraph_vertices is the set of vertices of the filtered graph
     */
-   SelectEdge(const int _selector, Graph* _g, CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(std::move(_subgraph_vertices))
+   SelectEdge(const int _selector, Graph* _g, const CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor>& _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(_subgraph_vertices)
    {
    }
 
@@ -1251,9 +1251,9 @@ namespace std
 } // namespace std
 
 template <typename H>
-H AbslHashValue(H h, const EdgeDescriptor& m)
+H AbslHashValue(const H& h, const EdgeDescriptor& m)
 {
-   return H::combine(std::move(h), m.m_source, m.m_target);
+   return H::combine(h, m.m_source, m.m_target);
 }
 /// vertex definition.
 using uvertex = boost::graph_traits<ugraph>::vertex_descriptor;

@@ -169,7 +169,7 @@ class string_separator
     * Constructor
     * @param delimiter is the string used to divide the string
     */
-   explicit string_separator(std::string _delimiter) : delimiter(std::move(_delimiter))
+   explicit string_separator(const std::string& _delimiter) : delimiter(_delimiter)
    {
    }
 

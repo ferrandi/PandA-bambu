@@ -80,7 +80,7 @@ class xml_node
    /**
     * constructor
     */
-   explicit xml_node(std::string _name) : name(std::move(_name)), line(0)
+   explicit xml_node(const std::string& _name) : name(_name), line(0)
    {
    }
    /// destructor

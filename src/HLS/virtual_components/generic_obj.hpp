@@ -108,7 +108,7 @@ class generic_obj
    /**
     * This is the constructor of the object class.
     */
-   generic_obj(const resource_type t, std::string _name) : type(t), name(std::move(_name))
+   generic_obj(const resource_type t, const std::string& _name) : type(t), name(_name)
    {
    }
 
