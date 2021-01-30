@@ -463,7 +463,7 @@ void HLSCWriter::WriteParamInitialization(const BehavioralHelperConstRef behavio
             {
                boost::replace_all(temp_variable, "void ", "char ");
             }
-            const auto first_square = temp_variable.find("[");
+            const auto first_square = temp_variable.find('[');
             if(first_square == std::string::npos)
             {
                temp_variable = temp_variable + "_temp[]";

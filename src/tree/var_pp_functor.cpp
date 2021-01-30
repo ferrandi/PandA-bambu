@@ -68,7 +68,7 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          std::string type_string = BH->print_type(type);
          if(BH->is_an_array(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
             {
                type_string.insert(found_square_bracket, "(*)");
@@ -113,7 +113,7 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          std::string type_string = BH->print_type(type);
          if(BH->is_an_array(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
             {
                type_string.insert(found_square_bracket, "(*)");
@@ -290,7 +290,7 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          std::string type_string = BH->print_type(type);
          if(BH->is_an_array(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
             {
                type_string.insert(found_square_bracket, "(*)");
@@ -335,7 +335,7 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          std::string type_string = BH->print_type(type);
          if(BH->is_an_array(type))
          {
-            size_t found_square_bracket = type_string.find("[");
+            size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
             {
                type_string.insert(found_square_bracket, "(*)");

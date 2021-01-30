@@ -341,10 +341,10 @@ CustomUnorderedMapUnstable<std::string, std::string> pragma_manager::ExtractClau
 
    for(auto clause : splitted)
    {
-      if(clause.find("(") != std::string::npos)
+      if(clause.find('(') != std::string::npos)
       {
-         const std::string key = clause.substr(0, clause.find("("));
-         const std::string value = clause.substr(clause.find("(") + 1, clause.size() - clause.find("(") - 2);
+         const std::string key = clause.substr(0, clause.find('('));
+         const std::string value = clause.substr(clause.find('(') + 1, clause.size() - clause.find('(') - 2);
          clauses_map[key] = value;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Clause " + key + ": " + value);
       }

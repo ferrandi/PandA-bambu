@@ -86,7 +86,7 @@ class xml_attribute : public xml_node
       convert_unescaped(escaped);
       /// replace '\n' character with the escaped version "\\n"
       std::string::size_type lPos = 0;
-      while((lPos = escaped.find("\n", lPos)) != std::string::npos)
+      while((lPos = escaped.find('\n', lPos)) != std::string::npos)
       {
          escaped.replace(lPos++, 1, "\\n");
       }

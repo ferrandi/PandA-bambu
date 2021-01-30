@@ -110,7 +110,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
       /// search for function name
       if(search_function)
       {
-         std::string::size_type notwhite = output_line.find_first_of("(");
+         std::string::size_type notwhite = output_line.find_first_of('(');
          if(notwhite != std::string::npos)
          {
             std::string Token = input_line;

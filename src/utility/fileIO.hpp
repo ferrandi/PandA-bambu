@@ -233,7 +233,7 @@ inline std::string GetDirectory(const boost::filesystem::path file)
  */
 inline std::string GetExtension(const std::string& file)
 {
-   return file.find(".") == std::string::npos ? "" : file.substr(file.find_last_of(".") + 1);
+   return file.find('.') == std::string::npos ? "" : file.substr(file.find_last_of('.') + 1);
 }
 
 inline std::string GetExtension(boost::filesystem::path file)

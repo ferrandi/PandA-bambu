@@ -1133,7 +1133,7 @@ void verilog_writer::write_module_parametrization(const structural_objectRef& ci
             {
                boost::replace_all(param_value, "\"\"", "\"");
             }
-            else if(param_value.find("\"") != std::string::npos)
+            else if(param_value.find('\"') != std::string::npos)
             {
                boost::replace_all(param_value, "\"", "");
                param_value = boost::lexical_cast<std::string>(param_value.size()) + "'b" + param_value;
@@ -1979,7 +1979,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
          {
             boost::replace_all(value, "\"\"", "\"");
          }
-         else if(value.find("\"") != std::string::npos)
+         else if(value.find('\"') != std::string::npos)
          {
             boost::replace_all(value, "\"", "");
             value = boost::lexical_cast<std::string>(value.size()) + "'b" + value;
@@ -2038,7 +2038,7 @@ void verilog_writer::write_module_parametrization_decl(const structural_objectRe
             {
                boost::replace_all(param, "\"\"", "\"");
             }
-            else if(param.find("\"") != std::string::npos)
+            else if(param.find('\"') != std::string::npos)
             {
                boost::replace_all(param, "\"", "");
                param = boost::lexical_cast<std::string>(param.size()) + "'b" + param;

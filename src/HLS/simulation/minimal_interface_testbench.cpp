@@ -699,7 +699,7 @@ void MinimalInterfaceTestbench::write_slave_initializations(bool with_memory) co
          const structural_objectRef& port_obj = mod->get_in_port(i);
          if(GetPointer<port_o>(port_obj)->get_is_memory())
          {
-            if(GetPointer<port_o>(port_obj)->get_id().find("S") == 0)
+            if(GetPointer<port_o>(port_obj)->get_id().find('S') == 0)
             {
                if(print_header_comment)
                {
@@ -728,7 +728,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
          const structural_objectRef& port_obj = mod->get_in_port(i);
          if(GetPointer<port_o>(port_obj)->get_is_memory())
          {
-            if(GetPointer<port_o>(port_obj)->get_id().find("M") == 0)
+            if(GetPointer<port_o>(port_obj)->get_id().find('M') == 0)
             {
                with_memory = true;
             }

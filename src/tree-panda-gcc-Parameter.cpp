@@ -184,7 +184,7 @@ int tree_panda_gcc_parameter::Exec()
                std::string parameter(optarg);
                if(boost::algorithm::starts_with(parameter, "td="))
                {
-                  setOption(OPT_gcc_standard, parameter.substr(parameter.find("=") + 1));
+                  setOption(OPT_gcc_standard, parameter.substr(parameter.find('=') + 1));
                }
                else
                {

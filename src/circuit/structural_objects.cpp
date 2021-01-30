@@ -2714,7 +2714,7 @@ void signal_o::xload(const xml_element* Enode, structural_objectRef _owner, stru
    structural_object::xload(Enode, _owner, CM);
    /// someone has to take care of the connected_objects
    std::string _id = get_id();
-   if(_id.find("\\") != std::string::npos)
+   if(_id.find('\\') != std::string::npos)
    {
       structural_objectRef module_own = get_owner();
       if(module_own->get_kind() != component_o_K)

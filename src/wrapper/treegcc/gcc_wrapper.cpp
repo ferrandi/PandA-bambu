@@ -2915,7 +2915,7 @@ void GccWrapper::ReadParameters()
       const auto parameters = Param->getOption<const CustomSet<std::string>>(OPT_gcc_parameters);
       for(const auto& parameter : parameters)
       {
-         const size_t equal_size = parameter.find("=");
+         const size_t equal_size = parameter.find('=');
          if(equal_size == std::string::npos)
          {
             THROW_ERROR("--param argument without value " + parameter);

@@ -165,10 +165,10 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
 {
    structural_objectRef port1;
    unsigned int size1;
-   if(port1_name.find("[") != std::string::npos)
+   if(port1_name.find('[') != std::string::npos)
    {
-      const auto port1_base_name = port1_name.substr(0, port1_name.find("["));
-      const auto port1_index = port1_name.substr(port1_name.find("[") + 1, port1_name.size() - port1_base_name.size() - 2);
+      const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
+      const auto port1_index = port1_name.substr(port1_name.find('[') + 1, port1_name.size() - port1_base_name.size() - 2);
       const auto port1_vector = component1->find_member(port1_base_name, port_o_K, component1);
       THROW_ASSERT(port1_vector, port1_name + " is not in " + component1->get_path());
       port1 = GetPointer<port_o>(port1_vector)->get_port(boost::lexical_cast<unsigned int>(port1_index));
@@ -182,10 +182,10 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
    }
    structural_objectRef port2;
    unsigned int size2;
-   if(port2_name.find("[") != std::string::npos)
+   if(port2_name.find('[') != std::string::npos)
    {
-      const auto port2_base_name = port2_name.substr(0, port2_name.find("["));
-      const auto port2_index = port2_name.substr(port2_name.find("[") + 1, port2_name.size() - port2_base_name.size() - 2);
+      const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
+      const auto port2_index = port2_name.substr(port2_name.find('[') + 1, port2_name.size() - port2_base_name.size() - 2);
       const auto port2_vector = component2->find_member(port2_base_name, port_o_K, component2);
       THROW_ASSERT(port2_vector, port2_base_name + " is not in " + component2->get_path());
       port2 = GetPointer<port_o>(port2_vector)->get_port(boost::lexical_cast<unsigned int>(port2_index));
@@ -223,10 +223,10 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
 {
    structural_objectRef port1;
    unsigned int size1;
-   if(port1_name.find("[") != std::string::npos)
+   if(port1_name.find('[') != std::string::npos)
    {
-      const auto port1_base_name = port1_name.substr(0, port1_name.find("["));
-      const auto port1_index = port1_name.substr(port1_name.find("[") + 1, port1_name.size() - port1_base_name.size() - 2);
+      const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
+      const auto port1_index = port1_name.substr(port1_name.find('[') + 1, port1_name.size() - port1_base_name.size() - 2);
       const auto port1_vector = component1->find_member(port1_base_name, port_o_K, component1);
       THROW_ASSERT(port1_vector, port1_name + " is not in " + component1->get_path());
       port1 = GetPointer<port_o>(port1_vector)->get_port(boost::lexical_cast<unsigned int>(port1_index));
@@ -240,10 +240,10 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
    }
    structural_objectRef port2;
    unsigned int size2;
-   if(port2_name.find("[") != std::string::npos)
+   if(port2_name.find('[') != std::string::npos)
    {
-      const auto port2_base_name = port2_name.substr(0, port2_name.find("["));
-      const auto port2_index = port2_name.substr(port2_name.find("[") + 1, port2_name.size() - port2_base_name.size() - 2);
+      const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
+      const auto port2_index = port2_name.substr(port2_name.find('[') + 1, port2_name.size() - port2_base_name.size() - 2);
       const auto port2_vector = component2->find_member(port2_base_name, port_o_K, component2);
       THROW_ASSERT(port2_vector, port2_base_name + " is not in " + component2->get_path());
       port2 = GetPointer<port_o>(port2_vector)->get_port(boost::lexical_cast<unsigned int>(port2_index));
@@ -271,10 +271,10 @@ void module_interface::AddConstant(const structural_managerRef SM, const structu
 {
    structural_objectRef port;
    unsigned int size;
-   if(port_name.find("[") != std::string::npos)
+   if(port_name.find('[') != std::string::npos)
    {
-      const auto port_base_name = port_name.substr(0, port_name.find("["));
-      const auto port_index = port_name.substr(port_name.find("[") + 1, port_name.size() - port_base_name.size() - 2);
+      const auto port_base_name = port_name.substr(0, port_name.find('['));
+      const auto port_index = port_name.substr(port_name.find('[') + 1, port_name.size() - port_base_name.size() - 2);
       const auto port_vector = component->find_member(port_base_name, port_o_K, component);
       THROW_ASSERT(port_vector, port_name + " is not in " + component->get_path());
       port = GetPointer<port_o>(port_vector)->get_port(boost::lexical_cast<unsigned int>(port_index));

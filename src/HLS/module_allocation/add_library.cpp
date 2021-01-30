@@ -209,9 +209,9 @@ DesignFlowStep_Status add_library::InternalExec()
    std::string module_parameters = (HLS->top->get_circ() and GetPointer<module>(HLS->top->get_circ()) and GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()) ?
                                        GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY) :
                                        "";
-   if(module_parameters.find(" ") != std::string::npos)
+   if(module_parameters.find(' ') != std::string::npos)
    {
-      module_parameters = module_parameters.substr(module_parameters.find(" "));
+      module_parameters = module_parameters.substr(module_parameters.find(' '));
    }
    fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, module_name + module_parameters);
    if(!add_library_specialization->interfaced)

@@ -794,9 +794,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
       {
          if(std::string(optarg_param).find("openmp-simd") != std::string::npos)
          {
-            if(std::string(optarg_param).find("=") != std::string::npos)
+            if(std::string(optarg_param).find('=') != std::string::npos)
             {
-               setOption(OPT_gcc_openmp_simd, std::string(optarg_param).substr(std::string(optarg_param).find("=") + 1));
+               setOption(OPT_gcc_openmp_simd, std::string(optarg_param).substr(std::string(optarg_param).find('=') + 1));
             }
             else
             {

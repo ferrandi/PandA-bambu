@@ -1211,7 +1211,7 @@ std::string HDL_manager::convert_to_identifier(const language_writer* writer, co
    }
    else if(dynamic_cast<const verilog_writer*>(writer))
    {
-      if((ret[0] >= '0' && ret[0] <= '9') || (ret.find(".") != std::string::npos) || (ret.find("[") != std::string::npos) || (ret.find("]") != std::string::npos))
+      if((ret[0] >= '0' && ret[0] <= '9') || (ret.find('.') != std::string::npos) || (ret.find('[') != std::string::npos) || (ret.find(']') != std::string::npos))
       {
          return "\\" + ret + " ";
       }

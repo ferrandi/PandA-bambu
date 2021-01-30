@@ -177,7 +177,7 @@ DesignFlowStep_Status TasteInterfaceGeneration::InternalExec()
          if(GetPointer<port_o>(port_obj)->get_is_memory())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Port " + GetPointer<port_o>(port_obj)->get_id());
-            if(GetPointer<port_o>(port_obj)->get_id().find("M") == 0)
+            if(GetPointer<port_o>(port_obj)->get_id().find('M') == 0)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Memory has to be instantiated");
                return true;

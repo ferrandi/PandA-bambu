@@ -324,7 +324,7 @@ std::string DesignCompilerWrapper::import_input_design(const DesignParametersRef
       if(top.size() == 0)
       {
          std::string name_v = GetLeafFileName(verilog);
-         std::string base_name = name_v.substr(0, name_v.find_last_of("."));
+         std::string base_name = name_v.substr(0, name_v.find_last_of('.'));
          target = base_name + "_synth.v";
       }
    }
@@ -588,9 +588,9 @@ time_modelRef DesignCompilerWrapper::parse_time_reports()
             timing_path.push_back(el1);
             if(line.find(" (out)") == std::string::npos)
             {
-               std::string el = line.substr(line.find_first_of("(") + 1, line.size());
+               std::string el = line.substr(line.find_first_of('(') + 1, line.size());
                boost::trim(el);
-               el = el.substr(0, el.find_first_of(")"));
+               el = el.substr(0, el.find_first_of(')'));
                critical_cell.push_back(el);
             }
             else

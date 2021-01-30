@@ -2726,7 +2726,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             std::string type_string = tree_helper::print_type(TM, type);
             if(is_an_array(type))
             {
-               size_t found_square_bracket = type_string.find("[");
+               size_t found_square_bracket = type_string.find('[');
                if(found_square_bracket != std::string::npos)
                {
                   type_string.insert(found_square_bracket, "(*)");

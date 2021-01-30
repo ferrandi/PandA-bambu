@@ -1669,7 +1669,7 @@ void TestbenchGenerationBaseStep::write_hdl_testbench_prolog() const
    writer->write("`define EOF 32'hFFFF_FFFF\n`define NULL 0\n`define MAX_COMMENT_LENGTH 1000\n`define SIMULATION_LENGTH " + STR(parameters->getOption<long long int>(OPT_max_sim_cycles)) + "\n\n");
    auto half_target_period_string = STR(target_period / 2);
    // If the value it is integer, we add .0 to describe a float otherwise modelsim returns conversion error
-   if(half_target_period_string.find(".") == std::string::npos)
+   if(half_target_period_string.find('.') == std::string::npos)
    {
       half_target_period_string += ".0";
    }
@@ -1803,7 +1803,7 @@ void TestbenchGenerationBaseStep::write_auxiliary_signal_declaration() const
          {
             boost::replace_all(value, "\"\"", "\"");
          }
-         else if(value.find("\"") != std::string::npos)
+         else if(value.find('\"') != std::string::npos)
          {
             boost::replace_all(value, "\"", "");
             value = boost::lexical_cast<std::string>(value.size()) + "'b" + value;

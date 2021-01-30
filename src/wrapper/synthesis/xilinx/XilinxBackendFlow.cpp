@@ -162,7 +162,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of Slice Registers:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -177,7 +177,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of Slice Flip Flops:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -192,7 +192,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of 4 input LUTs:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -207,7 +207,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of Slice LUTs:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -222,7 +222,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of occupied Slices:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -237,7 +237,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of LUT Flip Flop pairs used:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -253,7 +253,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of DSP48Es:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -268,7 +268,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of DSP48E1s:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -283,7 +283,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of BlockRAM/FIFO:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -298,7 +298,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of RAMB36E1/FIFO36E1s:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)
@@ -313,7 +313,7 @@ void XilinxBackendFlow::xparse_map_utilization(const std::string& fn)
             std::string tk = "Number of FIFO16/RAMB16s:";
             std::string token = line.substr(line.find(tk) + tk.size() + 1, line.length());
             boost::algorithm::trim(token);
-            token = token.substr(0, token.find(" "));
+            token = token.substr(0, token.find(' '));
             boost::algorithm::trim(token);
             boost::replace_all(token, ",", "");
             if(!area_m)

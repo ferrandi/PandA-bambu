@@ -230,7 +230,7 @@ structural_objectRef structural_manager::add_port(std::string id, port_o::port_d
                      {
                         if(boost::algorithm::starts_with(token, id))
                         {
-                           equation = token.substr(token.find("=") + 1, token.size());
+                           equation = token.substr(token.find('=') + 1, token.size());
                         }
                      }
                      attributeRef function(new attribute(attribute::STRING, equation));
