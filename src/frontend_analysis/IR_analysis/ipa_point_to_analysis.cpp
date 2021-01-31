@@ -150,8 +150,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(IR_LOWERING, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -160,17 +160,19 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BUILD_VIRTUAL_PHI, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MEM_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_RETURN, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(BIT_VALUE_OPT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(CSE_STEP, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FANOUT_OPT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(SPLIT_RETURN, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(LUT_TRANSFORMATION, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
       default:

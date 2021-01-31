@@ -231,7 +231,6 @@ using FrontendFlowStepType = enum FrontendFlowStepType {
    LUT_TRANSFORMATION,
 #endif
    MEMORY_DATA_FLOW_ANALYSIS,
-   MEM_CG_EXT,
 #if HAVE_BAMBU_BUILT
    MULTI_WAY_IF,
    MULTIPLE_ENTRY_IF_REDUCTION,

@@ -357,8 +357,6 @@ const std::string FrontendFlowStep::EnumToKindText(const FrontendFlowStepType fr
 #endif
       case(MEMORY_DATA_FLOW_ANALYSIS):
          return "MemoryDataFlowAnalysis";
-      case MEM_CG_EXT:
-         return "MemCgExt";
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
          return "MultiWayIf";
