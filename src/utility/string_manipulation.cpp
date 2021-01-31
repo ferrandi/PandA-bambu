@@ -254,7 +254,7 @@ std::string convert_fp_to_string(std::string num, unsigned int precision)
       double d;
       unsigned int i;
       float f;
-   } u;
+   } u = {};
    std::string res;
    char* endptr = nullptr;
 

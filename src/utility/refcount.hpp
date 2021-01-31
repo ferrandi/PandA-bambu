@@ -65,8 +65,8 @@ struct null_deleter
 
 #else
 #include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
-#include <boost/smart_ptr/weak_ptr.hpp> // for weak_ptr
-#include <cstddef> // for size_t
+#include <boost/smart_ptr/weak_ptr.hpp>   // for weak_ptr
+#include <cstddef>                        // for size_t
 
 #define refcount boost::shared_ptr
 #define Wrefcount boost::weak_ptr
