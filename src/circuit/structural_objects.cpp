@@ -4174,6 +4174,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("license is missing for " + EnodeC->get_name());
          }
+         else
          {
             license = text->get_content();
             xml_node::convert_escaped(license);
@@ -4199,6 +4200,7 @@ void module::xload(const xml_element* Enode, structural_objectRef _owner, struct
          {
             THROW_WARNING("multi_unit_multiplicity identifier is missing for " + EnodeC->get_name());
          }
+         else
          {
             std::string multi_unit_multiplicitySTR = text->get_content();
             xml_node::convert_escaped(specialized);
