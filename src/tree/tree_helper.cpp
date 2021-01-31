@@ -2330,10 +2330,15 @@ unsigned int tree_helper::get_field_idx(const tree_managerConstRef TM, const uns
       THROW_ASSERT(idx < rt->list_of_flds.size(), "unexpected index for list of fields");
       return GET_INDEX_NODE(rt->list_of_flds[idx]);
    }
-   else
+   else if(ut)
    {
       THROW_ASSERT(idx < ut->list_of_flds.size(), "unexpected index for list of fields");
       return GET_INDEX_NODE(ut->list_of_flds[idx]);
+   }
+   else
+   {
+      THROW_ERROR("unexpected behavior");
+      return 0;
    }
 }
 

@@ -98,7 +98,7 @@ class port_swapping : public HLSFunctionStep
     * @param num_vertices_g number of vertices in the graph
     * @param vset structure that contains the vertices and the relative level and the belongings
     */
-   void vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g, std::vector<PSVSet>& vset);
+   void vertex_levels(const std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g, std::vector<PSVSet>& vset);
 
    /**
     * This function calculates the distances between two vertices in a spanning tree
@@ -107,14 +107,14 @@ class port_swapping : public HLSFunctionStep
     * @param num_vertices_g number of vertices in the graph
     * @param vset structure that contains the vertices and the relative level and the belongings
     */
-   int vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest, std::vector<PSVSet>& vset);
+   int vertex_distance(const std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest, std::vector<PSVSet>& vset);
 
    /**
     * This function finds the maximum degree (out_edges) of a vertex
     * @param dSet structure with all the vertices and relative degrees
     * @return Vertex which has the max degree
     */
-   PSVertex find_max_degree(CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet);
+   PSVertex find_max_degree(const CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet);
 
    /**
     * This function updates the degree of all the vertices
@@ -129,7 +129,7 @@ class port_swapping : public HLSFunctionStep
     * @param edges vector of edges from which is taken the right one and from that the right vertex
     * @return chosen vertex
     */
-   PSVertex get_co_tree_vertex(PSVertex vertex, std::vector<PSE>& edges);
+   PSVertex get_co_tree_vertex(PSVertex vertex, const std::vector<PSE>& edges);
 
    /**
     * This function computes the port_swapping
@@ -138,14 +138,14 @@ class port_swapping : public HLSFunctionStep
     * @param num_vertices_g number of vertices in the graph
     * @param root vertex from which the spanning tree is calculated
     */
-   void port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root);
+   void port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root);
 
    /**
     * This function is the wrapper that executes port_swapping_algorithms and extracts the best solution
     * @param g starting graph
     * @return vector of vertices and relative results. Each vertex will contain the belonging set (A, B, AB)
     */
-   std::vector<std::pair<PSVertex, unsigned int>> p_swap(PSGraph g);
+   std::vector<std::pair<PSVertex, unsigned int>> p_swap(PSGraph& g);
 
    /**
     * This function checks if an operation is commutative or not
@@ -160,7 +160,7 @@ class port_swapping : public HLSFunctionStep
     * @param results vector containing all the vertices and relative belonging sets
     * @return belonging set of the operand
     */
-   unsigned int get_results(PSVertex operand, std::vector<std::pair<PSVertex, unsigned int>> results);
+   unsigned int get_results(PSVertex operand, const std::vector<std::pair<PSVertex, unsigned int>>& results);
 
    /**
     * Execute the step

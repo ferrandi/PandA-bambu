@@ -272,10 +272,8 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + STR(TreeM->CGetTreeNode(tree_var)));
             CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>& con_rel_per_vertex_per_port_index = con_rel[current_v][port_index];
             const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(current_v);
-            const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
-            for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+            for(const auto state : running_states)
             {
-               vertex state = *rs_it;
                if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
                {
                   con_rel_per_vertex_per_port_index.insert(std::make_pair(no_def, std::make_pair(tree_var, NULL_VERTEX)));
@@ -457,17 +455,15 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
          if(var_written)
          {
             const CustomOrderedSet<vertex>& end = HLS->Rliv->get_state_where_end(current_v);
-            const CustomOrderedSet<vertex>::const_iterator e_it_end = end.end();
-            for(auto e_it = end.begin(); e_it != e_it_end; ++e_it)
+            for(const auto estate : end)
             {
-               vertex state = *e_it;
-               if(HLS->storage_value_information->is_a_storage_value(state, var_written))
+               if(HLS->storage_value_information->is_a_storage_value(estate, var_written))
                {
-                  regs_out.insert(HLS->Rreg->get_register(HLS->storage_value_information->get_storage_value_index(state, var_written)));
+                  regs_out.insert(HLS->Rreg->get_register(HLS->storage_value_information->get_storage_value_index(estate, var_written)));
                }
                else
                {
-                  chained_out.insert(state);
+                  chained_out.insert(estate);
                }
             }
          }
@@ -1765,18 +1761,17 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                {
                   const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
-                  const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
-                  for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+                  for(const auto state : running_states)
                   {
-                     if(v2id.find(*rs_it) == v2id.end())
+                     if(v2id.find(state) == v2id.end())
                      {
                         curr_id = max_id;
-                        v2id[*rs_it] = max_id;
+                        v2id[state] = max_id;
                         ++max_id;
                      }
                      else
                      {
-                        curr_id = v2id.find(*rs_it)->second;
+                        curr_id = v2id.find(state)->second;
                      }
                      module_clique->add_subpartitions(curr_id, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                   }
@@ -1880,18 +1875,17 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                   for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
                      const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
-                     const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
-                     for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+                     for(const auto state : running_states)
                      {
-                        if(v2id.find(*rs_it) == v2id.end())
+                        if(v2id.find(state) == v2id.end())
                         {
                            curr_id = max_id;
-                           v2id[*rs_it] = max_id;
+                           v2id[state] = max_id;
                            ++max_id;
                         }
                         else
                         {
-                           curr_id = v2id.find(*rs_it)->second;
+                           curr_id = v2id.find(state)->second;
                         }
                         module_clique->add_subpartitions(curr_id, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]);
                      }

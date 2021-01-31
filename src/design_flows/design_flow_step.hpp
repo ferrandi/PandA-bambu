@@ -65,7 +65,7 @@ class DesignFlowStepSet : public CustomUnorderedSet<DesignFlowStepRef>
 };
 #else
 #include <functional> // for binary_function
-#include <set>        // for set
+#include <set> // for set
 class DesignFlowStepSorter : std::binary_function<vertex, vertex, bool>
 {
  public:

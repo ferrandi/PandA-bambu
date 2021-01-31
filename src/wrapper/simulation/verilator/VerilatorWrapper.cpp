@@ -132,7 +132,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    unsigned int nThreads = 1;
 #endif
 #if HAVE_THREADS
-   if(nThreads>1)
+   if(nThreads > 1)
    {
       script << " --threads " << nThreads;
    }

@@ -287,7 +287,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          if(bbs.find(bb_1) != bbs.end())
          {
             cond1 = true;
-            for(auto s1 : op1_run)
+            for(const auto s1 : op1_run)
             {
                auto info = HLS->STG->GetAstg()->GetStateInfo(s1);
                THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
@@ -296,7 +296,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          if(bbs.find(bb_2) != bbs.end())
          {
             cond2 = true;
-            for(auto s2 : op2_run)
+            for(const auto s2 : op2_run)
             {
                auto info = HLS->STG->GetAstg()->GetStateInfo(s2);
                THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
@@ -306,7 +306,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          if(cond1 && cond2)
          {
             auto stg = HLS->STG->GetAstg();
-            for(auto s1 : op1_run)
+            for(const auto s1 : op1_run)
             {
                std::queue<vertex> to_analyze;
                std::set<vertex> analyzed;
@@ -354,10 +354,9 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
    }
 
    {
-      const CustomOrderedSet<vertex>::const_iterator op1_run_it_end = op1_run.end();
-      for(auto op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
+      for(const auto s1 : op1_run)
       {
-         if(op2_run.find(*op1_run_it) != op2_run.end())
+         if(op2_run.find(s1) != op2_run.end())
          {
             return true;
          }

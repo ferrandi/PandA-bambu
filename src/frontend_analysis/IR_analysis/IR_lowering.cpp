@@ -999,8 +999,8 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
      in the result mode, to avoid sign-/zero-extension confusion.  */
 #if HAVE_ASSERTS
    val = val & data_mask;
-#endif
    val_so_far = val_so_far & static_cast<long long int>(data_mask);
+#endif
    THROW_ASSERT(val == static_cast<unsigned long long int>(val_so_far), "unexpected difference");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Expanded " + op0->ToString());
 

@@ -313,7 +313,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == next_bb_id))
                         {
                            THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(next_bb_id));
+#if HAVE_ASSERTS
                            found_valid_next_state = true;
+#endif
                            end_of_bb_execution = true;
                            taken_edge = e;
                            next_state = dst;
@@ -338,7 +340,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         const auto dst = boost::target(e, *stg);
                         if(dst == fsm_exit_node)
                         {
+#if HAVE_ASSERTS
                            found_valid_next_state = true;
+#endif
                            end_of_bb_execution = true;
                            taken_edge = e;
                            next_state = dst;

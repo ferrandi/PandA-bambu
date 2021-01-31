@@ -162,11 +162,6 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization string is " + test_v);
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
-         if(reserved_bytes == 0)
-         {
-            reserved_bytes = 1;
-         }
-
          if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);

@@ -126,7 +126,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 //
 //  This function calculates the levels of all the vertices in a spanning tree
 //
-void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g, std::vector<PSVSet>& vset)
+void port_swapping::vertex_levels(const std::vector<PSE>& spt_edges, PSVertex root, size_t num_vertices_g, std::vector<PSVSet>& vset)
 {
    PSVSet set;
    set.v = root;
@@ -137,9 +137,9 @@ void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, si
    bool flag = false;
    while(vset.size() < num_vertices_g)
    {
-      for(auto i : spt_edges)
+      for(const auto& i : spt_edges)
       {
-         for(auto j : vset)
+         for(const auto j : vset)
          {
             if(j.v == i.first)
             {
@@ -149,7 +149,7 @@ void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, si
                break;
             }
          }
-         for(auto lvl : vset)
+         for(const auto lvl : vset)
          {
             if(lvl.v == set.v)
             {
@@ -176,7 +176,7 @@ void port_swapping::vertex_levels(std::vector<PSE>& spt_edges, PSVertex root, si
 //
 //  This function calculates the distances between two vertices in a spanning tree
 //
-int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest, std::vector<PSVSet>& vset)
+int port_swapping::vertex_distance(const std::vector<PSE>& spt_edges, PSVertex root, PSVertex dest, std::vector<PSVSet>& vset)
 {
    PSVSet set;
    set.v = root;
@@ -187,9 +187,9 @@ int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, P
    bool found = false;
    while(!found)
    {
-      for(auto i : spt_edges)
+      for(const auto& i : spt_edges)
       {
-         for(auto j : vset)
+         for(const auto& j : vset)
          {
             if(j.v == i.first)
             {
@@ -216,7 +216,7 @@ int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, P
                break;
             }
          }
-         for(auto lvl : vset)
+         for(const auto& lvl : vset)
          {
             if(lvl.v == set.v)
             {
@@ -235,11 +235,11 @@ int port_swapping::vertex_distance(std::vector<PSE>& spt_edges, PSVertex root, P
    return distance;
 }
 
-port_swapping::PSVertex port_swapping::find_max_degree(CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet)
+port_swapping::PSVertex port_swapping::find_max_degree(const CustomOrderedSet<std::pair<PSVertex, unsigned int>>& dSet)
 {
    long unsigned int max = 0;
    PSVertex v = 0;
-   for(auto e : dSet)
+   for(const auto& e : dSet)
    {
       if(e.second > max)
       {
@@ -259,9 +259,9 @@ void port_swapping::update_degree(PSGraph g2, CustomOrderedSet<std::pair<PSVerte
    }
 }
 
-port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, std::vector<PSE>& e)
+port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, const std::vector<PSE>& e)
 {
-   for(auto ed : e)
+   for(const auto& ed : e)
    {
       if(v == ed.second)
       {
@@ -275,7 +275,7 @@ port_swapping::PSVertex port_swapping::get_co_tree_vertex(PSVertex v, std::vecto
    return v;
 }
 
-void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root)
+void port_swapping::port_swapping_algorithm(PSGraph& g, std::vector<PSMultiStart>& vector_sets, size_t num_vertices_g, PSVertex root)
 {
    //
    // Generating the Spanning Tree starting from Graph g
@@ -432,7 +432,7 @@ void port_swapping::port_swapping_algorithm(PSGraph g, std::vector<PSMultiStart>
    return;
 }
 
-std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_swap(PSGraph g)
+std::vector<std::pair<port_swapping::PSVertex, unsigned int>> port_swapping::p_swap(PSGraph& g)
 {
    auto g_vertices = vertices(g);
    std::vector<PSMultiStart> vector_sets;
@@ -468,7 +468,7 @@ bool port_swapping::is_commutative_op(const std::string& operation)
           operation == STOK(TOK_EQ_EXPR) || operation == STOK(TOK_NE_EXPR) || operation == STOK(TOK_WIDEN_SUM_EXPR) || operation == STOK(TOK_WIDEN_MULT_EXPR);
 }
 
-unsigned int port_swapping::get_results(PSVertex operand, std::vector<std::pair<PSVertex, unsigned int>> results)
+unsigned int port_swapping::get_results(PSVertex operand, const std::vector<std::pair<PSVertex, unsigned int>>& results)
 {
    for(auto res : results)
    {
@@ -542,10 +542,8 @@ DesignFlowStep_Status port_swapping::InternalExec()
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Read: " + behavioral_helper->PrintVariable(tree_var));
                const CustomOrderedSet<vertex>& running_states = HLS->Rliv->get_state_where_run(fu_operation);
-               const CustomOrderedSet<vertex>::const_iterator rs_it_end = running_states.end();
-               for(auto rs_it = running_states.begin(); rs_it != rs_it_end; ++rs_it)
+               for(const auto state : running_states)
                {
-                  vertex state = *rs_it;
                   if(tree_helper::is_parameter(TreeM, tree_var) || !HLS->Rliv->has_op_where_defined(tree_var))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Param operand");
@@ -628,13 +626,14 @@ DesignFlowStep_Status port_swapping::InternalExec()
 
 #ifndef NDEBUG
       for(auto res : results)
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Vertex: " + STR(res.first) + " Belongs To: " + STR(res.second));
+      }
 #endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Printing Results");
 
-      for(auto opt : operands)
+      for(const auto& opt : operands)
       {
          unsigned int op1, op2;
          op1 = get_results(opt.first_op, results);
