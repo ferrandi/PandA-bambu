@@ -575,8 +575,16 @@ namespace
          case real_type_K:
             return true;
          case array_type_K:
-         case vector_type_K:
             return isValidType(tree_helper::CGetElements(tn));
+         case integer_cst_K:
+         case real_cst_K:
+         case string_cst_K:
+         case CASE_DECL_NODES:
+         case ssa_name_K:
+            return isValidType(tree_helper::CGetType(tn));
+         case tree_reindex_K:
+            return isValidType(GET_CONST_NODE(tn));
+         case vector_type_K:
          case CharType_K:
          case nullptr_type_K:
          case type_pack_expansion_K:
@@ -598,12 +606,9 @@ namespace
          case union_type_K:
          case void_type_K:
             return false;
-         case tree_reindex_K:
-            return isValidType(GET_CONST_NODE(tn));
-         case CASE_CST_NODES:
-         case CASE_DECL_NODES:
-         case ssa_name_K:
-            return isValidType(tree_helper::CGetType(tn));
+         case complex_cst_K:
+         case vector_cst_K:
+         case void_cst_K:
          case aggr_init_expr_K:
          case case_label_expr_K:
          case lut_expr_K:
@@ -666,7 +671,6 @@ namespace
                case integer_cst_K:
                case real_cst_K:
                case string_cst_K:
-               case vector_cst_K:
                   break;
 
                /// unary_expr cases
@@ -868,6 +872,7 @@ namespace
                case tree_list_K:
                case tree_vec_K:
                case call_expr_K:
+               case vector_cst_K:
                default:
                   return false;
             }
@@ -1069,7 +1074,8 @@ namespace
       }
       else if(const auto* vc = GetPointer<const vector_cst>(tn))
       {
-         const auto el_bw = getGIMPLE_BW(vc->list_of_valu.front());
+         const auto el_type = tree_helper::CGetElements(type);
+         const auto el_bw = BitLatticeManipulator::Size(el_type);
          RangeRef r(new Range(Empty, bw));
          const auto stride = static_cast<size_t>(bw / el_bw);
          const auto strides = vc->list_of_valu.size() / stride;
@@ -7194,12 +7200,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
+         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          if(requireESSA)
          {
             relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          }
          relationships.insert(std::make_pair(FUNCTION_PARM_MASK, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
