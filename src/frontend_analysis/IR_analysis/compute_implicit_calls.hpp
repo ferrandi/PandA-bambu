@@ -47,6 +47,9 @@
 /// Superclass include
 #include "function_frontend_flow_step.hpp"
 
+#include "tree_manipulation.hpp"
+#include "tree_node.hpp"
+
 /// STL include
 #include "custom_map.hpp"
 #include <list>
@@ -63,11 +66,17 @@ class compute_implicit_calls : public FunctionFrontendFlowStep
    /// The tree manager
    tree_managerRef TM;
 
+   bool update_bb_ver;
+
    /**
     * Return the set of analyses in relationship with this design step
     * @param relationship_type is the type of relationship to be considered
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   void replace_with_memcpy(tree_nodeRef stmt, const statement_list* sl, tree_manipulationRef tree_man) const;
+
+   void replace_with_memset(tree_nodeRef stmt, const statement_list* sl, tree_manipulationRef tree_man) const;
 
  public:
    /**
