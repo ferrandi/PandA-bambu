@@ -272,6 +272,6 @@ class ProfilingInformation
    void Clear();
 };
 
-using ProfilingInformationRef = std::shared_ptr<ProfilingInformation>;
+using ProfilingInformationRef = refcount<ProfilingInformation>;
 
 #endif

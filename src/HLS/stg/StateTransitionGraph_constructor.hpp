@@ -149,6 +149,6 @@ class StateTransitionGraph_constructor
 };
 
 /// refcount definition to StateTransitionGraph_constructor class
-using StateTransitionGraph_constructorRef = std::shared_ptr<StateTransitionGraph_constructor>;
+using StateTransitionGraph_constructorRef = refcount<StateTransitionGraph_constructor>;
 
 #endif

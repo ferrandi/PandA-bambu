@@ -428,7 +428,7 @@ struct graphs_collection : public boost_graphs_collection
    }
 };
 
-using graphs_collectionRef = std::shared_ptr<graphs_collection>;
+using graphs_collectionRef = refcount<graphs_collection>;
 
 /**
  * bulk graph. All the edge of a graph are store in this object
@@ -491,7 +491,7 @@ struct undirected_graphs_collection : public undirected_boost_graphs_collection
    }
 };
 
-using undirected_graphs_collectionRef = std::shared_ptr<undirected_graphs_collection>;
+using undirected_graphs_collectionRef = refcount<undirected_graphs_collection>;
 
 /**
  * Function returning the reference to the edge information associated with the specified edge.
@@ -1048,8 +1048,8 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
    using graph_property_type = boost::graph_property_type<graphs_collection>::type;
 #endif
 };
-using graphRef = std::shared_ptr<graph>;
-using graphConstRef = std::shared_ptr<const graph>;
+using graphRef = refcount<graph>;
+using graphConstRef = refcount<const graph>;
 
 #if BOOST_VERSION >= 104600
 namespace boost
@@ -1179,7 +1179,7 @@ struct ugraph : public boost::filtered_graph<undirected_boost_graphs_collection,
 #endif
 };
 
-using ugraphRef = std::shared_ptr<ugraph>;
+using ugraphRef = refcount<ugraph>;
 
 /**
  * Functor used to sort edges

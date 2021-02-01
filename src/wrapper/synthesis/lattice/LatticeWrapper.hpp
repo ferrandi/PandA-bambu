@@ -91,6 +91,6 @@ class LatticeWrapper : public SynthesisTool
    std::string get_command_line(const DesignParametersRef& dp) const override;
 };
 /// Refcount definition for the class
-using LatticeWrapperRef = std::shared_ptr<LatticeWrapper>;
+using LatticeWrapperRef = refcount<LatticeWrapper>;
 
 #endif

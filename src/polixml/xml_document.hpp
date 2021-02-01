@@ -64,7 +64,7 @@ class xml_document : public xml_child
  public:
    /** constructor
     */
-   explicit xml_document(const std::string &_version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(_version)
+   explicit xml_document(const std::string& _version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(_version)
    {
    }
 

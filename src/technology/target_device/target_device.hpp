@@ -216,6 +216,6 @@ class target_device
    }
 };
 /// refcount definition for the class
-using target_deviceRef = std::shared_ptr<target_device>;
+using target_deviceRef = refcount<target_device>;
 
 #endif

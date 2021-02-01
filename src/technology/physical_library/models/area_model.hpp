@@ -104,6 +104,6 @@ class area_model
    static const double area_DEFAULT;
 };
 /// refcount definition of the class
-using area_modelRef = std::shared_ptr<area_model>;
+using area_modelRef = refcount<area_model>;
 
 #endif

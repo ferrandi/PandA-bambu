@@ -133,5 +133,5 @@ class InstructionWriter
     */
    void WriteComment(const std::string& comment);
 };
-using InstructionWriterRef = std::shared_ptr<InstructionWriter>;
+using InstructionWriterRef = refcount<InstructionWriter>;
 #endif

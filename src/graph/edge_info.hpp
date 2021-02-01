@@ -66,5 +66,5 @@ struct EdgeInfo
 /**
  * RefCount type definition of the edge_info class structure
  */
-using EdgeInfoRef = std::shared_ptr<EdgeInfo>;
+using EdgeInfoRef = refcount<EdgeInfo>;
 #endif

@@ -308,6 +308,6 @@ class network_flow
 };
 
 /// refcount definition of the class
-using network_flowRef = std::shared_ptr<network_flow>;
+using network_flowRef = refcount<network_flow>;
 
 #endif

@@ -272,6 +272,6 @@ class hls
    }
 };
 /// refcount definition of the class
-using hlsRef = std::shared_ptr<hls>;
+using hlsRef = refcount<hls>;
 
 #endif

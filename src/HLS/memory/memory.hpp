@@ -832,6 +832,6 @@ class memory
    bool notEQ(refcount<memory> ref) const;
 };
 /// refcount definition of the class
-using memoryRef = std::shared_ptr<memory>;
+using memoryRef = refcount<memory>;
 
 #endif

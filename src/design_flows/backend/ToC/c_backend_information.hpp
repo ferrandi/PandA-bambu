@@ -61,6 +61,6 @@ class CBackendInformation
     */
    virtual ~CBackendInformation();
 };
-using CBackendInformationConstRef = std::shared_ptr<const CBackendInformation>;
-using CBackendInformationRef = std::shared_ptr<CBackendInformation>;
+using CBackendInformationConstRef = refcount<const CBackendInformation>;
+using CBackendInformationRef = refcount<CBackendInformation>;
 #endif

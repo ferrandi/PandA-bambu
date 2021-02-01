@@ -86,6 +86,6 @@ class ngdbuild_wrapper : public XilinxWrapper
    ~ngdbuild_wrapper() override;
 };
 /// Refcount definition for the class
-using ngdbuild_wrapperRef = std::shared_ptr<ngdbuild_wrapper>;
+using ngdbuild_wrapperRef = refcount<ngdbuild_wrapper>;
 
 #endif

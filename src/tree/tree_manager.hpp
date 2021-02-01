@@ -476,6 +476,6 @@ class tree_manager
     */
    bool check_ssa_uses(unsigned int fun_id) const;
 };
-using tree_managerRef = std::shared_ptr<tree_manager>;
-using tree_managerConstRef = std::shared_ptr<const tree_manager>;
+using tree_managerRef = refcount<tree_manager>;
+using tree_managerConstRef = refcount<const tree_manager>;
 #endif

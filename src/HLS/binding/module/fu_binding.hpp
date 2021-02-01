@@ -365,7 +365,7 @@ class fu_binding
 /**
  * RefCount type definition of the fu_binding class structure
  */
-using fu_bindingRef = std::shared_ptr<fu_binding>;
-using fu_bindingConstRef = std::shared_ptr<const fu_binding>;
+using fu_bindingRef = refcount<fu_binding>;
+using fu_bindingConstRef = refcount<const fu_binding>;
 
 #endif

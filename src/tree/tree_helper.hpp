@@ -980,5 +980,5 @@ class FunctionExpander
    {
    }
 };
-using FunctionExpanderRef = std::shared_ptr<FunctionExpander>;
+using FunctionExpanderRef = refcount<FunctionExpander>;
 #endif

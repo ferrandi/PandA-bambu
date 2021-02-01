@@ -134,7 +134,7 @@ class xml_script_node_t
    }
    virtual ~xml_script_node_t();
 };
-using xml_script_node_tRef = std::shared_ptr<xml_script_node_t>;
+using xml_script_node_tRef = refcount<xml_script_node_t>;
 
 /** \class xml_set_entry_t
  * String entry of a multiple values variable (set).
@@ -157,7 +157,7 @@ class xml_set_entry_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-using xml_set_entry_tRef = std::shared_ptr<xml_set_entry_t>;
+using xml_set_entry_tRef = refcount<xml_set_entry_t>;
 
 /** \class xml_set_variable_t
  * Variable assignment, either single value or multiple entries set.
@@ -182,7 +182,7 @@ class xml_set_variable_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-using xml_set_variable_tRef = std::shared_ptr<xml_set_variable_t>;
+using xml_set_variable_tRef = refcount<xml_set_variable_t>;
 
 /** \class xml_parameter_t
  * Command line parameter. Just like a variable, it can be either a single
@@ -210,7 +210,7 @@ class xml_parameter_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-using xml_parameter_tRef = std::shared_ptr<xml_parameter_t>;
+using xml_parameter_tRef = refcount<xml_parameter_t>;
 
 /** \class xml_command_t
  * Command line of the synthesis tool.
@@ -236,7 +236,7 @@ class xml_command_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-using xml_command_tRef = std::shared_ptr<xml_command_t>;
+using xml_command_tRef = refcount<xml_command_t>;
 
 /** \class xml_shell_t
  * Command line of the native shell.
@@ -262,7 +262,7 @@ class xml_shell_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-using xml_shell_tRef = std::shared_ptr<xml_shell_t>;
+using xml_shell_tRef = refcount<xml_shell_t>;
 
 /** \class xml_ite_block_t
  * If/Then/Else block, evaluated at compile-time.
@@ -286,7 +286,7 @@ class xml_ite_block_t : public xml_script_node_t
 
    bool checkCondition(const DesignParametersRef& dp) const override;
 };
-using xml_ite_block_tRef = std::shared_ptr<xml_ite_block_t>;
+using xml_ite_block_tRef = refcount<xml_ite_block_t>;
 
 /** \class xml_foreach_t
  * Foreach block, where the set of script nodes is applied to each parameter
@@ -307,6 +307,6 @@ struct xml_foreach_t : public xml_script_node_t
 
    void clean() override;
 };
-using xml_foreach_tRef = std::shared_ptr<xml_foreach_t>;
+using xml_foreach_tRef = refcount<xml_foreach_t>;
 
 #endif

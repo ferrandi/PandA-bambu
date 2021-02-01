@@ -54,6 +54,6 @@ class SimulationInformation
    bool results_available = false;
 };
 
-using SimulationInformationRef = std::shared_ptr<SimulationInformation>;
-using SimulationInformationConstRef = std::shared_ptr<const SimulationInformation>;
+using SimulationInformationRef = refcount<SimulationInformation>;
+using SimulationInformationConstRef = refcount<const SimulationInformation>;
 #endif

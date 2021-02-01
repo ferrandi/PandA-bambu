@@ -86,6 +86,6 @@ class par_wrapper : public XilinxWrapper
    ~par_wrapper() override;
 };
 /// Refcount definition for the class
-using par_wrapperRef = std::shared_ptr<par_wrapper>;
+using par_wrapperRef = refcount<par_wrapper>;
 
 #endif

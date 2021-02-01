@@ -241,5 +241,5 @@ class DesignFlowManager
    const DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
 };
 
-using DesignFlowManagerRef = std::shared_ptr<DesignFlowManager>;
+using DesignFlowManagerRef = refcount<DesignFlowManager>;
 #endif

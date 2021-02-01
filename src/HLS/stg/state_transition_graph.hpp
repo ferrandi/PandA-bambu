@@ -152,8 +152,8 @@ struct StateInfo : public NodeInfo
    }
 };
 /// refcount definition
-using StateInfoRef = std::shared_ptr<StateInfo>;
-using StateInfoConstRef = std::shared_ptr<const StateInfo>;
+using StateInfoRef = refcount<StateInfo>;
+using StateInfoConstRef = refcount<const StateInfo>;
 
 enum transition_type : int
 {
@@ -238,8 +238,8 @@ class TransitionInfo : public EdgeInfo
    }
 };
 /// refcount about edge info
-using TransitionInfoRef = std::shared_ptr<TransitionInfo>;
-using TransitionInfoConstRef = std::shared_ptr<const TransitionInfo>;
+using TransitionInfoRef = refcount<TransitionInfo>;
+using TransitionInfoConstRef = refcount<const TransitionInfo>;
 
 /**
  * Structure holding information about the whole graph.
@@ -275,8 +275,8 @@ struct StateTransitionGraphInfo : public GraphInfo
    friend class StateTransitionGraph_constructor;
 };
 /// definition of the refcount
-using StateTransitionGraphInfoRef = std::shared_ptr<StateTransitionGraphInfo>;
-using StateTransitionGraphInfoConstRef = std::shared_ptr<const StateTransitionGraphInfo>;
+using StateTransitionGraphInfoRef = refcount<StateTransitionGraphInfo>;
+using StateTransitionGraphInfoConstRef = refcount<const StateTransitionGraphInfo>;
 
 /**
  * This structure defines the bulk for the state transition graph
@@ -311,8 +311,8 @@ class StateTransitionGraphsCollection : public graphs_collection
    }
 };
 /// refcount definition of the class
-using StateTransitionGraphsCollectionRef = std::shared_ptr<StateTransitionGraphsCollection>;
-using StateTransitionGraphsCollectionConstRef = std::shared_ptr<const StateTransitionGraphsCollection>;
+using StateTransitionGraphsCollectionRef = refcount<StateTransitionGraphsCollection>;
+using StateTransitionGraphsCollectionConstRef = refcount<const StateTransitionGraphsCollection>;
 
 /**
  * Class used to describe a state transition graph
@@ -420,8 +420,8 @@ struct StateTransitionGraph : public graph
    void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 };
 /// refcount definition of the class
-using StateTransitionGraphRef = std::shared_ptr<StateTransitionGraph>;
-using StateTransitionGraphConstRef = std::shared_ptr<const StateTransitionGraph>;
+using StateTransitionGraphRef = refcount<StateTransitionGraph>;
+using StateTransitionGraphConstRef = refcount<const StateTransitionGraph>;
 
 /**
  * Functor template used to write the content of the nodes to a dotty file.

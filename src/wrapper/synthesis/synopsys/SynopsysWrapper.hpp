@@ -101,6 +101,6 @@ class SynopsysWrapper : public SynthesisTool
    static SynthesisToolRef CreateWrapper(wrapper_t type, const ParameterConstRef& Param, const target_deviceRef& _device, const std::string& output_dir);
 };
 /// Refcount definition for the class
-using SynopsysWrapperRef = std::shared_ptr<SynopsysWrapper>;
+using SynopsysWrapperRef = refcount<SynopsysWrapper>;
 
 #endif

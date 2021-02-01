@@ -341,6 +341,6 @@ class conn_binding
    void cleanInternals();
 };
 /// Refcount definition of the class
-using conn_bindingRef = std::shared_ptr<conn_binding>;
+using conn_bindingRef = refcount<conn_binding>;
 
 #endif

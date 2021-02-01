@@ -97,6 +97,6 @@ class LUT_model : public time_model
    double get_timing_value(value_t val) const;
 };
 
-using LUT_modelRef = std::shared_ptr<LUT_model>;
+using LUT_modelRef = refcount<LUT_model>;
 
 #endif

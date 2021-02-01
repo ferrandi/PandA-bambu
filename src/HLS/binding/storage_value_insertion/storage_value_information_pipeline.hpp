@@ -79,5 +79,5 @@ class StorageValueInformationPipeline : public StorageValueInformation
     * @param sv is the assigned storage value*/
    void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) override;
 };
-using StorageValueInformationPipelineRef = std::shared_ptr<StorageValueInformationPipeline>;
+using StorageValueInformationPipelineRef = refcount<StorageValueInformationPipeline>;
 #endif

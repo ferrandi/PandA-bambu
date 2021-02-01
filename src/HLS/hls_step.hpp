@@ -93,7 +93,7 @@ class HLSFlowStepSpecialization
    virtual const std::string GetSignature() const = 0;
 };
 /// const refcount definition of the class
-using HLSFlowStepSpecializationConstRef = std::shared_ptr<const HLSFlowStepSpecialization>;
+using HLSFlowStepSpecializationConstRef = refcount<const HLSFlowStepSpecialization>;
 
 enum class HLSFlowStep_Type
 {
@@ -349,7 +349,7 @@ class HLS_step : public DesignFlowStep
    void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 /// refcount definition of the class
-using HLS_stepRef = std::shared_ptr<HLS_step>;
+using HLS_stepRef = refcount<HLS_step>;
 
 /**
  * Definition of hash function for HLSFlowStep_Type

@@ -75,8 +75,8 @@ struct DesignFlowStepInfo : public NodeInfo
     */
    DesignFlowStepInfo(const DesignFlowStepRef step_ref, const bool unnecessary);
 };
-using DesignFlowStepInfoRef = std::shared_ptr<DesignFlowStepInfo>;
-using DesignFlowStepInfoConstRef = std::shared_ptr<const DesignFlowStepInfo>;
+using DesignFlowStepInfoRef = refcount<DesignFlowStepInfo>;
+using DesignFlowStepInfoConstRef = refcount<const DesignFlowStepInfo>;
 
 struct DesignFlowDependenceInfo : public EdgeInfo
 {
@@ -91,8 +91,8 @@ struct DesignFlowDependenceInfo : public EdgeInfo
     */
    ~DesignFlowDependenceInfo() override;
 };
-using DesignFlowDependenceInfoRef = std::shared_ptr<DesignFlowDependenceInfo>;
-using DesignFlowDependenceInfoConstRef = std::shared_ptr<const DesignFlowDependenceInfo>;
+using DesignFlowDependenceInfoRef = refcount<DesignFlowDependenceInfo>;
+using DesignFlowDependenceInfoConstRef = refcount<const DesignFlowDependenceInfo>;
 
 struct DesignFlowGraphInfo : public GraphInfo
 {
@@ -103,8 +103,8 @@ struct DesignFlowGraphInfo : public GraphInfo
    /// The exit vertex of the graph
    vertex exit;
 };
-using DesignFlowGraphInfoRef = std::shared_ptr<DesignFlowGraphInfo>;
-using DesignFlowGraphInfoConstRef = std::shared_ptr<const DesignFlowGraphInfo>;
+using DesignFlowGraphInfoRef = refcount<DesignFlowGraphInfo>;
+using DesignFlowGraphInfoConstRef = refcount<const DesignFlowGraphInfo>;
 
 class DesignFlowGraphsCollection : public graphs_collection
 {
@@ -153,8 +153,8 @@ class DesignFlowGraphsCollection : public graphs_collection
     */
    vertex AddDesignFlowStep(const DesignFlowStepRef design_flow_step, const bool unnecessary);
 };
-using DesignFlowGraphsCollectionRef = std::shared_ptr<DesignFlowGraphsCollection>;
-using DesignFlowGraphsCollectionConstRef = std::shared_ptr<const DesignFlowGraphsCollection>;
+using DesignFlowGraphsCollectionRef = refcount<DesignFlowGraphsCollection>;
+using DesignFlowGraphsCollectionConstRef = refcount<const DesignFlowGraphsCollection>;
 
 class DesignFlowGraph : public graph
 {
@@ -253,8 +253,8 @@ class DesignFlowGraph : public graph
                  const CustomMap<vertex, std::string>& vertex_names, const size_t writing_step_counter) const;
 #endif
 };
-using DesignFlowGraphRef = std::shared_ptr<DesignFlowGraph>;
-using DesignFlowGraphConstRef = std::shared_ptr<const DesignFlowGraph>;
+using DesignFlowGraphRef = refcount<DesignFlowGraph>;
+using DesignFlowGraphConstRef = refcount<const DesignFlowGraph>;
 
 /**
  * Functor used to write the content of the design flow step to dotty file

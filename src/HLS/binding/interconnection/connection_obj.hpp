@@ -112,6 +112,6 @@ class connection_obj
 };
 
 /// RefCount definition for connection_obj class
-using connection_objRef = std::shared_ptr<connection_obj>;
+using connection_objRef = refcount<connection_obj>;
 
 #endif

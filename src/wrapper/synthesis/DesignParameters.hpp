@@ -129,6 +129,6 @@ struct DesignParameters
    }
 };
 /// refcount definition of the class
-using DesignParametersRef = std::shared_ptr<DesignParameters>;
+using DesignParametersRef = refcount<DesignParameters>;
 
 #endif

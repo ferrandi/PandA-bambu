@@ -217,7 +217,7 @@ class HLS_manager : public application_manager
    unsigned int UpdateMemVersion();
 };
 /// refcount definition of the class
-using HLS_managerRef = std::shared_ptr<HLS_manager>;
-using HLS_managerConstRef = std::shared_ptr<const HLS_manager>;
+using HLS_managerRef = refcount<HLS_manager>;
+using HLS_managerConstRef = refcount<const HLS_manager>;
 
 #endif

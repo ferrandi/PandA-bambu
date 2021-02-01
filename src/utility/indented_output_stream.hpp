@@ -129,5 +129,5 @@ class IndentedOutputStream
     */
    void WriteFile(const std::string& file_name);
 };
-using IndentedOutputStreamRef = std::shared_ptr<IndentedOutputStream>;
+using IndentedOutputStreamRef = refcount<IndentedOutputStream>;
 #endif

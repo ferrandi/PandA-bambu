@@ -98,7 +98,7 @@ CONSTREF_FORWARD_DECL(Parameter);
 CONSTREF_FORWARD_DECL(technology_manager);
 /// RefCount type definition of the library_manager class structure for representing libraries
 REF_FORWARD_DECL(library_manager);
-using fileIO_istreamRef = std::shared_ptr<std::istream>;
+using fileIO_istreamRef = refcount<std::istream>;
 /// RefCount type definition of the structural_manager class structure
 REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_manager);
@@ -393,6 +393,6 @@ class technology_manager
    TimeStamp CGetSetupHoldTimeStamp() const;
 };
 
-using technology_managerRef = std::shared_ptr<technology_manager>;
+using technology_managerRef = refcount<technology_manager>;
 
 #endif

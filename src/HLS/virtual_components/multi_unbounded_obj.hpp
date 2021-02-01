@@ -86,6 +86,6 @@ class multi_unbounded_obj : public generic_obj
 };
 
 /// RefCount definition for multi_unbounded_obj class
-using multi_unbounded_objRef = std::shared_ptr<multi_unbounded_obj>;
+using multi_unbounded_objRef = refcount<multi_unbounded_obj>;
 
 #endif

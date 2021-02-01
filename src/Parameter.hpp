@@ -808,7 +808,7 @@ template <>
 void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric);
 #endif
 
-using ParameterRef = std::shared_ptr<Parameter>;
-using ParameterConstRef = std::shared_ptr<const Parameter>;
+using ParameterRef = refcount<Parameter>;
+using ParameterConstRef = refcount<const Parameter>;
 
 #endif

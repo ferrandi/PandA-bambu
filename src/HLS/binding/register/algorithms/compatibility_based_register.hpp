@@ -100,6 +100,6 @@ class compatibility_based_register : public reg_binding_creator
    bool is_compatible(unsigned int sv1, unsigned int sv2) const;
 };
 /// refcount definition of the class
-using compatibility_based_registerRef = std::shared_ptr<compatibility_based_register>;
+using compatibility_based_registerRef = refcount<compatibility_based_register>;
 
 #endif

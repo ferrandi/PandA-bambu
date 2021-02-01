@@ -81,6 +81,6 @@ class ASICBackendFlow : public BackendFlow
    ~ASICBackendFlow() override;
 };
 /// Refcount definition for the class
-using ASICBackendFlowRef = std::shared_ptr<ASICBackendFlow>;
+using ASICBackendFlowRef = refcount<ASICBackendFlow>;
 
 #endif

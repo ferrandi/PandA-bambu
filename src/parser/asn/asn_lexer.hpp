@@ -88,5 +88,5 @@ class AsnFlexLexer : public yyFlexLexer
       return 1;
    }
 };
-using AsnFlexLexerRef = std::shared_ptr<AsnFlexLexer>;
+using AsnFlexLexerRef = refcount<AsnFlexLexer>;
 #endif

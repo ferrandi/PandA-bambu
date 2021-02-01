@@ -285,5 +285,5 @@ class Translator
    static void AggregateAndClean(std::map<std::string, std::map<std::string, long double>>& data, CustomOrderedSet<std::string>& column_names, const ParameterConstRef param);
 };
 
-using TranslatorConstRef = std::shared_ptr<const Translator>;
+using TranslatorConstRef = refcount<const Translator>;
 #endif

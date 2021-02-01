@@ -52,8 +52,9 @@
 
 REF_FORWARD_DECL(NodeInfo);
 
-struct NodeInfo
+class NodeInfo
 {
+ public:
    /// Constructor
    NodeInfo();
 
@@ -94,5 +95,5 @@ struct NodeInfo
 /**
  * RefCount type definition of the NodeInfo class structure
  */
-using NodeInfoRef = std::shared_ptr<NodeInfo>;
+using NodeInfoRef = refcount<NodeInfo>;
 #endif

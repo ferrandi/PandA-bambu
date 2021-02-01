@@ -121,6 +121,6 @@ class cell_model : public area_model
    void set_characterization(unsigned int characterization_type, unsigned int element_type, double value);
 };
 /// refcount definition of the class
-using cell_modelRef = std::shared_ptr<cell_model>;
+using cell_modelRef = refcount<cell_model>;
 
 #endif

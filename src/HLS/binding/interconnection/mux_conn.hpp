@@ -109,6 +109,6 @@ class mux_conn : public connection_obj
    }
 };
 /// refcount definition of the class
-using mux_connRef = std::shared_ptr<mux_conn>;
+using mux_connRef = refcount<mux_conn>;
 
 #endif

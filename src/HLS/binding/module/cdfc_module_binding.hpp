@@ -198,15 +198,15 @@ struct edge_cdfc_selector
 /// bulk compatibility graph
 using boost_cdfc_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t>, edge_cdfc_selector>;
 
-using boost_cdfc_graphRef = std::shared_ptr<boost_cdfc_graph>;
-using boost_cdfc_graphConstRef = std::shared_ptr<const boost_cdfc_graph>;
+using boost_cdfc_graphRef = refcount<boost_cdfc_graph>;
+using boost_cdfc_graphConstRef = refcount<const boost_cdfc_graph>;
 
 /// compatibility graph
 using cdfc_graph = boost::filtered_graph<boost_cdfc_graph, cdfc_graph_edge_selector<boost_cdfc_graph>, cdfc_graph_vertex_selector<boost_cdfc_graph>>;
 
 /// refcount version of cdfc_graph
-using cdfc_graphRef = std::shared_ptr<cdfc_graph>;
-using cdfc_graphConstRef = std::shared_ptr<const cdfc_graph>;
+using cdfc_graphRef = refcount<cdfc_graph>;
+using cdfc_graphConstRef = refcount<const cdfc_graph>;
 /// vertex definition
 using cdfc_vertex = boost::graph_traits<cdfc_graph>::vertex_descriptor;
 /// in_edge_iterator definition.
@@ -228,8 +228,8 @@ struct CdfcEdgeInfo : public EdgeInfo
     */
    explicit CdfcEdgeInfo(const int edge_weight);
 };
-using CdfcEdgeInfoRef = std::shared_ptr<CdfcEdgeInfo>;
-using CdfcEdgeInfoConstRef = std::shared_ptr<const CdfcEdgeInfo>;
+using CdfcEdgeInfoRef = refcount<CdfcEdgeInfo>;
+using CdfcEdgeInfoConstRef = refcount<const CdfcEdgeInfo>;
 
 /**
  * The info associated with a cdfc graph
@@ -246,8 +246,8 @@ struct CdfcGraphInfo : public GraphInfo
     */
    CdfcGraphInfo(const std::map<vertex, vertex>& c2s, const OpGraphConstRef operation_graph);
 };
-using CdfcGraphInfoRef = std::shared_ptr<CdfcGraphInfo>;
-using CdfcGraphInfoConstRef = std::shared_ptr<const CdfcGraphInfo>;
+using CdfcGraphInfoRef = refcount<CdfcGraphInfo>;
+using CdfcGraphInfoConstRef = refcount<const CdfcGraphInfo>;
 
 /**
  * Cdfc collection of graphs
@@ -300,8 +300,8 @@ class CdfcGraphsCollection : public graphs_collection
       }
    }
 };
-using CdfcGraphsCollectionRef = std::shared_ptr<CdfcGraphsCollection>;
-using CdfcGraphsCollectionConstRef = std::shared_ptr<const CdfcGraphsCollection>;
+using CdfcGraphsCollectionRef = refcount<CdfcGraphsCollection>;
+using CdfcGraphsCollectionConstRef = refcount<const CdfcGraphsCollection>;
 
 /**
  * Cdfc graph
@@ -344,8 +344,8 @@ class CdfcGraph : public graph
     */
    void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 };
-using CdfcGraphRef = std::shared_ptr<CdfcGraph>;
-using CdfcGraphConstRef = std::shared_ptr<const CdfcGraph>;
+using CdfcGraphRef = refcount<CdfcGraph>;
+using CdfcGraphConstRef = refcount<const CdfcGraph>;
 
 /// connection code can be
 /// no_def - source is not defined because is a parameter or a constan value

@@ -80,6 +80,6 @@ class CInitializationParser
     */
    void Parse(CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const;
 };
-using CInitializationParserConstRef = std::shared_ptr<const CInitializationParser>;
-using CInitializationParserRef = std::shared_ptr<CInitializationParser>;
+using CInitializationParserConstRef = refcount<const CInitializationParser>;
+using CInitializationParserRef = refcount<CInitializationParser>;
 #endif

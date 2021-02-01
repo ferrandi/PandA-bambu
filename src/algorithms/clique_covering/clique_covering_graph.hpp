@@ -158,7 +158,7 @@ using boost_cc_compatibility_graph = boost::adjacency_list<boost::vecS, boost::v
 using cc_compatibility_graph = boost::filtered_graph<boost_cc_compatibility_graph, cc_compatibility_graph_edge_selector<boost_cc_compatibility_graph>, cc_compatibility_graph_vertex_selector<boost_cc_compatibility_graph>>;
 
 /// refcount version of cc_compatibility_graph
-using cc_compatibility_graphRef = std::shared_ptr<cc_compatibility_graph>;
+using cc_compatibility_graphRef = refcount<cc_compatibility_graph>;
 
 /// cc_compatibility_graph vertex
 using C_vertex = boost::graph_traits<cc_compatibility_graph>::vertex_descriptor;

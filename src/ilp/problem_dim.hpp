@@ -79,6 +79,6 @@ class problem_dim
    virtual ~problem_dim();
 };
 
-using problem_dimRef = std::shared_ptr<problem_dim>;
+using problem_dimRef = refcount<problem_dim>;
 
 #endif
