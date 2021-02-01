@@ -2749,10 +2749,6 @@ void Andersen_AA::print_all_structs() const
    }
 }
 
-// Max. length of the printed name of a single object, max length for a complete
-//  value or node printout, and the width of the left column for some formats.
-const u32 max_name_len = 1 << 8, max_val_len = 1 << 12, max_node_len = 1 << 13, lhs_width = 40;
-
 //------------------------------------------------------------------------------
 //(n) - the node ID that will be printed for some types (unless 0).
 //(const_with_val) - print the values of constants (default yes).
@@ -7847,7 +7843,7 @@ class PtsSet
       return pts;
    }
 
-   void print()
+   void print() const
    {
       // this is the really slow way to do it, but we don't want to
       // pollute the bdd->vector cache
@@ -8008,9 +8004,9 @@ class PtsGraph
       return pts.empty();
    }
 
-   void print()
+   void print() const
    {
-      for(auto i : pts)
+      for(const auto& i : pts)
       {
          llvm::outs() << i.first << " :";
          i.second.print();
@@ -8576,7 +8572,7 @@ class DFG
       std::map<size_t, size_t> np2p, p2ne;
       u32 t1 = 0, t3 = 0, t4 = 0;
 
-      for(auto i : tp_nodes)
+      for(const auto &i : tp_nodes)
       {
          t1 += i.succ.size();
       }
