@@ -587,7 +587,6 @@ gcc_regression_simple/complex-4.c
 gcc_regression_simple/complex-5.c
 gcc_regression_simple/complex-7.c
 gcc_regression_simple/conversion.c
-gcc_regression_simple/COPYING3
 gcc_regression_simple/cvt-1.c
 gcc_regression_simple/dbra-1.c
 gcc_regression_simple/divcmp-1.c
@@ -844,7 +843,6 @@ gcc_regression_simple/pta-field-2.c
 gcc_regression_simple/ptr-arith-1.c
 gcc_regression_simple/pure-1.c
 gcc_regression_simple/pushpop_macro.c
-gcc_regression_simple/README
 gcc_regression_simple/restrict-1.c
 gcc_regression_simple/scope-1.c
 gcc_regression_simple/shiftdi.c
@@ -887,7 +885,6 @@ gcc_regression_simple/zero-struct-1.c
 gcc_regression_simple/builtins/abs-1.c
 gcc_regression_simple/builtins/abs-2.c
 gcc_regression_simple/builtins/abs-3.c
-gcc_regression_simple/builtins/chk.h
 gcc_regression_simple/builtins/complex-builtins-1.c
 gcc_regression_simple/builtins/memchr.c
 gcc_regression_simple/builtins/memcmp.c
@@ -969,6 +966,5 @@ gcc_regression_simple/ieee/mzero4.c
 gcc_regression_simple/ieee/mzero5.c
 gcc_regression_simple/ieee/pr28634.c
 gcc_regression_simple/ieee/pr30704.c
-gcc_regression_simple/ieee/test.xml
 gcc_regression_simple/ieee/unsafe-fp-assoc-1.c
 gcc_regression_simple/ieee/unsafe-fp-assoc.c
