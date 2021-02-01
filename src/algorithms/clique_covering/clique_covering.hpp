@@ -1403,7 +1403,7 @@ class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
    size_t compute_cost(const std::vector<CustomOrderedSet<C_vertex>>& curr_cliques, const filter_clique<vertex_type>& fc)
    {
       size_t total_cost = 0;
-      for(const auto clique_val : curr_cliques)
+      for(const auto& clique_val : curr_cliques)
       {
          total_cost += fc.clique_cost(clique_val, coloring_based_clique_covering<vertex_type>::uv2v);
       }
