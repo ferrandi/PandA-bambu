@@ -161,11 +161,12 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization string is " + test_v);
 
-         if(!is_memory)
+         unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
+         if(reserved_bytes == 0)
          {
-            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "not yet supported case");
+            reserved_bytes = 1;
          }
-         unsigned int reserved_bytes;
+
          if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
@@ -229,13 +230,9 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                                   " : reserved_mem_size = " + STR(HLSMgr->RSim->param_mem_size.at(v_idx).find(*l)->second));
             }
          }
-         else
+         else if(!is_memory)
          {
-            reserved_bytes = tree_helper::size(TM, *l) / 8;
-            if(reserved_bytes == 0)
-            {
-               reserved_bytes = 1;
-            }
+            THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "not yet supported case");
          }
 
          std::list<unsigned int>::const_iterator l_next;
@@ -269,7 +266,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          }
 
          if(next_object_offset >= reserved_bytes)
-            THROW_ERROR("more allocated memory than expected");
+            THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) + " reserved_bytes=" + STR(reserved_bytes));
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }
