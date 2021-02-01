@@ -5589,7 +5589,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
             if(var > 0 && !tn->name)
             {
                /// Global variables or parameters
-               if((GetPointer<var_decl>(node) and (!(GetPointer<var_decl>(node)->scpe) or GET_NODE(GetPointer<var_decl>(node)->scpe)->get_kind() == translation_unit_decl_K)))
+               if(((GetPointer<var_decl>(node)) && (!(GetPointer<var_decl>(node)->scpe) || (GET_NODE(GetPointer<var_decl>(node)->scpe)->get_kind() == translation_unit_decl_K))))
                {
                   res += tree_helper::return_C_qualifiers(quals, true);
                }
