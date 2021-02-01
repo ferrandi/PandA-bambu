@@ -265,7 +265,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             THROW_ERROR("unexpected pattern");
          }
 
-         if(next_object_offset >= reserved_bytes)
+         if(next_object_offset < reserved_bytes)
             THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) + " reserved_bytes=" + STR(reserved_bytes));
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
