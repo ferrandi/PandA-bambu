@@ -1263,6 +1263,10 @@ clang10_regression_simple_no_expose_globals.sh\
 clang11_regression_simple_default.sh\
 clang11_regression_simple_ext_pipelined.sh\
 clang11_regression_simple_no_expose_globals.sh\
+clang11_regression_simple_default_verilator.sh\
+clang11_regression_simple_ext_pipelined_verilator.sh\
+clang11_regression_simple_no_expose_globals_verilator.sh\
+gcc_regression_simple_verilator\
 softfloat-tests-clang4.sh\
 softfloat-tests-clang5.sh\
 softfloat-tests-clang6.sh\
