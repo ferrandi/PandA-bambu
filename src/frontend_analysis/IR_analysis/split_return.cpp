@@ -140,8 +140,8 @@ bool SplitReturn::HasToBeExecuted() const
       return GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
    }
    else
-   {
 #endif
+   {
       return FunctionFrontendFlowStep::HasToBeExecuted();
    }
 }

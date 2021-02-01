@@ -396,7 +396,7 @@ class structural_manager
     * @param os is the output stream
     * @param s is the circuit manager element
     */
-   friend std::ostream& operator<<(std::ostream& os, structural_manager& s)
+   friend std::ostream& operator<<(std::ostream& os, const structural_manager& s)
    {
       s.print(os);
       return os;

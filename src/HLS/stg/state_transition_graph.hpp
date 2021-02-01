@@ -185,7 +185,7 @@ class TransitionInfo : public EdgeInfo
    bool epp_incrementValid{false};
 
  public:
-   TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
+   explicit TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
    {
    }
 
@@ -518,7 +518,7 @@ class last_intermediate_state
 class next_unique_state
 {
  public:
-   next_unique_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph)
+   explicit next_unique_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph)
    {
    }
 

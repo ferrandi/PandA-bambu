@@ -1051,8 +1051,8 @@ void functional_unit::xload(const xml_element* Enode, const technology_nodeRef f
       else if(dv_type == TargetDevice_Type::IC && EnodeC->get_name() == "layout")
       {
          logical_type = COMBINATIONAL; // do nothing
-#endif
       }
+#endif
       else
       {
          THROW_ERROR("functional_unit - not yet supported: " + EnodeC->get_name());
