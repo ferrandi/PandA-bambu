@@ -295,8 +295,8 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                            {
                               max = schedule->GetEndingTime(stmt->index);
                            }
-                           if(GET_NODE(stmt)->get_kind() == gimple_call_K or (GetPointer<const gimple_assign>(GET_NODE(stmt)) and (GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == call_expr_K ||
-                                                                                                                                   GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == aggr_init_expr_K)))
+                           if((GET_NODE(stmt)->get_kind() == gimple_call_K) || ((GetPointer<const gimple_assign>(GET_NODE(stmt))) && ((GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == call_expr_K) ||
+                                                                                                                                   (GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == aggr_init_expr_K))))
                            {
                               return false;
                            }

@@ -509,7 +509,7 @@ void VcdSignalSelection::DetectInvalidReturns(const CustomOrderedSet<unsigned in
          if(tn->get_kind() == gimple_return_K)
          {
             const auto* gr = GetPointer<const gimple_return>(tn);
-            if(gr->op != nullptr and (IsAddressType(tree_helper::get_type_index(TM, GET_INDEX_NODE(gr->op))) or (GET_NODE(gr->op)->get_kind() == ssa_name_K and Discr->address_ssa.find(GET_NODE(gr->op)) != Discr->address_ssa.end())))
+            if((gr->op != nullptr) && (IsAddressType(tree_helper::get_type_index(TM, GET_INDEX_NODE(gr->op))) || ((GET_NODE(gr->op)->get_kind() == ssa_name_K )&& (Discr->address_ssa.find(GET_NODE(gr->op)) != Discr->address_ssa.end()))))
             {
                addr_fun_ids.insert(i);
                break;
