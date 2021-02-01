@@ -64,9 +64,9 @@ struct null_deleter
 #define RefcountCast std::dynamic_pointer_cast
 
 #else
-#include <boost/smart_ptr/shared_ptr.hpp> // for shared_ptr
-#include <boost/smart_ptr/weak_ptr.hpp>   // for weak_ptr
-#include <cstddef>                        // for size_t
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/smart_ptr/weak_ptr.hpp>
+#include <cstddef>
 
 #define refcount boost::shared_ptr
 #define Wrefcount boost::weak_ptr
