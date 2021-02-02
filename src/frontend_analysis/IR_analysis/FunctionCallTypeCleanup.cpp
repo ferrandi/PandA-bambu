@@ -325,12 +325,29 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(INVALIDATION_RELATIONSHIP):
       {
+         switch(GetStatus())
+         {
+            case DesignFlowStep_Status::SUCCESS:
+            {
+               relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
+               break;
+            }
+            case DesignFlowStep_Status::ABORTED:
+            case DesignFlowStep_Status::EMPTY:
+            case DesignFlowStep_Status::NONEXISTENT:
+            case DesignFlowStep_Status::SKIPPED:
+            case DesignFlowStep_Status::UNCHANGED:
+            case DesignFlowStep_Status::UNEXECUTED:
+            case DesignFlowStep_Status::UNNECESSARY:
+               break;
+         }
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
