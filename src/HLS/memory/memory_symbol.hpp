@@ -140,6 +140,6 @@ class memory_symbol
    }
 };
 /// refcount definition of the class
-using memory_symbolRef = std::shared_ptr<memory_symbol>;
+using memory_symbolRef = refcount<memory_symbol>;
 
 #endif

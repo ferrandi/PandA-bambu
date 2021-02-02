@@ -136,6 +136,6 @@ class AadlInformation
     */
    AsnTypeRef CGetAsnType(const std::string& name) const;
 };
-using AadlInformationRef = std::shared_ptr<AadlInformation>;
-using AadlInformationConstRef = std::shared_ptr<const AadlInformation>;
+using AadlInformationRef = refcount<AadlInformation>;
+using AadlInformationConstRef = refcount<const AadlInformation>;
 #endif

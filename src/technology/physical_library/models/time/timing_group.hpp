@@ -58,6 +58,6 @@ struct timing_group
 
    void xwrite(xml_element* pin_node, const CustomOrderedSet<std::string>& input_set);
 };
-using timing_groupRef = std::shared_ptr<timing_group>;
+using timing_groupRef = refcount<timing_group>;
 
 #endif

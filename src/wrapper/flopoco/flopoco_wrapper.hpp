@@ -265,6 +265,6 @@ class flopoco_wrapper
 };
 
 /// Refcount definition for the flopoco_wrapper class
-using flopoco_wrapperRef = std::shared_ptr<flopoco_wrapper>;
+using flopoco_wrapperRef = refcount<flopoco_wrapper>;
 
 #endif /* FLOPOCOWRAPPER_H */

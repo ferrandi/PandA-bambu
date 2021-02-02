@@ -252,6 +252,6 @@ class CBackend : public DesignFlowStep
     */
    const CWriterRef GetCWriter() const;
 };
-using CBackendRef = std::shared_ptr<CBackend>;
-using CBackendConstRef = std::shared_ptr<const CBackend>;
+using CBackendRef = refcount<CBackend>;
+using CBackendConstRef = refcount<const CBackend>;
 #endif

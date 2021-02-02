@@ -161,6 +161,6 @@ class time_model
    //@}
 };
 /// refcount definition of the class
-using time_modelRef = std::shared_ptr<time_model>;
+using time_modelRef = refcount<time_model>;
 
 #endif

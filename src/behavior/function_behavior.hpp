@@ -119,7 +119,7 @@ struct memory_access
 
    memory_access(unsigned int _node_id, unsigned int _base_address, unsigned int _offset = 0);
 };
-using memory_accessRef = std::shared_ptr<memory_access>;
+using memory_accessRef = refcount<memory_access>;
 
 /// The access type to a variable
 enum class FunctionBehavior_VariableAccessType
@@ -932,8 +932,8 @@ class FunctionBehavior
    unsigned int UpdateBitValueVersion();
 };
 
-using FunctionBehaviorRef = std::shared_ptr<FunctionBehavior>;
-using FunctionBehaviorConstRef = std::shared_ptr<const FunctionBehavior>;
+using FunctionBehaviorRef = refcount<FunctionBehavior>;
+using FunctionBehaviorConstRef = refcount<const FunctionBehavior>;
 
 /**
  * The key comparison function for vertices set based on levels

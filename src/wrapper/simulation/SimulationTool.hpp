@@ -124,5 +124,5 @@ class SimulationTool
    virtual void Clean() const;
 };
 /// refcount definition of the class
-using SimulationToolRef = std::shared_ptr<SimulationTool>;
+using SimulationToolRef = refcount<SimulationTool>;
 #endif

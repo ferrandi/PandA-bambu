@@ -945,7 +945,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          {
             THROW_ASSERT(gn->bb_index, stmt->ToString() + " is not in a basic block");
             const auto used_ssas = tree_helper::ComputeSsaUses(old_node);
-            for(auto used_ssa : used_ssas)
+            for(const auto& used_ssa : used_ssas)
             {
                for(decltype(used_ssa.second) counter = 0; counter < used_ssa.second; counter++)
                {
@@ -953,7 +953,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
                }
             }
             const auto new_used_ssas = tree_helper::ComputeSsaUses(new_node);
-            for(auto new_used_ssa : new_used_ssas)
+            for(const auto& new_used_ssa : new_used_ssas)
             {
                for(decltype(new_used_ssa.second) counter = 0; counter < new_used_ssa.second; counter++)
                {
@@ -1014,7 +1014,7 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
       case gimple_assign_K:
       {
          auto* gm = GetPointer<gimple_assign>(curr_tn);
-         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, true);
+         RecursiveReplaceTreeNode(gm->op0, old_node, new_node, stmt, GET_NODE(new_node)->get_kind() == ssa_name_K);
          RecursiveReplaceTreeNode(gm->op1, old_node, new_node, stmt, false);
          std::vector<tree_nodeRef>& uses = gm->use_set->variables;
          std::vector<tree_nodeRef>::iterator use, use_end = uses.end();

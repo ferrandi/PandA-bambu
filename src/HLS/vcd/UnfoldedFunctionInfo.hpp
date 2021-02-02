@@ -62,6 +62,6 @@ class UnfoldedFunctionInfo : public NodeInfo
    ~UnfoldedFunctionInfo() override = default;
 };
 
-using UnfoldedFunctionInfoRef = std::shared_ptr<UnfoldedFunctionInfo>;
-using UnfoldedFunctionInfoConstRef = std::shared_ptr<const UnfoldedFunctionInfo>;
+using UnfoldedFunctionInfoRef = refcount<UnfoldedFunctionInfo>;
+using UnfoldedFunctionInfoConstRef = refcount<const UnfoldedFunctionInfo>;
 #endif

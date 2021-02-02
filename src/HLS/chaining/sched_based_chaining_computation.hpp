@@ -69,6 +69,6 @@ class sched_based_chaining_computation : public chaining
    DesignFlowStep_Status InternalExec() override;
 };
 
-using sched_based_chaining_computationRef = std::shared_ptr<sched_based_chaining_computation>;
+using sched_based_chaining_computationRef = refcount<sched_based_chaining_computation>;
 
 #endif

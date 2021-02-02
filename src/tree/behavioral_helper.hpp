@@ -752,7 +752,7 @@ class BehavioralHelper
 /**
  * RefCount type definition of the tree_to_graph class structure
  */
-using BehavioralHelperRef = std::shared_ptr<BehavioralHelper>;
-using BehavioralHelperConstRef = std::shared_ptr<const BehavioralHelper>;
+using BehavioralHelperRef = refcount<BehavioralHelper>;
+using BehavioralHelperConstRef = refcount<const BehavioralHelper>;
 
 #endif

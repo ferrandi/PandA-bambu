@@ -350,6 +350,6 @@ class language_writer
    void WriteLicense();
 };
 /// RefCount definition of the class
-using language_writerRef = std::shared_ptr<language_writer>;
+using language_writerRef = refcount<language_writer>;
 
 #endif

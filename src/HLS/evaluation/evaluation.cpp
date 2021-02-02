@@ -136,9 +136,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   else if(objective == "AREA")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
-                  }
                   else if(objective == "AREAxTIME")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
@@ -153,24 +153,24 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   else if(objective == "CLOCK_SLACK")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
-                  }
                   else if(objective == "CYCLES" || objective == "TOTAL_CYCLES")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
-                  }
                   else if(objective == "DSPS")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_EXPERIMENTAL
-                     else if(objective == "EDGES_REDUCTION_EVALUATION") ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+                  else if(objective == "EDGES_REDUCTION_EVALUATION") ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
-                  }
                   else if(objective == "FREQUENCY")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
@@ -182,12 +182,12 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   else if(objective == "REGISTERS")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_EXPERIMENTAL
                      else if(objective == "NUM_AF_EDGES") ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
-                  }
                   else if(objective == "TIME" || objective == "TOTAL_TIME")
                   {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
@@ -196,7 +196,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #endif
                   else
                   {
-                     THROW_ERROR("Evaluaton objective not yet supported " + objective);
+                     THROW_ERROR("Evaluation objective not yet supported " + objective);
                   }
                }
                break;

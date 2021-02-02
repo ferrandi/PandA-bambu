@@ -78,6 +78,6 @@ class HLS_target : public target_manager
    static HLS_targetRef create_target(const ParameterRef& Param);
 };
 /// refcount definition of class
-using HLS_targetRef = std::shared_ptr<HLS_target>;
+using HLS_targetRef = refcount<HLS_target>;
 
 #endif

@@ -161,6 +161,6 @@ class target_technology
 };
 
 /// refcount definition for the class
-using target_technologyRef = std::shared_ptr<target_technology>;
+using target_technologyRef = refcount<target_technology>;
 
 #endif

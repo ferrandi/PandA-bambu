@@ -98,6 +98,6 @@ class liberty_model : public time_model
    double get_skew_value() const;
 };
 
-using liberty_modelRef = std::shared_ptr<liberty_model>;
+using liberty_modelRef = refcount<liberty_model>;
 
 #endif

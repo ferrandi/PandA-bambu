@@ -224,7 +224,7 @@ class DesignFlowStep
     */
    virtual void PrintFinalIR() const;
 };
-using DesignFlowStepRef = std::shared_ptr<DesignFlowStep>;
-using DesignFlowStepConstRef = std::shared_ptr<const DesignFlowStep>;
+using DesignFlowStepRef = refcount<DesignFlowStep>;
+using DesignFlowStepConstRef = refcount<const DesignFlowStep>;
 
 #endif

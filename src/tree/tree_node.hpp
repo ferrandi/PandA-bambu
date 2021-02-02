@@ -208,8 +208,8 @@ class tree_node
 /**
  * RefCount type definition of the tree_node class structure
  */
-using tree_nodeRef = std::shared_ptr<tree_node>;
-using tree_nodeConstRef = std::shared_ptr<const tree_node>;
+using tree_nodeRef = refcount<tree_node>;
+using tree_nodeConstRef = refcount<const tree_node>;
 
 /**
  * A set of const tree node
@@ -979,7 +979,7 @@ struct PointToInformation
     */
    ~PointToInformation();
 };
-using PointToInformationRef = std::shared_ptr<PointToInformation>;
+using PointToInformationRef = refcount<PointToInformation>;
 
 /**
  * struct definition of the common part of an expression
@@ -1084,7 +1084,7 @@ struct PointToSolution
       GETID(variables) = 0
    };
 };
-using PointToSolutionRef = std::shared_ptr<PointToSolution>;
+using PointToSolutionRef = refcount<PointToSolution>;
 
 /**
  * struct definition of the common part of a gimple  with virtual operands

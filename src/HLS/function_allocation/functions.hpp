@@ -150,6 +150,6 @@ class functions
    static std::string get_function_name_cleaned(unsigned funID, const HLS_managerRef HLSMgr);
 };
 /// refcount definition of the class
-using functionsRef = std::shared_ptr<functions>;
+using functionsRef = refcount<functions>;
 
 #endif

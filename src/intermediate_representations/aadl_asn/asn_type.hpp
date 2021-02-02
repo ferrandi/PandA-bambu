@@ -227,6 +227,6 @@ class SetOfAsnType : public AsnType
    SetOfAsnType(std::string element, const std::string& size);
 };
 
-using AsnTypeRef = std::shared_ptr<AsnType>;
-using AsnTypeConstRef = std::shared_ptr<const AsnType>;
+using AsnTypeRef = refcount<AsnType>;
+using AsnTypeConstRef = refcount<const AsnType>;
 #endif

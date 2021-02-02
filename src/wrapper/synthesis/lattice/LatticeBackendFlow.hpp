@@ -94,6 +94,6 @@ class LatticeBackendFlow : public BackendFlow
    void ExecuteSynthesis() override;
 };
 /// Refcount definition for the class
-using LatticeBackendFlowRef = std::shared_ptr<LatticeBackendFlow>;
+using LatticeBackendFlowRef = refcount<LatticeBackendFlow>;
 
 #endif

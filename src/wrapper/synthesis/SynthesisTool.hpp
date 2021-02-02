@@ -259,6 +259,6 @@ class SynthesisTool
    virtual std::string get_tool_exec() const;
 };
 /// refcount definition of the class
-using SynthesisToolRef = std::shared_ptr<SynthesisTool>;
+using SynthesisToolRef = refcount<SynthesisTool>;
 
 #endif

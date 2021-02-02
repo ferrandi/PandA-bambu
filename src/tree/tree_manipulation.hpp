@@ -671,7 +671,7 @@ class tree_manipulation
    tree_nodeRef CloneFunction(const tree_nodeRef &tn, const std::string& funNameSuffix);
 };
 
-using tree_manipulationRef = std::shared_ptr<tree_manipulation>;
-using tree_manipulationConstRef = std::shared_ptr<const tree_manipulation>;
+using tree_manipulationRef = refcount<tree_manipulation>;
+using tree_manipulationConstRef = refcount<const tree_manipulation>;
 
 #endif /* TREE_MANIPULATION_HPP */

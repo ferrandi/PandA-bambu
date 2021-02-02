@@ -79,6 +79,6 @@ class reg_binding_creator : public HLSFunctionStep
    ~reg_binding_creator() override;
 };
 /// refcount definition of the class
-using reg_binding_creatorRef = std::shared_ptr<reg_binding_creator>;
+using reg_binding_creatorRef = refcount<reg_binding_creator>;
 
 #endif

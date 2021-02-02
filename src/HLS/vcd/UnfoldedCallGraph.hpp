@@ -59,6 +59,6 @@ using UnfoldedOutEdgeIterator = boost::graph_traits<UnfoldedCallGraph>::out_edge
 using UnfoldedEdgeIterator = boost::graph_traits<UnfoldedCallGraph>::edge_iterator;
 using UnfoldedEdgeDescriptor = boost::graph_traits<UnfoldedCallGraph>::edge_descriptor;
 
-using UnfoldedCallGraphRef = std::shared_ptr<UnfoldedCallGraph>;
-using UnfoldedCallGraphConstRef = std::shared_ptr<const UnfoldedCallGraph>;
+using UnfoldedCallGraphRef = refcount<UnfoldedCallGraph>;
+using UnfoldedCallGraphConstRef = refcount<const UnfoldedCallGraph>;
 #endif

@@ -115,7 +115,7 @@ struct attribute
 
    void xwrite(xml_element* xml_node, const std::string& name);
 };
-using attributeRef = std::shared_ptr<attribute>;
+using attributeRef = refcount<attribute>;
 
 /**
  * This class manages the specific library structure.
@@ -246,7 +246,7 @@ class library_manager
    }
 };
 
-using library_managerRef = std::shared_ptr<library_manager>;
-using library_managerConstRef = std::shared_ptr<const library_manager>;
+using library_managerRef = refcount<library_manager>;
+using library_managerConstRef = refcount<const library_manager>;
 
 #endif

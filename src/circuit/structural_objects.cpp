@@ -84,7 +84,7 @@
 #include "layout_model.hpp"
 #endif
 
-inline std::string legalize(std::string& id)
+inline std::string legalize(const std::string& id)
 {
    // boost::replace_all(id, "[", "_");
    // boost::replace_all(id, "]", "_");

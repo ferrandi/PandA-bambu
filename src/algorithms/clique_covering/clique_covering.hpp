@@ -874,7 +874,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       boost::initialize_incremental_components(clique_covering_graph_bulk, ds);
 
       u_vertex_iterator ui, uiend;
-      for(boost::tie(ui, uiend) = boost::vertices(clique_covering_graph_bulk); ui != uiend; ui++)
+      for(boost::tie(ui, uiend) = boost::vertices(clique_covering_graph_bulk); ui != uiend; ++ui)
       {
          support.insert(*ui);
          all_vertices.insert(*ui);
@@ -1400,10 +1400,10 @@ class RTS_based_clique_covering : public TS_based_clique_covering<vertex_type>
 {
    using edge_descriptor = boost::graph_traits<cc_compatibility_graph>::edge_descriptor;
 
-   size_t compute_cost(std::vector<CustomOrderedSet<C_vertex>>& curr_cliques, const filter_clique<vertex_type>& fc)
+   size_t compute_cost(const std::vector<CustomOrderedSet<C_vertex>>& curr_cliques, const filter_clique<vertex_type>& fc)
    {
       size_t total_cost = 0;
-      for(auto clique_val : curr_cliques)
+      for(const auto& clique_val : curr_cliques)
       {
          total_cost += fc.clique_cost(clique_val, coloring_based_clique_covering<vertex_type>::uv2v);
       }
@@ -1919,7 +1919,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
    /**
     * Returns number of cliques into graph after performing clique covering
     */
-   size_t num_vertices()
+   size_t num_vertices() override
    {
       return number_of_cliques;
    }
@@ -1928,7 +1928,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
     * Writes a dotty representation of the actual graph
     * @param filename is the output filename
     */
-   void writeDot(const std::string& filename) const
+   void writeDot(const std::string& filename) const override
    {
       // THROW_WARNING("randomized_clique_covering::writeDot not yet implemented");
 
@@ -1942,20 +1942,20 @@ class randomized_clique_covering : public clique_covering<vertex_type>
     * suggest that the problem have at least a given number of resources
     * @param n_resources is the number of resources available
     */
-   void suggest_min_resources(size_t)
+   void suggest_min_resources(size_t) override
    {
    }
 
-   void suggest_max_resources(size_t)
+   void suggest_max_resources(size_t) override
    {
    }
 
-   void min_resources(size_t _minimum_number_of_cliques)
+   void min_resources(size_t _minimum_number_of_cliques) override
    {
       minimum_number_of_cliques = _minimum_number_of_cliques;
    }
 
-   void max_resources(size_t _maximum_number_of_cliques)
+   void max_resources(size_t _maximum_number_of_cliques) override
    {
       maximum_number_of_cliques = _maximum_number_of_cliques;
    }

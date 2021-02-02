@@ -77,6 +77,6 @@ class direct_conn : public connection_obj
    }
 };
 /// refcount definition of the class
-using direct_connRef = std::shared_ptr<direct_conn>;
+using direct_connRef = refcount<direct_conn>;
 
 #endif

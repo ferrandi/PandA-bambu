@@ -407,6 +407,6 @@ class liveness
 };
 
 // refcount definition for class
-using livenessRef = std::shared_ptr<liveness>;
+using livenessRef = refcount<liveness>;
 
 #endif

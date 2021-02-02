@@ -221,6 +221,6 @@ class reg_binding : public variable2obj<generic_objRef>
 /**
  * RefCount type definition of the reg_binding class structure
  */
-using reg_bindingRef = std::shared_ptr<reg_binding>;
+using reg_bindingRef = refcount<reg_binding>;
 
 #endif

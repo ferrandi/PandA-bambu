@@ -114,5 +114,5 @@ class simple_indent
    void deindent();
 };
 
-using simple_indentRef = std::shared_ptr<simple_indent>;
+using simple_indentRef = refcount<simple_indent>;
 #endif

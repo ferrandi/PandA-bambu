@@ -162,6 +162,11 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Initialization string is " + test_v);
 
          unsigned int reserved_bytes = tree_helper::size(TM, *l) / 8;
+         if(reserved_bytes == 0)
+         {
+            reserved_bytes = 1;
+         }
+
          if(tree_helper::is_a_pointer(TM, *l) && !is_memory)
          {
             unsigned int base_type = tree_helper::get_type_index(TM, *l);
@@ -260,7 +265,8 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
             THROW_ERROR("unexpected pattern");
          }
 
-         THROW_ASSERT(next_object_offset >= reserved_bytes, "more allocated memory than expected");
+         if(next_object_offset < reserved_bytes)
+            THROW_ERROR("more allocated memory than expected  next_object_offset=" + STR(next_object_offset) + " reserved_bytes=" + STR(reserved_bytes));
          HLSMgr->RSim->param_next_off[v_idx][*l] = next_object_offset;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered " + param);
       }

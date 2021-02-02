@@ -774,8 +774,10 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
    long long int val_so_far = 0;
    tree_nodeRef accum, tem;
    int opno;
+#if HAVE_ASSERTS
    unsigned data_bitsize = tree_helper::size(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(type)));
    unsigned long long int data_mask = data_bitsize >= 64 ? ~0ULL : (1ULL << data_bitsize) - 1;
+#endif
    tree_nodeRef tem_ga;
    tree_nodeRef COST0 = TM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(type));
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Expanding " + op0->ToString());
@@ -980,7 +982,9 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
 
    if(variant == negate_variant)
    {
+#if HAVE_ASSERTS
       val_so_far = -val_so_far;
+#endif
       tem = tree_man->create_unary_operation(type, accum, srcp_default, negate_expr_K);
       tem_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), tem, block->number, srcp_default);
       block->PushBefore(tem_ga, stmt);
@@ -988,7 +992,9 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
    }
    else if(variant == add_variant)
    {
+#if HAVE_ASSERTS
       val_so_far = val_so_far + 1;
+#endif
       tem = tree_man->create_binary_operation(type, accum, op0, srcp_default, plus_expr_K);
       tem_ga = tree_man->CreateGimpleAssign(type, tree_nodeRef(), tree_nodeRef(), tem, block->number, srcp_default);
       block->PushBefore(tem_ga, stmt);

@@ -119,6 +119,6 @@ class clb_model : public area_model
    double get_resource_value(value_t val) const;
 };
 
-using clb_modelRef = std::shared_ptr<clb_model>;
+using clb_modelRef = refcount<clb_model>;
 
 #endif

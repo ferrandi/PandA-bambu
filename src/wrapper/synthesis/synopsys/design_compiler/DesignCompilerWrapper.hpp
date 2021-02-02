@@ -324,6 +324,6 @@ class DesignCompilerWrapper : public SynopsysWrapper
    std::string get_report_file(unsigned int report_type) const;
 };
 /// Refcount definition for the class
-using DesignCompilerWrapperRef = std::shared_ptr<DesignCompilerWrapper>;
+using DesignCompilerWrapperRef = refcount<DesignCompilerWrapper>;
 
 #endif

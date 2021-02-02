@@ -203,7 +203,7 @@ class generic_obj
 };
 
 /// RefCount definition for generic_obj class
-using generic_objRef = std::shared_ptr<generic_obj>;
+using generic_objRef = refcount<generic_obj>;
 
 #if !HAVE_UNORDERED
 class GenericObjSorter : std::binary_function<generic_objRef, generic_objRef, bool>

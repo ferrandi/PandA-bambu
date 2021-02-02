@@ -73,7 +73,7 @@ struct GraphInfo
 /**
  * RefCount type definition of the GraphInfo class structure
  */
-using GraphInfoRef = std::shared_ptr<GraphInfo>;
-using GraphInfoConstRef = std::shared_ptr<const GraphInfo>;
+using GraphInfoRef = refcount<GraphInfo>;
+using GraphInfoConstRef = refcount<const GraphInfo>;
 
 #endif

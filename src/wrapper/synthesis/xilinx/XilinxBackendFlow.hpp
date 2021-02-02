@@ -131,6 +131,6 @@ class XilinxBackendFlow : public BackendFlow
    void ExecuteSynthesis() override;
 };
 /// Refcount definition for the class
-using XilinxBackendFlowRef = std::shared_ptr<XilinxBackendFlow>;
+using XilinxBackendFlowRef = refcount<XilinxBackendFlow>;
 
 #endif

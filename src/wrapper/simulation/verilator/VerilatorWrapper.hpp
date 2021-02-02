@@ -86,6 +86,6 @@ class VerilatorWrapper : public SimulationTool
    void Clean() const override;
 };
 /// Refcount definition for the VerilatorWrapper class
-using VerilatorWrapperRef = std::shared_ptr<VerilatorWrapper>;
+using VerilatorWrapperRef = refcount<VerilatorWrapper>;
 
 #endif

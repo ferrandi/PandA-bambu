@@ -86,6 +86,6 @@ class NanoXploreWrapper : public SynthesisTool
    std::string get_command_line(const DesignParametersRef& dp) const override = 0;
 };
 /// Refcount definition for the class
-using NanoXploreWrapperRef = std::shared_ptr<NanoXploreWrapper>;
+using NanoXploreWrapperRef = refcount<NanoXploreWrapper>;
 
 #endif

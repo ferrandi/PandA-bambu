@@ -87,7 +87,7 @@ BBWriter::BBWriter(const BBGraph* _g, CustomUnorderedSet<vertex> _annotated)
       annotated(std::move(_annotated))
 #if HAVE_HLS_BUILT
       ,
-      schedule(GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM) and GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index()) ?
+      schedule((GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM) and GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index())) ?
                    GetPointer<const HLS_manager>(_g->CGetBBGraphInfo()->AppM)->get_HLS(helper->get_function_index())->Rsch :
                    ScheduleConstRef())
 #endif

@@ -73,5 +73,5 @@ struct DiscrepancyFlexLexer : public yyFlexLexer
    }
 };
 
-using DiscrepancyFlexLexerRef = std::shared_ptr<DiscrepancyFlexLexer>;
+using DiscrepancyFlexLexerRef = refcount<DiscrepancyFlexLexer>;
 #endif

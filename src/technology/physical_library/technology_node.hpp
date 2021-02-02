@@ -363,8 +363,8 @@ struct technology_node
    static simple_indent PP;
 };
 /// refcount definition of the class
-using technology_nodeRef = std::shared_ptr<technology_node>;
-using technology_nodeConstRef = std::shared_ptr<const technology_node>;
+using technology_nodeRef = refcount<technology_node>;
+using technology_nodeConstRef = refcount<const technology_node>;
 
 /**
  * This class specifies the characteristic of a particular operation working on a given functional unit.

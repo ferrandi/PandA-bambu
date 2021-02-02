@@ -65,7 +65,7 @@ REF_FORWARD_DECL(structural_manager);
 REF_FORWARD_DECL(technology_node);
 REF_FORWARD_DECL(XMLDomParser);
 class xml_element;
-using fileIO_istreamRef = std::shared_ptr<std::istream>;
+using fileIO_istreamRef = refcount<std::istream>;
 
 #include "custom_map.hpp"
 #include "custom_set.hpp"
@@ -91,7 +91,7 @@ struct BackendStep
    /// output directory
    std::string out_dir;
 };
-using BackendStepRef = std::shared_ptr<BackendStep>;
+using BackendStepRef = refcount<BackendStep>;
 
 class BackendFlow
 {
@@ -276,6 +276,6 @@ class BackendFlow
    time_modelRef get_timing_results() const;
 };
 /// refcount definition of the class
-using BackendFlowRef = std::shared_ptr<BackendFlow>;
+using BackendFlowRef = refcount<BackendFlow>;
 
 #endif

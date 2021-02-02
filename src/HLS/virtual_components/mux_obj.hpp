@@ -141,6 +141,6 @@ class mux_obj : public generic_obj
 };
 
 /// RefCount definition for the class
-using mux_objRef = std::shared_ptr<mux_obj>;
+using mux_objRef = refcount<mux_obj>;
 
 #endif

@@ -309,7 +309,7 @@ struct structural_type_descriptor
 /**
  * RefCount type definition of the structural_type_descriptor class structure
  */
-using structural_type_descriptorRef = std::shared_ptr<structural_type_descriptor>;
+using structural_type_descriptorRef = refcount<structural_type_descriptor>;
 
 /**
  * Enumerative type for structural object classes, it is used with get_kind() function
@@ -640,7 +640,7 @@ class structural_object
 /**
  * RefCount type definition of the structural_object class structure
  */
-using structural_objectRef = std::shared_ptr<structural_object>;
+using structural_objectRef = refcount<structural_object>;
 
 /**
  * This class describes a port associated with a component or a channel.

@@ -407,6 +407,6 @@ class CWriter
    virtual void WriteBuiltinWaitCall();
 };
 
-using CWriterRef = std::shared_ptr<CWriter>;
+using CWriterRef = refcount<CWriter>;
 
 #endif
