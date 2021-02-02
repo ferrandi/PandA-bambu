@@ -87,7 +87,7 @@ struct DesignFlowDependenceInfo : public EdgeInfo
    DesignFlowDependenceInfo();
 
    /**
-    * Desturctor
+    * Destructor
     */
    ~DesignFlowDependenceInfo() override;
 };
