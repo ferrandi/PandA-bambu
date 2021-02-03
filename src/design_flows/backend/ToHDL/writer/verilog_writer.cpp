@@ -101,7 +101,7 @@ const char* verilog_writer::tokenNames[] = {
     /// some System Verilog 2005 keywords
     "alias", "always_comb", "always_ff", "always_latch", "assert", "assume", "before", "bind", "bins", "binsof", "bit", "break", "byte", "chandle", "class", "clocking", "const", "constraint", "context", "continue", "cover", "covergroup", "coverpoint",
     "cross", "dist", "do", "endclass", "endgroup",
-    "endsequence"
+    "endsequence",
     "endclocking",
     "endpackage", "endinterface", "endprogram", "endproperty", "enum", "expect", "export", "extends", "extern", "final", "first_match", "foreach", "forkjoin", "iff", "ignore_bins", "illegal_bins", "import", "intersect", "inside", "interface", "int",
     "join_any", "join_none", "local", "logic", "longint", "matches", "modport", "new", "null", "package", "packed", "priority", "program", "property", "protected", "pure", "rand", "randc", "randcase", "randomize", "randsequence", "ref", "return",
