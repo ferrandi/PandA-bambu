@@ -247,8 +247,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
             if(op0->get_kind() == realpart_expr_K || op0->get_kind() == imagpart_expr_K)
             {
                enum kind code0 = GET_NODE(GetPointer<unary_expr>(op0)->op)->get_kind();
-               if((code0 == bit_field_ref_K) || code0 == component_ref_K || code0 == indirect_ref_K || code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K || code0 == target_mem_ref_K ||
-                  code0 == target_mem_ref461_K)
+               if((code0 == bit_field_ref_K) || code0 == component_ref_K || code0 == indirect_ref_K || code0 == misaligned_indirect_ref_K || code0 == mem_ref_K || code0 == array_ref_K || code0 == target_mem_ref_K || code0 == target_mem_ref461_K)
                {
                   store_candidate = true;
                }

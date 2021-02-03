@@ -239,13 +239,14 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
 
 const std::vector<std::string> SplitString(const std::string&
 #ifndef __clang_analyzer__
-                                           input
+                                               input
 #endif
-                                           , const std::string&
+                                           ,
+                                           const std::string&
 #ifndef __clang_analyzer__
-                                           separators
+                                               separators
 #endif
-                                           )
+)
 {
    std::vector<std::string> ret_value;
 #ifndef __clang_analyzer__

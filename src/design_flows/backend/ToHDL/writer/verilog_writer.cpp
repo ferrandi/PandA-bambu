@@ -100,12 +100,10 @@ const char* verilog_writer::tokenNames[] = {
     "tran", "tranif0", "tranif1", "tri", "tri0", "tri1", "triand", "trior", "trireg", "units", "unsigned", "use", "uwire", "vectored", "wait", "wand", "weak0", "weak1", "while", "wire", "wone", "wor", "xnor", "xor",
     /// some System Verilog 2005 keywords
     "alias", "always_comb", "always_ff", "always_latch", "assert", "assume", "before", "bind", "bins", "binsof", "bit", "break", "byte", "chandle", "class", "clocking", "const", "constraint", "context", "continue", "cover", "covergroup", "coverpoint",
-    "cross", "dist", "do", "endclass", "endgroup",
-    "endsequence",
-    "endclocking",
-    "endpackage", "endinterface", "endprogram", "endproperty", "enum", "expect", "export", "extends", "extern", "final", "first_match", "foreach", "forkjoin", "iff", "ignore_bins", "illegal_bins", "import", "intersect", "inside", "interface", "int",
-    "join_any", "join_none", "local", "logic", "longint", "matches", "modport", "new", "null", "package", "packed", "priority", "program", "property", "protected", "pure", "rand", "randc", "randcase", "randomize", "randsequence", "ref", "return",
-    "sequence", "shortint", "shortreal", "solve", "static", "string", "struct", "super", "tagged", "this", "throughout", "timeprecision", "timeunit", "type", "typedef", "unique", "var", "virtual", "void", "wait_order", "wildcard", "with", "within",
+    "cross", "dist", "do", "endclass", "endgroup", "endsequence", "endclocking", "endpackage", "endinterface", "endprogram", "endproperty", "enum", "expect", "export", "extends", "extern", "final", "first_match", "foreach", "forkjoin", "iff",
+    "ignore_bins", "illegal_bins", "import", "intersect", "inside", "interface", "int", "join_any", "join_none", "local", "logic", "longint", "matches", "modport", "new", "null", "package", "packed", "priority", "program", "property", "protected", "pure",
+    "rand", "randc", "randcase", "randomize", "randsequence", "ref", "return", "sequence", "shortint", "shortreal", "solve", "static", "string", "struct", "super", "tagged", "this", "throughout", "timeprecision", "timeunit", "type", "typedef", "unique",
+    "var", "virtual", "void", "wait_order", "wildcard", "with", "within",
     /// some System Verilog 2009 keywords
     "accept_on", "checker", "endchecker", "eventually", "global", "implies", "let", "nexttime", "reject_on", "restrict", "s_always", "s_eventually", "s_nexttime", "s_until", "s_until_with", "strong", "sync_accept_on", "sync_reject_on", "unique0", "until",
     "until_with", "untyped", "weak",
