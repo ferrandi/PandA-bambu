@@ -2408,7 +2408,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          auto* ue = GetPointer<unary_expr>(node);
          res = res + " " + op + print_node(GET_INDEX_NODE(ue->op), v, vppf);
          auto* sa = GetPointer<ssa_name>(GET_NODE(ue->op));
-         if(sa and (sa->volatile_flag || GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K) and sa->var and GetPointer<var_decl>(GET_NODE(sa->var)))
+         if(sa and (sa->volatile_flag || (GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)) && (sa->var and GetPointer<var_decl>(GET_NODE(sa->var))))
          {
             res += " = 0";
          }

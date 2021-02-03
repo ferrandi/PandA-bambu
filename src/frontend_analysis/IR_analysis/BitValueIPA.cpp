@@ -589,7 +589,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         {
                            const auto def = ssa->CGetDefStmts();
                            THROW_ASSERT(not def.empty(), "ssa_name " + STR(GET_NODE(ssa_tn)) + " with id " + STR(ssa->index) + " has no def_stmts");
-                           if(def.size() == 1 and (GET_INDEX_NODE(ssa->var) == pd_id) and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+                           if((def.size() == 1) && (GET_INDEX_NODE(ssa->var) == pd_id) && ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) || ssa->volatile_flag))
                            {
                               // ssa is the first version of the parameter
                               THROW_ASSERT(prev_found == 0 or ssa->index == prev_found, "multiple ssa names are the first version of the same param\n"
@@ -629,7 +629,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         {
                            const auto def = ssa->CGetDefStmts();
                            THROW_ASSERT(not def.empty(), "ssa_name " + STR(GET_NODE(ssa_tn)) + " with id " + STR(ssa->index) + " has no def_stmts");
-                           if(def.size() == 1 and (GET_INDEX_NODE(ssa->var) == pd_id) and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+                           if((def.size() == 1) && (GET_INDEX_NODE(ssa->var) == pd_id) && ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) || ssa->volatile_flag))
                            {
                               // ssa is the first version of the parameter
                               THROW_ASSERT(prev_found == 0 or ssa->index == prev_found, "multiple ssa names are the first version of the same param\n"
