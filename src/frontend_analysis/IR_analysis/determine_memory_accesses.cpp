@@ -527,7 +527,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      if(not vd->scpe or GET_NODE(vd->scpe)->get_kind() == translation_unit_decl_K)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Not local");
-                        return false;
+                        return true;
                      }
                      if(vd->scpe)
                      {
