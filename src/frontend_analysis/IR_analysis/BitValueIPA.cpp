@@ -625,7 +625,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      {
                         const tree_nodeRef ssa_tn = GET_NODE(s.first);
                         const auto* ssa = GetPointer<const ssa_name>(ssa_tn);
-                        if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
+                        if((ssa->var != nullptr) and (GET_NODE(ssa->var)->get_kind() == parm_decl_K))
                         {
                            const auto def = ssa->CGetDefStmts();
                            THROW_ASSERT(not def.empty(), "ssa_name " + STR(GET_NODE(ssa_tn)) + " with id " + STR(ssa->index) + " has no def_stmts");
