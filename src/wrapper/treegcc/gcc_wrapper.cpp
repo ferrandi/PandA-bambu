@@ -2899,7 +2899,7 @@ void GccWrapper::ReadParameters()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining parameter " + parameter);
          const size_t found = parameter.find("no-");
          // if the token starts with "no-", the optimization has to be disabled
-         if(found != std::string::npos and found == 0)
+         if(found == 0)
          {
             std::string str = parameter.substr(found + std::string("no-").size());
             optimization_flags[str] = false;
