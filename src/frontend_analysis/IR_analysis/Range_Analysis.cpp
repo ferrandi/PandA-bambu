@@ -1336,14 +1336,20 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
    }
    else
    {
+#ifndef NDEBUG
       bw_t newBW = interval->getBitWidth();
+#else
+      bw_t newBW;
+#endif
       if(interval->isFullSet())
       {
          return ut_None;
       }
       if(interval->isConstant())
       {
+#ifndef NDEBUG
          newBW = 0U;
+#endif
       }
       else if(!interval->isReal())
       {
@@ -1387,7 +1393,6 @@ int VarNode::updateIR(const tree_managerRef& TM, const tree_manipulationRef& tre
       //                               "Current range " + superRange->ToString() + "<" + STR(superBW) + ">" + " was better than computed range " + interval->ToString() + "<" + STR(newBW) + "> for " + SSA->ToString() + " " +
       //                                   GET_CONST_NODE(SSA->type)->get_kind_text() + "<" + SSA->bit_values + ">");
       //                interval = superRange;
-      //                newBW = superBW;
       //                return true;
       //             }
       //          }
