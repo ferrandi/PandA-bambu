@@ -66,9 +66,9 @@ REF_FORWARD_DECL(structural_object);
 /// Channel line  selector
 #define CHANNEL_SELECTOR 4
 /// All lines selector
-#define ALL_LINES_SELECTOR DATA_SELECTOR | CLOCK_SELECTOR | CHANNEL_SELECTOR
+#define ALL_LINES_SELECTOR (DATA_SELECTOR | CLOCK_SELECTOR | CHANNEL_SELECTOR)
 /// All but clock lines selector
-#define PURE_DATA_SELECTOR DATA_SELECTOR | CHANNEL_SELECTOR
+#define PURE_DATA_SELECTOR (DATA_SELECTOR | CHANNEL_SELECTOR)
 
 /**
  * Information associated with a circuit graph node.

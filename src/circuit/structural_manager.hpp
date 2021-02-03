@@ -58,7 +58,7 @@
 #include <iosfwd> // for ostream
 #include <string>
 
-#define TREENODE_CHECK -1
+#define TREENODE_CHECK (-1)
 
 /**
  * @name Forward declarations.

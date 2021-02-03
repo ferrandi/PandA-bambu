@@ -64,7 +64,7 @@ REF_FORWARD_DECL(target_device);
 class xml_element;
 
 /// macro used to convert the functional unit name and the library in an unique string.
-#define ENCODE_FU_LIB(fu_name, library) fu_name + ":" + library
+#define ENCODE_FU_LIB(fu_name, library) ((fu_name) + ":" + (library))
 
 /**
  * @class HLS_constraints

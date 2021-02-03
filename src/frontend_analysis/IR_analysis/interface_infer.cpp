@@ -94,7 +94,7 @@
 #include "language_writer.hpp"
 
 #define EPSILON 0.000000001
-#define ENCODE_FDNAME(argName_string, MODE, interfaceType) (argName_string + STR_CST_interface_parameter_keyword + (MODE) + interfaceType)
+#define ENCODE_FDNAME(argName_string, MODE, interfaceType) ((argName_string) + STR_CST_interface_parameter_keyword + (MODE) + (interfaceType))
 
 const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> interface_infer::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {

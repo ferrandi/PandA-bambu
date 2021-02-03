@@ -92,15 +92,15 @@ REF_FORWARD_DECL(bloc);
 
 #define MIN_VALUE_BIT_SIZE 0
 #define MIN_VALUE_UNSIGNED_INT 0
-#define MIN_VALUE_INT -2147483648LL
+#define MIN_VALUE_INT (-2147483648LL)
 #define MIN_VALUE_LONG_LONG_INT 0
 #define MIN_VALUE_UNSIGNED_LONG_LONG_INT 0
 
-#define MAX_VALUE_BIT_SIZE -1
-#define MAX_VALUE_UNSIGNED_INT -1
+#define MAX_VALUE_BIT_SIZE (-1)
+#define MAX_VALUE_UNSIGNED_INT (-1)
 #define MAX_VALUE_INT 2147483647
-#define MAX_VALUE_LONG_LONG_INT -1
-#define MAX_VALUE_UNSIGNED_LONG_LONG_INT -1
+#define MAX_VALUE_LONG_LONG_INT (-1)
+#define MAX_VALUE_UNSIGNED_LONG_LONG_INT (-1)
 
 /**
  * This class creates a layer to add nodes and to manipulate the tree_nodes manager.

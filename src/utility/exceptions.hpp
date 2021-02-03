@@ -289,7 +289,7 @@ inline T& throw_error(const T& t, const char* expression, const char* pp, const 
 
 /// helper function used to throw a warning in a standard way: though it uses PRINT_DBG_MEX,
 /// the debug level used is such that the message is always printed
-#define THROW_WARNING(str_expr) ((error_on_warning) ? ((void)(THROW_ERROR(str_expr))) : ((void)(std::cerr << std::string("Warning: ") + str_expr << std::endl)))
+#define THROW_WARNING(str_expr) ((error_on_warning) ? ((void)(THROW_ERROR(str_expr))) : ((void)(std::cerr << std::string("Warning: ") + (str_expr) << std::endl)))
 
 /// helper function to mark points not yet implemented
 #define NOT_YET_IMPLEMENTED() ((error_on_warning) ? ((void)(THROW_ERROR(std::string("Not yet implemented")))) : (throw_warning((std::string("Not yet implemented")), __PRETTY_FUNCTION__, __FILE__, __LINE__)))

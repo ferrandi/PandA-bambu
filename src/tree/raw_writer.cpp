@@ -105,7 +105,7 @@
  * Macro which writes on an output stream a string with its length. STRING_CST case
  */
 #define WRITE_STRGLNGT_STRING(os, field) \
-   (os << " "                            \
+   ((os) << " "                            \
        << "strg: \"" << (field) << "\" lngt: " << (field).size() + 1)
 
 /**
