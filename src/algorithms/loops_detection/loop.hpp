@@ -256,7 +256,7 @@ class Loop
     * @param g is the basic block control flow graph
     * @param header is the header basic block
     */
-   Loop(const BBGraphRef g, vertex header);
+   Loop(const BBGraphRef _bb_graph, vertex _header_block);
 
    /**
     * returns the loop id

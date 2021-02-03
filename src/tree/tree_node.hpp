@@ -3800,7 +3800,7 @@ struct gimple_phi : public gimple_node
     * @param def_edge is the def edge to be removed
     * @param update_uses specifies if the uses have to be updated
     */
-   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& def_edge);
+   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_removed);
 
    /**
     * Add a defedge

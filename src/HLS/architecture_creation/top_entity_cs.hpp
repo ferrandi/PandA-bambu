@@ -60,7 +60,7 @@ class top_entity_cs : public top_entity
    void add_context_switch_port_kernel();
 
  public:
-   top_entity_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION);
+   top_entity_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION);
 
    /**
     * Destructor

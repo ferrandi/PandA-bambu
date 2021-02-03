@@ -65,7 +65,7 @@ class HLSBitValue : public HLS_step
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   HLSBitValue(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   HLSBitValue(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

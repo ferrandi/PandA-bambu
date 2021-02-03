@@ -69,7 +69,7 @@ class datapath_creator : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of algorithm used to create a datapath
     */
-   datapath_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_factory);
+   datapath_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);
 
    /**
     * Destructor.

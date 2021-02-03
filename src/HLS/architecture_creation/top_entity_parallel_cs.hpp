@@ -67,7 +67,7 @@ class top_entity_parallel_cs : public top_entity
    void resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW);
 
  public:
-   top_entity_parallel_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);
+   top_entity_parallel_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);
 
    /**
     * Destructor

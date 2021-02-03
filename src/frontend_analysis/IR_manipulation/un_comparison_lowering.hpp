@@ -63,7 +63,7 @@ class UnComparisonLowering : public FunctionFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param Param is the set of the parameters
     */
-   UnComparisonLowering(const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   UnComparisonLowering(const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

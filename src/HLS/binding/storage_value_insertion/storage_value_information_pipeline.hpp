@@ -63,14 +63,14 @@ class StorageValueInformationPipeline : public StorageValueInformation
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   bool is_a_storage_value(vertex curr_vertex, unsigned int var_index) override;
+   bool is_a_storage_value(vertex state, unsigned int var_index) override;
 
    /**
     * Returns the index of the storage value associated with the variable in a given vertex
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) override;
+   unsigned int get_storage_value_index(vertex state, unsigned int var_index) override;
 
    /**
     * assign a storage value to a couple state-variable

@@ -3506,7 +3506,7 @@ class BinaryOpNode : public OpNode
       return BO->getValueId() == OperationId::BinaryOpId;
    }
 
-   static RangeRef evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool isSigned);
+   static RangeRef evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool opSigned);
 
    /// Return the opcode of the operation.
    kind getOpcode() const

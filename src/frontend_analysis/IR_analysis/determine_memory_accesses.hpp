@@ -93,7 +93,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * @param function_id is the node id of the function analyzed.
     * @param design_flow_manager is the design flow manager
     */
-   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int function_idi, const DesignFlowManagerConstRef design_flow_manager);
+   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

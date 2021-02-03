@@ -68,7 +68,7 @@ class CTestbenchExecution : public HLS_step
     */
    CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const std::string& testbench_basename = "values");
 
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type);
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
 
    virtual DesignFlowStep_Status Exec();
 

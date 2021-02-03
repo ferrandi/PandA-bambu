@@ -182,7 +182,7 @@ class SequenceAsnType : public AsnType
    /**
     * Constructor
     */
-   explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef>> element_type_list);
+   explicit SequenceAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields);
 };
 
 class SequenceOfAsnType : public AsnType
@@ -209,7 +209,7 @@ class SetAsnType : public AsnType
    /**
     * Constructor
     */
-   explicit SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> element_type_list);
+   explicit SetAsnType(std::list<std::pair<std::string, AsnTypeRef>> _fields);
 };
 
 class SetOfAsnType : public AsnType

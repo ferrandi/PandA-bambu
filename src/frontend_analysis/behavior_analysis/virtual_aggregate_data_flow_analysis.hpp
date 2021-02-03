@@ -62,7 +62,7 @@ class VirtualAggregateDataFlowAnalysis : public DataDependenceComputation
     * @param function_index is the index of the function
     * @param parameters is the set of the parameters
     */
-   VirtualAggregateDataFlowAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const unsigned int function_id, const ParameterConstRef parameters);
+   VirtualAggregateDataFlowAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const unsigned int _function_index, const ParameterConstRef parameters);
 
    /**
     *  Destructor

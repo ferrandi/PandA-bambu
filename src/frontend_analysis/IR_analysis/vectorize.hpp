@@ -132,7 +132,7 @@ class Vectorize : public FunctionFrontendFlowStep
     * @param created_statements is the list of statements created during transformation
     * @return the tree node of the transformed node
     */
-   unsigned int Transform(const unsigned int tree_node_index, const size_t parallel_degree, const size_t scalar_index, std::list<tree_nodeRef>& created_statements, std::vector<tree_nodeRef>& created_phis);
+   unsigned int Transform(const unsigned int tree_node_index, const size_t parallel_degree, const size_t scalar_index, std::list<tree_nodeRef>& new_stmt_list, std::vector<tree_nodeRef>& new_phi_list);
 
    /**
     * Duplicate increment statement and update uses of defined variable when necessary

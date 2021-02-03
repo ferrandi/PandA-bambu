@@ -452,7 +452,7 @@ struct operation : public technology_node
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device) override;
 
    /**
     * Add a operation node to an xml tree.
@@ -673,7 +673,7 @@ struct functional_unit : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* node, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device) override;
 
 #if HAVE_BOOLEAN_PARSER_BUILT
    /**
@@ -778,7 +778,7 @@ struct functional_unit_template : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param, const target_deviceRef device) override;
 
    /**
     * Add a functional unit to an xml tree.

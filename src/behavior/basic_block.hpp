@@ -288,7 +288,7 @@ class BBGraphsCollection : public graphs_collection
     * @param bb_node_info is the info to be associated with the graph
     * @param parameters is the set of input parameters
     */
-   BBGraphsCollection(const BBGraphInfoRef bb_node_info, const ParameterConstRef parameters);
+   BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -329,7 +329,7 @@ struct BBGraph : public graph
     * @param BBGraphsCollection is the bulk graph.
     * @param selector is the selector used to filter the bulk graph.
     */
-   BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector);
+   BBGraph(const BBGraphsCollectionRef _g, int selector);
 
    /**
     * Sub-graph constructor.
@@ -337,7 +337,7 @@ struct BBGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, CustomUnorderedSet<vertex>& sub);
+   BBGraph(const BBGraphsCollectionRef _g, int selector, CustomUnorderedSet<vertex>& sub);
 
    /**
     * Destructor

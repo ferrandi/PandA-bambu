@@ -602,7 +602,7 @@ class tree_manipulation
     * @param block is the basic block in which new statement has to be added
     * @return the ssa in the left part of the created statement
     */
-   tree_nodeRef ExtractCondition(const tree_nodeRef& gc, const blocRef& block) const;
+   tree_nodeRef ExtractCondition(const tree_nodeRef& condition, const blocRef& block) const;
 
    /**
     * Create a nop_expr to perform a conversion

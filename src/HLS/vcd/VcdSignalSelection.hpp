@@ -174,7 +174,7 @@ class VcdSignalSelection : public HLS_step
    /**
     * Constructor
     */
-   VcdSignalSelection(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   VcdSignalSelection(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

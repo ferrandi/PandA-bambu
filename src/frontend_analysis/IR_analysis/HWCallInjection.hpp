@@ -53,7 +53,7 @@ class HWCallInjection : public FunctionFrontendFlowStep
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
-   bool isHardwareCall(tree_nodeRef FD);
+   bool isHardwareCall(tree_nodeRef expr);
 
    void buildBuiltinCall(const blocRef block, const tree_nodeRef stmt);
 

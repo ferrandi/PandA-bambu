@@ -153,7 +153,7 @@ class flopoco_wrapper
     * @param FU_file is the name of the file, without extension, where the VHDL code should be put (i.e. "FPAdder", not "FPAdder.vhdl")
     * @param pipe_parameter is a string defining the design frequency, in case is not empty
     */
-   int InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& FU_file, const std::string& pipe_parameter);
+   int InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& filename, const std::string& pipe_parameter);
 
    /**
     * Helper methods for automatic VHDL code generation:

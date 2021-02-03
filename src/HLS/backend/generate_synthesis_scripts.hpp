@@ -56,7 +56,7 @@ class GenerateSynthesisScripts : public HLS_step
    /**
     * Constructor.
     */
-   GenerateSynthesisScripts(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   GenerateSynthesisScripts(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

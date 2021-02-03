@@ -258,7 +258,7 @@ class CallGraphManager
     * @param e is the edge in the call graph
     * @param call_id is the call graph point to remove
     */
-   void RemoveCallPoint(EdgeDescriptor e, const unsigned int call_id);
+   void RemoveCallPoint(EdgeDescriptor e, const unsigned int callid);
 
    /**
     * Replaces a call point.
@@ -266,7 +266,7 @@ class CallGraphManager
     * @param old_call_id is the old call tree node id
     * @param new_call_id is the new call tree node id
     */
-   void ReplaceCallPoint(const EdgeDescriptor e, const unsigned int old_call_id, const unsigned int new_call_id);
+   void ReplaceCallPoint(const EdgeDescriptor e, const unsigned int orig, const unsigned int repl);
 
    /**
     * Returns true is there is at least a reachable function that is
@@ -310,13 +310,13 @@ struct CalledFunctionsVisitor : public boost::default_dfs_visitor
     */
    CalledFunctionsVisitor(const bool allow_recursive_functions, const CallGraphManager* call_graph_manager, CustomOrderedSet<unsigned int>& body_functions, CustomOrderedSet<unsigned int>& library_functions);
 
-   void back_edge(const EdgeDescriptor& edge, const CallGraph& call_graph);
+   void back_edge(const EdgeDescriptor& edge, const CallGraph& g);
 
    /**
     * Function called when a vertex has been finished
     * @param u is the vertex
     * @param call_graph is the call graph
     */
-   void finish_vertex(const vertex& u, const CallGraph& call_graph);
+   void finish_vertex(const vertex& u, const CallGraph& g);
 };
 #endif

@@ -140,7 +140,7 @@ class structural_manager
     * @param top is the top component from which the graph is built.
     * @param og is the bulk graph where the graph is stored.
     */
-   void build_graph(const structural_objectRef& top, graphs_collection* og);
+   void build_graph(const structural_objectRef& top, graphs_collection* bg);
 
  public:
    /**
@@ -150,7 +150,7 @@ class structural_manager
    explicit structural_manager(const ParameterConstRef Param);
 
 #if HAVE_BAMBU_BUILT || HAVE_KOALA_BUILT
-   void set_top_info(const std::string& id, const technology_managerRef& TM, const std::string& Library = "");
+   void set_top_info(const std::string& id, const technology_managerRef& LM, const std::string& Library = "");
 #endif
 
    /**
@@ -218,7 +218,7 @@ class structural_manager
     * @param port_type is the type of the port.
     * @param treenode is the treenode of the port.
     */
-   structural_objectRef add_port(std::string id, port_o::port_direction pdir, structural_objectRef owner, structural_type_descriptorRef port_type, unsigned int treenode = 0);
+   structural_objectRef add_port(std::string id, port_o::port_direction pdir, structural_objectRef owner, structural_type_descriptorRef type_descr, unsigned int treenode = 0);
 
    /**
     * Change the direction of the port
@@ -259,7 +259,7 @@ class structural_manager
     * Disconnects a member from from_signal and reconnects it to to_signal.
     * Signals must be of compatible types and owned by the same object
     */
-   void reconnect_signal_member(structural_objectRef& port, structural_objectRef& from_signal, structural_objectRef& to_signal);
+   void reconnect_signal_member(structural_objectRef& member, structural_objectRef& from_signal, structural_objectRef& to_signal);
 
    /**
     * Create a new constant;
@@ -330,7 +330,7 @@ class structural_manager
     * @param dt is the type of the not-parsed functionality.
     * @param descr is the description of the functionality.
     */
-   void add_NP_functionality(structural_objectRef owner, NP_functionality::NP_functionaly_type dt, std::string functionality_description);
+   void add_NP_functionality(structural_objectRef cir, NP_functionality::NP_functionaly_type dt, std::string functionality_description);
 
    /**
     * Specify a parameter for the top module

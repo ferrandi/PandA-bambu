@@ -69,6 +69,6 @@ struct AadlParserNode
     * @param os is the output stream
     * @param to_be_printed is the node to be printed
     */
-   friend std::ostream& operator<<(std::ostream& os, const AadlParserNode& to_be_printed);
+   friend std::ostream& operator<<(std::ostream& os, const AadlParserNode& aadl_parser_node);
 };
 #endif

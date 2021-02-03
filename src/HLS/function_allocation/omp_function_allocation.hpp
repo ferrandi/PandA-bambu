@@ -50,7 +50,7 @@ class OmpFunctionAllocation : public fun_dominator_allocation
    /**
     * Constructor
     */
-   OmpFunctionAllocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   OmpFunctionAllocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

@@ -184,7 +184,7 @@ class BackendFlow
     * @param flow_name is a string representing the name of the flow
     * @param target is the data structure containing all the information about the target of the synthesis
     */
-   BackendFlow(const ParameterConstRef Param, std::string flow_name, const target_managerRef target);
+   BackendFlow(const ParameterConstRef Param, std::string flow_name, const target_managerRef _manager);
 
    /**
     * Destructor

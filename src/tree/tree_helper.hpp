@@ -103,7 +103,7 @@ class tree_helper
     * @param before is true if we are computing types which must be declared before index
     * @return the types to be declared
     */
-   static const CustomUnorderedSet<unsigned int> RecursiveGetTypesToBeDeclared(const tree_managerConstRef TM, const unsigned int index, const bool recursive, const bool without_transformation, const bool before);
+   static const CustomUnorderedSet<unsigned int> RecursiveGetTypesToBeDeclared(const tree_managerConstRef TM, const unsigned int index, const bool recursion, const bool without_transformation, const bool before);
 
    /**
     * recursively compute the references to the ssa_name variables used in a statement
@@ -467,7 +467,7 @@ class tree_helper
     * @param TM is the tree_manager
     * @param index is the treenode index
     */
-   static bool is_scalar(const tree_managerConstRef& TM, const unsigned int index);
+   static bool is_scalar(const tree_managerConstRef& TM, const unsigned int var);
 
    static bool is_a_variable(const tree_managerConstRef& TM, const unsigned int index);
 

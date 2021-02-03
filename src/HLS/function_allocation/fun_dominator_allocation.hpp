@@ -56,7 +56,7 @@ class fun_dominator_allocation : public function_allocation
    /**
     * Constructor
     */
-   fun_dominator_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
+   fun_dominator_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::DOMINATOR_FUNCTION_ALLOCATION);
 
    /**
     * Destructor
