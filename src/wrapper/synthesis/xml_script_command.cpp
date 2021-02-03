@@ -791,7 +791,7 @@ xml_ite_block_t::xml_ite_block_t(const xml_element* element) : xml_script_node_t
                }
                xml_script_node_tRef node = xml_script_node_tRef(xml_script_node_t::create(el));
                elseNodes.push_back(node);
-               elseFound=true;
+               elseFound = true;
             }
          }
          else

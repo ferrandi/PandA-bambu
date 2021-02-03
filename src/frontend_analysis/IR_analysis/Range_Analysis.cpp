@@ -2545,7 +2545,7 @@ static bool enable_ternary = false; // TODO: disable because of problem with red
 static bool enable_bit_phi = true;
 
 #define OPERATION_OPTION(opts, X)                                                                          \
-   if((opts).erase("no_" #X))                                                                                \
+   if((opts).erase("no_" #X))                                                                              \
    {                                                                                                       \
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: " #X " operation disabled"); \
       enable_##X = false;                                                                                  \

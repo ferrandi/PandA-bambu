@@ -183,9 +183,8 @@ class parametric_list_based : public Scheduling
     */
    void compute_starting_ending_time_asap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained, fu_bindingRef res_binding,
                                           const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
-   void compute_starting_ending_time_alap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& starting_time, double& ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles,
-                                          bool& cannot_be_chained, fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time,
-                                          CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
+   void compute_starting_ending_time_alap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& starting_time, double& ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles, bool& cannot_be_chained,
+                                          fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
 
    /**
     * update starting and ending time by moving candidate_v as late as possible without increasing the whole latency

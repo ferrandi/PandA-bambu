@@ -1226,7 +1226,7 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
          return_value += " __attribute__((packed))";
       }
       if(dn && ((dn->orig and (GetPointer<var_decl>(curr_tn)) && (GetPointer<var_decl>(GET_NODE(dn->orig))) && (GetPointer<var_decl>(curr_tn)->algn != GetPointer<var_decl>(GET_NODE(dn->orig))->algn)) ||
-                 ((GetPointer<var_decl>(curr_tn)) && (GetPointer<var_decl>(curr_tn)->algn == 128))))
+                ((GetPointer<var_decl>(curr_tn)) && (GetPointer<var_decl>(curr_tn)->algn == 128))))
       {
          return_value += " __attribute__ ((aligned (" + boost::lexical_cast<std::string>(GetPointer<var_decl>(curr_tn)->algn / 8) + "))) ";
       }

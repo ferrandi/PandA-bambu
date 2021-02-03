@@ -52,17 +52,17 @@
 /// return the id given a super class or a class member
 #define GETID(field) field##_ID
 /// macro used to visit the super class
-#define VISIT_SC(mask, superclass, method)    \
+#define VISIT_SC(mask, superclass, method)      \
    if(((1 << GETID(superclass)) & (mask)) == 0) \
    this->superclass::method
 /// macro used to visit a non null member
 #define VISIT_MEMBER_NAMED(ref_obj_name, mask, ref_obj, method) \
-   if(((1 << GETID(ref_obj_name)) & (mask)) == 0 && (ref_obj))      \
+   if(((1 << GETID(ref_obj_name)) & (mask)) == 0 && (ref_obj))  \
    (ref_obj)->method
 #define VISIT_MEMBER(mask, ref_obj, method) VISIT_MEMBER_NAMED(ref_obj, mask, ref_obj, method)
 /// macro used to traverse non empty sequences
 #define SEQ_VISIT_MEMBER(mask, seq, seqbasetype, method, visitor_type, visitor_obj) \
-   if(((1 << GETID(seq)) & (mask)) == 0 && !(seq).empty())                              \
+   if(((1 << GETID(seq)) & (mask)) == 0 && !(seq).empty())                          \
    std::for_each((seq).begin(), (seq).end(), for_each_functor<seqbasetype, visitor_type>(&seqbasetype::method, visitor_obj))
 /// constant used to avoid member visit
 #define NO_VISIT ~0U
