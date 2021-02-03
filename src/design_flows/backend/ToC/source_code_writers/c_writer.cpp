@@ -1453,7 +1453,7 @@ void CWriter::DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declare
          return false;
       }
       auto* sa = GetPointer<ssa_name>(node);
-      if(sa and (sa->volatile_flag || GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K) and sa->var and GET_NODE(sa->var)->get_kind() == parm_decl_K)
+      if(sa && (sa->volatile_flag || (GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)) && sa->var && (GET_NODE(sa->var)->get_kind() == parm_decl_K))
       {
          return false;
       }

@@ -54,7 +54,7 @@
 /// Header include
 #include "math_function.hpp"
 
-long double get_point_line_distance(const AugmentedVector<long double>& point, AugmentedVector<long double>& line_point1, AugmentedVector<long double>& line_point2)
+long double get_point_line_distance(const AugmentedVector<long double>& point, const AugmentedVector<long double>& line_point1, const AugmentedVector<long double>& line_point2)
 {
    long double t;
    long double dq = 0;
