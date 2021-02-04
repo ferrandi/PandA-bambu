@@ -170,7 +170,7 @@ class HDL_manager
     * @param device is the data structure containing information about the target device
     * @param parameters is the data structure containing all the parameters
     */
-   HDL_manager(const HLS_managerRef hls_manager, const target_deviceRef device, const ParameterConstRef parameters);
+   HDL_manager(const HLS_managerRef _HLSMgr, const target_deviceRef device, const ParameterConstRef parameters);
 
    /**
     * Constructor
@@ -194,12 +194,12 @@ class HDL_manager
     * @param the created files (file_name + other files)
     * @param the created aux files
     */
-   void hdl_gen(const std::string& file_name, const std::list<structural_objectRef>& cirs, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
+   void hdl_gen(const std::string& filename, const std::list<structural_objectRef>& cirs, bool equation, std::list<std::string>& hdl_files, std::list<std::string>& aux_files);
 
    /**
     * Converts a generic string to a language compliant identifier
     */
-   static std::string convert_to_identifier(const language_writer* lan, const std::string& id);
+   static std::string convert_to_identifier(const language_writer* writer, const std::string& id);
 
    /**
     * Converts a generic string to a language compliant identifier

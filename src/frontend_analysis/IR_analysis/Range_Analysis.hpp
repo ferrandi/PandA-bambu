@@ -95,7 +95,7 @@ class RangeAnalysis : public ApplicationFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   RangeAnalysis(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   RangeAnalysis(const application_managerRef AM, const DesignFlowManagerConstRef dfm, const ParameterConstRef parameters);
 
    /**
     *  Destructor

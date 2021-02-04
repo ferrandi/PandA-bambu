@@ -767,8 +767,8 @@ void CheckSystemType::recursive_examinate(const tree_nodeRef& curr_tn, const uns
          bool is_system;
          std::string include = std::get<0>(behavioral_helper->get_definition(index, is_system));
 #if HAVE_BAMBU_BUILT
-         if(include.find("etc/libbambu") != std::string::npos or include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) != std::string::npos or
-            include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include")) != std::string::npos or (ty->name and GetPointer<const type_decl>(GET_CONST_NODE(ty->name)) and GetPointer<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag))
+         if((include.find("etc/libbambu") != std::string::npos) || (include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) != std::string::npos) ||
+            (include.find(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include")) != std::string::npos) || (ty->name && (GetPointer<const type_decl>(GET_CONST_NODE(ty->name))) && (GetPointer<const type_decl>(GET_CONST_NODE(ty->name))->libbambu_flag)))
          {
             ty->libbambu_flag = true;
          }
@@ -1068,5 +1068,9 @@ void CheckSystemType::getRealInclName(const std::string& include, std::string& r
 
 bool CheckSystemType::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return not already_executed;
 }

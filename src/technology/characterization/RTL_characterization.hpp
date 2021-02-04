@@ -175,7 +175,7 @@ class RTLCharacterization : public FunctionalUnitStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   RTLCharacterization(const target_managerRef target, const std::string& component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   RTLCharacterization(const target_managerRef target, const std::string& _cells, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

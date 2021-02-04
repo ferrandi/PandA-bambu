@@ -243,7 +243,7 @@ class network_flow
     * Constructor of the class.
     * @param debug_level_ is the debug level
     */
-   explicit network_flow(int debug_level_);
+   explicit network_flow(int _debug_level);
 
    /**
     * Destructor of the class.

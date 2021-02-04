@@ -218,6 +218,7 @@ vertex Loop::primary_landing_pad() const
             // If candidate has a single successor which is test_candidate, then test_candidate is our
             // new candidate
             graph::out_edge_iterator e_iter, e_iter_end;
+            first = false;
             for(boost::tie(e_iter, e_iter_end) = boost::out_edges(candidate, *g); e_iter != e_iter_end; ++e_iter)
             {
                if(boost::target(*e_out_iter, *g) != test_candidate)

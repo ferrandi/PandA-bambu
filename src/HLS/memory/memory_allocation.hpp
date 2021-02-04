@@ -154,7 +154,7 @@ class memory_allocation : public HLS_step
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the algorithm to be used
     */
-   memory_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+   memory_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
                      const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**

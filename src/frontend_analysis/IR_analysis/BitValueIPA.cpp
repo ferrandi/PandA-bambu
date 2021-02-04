@@ -158,7 +158,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
+   const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    CustomOrderedSet<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
    auto addressed_functions = CGMan->GetAddressedFunctions();
    root_fun_ids.insert(addressed_functions.begin(), addressed_functions.end());
@@ -182,7 +182,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
    // ---- initialization phase ----
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Initialize data structures");
-   for(unsigned int fu_id : reached_body_fun_ids)
+   for(auto fu_id : reached_body_fun_ids)
    {
       const std::string fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
@@ -589,7 +589,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         {
                            const auto def = ssa->CGetDefStmts();
                            THROW_ASSERT(not def.empty(), "ssa_name " + STR(GET_NODE(ssa_tn)) + " with id " + STR(ssa->index) + " has no def_stmts");
-                           if(def.size() == 1 and (GET_INDEX_NODE(ssa->var) == pd_id) and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+                           if((def.size() == 1) && (GET_INDEX_NODE(ssa->var) == pd_id) && ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) || ssa->volatile_flag))
                            {
                               // ssa is the first version of the parameter
                               THROW_ASSERT(prev_found == 0 or ssa->index == prev_found, "multiple ssa names are the first version of the same param\n"
@@ -625,11 +625,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      {
                         const tree_nodeRef ssa_tn = GET_NODE(s.first);
                         const auto* ssa = GetPointer<const ssa_name>(ssa_tn);
-                        if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
+                        if((ssa->var != nullptr) and (GET_NODE(ssa->var)->get_kind() == parm_decl_K))
                         {
                            const auto def = ssa->CGetDefStmts();
                            THROW_ASSERT(not def.empty(), "ssa_name " + STR(GET_NODE(ssa_tn)) + " with id " + STR(ssa->index) + " has no def_stmts");
-                           if(def.size() == 1 and (GET_INDEX_NODE(ssa->var) == pd_id) and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+                           if((def.size() == 1) && (GET_INDEX_NODE(ssa->var) == pd_id) && ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) || ssa->volatile_flag))
                            {
                               // ssa is the first version of the parameter
                               THROW_ASSERT(prev_found == 0 or ssa->index == prev_found, "multiple ssa names are the first version of the same param\n"

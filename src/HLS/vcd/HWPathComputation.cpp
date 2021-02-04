@@ -88,8 +88,8 @@ class HWCallPathCalculator : public boost::default_dfs_visitor
 
    ~HWCallPathCalculator();
 
-   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
-   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
+   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg);
+   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg);
    void finish_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph&);
    void examine_edge(const EdgeDescriptor& e, const UnfoldedCallGraph& cg);
 };

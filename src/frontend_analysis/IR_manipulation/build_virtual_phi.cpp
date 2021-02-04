@@ -699,5 +699,9 @@ void BuildVirtualPhi::Initialize()
 
 bool BuildVirtualPhi::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }

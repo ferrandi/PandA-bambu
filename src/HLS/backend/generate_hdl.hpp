@@ -60,7 +60,7 @@ class generate_hdl : public HLS_step
    /**
     * Constructor.
     */
-   generate_hdl(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   generate_hdl(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

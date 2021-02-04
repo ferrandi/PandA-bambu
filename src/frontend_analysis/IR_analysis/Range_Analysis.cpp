@@ -2550,7 +2550,7 @@ static bool enable_ternary = false; // TODO: disable because of problem with red
 static bool enable_bit_phi = true;
 
 #define OPERATION_OPTION(opts, X)                                                                          \
-   if(opts.erase("no_" #X))                                                                                \
+   if((opts).erase("no_" #X))                                                                              \
    {                                                                                                       \
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Range analysis: " #X " operation disabled"); \
       enable_##X = false;                                                                                  \
@@ -2560,7 +2560,7 @@ static bool enable_bit_phi = true;
    {                                           \
       return RangeRef(new Range(Regular, bw)); \
    }
-#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? stdResult : getRangeFor(var, Regular)
+#define RESULT_DISABLED_OPTION(x, var, stdResult) enable_##x ? (stdResult) : getRangeFor(var, Regular)
 #else
 
 #define OPERATION_OPTION(opts, X) void(0)
@@ -3511,7 +3511,7 @@ class BinaryOpNode : public OpNode
       return BO->getValueId() == OperationId::BinaryOpId;
    }
 
-   static RangeRef evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool isSigned);
+   static RangeRef evaluate(kind opcode, bw_t bw, const RangeConstRef& op1, const RangeConstRef& op2, bool opSigned);
 
    /// Return the opcode of the operation.
    kind getOpcode() const
@@ -7329,7 +7329,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 #if defined(EARLY_DEAD_CODE_RESTART) || !defined(NDEBUG)
    const auto TM = AppM->get_tree_manager();
 #endif
-   auto rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
 
 #ifdef EARLY_DEAD_CODE_RESTART
    for(const auto f : rb_funcs)

@@ -406,5 +406,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
 
 bool HWCallInjection::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return not already_executed;
 }

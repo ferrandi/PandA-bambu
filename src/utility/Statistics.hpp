@@ -105,7 +105,7 @@ boost::math::lognormal VarSum(boost::math::lognormal x, boost::math::lognormal y
  * @param y is the second random variable.
  * @param p is the correlation between x and y.
  */
-boost::math::lognormal VarSum(boost::math::lognormal x, boost::math::lognormal y, double p);
+boost::math::lognormal VarSum(boost::math::lognormal s1, boost::math::lognormal s2, double p);
 
 /**
  * @return return the max of two boost::math::normal random variables.

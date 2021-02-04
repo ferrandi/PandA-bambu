@@ -67,7 +67,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
     * Write extra information on the given statement vertex, before the
     * statement itself
     */
-   void writePreInstructionInfo(const FunctionBehaviorConstRef FB, const vertex v) override;
+   void writePreInstructionInfo(const FunctionBehaviorConstRef FB, const vertex statement) override;
 
    /**
     * Write extra information on the given statement vertex, after the

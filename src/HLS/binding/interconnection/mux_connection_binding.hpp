@@ -170,7 +170,7 @@ class mux_connection_binding : public conn_binding_creator
     * Main constructor
     * @param design_flow_manager is the design flow manager
     */
-   mux_connection_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   mux_connection_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

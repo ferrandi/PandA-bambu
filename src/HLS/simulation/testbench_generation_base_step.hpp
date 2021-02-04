@@ -215,7 +215,7 @@ class TestbenchGenerationBaseStep : public HLS_step
     * Declared protected to prevent direct instantiation. Use
     * Create() factory methods instead.
     */
-   TestbenchGenerationBaseStep(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, std::string c_testbench_basename = "values");
+   TestbenchGenerationBaseStep(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type, std::string c_testbench_basename = "values");
 
  public:
    /**

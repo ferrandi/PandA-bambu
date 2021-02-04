@@ -111,7 +111,7 @@ struct attribute
       return content_list;
    }
 
-   static void xload(const xml_element* node, std::vector<std::string>& ordered_attributes, std::map<std::string, attributeRef>& attributes);
+   static void xload(const xml_element* EnodeC, std::vector<std::string>& ordered_attributes, std::map<std::string, attributeRef>& attributes);
 
    void xwrite(xml_element* xml_node, const std::string& name);
 };

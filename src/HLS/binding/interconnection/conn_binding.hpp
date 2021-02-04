@@ -226,7 +226,7 @@ class conn_binding
    /**
     * Add a data converter, if needed, between two objects of the structural representation of the datapath
     */
-   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef conn_out, const structural_objectRef port_tgt, unsigned int conn_type);
+   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef src, const structural_objectRef port_tgt, unsigned int conn_type);
 
    /**
     * check if a port vector has its port bounded to something
@@ -262,7 +262,7 @@ class conn_binding
     */
    generic_objRef bind_command_port(const vertex& ver, direction_type dir, unsigned int mode, const OpGraphConstRef g);
 
-   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& ver, const OpGraphConstRef data);
+   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& cond, const OpGraphConstRef data);
 
    generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const generic_objRef elem, unsigned int op);
 

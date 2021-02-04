@@ -375,7 +375,7 @@ class tree_manager
     * merge two tree manager: this with TM_source
     * @param TM_source is one of the tree_manager.
     */
-   void merge_tree_managers(const tree_managerRef& TM_source);
+   void merge_tree_managers(const tree_managerRef& source_tree_manager);
 
    /**
     * Increment the number of added gotos
@@ -447,7 +447,7 @@ class tree_manager
     * @param old_node is the node whose occurrences have to be replace
     * @param new_node is thenode that replaces occurrences of old_node
     */
-   void ReplaceTreeNode(const tree_nodeRef& tn, const tree_nodeRef& old_node, const tree_nodeRef& new_node);
+   void ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef& old_node, const tree_nodeRef& new_node);
 
    /**
     * memoization of integer constants

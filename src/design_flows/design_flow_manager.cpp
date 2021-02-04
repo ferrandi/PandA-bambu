@@ -104,7 +104,7 @@ bool DesignFlowStepNecessitySorter::operator()(const vertex x, const vertex y) c
 #if HAVE_UNORDERED
       return x < y;
 #else
-      return x_info->design_flow_step->GetName() < y_info->design_flow_step->GetName();
+      return x_info->design_flow_step->GetName() > y_info->design_flow_step->GetName();
 #endif
    }
 }

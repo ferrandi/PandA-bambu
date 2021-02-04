@@ -65,7 +65,7 @@
 /// Default extension for generated files
 #define FILE_EXT ".vhdl"
 /// Name of the stored Functional Unit
-#define ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) FU_name + "_" + STR(FU_prec_in) + "_" + STR(FU_prec_out) + (pipe_parameter != "" ? "_" + pipe_parameter : "")
+#define ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) ((FU_name) + "_" + STR(FU_prec_in) + "_" + STR(FU_prec_out) + ((pipe_parameter) != "" ? "_" + (pipe_parameter) : ""))
 /// Additional bits in FloPoCo encoding with reference to IEEE-754 standard
 #define FLOPOCO_ADDITIONAL_BITS 2
 /// Prefix for the wrapper to the inputs
@@ -153,7 +153,7 @@ class flopoco_wrapper
     * @param FU_file is the name of the file, without extension, where the VHDL code should be put (i.e. "FPAdder", not "FPAdder.vhdl")
     * @param pipe_parameter is a string defining the design frequency, in case is not empty
     */
-   int InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& FU_file, const std::string& pipe_parameter);
+   int InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& filename, const std::string& pipe_parameter);
 
    /**
     * Helper methods for automatic VHDL code generation:

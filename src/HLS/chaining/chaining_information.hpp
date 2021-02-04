@@ -115,7 +115,7 @@ class ChainingInformation
     * @param op1 is the first vertex
     * @param op2 is the second vertex
     */
-   bool may_be_chained_ops(vertex op1, vertex op2) const;
+   bool may_be_chained_ops(vertex tgt, vertex src) const;
 
    /**
     * put into relation the vertices whith respect the chained vertices connected with the input

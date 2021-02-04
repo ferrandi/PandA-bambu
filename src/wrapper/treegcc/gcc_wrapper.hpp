@@ -373,7 +373,7 @@ class GccWrapper
     * @param compiler is the compiler to be used
     * @param OS is the optimization set
     */
-   GccWrapper(const ParameterConstRef Param, const GccWrapper_CompilerTarget compiler, const GccWrapper_OptimizationSet OS);
+   GccWrapper(const ParameterConstRef Param, const GccWrapper_CompilerTarget _compiler_target, const GccWrapper_OptimizationSet OS);
 
    /**
     * Destructor
@@ -385,7 +385,7 @@ class GccWrapper
     * @param TM is where tree_manager will be stored
     * @param source_files are the source files to be compiled; key is the original source code file, value is the transformed source code file
     */
-   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& input_files);
+   void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files);
 
    /**
     * Return the list of gcc system include
@@ -443,7 +443,7 @@ class GccWrapper
     * @param optimization_level is the optimization level to be printed
     * @return the optimization level in string format
     */
-   static std::string WriteOptimizationLevel(const GccWrapper_OptimizationSet optimiation_level);
+   static std::string WriteOptimizationLevel(const GccWrapper_OptimizationSet optimization_level);
 
    /**
     * Check if the combination gcc-plugin is supported; if not it throws error

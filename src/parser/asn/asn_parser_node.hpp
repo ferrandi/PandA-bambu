@@ -75,6 +75,6 @@ struct AsnParserNode
     * @param os is the output stream
     * @param to_be_printed is the node to be printed
     */
-   friend std::ostream& operator<<(std::ostream& os, const AsnParserNode& to_be_printed);
+   friend std::ostream& operator<<(std::ostream& os, const AsnParserNode& asn_parser_node);
 };
 #endif

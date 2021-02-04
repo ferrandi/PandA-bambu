@@ -49,7 +49,7 @@ class ParallelMemoryConnBinding : public conn_binding
    /**
     * Constructor.
     */
-   ParallelMemoryConnBinding(const BehavioralHelperConstRef BH, const ParameterConstRef parameters);
+   ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper, const ParameterConstRef parameters);
 
    /**
     * Destructor.

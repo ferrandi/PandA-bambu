@@ -62,7 +62,7 @@ class BB_based_stg : public STG_creator
     * Constructor.
     * @param design_flow_manager is  the design flow manager
     */
-   BB_based_stg(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   BB_based_stg(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -140,7 +140,7 @@ class BB_based_stg : public STG_creator
     * An edge is created from the second last state to the destination state.
     * The state to move, and all the edges to/from it are not modified by this method.
     */
-   void move_without_duplication(const vertex stateToMove, const vertex secondLastState, const vertex dest_first_state, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
+   void move_without_duplication(const vertex stateToMove, const vertex secondLastState, const vertex destinationState, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
                                  const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet, const CustomOrderedSet<unsigned int>& useSet);
 
    /**
@@ -150,7 +150,7 @@ class BB_based_stg : public STG_creator
     * the states that follows the first state of the destination bb.
     * The state to move, and all the edges to/from it are not modified by this method.
     */
-   void move_with_duplication(const vertex stateToMove, const vertex secondLastState, const vertex dest_first_state, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
+   void move_with_duplication(const vertex stateToMove, const vertex secondLastState, const vertex stateToClone, const std::map<vertex, std::list<vertex>>& global_starting_ops, const std::map<vertex, std::list<vertex>>& global_executing_ops,
                               const std::map<vertex, std::list<vertex>>& global_ending_ops, const CustomOrderedSet<unsigned int>& defSet, const CustomOrderedSet<unsigned int>& useSet);
    /**
     * If hardware discrepancy analysis is activated, use this function to

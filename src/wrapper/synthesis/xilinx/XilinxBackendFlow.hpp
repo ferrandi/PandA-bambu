@@ -107,13 +107,13 @@ class XilinxBackendFlow : public BackendFlow
    /**
     * Fixed the parsing of timing results from xst
     */
-   void parse_timing(const std::string& fn);
+   void parse_timing(const std::string& log_file);
 
  public:
    /**
     * Constructor
     */
-   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef manager);
+   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef _target);
 
    /**
     * Destructor

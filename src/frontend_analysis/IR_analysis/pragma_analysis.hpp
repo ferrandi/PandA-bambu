@@ -68,13 +68,13 @@ class PragmaAnalysis : public ApplicationFrontendFlowStep
     * @param tree_node is the index of the call
     * @param param is the index of the parameter (starting from 1)
     */
-   std::string get_call_parameter(const unsigned int tree_node, const unsigned int param) const;
+   std::string get_call_parameter(const unsigned int tree_node, const unsigned int idx) const;
 
    /**
     * Create a map pragma
     * @param index_node is the tree index of the gimple containing the call which will be directly replaced by the pragma
     */
-   void create_map_pragma(const unsigned int tree_node) const;
+   void create_map_pragma(const unsigned int node_id) const;
 
    /**
     * Create an omp pragma

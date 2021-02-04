@@ -56,7 +56,7 @@ class HLSSynthesisFlow : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   HLSSynthesisFlow(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   HLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

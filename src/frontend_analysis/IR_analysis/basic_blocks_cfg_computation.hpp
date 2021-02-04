@@ -66,7 +66,7 @@ class BasicBlocksCfgComputation : public FunctionFrontendFlowStep
     * @param fun_id is the function for which basic block control flow graph has to be built
     * @param design_flow_manager is the design flow manager
     */
-   BasicBlocksCfgComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
+   BasicBlocksCfgComputation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

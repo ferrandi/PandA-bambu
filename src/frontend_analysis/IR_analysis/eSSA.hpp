@@ -76,7 +76,7 @@ class eSSA : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   eSSA(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   eSSA(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm);
 
    /**
     *  Destructor
