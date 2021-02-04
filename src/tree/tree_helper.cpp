@@ -6400,37 +6400,36 @@ FunctionExpander::FunctionExpander()
 
 unsigned int tree_helper::get_formal_ith(const tree_managerConstRef& TM, unsigned int index_obj, unsigned int parm_index)
 {
-   const tree_nodeRef t = TM->get_tree_node_const(index_obj);
+   const auto t = TM->CGetTreeNode(index_obj);
    if(t->get_kind() == gimple_call_K)
    {
-      auto* gc = GetPointer<gimple_call>(t);
+      const auto gc = GetPointerS<const gimple_call>(t);
 
-      unsigned int fn_type_index;
-      const tree_nodeRef fn_type = get_type_node(GET_NODE(gc->fn), fn_type_index);
+      const auto fn_type = CGetType(GET_CONST_NODE(gc->fn));
       if(fn_type->get_kind() == pointer_type_K)
       {
-         auto* pt = GetPointer<pointer_type>(fn_type);
+         const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         auto* ft = GetPointer<function_type>(GET_NODE(pt->ptd));
+         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
          if(ft->varargs_flag)
          {
             return 0;
          }
          else if(ft->prms)
          {
-            auto* tl = GetPointer<tree_list>(GET_NODE(ft->prms));
+            auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
             unsigned int ith = 0;
             if(parm_index == ith)
             {
-               return GET_INDEX_NODE(tl->valu);
+               return GET_INDEX_CONST_NODE(tl->valu);
             }
             while(tl->chan)
             {
                ++ith;
-               tl = GetPointer<tree_list>(GET_NODE(tl->chan));
+               tl = GetPointerS<const tree_list>(GET_CONST_NODE(tl->chan));
                if(parm_index == ith)
                {
-                  return GET_INDEX_NODE(tl->valu);
+                  return GET_INDEX_CONST_NODE(tl->valu);
                }
             }
             THROW_ERROR("unexpected pattern");
@@ -6438,14 +6437,13 @@ unsigned int tree_helper::get_formal_ith(const tree_managerConstRef& TM, unsigne
          }
          else
          {
-            const tree_nodeRef fn_node = GET_NODE(gc->fn);
+            const auto fn_node = GET_CONST_NODE(gc->fn);
             /// parameters are not available through function_type but only through function_decl
             THROW_ASSERT(fn_node->get_kind() == addr_expr_K, "Unexpected pattern");
-            auto* ue = GetPointer<unary_expr>(fn_node);
-            tree_nodeRef fn = GET_NODE(ue->op);
+            const auto ue = GetPointerS<const unary_expr>(fn_node);
+            const auto fn = GET_CONST_NODE(ue->op);
             THROW_ASSERT(fn->get_kind() == function_decl_K, "Unexpected pattern");
-            auto* fd = GetPointer<function_decl>(fn);
-            return get_formal_ith(TM, fd->index, parm_index);
+            return get_formal_ith(TM, fn->index, parm_index);
          }
       }
       else
@@ -6456,37 +6454,37 @@ unsigned int tree_helper::get_formal_ith(const tree_managerConstRef& TM, unsigne
    }
    else if(t->get_kind() == gimple_assign_K)
    {
-      auto* ga = GetPointer<gimple_assign>(t);
-      return get_formal_ith(TM, GET_INDEX_NODE(ga->op1), parm_index);
+      const auto ga = GetPointerS<const gimple_assign>(t);
+      return get_formal_ith(TM, GET_INDEX_CONST_NODE(ga->op1), parm_index);
    }
    else if(t->get_kind() == call_expr_K || t->get_kind() == aggr_init_expr_K)
    {
-      auto* ce = GetPointer<call_expr>(t);
+      const auto ce = GetPointerS<const call_expr>(t);
       const auto fn_type = CGetType(GET_CONST_NODE(ce->fn));
       if(fn_type->get_kind() == pointer_type_K)
       {
-         const auto* pt = GetPointer<const pointer_type>(fn_type);
+         const auto pt = GetPointerS<const pointer_type>(fn_type);
          THROW_ASSERT(pt->ptd, "unexpected pattern");
-         const auto* ft = GetPointer<const function_type>(GET_CONST_NODE(pt->ptd));
+         const auto ft = GetPointerS<const function_type>(GET_CONST_NODE(pt->ptd));
          if(ft->varargs_flag)
          {
             return 0;
          }
          else if(ft->prms)
          {
-            auto* tl = GetPointer<tree_list>(GET_NODE(ft->prms));
+            auto tl = GetPointerS<const tree_list>(GET_CONST_NODE(ft->prms));
             unsigned int ith = 0;
             if(parm_index == ith)
             {
-               return GET_INDEX_NODE(tl->valu);
+               return GET_INDEX_CONST_NODE(tl->valu);
             }
             while(tl->chan)
             {
                ++ith;
-               tl = GetPointer<tree_list>(GET_NODE(tl->chan));
+               tl = GetPointerS<const tree_list>(GET_CONST_NODE(tl->chan));
                if(parm_index == ith)
                {
-                  return GET_INDEX_NODE(tl->valu);
+                  return GET_INDEX_CONST_NODE(tl->valu);
                }
             }
             THROW_ERROR("unexpected pattern");
@@ -6494,14 +6492,13 @@ unsigned int tree_helper::get_formal_ith(const tree_managerConstRef& TM, unsigne
          }
          else
          {
-            const tree_nodeRef fn_node = GET_NODE(ce->fn);
+            const auto fn_node = GET_CONST_NODE(ce->fn);
             /// parameters are not available through function_type but only through function_decl
             THROW_ASSERT(fn_node->get_kind() == addr_expr_K, "Unexpected pattern");
-            auto* ue = GetPointer<unary_expr>(fn_node);
-            tree_nodeRef fn = GET_NODE(ue->op);
+            const auto ue = GetPointerS<const unary_expr>(fn_node);
+            const auto fn = GET_CONST_NODE(ue->op);
             THROW_ASSERT(fn->get_kind(), "Unexpected pattern");
-            auto* fd = GetPointer<function_decl>(fn);
-            return get_formal_ith(TM, fd->index, parm_index);
+            return get_formal_ith(TM, fn->index, parm_index);
          }
       }
       else
@@ -6512,13 +6509,13 @@ unsigned int tree_helper::get_formal_ith(const tree_managerConstRef& TM, unsigne
    }
    else if(t->get_kind() == function_decl_K)
    {
-      auto* fd = GetPointer<function_decl>(t);
+      const auto fd = GetPointerS<const function_decl>(t);
       unsigned int ith = 0;
       for(const auto& i : fd->list_of_args)
       {
          if(parm_index == ith)
          {
-            return get_type_index(TM, GET_INDEX_NODE(i));
+            return get_type_index(TM, GET_INDEX_CONST_NODE(i));
          }
          ++ith;
       }
