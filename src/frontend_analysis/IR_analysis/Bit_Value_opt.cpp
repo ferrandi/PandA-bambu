@@ -2781,6 +2781,10 @@ DesignFlowStep_Status Bit_Value_opt::InternalExec()
 
 bool Bit_Value_opt::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return (bitvalue_version != function_behavior->GetBitValueVersion()) or FunctionFrontendFlowStep::HasToBeExecuted();
 }
 

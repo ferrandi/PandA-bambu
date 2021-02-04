@@ -244,8 +244,23 @@ DesignFlowStep_Status FunctionFrontendFlowStep::Exec()
    return status;
 }
 
+bool FunctionFrontendFlowStep::HasToBeExecuted0() const
+{
+   CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   const auto funcs = CGMan->GetReachedBodyFunctions();
+   if(function_id and funcs.find(function_id) == funcs.end())
+   {
+      return false;
+   }
+   return true;
+}
+
 bool FunctionFrontendFlowStep::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version != function_behavior->GetBBVersion();
 }
 

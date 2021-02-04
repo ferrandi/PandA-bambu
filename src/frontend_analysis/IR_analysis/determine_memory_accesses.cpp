@@ -1465,5 +1465,9 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
 
 bool determine_memory_accesses::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return not already_executed;
 }

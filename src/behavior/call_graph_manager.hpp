@@ -190,7 +190,7 @@ class CallGraphManager
     * Returns the source code functions called by the root functions
     * @return the set of top function
     */
-   CustomOrderedSet<unsigned int> GetReachedBodyFunctions() const;
+   const CustomOrderedSet<unsigned int>& GetReachedBodyFunctions() const;
 
    /**
     * compute the list of reached function starting from a given function

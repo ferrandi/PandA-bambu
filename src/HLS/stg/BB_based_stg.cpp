@@ -256,7 +256,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    {
       /// the analysis has to be performed only on the reachable functions
       /// functions to be analyzed
-      CustomOrderedSet<unsigned int> sort_list = CGM->GetReachedBodyFunctions();
+      const auto sort_list = CGM->GetReachedBodyFunctions();
       CustomUnorderedSet<vertex> vertex_subset;
       for(auto cvertex : sort_list)
       {

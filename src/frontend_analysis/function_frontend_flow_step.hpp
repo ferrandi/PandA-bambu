@@ -96,6 +96,11 @@ class FunctionFrontendFlowStep : public FrontendFlowStep
     */
    void WriteBBGraphDot(const std::string& filename) const;
 
+   /**
+    * Check if this function is reachable from the top functions
+    */
+   bool HasToBeExecuted0() const;
+
  public:
    /**
     * Constructor

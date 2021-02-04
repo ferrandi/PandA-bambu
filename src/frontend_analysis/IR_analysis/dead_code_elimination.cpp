@@ -116,9 +116,12 @@ bool dead_code_elimination::HasToBeExecuted() const
    {
       return true;
    }
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    std::map<unsigned int, bool> cur_writing_memory;
    std::map<unsigned int, bool> cur_reading_memory;
-   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    for(const auto i : AppM->CGetCallGraphManager()->get_called_by(function_id))
    {
       const tree_nodeRef curr_tn = AppM->get_tree_manager()->GetTreeNode(i);

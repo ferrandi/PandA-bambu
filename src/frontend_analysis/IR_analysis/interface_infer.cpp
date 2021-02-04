@@ -2106,5 +2106,9 @@ void interface_infer::Initialize()
 
 bool interface_infer::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }

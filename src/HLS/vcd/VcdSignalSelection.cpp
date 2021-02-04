@@ -716,8 +716,8 @@ void VcdSignalSelection::SelectAddrSsa(const CustomUnorderedMap<unsigned int, Un
     * initialize the set of fun_ids representing an address
     */
    CustomUnorderedSet<unsigned int> addr_fun_ids;
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
-   for(unsigned int f_id : reached_body_fun_ids)
+   const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
+   for(auto f_id : reached_body_fun_ids)
    {
       const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(f_id);
       const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();

@@ -3080,6 +3080,10 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
 bool Vectorize::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    if(bb_version != 0)
    {
       return false;

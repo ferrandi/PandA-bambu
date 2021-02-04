@@ -7329,7 +7329,7 @@ DesignFlowStep_Status RangeAnalysis::Exec()
 #if defined(EARLY_DEAD_CODE_RESTART) || !defined(NDEBUG)
    const auto TM = AppM->get_tree_manager();
 #endif
-   auto rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   CustomOrderedSet<unsigned int> rb_funcs = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
 
 #ifdef EARLY_DEAD_CODE_RESTART
    for(const auto f : rb_funcs)

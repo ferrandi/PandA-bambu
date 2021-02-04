@@ -158,7 +158,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
+   const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    CustomOrderedSet<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
    auto addressed_functions = CGMan->GetAddressedFunctions();
    root_fun_ids.insert(addressed_functions.begin(), addressed_functions.end());
@@ -182,7 +182,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
 
    // ---- initialization phase ----
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Initialize data structures");
-   for(unsigned int fu_id : reached_body_fun_ids)
+   for(auto fu_id : reached_body_fun_ids)
    {
       const std::string fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));

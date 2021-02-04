@@ -1068,5 +1068,9 @@ void CheckSystemType::getRealInclName(const std::string& include, std::string& r
 
 bool CheckSystemType::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return not already_executed;
 }
