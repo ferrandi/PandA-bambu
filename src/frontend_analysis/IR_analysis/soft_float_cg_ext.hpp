@@ -131,13 +131,32 @@ class FunctionVersion
    {
    }
 
+   FunctionVersion(const FunctionVersion& other) : function_vertex(other.function_vertex), userRequired(other.std_format() ? nullptr : new FloatFormat(*other.userRequired)), internal(other.internal)
+   {
+   }
+
    ~FunctionVersion()
    {
+   }
+
+   bool operator==(const FunctionVersion& other) const
+   {
+      return function_vertex == other.function_vertex && internal == other.internal && ((userRequired == nullptr && other.userRequired == nullptr) || (userRequired != nullptr && other.userRequired != nullptr && *userRequired == *other.userRequired));
+   }
+
+   bool operator!=(const FunctionVersion& other) const
+   {
+      return !(this->operator==(other));
    }
 
    bool std_format() const
    {
       return userRequired == nullptr;
+   }
+
+   std::string ToString() const
+   {
+      return STR(function_vertex) + (internal ? "_internal_" : "") + (userRequired ? userRequired->mngl() : "");
    }
 };
 

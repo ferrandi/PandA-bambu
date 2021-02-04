@@ -328,6 +328,7 @@ static __float32 __float32_rem(__float32, __float32);
 static __float32 __float32_sqrt(__float32);
 SF_ADAPTER1_unary(__float32_sqrt, 32); // __FORCE_INLINE float sqrtf(float x) {return float32_sqrtif(x);}
 static __flag __float32_eq(__float32, __float32);
+SF_ADAPTER2(__float32_eq, 32);
 static __flag __float32_le(__float32, __float32);
 SF_ADAPTER2(__float32_le, 32);
 static __flag __float32_lt(__float32, __float32);
@@ -346,7 +347,11 @@ static __flag __float32_eq_signaling(__float32, __float32);
 static __flag __float32_le_quiet(__float32, __float32);
 static __flag __float32_lt_quiet(__float32, __float32);
 static __flag __float32_is_signaling_nan(__float32);
-// static __flag __float32_ltgt_quiet( __float32 a, __float32 b) {return !__float32_eq(b,a);}SF_ADAPTER2(__float32_ltgt_quiet,32);
+static __FORCE_INLINE __flag __float32_ltgt_quiet(__float32 a, __float32 b)
+{
+   return !__float32_eq(b, a);
+}
+SF_ADAPTER2(__float32_ltgt_quiet, 32);
 
 static __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC);
 SF_ADAPTER1_ternary(__float32_muladd, 32);
@@ -395,6 +400,7 @@ static __float64 __float64_rem(__float64, __float64);
 static __float64 __float64_sqrt(__float64);
 SF_ADAPTER1_unary(__float64_sqrt, 64); // __FORCE_INLINE double sqrt(double x) {return float64_sqrtif(x);}
 static __flag __float64_eq(__float64, __float64);
+SF_ADAPTER2(__float64_eq, 64);
 static __flag __float64_le(__float64, __float64);
 SF_ADAPTER2(__float64_le, 64);
 static __flag __float64_lt(__float64, __float64);
@@ -413,7 +419,11 @@ static __flag __float64_eq_signaling(__float64, __float64);
 static __flag __float64_le_quiet(__float64, __float64);
 static __flag __float64_lt_quiet(__float64, __float64);
 static __flag __float64_is_signaling_nan(__float64);
-// static __flag __float64_ltgt_quiet( __float64 a, __float64 b) {return !__float64_eq(b,a);}SF_ADAPTER2(__float64_ltgt_quiet,64);
+static __FORCE_INLINE __flag __float64_ltgt_quiet(__float64 a, __float64 b)
+{
+   return !__float64_eq(b, a);
+}
+SF_ADAPTER2(__float64_ltgt_quiet, 64);
 
 #ifdef FLOATX80
 
