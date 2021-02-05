@@ -527,7 +527,7 @@ const CustomOrderedSet<unsigned int> CallGraphManager::GetRootFunctions() const
    return root_functions;
 }
 
-CustomOrderedSet<unsigned int> CallGraphManager::GetReachedBodyFunctions() const
+const CustomOrderedSet<unsigned int>& CallGraphManager::GetReachedBodyFunctions() const
 {
    return reached_body_functions;
 }

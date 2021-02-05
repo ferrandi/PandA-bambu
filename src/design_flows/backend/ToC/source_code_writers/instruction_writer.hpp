@@ -131,7 +131,7 @@ class InstructionWriter
     * Writes a comment
     * @param comment is the string to be printed
     */
-   void WriteComment(const std::string& comment);
+   void WriteComment(const std::string& text);
 };
 using InstructionWriterRef = refcount<InstructionWriter>;
 #endif

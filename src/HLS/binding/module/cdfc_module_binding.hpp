@@ -382,7 +382,7 @@ class cdfc_module_binding : public fu_binding_creator
                                  std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
    bool false_loop_search_cdfc_more(cdfc_vertex src, unsigned int level, unsigned k, cdfc_vertex start, const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg, std::deque<cdfc_edge>& candidate_edges, std::vector<bool>& visited,
                                     std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
-   bool can_be_clustered(vertex v, OpGraphConstRef fdfg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time);
+   bool can_be_clustered(vertex v, OpGraphConstRef fsdg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time);
 
    int weight_computation(bool cond1, bool cond2, vertex v1, vertex v2, const double mux_time, const OpGraphConstRef fdfg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time,
 #ifdef HC_APPROACH
@@ -390,7 +390,7 @@ class cdfc_module_binding : public fu_binding_creator
 #endif
                           connection_relation& con_rel, double controller_delay, unsigned int prec);
 
-   void update_slack_starting_time(const OpGraphConstRef sdg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
+   void update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
                                    bool only_forward);
 
    void initialize_connection_relation(connection_relation& con_rel, OpVertexSet& all_candidate_vertices);
@@ -406,7 +406,7 @@ class cdfc_module_binding : public fu_binding_creator
    /**
     * This is the constructor of the class.
     */
-   cdfc_module_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   cdfc_module_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor.

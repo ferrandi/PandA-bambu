@@ -53,7 +53,7 @@ class DryRunEvaluation : public EvaluationBaseStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of evaluation
     */
-   DryRunEvaluation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   DryRunEvaluation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

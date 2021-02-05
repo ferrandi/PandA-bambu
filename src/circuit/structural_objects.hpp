@@ -578,7 +578,7 @@ class structural_object
     * Add a structural_object to an xml tree.
     * @param rootnode is the root node at which the xml representation of the structural object is attached.
     */
-   virtual void xwrite(xml_element* rootnode);
+   virtual void xwrite(xml_element* Enode);
 
 #if HAVE_TECHNOLOGY_BUILT
    /**
@@ -1613,7 +1613,7 @@ class constant_o : public structural_object
     * Return the ith element bounded to the connection.
     * @param n is the index of the port.
     */
-   structural_objectRef get_connection(unsigned int n) const;
+   structural_objectRef get_connection(unsigned int idx) const;
 
    /**
     * Return the number of ports associated with the connection
@@ -1713,7 +1713,7 @@ class signal_o : public structural_object
 
    bool is_connected(structural_objectRef s) const;
 
-   void substitute_port(structural_objectRef old_port, structural_objectRef new_port);
+   void substitute_port(structural_objectRef old_conn, structural_objectRef new_conn);
 
    /**
     * set the signal as critical with respect to the timing path
@@ -2048,7 +2048,7 @@ class module : public structural_object
     */
    void add_internal_object(structural_objectRef c);
 
-   void remove_internal_object(structural_objectRef c);
+   void remove_internal_object(structural_objectRef s);
 
    /**
     * Return the ith internal objects.

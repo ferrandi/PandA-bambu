@@ -173,7 +173,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                   auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
                   unsigned int ssa_defined_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga->op0)));
                   auto* binop0 = GetPointer<binary_expr>(GET_NODE(ga->op1));
-                  if(ssa_defined->CGetNumberUses() == 1 and ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op0))) and ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op1))))
+                  if((ssa_defined->CGetNumberUses() == 1) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op0)))) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op1)))))
                   {
                      auto statement_node = ssa_defined->CGetUseStmts().begin()->first;
                      if(GET_NODE(statement_node)->get_kind() == gimple_assign_K)

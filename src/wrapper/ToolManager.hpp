@@ -82,12 +82,12 @@ class ToolManager
     * If the permissive flag is given, it raises simply a warning
     * @param log_file is the file where output will be saved
     */
-   int execute_command(const std::string& command, const std::string& error_message, const std::string& log_file, bool permissive = false, bool throw_message = true);
+   int execute_command(const std::string& _command_, const std::string& error_message, const std::string& log_file, bool permissive = false, bool throw_message = true);
 
    /**
     * Check if a command exist on a given host provided a configuration script
     */
-   int check_command(const std::string& command, const std::string& setupscr, const std::string& host, bool permissive = false);
+   int check_command(const std::string& _tool_, const std::string& setupscr, const std::string& _host_, bool permissive = false);
    /**
     * Generate the command to the executed on the remote host
     */
@@ -131,7 +131,7 @@ class ToolManager
    /**
     * Configuration of the tool
     */
-   void configure(const std::string& tool, const std::string& setupscr, const std::string& host = "", const std::string& remote_path = "", bool force_remote = false);
+   void configure(const std::string& _tool_, const std::string& setupscr, const std::string& _host_ = "", const std::string& _remote_path_ = "", bool force_remote = false);
 
    /**
     * Execute the tool
@@ -147,7 +147,7 @@ class ToolManager
     */
    std::vector<std::string> determine_paths(std::vector<std::string>& files, bool overwrite = true);
 
-   std::string determine_paths(std::string& files, bool overwrite = true);
+   std::string determine_paths(std::string& file_name, bool overwrite = true);
 };
 
 /// Refcount definition for the class

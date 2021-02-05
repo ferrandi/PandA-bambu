@@ -96,9 +96,9 @@ class moduleGenerator
     */
    virtual ~moduleGenerator();
 
-   structural_type_descriptorRef getDataType(unsigned int variable, const FunctionBehaviorConstRef FB) const;
+   structural_type_descriptorRef getDataType(unsigned int variable, const FunctionBehaviorConstRef function_behavior) const;
 
-   void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
+   void add_port_parameters(structural_objectRef generated_port, structural_objectRef original_port);
 
    std::string GenerateHDL(const module* mod, const std::string& hdl_template, std::vector<std::tuple<unsigned int, unsigned int>>& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB,
                            const std::string& path_dynamic_generators, HDLWriter_Language);

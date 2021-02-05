@@ -767,7 +767,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
       }                                                                                                                \
    }
 
-#define SET_VALUE(field, type) dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field
+#define SET_VALUE(field, type) (dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field)
 
 void tree_node_dup::operator()(const srcp* obj, unsigned int& mask)
 {

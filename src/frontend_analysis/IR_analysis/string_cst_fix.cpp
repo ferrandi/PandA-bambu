@@ -112,9 +112,9 @@ DesignFlowStep_Status string_cst_fix::Exec()
 {
    const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
    const tree_managerRef TM = AppM->get_tree_manager();
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
+   const auto reached_body_fun_ids = CG->GetReachedBodyFunctions();
 
-   for(unsigned int function_id : reached_body_fun_ids)
+   for(auto function_id : reached_body_fun_ids)
    {
       const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
       auto* fd = GetPointer<function_decl>(curr_tn);

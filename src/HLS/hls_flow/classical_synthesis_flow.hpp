@@ -68,7 +68,7 @@ class ClassicalHLSSynthesisFlow : public HLS_step
     * @param HLSMgr is the HLS manager
     * @param design_flow_manager is the design flow manager
     */
-   ClassicalHLSSynthesisFlow(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   ClassicalHLSSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

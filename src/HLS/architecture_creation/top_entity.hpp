@@ -88,7 +88,7 @@ class top_entity : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param top_entity_type is the type of top entity to be created
     */
-   top_entity(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
+   top_entity(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
 
    /**
     * Destructor

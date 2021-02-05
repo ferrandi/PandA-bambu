@@ -90,7 +90,7 @@ class WB4_interface : public minimal_interface
    /**
     * Constructor
     */
-   WB4_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
+   WB4_interface(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type = HLSFlowStep_Type::WB4_INTERFACE_GENERATION);
 
    /**
     * Destructor

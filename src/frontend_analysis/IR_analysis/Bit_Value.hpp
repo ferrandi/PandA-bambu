@@ -225,7 +225,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   Bit_Value(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   Bit_Value(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm);
 
    /**
     *  Destructor

@@ -236,7 +236,7 @@ bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
    return (tree_helper::Size(GET_NODE((ne)->op)) == 1);
 }
 
-#define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
+#define VECT_CONTAINS(v, x) (std::find((v).begin(), (v).end(), x) != (v).end())
 
 bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
 {

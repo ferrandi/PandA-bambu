@@ -152,7 +152,7 @@ class operations_cfg_computation : public FunctionFrontendFlowStep
     * @param AppM is the application manager
     * @param function_id is the identifier of the function
     */
-   operations_cfg_computation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   operations_cfg_computation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

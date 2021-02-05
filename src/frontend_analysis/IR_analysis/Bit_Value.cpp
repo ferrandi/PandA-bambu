@@ -1872,5 +1872,9 @@ void Bit_Value::Initialize()
 
 bool Bit_Value::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return (bitvalue_version != function_behavior->GetBitValueVersion()) or FunctionFrontendFlowStep::HasToBeExecuted();
 }

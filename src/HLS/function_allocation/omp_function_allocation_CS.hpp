@@ -50,7 +50,7 @@ class OmpFunctionAllocationCS : public fun_dominator_allocation
    /**
     * Constructor
     */
-   OmpFunctionAllocationCS(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   OmpFunctionAllocationCS(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -61,11 +61,11 @@ class OmpFunctionAllocationCS : public fun_dominator_allocation
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status Exec();
+   DesignFlowStep_Status Exec() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec
     */
-   void Initialize();
+   void Initialize() override;
 };
 #endif

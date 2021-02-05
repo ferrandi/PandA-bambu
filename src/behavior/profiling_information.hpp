@@ -208,7 +208,7 @@ class ProfilingInformation
     * @param basic_block is the basic block
     * @return the absolute number of executions of a basic block
     */
-   unsigned long long int GetBBExecutions(const vertex basic_block) const;
+   unsigned long long int GetBBExecutions(const vertex bb_vertex) const;
 
    /**
     * Return the absolute number of the executions of an edge

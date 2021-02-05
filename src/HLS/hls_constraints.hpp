@@ -64,7 +64,7 @@ REF_FORWARD_DECL(target_device);
 class xml_element;
 
 /// macro used to convert the functional unit name and the library in an unique string.
-#define ENCODE_FU_LIB(fu_name, library) fu_name + ":" + library
+#define ENCODE_FU_LIB(fu_name, library) ((fu_name) + ":" + (library))
 
 /**
  * @class HLS_constraints
@@ -107,7 +107,7 @@ class HLS_constraints
    /**
     * Constructor.
     */
-   HLS_constraints(const ParameterConstRef& Param, std::string function_name);
+   HLS_constraints(const ParameterConstRef& Param, std::string _fun_name);
 
    /**
     * Gets the name of the function which the constraints are associated with
@@ -231,7 +231,7 @@ class HLS_constraints
     * Writes the HLS constraints into an XML tree.
     * @param Enode is the root node which the XML representation of the constraints is attached.
     */
-   void xwrite(xml_element* Enode);
+   void xwrite(xml_element* rootnode);
 
    /**
     * Writes the generic synthesis constraints

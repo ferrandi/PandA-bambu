@@ -73,7 +73,7 @@ class ToDataFileStep : public virtual DesignFlowStep
     * @param to_data_file_step is the type of this step
     * @param parameters is the set of input parameters
     */
-   ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager, const ToDataFileStep_Type to_data_file_step, const ParameterConstRef parameters);
+   ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager, const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef parameters);
 
    /**
     * Return a unified identifier of this design step

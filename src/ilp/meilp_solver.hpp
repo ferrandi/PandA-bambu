@@ -285,7 +285,7 @@ class meilp_solver
    /**
     * Set the verbosity (debug_level)
     */
-   void set_debug_level(int v);
+   void set_debug_level(int dl);
 
    /**
     * Set the variable priority

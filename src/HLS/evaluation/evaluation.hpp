@@ -86,7 +86,7 @@ class Evaluation
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of evaluation
     */
-   Evaluation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   Evaluation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

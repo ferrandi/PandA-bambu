@@ -117,7 +117,7 @@ extern std::string panda_message;
 ///@param curDbgLevel the current debug level at which the algorithm is executing
 ///@param formatMex the array of chars containing the message to print: this message
 /// can be written using a printf like syntax.
-#define PRINT_DBG_MEX(dbgLevel, curDbgLevel, mex) ((dbgLevel <= curDbgLevel) ? std::cerr << mex << std::endl : std::cerr)
+#define PRINT_DBG_MEX(dbgLevel, curDbgLevel, mex) (((dbgLevel) <= (curDbgLevel)) ? std::cerr << mex << std::endl : std::cerr)
 
 /**
  * We are producing a debug version of the program, so the message is printed;
@@ -128,7 +128,7 @@ extern std::string panda_message;
  * @param formatMex the array of chars containing the message to print: this message
  * can be written using a printf like syntax.
  */
-#define PRINT_DBG_STRING(dbgLevel, curDbgLevel, mex) ((dbgLevel <= curDbgLevel) ? std::cerr << mex : std::cerr)
+#define PRINT_DBG_STRING(dbgLevel, curDbgLevel, mex) (((dbgLevel) <= (curDbgLevel)) ? std::cerr << mex : std::cerr)
 
 /// We are producing a debug version of the program, so the message is printed;
 ///@param dbglevel the minimum debug level at which we desire to print the message:
@@ -137,7 +137,7 @@ extern std::string panda_message;
 ///@param formatMex the array of chars containing the message to print: this message
 /// can be written using a printf like syntax.
 #define INDENT_DBG_MEX(dbgLevel, curDbgLevel, mex)                                                                                                                                                                                                           \
-   ((dbgLevel <= curDbgLevel) ?                                                                                                                                                                                                                              \
+   (((dbgLevel) <= (curDbgLevel)) ?                                                                                                                                                                                                                          \
         (panda_message = mex,                                                                                                                                                                                                                                \
          (std::string(panda_message) == "-->") ?                                                                                                                                                                                                             \
              (null_stream << (indentation += 2)) :                                                                                                                                                                                                           \
@@ -161,7 +161,7 @@ extern std::string panda_message;
 #else
 
 #define INDENT_OUT_MEX(outLevel, curOutLevel, mex)                                                                                                                                                                                                           \
-   ((outLevel <= curOutLevel) ?                                                                                                                                                                                                                              \
+   (((outLevel) <= (curOutLevel)) ?                                                                                                                                                                                                                          \
         (panda_message = mex,                                                                                                                                                                                                                                \
          (std::string(panda_message) == "-->") ?                                                                                                                                                                                                             \
              (null_stream << (indentation += 2)) :                                                                                                                                                                                                           \
@@ -174,9 +174,9 @@ extern std::string panda_message;
                                                                                                                       (std::cerr << std::string(indentation, ' ') << panda_message << std::endl)))))) :                                                      \
         (std::cerr))
 
-#define PRINT_OUT_MEX(profLevel, curprofLevel, mex) ((profLevel <= curprofLevel) ? std::cerr << mex << std::endl : std::cerr)
+#define PRINT_OUT_MEX(profLevel, curprofLevel, mex) (((profLevel) <= (curprofLevel)) ? std::cerr << mex << std::endl : std::cerr)
 
-#define PRINT_OUT_STRING(profLevel, curprofLevel, mex) ((profLevel <= curprofLevel) ? std::cerr << mex : std::cerr)
+#define PRINT_OUT_STRING(profLevel, curprofLevel, mex) (((profLevel) <= (curprofLevel)) ? std::cerr << mex : std::cerr)
 
 #endif
 

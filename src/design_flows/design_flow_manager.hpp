@@ -76,7 +76,7 @@ class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
     * Constructor
     * @param design_flow_graph is the graph to which design flow steps belong
     */
-   explicit DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef design_flow_graph_);
+   explicit DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef _design_flow_graph);
 
    /**
     * Compare position of two vertices

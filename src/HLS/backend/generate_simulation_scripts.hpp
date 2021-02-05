@@ -56,7 +56,7 @@ class GenerateSimulationScripts : public HLS_step
    /**
     * Constructor.
     */
-   GenerateSimulationScripts(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   GenerateSimulationScripts(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

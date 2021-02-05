@@ -74,7 +74,7 @@ class MemoryDataFlowAnalysis : public DataDependenceComputation
     * @param function_index is the index of the function
     * @param parameters is the set of the parameters
     */
-   MemoryDataFlowAnalysis(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   MemoryDataFlowAnalysis(const application_managerRef AppM, const unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor

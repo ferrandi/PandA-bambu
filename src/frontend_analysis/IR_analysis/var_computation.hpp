@@ -93,7 +93,7 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param op_vertex is the vertex to which gimple node belongs
     * @param vops is the set of virtual operands to be considered
     */
-   void AnalyzeVops(const vertex op_graph, const gimple_node* vops) const;
+   void AnalyzeVops(const vertex op_vertex, const gimple_node* vops) const;
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -109,7 +109,7 @@ class VarComputation : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   VarComputation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   VarComputation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

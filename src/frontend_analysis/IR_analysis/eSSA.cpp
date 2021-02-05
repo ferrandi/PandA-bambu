@@ -1350,6 +1350,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool eSSA::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return function_behavior->GetBitValueVersion() != bv_ver || FunctionFrontendFlowStep::HasToBeExecuted();
 }
 

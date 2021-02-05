@@ -86,6 +86,6 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * Create a scheduling design flow step
     * @param technology_design_flow_step_type is the type of step to be created
     */
-   DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type hls_flow_step_type) const;
+   DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const;
 };
 #endif

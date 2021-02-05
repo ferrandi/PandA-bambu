@@ -296,13 +296,13 @@ class CWriter
     * Write function implementation
     * @param function_id is the index of the function to be written
     */
-   virtual void WriteFunctionImplementation(unsigned int function_index);
+   virtual void WriteFunctionImplementation(unsigned int function_id);
 
    /**
     * Writes the body of the function to the specified stream
     * @param funId is the index of the function
     */
-   virtual void StartFunctionBody(const unsigned int funId);
+   virtual void StartFunctionBody(const unsigned int function_id);
 
    /**
     * Writes the body of a function
@@ -357,7 +357,7 @@ class CWriter
     * @param locally_declared_type is the set of type already declared in this function
     * @param routine_name is the name of the routina (function or thread)
     */
-   virtual void DeclareType(unsigned int varType, const BehavioralHelperConstRef BH, CustomSet<std::string>& locally_declared_type);
+   virtual void DeclareType(unsigned int varType, const BehavioralHelperConstRef behavioral_helper, CustomSet<std::string>& locally_declared_type);
 
    /**
     * Declares the local variable; in case the variable used in the intialization of
@@ -386,7 +386,7 @@ class CWriter
     * @param helper is the behavioral helper associated with the function
     * @param varFunc is the printer functor
     */
-   virtual void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& locally_declared_type, const BehavioralHelperConstRef BH,
+   virtual void DeclareLocalVariables(const CustomSet<unsigned int>& to_be_declared, CustomSet<unsigned int>& already_declared_variables, CustomSet<std::string>& already_declared_types, const BehavioralHelperConstRef behavioral_helper,
                                       const var_pp_functorConstRef varFunc);
 
    /**

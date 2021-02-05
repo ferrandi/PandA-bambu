@@ -116,6 +116,10 @@ void ExtractOmpFor::Initialize()
 
 bool ExtractOmpFor::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }
 

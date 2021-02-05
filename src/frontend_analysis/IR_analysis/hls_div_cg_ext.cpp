@@ -691,5 +691,9 @@ void hls_div_cg_ext::recursive_examinate(const tree_nodeRef& current_tree_node, 
 
 bool hls_div_cg_ext::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return not already_executed;
 }

@@ -135,14 +135,14 @@ struct CdfgEdgeInfo : public EdgeInfo
     * @param type is the type
     * @return the nodeID of type type
     */
-   const CustomOrderedSet<unsigned int>& get_nodeID(const int type) const;
+   const CustomOrderedSet<unsigned int>& get_nodeID(const int selector) const;
 
    /**
     * Return the string of the labels associated with the edge
     * @param type is the type of labels to be printed
     * @param BH is the helper used to print the labels
     */
-   const std::string PrintLabels(const int type, const BehavioralHelperConstRef BH) const;
+   const std::string PrintLabels(const int selector, const BehavioralHelperConstRef BH) const;
 };
 
 /**

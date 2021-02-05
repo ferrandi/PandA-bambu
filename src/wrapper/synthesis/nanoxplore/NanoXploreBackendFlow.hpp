@@ -76,7 +76,7 @@ class NanoXploreBackendFlow : public BackendFlow
    /**
     * Constructor
     */
-   NanoXploreBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef manager);
+   NanoXploreBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef _target);
 
    /**
     * Destructor
