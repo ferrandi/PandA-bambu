@@ -247,7 +247,7 @@ void bloc::Replace(const tree_nodeRef old_stmt, const tree_nodeRef new_stmt, con
 void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt)
 {
    THROW_ASSERT(number != ENTRY_BLOCK_ID, "Trying to add " + new_stmt->ToString() + " to entry");
-   THROW_ASSERT(not GET_NODE(new_stmt) or GET_NODE(new_stmt)->get_kind() != gimple_phi_K, "Adding phi " + new_stmt->ToString() + " to statements list");
+   THROW_ASSERT((not GET_NODE(new_stmt)) || (GET_NODE(new_stmt)->get_kind() != gimple_phi_K), "Adding phi " + new_stmt->ToString() + " to statements list");
    auto pos = list_of_stmt.begin();
    while(pos != list_of_stmt.end())
    {
@@ -297,7 +297,7 @@ void bloc::PushBefore(const tree_nodeRef new_stmt, const tree_nodeRef existing_s
 void bloc::PushAfter(const tree_nodeRef new_stmt, const tree_nodeRef existing_stmt)
 {
    THROW_ASSERT(number != ENTRY_BLOCK_ID, "Trying to add " + new_stmt->ToString() + " to entry");
-   THROW_ASSERT(not GET_NODE(new_stmt) or GET_NODE(new_stmt)->get_kind() != gimple_phi_K, "Adding phi " + new_stmt->ToString() + " to statements list");
+   THROW_ASSERT((not GET_NODE(new_stmt)) || (GET_NODE(new_stmt)->get_kind() != gimple_phi_K), "Adding phi " + new_stmt->ToString() + " to statements list");
    auto pos = list_of_stmt.begin();
    while(pos != list_of_stmt.end())
    {
