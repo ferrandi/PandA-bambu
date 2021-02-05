@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -106,7 +106,9 @@ std::string convert_to_binary(G _value, unsigned int precision)
    auto value = static_cast<unsigned long long int>(_value);
    std::string bin_value;
    for(unsigned int ind = 0; ind < precision; ind++)
+   {
       bin_value = bin_value + (((1LLU << (precision - ind - 1)) & value) ? '1' : '0');
+   }
    return bin_value;
 }
 
@@ -116,11 +118,15 @@ std::string convert_vector_to_string(const std::vector<G>& vector_form, const st
    std::string string_form;
    for(unsigned int i = 0; i < vector_form.size(); i++)
    {
-      std::string element_string = boost::lexical_cast<std::string>(vector_form[i]);
+      auto element_string = boost::lexical_cast<std::string>(vector_form[i]);
       if(trim_empty_elements and element_string.size() == 0)
+      {
          continue;
+      }
       if(string_form.size())
+      {
          string_form += separator;
+      }
       string_form += element_string;
    }
    return string_form;
@@ -134,7 +140,9 @@ std::vector<G> convert_string_to_vector(const std::string& string_form, const st
    for(auto& i : tmp_vector_form)
    {
       if(trim_empty_elements and i.size() == 0)
+      {
          continue;
+      }
       vector_form.push_back(boost::lexical_cast<G>(i));
    }
    return vector_form;
@@ -161,7 +169,7 @@ class string_separator
     * Constructor
     * @param delimiter is the string used to divide the string
     */
-   explicit string_separator(std::string _delimiter) : delimiter(std::move(_delimiter))
+   explicit string_separator(const std::string& _delimiter) : delimiter(_delimiter)
    {
    }
 
@@ -175,13 +183,17 @@ class string_separator
    bool operator()(std::string::const_iterator& next, std::string::const_iterator& end, std::basic_string<char, std::char_traits<char>, std::allocator<char>>& tok)
    {
       if(next == end)
+      {
          return false;
+      }
       std::string current(next, end);
       if(current.find(delimiter) != std::string::npos)
       {
          tok = current.substr(0, current.find(delimiter));
          for(size_t counter = current.find(delimiter) + delimiter.size(); counter != 0; counter--)
+         {
             next++;
+         }
          return true;
       }
       else

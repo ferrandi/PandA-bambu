@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -208,8 +208,8 @@ class tree_node
 /**
  * RefCount type definition of the tree_node class structure
  */
-typedef refcount<tree_node> tree_nodeRef;
-typedef refcount<const tree_node> tree_nodeConstRef;
+using tree_nodeRef = refcount<tree_node>;
+using tree_nodeConstRef = refcount<const tree_node>;
 
 /**
  * A set of const tree node
@@ -338,11 +338,11 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the pointer to t
  */
 #ifndef NDEBUG
-#define GET_NODE(t) (t ? (GetPointer<tree_reindex>(t) ? (GetPointer<tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
-#define GET_CONST_NODE(t) (t ? (GetPointer<const tree_reindex>(t) ? (GetPointer<const tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_NODE(t) ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_CONST_NODE(t) ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<const tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
 #else
-#define GET_NODE(t) (GetPointer<tree_reindex>(t))->actual_tree_node
-#define GET_CONST_NODE(t) (GetPointer<const tree_reindex>(t))->actual_tree_node
+#define GET_NODE(t) (GetPointerS<tree_reindex>(t))->actual_tree_node
+#define GET_CONST_NODE(t) (GetPointerS<const tree_reindex>(t))->actual_tree_node
 #endif
 
 /**
@@ -979,7 +979,7 @@ struct PointToInformation
     */
    ~PointToInformation();
 };
-typedef refcount<PointToInformation> PointToInformationRef;
+using PointToInformationRef = refcount<PointToInformation>;
 
 /**
  * struct definition of the common part of an expression
@@ -1084,7 +1084,7 @@ struct PointToSolution
       GETID(variables) = 0
    };
 };
-typedef refcount<PointToSolution> PointToSolutionRef;
+using PointToSolutionRef = refcount<PointToSolution>;
 
 /**
  * struct definition of the common part of a gimple  with virtual operands
@@ -3761,10 +3761,10 @@ struct gimple_phi : public gimple_node
    friend class parm2ssa;
 
    /// The type of the def edge
-   typedef std::pair<tree_nodeRef, unsigned int> DefEdge;
+   using DefEdge = std::pair<tree_nodeRef, unsigned int>;
 
    /// The type of the def edge list
-   typedef std::list<DefEdge> DefEdgeList;
+   using DefEdgeList = std::list<DefEdge>;
 
  private:
    /** store the list pairs: <def, edge>. Each tuple contains the incoming reaching
@@ -3800,7 +3800,7 @@ struct gimple_phi : public gimple_node
     * @param def_edge is the def edge to be removed
     * @param update_uses specifies if the uses have to be updated
     */
-   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& def_edge);
+   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_removed);
 
    /**
     * Add a defedge

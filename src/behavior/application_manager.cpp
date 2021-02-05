@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,9 +80,7 @@ application_manager::application_manager(const FunctionExpanderConstRef function
 #if HAVE_PRAGMA_BUILT
       PM(new pragma_manager(application_managerRef(this, null_deleter()), _Param)),
 #endif
-#ifndef NDEBUG
       cfg_transformations(0),
-#endif
       debug_level(_Param->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE))
 #if HAVE_FROM_DISCREPANCY_BUILT
       ,
@@ -214,19 +212,33 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
          auto* gm = GetPointer<gimple_assign>(tn);
          tree_nodeRef op0 = GET_NODE(gm->op0);
          if(gm->init_assignment || gm->clobber)
+         {
             break;
+         }
          else if(op0->get_kind() == array_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == indirect_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == misaligned_indirect_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == mem_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == target_mem_ref_K)
+         {
             break;
+         }
          else if(op0->get_kind() == target_mem_ref461_K)
+         {
             break;
+         }
          else
          {
             return GET_INDEX_NODE(gm->op0);
@@ -241,12 +253,18 @@ unsigned int application_manager::get_produced_value(const tree_nodeRef& tn) con
             auto tl = GetPointer<tree_list>(GET_NODE(ga->out));
             /// only the first output and so only single output gimple_asm are supported
             if(tl->valu)
+            {
                return GET_INDEX_NODE(tl->valu);
+            }
             else
+            {
                THROW_ERROR("unexpected condition");
+            }
          }
          else
+         {
             return 0;
+         }
          break;
       }
       case binfo_K:
@@ -331,22 +349,35 @@ void application_manager::add_written_object(unsigned int node_id)
    written_objects.insert(node_id);
 }
 
-#ifndef NDEBUG
 bool application_manager::ApplyNewTransformation() const
 {
+#ifndef NDEBUG
    return cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations);
+#else
+   return true;
+#endif
 }
 
-void application_manager::RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn)
+void application_manager::RegisterTransformation(const std::string&
+#ifndef NDEBUG
+                                                     step
+#endif
+                                                 ,
+                                                 const tree_nodeConstRef
+#ifndef NDEBUG
+                                                     new_tn
+#endif
+)
 {
+#ifndef NDEBUG
    THROW_ASSERT(cfg_transformations < Param->getOption<size_t>(OPT_cfg_max_transformations), step + " - " + (new_tn ? new_tn->ToString() : ""));
    cfg_transformations++;
    if(Param->getOption<size_t>(OPT_cfg_max_transformations) != std::numeric_limits<size_t>::max())
    {
       INDENT_OUT_MEX(0, 0, "---Transformation " + STR(cfg_transformations) + " - " + step + " - " + (new_tn ? new_tn->ToString() : ""));
    }
-}
 #endif
+}
 
 bool application_manager::isParmUsed(unsigned parm_index) const
 {
@@ -365,7 +396,9 @@ void application_manager::setSSAFromParm(unsigned int parm_index, unsigned ssa_i
    THROW_ASSERT(parm_index, "unexpected null parm_decl index");
    THROW_ASSERT(ssa_index, "unexpected null ssa_name index");
    if(Parm2SSA_map.find(parm_index) == Parm2SSA_map.end())
+   {
       Parm2SSA_map[parm_index] = ssa_index;
+   }
    else
    {
       THROW_ASSERT(Parm2SSA_map.find(parm_index)->second == ssa_index, "unexpected condition");

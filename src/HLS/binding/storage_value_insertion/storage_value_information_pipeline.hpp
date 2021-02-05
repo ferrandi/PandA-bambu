@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,14 +63,14 @@ class StorageValueInformationPipeline : public StorageValueInformation
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   bool is_a_storage_value(vertex curr_vertex, unsigned int var_index) override;
+   bool is_a_storage_value(vertex state, unsigned int var_index) override;
 
    /**
     * Returns the index of the storage value associated with the variable in a given vertex
     * @param curr_vertex is the vertex
     * @param var_index is the variable
     */
-   unsigned int get_storage_value_index(vertex curr_vertex, unsigned int var_index) override;
+   unsigned int get_storage_value_index(vertex state, unsigned int var_index) override;
 
    /**
     * assign a storage value to a couple state-variable
@@ -79,5 +79,5 @@ class StorageValueInformationPipeline : public StorageValueInformation
     * @param sv is the assigned storage value*/
    void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) override;
 };
-typedef refcount<StorageValueInformationPipeline> StorageValueInformationPipelineRef;
+using StorageValueInformationPipelineRef = refcount<StorageValueInformationPipeline>;
 #endif

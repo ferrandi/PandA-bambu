@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,9 +75,13 @@ void values_scheme::Initialize()
 {
    HLSFunctionStep::Initialize();
    if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
+   {
       HLS->storage_value_information = StorageValueInformationPipelineRef(new StorageValueInformationPipeline(HLSMgr, funId));
+   }
    else
+   {
       HLS->storage_value_information = StorageValueInformationFsmRef(new StorageValueInformationFsm(HLSMgr, funId));
+   }
    HLS->storage_value_information->Initialize();
 }
 
@@ -85,7 +89,9 @@ DesignFlowStep_Status values_scheme::InternalExec()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       START_TIME(step_time);
+   }
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
    unsigned int i = 0;
@@ -95,7 +101,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
    last_intermediate_state fetch_previous(HLS->STG->GetStg(), HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline());
    next_unique_state get_next(HLS->STG->GetStg());
 
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       // std::cerr << "current state for sv " << HLS->Rliv->get_name(*vIt) << std::endl;
@@ -113,7 +119,7 @@ DesignFlowStep_Status values_scheme::InternalExec()
       if(HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
       {
          std::list<vertex> running_ops = HLS->STG->GetStg()->GetStateInfo(*vIt)->executing_operations;
-         const std::list<vertex>::const_iterator opEnd = running_ops.end();
+         const auto opEnd = running_ops.end();
          vertex state_0 = get_next(start_state);
          for(auto opIt = running_ops.begin(); opIt != opEnd; ++opIt)
          {
@@ -141,15 +147,23 @@ DesignFlowStep_Status values_scheme::InternalExec()
    }
    HLS->storage_value_information->number_of_storage_values = i;
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Storage Value Information of function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of storage values inserted: " + std::to_string(i));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       STOP_TIME(step_time);
+   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to compute storage value information: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "<--");
    if(output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -166,10 +166,14 @@ DesignFlowStep_Status classic_datapath::InternalExec()
       structural_objectRef dummy_gate = HLS->datapath->add_module_from_technology_library("dummy_REG", flipflop_SR, LIBRARY_STD, datapath_cir, HLS->HLS_T->get_technology_manager());
       structural_objectRef port_ck = dummy_gate->find_member(CLOCK_PORT_NAME, port_o_K, dummy_gate);
       if(port_ck)
+      {
          HLS->datapath->add_connection(clock, port_ck);
+      }
       structural_objectRef port_rst = dummy_gate->find_member(RESET_PORT_NAME, port_o_K, dummy_gate);
       if(port_rst)
+      {
          HLS->datapath->add_connection(reset, port_rst);
+      }
    }
    /// circuit is now complete. circuit manager can be initialized and dot representation can be created
    HLS->datapath->INIT(true);
@@ -231,7 +235,9 @@ void classic_datapath::add_ports()
          port_type = structural_type_descriptorRef(new structural_type_descriptor(function_parameter, BH));
       }
       if(HLSMgr->Rmem->has_base_address(function_parameter) && (HLSMgr->Rmem->is_parm_decl_stored(function_parameter) || HLSMgr->Rmem->is_parm_decl_copied(function_parameter)))
+      {
          need_start_done = true;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---type is: " + port_type->get_name());
       std::string prefix = "in_port_";
       port_o::port_direction port_direction = port_o::IN;

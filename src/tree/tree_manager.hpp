@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -350,7 +350,9 @@ class tree_manager
    friend std::ostream& operator<<(std::ostream& os, const tree_managerRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 
@@ -373,7 +375,7 @@ class tree_manager
     * merge two tree manager: this with TM_source
     * @param TM_source is one of the tree_manager.
     */
-   void merge_tree_managers(const tree_managerRef& TM_source);
+   void merge_tree_managers(const tree_managerRef& source_tree_manager);
 
    /**
     * Increment the number of added gotos
@@ -445,7 +447,7 @@ class tree_manager
     * @param old_node is the node whose occurrences have to be replace
     * @param new_node is thenode that replaces occurrences of old_node
     */
-   void ReplaceTreeNode(const tree_nodeRef& tn, const tree_nodeRef& old_node, const tree_nodeRef& new_node);
+   void ReplaceTreeNode(const tree_nodeRef& stmt, const tree_nodeRef& old_node, const tree_nodeRef& new_node);
 
    /**
     * memoization of integer constants
@@ -474,6 +476,6 @@ class tree_manager
     */
    bool check_ssa_uses(unsigned int fun_id) const;
 };
-typedef refcount<tree_manager> tree_managerRef;
-typedef refcount<const tree_manager> tree_managerConstRef;
+using tree_managerRef = refcount<tree_manager>;
+using tree_managerConstRef = refcount<const tree_manager>;
 #endif

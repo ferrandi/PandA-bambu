@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,7 +81,7 @@ class dom_post_dom_computation : public FunctionFrontendFlowStep
     * @param function_id is the node id of the function analyzed.
     * @param design_flow_manager is the design flow manager
     */
-   dom_post_dom_computation(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   dom_post_dom_computation(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

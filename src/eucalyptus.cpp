@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -122,11 +122,15 @@ int main(int argc, char* argv[])
       auto output_level = parameters->getOption<int>(OPT_output_level);
       STOP_TIME(cpu_time);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
+      {
          parameters->PrintFullHeader(std::cerr);
+      }
 
       /// eucalyptus does not perform a clock constrained synthesis
       if(!parameters->isOption(OPT_clock_period))
+      {
          parameters->setOption(OPT_clock_period, 0.0);
+      }
 
       // Technology library manager
       technology_managerRef TM = technology_managerRef(new technology_manager(parameters));

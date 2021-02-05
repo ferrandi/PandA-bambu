@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,25 +105,41 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 static kind ternary_operation_type0(kind operation_kind1, kind operation_kind2)
 {
    if(operation_kind1 == plus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_plus_expr_K;
+   }
    else if(operation_kind1 == plus_expr_K && operation_kind2 == minus_expr_K)
+   {
       return ternary_pm_expr_K;
+   }
    else if(operation_kind1 == minus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_mp_expr_K;
-   else // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
+   }
+   else
+   { // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
       return ternary_mm_expr_K;
+   }
 }
 
 static kind ternary_operation_type1(kind operation_kind1, kind operation_kind2)
 {
    if(operation_kind1 == plus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_plus_expr_K;
+   }
    else if(operation_kind1 == plus_expr_K && operation_kind2 == minus_expr_K)
+   {
       return ternary_mm_expr_K;
+   }
    else if(operation_kind1 == minus_expr_K && operation_kind2 == plus_expr_K)
+   {
       return ternary_pm_expr_K;
-   else // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
+   }
+   else
+   { // if(operation_kind1 == minus_expr_K && operation_kind2 == minus_expr_K)
       return ternary_mp_expr_K;
+   }
 }
 
 void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_managerRef TM)
@@ -139,10 +155,10 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
       auto it_los = list_of_stmt.begin();
       while(it_los != it_los_end)
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
+         {
             break;
-#endif
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(*it_los)->ToString());
          if(GET_NODE(*it_los)->get_kind() == gimple_assign_K)
          {
@@ -157,7 +173,7 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                   auto* ssa_defined = GetPointer<ssa_name>(GET_NODE(ga->op0));
                   unsigned int ssa_defined_size = tree_helper::Size(tree_helper::get_type_node(GET_NODE(ga->op0)));
                   auto* binop0 = GetPointer<binary_expr>(GET_NODE(ga->op1));
-                  if(ssa_defined->CGetNumberUses() == 1 and ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op0))) and ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op1))))
+                  if((ssa_defined->CGetNumberUses() == 1) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op0)))) && (ssa_defined_size == tree_helper::Size(tree_helper::get_type_node(GET_NODE(binop0->op1)))))
                   {
                      auto statement_node = ssa_defined->CGetUseStmts().begin()->first;
                      if(GET_NODE(statement_node)->get_kind() == gimple_assign_K)
@@ -185,17 +201,19 @@ void extract_patterns::ternary_plus_expr_extraction(statement_list* sl, tree_man
                            }
                            auto sn0 = GetPointer<ssa_name>(GET_NODE(binop0->op0));
                            if(sn0)
+                           {
                               sn0->AddUseStmt(statement_node);
+                           }
                            auto sn1 = GetPointer<ssa_name>(GET_NODE(binop0->op1));
                            if(sn1)
+                           {
                               sn1->AddUseStmt(statement_node);
+                           }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Statement removed " + GET_NODE(*it_los)->ToString());
                            B->RemoveStmt(*it_los);
                            it_los = list_of_stmt.begin();
                            it_los_end = list_of_stmt.end();
-#ifndef NDEBUG
                            AppM->RegisterTransformation(GetName(), statement_node);
-#endif
                            continue;
                         }
                      }

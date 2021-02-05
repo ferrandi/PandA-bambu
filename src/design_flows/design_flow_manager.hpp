@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,7 @@ class DesignFlowStepNecessitySorter : std::binary_function<vertex, vertex, bool>
     * Constructor
     * @param design_flow_graph is the graph to which design flow steps belong
     */
-   explicit DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef design_flow_graph_);
+   explicit DesignFlowStepNecessitySorter(const DesignFlowGraphConstRef _design_flow_graph);
 
    /**
     * Compare position of two vertices
@@ -241,5 +241,5 @@ class DesignFlowManager
    const DesignFlowStepRef CreateFlowStep(const std::string& signature) const;
 };
 
-typedef refcount<DesignFlowManager> DesignFlowManagerRef;
+using DesignFlowManagerRef = refcount<DesignFlowManager>;
 #endif

@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2021 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -255,11 +255,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, CallGraphBuiltinCall::F
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         break;
-      }
       case(PRECEDENCE_RELATIONSHIP):
+      case(INVALIDATION_RELATIONSHIP):
       {
          break;
       }
@@ -306,16 +303,18 @@ DesignFlowStep_Status CallGraphBuiltinCall::InternalExec()
       tree_nodeRef rf = TM->get_tree_node_const(root_function);
       rf->visit(&fdr_visitor);
    }
-   for(CustomUnorderedSet<unsigned int>::const_iterator Itr = allFunctions.begin(), End = allFunctions.end(); Itr != End; ++Itr)
+   for(unsigned int allFunction : allFunctions)
    {
-      std::string functionName = tree_helper::name_function(TM, *Itr);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(*Itr) + " " + functionName);
-      tree_nodeRef function = TM->get_tree_node_const(*Itr);
+      std::string functionName = tree_helper::name_function(TM, allFunction);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing function " + STR(allFunction) + " " + functionName);
+      tree_nodeRef function = TM->get_tree_node_const(allFunction);
       auto* funDecl = GetPointer<function_decl>(function);
       std::string type = tree_helper::print_type(TM, GET_INDEX_NODE(funDecl->type));
       if(funDecl->body && functionName != "__start_pragma__" && functionName != "__close_pragma__" && !boost::algorithm::starts_with(functionName, "__pragma__"))
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FunctionTypeString " + type);
-      typeToDeclaration[type].insert(*Itr);
+      }
+      typeToDeclaration[type].insert(allFunction);
    }
    for(const auto& block : stmtList->list_of_bloc)
    {
@@ -351,7 +350,9 @@ static tree_nodeRef getFunctionPointerType(tree_nodeRef fptr)
       pt = GetPointer<pointer_type>(GET_NODE(var->type));
    }
    else
+   {
       pt = GetPointer<pointer_type>(GET_NODE(sa->type));
+   }
 
    THROW_ASSERT(pt, "Declaration node has not information about pointer_type");
    THROW_ASSERT(GetPointer<function_type>(GET_NODE(pt->ptd)), "Pointer type has not information about pointed function_type");

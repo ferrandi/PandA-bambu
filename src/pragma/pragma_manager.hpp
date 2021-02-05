@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -224,7 +224,7 @@ class pragma_manager
 };
 
 /// Refcount definition for the class
-typedef refcount<const pragma_manager> pragma_managerConstRef;
-typedef refcount<pragma_manager> pragma_managerRef;
+using pragma_managerConstRef = refcount<const pragma_manager>;
+using pragma_managerRef = refcount<pragma_manager>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -162,7 +162,9 @@ static std::string input_vector_to_string(const std::vector<long long int>& to_b
    {
       output += (to_be_printed[i] == default_COND ? "-" : std::to_string(to_be_printed[i]));
       if(i != (to_be_printed.size() - 1) && with_comma)
+      {
          output += ",";
+      }
    }
    return output;
 }
@@ -252,7 +254,9 @@ void fsm_controller::create_state_machine(std::string& parse)
          {
             all_external = all_external && astg->CGetStateInfo(boost::target(*lst, *astg))->loopId != std::get<0>(loop);
             if(!all_external)
+            {
                break;
+            }
          }
          if(all_external)
          {
@@ -339,7 +343,9 @@ void fsm_controller::create_state_machine(std::string& parse)
             THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, op));
             structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
             if(!CM)
+            {
                continue;
+            }
             structural_objectRef top = CM->get_circ();
             THROW_ASSERT(top, "expected");
             auto* fu_module = GetPointer<module>(top);
@@ -348,10 +354,14 @@ void fsm_controller::create_state_machine(std::string& parse)
             structural_objectRef done_port_i = fu_module->find_member(DONE_PORT_NAME, port_o_K, top);
             /// do some checks
             if(!GetPointer<operation>(op_tn)->is_bounded() && (!start_port_i || !done_port_i))
+            {
                THROW_ERROR("Unbounded operations have to have both done_port and start_port ports!" + STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
+            }
             bool is_starting_operation;
             if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
+            {
                is_starting_operation = std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end();
+            }
             else
             {
                // since v now has to wait for loop completion, every operation will be unbounded
@@ -413,7 +423,9 @@ void fsm_controller::create_state_machine(std::string& parse)
                            else if(mux_slave->get_type() == generic_obj::resource_type::FUNCTIONAL_UNIT && active_fu.find(mux_slave) == active_fu.end())
                            {
                               if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
+                              {
                                  present_state[v][out_ports[s.second]] = 2;
+                              }
                            }
                         }
                      }
@@ -443,7 +455,9 @@ void fsm_controller::create_state_machine(std::string& parse)
    {
       // for every loop controller set the proper transition depending on the done port
       if(HLS->STG->get_entry_state() == v or HLS->STG->get_exit_state() == v)
+      {
          continue;
+      }
 
       // skip all but one state per loop
       if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end())
@@ -454,16 +468,20 @@ void fsm_controller::create_state_machine(std::string& parse)
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing state " + stg->CGetStateInfo(v)->name);
 
-         parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], 0);
+         parse += stg->CGetStateInfo(v)->name + " 0" + input_vector_to_string(present_state[v], false);
 
          std::list<EdgeDescriptor> sorted;
          EdgeDescriptor default_edge;
          bool found_default = false;
          vertex ver;
          if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
+         {
             ver = v;
+         }
          else
+         {
             ver = loop_last_state[stg->CGetStateInfo(v)->loopId];
+         }
          for(boost::tie(oe, oend) = boost::out_edges(ver, *stg); oe != oend; oe++)
          {
             if(!found_default)
@@ -474,13 +492,19 @@ void fsm_controller::create_state_machine(std::string& parse)
                   default_edge = *oe;
                }
                if(!found_default)
+               {
                   sorted.push_back(*oe);
+               }
             }
             else
+            {
                sorted.push_back(*oe);
+            }
          }
          if(found_default)
+         {
             sorted.push_back(default_edge);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Sorted next states");
 
          bool done_port_is_registered = HLS->registered_done_port;
@@ -493,7 +517,9 @@ void fsm_controller::create_state_machine(std::string& parse)
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing condition");
             auto transitionType = stg->CGetTransitionInfo(e)->get_type();
             if(transitionType == DONTCARE_COND)
+            {
                ; // do nothing
+            }
             else if(transitionType == TRUE_COND)
             {
                auto op = stg->CGetTransitionInfo(e)->get_operation();
@@ -555,29 +581,45 @@ void fsm_controller::create_state_machine(std::string& parse)
                for(auto label : labels)
                {
                   if(value == "-")
+                  {
                      value = get_guard_value(TreeM, label, op, data);
+                  }
                   else
+                  {
                      value += "|" + get_guard_value(TreeM, label, op, data);
+                  }
                }
                if(stg->CGetTransitionInfo(e)->get_has_default())
                {
                   if(value == "-")
+                  {
                      value = STR(default_COND);
+                  }
                   else
+                  {
                      value += "|" + STR(default_COND);
+                  }
                }
                in[cond_ports.find(op)->second] = value;
             }
             else
+            {
                THROW_ERROR("transition type not supported yet");
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed conditions: " + parse);
 
             parse += " : ";
-            for(std::vector<std::string>::const_iterator in_it = in.begin(); in_it != in.end(); ++in_it)
+            for(auto in_it = in.begin(); in_it != in.end(); ++in_it)
+            {
                if(in_it == in.begin())
+               {
                   parse += *in_it;
+               }
                else
+               {
                   parse += "," + *in_it;
+               }
+            }
 
             vertex tgt = boost::target(e, *stg);
             bool last_transition = tgt == HLS->STG->get_exit_state();
@@ -587,17 +629,25 @@ void fsm_controller::create_state_machine(std::string& parse)
             {
                OutEdgeIterator os_it, os_it_end;
                for(boost::tie(os_it, os_it_end) = boost::out_edges(tgt, *stg); os_it != os_it_end && !assert_done_port; os_it++)
+               {
                   if(boost::target(*os_it, *stg) == HLS->STG->get_exit_state())
+                  {
                      assert_done_port = true;
+                  }
+               }
             }
             else
+            {
                assert_done_port = last_transition;
+            }
 
             std::vector<long long int> transition_outputs(out_num, default_COND);
             for(unsigned int k = 0; k < out_num; k++)
             {
                if(present_state[v][k] == 1 && unbounded_ports.find(k) == unbounded_ports.end())
+               {
                   transition_outputs[k] = 0;
+               }
             }
 
             if(selectors.find(conn_binding::IN) != selectors.end())
@@ -610,9 +660,13 @@ void fsm_controller::create_state_machine(std::string& parse)
                      THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
                      bool source_activation = false;
                      if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
+                     {
                         source_activation = std::get<0>(a) == v;
+                     }
                      else
+                     {
                         source_activation = loop_map[stg->CGetStateInfo(v)->loopId].find(std::get<0>(a)) != loop_map[stg->CGetStateInfo(v)->loopId].end();
+                     }
                      if(source_activation && (std::get<1>(a) == tgt || std::get<1>(a) == NULL_VERTEX))
                      {
                         THROW_ASSERT(present_state[v][out_ports[s.second]] != 0, "unexpected condition");
@@ -626,7 +680,9 @@ void fsm_controller::create_state_machine(std::string& parse)
                   if(parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1)
                   {
                      if(wren_list.find(sel.second) != wren_list.end() && ((transition_outputs[wren_list[sel.second]] == 0) || (transition_outputs[wren_list[sel.second]] == default_COND && present_state[v][wren_list[sel.second]] != 1)))
+                     {
                         transition_outputs[sel.first] = 2;
+                     }
                   }
                }
             }
@@ -634,7 +690,9 @@ void fsm_controller::create_state_machine(std::string& parse)
             for(unsigned int k = 0; k < out_num; k++)
             {
                if(present_state[v][k] == transition_outputs[k])
+               {
                   transition_outputs[k] = default_COND;
+               }
                else if(present_state[v][k] != transition_outputs[k] && present_state[v][k] == 1 && transition_outputs[k] == 0)
                {
                   // std::cerr << "k " << k << " to " << HLS->STG->get_state_name(tgt)<< std::endl;
@@ -683,15 +741,23 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
          high_result = tree_helper::get_integer_cst_value(ic_high);
       }
       if(high_result == 0)
+      {
          return STR(low_result);
+      }
       else
       {
          std::string res_string;
          for(long long int current_value = low_result; current_value <= high_result; ++current_value)
+         {
             if(current_value == low_result)
+            {
                res_string = STR(current_value);
+            }
             else
+            {
                res_string += "|" + STR(current_value);
+            }
+         }
          return res_string;
       }
    }

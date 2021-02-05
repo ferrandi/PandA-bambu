@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -113,7 +113,9 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
             {
                auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
                if(GET_NODE(ae->op)->get_kind() == parm_decl_K)
+               {
                   parm_decl_addr.insert(GET_INDEX_NODE(ae->op));
+               }
             }
          }
       }

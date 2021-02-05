@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -90,7 +90,7 @@ DesignFlowStepSorter::DesignFlowStepSorter() = default;
 
 bool DesignFlowStepSorter::operator()(const DesignFlowStepRef x, const DesignFlowStepRef y) const
 {
-   return x->GetName() < y->GetName();
+   return x->GetName() > y->GetName();
 }
 
 DesignFlowStepSet::DesignFlowStepSet() : std::set<DesignFlowStepRef, DesignFlowStepSorter>(DesignFlowStepSorter())

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -99,8 +99,8 @@ template <typename Graph>
 struct cdfc_graph_vertex_selector
 {
  public:
-   typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_descriptor;
-   typedef CustomSet<vertex_descriptor> SET_container;
+   using vertex_descriptor = typename boost::graph_traits<Graph>::vertex_descriptor;
+   using SET_container = CustomSet<vertex_descriptor>;
    /// constructor
    cdfc_graph_vertex_selector() : all(true), support(nullptr)
    {
@@ -113,9 +113,13 @@ struct cdfc_graph_vertex_selector
    bool operator()(const vertex_descriptor& v) const
    {
       if(all)
+      {
          return true;
+      }
       else
+      {
          return support->find(v) != support->end();
+      }
    }
 
  private:
@@ -192,27 +196,27 @@ struct edge_cdfc_selector
 };
 
 /// bulk compatibility graph
-typedef boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t>, edge_cdfc_selector> boost_cdfc_graph;
+using boost_cdfc_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t>, edge_cdfc_selector>;
 
-typedef refcount<boost_cdfc_graph> boost_cdfc_graphRef;
-typedef refcount<const boost_cdfc_graph> boost_cdfc_graphConstRef;
+using boost_cdfc_graphRef = refcount<boost_cdfc_graph>;
+using boost_cdfc_graphConstRef = refcount<const boost_cdfc_graph>;
 
 /// compatibility graph
-typedef boost::filtered_graph<boost_cdfc_graph, cdfc_graph_edge_selector<boost_cdfc_graph>, cdfc_graph_vertex_selector<boost_cdfc_graph>> cdfc_graph;
+using cdfc_graph = boost::filtered_graph<boost_cdfc_graph, cdfc_graph_edge_selector<boost_cdfc_graph>, cdfc_graph_vertex_selector<boost_cdfc_graph>>;
 
 /// refcount version of cdfc_graph
-typedef refcount<cdfc_graph> cdfc_graphRef;
-typedef refcount<const cdfc_graph> cdfc_graphConstRef;
+using cdfc_graphRef = refcount<cdfc_graph>;
+using cdfc_graphConstRef = refcount<const cdfc_graph>;
 /// vertex definition
-typedef boost::graph_traits<cdfc_graph>::vertex_descriptor cdfc_vertex;
+using cdfc_vertex = boost::graph_traits<cdfc_graph>::vertex_descriptor;
 /// in_edge_iterator definition.
-typedef boost::graph_traits<cdfc_graph>::in_edge_iterator cdfc_in_edge_iterator;
+using cdfc_in_edge_iterator = boost::graph_traits<cdfc_graph>::in_edge_iterator;
 /// out_edge_iterator definition.
-typedef boost::graph_traits<cdfc_graph>::out_edge_iterator cdfc_out_edge_iterator;
+using cdfc_out_edge_iterator = boost::graph_traits<cdfc_graph>::out_edge_iterator;
 /// edge_iterator definition.
-typedef boost::graph_traits<cdfc_graph>::edge_iterator cdfc_edge_iterator;
+using cdfc_edge_iterator = boost::graph_traits<cdfc_graph>::edge_iterator;
 /// edge definition.
-typedef boost::graph_traits<cdfc_graph>::edge_descriptor cdfc_edge;
+using cdfc_edge = boost::graph_traits<cdfc_graph>::edge_descriptor;
 
 struct CdfcEdgeInfo : public EdgeInfo
 {
@@ -224,8 +228,8 @@ struct CdfcEdgeInfo : public EdgeInfo
     */
    explicit CdfcEdgeInfo(const int edge_weight);
 };
-typedef refcount<CdfcEdgeInfo> CdfcEdgeInfoRef;
-typedef refcount<const CdfcEdgeInfo> CdfcEdgeInfoConstRef;
+using CdfcEdgeInfoRef = refcount<CdfcEdgeInfo>;
+using CdfcEdgeInfoConstRef = refcount<const CdfcEdgeInfo>;
 
 /**
  * The info associated with a cdfc graph
@@ -242,8 +246,8 @@ struct CdfcGraphInfo : public GraphInfo
     */
    CdfcGraphInfo(const std::map<vertex, vertex>& c2s, const OpGraphConstRef operation_graph);
 };
-typedef refcount<CdfcGraphInfo> CdfcGraphInfoRef;
-typedef refcount<const CdfcGraphInfo> CdfcGraphInfoConstRef;
+using CdfcGraphInfoRef = refcount<CdfcGraphInfo>;
+using CdfcGraphInfoConstRef = refcount<const CdfcGraphInfo>;
 
 /**
  * Cdfc collection of graphs
@@ -287,13 +291,17 @@ class CdfcGraphsCollection : public graphs_collection
    inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
    {
       if(ExistsEdge(source, target))
+      {
          return AddSelector(source, target, selector);
+      }
       else
+      {
          return InternalAddEdge(source, target, selector, EdgeInfoRef(new CdfcEdgeInfo(0)));
+      }
    }
 };
-typedef refcount<CdfcGraphsCollection> CdfcGraphsCollectionRef;
-typedef refcount<const CdfcGraphsCollection> CdfcGraphsCollectionConstRef;
+using CdfcGraphsCollectionRef = refcount<CdfcGraphsCollection>;
+using CdfcGraphsCollectionConstRef = refcount<const CdfcGraphsCollection>;
 
 /**
  * Cdfc graph
@@ -336,8 +344,8 @@ class CdfcGraph : public graph
     */
    void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 };
-typedef refcount<CdfcGraph> CdfcGraphRef;
-typedef refcount<const CdfcGraph> CdfcGraphConstRef;
+using CdfcGraphRef = refcount<CdfcGraph>;
+using CdfcGraphConstRef = refcount<const CdfcGraph>;
 
 /// connection code can be
 /// no_def - source is not defined because is a parameter or a constan value
@@ -358,7 +366,7 @@ enum conn_code
 
 /// put into relation an operation vertex with its sources
 /// op vertex -> vector of port index -> set of pair < conn code, pair of < tree_var/storage_value, null/vertex> >
-typedef CustomUnorderedMap<vertex, std::vector<CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>>> connection_relation;
+using connection_relation = CustomUnorderedMap<vertex, std::vector<CustomOrderedSet<std::pair<conn_code, std::pair<unsigned int, vertex>>>>>;
 
 /**
  * Class managing the module allocation.
@@ -374,7 +382,7 @@ class cdfc_module_binding : public fu_binding_creator
                                  std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
    bool false_loop_search_cdfc_more(cdfc_vertex src, unsigned int level, unsigned k, cdfc_vertex start, const cdfc_graphConstRef& cdfc, const cdfc_graphConstRef& cg, std::deque<cdfc_edge>& candidate_edges, std::vector<bool>& visited,
                                     std::vector<bool>& cg_visited, std::vector<bool>& cdfc_visited);
-   bool can_be_clustered(vertex v, OpGraphConstRef fdfg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time);
+   bool can_be_clustered(vertex v, OpGraphConstRef fsdg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, const double mux_time);
 
    int weight_computation(bool cond1, bool cond2, vertex v1, vertex v2, const double mux_time, const OpGraphConstRef fdfg, const fu_bindingConstRef fu, const CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time,
 #ifdef HC_APPROACH
@@ -382,7 +390,7 @@ class cdfc_module_binding : public fu_binding_creator
 #endif
                           connection_relation& con_rel, double controller_delay, unsigned int prec);
 
-   void update_slack_starting_time(const OpGraphConstRef sdg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
+   void update_slack_starting_time(const OpGraphConstRef fdfg, OpVertexSet& sorted_vertices, CustomUnorderedMap<vertex, double>& slack_time, CustomUnorderedMap<vertex, double>& starting_time, bool update_starting_time, bool only_backward,
                                    bool only_forward);
 
    void initialize_connection_relation(connection_relation& con_rel, OpVertexSet& all_candidate_vertices);
@@ -398,7 +406,7 @@ class cdfc_module_binding : public fu_binding_creator
    /**
     * This is the constructor of the class.
     */
-   cdfc_module_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   cdfc_module_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor.

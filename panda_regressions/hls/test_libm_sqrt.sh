@@ -9,8 +9,8 @@ mkdir output_test_libm_sqrt
 cd output_test_libm_sqrt
 gcc -fopenmp -O3 -I$dir_script/../../etc/libbambu/ $dir_script/../../etc/libbambu/libm/poly_sqrt.c -DCHECK_SQRT_FUNCTION -lm 
 ./a.out
-cd ..
 return_value=$?
+cd ..
 if test $return_value != 0; then
    echo "C based test of softfloat sqrt not passed."
    exit $return_value

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1239,19 +1239,33 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
          get_used_variables(first_level_only, le->op0, list_of_variable);
          get_used_variables(first_level_only, le->op1, list_of_variable);
          if(le->op2)
+         {
             get_used_variables(first_level_only, le->op2, list_of_variable);
+         }
          if(le->op3)
+         {
             get_used_variables(first_level_only, le->op3, list_of_variable);
+         }
          if(le->op4)
+         {
             get_used_variables(first_level_only, le->op4, list_of_variable);
+         }
          if(le->op5)
+         {
             get_used_variables(first_level_only, le->op5, list_of_variable);
+         }
          if(le->op6)
+         {
             get_used_variables(first_level_only, le->op6, list_of_variable);
+         }
          if(le->op7)
+         {
             get_used_variables(first_level_only, le->op7, list_of_variable);
+         }
          if(le->op8)
+         {
             get_used_variables(first_level_only, le->op8, list_of_variable);
+         }
          break;
       }
       case gimple_switch_K:
@@ -1287,9 +1301,9 @@ void tree_helper::get_used_variables(bool first_level_only, const tree_nodeRef t
       case constructor_K:
       {
          auto* co = GetPointer<constructor>(t);
-         for(auto i = co->list_of_idx_valu.begin(); i != co->list_of_idx_valu.end(); ++i)
+         for(auto& i : co->list_of_idx_valu)
          {
-            get_used_variables(first_level_only, i->second, list_of_variable);
+            get_used_variables(first_level_only, i.second, list_of_variable);
          }
          break;
       }
@@ -1470,12 +1484,12 @@ tree_nodeRef tree_helper::find_obj_type_ref_function(const tree_nodeRef tn)
 #endif
       if(rt)
       {
-         for(auto x = rt->list_of_fncs.begin(); x != rt->list_of_fncs.end(); ++x)
+         for(auto& list_of_fnc : rt->list_of_fncs)
          {
-            auto* fd = GetPointer<function_decl>(GET_NODE(*x));
+            auto* fd = GetPointer<function_decl>(GET_NODE(list_of_fnc));
             if(fd && GET_INDEX_NODE(fd->type) == function_type)
             {
-               return *x;
+               return list_of_fnc;
             }
          }
       }
@@ -2316,10 +2330,15 @@ unsigned int tree_helper::get_field_idx(const tree_managerConstRef TM, const uns
       THROW_ASSERT(idx < rt->list_of_flds.size(), "unexpected index for list of fields");
       return GET_INDEX_NODE(rt->list_of_flds[idx]);
    }
-   else
+   else if(ut)
    {
       THROW_ASSERT(idx < ut->list_of_flds.size(), "unexpected index for list of fields");
       return GET_INDEX_NODE(ut->list_of_flds[idx]);
+   }
+   else
+   {
+      THROW_ERROR("unexpected behavior");
+      return 0;
    }
 }
 
@@ -5274,7 +5293,9 @@ void tree_helper::get_array_dimensions(const tree_managerConstRef& TM, const uns
       dims.push_back(range_domain);
    }
    else
+   {
       dims.push_back(0); // variable size array may fall in this case
+   }
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);
    if(elts->get_kind() == array_type_K)
@@ -5351,7 +5372,9 @@ unsigned int tree_helper::get_var_alignment(const tree_managerConstRef& TM, unsi
    const tree_nodeRef varnode = TM->get_tree_node_const(var);
    const auto* vd = GetPointer<var_decl>(varnode);
    if(vd)
+   {
       return vd->algn < 8 ? 1 : (vd->algn / 8);
+   }
    return 1;
 }
 
@@ -5566,7 +5589,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
             if(var > 0 && !tn->name)
             {
                /// Global variables or parameters
-               if((GetPointer<var_decl>(node) and (!(GetPointer<var_decl>(node)->scpe) or GET_NODE(GetPointer<var_decl>(node)->scpe)->get_kind() == translation_unit_decl_K)))
+               if(((GetPointer<var_decl>(node)) && (!(GetPointer<var_decl>(node)->scpe) || (GET_NODE(GetPointer<var_decl>(node)->scpe)->get_kind() == translation_unit_decl_K))))
                {
                   res += tree_helper::return_C_qualifiers(quals, true);
                }
@@ -6185,10 +6208,14 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
          {
             lnode = GetPointer<tree_list>(GET_NODE(lnode->chan));
             if(!GetPointer<void_type>(GET_NODE(lnode->valu)))
+            {
                prmtrs.push_back(lnode->valu);
+            }
          }
          for(auto valu : prmtrs)
+         {
             res += "," + print_type(TM, GET_INDEX_NODE(valu), global, print_qualifiers);
+         }
          break;
       }
       case template_type_parm_K:
@@ -7848,7 +7875,9 @@ void tree_helper::compute_ssa_uses_rec_ptr(const tree_nodeRef& curr_tn, CustomOr
          compute_ssa_uses_rec_ptr(le->op0, ssa_uses);
          compute_ssa_uses_rec_ptr(le->op1, ssa_uses);
          if(le->op2)
+         {
             compute_ssa_uses_rec_ptr(le->op2, ssa_uses);
+         }
          if(le->op3)
          {
             compute_ssa_uses_rec_ptr(le->op3, ssa_uses);
@@ -8188,7 +8217,9 @@ void tree_helper::ComputeSsaUses(const tree_nodeRef tn, TreeNodeMap<size_t>& ssa
          ComputeSsaUses(le->op0, ssa_uses);
          ComputeSsaUses(le->op1, ssa_uses);
          if(le->op2)
+         {
             ComputeSsaUses(le->op2, ssa_uses);
+         }
          if(le->op3)
          {
             ComputeSsaUses(le->op3, ssa_uses);
@@ -8424,11 +8455,11 @@ bool tree_helper::is_a_nop_function_decl(function_decl* fd)
             return true;
          }
          blocRef single_bb;
-         for(auto lob_it = sl->list_of_bloc.begin(); lob_it != sl->list_of_bloc.end(); ++lob_it)
+         for(auto& lob_it : sl->list_of_bloc)
          {
-            if(lob_it->first != bloc::ENTRY_BLOCK_ID && lob_it->first != bloc::EXIT_BLOCK_ID)
+            if(lob_it.first != bloc::ENTRY_BLOCK_ID && lob_it.first != bloc::EXIT_BLOCK_ID)
             {
-               single_bb = lob_it->second;
+               single_bb = lob_it.second;
             }
          }
          THROW_ASSERT(single_bb, "unexpected condition");
@@ -8552,19 +8583,33 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
          get_required_values(TM, required, GET_NODE(le->op0), GET_INDEX_NODE(le->op0));
          get_required_values(TM, required, GET_NODE(le->op1), GET_INDEX_NODE(le->op1));
          if(le->op2)
+         {
             get_required_values(TM, required, GET_NODE(le->op2), GET_INDEX_NODE(le->op2));
+         }
          if(le->op3)
+         {
             get_required_values(TM, required, GET_NODE(le->op3), GET_INDEX_NODE(le->op3));
+         }
          if(le->op4)
+         {
             get_required_values(TM, required, GET_NODE(le->op4), GET_INDEX_NODE(le->op4));
+         }
          if(le->op5)
+         {
             get_required_values(TM, required, GET_NODE(le->op5), GET_INDEX_NODE(le->op5));
+         }
          if(le->op6)
+         {
             get_required_values(TM, required, GET_NODE(le->op6), GET_INDEX_NODE(le->op6));
+         }
          if(le->op7)
+         {
             get_required_values(TM, required, GET_NODE(le->op7), GET_INDEX_NODE(le->op7));
+         }
          if(le->op8)
+         {
             get_required_values(TM, required, GET_NODE(le->op8), GET_INDEX_NODE(le->op8));
+         }
          break;
       }
       case gimple_cond_K:
@@ -8804,7 +8849,9 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
             tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
          } while(tl);
          for(auto tl_current0 : tl_list)
+         {
             required.emplace_back(GET_INDEX_NODE(tl_current0->valu), 0);
+         }
          break;
       }
       case component_ref_K:

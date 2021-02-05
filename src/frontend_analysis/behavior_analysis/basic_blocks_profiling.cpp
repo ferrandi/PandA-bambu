@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -158,7 +158,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
 
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      CustomOrderedSet<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+      const auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
       for(const auto function : functions)
       {
          AppM->CGetFunctionBehavior(function)->CGetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_profiling.dot");
@@ -169,8 +169,8 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
 
 void BasicBlocksProfiling::Initialize()
 {
-   CustomOrderedSet<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
-   for(auto function : functions)
+   const auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   for(const auto function : functions)
    {
       AppM->GetFunctionBehavior(function)->profiling_information->Clear();
    }

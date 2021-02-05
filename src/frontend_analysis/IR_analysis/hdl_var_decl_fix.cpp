@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -190,7 +190,9 @@ DesignFlowStep_Status HDLVarDeclFix::InternalExec()
    else
    {
       for(auto arg : fd->list_of_args)
+      {
          recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+      }
    }
 
    VarDeclFix::InternalExec();

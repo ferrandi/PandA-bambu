@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,7 +65,7 @@ class DesignFlowStepSet : public CustomUnorderedSet<DesignFlowStepRef>
 };
 #else
 #include <functional> // for binary_function
-#include <set>        // for set
+#include <set> // for set
 class DesignFlowStepSorter : std::binary_function<vertex, vertex, bool>
 {
  public:
@@ -224,7 +224,7 @@ class DesignFlowStep
     */
    virtual void PrintFinalIR() const;
 };
-typedef refcount<DesignFlowStep> DesignFlowStepRef;
-typedef refcount<const DesignFlowStep> DesignFlowStepConstRef;
+using DesignFlowStepRef = refcount<DesignFlowStep>;
+using DesignFlowStepConstRef = refcount<const DesignFlowStep>;
 
 #endif

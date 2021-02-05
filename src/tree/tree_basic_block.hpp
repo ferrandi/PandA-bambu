@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -170,7 +170,7 @@ struct bloc
     * Add a value to list of phi node.
     * @param a is a NODE_ID.
     */
-   void AddPhi(const tree_nodeRef a);
+   void AddPhi(const tree_nodeRef phi);
 
    /**
     * Add a statement in front of list of statements.

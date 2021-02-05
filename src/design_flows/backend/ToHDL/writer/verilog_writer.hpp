@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -101,7 +101,7 @@ class verilog_writer : public language_writer
     * @param port is the port
     * @return a string in case of a port owned by a port vector
     */
-   std::string may_slice_string(const structural_objectRef& port);
+   std::string may_slice_string(const structural_objectRef& cir);
 
    /**
     * Write the #include for each used library.
@@ -144,7 +144,7 @@ class verilog_writer : public language_writer
     * @param component_name is the name of the module to be instanced. It has to be specified since VHDL and verilog can print in different ways
     * @param write_parametrization specified if parameters have to be written
     */
-   void write_module_instance_begin(const structural_objectRef& cir, const std::string& component_name, bool write_parametrization) override;
+   void write_module_instance_begin(const structural_objectRef& cir, const std::string& module_name, bool write_parametrization) override;
 
    /**
     * Write the ending part of the instance of a module.
@@ -156,7 +156,7 @@ class verilog_writer : public language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool& first_port_analyzed) override;
+   void write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool& first_port_analyzed) override;
    void write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed) override;
    /**
     * Write the end part in a module declaration.

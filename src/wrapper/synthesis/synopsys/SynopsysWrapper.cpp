@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,9 +96,8 @@ SynthesisToolRef SynopsysWrapper::CreateWrapper(wrapper_t type, const ParameterC
 void SynopsysWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   for(auto& var : xml_reserved_vars)
    {
-      const xml_set_variable_tRef& var = (*it);
       dp->assign(var->name, getStringValue(var, dp), false);
    }
 

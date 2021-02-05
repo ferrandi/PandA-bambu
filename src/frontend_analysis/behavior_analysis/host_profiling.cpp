@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -155,12 +155,16 @@ void HostProfiling::normalize(const application_managerRef AppM, const CustomUno
          unsigned int loop_id = (*loop)->GetId();
          /// FIXME: zero loop
          if(loop_id == 0)
+         {
             continue;
+         }
          long double avg_number = 0.0L;
          long double abs_execution = 0.0L;
          PathProfilingInformation& path_profiling = FB->profiling_information->path_profiling;
          if(path_profiling.find(loop_id) == path_profiling.end())
+         {
             continue;
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Loop: " + boost::lexical_cast<std::string>(loop_id));
          const auto& elements = path_profiling.find(loop_id)->second;
          for(const auto& element : elements)
@@ -181,12 +185,12 @@ void HostProfiling::normalize(const application_managerRef AppM, const CustomUno
          FB->profiling_information->avg_iterations[(*loop)->GetId()] = avg_number;
          FB->profiling_information->abs_iterations[(*loop)->GetId()] = static_cast<unsigned long long int>(llroundl(abs_execution));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Factor: " + boost::lexical_cast<std::string>(abs_execution));
-         for(auto k = path_profiling.at(loop_id).begin(); k != path_profiling.at(loop_id).end(); ++k)
+         for(auto& k : path_profiling.at(loop_id))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->New path");
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Absolute path: " + boost::lexical_cast<std::string>(k->second));
-            k->second /= abs_execution;
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Relative path: " + boost::lexical_cast<std::string>(k->second));
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Absolute path: " + boost::lexical_cast<std::string>(k.second));
+            k.second /= abs_execution;
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Relative path: " + boost::lexical_cast<std::string>(k.second));
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");

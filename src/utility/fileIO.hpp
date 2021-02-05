@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,13 +69,13 @@
 /**
  * RefCount type definition for the input stream object.
  */
-typedef refcount<std::istream> fileIO_istreamRef;
-typedef refcount<const std::istream> fileIO_istreamConstRef;
+using fileIO_istreamRef = refcount<std::istream>;
+using fileIO_istreamConstRef = refcount<const std::istream>;
 
 /**
  * RefCount type definition for the input stream object.
  */
-typedef refcount<std::ostream> fileIO_ostreamRef;
+using fileIO_ostreamRef = refcount<std::ostream>;
 
 /**
  * this function returns an istream compressed or not.
@@ -149,7 +149,9 @@ inline void CopyStdout(const std::string& filename)
    {
       size_t wBytes = fwrite(buffer, 1, nBytes, stdout);
       if(wBytes < nBytes)
+      {
          break;
+      }
    }
    fclose(filese);
 }
@@ -231,7 +233,7 @@ inline std::string GetDirectory(const boost::filesystem::path file)
  */
 inline std::string GetExtension(const std::string& file)
 {
-   return file.find(".") == std::string::npos ? "" : file.substr(file.find_last_of(".") + 1);
+   return file.find('.') == std::string::npos ? "" : file.substr(file.find_last_of('.') + 1);
 }
 
 inline std::string GetExtension(boost::filesystem::path file)
@@ -247,9 +249,13 @@ inline std::string GetCurrentPath()
 {
    std::string current_dir;
    if(getenv("OWD"))
+   {
       current_dir = getenv("OWD");
+   }
    else
+   {
       current_dir = boost::filesystem::current_path().string();
+   }
 #ifdef _WIN32
    boost::replace_all(current_dir, "\\", "/");
 #endif
@@ -260,7 +266,9 @@ inline std::string GetPath(const std::string& path)
 {
    boost::filesystem::path local_path_file = path;
    if(local_path_file.is_relative())
+   {
       local_path_file = boost::filesystem::path(GetCurrentPath()) / local_path_file;
+   }
    return local_path_file.string();
 }
 
@@ -281,7 +289,9 @@ inline std::string relocate_compiler_path(const std::string& path)
       return "c:/msys64/" + path;
 #else
    else
+   {
       return path;
+   }
 #endif
 }
 inline bool ExistFile(const std::string& file)
@@ -307,7 +317,9 @@ inline void CopyFile(boost::filesystem::path file_source, boost::filesystem::pat
       }
    }
    else
+   {
       boost::filesystem::copy_file(file_source, file_target, boost::filesystem::copy_option::overwrite_if_exists);
+   }
 }
 
 /**

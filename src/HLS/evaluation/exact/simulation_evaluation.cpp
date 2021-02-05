@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -116,7 +116,7 @@ DesignFlowStep_Status SimulationEvaluation::InternalExec()
       HLSMgr->RSim->sim_tool->Clean();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cleaned up simulation files");
    }
-   std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
+   auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    for(const auto& objective : objective_vector)
    {

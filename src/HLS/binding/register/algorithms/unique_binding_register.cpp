@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,9 @@ DesignFlowStep_Status unique_binding_register::InternalExec()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       START_TIME(step_time);
+   }
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
    for(unsigned int sv = 0; sv < HLS->storage_value_information->get_number_of_storage_values(); sv++)
@@ -80,16 +82,26 @@ DesignFlowStep_Status unique_binding_register::InternalExec()
    }
    HLS->Rreg->set_used_regs(HLS->storage_value_information->get_number_of_storage_values());
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       STOP_TIME(step_time);
+   }
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
       HLS->Rreg->print();
+   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "<--");
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

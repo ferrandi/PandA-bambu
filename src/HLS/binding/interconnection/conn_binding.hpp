@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ class GenericObjUnsignedIntSorter;
 #include "graph.hpp"
 
 /// definition of the data transfer (tree_node, precision, from, to, data_transferred, current_op). Note that from/to can represent either chained vertices or STG states
-typedef std::tuple<unsigned int, unsigned int, vertex, vertex, vertex> data_transfer;
+using data_transfer = std::tuple<unsigned int, unsigned int, vertex, vertex, vertex>;
 
 /**
  * @class conn_binding
@@ -78,24 +78,17 @@ class conn_binding
 {
  public:
    /// direction port identifier
-   typedef enum
-   {
-      IN = 0,
-      OUT
-   } direction_type;
+   using direction_type = enum { IN = 0, OUT };
 
    /// type of the datastructure
-   typedef enum
-   {
-      STG = 0
-   } type_t;
+   using type_t = enum { STG = 0 };
 
    /// connection between two objects (<src, tgt, tgt_port, tgt_port_index>)
-   typedef std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int> connection;
+   using connection = std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>;
 
    /// definition of the connection implementations
 #if HAVE_UNORDERED
-   typedef std::map<connection, connection_objRef> conn_implementation_map;
+   using conn_implementation_map = std::map<connection, connection_objRef>;
 #else
 
    /// Sorter for connection
@@ -114,7 +107,7 @@ class conn_binding
 #endif
 
    /// definition of the key to deal with constant parameters
-   typedef std::tuple<std::string, std::string> const_param;
+   using const_param = std::tuple<std::string, std::string>;
 
    /// definition of target of a connection
    struct ConnectionTarget : public std::tuple<generic_objRef, unsigned int, unsigned int>
@@ -138,7 +131,7 @@ class conn_binding
 
    /// definition of sources of a connection
 #if HAVE_UNORDERED
-   typedef CustomUnorderedMap<generic_objRef, CustomOrderedSet<data_transfer>> ConnectionSources;
+   using ConnectionSources = CustomUnorderedMap<generic_objRef, CustomOrderedSet<data_transfer>>;
 #else
    typedef std::map<generic_objRef, CustomOrderedSet<data_transfer>, GenericObjSorter> ConnectionSources;
 #endif
@@ -181,7 +174,7 @@ class conn_binding
 
    /// selector ports
 #if HAVE_UNORDERED
-   typedef std::map<std::pair<generic_objRef, unsigned int>, generic_objRef> Selectors;
+   using Selectors = std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>;
 #else
    typedef std::map<std::pair<generic_objRef, unsigned int>, generic_objRef, GenericObjUnsignedIntSorter> Selectors;
 #endif
@@ -233,7 +226,7 @@ class conn_binding
    /**
     * Add a data converter, if needed, between two objects of the structural representation of the datapath
     */
-   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef conn_out, const structural_objectRef port_tgt, unsigned int conn_type);
+   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef src, const structural_objectRef port_tgt, unsigned int conn_type);
 
    /**
     * check if a port vector has its port bounded to something
@@ -269,7 +262,7 @@ class conn_binding
     */
    generic_objRef bind_command_port(const vertex& ver, direction_type dir, unsigned int mode, const OpGraphConstRef g);
 
-   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& ver, const OpGraphConstRef data);
+   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& cond, const OpGraphConstRef data);
 
    generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const generic_objRef elem, unsigned int op);
 
@@ -348,6 +341,6 @@ class conn_binding
    void cleanInternals();
 };
 /// Refcount definition of the class
-typedef refcount<conn_binding> conn_bindingRef;
+using conn_bindingRef = refcount<conn_binding>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,9 +59,13 @@
 static inline bool conv_really_needed(const tree_managerConstRef TM, unsigned int op0, unsigned int op1)
 {
    if(op0 != op1 and ((tree_helper::is_real(TM, op0) and tree_helper::is_real(TM, op1)) || (tree_helper::is_a_complex(TM, op0) and tree_helper::is_a_complex(TM, op1))))
+   {
       return tree_helper::size(TM, op0) != tree_helper::size(TM, op1);
+   }
    else
+   {
       return op0 != op1;
+   }
 }
 
 FunctionCallTypeCleanup::FunctionCallTypeCleanup(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -296,7 +300,9 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
    }
 
    if(changed)
+   {
       function_behavior->UpdateBBVersion();
+   }
    return DesignFlowStep_Status::SUCCESS;
 }
 

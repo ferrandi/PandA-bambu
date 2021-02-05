@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -116,7 +116,9 @@ class OrderedBasicBlock
          Inst = GetPointer<const gimple_node>(GET_CONST_NODE(*II));
          NumberedInsts[Inst] = NextInstPos++;
          if(Inst == A || Inst == B)
+         {
             break;
+         }
       }
 
       THROW_ASSERT(II != IE, "Instruction not found?");
@@ -1071,7 +1073,9 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
 
             // Insert required sigma operation into the intermediate basic block
             PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), interBB->number);
-            GetPointer<gimple_phi>(GET_NODE(PIC))->SetSSAUsesComputed();
+            const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
+            gp->SetSSAUsesComputed();
+            gp->artificial = true;
             interBB->AddPhi(PIC);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Insertion moved to intermediate BB" + STR(interBB->number));
          }
@@ -1079,7 +1083,9 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          {
             // Insert required sigma operation into the destination basic block
             PIC = tree_man->create_phi_node(new_ssa_var, list_of_def_edge, TM->GetTreeReindex(function_id), pwe->To);
-            GetPointer<gimple_phi>(GET_NODE(PIC))->SetSSAUsesComputed();
+            const auto gp = GetPointer<gimple_phi>(GET_NODE(PIC));
+            gp->SetSSAUsesComputed();
+            gp->artificial = true;
             ToBB->AddPhi(PIC);
          }
 
@@ -1090,6 +1096,7 @@ tree_nodeRef materializeStack(ValueDFSStack& RenameStack, unsigned int function_
          newSSA->range = RangeRef(op->range ? op->range->clone() : nullptr);
          newSSA->min = op->min;
          newSSA->max = op->max;
+         newSSA->var = op->var;
 
          PredicateMap.insert({PIC, ValInfo});
          Result.Def = PIC;
@@ -1263,14 +1270,12 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
          // ends up with predicateinfo.
          if(!Result.Def)
          {
-#ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
                return modified;
             }
-#endif
             Result.Def = materializeStack(RenameStack, function_id, sl, Op->getOperand(), PredicateMap, DT, TM, tree_man, interBranchBBs, DFSInfos
 #ifndef NDEBUG
                                           ,
@@ -1294,9 +1299,7 @@ bool eSSA::renameUses(CustomSet<OperandRef>& OpSet, eSSA::ValueInfoLookup& Value
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---New definition not dominating use in DT, but in CFG only");
          }
 #endif
-#ifndef NDEBUG
          AppM->RegisterTransformation(GetName(), VD.U->getUser());
-#endif
          VD.U->set(phi->res, TM);
          modified = true;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1318,15 +1321,21 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+         if(parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(VECTORIZE, SAME_FUNCTION));
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -1341,8 +1350,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool eSSA::HasToBeExecuted() const
 {
-   const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_id);
-   return FB->GetBBVersion() != bb_ver || FB->GetBitValueVersion() != bv_ver;
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
+   return function_behavior->GetBitValueVersion() != bv_ver || FunctionFrontendFlowStep::HasToBeExecuted();
+}
+
+void eSSA::Initialize()
+{
 }
 
 DesignFlowStep_Status eSSA::InternalExec()
@@ -1496,24 +1512,16 @@ DesignFlowStep_Status eSSA::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysis detected " + STR(OpsToRename.size()) + " operations to rename");
    if(OpsToRename.empty())
    {
+      DT.reset();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       return DesignFlowStep_Status::UNCHANGED;
    }
 
-   bool modified = renameUses(OpsToRename, ValueInfoNums, ValueInfos, DFSInfos, EdgeUsesOnly, sl);
+   const auto modified = renameUses(OpsToRename, ValueInfoNums, ValueInfos, DFSInfos, EdgeUsesOnly, sl);
    DT.reset();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
-   const auto FB = AppM->GetFunctionBehavior(function_id);
-   bb_ver = FB->GetBBVersion();
-   bv_ver = FB->GetBitValueVersion();
-   if(modified)
-   {
-      bb_ver = FB->UpdateBBVersion();
-      return DesignFlowStep_Status::SUCCESS;
-   }
-   return DesignFlowStep_Status::UNCHANGED;
-}
 
-void eSSA::Initialize()
-{
+   bv_ver = function_behavior->GetBitValueVersion();
+   modified ? function_behavior->UpdateBBVersion() : 0;
+   return modified ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
 }

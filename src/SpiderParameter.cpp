@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -161,7 +161,7 @@ void SpiderParameter::PrintProgramName(std::ostream& os) const
    os << "********************************************************************************" << std::endl;
    os << "                         ____        _     _" << std::endl;
    os << "                        / ___| _ __ (_) __| | ___ _ __" << std::endl;
-   os << "                        \\___ \\| '_ \\| |/ _` |/ _ \\ '__|" << std::endl;
+   os << R"(                        \___ \| '_ \| |/ _` |/ _ \ '__|)" << std::endl;
    os << "                         ___) | |_) | | (_| |  __/ |" << std::endl;
    os << "                        |____/| .__/|_|\\__,_|\\___|_|" << std::endl;
    os << "                              |_|" << std::endl;

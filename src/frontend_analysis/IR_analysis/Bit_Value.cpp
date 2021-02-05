@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -837,13 +837,17 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
                auto index = 0u;
                bool found = false;
                for(; index < address_bitsize; ++index)
+               {
                   if((1ULL << index) & align)
                   {
                      found = true;
                      break;
                   }
+               }
                if(!found)
+               {
                   ++address_bitsize;
+               }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Memory variable " + STR(address_bitsize));
          }
@@ -871,7 +875,9 @@ unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae, bool safe) const
 {
    auto vd = GetPointer<var_decl>(GET_NODE(ae->op));
    if(!vd)
+   {
       return 0;
+   }
    auto align = vd->algn;
    if(safe)
    {
@@ -884,11 +890,13 @@ unsigned int Bit_Value::lsb_to_zero(const addr_expr* ae, bool safe) const
    auto index = 0u;
    bool found = false;
    for(; index < AppM->get_address_bitsize(); ++index)
+   {
       if((1ULL << index) & align)
       {
          found = true;
          break;
       }
+   }
    return found ? index : 0;
 }
 
@@ -952,13 +960,11 @@ bool Bit_Value::update_IR()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Updating IR");
    for(const auto& b : best)
    {
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
          return res;
       }
-#endif
       const unsigned int tn_id = b.first;
       tree_nodeRef tn = TM->get_tree_node_const(tn_id);
       const auto kind = tn->get_kind();
@@ -971,9 +977,7 @@ bool Bit_Value::update_IR()
             ssa->bit_values = bitstring_to_string(b.second);
             res = true;
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var id: " + STR(tn_id) + " bitstring: " + ssa->bit_values);
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), tn);
-#endif
          }
          if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
          {
@@ -1081,7 +1085,9 @@ void Bit_Value::initialize()
       unsigned int p_decl_id = GET_INDEX_NODE(parm_decl_node);
       const tree_nodeConstRef parm_type = tree_helper::CGetType(GET_NODE(parm_decl_node));
       if(not is_handled_by_bitvalue(parm_type->index))
+      {
          continue;
+      }
       auto* p = GetPointer<parm_decl>(GET_NODE(parm_decl_node));
       std::deque<bit_lattice> b = p->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(parm_decl_node))) : string_to_bitstring(p->bit_values);
       parm.insert(std::make_pair(p_decl_id, b));
@@ -1116,9 +1122,13 @@ void Bit_Value::initialize()
    else
    {
       if(fd->bit_values.empty())
+      {
          best[function_id] = create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
+      }
       else
+      {
          best[function_id] = string_to_bitstring(fd->bit_values);
+      }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Index node of current function inserted: " + STR(function_id));
       if(tree_helper::is_int(TM, ret_type_id))
@@ -1471,9 +1481,13 @@ void Bit_Value::initialize()
                            const auto* called_fd = GetPointer<const function_decl>(fu_decl_node);
                            const auto new_bitvalue = called_fd->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(ga->op0))) : string_to_bitstring(called_fd->bit_values);
                            if(best[ssa_node_id].empty())
+                           {
                               best[ssa_node_id] = new_bitvalue;
+                           }
                            else
+                           {
                               best[ssa_node_id] = sup(new_bitvalue, best[ssa_node_id], ssa_node_id);
+                           }
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "updated bitstring: " + bitstring_to_string(best.at(ssa_node_id)));
                         }
                      }
@@ -1546,9 +1560,13 @@ void Bit_Value::initialize()
          {
             unsigned int ssa_use_node_id = std::get<0>(var_pair);
             if(ssa_use_node_id == 0)
+            {
                continue;
+            }
             if(not is_handled_by_bitvalue(ssa_use_node_id))
+            {
                continue;
+            }
             tree_nodeRef use_node = TM->get_tree_node_const(ssa_use_node_id);
             auto* ssa_use = GetPointer<ssa_name>(use_node);
 
@@ -1584,15 +1602,21 @@ void Bit_Value::initialize()
                      const auto& parm_bitvalue = parm.at(parm_id);
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "param bitstring: " + bitstring_to_string(parm_bitvalue));
                      if(not parm_bitvalue.empty())
+                     {
                         new_bitvalue = parm_bitvalue;
+                     }
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "new bitstring: " + bitstring_to_string(new_bitvalue));
 
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "id: " + STR(ssa_use_node_id) + " is in best? " + (best.find(ssa_use_node_id) == best.end() ? "NO" : "YES"));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "previous best bitstring: " + bitstring_to_string(best[ssa_use_node_id]));
                      if(best[ssa_use_node_id].empty())
+                     {
                         best[ssa_use_node_id] = new_bitvalue;
+                     }
                      else
+                     {
                         best[ssa_use_node_id] = sup(new_bitvalue, best[ssa_use_node_id], ssa_use_node_id);
+                     }
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "updated bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                   }
                   else if(GET_NODE(ssa_use->var)->get_kind() == var_decl_K)
@@ -1704,7 +1728,9 @@ void Bit_Value::initialize()
                   const auto use_node = GET_NODE(def_edge.first);
                   auto* ssa_use = GetPointer<ssa_name>(use_node);
                   if(not is_handled_by_bitvalue(ssa_use_node_id))
+                  {
                      continue;
+                  }
 
                   if(ssa_use)
                   {
@@ -1738,15 +1764,21 @@ void Bit_Value::initialize()
                            const auto& parm_bitvalue = parm.at(parm_id);
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "param bitstring: " + bitstring_to_string(parm_bitvalue));
                            if(not parm_bitvalue.empty())
+                           {
                               new_bitvalue = parm_bitvalue;
+                           }
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "new bitstring: " + bitstring_to_string(new_bitvalue));
 
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "id: " + STR(ssa_use_node_id) + " is in best? " + (best.find(ssa_use_node_id) == best.end() ? "NO" : "YES"));
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "previous best bitstring: " + bitstring_to_string(best[ssa_use_node_id]));
                            if(best[ssa_use_node_id].empty())
+                           {
                               best[ssa_use_node_id] = new_bitvalue;
+                           }
                            else
+                           {
                               best[ssa_use_node_id] = sup(new_bitvalue, best[ssa_use_node_id], ssa_use_node_id);
+                           }
                            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "updated bitstring: " + bitstring_to_string(best.at(ssa_use_node_id)));
                         }
                         else if(GET_NODE(ssa_use->var)->get_kind() == var_decl_K)
@@ -1841,5 +1873,9 @@ void Bit_Value::Initialize()
 
 bool Bit_Value::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return (bitvalue_version != function_behavior->GetBitValueVersion()) or FunctionFrontendFlowStep::HasToBeExecuted();
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -77,7 +77,9 @@ liveness::~liveness() = default;
 bool liveness::is_defined(unsigned int var) const
 {
    if(var_op_definition.find(var) != var_op_definition.end())
+   {
       return true;
+   }
 
    return false;
 }
@@ -105,9 +107,13 @@ void liveness::erase_el_live_in(const vertex& v, unsigned int var)
 const CustomOrderedSet<unsigned int>& liveness::get_live_in(const vertex& v) const
 {
    if(live_in.find(v) != live_in.end())
+   {
       return live_in.find(v)->second;
+   }
    else
+   {
       return empty_set;
+   }
 }
 
 void liveness::set_live_out(const vertex& v, unsigned int var)
@@ -133,9 +139,13 @@ void liveness::erase_el_live_out(const vertex& v, unsigned int var)
 const CustomOrderedSet<unsigned int>& liveness::get_live_out(const vertex& v) const
 {
    if(live_out.find(v) != live_out.end())
+   {
       return live_out.find(v)->second;
+   }
    else
+   {
       return empty_set;
+   }
 }
 
 vertex liveness::get_op_where_defined(unsigned int var) const
@@ -160,11 +170,17 @@ const CustomOrderedSet<vertex>& liveness::get_state_in(vertex state, vertex op, 
 bool liveness::has_state_in(vertex state, vertex op, unsigned int var) const
 {
    if(state_in_definitions.find(state) == state_in_definitions.end())
+   {
       return false;
+   }
    if(state_in_definitions.find(state)->second.find(op) == state_in_definitions.find(state)->second.end())
+   {
       return false;
+   }
    if(state_in_definitions.find(state)->second.find(op)->second.find(var) == state_in_definitions.find(state)->second.find(op)->second.end())
+   {
       return false;
+   }
    return true;
 }
 
@@ -184,11 +200,17 @@ const CustomOrderedSet<vertex>& liveness::get_state_out(vertex state, vertex op,
 bool liveness::has_state_out(vertex state, vertex op, unsigned int var) const
 {
    if(state_out_definitions.find(state) == state_out_definitions.end())
+   {
       return false;
+   }
    if(state_out_definitions.find(state)->second.find(op) == state_out_definitions.find(state)->second.end())
+   {
       return false;
+   }
    if(state_out_definitions.find(state)->second.find(op)->second.find(var) == state_out_definitions.find(state)->second.find(op)->second.end())
+   {
       return false;
+   }
    return true;
 }
 
@@ -212,7 +234,9 @@ const CustomOrderedSet<vertex>& liveness::get_state_where_run(vertex op) const
 const std::string& liveness::get_name(vertex v) const
 {
    if(v == NULL_VERTEX)
+   {
       return null_vertex_string;
+   }
    THROW_ASSERT(names.find(v) != names.end(), "state without a name");
    return names.find(v)->second;
 }
@@ -249,7 +273,9 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
                   if(id == HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->get_bb_index())
                   {
                      if(HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != 0 && HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId != HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id)
+                     {
                         THROW_ERROR("Attempting to change the loopId of state " + HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->name);
+                     }
                      HLS->STG->GetAstg()->GetStateInfo(std::get<0>(s_pair))->loopId = HLSMgr->CGetFunctionBehavior(HLS->functionId)->CGetBBGraph()->CGetBBNodeInfo(bb)->loop_id;
                   }
                }
@@ -261,7 +287,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          if(bbs.find(bb_1) != bbs.end())
          {
             cond1 = true;
-            for(auto s1 : op1_run)
+            for(const auto s1 : op1_run)
             {
                auto info = HLS->STG->GetAstg()->GetStateInfo(s1);
                THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
@@ -270,7 +296,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          if(bbs.find(bb_2) != bbs.end())
          {
             cond2 = true;
-            for(auto s2 : op2_run)
+            for(const auto s2 : op2_run)
             {
                auto info = HLS->STG->GetAstg()->GetStateInfo(s2);
                THROW_ASSERT(info->loopId == 0 || info->loopId == loop->GetId(), "The same operation is performed in multiple loops");
@@ -280,7 +306,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
          if(cond1 && cond2)
          {
             auto stg = HLS->STG->GetAstg();
-            for(auto s1 : op1_run)
+            for(const auto s1 : op1_run)
             {
                std::queue<vertex> to_analyze;
                std::set<vertex> analyzed;
@@ -305,7 +331,9 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
                      if(op2_run.find(tgt) != op2_run.end())
                      {
                         if(distance % initiation_time == 0)
+                        {
                            return false;
+                        }
                         continue;
                      }
 
@@ -326,10 +354,13 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
    }
 
    {
-      const CustomOrderedSet<vertex>::const_iterator op1_run_it_end = op1_run.end();
-      for(auto op1_run_it = op1_run.begin(); op1_run_it != op1_run_it_end; ++op1_run_it)
-         if(op2_run.find(*op1_run_it) != op2_run.end())
+      for(const auto s1 : op1_run)
+      {
+         if(op2_run.find(s1) != op2_run.end())
+         {
             return true;
+         }
+      }
       return false;
    }
 #if 0 && HAVE_EXPERIMENTAL
@@ -427,7 +458,9 @@ bool liveness::non_in_parallel(vertex v1, vertex v2, const BBGraphConstRef cdg) 
          vertex cer0_v1 = boost::source(*ie_it, *cdg);
          bool current_res = non_in_parallel(cer0_v1, v2, cdg);
          if(!current_res)
+         {
             return current_res;
+         }
       }
       return true;
    }
@@ -439,7 +472,9 @@ bool liveness::non_in_parallel(vertex v1, vertex v2, const BBGraphConstRef cdg) 
          vertex cer0_v2 = boost::source(*ie_it, *cdg);
          bool current_res = non_in_parallel(v1, cer0_v2, cdg);
          if(!current_res)
+         {
             return current_res;
+         }
       }
       return true;
    }

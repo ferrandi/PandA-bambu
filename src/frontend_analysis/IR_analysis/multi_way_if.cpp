@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -166,7 +166,9 @@ void multi_way_if::UpdateCfg(unsigned int pred_bb, unsigned int curr_bb)
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Updating control flow graph");
    /// Remove curr_bb from successor of pred_bb
    if(std::find(sl->list_of_bloc[pred_bb]->list_of_succ.begin(), sl->list_of_bloc[pred_bb]->list_of_succ.end(), curr_bb) != sl->list_of_bloc[pred_bb]->list_of_succ.end())
+   {
       sl->list_of_bloc[pred_bb]->list_of_succ.erase(std::find(sl->list_of_bloc[pred_bb]->list_of_succ.begin(), sl->list_of_bloc[pred_bb]->list_of_succ.end(), curr_bb));
+   }
 
    /// For each successor succ of curr_bb
    for(auto succ : sl->list_of_bloc[curr_bb]->list_of_succ)
@@ -175,16 +177,22 @@ void multi_way_if::UpdateCfg(unsigned int pred_bb, unsigned int curr_bb)
       if(sl->list_of_bloc[succ]->list_of_pred.begin() != sl->list_of_bloc[succ]->list_of_pred.end())
       {
          while(std::find(sl->list_of_bloc[succ]->list_of_pred.begin(), sl->list_of_bloc[succ]->list_of_pred.end(), curr_bb) != sl->list_of_bloc[succ]->list_of_pred.end())
+         {
             sl->list_of_bloc[succ]->list_of_pred.erase(std::find(sl->list_of_bloc[succ]->list_of_pred.begin(), sl->list_of_bloc[succ]->list_of_pred.end(), curr_bb));
+         }
       }
 
       /// Add pred_bb to its predecessor
       if(std::find(sl->list_of_bloc[succ]->list_of_pred.begin(), sl->list_of_bloc[succ]->list_of_pred.end(), pred_bb) == sl->list_of_bloc[succ]->list_of_pred.end())
+      {
          sl->list_of_bloc[succ]->list_of_pred.push_back(pred_bb);
+      }
 
       /// Add succ to successor of pred_bb
       if(std::find(sl->list_of_bloc[pred_bb]->list_of_succ.begin(), sl->list_of_bloc[pred_bb]->list_of_succ.end(), succ) == sl->list_of_bloc[pred_bb]->list_of_succ.end())
+      {
          sl->list_of_bloc[pred_bb]->list_of_succ.push_back(succ);
+      }
 
       /// Update phi information
       for(const auto& phi : sl->list_of_bloc[succ]->CGetPhiList())
@@ -194,7 +202,9 @@ void multi_way_if::UpdateCfg(unsigned int pred_bb, unsigned int curr_bb)
          for(const auto& def_edge : current_phi->CGetDefEdgesList())
          {
             if(def_edge.second == curr_bb)
+            {
                current_phi->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, pred_bb));
+            }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Modified phi " + phi->ToString());
       }
@@ -217,18 +227,22 @@ DesignFlowStep_Status multi_way_if::InternalExec()
    for(auto bb : sl->list_of_bloc)
    {
       unsigned int curr_bb = bb.first;
-      std::vector<unsigned int>::const_iterator lop_it_end = sl->list_of_bloc[curr_bb]->list_of_pred.end();
-      for(std::vector<unsigned int>::const_iterator lop_it = sl->list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
+      auto lop_it_end = sl->list_of_bloc[curr_bb]->list_of_pred.end();
+      for(auto lop_it = sl->list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
       {
          GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[*lop_it], inverse_vertex_map[curr_bb], CFG_SELECTOR);
       }
       for(auto succ : sl->list_of_bloc[curr_bb]->list_of_succ)
       {
          if(succ == bloc::EXIT_BLOCK_ID)
+         {
             GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[succ], CFG_SELECTOR);
+         }
       }
       if(sl->list_of_bloc[curr_bb]->list_of_succ.empty())
+      {
          GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+      }
    }
    /// add a connection between entry and exit thus avoiding problems with non terminating code
    GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
@@ -294,14 +308,12 @@ DesignFlowStep_Status multi_way_if::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because it contains an if");
          continue;
       }
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached limit of cfg transformations");
          continue;
       }
       AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
       /// check for short circuit conditions: i.e., if they have at least a successor in common
       /// if so we add a basic block on the shortest path (e.g., predecessor --> common successor)
       /// In this way in the produced gimple_multi_way_if there cannot be multiple conditions with the same next bb
@@ -390,7 +402,9 @@ void multi_way_if::MergeCondMulti(const unsigned int pred_bb, const unsigned int
 
    /// Remove old gimple multi way if
    while(sl->list_of_bloc[curr_bb]->CGetStmtList().size())
+   {
       sl->list_of_bloc[curr_bb]->RemoveStmt(sl->list_of_bloc[curr_bb]->CGetStmtList().front());
+   }
 
    /// First case: second bb is on the true edge
    if(sl->list_of_bloc[pred_bb]->true_edge == curr_bb)
@@ -449,7 +463,9 @@ void multi_way_if::MergeMultiMulti(const unsigned int pred_bb, const unsigned in
 
    /// Remove old gimple multi way if
    while(sl->list_of_bloc[curr_bb]->CGetStmtList().size())
+   {
       sl->list_of_bloc[curr_bb]->RemoveStmt(sl->list_of_bloc[curr_bb]->CGetStmtList().front());
+   }
 
    for(auto old_cond1 : old_gwi1->list_of_cond)
    {
@@ -558,7 +574,9 @@ void multi_way_if::MergeMultiCond(const unsigned int pred_bb, const unsigned int
 
    /// Remove old gimple_cond
    while(sl->list_of_bloc[curr_bb]->CGetStmtList().size())
+   {
       sl->list_of_bloc[curr_bb]->RemoveStmt(sl->list_of_bloc[curr_bb]->CGetStmtList().front());
+   }
 
    /// Create condition
    auto ce_cond = tree_man->ExtractCondition(old_ce, sl->list_of_bloc[pred_bb]);
@@ -689,9 +707,13 @@ void multi_way_if::FixCfg(const unsigned int pred_bb, const unsigned int succ_bb
    pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), succ_bb));
    pred_block->list_of_succ.push_back(new_basic_block_index);
    if(pred_block->true_edge == succ_bb)
+   {
       pred_block->true_edge = new_basic_block_index;
+   }
    if(pred_block->false_edge == succ_bb)
+   {
       pred_block->false_edge = new_basic_block_index;
+   }
 
    /// Fix the last statement of the predecessor
    auto& pred_list_of_stmt = pred_block->CGetStmtList();
@@ -720,7 +742,9 @@ void multi_way_if::FixCfg(const unsigned int pred_bb, const unsigned int succ_bb
       for(auto& def_edge : gp->CGetDefEdgesList())
       {
          if(def_edge.second == pred_bb)
+         {
             gp->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(def_edge.first, new_basic_block_index));
+         }
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added BB" + STR(new_basic_block_index));
@@ -730,7 +754,9 @@ bool multi_way_if::HasToBeExecuted() const
 {
 #if HAVE_ILP_BUILT
    if((parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING) and GetPointer<const HLS_manager>(AppM) and not GetPointer<const HLS_manager>(AppM)->get_HLS(function_id))
+   {
       return false;
+   }
 #endif
 
    /// Multi way if can be executed only after vectorization

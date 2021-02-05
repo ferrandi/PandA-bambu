@@ -190,7 +190,7 @@ int main()
       b.b=sign<<31|(exp << 23)|index_b;
       c.b = __float32_divSRT4(a.b, b.b);
       d.b = __float32_divG(a.b, b.b);
-      golden.f = a.f / b.f;
+      golden.f = 0.0f / 0.0f;
       if((c.b != golden.b && c.f != golden.f) || (d.b != golden.b && d.f != golden.f))
       {
         printf("J) a.b=%u b.b=%u, c.b=%u, d.b=%u, golden.b=%u \n", a.b, b.b, c.b, d.b, golden.b);

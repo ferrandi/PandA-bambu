@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,7 @@ class SymbolicApplicationFrontendFlowStep : public ApplicationFrontendFlowStep
     * @param design_flow_manager is the design flow manager
     * @param _Param is the set of the parameters
     */
-   SymbolicApplicationFrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType frontend_flow_step_type, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   SymbolicApplicationFrontendFlowStep(const application_managerRef AppM, const FrontendFlowStepType _represented_frontend_flow_step, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

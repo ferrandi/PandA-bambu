@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -63,12 +63,18 @@ bool Bit_Value::manage_forward_binary_operands(const binary_expr* operation, uns
       {
          const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
          if(not is_handled_by_bitvalue(op1_type->index))
+         {
             return false;
+         }
          else
+         {
             arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+         }
       }
       else
+      {
          arg1_bitstring = current.at(arg1_uid);
+      }
    }
    else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
    {
@@ -85,7 +91,9 @@ bool Bit_Value::manage_forward_binary_operands(const binary_expr* operation, uns
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op0))->valr) + " : " + bitstring_to_string(arg1_bitstring));
    }
    else
+   {
       return false;
+   }
 
    if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
    {
@@ -94,12 +102,18 @@ bool Bit_Value::manage_forward_binary_operands(const binary_expr* operation, uns
       {
          const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
          if(not is_handled_by_bitvalue(op2_type->index))
+         {
             return false;
+         }
          else
+         {
             arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
+         }
       }
       else
+      {
          arg2_bitstring = current.at(arg2_uid);
+      }
    }
    else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
    {
@@ -116,7 +130,9 @@ bool Bit_Value::manage_forward_binary_operands(const binary_expr* operation, uns
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op1))->valr) + " : " + bitstring_to_string(arg2_bitstring));
    }
    else
+   {
       return false;
+   }
    return true;
 }
 
@@ -135,9 +151,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       {
          const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(ga->op1));
          if(not is_handled_by_bitvalue(op1_type->index))
+         {
             return res;
+         }
          else
+         {
             res = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(ga->op1)));
+         }
       }
       else
       {
@@ -162,7 +182,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       if(arg1_bitstring.size() > arg2_bitstring.size())
       {
@@ -177,8 +199,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " +");
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-      std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-      std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+      auto arg1_it = arg1_bitstring.rbegin();
+      auto arg2_it = arg2_bitstring.rbegin();
       bit_lattice carry1 = bit_lattice::ZERO;
       unsigned int max_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
 
@@ -190,7 +212,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       }
 
       if(tree_helper::is_int(TM, output_uid) && res.size() < max_bitsize)
+      {
          res.push_front(plus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(carry1).back());
+      }
       else if(!tree_helper::is_int(TM, output_uid))
       {
          while(res.size() < max_bitsize)
@@ -220,12 +244,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
       {
@@ -235,7 +265,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -244,12 +276,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
             if(not is_handled_by_bitvalue(op2_type->index))
+            {
                return res;
+            }
             else
+            {
                arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
+            }
          }
          else
+         {
             arg2_bitstring = current.at(arg2_uid);
+         }
       }
       else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
       {
@@ -259,7 +297,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op1))->value) + " : " + bitstring_to_string(arg2_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op2)->get_kind() == ssa_name_K)
       {
@@ -268,12 +308,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op3_type = tree_helper::CGetType(GET_NODE(operation->op2));
             if(not is_handled_by_bitvalue(op3_type->index))
+            {
                return res;
+            }
             else
+            {
                arg3_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op2)));
+            }
          }
          else
+         {
             arg3_bitstring = current.at(arg3_uid);
+         }
       }
       else if(GET_NODE(operation->op2)->get_kind() == integer_cst_K)
       {
@@ -283,16 +329,24 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op2))->value) + " : " + bitstring_to_string(arg3_bitstring));
       }
       else
+      {
          return res;
+      }
 
       auto ternary_adders = [&] {
          size_t arg_size_max = std::max({arg1_bitstring.size(), arg2_bitstring.size(), arg3_bitstring.size()});
          if(arg1_bitstring.size() < arg_size_max)
+         {
             arg1_bitstring = sign_extend_bitstring(arg1_bitstring, tree_helper::is_int(TM, arg1_uid), arg_size_max);
+         }
          if(arg2_bitstring.size() < arg_size_max)
+         {
             arg2_bitstring = sign_extend_bitstring(arg2_bitstring, tree_helper::is_int(TM, arg2_uid), arg_size_max);
+         }
          if(arg3_bitstring.size() < arg_size_max)
+         {
             arg3_bitstring = sign_extend_bitstring(arg3_bitstring, tree_helper::is_int(TM, arg3_uid), arg_size_max);
+         }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level,
                         "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + (op_kind == ternary_plus_expr_K || op_kind == ternary_pm_expr_K ? " + " : " - ") + STR(arg2_uid) +
@@ -326,9 +380,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          if(tree_helper::is_int(TM, output_uid) and res_int.size() < max_bitsize)
          {
             if(op_kind == ternary_plus_expr_K or op_kind == ternary_pm_expr_K)
+            {
                res_int.push_front(plus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(carry1).back());
+            }
             else
+            {
                res_int.push_front(minus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(carry1).back());
+            }
          }
          else if(not tree_helper::is_int(TM, output_uid))
          {
@@ -375,9 +433,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          if(tree_helper::is_int(TM, output_uid) and res.size() < max_bitsize)
          {
             if(op_kind == ternary_plus_expr_K or op_kind == ternary_mp_expr_K)
+            {
                res.push_front(plus_expr_map.at(res_int.front()).at(arg3_bitstring.front()).at(carry1).back());
+            }
             else
+            {
                res.push_front(minus_expr_map.at(res_int.front()).at(arg3_bitstring.front()).at(carry1).back());
+            }
          }
          else if(not tree_helper::is_int(TM, output_uid))
          {
@@ -410,7 +472,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       //    auto mult0 = [&] {
       //       if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -486,24 +550,34 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             arg2_bitstring = sign_extend_bitstring(arg2_bitstring, tree_helper::is_int(TM, arg2_uid), res_bitsize);
          }
          while(arg1_bitstring.size() > res_bitsize)
+         {
             arg1_bitstring.pop_front();
+         }
          while(arg2_bitstring.size() > res_bitsize)
+         {
             arg2_bitstring.pop_front();
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " * " + STR(arg2_uid));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " *");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
          while(res.size() < res_bitsize)
+         {
             res.push_front(bit_lattice::ZERO);
+         }
          auto arg2_it = arg2_bitstring.crbegin();
          for(size_t pos = 0; arg2_it != arg2_bitstring.crend() && pos < res_bitsize; ++arg2_it, ++pos)
          {
             std::deque<bit_lattice> temp_op1;
             while(temp_op1.size() < pos)
+            {
                temp_op1.push_front(bit_lattice::ZERO);
+            }
             auto arg1_it = arg1_bitstring.crbegin();
             for(size_t idx = 0; (idx + pos) < res_bitsize; ++idx, ++arg1_it)
+            {
                temp_op1.push_front(bit_and_expr_map.at(*arg1_it).at(*arg2_it));
+            }
             bit_lattice carry1 = bit_lattice::ZERO;
             std::deque<bit_lattice> temp_res;
             auto temp_op1_it = temp_op1.crbegin();
@@ -518,8 +592,10 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             res = temp_res;
          }
       };
-      if(1)
+      if(true)
+      {
          mult1();
+      }
    }
 #endif
 #if 1
@@ -533,16 +609,24 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
       auto tde0 = [&] {
          unsigned res_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
 
          if(tree_helper::is_int(TM, arg1_uid))
+         {
             res = create_u_bitstring(1u + static_cast<unsigned int>(arg1_bitstring.size()));
+         }
          else
+         {
             res = create_u_bitstring(static_cast<unsigned int>(arg1_bitstring.size()));
+         }
          while(res.size() > res_bitsize)
+         {
             res.pop_front();
+         }
       };
       tde0();
    }
@@ -556,16 +640,24 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
       auto tme0 = [&] {
          unsigned res_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
 
          if(tree_helper::is_int(TM, arg1_uid))
+         {
             res = create_u_bitstring(1 + static_cast<unsigned int>(std::min(arg1_bitstring.size(), arg2_bitstring.size())));
+         }
          else
+         {
             res = create_u_bitstring(static_cast<unsigned int>(std::min(arg1_bitstring.size(), arg2_bitstring.size())));
+         }
          while(res.size() > res_bitsize)
+         {
             res.pop_front();
+         }
       };
       tme0();
    }
@@ -582,7 +674,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto gt0 = [&] {
          bool is_signed_var = tree_helper::is_int(TM, arg1_uid) || tree_helper::is_int(TM, arg2_uid);
@@ -600,8 +694,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " >");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -663,7 +757,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto ge0 = [&] {
          if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -680,8 +776,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
          bool is_signed_var = tree_helper::is_int(TM, arg1_uid) || tree_helper::is_int(TM, arg2_uid);
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -743,7 +839,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto lt0 = [&] {
          if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -760,8 +858,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
          bool is_signed_var = tree_helper::is_int(TM, arg1_uid) || tree_helper::is_int(TM, arg2_uid);
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -823,7 +921,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto le0 = [&] {
          if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -840,8 +940,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
          bool is_signed_var = tree_helper::is_int(TM, arg1_uid) || tree_helper::is_int(TM, arg2_uid);
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -903,7 +1003,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto ee0 = [&] {
          if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -919,8 +1021,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " ==");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -968,7 +1070,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto ne0 = [&] {
          if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -984,8 +1088,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " !=");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " ?");
 
-         std::deque<bit_lattice>::const_iterator arg1_bitstring_it = arg1_bitstring.begin();
-         std::deque<bit_lattice>::const_iterator arg2_bitstring_it = arg2_bitstring.begin();
+         auto arg1_bitstring_it = arg1_bitstring.begin();
+         auto arg2_bitstring_it = arg2_bitstring.begin();
          bool computed_result = false;
          for(; arg1_bitstring_it != arg1_bitstring.end() && arg2_bitstring_it != arg2_bitstring.end(); ++arg1_bitstring_it, ++arg2_bitstring_it)
          {
@@ -1034,21 +1138,27 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto me0 = [&] {
          size_t arg_size_max = std::max(arg1_bitstring.size(), arg2_bitstring.size());
          if(arg_size_max > arg2_bitstring.size())
+         {
             arg2_bitstring = sign_extend_bitstring(arg2_bitstring, tree_helper::is_int(TM, arg2_uid), arg_size_max);
+         }
          if(arg_size_max > arg1_bitstring.size())
+         {
             arg1_bitstring = sign_extend_bitstring(arg1_bitstring, tree_helper::is_int(TM, arg1_uid), arg_size_max);
+         }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " - " + STR(arg2_uid));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " -");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
          bit_lattice borrow = bit_lattice::ZERO;
 
          unsigned int max_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
@@ -1058,11 +1168,15 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             borrow = minus_expr_map.at(*arg1_it).at(*arg2_it).at(borrow).front();
          }
          if(tree_helper::is_int(TM, output_uid) && res.size() < max_bitsize)
+         {
             res.push_front(minus_expr_map.at(arg1_bitstring.front()).at(arg2_bitstring.front()).at(borrow).back());
+         }
          else if(!tree_helper::is_int(TM, output_uid))
          {
             while(res.size() < max_bitsize)
+            {
                res.push_front(borrow);
+            }
          }
       };
       me0();
@@ -1083,12 +1197,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
+            }
          }
          else
+         {
             arg_bitstring = current.at(arg_uid);
+         }
       }
       else if(GET_NODE(operation->op)->get_kind() == integer_cst_K or GET_NODE(operation->op)->get_kind() == real_cst_K)
       {
@@ -1097,7 +1217,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          arg_bitstring = best.at(arg_uid);
       }
       else
+      {
          return res;
+      }
 
       auto ne0 = [&] {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = - " + STR(arg_uid));
@@ -1117,7 +1239,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             borrow = minus_expr_map.at(bit_lattice::ZERO).at(*arg_it).at(borrow).front();
          }
          if(tree_helper::is_int(TM, output_uid) && res.size() < max_bitsize)
+         {
             res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(arg_bitstring.front()).at(borrow).back());
+         }
       };
 
       if(tree_helper::is_real(TM, arg_uid))
@@ -1153,7 +1277,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
       const tree_nodeConstRef op_type = tree_helper::CGetType(GET_NODE(operation->op));
       if(not is_handled_by_bitvalue(op_type->index))
+      {
          return res;
+      }
 
       const unsigned int arg_uid = GET_INDEX_NODE(operation->op);
 
@@ -1161,9 +1287,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       if(GET_NODE(operation->op)->get_kind() == ssa_name_K)
       {
          if(current.find(arg_uid) == current.end())
+         {
             arg_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
+         }
          else
+         {
             arg_bitstring = current.at(arg_uid);
+         }
       }
       else if(GET_NODE(operation->op)->get_kind() == integer_cst_K or GET_NODE(operation->op)->get_kind() == real_cst_K)
       {
@@ -1198,7 +1328,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   borrow = borrow_and_bit_pair.front();
                }
                if(res.size() < BitLatticeManipulator::Size(op_type))
+               {
                   res.push_front(minus_expr_map.at(bit_lattice::ZERO).at(arg_bitstring.front()).at(borrow).back());
+               }
                break;
             }
             case bit_lattice::U:
@@ -1212,7 +1344,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                   borrow = borrow_and_bit_pair.front();
                }
                if(negated_bitstring.size() < BitLatticeManipulator::Size(op_type))
+               {
                   negated_bitstring.push_front(minus_expr_map.at(bit_lattice::ZERO).at(arg_bitstring.front()).at(borrow).back());
+               }
                res = inf(arg_bitstring, negated_bitstring, output_uid);
                break;
             }
@@ -1258,7 +1392,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto bae0 = [&] {
          unsigned int max_size = BitLatticeManipulator::Size(GET_NODE(ga->op0));
@@ -1275,8 +1411,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " &");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
 
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++bit_index)
          {
@@ -1297,13 +1433,19 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto bie0 = [&] {
          if(arg1_bitstring.size() == 1 && arg1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg1_uid) && !tree_helper::is_int(TM, arg1_uid))
+         {
             arg1_bitstring.push_front(bit_lattice::ZERO);
+         }
          if(arg2_bitstring.size() == 1 && arg2_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg2_uid) && !tree_helper::is_int(TM, arg2_uid))
+         {
             arg2_bitstring.push_front(bit_lattice::ZERO);
+         }
          unsigned int max_size = BitLatticeManipulator::Size(GET_NODE(ga->op0));
          if(max_size > arg2_bitstring.size())
          {
@@ -1318,8 +1460,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " |");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
 
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++bit_index)
          {
@@ -1346,12 +1488,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
       {
@@ -1361,7 +1509,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -1370,12 +1520,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
             if(not is_handled_by_bitvalue(op2_type->index))
+            {
                return res;
+            }
             else
+            {
                arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
+            }
          }
          else
+         {
             arg2_bitstring = current.at(arg2_uid);
+         }
       }
       else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
       {
@@ -1385,7 +1541,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op1))->value) + " : " + bitstring_to_string(arg2_bitstring));
       }
       else
+      {
          return res;
+      }
 
       auto bice0 = [&] {
          long long int offset = GetPointer<integer_cst>(GET_NODE(operation->op2))->value;
@@ -1403,16 +1561,20 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " |concat");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
          long long index = 0;
 
          for(; arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++index)
          {
             if(index < offset)
+            {
                res.push_front(*arg2_it);
+            }
             else
+            {
                res.push_front(*arg1_it);
+            }
          }
       };
       bice0();
@@ -1429,13 +1591,19 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto bxe0 = [&] {
          if(arg1_bitstring.size() == 1 && arg1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg1_uid) && !tree_helper::is_int(TM, arg1_uid))
+         {
             arg1_bitstring.push_front(bit_lattice::ZERO);
+         }
          if(arg2_bitstring.size() == 1 && arg2_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg2_uid) && !tree_helper::is_int(TM, arg2_uid))
+         {
             arg2_bitstring.push_front(bit_lattice::ZERO);
+         }
 
          unsigned int max_size = BitLatticeManipulator::Size(GET_NODE(ga->op0));
          if(max_size > arg2_bitstring.size())
@@ -1451,8 +1619,8 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg1_bitstring) + " ^");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(arg2_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
-         std::deque<bit_lattice>::const_reverse_iterator arg2_it = arg2_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
+         auto arg2_it = arg2_bitstring.rbegin();
 
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend() && arg2_it != arg2_bitstring.rend(); ++arg1_it, ++arg2_it, ++bit_index)
          {
@@ -1477,12 +1645,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op)->get_kind() == integer_cst_K)
       {
@@ -1492,11 +1666,15 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
       auto bne0 = [&] {
          unsigned int max_size = BitLatticeManipulator::Size(GET_NODE(ga->op0));
          if(arg1_bitstring.size() == 1 && arg1_bitstring.at(0) == bit_lattice::X && !tree_helper::is_bool(TM, arg1_uid) && !tree_helper::is_int(TM, arg1_uid))
+         {
             arg1_bitstring.push_front(bit_lattice::ZERO);
+         }
          if(arg1_bitstring.size() < max_size)
          {
             arg1_bitstring = sign_extend_bitstring(arg1_bitstring, tree_helper::is_int(TM, arg1_uid), max_size);
@@ -1504,7 +1682,7 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = ~" + STR(arg1_uid));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, " ~" + bitstring_to_string(arg1_bitstring) + " =");
 
-         std::deque<bit_lattice>::const_reverse_iterator arg1_it = arg1_bitstring.rbegin();
+         auto arg1_it = arg1_bitstring.rbegin();
          for(unsigned bit_index = 0; bit_index < max_size && arg1_it != arg1_bitstring.rend(); ++arg1_it, ++bit_index)
          {
             res.push_front(bit_xor_expr_map.at(*arg1_it).at(bit_lattice::ONE));
@@ -1525,7 +1703,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto tae0 = [&] {
          if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -1550,7 +1730,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_left = bit_lattice::U;
+            }
          }
          bit_lattice arg_right = bit_lattice::ZERO;
          for(auto current_bit : arg2_bitstring)
@@ -1561,7 +1743,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_right = bit_lattice::U;
+            }
          }
          res.push_front(bit_and_expr_map.at(arg_left).at(arg_right));
       };
@@ -1578,7 +1762,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto toe0 = [&] {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " || " + STR(arg2_uid));
@@ -1594,7 +1780,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_left = bit_lattice::U;
+            }
          }
          bit_lattice arg_right = bit_lattice::ZERO;
          for(auto current_bit : arg2_bitstring)
@@ -1605,7 +1793,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_right = bit_lattice::U;
+            }
          }
          res.push_front(bit_ior_expr_map.at(arg_left).at(arg_right));
       };
@@ -1622,7 +1812,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg1_uid = 0;
 
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto txe0 = [&] {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " ^ " + STR(arg2_uid));
@@ -1638,7 +1830,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_left = bit_lattice::U;
+            }
          }
          bit_lattice arg_right = bit_lattice::ZERO;
          for(auto current_bit : arg2_bitstring)
@@ -1649,7 +1843,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_right = bit_lattice::U;
+            }
          }
 
          res.push_front(bit_xor_expr_map.at(arg_left).at(arg_right));
@@ -1671,12 +1867,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op)->get_kind() == integer_cst_K)
       {
@@ -1686,7 +1888,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       auto tne0 = [&] {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = !" + STR(arg1_uid));
@@ -1701,7 +1905,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_left = bit_lattice::U;
+            }
          }
          res.push_front(bit_xor_expr_map.at(arg_left).at(bit_lattice::ONE));
       };
@@ -1721,12 +1927,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, first argument is ssa with bitstring -> " + bitstring_to_string(arg1_bitstring));
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
@@ -1737,7 +1949,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -1759,14 +1973,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          if(arg1_bitstring.size() <= static_cast<size_t>(const2->value))
          {
             if(tree_helper::is_int(TM, arg1_uid))
+            {
                res.push_front(arg1_bitstring.front());
+            }
             else
+            {
                res.push_front(bit_lattice::ZERO);
+            }
          }
          else
          {
             size_t new_lenght = arg1_bitstring.size() - static_cast<size_t>(const2->value);
-            std::deque<bit_lattice>::const_iterator arg1_it = arg1_bitstring.begin();
+            auto arg1_it = arg1_bitstring.begin();
             while(res.size() < new_lenght)
             {
                res.push_back(*arg1_it);
@@ -1777,7 +1995,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(arg1_bitstring) + ">>" + STR(const2->value) + " => " + bitstring_to_string(res));
       }
       else
+      {
          return res;
+      }
    }
 #endif
 #if 1
@@ -1797,9 +2017,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       {
          arg1_uid = GET_INDEX_NODE(operation->op0);
          if(current.find(arg1_uid) == current.end())
+         {
             arg1_bitstring = create_u_bitstring(1);
+         }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, first argument is ssa with bitstring -> " + bitstring_to_string(arg1_bitstring));
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
@@ -1810,7 +2034,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
       auto ebe0 = [&] {
          THROW_ASSERT(GET_NODE(operation->op1)->get_kind() == integer_cst_K, "unexpected condition");
          auto* const2 = GetPointer<integer_cst>(GET_NODE(operation->op1));
@@ -1820,21 +2046,27 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          if(arg1_bitstring.size() <= static_cast<size_t>(const2->value))
          {
             if(tree_helper::is_int(TM, arg1_uid))
+            {
                res.push_front(arg1_bitstring.front());
+            }
             else
+            {
                res.push_front(bit_lattice::ZERO);
+            }
          }
          else
          {
             size_t new_lenght = arg1_bitstring.size() - static_cast<size_t>(const2->value);
-            std::deque<bit_lattice>::const_iterator arg1_it = arg1_bitstring.begin();
+            auto arg1_it = arg1_bitstring.begin();
             while(res.size() < new_lenght)
             {
                res.push_back(*arg1_it);
                ++arg1_it;
             }
             while(res.size() > 1)
+            {
                res.pop_front();
+            }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " extract bit " + STR(GET_INDEX_NODE(operation->op1)));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(arg1_bitstring) + ">>" + STR(const2->value) + " => " + bitstring_to_string(res));
@@ -1855,12 +2087,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
       {
@@ -1870,7 +2108,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -1913,12 +2153,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
       {
@@ -1928,7 +2174,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -1974,12 +2222,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
       {
@@ -1989,7 +2243,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<integer_cst>(GET_NODE(operation->op0))->value) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       unsigned int res_bitsize = BitLatticeManipulator::Size(GET_NODE(ga->op0));
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
@@ -2000,18 +2256,28 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
             if(not is_handled_by_bitvalue(op2_type->index))
+            {
                return res;
+            }
             else
+            {
                arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
+            }
          }
          else
+         {
             arg2_bitstring = current.at(arg2_uid);
+         }
 
          long long unsigned int bsize_elev2 = 1ULL << arg2_bitstring.size();
          if(res_bitsize < bsize_elev2 || res_bitsize < bsize_elev2 + arg1_bitstring.size())
+         {
             res = create_u_bitstring(res_bitsize);
+         }
          else
+         {
             res = create_u_bitstring(static_cast<unsigned int>(arg1_bitstring.size() + bsize_elev2));
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " << " + STR(arg2_uid));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(arg1_bitstring) + "<<" + bitstring_to_string(arg2_bitstring) + " => " + bitstring_to_string(res));
       }
@@ -2027,24 +2293,32 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
 
          const unsigned int arg1_bitsize = BitLatticeManipulator::Size(GET_NODE(operation->op0));
          if(res_bitsize <= static_cast<long long unsigned int>(const2->value))
+         {
             res.push_front(bit_lattice::ZERO);
+         }
          else
          {
             res = arg1_bitstring;
             while(res.size() > arg1_bitsize)
+            {
                res.pop_front();
+            }
             for(int i = 0; i < const2->value; i++)
             {
                res.push_back(bit_lattice::ZERO);
                if(res.size() > res_bitsize)
+               {
                   res.pop_front();
+               }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, operation: " + STR(output_uid) + " = " + STR(arg1_uid) + " << " + STR(GET_INDEX_NODE(operation->op1)));
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "res: " + bitstring_to_string(arg1_bitstring) + "<<" + STR(const2->value) + " => " + bitstring_to_string(res));
       }
       else
+      {
          return res;
+      }
    }
 #endif
 #if 1
@@ -2076,9 +2350,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             {
                const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op));
                if(not is_handled_by_bitvalue(op1_type->index))
+               {
                   return res;
+               }
                else
+               {
                   res = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op)));
+               }
             }
             else
             {
@@ -2136,12 +2414,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op1_type = tree_helper::CGetType(GET_NODE(operation->op0));
             if(not is_handled_by_bitvalue(op1_type->index))
+            {
                return res;
+            }
             else
+            {
                arg1_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op0)));
+            }
          }
          else
+         {
             arg1_bitstring = current.at(arg1_uid);
+         }
       }
       else if(GET_NODE(operation->op0)->get_kind() == integer_cst_K)
       {
@@ -2158,7 +2442,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op0))->valr) + " : " + bitstring_to_string(arg1_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op1)->get_kind() == ssa_name_K)
       {
@@ -2167,12 +2453,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op2_type = tree_helper::CGetType(GET_NODE(operation->op1));
             if(not is_handled_by_bitvalue(op2_type->index))
+            {
                return res;
+            }
             else
+            {
                arg2_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op1)));
+            }
          }
          else
+         {
             arg2_bitstring = current.at(arg2_uid);
+         }
       }
       else if(GET_NODE(operation->op1)->get_kind() == integer_cst_K)
       {
@@ -2189,7 +2481,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op1))->valr) + " : " + bitstring_to_string(arg2_bitstring));
       }
       else
+      {
          return res;
+      }
 
       if(GET_NODE(operation->op2)->get_kind() == ssa_name_K)
       {
@@ -2198,12 +2492,18 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             const tree_nodeConstRef op3_type = tree_helper::CGetType(GET_NODE(operation->op2));
             if(not is_handled_by_bitvalue(op3_type->index))
+            {
                return res;
+            }
             else
+            {
                arg3_bitstring = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(operation->op2)));
+            }
          }
          else
+         {
             arg3_bitstring = current.at(arg3_uid);
+         }
       }
       else if(GET_NODE(operation->op2)->get_kind() == integer_cst_K)
       {
@@ -2220,7 +2520,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer, created bitstring from constant -> " + STR(GetPointer<real_cst>(GET_NODE(operation->op2))->valr) + " : " + bitstring_to_string(arg3_bitstring));
       }
       else
+      {
          return res;
+      }
 
       auto ce0 = [&] {
          bit_lattice arg_cond = bit_lattice::ZERO;
@@ -2232,7 +2534,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
                break;
             }
             else if(current_bit == bit_lattice::U)
+            {
                arg_cond = bit_lattice::U;
+            }
          }
 
          if(arg_cond == bit_lattice::ZERO)
@@ -2259,9 +2563,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
              */
             const auto inf_size = std::max(arg2_bitstring.size(), arg3_bitstring.size());
             if(arg2_bitstring.size() < inf_size)
+            {
                arg2_bitstring = sign_extend_bitstring(arg2_bitstring, tree_helper::is_int(TM, arg2_uid), inf_size);
+            }
             if(arg3_bitstring.size() < inf_size)
+            {
                arg3_bitstring = sign_extend_bitstring(arg3_bitstring, tree_helper::is_int(TM, arg3_uid), inf_size);
+            }
             const auto out_uid = GET_INDEX_NODE(ga->op0);
             res = inf(arg2_bitstring, arg3_bitstring, out_uid);
          }
@@ -2281,7 +2589,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
       unsigned int arg2_uid = 0;
       unsigned int arg1_uid = 0;
       if(!manage_forward_binary_operands(operation, arg1_uid, arg2_uid, arg1_bitstring, arg2_bitstring))
+      {
          return res;
+      }
 
       auto me0 = [&] {
          if(arg1_bitstring.size() > arg2_bitstring.size())
@@ -2319,9 +2629,13 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
             const auto* fd = GetPointer<const function_decl>(tn);
             THROW_ASSERT(fd, "node " + STR(called_id) + " is not a function_decl");
             if(fd->bit_values.empty())
+            {
                res = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(ga->op0)));
+            }
             else
+            {
                res = string_to_bitstring(fd->bit_values);
+            }
          }
       };
       ce0();
@@ -2340,7 +2654,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
          {
             res = create_u_bitstring(address_size - lt0);
             for(auto index = 0u; index < lt0; ++index)
+            {
                res.push_back(bit_lattice::ZERO);
+            }
          }
       };
       ae0();
@@ -2352,7 +2668,9 @@ std::deque<bit_lattice> Bit_Value::forward_transfer(const gimple_assign* ga) con
    }
 #endif
    else
+   {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "forward_transfer Error: operation unhandled yet -> " + GET_NODE(ga->op1)->get_kind_text());
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, bitstring_to_string(res));
    return res;
 }
@@ -2367,9 +2685,13 @@ void Bit_Value::forward()
    do
    {
       if(first_phase)
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---=================== First Phase forward analysis");
+      }
       else
+      {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---=================== Second Phase forward analysis");
+      }
       bool current_updated = true;
       while(current_updated)
       {
@@ -2405,9 +2727,13 @@ void Bit_Value::forward()
                         {
                            unsigned int ssa_use_node_id = std::get<0>(var_pair);
                            if(ssa_use_node_id == 0)
+                           {
                               continue;
+                           }
                            if(not is_handled_by_bitvalue(ssa_use_node_id))
+                           {
                               continue;
+                           }
                            tree_nodeRef use_node = TM->get_tree_node_const(ssa_use_node_id);
                            auto* ssa_use = GetPointer<ssa_name>(use_node);
 
@@ -2480,9 +2806,13 @@ void Bit_Value::forward()
                      if(current.find(GET_INDEX_NODE(def_edge.first)) == current.end())
                      {
                         if(best.find(GET_INDEX_NODE(def_edge.first)) == best.end())
+                        {
                            current[GET_INDEX_NODE(def_edge.first)] = create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(pn->res)));
+                        }
                         else
+                        {
                            current[GET_INDEX_NODE(def_edge.first)] = best.at(GET_INDEX_NODE(def_edge.first));
+                        }
                      }
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Edge " + STR(def_edge.second) + ": " + bitstring_to_string(current.at(GET_INDEX_NODE(def_edge.first))));
 

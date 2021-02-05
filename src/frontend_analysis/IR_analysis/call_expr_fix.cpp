@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -137,7 +137,9 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
                         auto* node = GetPointer<tree_list>(elem);
                         paramList = node->chan;
                         if(GET_NODE(node->valu)->get_kind() != void_type_K)
+                        {
                            count_param++;
+                        }
                      }
                      if(fd->list_of_args.size() == 0 && count_param == 0)
                      {
@@ -182,7 +184,9 @@ DesignFlowStep_Status call_expr_fix::InternalExec()
                            auto* node = GetPointer<tree_list>(elem);
                            paramList = node->chan;
                            if(GET_NODE(node->valu)->get_kind() != void_type_K)
+                           {
                               count_param++;
+                           }
                         }
                         if(fd->list_of_args.size() == 0 && count_param == 0)
                         {

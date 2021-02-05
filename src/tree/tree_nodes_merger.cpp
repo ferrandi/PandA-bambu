@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1481,7 +1481,7 @@ void tree_node_index_factory::operator()(const attr* obj, unsigned int& mask)
       }                                                                                                                      \
    }
 
-#define SET_VALUE(field, type) dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field
+#define SET_VALUE(field, type) (dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field)
 
 void tree_node_index_factory::operator()(const srcp* obj, unsigned int& mask)
 {

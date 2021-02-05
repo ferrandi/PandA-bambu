@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,9 +76,13 @@ void ComputeReservedMemory::GoNext()
 {
    /// For compatibility with old initialization (without parentheses)
    if(depth_level == 0)
+   {
       elements_number++;
+   }
    if(depth_level == 1)
+   {
       elements_number++;
+   }
 }
 
 void ComputeReservedMemory::GoUp()

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -210,18 +210,26 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
    {
       const technology_managerRef TM = HLS->HLS_T->get_technology_manager();
       std::string delay_unit;
-      std::string synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
+      auto synch_reset = parameters->getOption<std::string>(OPT_sync_reset);
       if(synch_reset == "sync")
+      {
          delay_unit = flipflop_SR;
+      }
       else
+      {
          delay_unit = flipflop_AR;
+      }
       structural_objectRef delay_gate = SM->add_module_from_technology_library("done_delayed_REG", delay_unit, LIBRARY_STD, circuit, TM);
       structural_objectRef port_ck = delay_gate->find_member(CLOCK_PORT_NAME, port_o_K, delay_gate);
       if(port_ck)
+      {
          SM->add_connection(clock_obj, port_ck);
+      }
       structural_objectRef port_rst = delay_gate->find_member(RESET_PORT_NAME, port_o_K, delay_gate);
       if(port_rst)
+      {
          SM->add_connection(reset_obj, port_rst);
+      }
 
       structural_objectRef done_signal_in = SM->add_sign("done_delayed_REG_signal_in", circuit, GetPointer<module>(delay_gate)->get_in_port(2)->get_typeRef());
       SM->add_connection(GetPointer<module>(delay_gate)->get_in_port(2), done_signal_in);
@@ -231,7 +239,9 @@ DesignFlowStep_Status top_entity_parallel_cs::InternalExec()
       SM->add_connection(done_obj, done_signal_out);
    }
    else
+   {
       SM->add_connection(controller_done, done_obj);
+   }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "\tDone signal added!");
 
    /// add entry in in_port_map between port id and port index
@@ -329,7 +339,7 @@ void top_entity_parallel_cs::connect_loop_iter(const structural_objectRef circui
 
 void top_entity_parallel_cs::resize_controller_parallel(structural_objectRef controller_circuit, unsigned loopBW)
 {
-   unsigned int num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_objectRef controller_done_request = controller_circuit->find_member(STR(DONE_REQUEST) + "_accelerator", port_vector_o_K, controller_circuit);
    GetPointer<port_o>(controller_done_request)->add_n_ports(num_kernel, controller_done_request);
    structural_objectRef controller_done_port = controller_circuit->find_member(STR(DONE_PORT_NAME) + "_accelerator", port_vector_o_K, controller_circuit);
@@ -349,7 +359,7 @@ void top_entity_parallel_cs::connect_port_parallel(const structural_objectRef ci
    structural_objectRef datapath_circuit = Datapath->get_circ();
    structural_objectRef controller_circuit = circuit->find_member("__controller_parallel", component_o_K, circuit);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
-   unsigned int num_slots = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto num_slots = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_type_descriptorRef data_type = structural_type_descriptorRef(new structural_type_descriptor("bool", loopBW));
 
    structural_objectRef controller_task_pool_end = controller_circuit->find_member(STR(TASKS_POOL_END), port_o_K, controller_circuit);

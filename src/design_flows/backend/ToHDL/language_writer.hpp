@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,7 +96,9 @@ class language_writer
    {
       std::string res;
       for(unsigned int i = 0; i < n_states; ++i)
+      {
          res = (val == i ? "1" : "0") + res;
+      }
       return res;
    }
 
@@ -348,6 +350,6 @@ class language_writer
    void WriteLicense();
 };
 /// RefCount definition of the class
-typedef refcount<language_writer> language_writerRef;
+using language_writerRef = refcount<language_writer>;
 
 #endif

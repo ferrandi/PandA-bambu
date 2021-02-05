@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,7 @@
 /// Conversion is performed if needed.
 #define LOAD_VALUE(variable, node)     \
    if((node)->get_name() == #variable) \
-   variable = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute("value")->get_value())
+   (variable) = boost::lexical_cast<BOOST_TYPEOF_TPL(variable)>((node)->get_attribute("value")->get_value())
 
 /// LOAD XML Value Macro. Set a variable starting from an XML attribute composed of name and value.
 /// Conversion is performed if needed.

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2020 Politecnico di Milano
+ *              Copyright (C) 2017-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,9 +65,8 @@ std::string QuartusPowerWrapper::get_command_line(const DesignParametersRef& dp)
 {
    std::ostringstream s;
    s << get_tool_exec() << " -f " << script_name;
-   for(std::vector<xml_parameter_tRef>::const_iterator it = xml_tool_options.begin(); it != xml_tool_options.end(); it++)
+   for(const auto& option : xml_tool_options)
    {
-      const xml_parameter_tRef& option = *it;
       if(option->checkCondition(dp))
       {
          std::string value = toString(option, dp);
@@ -82,9 +81,8 @@ std::string QuartusPowerWrapper::get_command_line(const DesignParametersRef& dp)
 void QuartusPowerWrapper::generate_synthesis_script(const DesignParametersRef& dp, const std::string& file_name)
 {
    // Export reserved (constant) values to design parameters
-   for(auto it = xml_reserved_vars.begin(); it != xml_reserved_vars.end(); ++it)
+   for(auto& var : xml_reserved_vars)
    {
-      const xml_set_variable_tRef& var = (*it);
       dp->assign(var->name, getStringValue(var, dp), false);
    }
 

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 #include "exceptions.hpp"
 #include <boost/lexical_cast.hpp>
 
-#define NO_TOKEN -1
+#define NO_TOKEN (-1)
 
 const int treeVocabularyTokenTypes::bisontokens[] = {
     TOK_BISON_GCC_VERSION, TOK_BISON_PLUGIN_VERSION, TOK_BISON_IDENTIFIER_NODE, TOK_BISON_TREE_LIST, TOK_BISON_TREE_VEC, TOK_BISON_BLOCK, TOK_BISON_VOID_TYPE, TOK_BISON_INTEGER_TYPE, TOK_BISON_REAL_TYPE, TOK_BISON_COMPLEX_TYPE,
@@ -800,9 +800,13 @@ int treeVocabularyTokenTypes::check_tokens(const char* tok) const
 {
    auto el = token_map.find(tok);
    if(el == token_map.end())
+   {
       return -1;
+   }
    else
+   {
       return bisontokens[el->second];
+   }
 }
 TreeVocabularyTokenTypes_TokenEnum treeVocabularyTokenTypes::bison2token(int bison) const
 {

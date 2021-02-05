@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,7 +88,9 @@ static bool is_valid_state_string(const std::string& s, bool one_hot_fsm_encodin
 static size_t compute_state_id(const std::string& s, bool one_hot_fsm_encoding)
 {
    if(not is_valid_state_string(s, one_hot_fsm_encoding))
+   {
       THROW_ERROR("invalid state_string: " + s);
+   }
 
    if(one_hot_fsm_encoding)
    {
@@ -104,7 +106,9 @@ static size_t compute_state_id(const std::string& s, bool one_hot_fsm_encoding)
 static bool is_binary_string_repr(const std::string& s, unsigned int id, bool one_hot_fsm_encoding)
 {
    if(not is_valid_state_string(s, one_hot_fsm_encoding))
+   {
       THROW_ERROR("invalid state_string: " + s);
+   }
 
    return compute_state_id(s, one_hot_fsm_encoding) == id;
 }

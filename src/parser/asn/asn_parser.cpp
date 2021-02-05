@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,7 +78,9 @@ DesignFlowStep_Status AsnParser::Exec()
 {
    fileIO_istreamRef sname = fileIO_istream_open(file_name);
    if(sname->fail())
+   {
       THROW_ERROR(std::string("FILE does not exist: ") + file_name);
+   }
    const AsnFlexLexerRef lexer(new AsnFlexLexer(parameters, sname.get(), nullptr));
    const AsnParserDataRef data(new AsnParserData(GetPointer<HLS_manager>(AppM)->aadl_information, parameters));
    YYParse(data, lexer);

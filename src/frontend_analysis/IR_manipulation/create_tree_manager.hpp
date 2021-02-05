@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,7 +80,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
     * @param AppM is the reference to the application manager
     * @param design_flow_manager is the design flow manager
     */
-   create_tree_manager(const ParameterConstRef Param, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+   create_tree_manager(const ParameterConstRef _parameters, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,6 +48,7 @@
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_L2_NAME.hpp"
 #include "config_HAVE_THREADS.hpp"
+#include "config_USE_PARALLEL_VERILATOR.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -105,7 +106,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    bool generate_vcd_output =
        (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) || (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
 
-   const std::string output_directory = Param->getOption<std::string>(OPT_output_directory);
+   const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
 #if HAVE_EXPERIMENTAL
 #ifdef _WIN32
@@ -125,9 +126,16 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
 #endif
+#if USE_PARALLEL_VERILATOR
    unsigned int nThreads = std::thread::hardware_concurrency();
+#else
+   unsigned int nThreads = 1;
+#endif
 #if HAVE_THREADS
-   script << " --threads " << nThreads;
+   if(nThreads > 1)
+   {
+      script << " --threads " << nThreads;
+   }
 #endif
    if(generate_vcd_output)
    {
@@ -151,7 +159,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 
    script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
 #if HAVE_THREADS
-   script << " OPT_FAST=\"-fstrict-aliasing -march=native\" OPT_SLOW=\"-fstrict-aliasing\" OPT=\"-march=native\"";
+   script << R"( OPT_FAST="-fstrict-aliasing -march=native" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
 #else
    script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
 #endif

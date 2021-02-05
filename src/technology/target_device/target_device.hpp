@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -153,7 +153,9 @@ class target_device
    G get_parameter(const std::string& key) const
    {
       if(parameters.find(key) == parameters.end())
+      {
          THROW_ERROR("Parameter \"" + key + "\" not found in target device parameters' list");
+      }
       return boost::lexical_cast<G>(parameters.find(key)->second);
    }
 
@@ -214,6 +216,6 @@ class target_device
    }
 };
 /// refcount definition for the class
-typedef refcount<target_device> target_deviceRef;
+using target_deviceRef = refcount<target_device>;
 
 #endif

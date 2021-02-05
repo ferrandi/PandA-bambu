@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -176,7 +176,9 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end; ++it_bb)
    {
       if(it_bb->second->number != BB_ENTRY and it_bb->second->number != BB_EXIT)
+      {
          continue;
+      }
       bbgc->add_vertex(it_bb->second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
       if(it_bb->second->number == BB_EXIT)
@@ -188,15 +190,19 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    for(it_bb = sl->list_of_bloc.begin(); it_bb != it_bb_end; ++it_bb)
    {
       if(it_bb->second->number == BB_ENTRY || it_bb->second->number == BB_EXIT)
+      {
          continue;
+      }
       bbgc->add_vertex(it_bb->second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added basic block with index " + boost::lexical_cast<std::string>(it_bb->second->number));
    }
-   std::map<unsigned int, blocRef>::const_iterator b_end = sl->list_of_bloc.end();
-   for(std::map<unsigned int, blocRef>::const_iterator b = sl->list_of_bloc.begin(); b != b_end; ++b)
+   auto b_end = sl->list_of_bloc.end();
+   for(auto b = sl->list_of_bloc.begin(); b != b_end; ++b)
    {
       if(b->second->number == BB_ENTRY || b->second->number == BB_EXIT)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering connections for BB" + boost::lexical_cast<std::string>(b->first));
       const vertex current = bbgc->Cget_vertex(b->second->number);
       if(b->second->list_of_pred.empty() or std::find(b->second->list_of_pred.begin(), b->second->list_of_pred.end(), bloc::ENTRY_BLOCK_ID) != b->second->list_of_pred.end())
@@ -211,8 +217,8 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
       }
       else
       {
-         std::vector<unsigned int>::const_iterator su_end = b->second->list_of_succ.end();
-         for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
+         auto su_end = b->second->list_of_succ.end();
+         for(auto su = b->second->list_of_succ.begin(); su != su_end; ++su)
          {
             if((*su) == bloc::EXIT_BLOCK_ID)
             {
@@ -245,7 +251,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
                // Map between gimple_label and index of basic block
                std::map<tree_nodeRef, unsigned int> label_to_bb;
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
+               for(auto su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   THROW_ASSERT(sl->list_of_bloc[*su]->CGetStmtList().size(), "Empty Basic Block");
                   const auto first = sl->list_of_bloc[*su]->CGetStmtList().front();
@@ -278,7 +284,7 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
             {
                // Map between gimple_label and index of basic block
                su_end = b->second->list_of_succ.end();
-               for(std::vector<unsigned int>::const_iterator su = b->second->list_of_succ.begin(); su != su_end; ++su)
+               for(auto su = b->second->list_of_succ.begin(); su != su_end; ++su)
                {
                   bbgc->add_bb_edge_info(current, bbgc->Cget_vertex(*su), CFG_SELECTOR, *su);
                }
@@ -302,7 +308,9 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
    for(boost::tie(v, v_end) = boost::vertices(*fcfg); v != v_end; v++)
    {
       if(boost::out_degree(*v, *fcfg) == 0 and *v != exit)
+      {
          bbgc->AddEdge(*v, exit, CFG_SELECTOR);
+      }
    }
    const auto operations_cfg_computation_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::OPERATIONS_CFG_COMPUTATION, function_id);
    const auto operations_cfg_computation_vertex = design_flow_manager.lock()->GetDesignFlowStep(operations_cfg_computation_signature);
@@ -324,7 +332,9 @@ DesignFlowStep_Status BasicBlocksCfgComputation::InternalExec()
          const auto bb_vertex = bb_index_map.find(bb_index)->second;
          const auto bb_node_info = bb_graph->GetBBNodeInfo(bb_vertex);
          if(block.second->number == BB_ENTRY or block.second->number == BB_EXIT)
+         {
             continue;
+         }
          THROW_ASSERT(!(block.second->CGetStmtList().empty() && block.second->CGetPhiList().empty()), "unexpected condition: BB" + STR(bb_index));
          for(const auto& phi : block.second->CGetPhiList())
          {

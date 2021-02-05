@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -203,9 +203,13 @@ vertex Loop::primary_landing_pad() const
       for(boost::tie(e_out_iter, e_out_iter_end) = boost::out_edges(lp, *g); e_out_iter != e_out_iter_end; ++e_out_iter)
       {
          if(test_candidate == NULL_VERTEX)
+         {
             test_candidate = boost::target(*e_out_iter, *g);
+         }
          else
+         {
             test_candidate = NULL_VERTEX;
+         }
       }
       if(test_candidate != candidate)
       {
@@ -214,14 +218,19 @@ vertex Loop::primary_landing_pad() const
             // If candidate has a single successor which is test_candidate, then test_candidate is our
             // new candidate
             graph::out_edge_iterator e_iter, e_iter_end;
+            first = false;
             for(boost::tie(e_iter, e_iter_end) = boost::out_edges(candidate, *g); e_iter != e_iter_end; ++e_iter)
             {
                if(boost::target(*e_out_iter, *g) != test_candidate)
+               {
                   return NULL_VERTEX;
+               }
             }
          }
          else
+         {
             return NULL_VERTEX;
+         }
       }
    }
    return candidate;
@@ -284,7 +293,9 @@ void Loop::get_recursively_bb(CustomUnorderedSet<vertex>& ret) const
    ret.insert(blocks.begin(), blocks.end());
    CustomOrderedSet<LoopConstRef>::const_iterator child, child_end = children.end();
    for(child = children.begin(); child != child_end; ++child)
+   {
       (*child)->get_recursively_bb(ret);
+   }
 }
 
 OpVertexSet Loop::GetRecursivelyOps(const OpGraphConstRef op_graph) const

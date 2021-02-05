@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -97,7 +97,9 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
       {
          auto* in = GetPointer<identifier_node>(id_name);
          if(!in->operator_flag)
+         {
             simple_name = in->strg;
+         }
       }
       if(fd->mngl)
       {
@@ -106,7 +108,9 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
          {
             auto* in = GetPointer<identifier_node>(mangled_id_name);
             if(!in->operator_flag)
+            {
                mangled_name = in->strg;
+            }
          }
       }
       if(mangled_name != "")
@@ -140,12 +144,16 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
                      firstPar = false;
                   }
                   else
+                  {
                      stringTemp += ", " + argType;
+                  }
                }
                stringTemp += ")";
             }
             else
+            {
                boost::replace_all(stringTemp, " " + name + "(", " " + simple_name + "(");
+            }
          }
          boost::replace_all(stringTemp, "/*&*/*", "&");
       }

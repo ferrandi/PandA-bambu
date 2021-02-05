@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -94,7 +94,7 @@ Evaluation::~Evaluation() = default;
 
 const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> Evaluation::ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const
 {
-   std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
+   auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ret;
    switch(relationship_type)
@@ -134,7 +134,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   }
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "AREA")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "AREAxTIME")
@@ -145,17 +147,25 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "BRAMS")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
                   else if(objective == "CLOCK_SLACK")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "CYCLES" || objective == "TOTAL_CYCLES")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SIMULATION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "DSPS")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_EXPERIMENTAL
                   else if(objective == "EDGES_REDUCTION_EVALUATION")
@@ -163,11 +173,17 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "FREQUENCY")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
                   else if(objective == "PERIOD")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
                   else if(objective == "REGISTERS")
+                  {
                      ret.insert(std::make_tuple(HLSFlowStep_Type::SYNTHESIS_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::WHOLE_APPLICATION));
+                  }
 #endif
 #if HAVE_EXPERIMENTAL
                   else if(objective == "NUM_AF_EDGES")
@@ -181,7 +197,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   }
 #endif
                   else
-                     THROW_ERROR("Evaluaton objective not yet supported " + objective);
+                  {
+                     THROW_ERROR("Evaluation objective not yet supported " + objective);
+                  }
                }
                break;
             }
@@ -203,7 +221,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
       {
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+         {
             ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
 #endif
          break;
       }
@@ -217,7 +237,7 @@ DesignFlowStep_Status Evaluation::Exec()
 {
    bool printed_area = false;
    bool printed_frequency = false;
-   std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
+   auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    const auto& evaluations = HLSMgr->evaluations;
    for(const auto& objective : objective_vector)
@@ -236,10 +256,10 @@ DesignFlowStep_Status Evaluation::Exec()
       {
          THROW_ASSERT(evaluations.find("TOTAL_CYCLES") != evaluations.end(), "");
          THROW_ASSERT(evaluations.at("TOTAL_CYCLES").size() == 1, "");
-         unsigned long long int tot_cycles = static_cast<unsigned long long int>(evaluations.at("TOTAL_CYCLES")[0]);
+         auto tot_cycles = static_cast<unsigned long long int>(evaluations.at("TOTAL_CYCLES")[0]);
          THROW_ASSERT(evaluations.find("NUM_EXECUTIONS") != evaluations.end(), "");
          THROW_ASSERT(evaluations.at("NUM_EXECUTIONS").size() == 1, "");
-         unsigned long long int num_executions = static_cast<unsigned long long int>(evaluations.at("NUM_EXECUTIONS")[0]);
+         auto num_executions = static_cast<unsigned long long int>(evaluations.at("NUM_EXECUTIONS")[0]);
          auto avg_cycles = static_cast<unsigned long long int>(evaluation);
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Total cycles             : " + STR(tot_cycles) + " cycles");
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Number of executions     : " + STR(num_executions));
@@ -334,9 +354,13 @@ DesignFlowStep_Status Evaluation::Exec()
          /// get the used resources from the wrapper
          double reg = evaluation;
          if(reg > 0.0)
+         {
             INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Registers                : " + STR(reg));
+         }
          else
+         {
             INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---(no registers)");
+         }
       }
    }
 
@@ -401,14 +425,16 @@ DesignFlowStep_Status Evaluation::Exec()
                bench_name += FB->CGetBehavioralHelper()->get_function_name();
             }
             else
+            {
                bench_name += ":" + FB->CGetBehavioralHelper()->get_function_name();
+            }
 
             bench_name += "_" + boost::lexical_cast<std::string>(progressive - 1);
          }
       }
    }
 
-   const std::string bambu_args = parameters->getOption<std::string>(OPT_cat_args);
+   const auto bambu_args = parameters->getOption<std::string>(OPT_cat_args);
    const std::string bambu_version = parameters->PrintVersion();
    const std::string current_time = TimeStamp::GetCurrentTimeStamp();
    WRITE_XNVM2(STR_XML_bambu_results_bambu_args, bambu_args, nodeRoot);
@@ -449,7 +475,9 @@ DesignFlowStep_Status Evaluation::Exec()
          for(auto const single_evaluation : local_evaluations)
          {
             if(value != "")
+            {
                value += ",";
+            }
             value += STR(single_evaluation);
          }
       }

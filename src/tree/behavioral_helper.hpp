@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,7 +74,7 @@ REF_FORWARD_DECL(tree_node);
 CONSTREF_FORWARD_DECL(var_pp_functor);
 //@}
 
-typedef unsigned int tree_class;
+using tree_class = unsigned int;
 
 #define INTERNAL "internal_"
 
@@ -162,21 +162,21 @@ class BehavioralHelper
     * @param index is the initialization expression.
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_init(unsigned int index, const var_pp_functorConstRef vppf) const;
+   virtual std::string print_init(unsigned int var, const var_pp_functorConstRef vppf) const;
 
    /**
     * Print the attributes associated to a variable
     * @param index is the attribute node
     * @param vppf is the functor used to dump the variable var.
     */
-   virtual std::string print_attributes(unsigned int index, const var_pp_functorConstRef vppf, bool first = true) const;
+   virtual std::string print_attributes(unsigned int var, const var_pp_functorConstRef vppf, bool first = true) const;
 
    /**
     * Print the name of the variable associated to the index
     * @param index is the considered variable.
     * @return the name of the variable
     */
-   std::string PrintVariable(unsigned int index) const;
+   std::string PrintVariable(unsigned int var) const;
 
    /**
     * Invalidate cached variable name
@@ -216,7 +216,7 @@ class BehavioralHelper
     * @param index is the index of a C object
     * @return the size in bit
     */
-   virtual unsigned int get_size(unsigned int index) const;
+   virtual unsigned int get_size(unsigned int var) const;
 
    /**
     * Return the name of the function
@@ -274,19 +274,19 @@ class BehavioralHelper
    /**
     * Return true if index is a variable or a type of type struct
     */
-   virtual bool is_a_struct(unsigned int index) const;
+   virtual bool is_a_struct(unsigned int variable) const;
 
    /**
     * Return true if index is a variable of a type of type union
     * @param index is the index of the variable or of the type
     * @return true if variable or type is of type union
     */
-   virtual bool is_an_union(unsigned int index) const;
+   virtual bool is_an_union(unsigned int variable) const;
 
    /**
     * Return true if index is a variable or a type of type array
     */
-   virtual bool is_an_array(unsigned int index) const;
+   virtual bool is_an_array(unsigned int variable) const;
 
    /**
     * Return true if index is a variable or a type of type vector
@@ -296,37 +296,37 @@ class BehavioralHelper
    /**
     * Return true if index is a variable or a type of type pointer
     */
-   virtual bool is_a_pointer(unsigned int index) const;
+   virtual bool is_a_pointer(unsigned int variable) const;
 
    /**
     * Return true if the index is an indirect ref.
     * @param index is a variable.
     */
-   virtual bool is_an_indirect_ref(unsigned int index) const;
+   virtual bool is_an_indirect_ref(unsigned int variable) const;
 
    /**
     * Return true if the index is an array ref
     * @param index is a variable.
     */
-   virtual bool is_an_array_ref(unsigned int index) const;
+   virtual bool is_an_array_ref(unsigned int variable) const;
 
    /**
     * Return true if the index is a component ref
     * @param index is the index
     */
-   virtual bool is_a_component_ref(unsigned int index) const;
+   virtual bool is_a_component_ref(unsigned int variable) const;
 
    /**
     * Return true if the index is an addr_expr
     * @param index is the index
     */
-   virtual bool is_an_addr_expr(unsigned int index) const;
+   virtual bool is_an_addr_expr(unsigned int variable) const;
 
    /**
     * Return true if the index is a mem_ref
     * @param index is the index
     */
-   virtual bool is_a_mem_ref(unsigned int index) const;
+   virtual bool is_a_mem_ref(unsigned int variable) const;
 
    /**
     * check if a given index is a static declaration
@@ -347,26 +347,26 @@ class BehavioralHelper
     * @param index is a nodeID.
     * @return true if it's a constant object
     */
-   virtual bool is_a_constant(unsigned int index) const;
+   virtual bool is_a_constant(unsigned int obj) const;
 
    /**
     * Return true if index is a result_decl
     */
-   virtual bool is_a_result_decl(unsigned int index) const;
+   virtual bool is_a_result_decl(unsigned int obj) const;
 
    /**
     * Return true if index is a realpart_expr
     * @param index is the index of the node
     * @return true if index is a realpart_expr
     */
-   virtual bool is_a_realpart_expr(unsigned int index) const;
+   virtual bool is_a_realpart_expr(unsigned int obj) const;
 
    /**
     * Return true if index is a imagpart_expr
     * @param index is the index of the node
     * @return true if index is a imagpart_expr
     */
-   virtual bool is_a_imagpart_expr(unsigned int index) const;
+   virtual bool is_a_imagpart_expr(unsigned int obj) const;
 
    /**
     * Return true if function is an operating system function
@@ -391,50 +391,50 @@ class BehavioralHelper
     * Return the variable of an indirect ref.
     * @param index is an indirect_ref object.
     */
-   virtual unsigned int get_indirect_ref_var(unsigned int index) const;
+   virtual unsigned int get_indirect_ref_var(unsigned int obj) const;
 
    /**
     * Return the array variable of an array ref.
     * @param index is an indirect_ref object.
     */
-   virtual unsigned int get_array_ref_array(unsigned int index) const;
+   virtual unsigned int get_array_ref_array(unsigned int obj) const;
 
    /**
     * Return the index variable of an array ref.
     * @param index is an indirect_ref object.
     */
-   virtual unsigned int get_array_ref_index(unsigned int index) const;
+   virtual unsigned int get_array_ref_index(unsigned int obj) const;
 
    /**
     * Return the record variable of a component ref.
     * @param index is a component_ref object.
     */
-   virtual unsigned int get_component_ref_record(unsigned int index) const;
+   virtual unsigned int get_component_ref_record(unsigned int obj) const;
 
    /**
     * Return the field index of a component ref.
     * @param index is an component_ref object.
     */
-   virtual unsigned int get_component_ref_field(unsigned int index) const;
+   virtual unsigned int get_component_ref_field(unsigned int obj) const;
 
    /**
     * Return the base of a mem ref.
     * @param index is a mem_ref object.
     */
-   virtual unsigned int get_mem_ref_base(unsigned int index) const;
+   virtual unsigned int get_mem_ref_base(unsigned int obj) const;
 
    /**
     * Return the offset of a mem ref.
     * @param index is a mem_ref object.
     */
-   virtual unsigned int get_mem_ref_offset(unsigned int index) const;
+   virtual unsigned int get_mem_ref_offset(unsigned int obj) const;
 
    /**
     * Return the index of the operand if index is addr_expr, a realpart_expr or a imagpart_expr
     * @param index is the index of the expression
     * @return the index of the operand
     */
-   virtual unsigned int get_operand_from_unary_expr(unsigned int index) const;
+   virtual unsigned int get_operand_from_unary_expr(unsigned int obj) const;
 
    /**
     * Return the index of the variable base of a ssa var
@@ -447,7 +447,7 @@ class BehavioralHelper
     * Return the intermediate variable of an operation. It returns 0 when there is not an intermediate variable.
     * @param index is an operation.
     */
-   virtual unsigned int get_intermediate_var(unsigned int index) const;
+   virtual unsigned int get_intermediate_var(unsigned int obj) const;
 
    /**
     * Return the type of the variable
@@ -466,7 +466,7 @@ class BehavioralHelper
     * @param index is the type of the array
     * @return the type of the element
     */
-   unsigned int GetElements(const unsigned int index) const;
+   unsigned int GetElements(const unsigned int type) const;
 
    /**
     * Returns the types of the parameters
@@ -651,7 +651,7 @@ class BehavioralHelper
     * @param type is the type
     * @return the unqualified version of the type if it exists, 0 otherwise
     */
-   unsigned int GetUnqualified(const unsigned int type) const;
+   unsigned int GetUnqualified(const unsigned int index) const;
 
    /**
     * rename a variable
@@ -752,7 +752,7 @@ class BehavioralHelper
 /**
  * RefCount type definition of the tree_to_graph class structure
  */
-typedef refcount<BehavioralHelper> BehavioralHelperRef;
-typedef refcount<const BehavioralHelper> BehavioralHelperConstRef;
+using BehavioralHelperRef = refcount<BehavioralHelper>;
+using BehavioralHelperConstRef = refcount<const BehavioralHelper>;
 
 #endif

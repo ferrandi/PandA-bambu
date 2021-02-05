@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -135,7 +135,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       }
    }
    else
+   {
       writer->write("assign mask = (1 << Mout_data_ram_size) -1;\n");
+   }
 
    writer->write_comment("OffChip Memory write\n");
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
@@ -152,15 +154,21 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
       std::string post_slice;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+      {
          post_slice = "[" + boost::lexical_cast<std::string>(i) + "]";
+      }
       writer->write("if (Mout_we_ram" + post_slice + " === 1'b1 && base_addr <= Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
                     "] && Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE))\n");
       writer->write("begin");
       writer->write(STR(STD_OPENING_CHAR) + "\n");
       if(Mout_Wdata_ram_port->get_kind() == port_vector_o_K)
+      {
          post_slice = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * bitsize) + "]";
+      }
       else
+      {
          post_slice = "";
+      }
       writer->write(mem_aggregate + " = (Mout_Wdata_ram" + post_slice + " & mask" + post_slice + ") | (" + mem_aggregate + " & ~(mask" + post_slice + "));\n");
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -170,7 +178,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
 
    structural_objectRef Min_Wdata_ram_port = mod->find_member("Min_Wdata_ram", port_o_K, cir);
    if(Min_Wdata_ram_port)
+   {
       writer->write("assign Min_Wdata_ram = 0;\n");
+   }
 
    structural_objectRef M_Rdata_ram_port = mod->find_member("M_Rdata_ram", port_o_K, cir);
    THROW_ASSERT(M_Rdata_ram_port, "M_Rdata_ram port is missing");
@@ -186,12 +196,18 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         }
          std::string post_slice2;
          if(M_Rdata_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice2 = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * bitsize) + "]";
+         }
          else
+         {
             post_slice2 = "";
+         }
 
          cond_load(Mout_addr_ram_bitsize, post_slice1, post_slice2, "Sin_Rdata_ram", i, STR(bitsize) + "'b0", mem_aggregate);
       }
@@ -205,12 +221,18 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         }
          std::string post_slice2;
          if(M_Rdata_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice2 = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * bitsize) + "]";
+         }
          else
+         {
             post_slice2 = "";
+         }
          if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
          {
             cond_load(Mout_addr_ram_bitsize, post_slice1, post_slice2, "M_Rdata_ram_delayed_temporary", i, STR(bitsize) + "'b0", mem_aggregate);
@@ -245,12 +267,18 @@ void MinimalInterfaceTestbench::write_memory_handler() const
          std::string mem_aggregate = memory_aggregate_slices(i, bitsize, Mout_addr_ram_bitsize);
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         }
          std::string post_slice2;
          if(M_Rdata_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice2 = "[" + boost::lexical_cast<std::string>((i + 1) * bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * bitsize) + "]";
+         }
          else
+         {
             post_slice2 = "";
+         }
          if(memory_allocation_policy == MemoryAllocation_Policy::ALL_BRAM or memory_allocation_policy == MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
          {
             cond_load(Mout_addr_ram_bitsize, post_slice1, post_slice2, "M_Rdata_ram_delayed_temporary", i, STR(bitsize) + "'b0", mem_aggregate);
@@ -280,7 +308,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    }
    structural_objectRef Sin_Wdata_ram_port = mod->find_member("S_Wdata_ram", port_o_K, cir);
    if(Sin_Wdata_ram_port)
+   {
       writer->write("assign S_Wdata_ram = Mout_Wdata_ram;\n");
+   }
 
    writer->write("always @(posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
    writer->write("begin");
@@ -289,7 +319,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    {
       std::string post_slice1;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+      {
          post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+      }
 
       writer->write("if ((Mout_oe_ram" + post_slice1 + "===1'b1 && base_addr <= Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
                     "] && Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)))\n");
@@ -337,7 +369,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       {
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         }
          writer->write("assign Sin_DataRdy" + post_slice1 + " = (base_addr <= Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
                        "] && Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" +
                        boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_READ-1)) || (Mout_we_ram" + post_slice1 + "===1'b1 && (reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_WRITE-1)));\n");
@@ -351,7 +385,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       {
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         }
          writer->write("assign M_DataRdy" + post_slice1 + " = Sout_DataRdy" + post_slice1 + " | ((base_addr <= Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" +
                        boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] && Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
                        "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_READ-1)) || (Mout_we_ram" + post_slice1 + "===1'b1 && (reg_DataReady[" + boost::lexical_cast<std::string>(i) +
@@ -364,7 +400,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
       {
          std::string post_slice1;
          if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+         {
             post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+         }
          writer->write("assign M_DataRdy" + post_slice1 + " = (base_addr <= Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) +
                        "] && Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] < (base_addr + MEMSIZE)) && (((reg_DataReady[" +
                        boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_READ-1)) || (Mout_we_ram" + post_slice1 + "===1'b1 && (reg_DataReady[" + boost::lexical_cast<std::string>(i) + "] == `MEM_DELAY_WRITE-1)));\n");
@@ -374,16 +412,24 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    /// Master inputs set up
    structural_objectRef Min_oe_ram_port = mod->find_member("Min_oe_ram", port_o_K, cir);
    if(Min_oe_ram_port)
+   {
       writer->write("assign Min_oe_ram = 0;\n");
+   }
    structural_objectRef Min_we_ram_port = mod->find_member("Min_we_ram", port_o_K, cir);
    if(Min_we_ram_port)
+   {
       writer->write("assign Min_we_ram = 0;\n");
+   }
    structural_objectRef Min_addr_ram_port = mod->find_member("Min_addr_ram", port_o_K, cir);
    if(Min_addr_ram_port)
+   {
       writer->write("assign Min_addr_ram = 0;\n");
+   }
    structural_objectRef Min_data_ram_size_port = mod->find_member("Min_data_ram_size", port_o_K, cir);
    if(Min_data_ram_size_port)
+   {
       writer->write("assign Min_data_ram_size = 0;\n");
+   }
    /// Slave inputs connections
    structural_objectRef Mout_oe_ram_port = mod->find_member("Mout_oe_ram", port_o_K, cir);
    THROW_ASSERT(Mout_oe_ram_port, "Mout_oe_ram port is missing");
@@ -418,7 +464,9 @@ void MinimalInterfaceTestbench::write_memory_handler() const
    {
       std::string post_slice1;
       if(Mout_addr_ram_port->get_kind() == port_vector_o_K)
+      {
          post_slice1 = "[" + boost::lexical_cast<std::string>(i) + "]";
+      }
       writer->write("if (Mout_we_ram" + post_slice1 + "===1'b1 && Mout_oe_ram" + post_slice1 + "===1'b1)\n");
       writer->write("begin\n");
       writer->write(STR(STD_OPENING_CHAR));
@@ -500,19 +548,33 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   writer->write("integer __m_axis_tready_port_state = 0;\n");
                }
                if(InterfaceType == port_o::port_interface::PI_RVALID)
+               {
                   writer->write_comment("RVALID handler\n");
+               }
                else if(InterfaceType == port_o::port_interface::PI_WACK)
+               {
                   writer->write_comment("WACK handler\n");
+               }
                else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
+               {
                   writer->write_comment("EMPTY_N handler\n");
+               }
                else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+               {
                   writer->write_comment("FULL_N handler\n");
+               }
                else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID)
+               {
                   writer->write_comment("S_AXIS_TVALID handler\n");
+               }
                else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+               {
                   writer->write_comment("M_AXIS_TREADY handler\n");
+               }
                else
+               {
                   THROW_ERROR("unsupported interface type");
+               }
                writer->write("always @ (posedge " + std::string(CLOCK_PORT_NAME) + ")\n");
                writer->write(STR(STD_OPENING_CHAR));
                writer->write("begin\n");
@@ -526,51 +588,87 @@ void MinimalInterfaceTestbench::write_interface_handler() const
                   if(InterfaceType == port_o::port_interface::PI_RVALID)
                   {
                      if(have_both)
+                     {
                         writer->write("if(__state == 3)\n");
+                     }
                      else
+                     {
                         writer->write("if(__state == 3 && __vld_port_state == 0)\n");
+                     }
                   }
                   else if(InterfaceType == port_o::port_interface::PI_WACK)
                   {
                      writer->write("if(__state == 3)\n");
                   }
                   else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
+                  {
                      writer->write("if(__state == 3)\n");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+                  {
                      writer->write("if(__state == 3)\n");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID)
+                  {
                      writer->write("if(__state == 3)\n");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+                  {
                      writer->write("if(__state == 3)\n");
+                  }
                   else
+                  {
                      THROW_ERROR("unsupported interface type");
+                  }
                   writer->write(STR(STD_OPENING_CHAR));
                   writer->write("begin\n");
                   if(InterfaceType == port_o::port_interface::PI_WACK)
+                  {
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __ack_port_state < 1 ? 1'b0 : 1'b1;\n");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+                  {
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __full_n_port_state < 3 ? 1'b0 : 1'b1;\n");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+                  {
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= __m_axis_tready_port_state < 3 ? 1'b0 : 1'b1;\n");
+                  }
                   else
+                  {
                      writer->write(HDL_manager::convert_to_identifier(writer.get(), portInst->get_id()) + " <= 1'b1;\n");
+                  }
                   if(InterfaceType == port_o::port_interface::PI_RVALID)
                   {
                      if(!have_both)
+                     {
                         writer->write("__vld_port_state <= 1;");
+                     }
                   }
                   else if(InterfaceType == port_o::port_interface::PI_WACK)
+                  {
                      writer->write("__ack_port_state <= __ack_port_state + 1;");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_EMPTY_N)
+                  {
                      ;
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_FULL_N)
+                  {
                      writer->write("__full_n_port_state <= __full_n_port_state + 1;");
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_S_AXIS_TVALID)
+                  {
                      ;
+                  }
                   else if(InterfaceType == port_o::port_interface::PI_M_AXIS_TREADY)
+                  {
                      writer->write("__m_axis_tready_port_state <= __m_axis_tready_port_state + 1;");
+                  }
                   else
+                  {
                      THROW_ERROR("unsupported interface type");
+                  }
                   writer->write(STR(STD_CLOSING_CHAR) + "\n");
                   writer->write("end\n");
                   writer->write("else");
@@ -589,7 +687,9 @@ void MinimalInterfaceTestbench::write_interface_handler() const
 void MinimalInterfaceTestbench::write_slave_initializations(bool with_memory) const
 {
    if(with_memory)
+   {
       return;
+   }
    /// write slave signals initialization
    if(mod->get_in_port_size())
    {
@@ -599,7 +699,7 @@ void MinimalInterfaceTestbench::write_slave_initializations(bool with_memory) co
          const structural_objectRef& port_obj = mod->get_in_port(i);
          if(GetPointer<port_o>(port_obj)->get_is_memory())
          {
-            if(GetPointer<port_o>(port_obj)->get_id().find("S") == 0)
+            if(GetPointer<port_o>(port_obj)->get_id().find('S') == 0)
             {
                if(print_header_comment)
                {
@@ -611,7 +711,9 @@ void MinimalInterfaceTestbench::write_slave_initializations(bool with_memory) co
          }
       }
       if(!print_header_comment)
+      {
          writer->write("\n");
+      }
    }
 }
 
@@ -626,14 +728,20 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
          const structural_objectRef& port_obj = mod->get_in_port(i);
          if(GetPointer<port_o>(port_obj)->get_is_memory())
          {
-            if(GetPointer<port_o>(port_obj)->get_id().find("M") == 0)
+            if(GetPointer<port_o>(port_obj)->get_id().find('M') == 0)
+            {
                with_memory = true;
+            }
             writer->write("wire ");
          }
          else if(parameters->isOption(OPT_clock_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_clock_name))
+         {
             writer->write("input ");
+         }
          else if(GetPointer<port_o>(port_obj)->get_id() == CLOCK_PORT_NAME)
+         {
             writer->write("input ");
+         }
          else
          {
             writer->write("reg ");
@@ -642,11 +750,17 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
          writer->write(writer->type_converter(port_obj->get_typeRef()) + writer->type_converter_size(port_obj));
          auto port_name = mod->get_in_port(i)->get_id();
          if(parameters->isOption(OPT_clock_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_clock_name))
+         {
             port_name = CLOCK_PORT_NAME;
+         }
          else if(parameters->isOption(OPT_reset_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_reset_name))
+         {
             port_name = RESET_PORT_NAME;
+         }
          else if(parameters->isOption(OPT_start_name) && GetPointer<port_o>(port_obj)->get_id() == parameters->getOption<std::string>(OPT_start_name))
+         {
             port_name = START_PORT_NAME;
+         }
          writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          if(port_obj->get_typeRef()->treenode > 0 && tree_helper::is_a_pointer(TreeM, port_obj->get_typeRef()->treenode))
          {
@@ -690,7 +804,9 @@ void MinimalInterfaceTestbench::write_output_signal_declaration() const
          writer->write("wire " + writer->type_converter(portInst->get_typeRef()) + writer->type_converter_size(portInst));
          auto port_name = portInst->get_id();
          if(parameters->isOption(OPT_done_name) && port_name == parameters->getOption<std::string>(OPT_done_name))
+         {
             port_name = DONE_PORT_NAME;
+         }
          writer->write(HDL_manager::convert_to_identifier(writer.get(), port_name) + ";\n");
          if(port_name == RETURN_PORT_NAME)
          {
@@ -744,7 +860,9 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
       writer->write("\n");
       writer->write_comment("Read a value for " + input_name + " --------------------------------------------------------------\n");
       if(!first_valid_input)
+      {
          writer->write("_ch_ = $fgetc(file);\n");
+      }
 
       writer->write("while (_ch_ == \"/\" || _ch_ == \"\\n\")\n");
       writer->write(STR(STD_OPENING_CHAR));
@@ -788,7 +906,7 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
       writer->write(STR(STD_OPENING_CHAR));
       writer->write("begin\n");
       {
-         writer->write("_r_ = $fscanf(file,\"%b\\n\", paddr" + input_name + "); ");
+         writer->write(R"(_r_ = $fscanf(file,"%b\n", paddr)" + input_name + "); ");
          writer->write_comment("expected format: bbb...b (example: 00101110)\n");
       }
       writer->write(STR(STD_CLOSING_CHAR));
@@ -835,7 +953,9 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
          for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
          {
             if(bitsize_index)
+            {
                mem_aggregate += ", ";
+            }
             mem_aggregate += "_bambu_testbench_mem_[paddr" + input_name + " + " + STR((bitsize - bitsize_index) / 8 - 1) + " - base_addr]";
          }
          mem_aggregate += "}";
@@ -843,9 +963,13 @@ void MinimalInterfaceTestbench::read_input_value_from_file_RNONE(const std::stri
          size_t escaped_pos = input_name.find('\\');
          std::string nonescaped_name = input_name;
          if(escaped_pos != std::string::npos)
+         {
             nonescaped_name.erase(std::remove(nonescaped_name.begin(), nonescaped_name.end(), '\\'), nonescaped_name.end());
+         }
          if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+         {
             writer->write("$display(\"Value found for input " + nonescaped_name + ": %b\", " + input_name + ");\n");
+         }
       }
       writer->write(STR(STD_CLOSING_CHAR));
       writer->write("end\n");
@@ -896,29 +1020,43 @@ void MinimalInterfaceTestbench::write_file_reading_operations() const
       auto InterfaceType = GetPointer<port_o>(portInst)->get_port_interface();
       std::string input_name = HDL_manager::convert_to_identifier(writer.get(), portInst->get_id());
       if(InterfaceType == port_o::port_interface::PI_DEFAULT)
+      {
          read_input_value_from_file(input_name, first_valid_input);
+      }
       else if(InterfaceType == port_o::port_interface::PI_RNONE)
       {
          auto port_bitwidth = GetPointer<port_o>(portInst)->get_typeRef()->size * GetPointer<port_o>(portInst)->get_typeRef()->vector_size;
          unsigned bitsize = 0;
          if(port_bitwidth <= 512)
+         {
             bitsize = resize_to_1_8_16_32_64_128_256_512(port_bitwidth);
+         }
          else
          {
             if(port_bitwidth % 8)
+            {
                bitsize = 8 * (port_bitwidth / 8) + 8;
+            }
             else
+            {
                bitsize = port_bitwidth;
+            }
          }
          read_input_value_from_file_RNONE(input_name, first_valid_input, bitsize);
       }
       else if(InterfaceType == port_o::port_interface::PI_WNONE || InterfaceType == port_o::port_interface::PI_DIN || InterfaceType == port_o::port_interface::PI_DOUT)
+      {
          read_input_value_from_file("paddr" + input_name, first_valid_input);
+      }
       else
+      {
          THROW_ERROR("not yet supported port interface for port " + input_name);
+      }
    }
    if(not first_valid_input)
+   {
       writer->write("_ch_ = $fgetc(file);\n");
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written file reading operations");
 }
 
@@ -928,7 +1066,9 @@ std::string MinimalInterfaceTestbench::memory_aggregate_slices(unsigned int i, l
    for(unsigned int bitsize_index = 0; bitsize_index < bitsize; bitsize_index = bitsize_index + 8)
    {
       if(bitsize_index)
+      {
          mem_aggregate += ", ";
+      }
       mem_aggregate += "_bambu_testbench_mem_[Mout_addr_ram[" + boost::lexical_cast<std::string>((i + 1) * Mout_addr_ram_bitsize - 1) + ":" + boost::lexical_cast<std::string>(i * Mout_addr_ram_bitsize) + "] + " + STR((bitsize - bitsize_index) / 8 - 1) +
                        " - base_addr]";
    }

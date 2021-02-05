@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -93,7 +93,7 @@ class HLSFlowStepSpecialization
    virtual const std::string GetSignature() const = 0;
 };
 /// const refcount definition of the class
-typedef refcount<const HLSFlowStepSpecialization> HLSFlowStepSpecializationConstRef;
+using HLSFlowStepSpecializationConstRef = refcount<const HLSFlowStepSpecialization>;
 
 enum class HLSFlowStep_Type
 {
@@ -296,7 +296,7 @@ class HLS_step : public DesignFlowStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of this hls flow step
     */
-   HLS_step(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+   HLS_step(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
             const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**
@@ -346,10 +346,10 @@ class HLS_step : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type) override;
 };
 /// refcount definition of the class
-typedef refcount<HLS_step> HLS_stepRef;
+using HLS_stepRef = refcount<HLS_step>;
 
 /**
  * Definition of hash function for HLSFlowStep_Type

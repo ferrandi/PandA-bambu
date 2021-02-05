@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -94,9 +94,13 @@ DesignFlowStep_Status top_entity_cs::InternalExec()
    {
       bool found = false;
       if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+      {
          found = true;
+      }
       if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+      {
          found = true;
+      }
       if(found) // function with selector
       {
          add_context_switch_port();
@@ -120,7 +124,9 @@ void top_entity_cs::add_context_switch_port()
 
    int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
+   {
       num_slots = 1;
+   }
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
    structural_objectRef selector_obj = SM->add_port(STR(SELECTOR_REGISTER_FILE), port_o::IN, circuit, port_type);
    structural_objectRef datapath_selector = datapath_circuit->find_member(STR(SELECTOR_REGISTER_FILE), port_o_K, datapath_circuit);
@@ -146,7 +152,9 @@ void top_entity_cs::add_context_switch_port_kernel()
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
+   {
       num_slots = 1;
+   }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding selector register file connection");
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
@@ -193,7 +201,7 @@ void top_entity_cs::add_input_register(structural_objectRef port_in, const std::
    auto TM = HLS->HLS_T->get_technology_manager();
    auto register_library = TM->get_library("register_file");
    auto register_file_module = SM->add_module_from_technology_library(port_prefix + "_REG", "register_file", register_library, circuit, TM);
-   unsigned int cs_number = HLS->Param->getOption<unsigned int>(OPT_context_switch);
+   auto cs_number = HLS->Param->getOption<unsigned int>(OPT_context_switch);
    GetPointer<module>(register_file_module)->SetParameter("n_elements", STR(cs_number));
    /// Resizing input port
    GetPointer<module>(register_file_module)->get_in_port(1)->type_resize(GET_TYPE_SIZE(port_in));

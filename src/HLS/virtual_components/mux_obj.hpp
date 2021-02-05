@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -141,6 +141,6 @@ class mux_obj : public generic_obj
 };
 
 /// RefCount definition for the class
-typedef refcount<mux_obj> mux_objRef;
+using mux_objRef = refcount<mux_obj>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -290,7 +290,7 @@ class AllocationInformation : public HLSFunctionIR
     * Returns the technology_node associated with the given operation
     * @param fu_name is the string representing the name of the unit
     */
-   static technology_nodeRef get_fu(const std::string& fu_name, const HLS_managerConstRef HLSMgr);
+   static technology_nodeRef get_fu(const std::string& fu_name, const HLS_managerConstRef hls_manager);
 
    /**
     * Return the connection delay due to phi
@@ -358,7 +358,7 @@ class AllocationInformation : public HLSFunctionIR
     * @param function_id is the index of the function
     * @param parameters is the set of input parameters
     */
-   AllocationInformation(const HLS_managerRef HLS_mgr, const unsigned int function_id, const ParameterConstRef parameters);
+   AllocationInformation(const HLS_managerRef _hls_manager, const unsigned int _function_index, const ParameterConstRef parameters);
 
    /**
     * Initialize all the data structure
@@ -853,7 +853,7 @@ class AllocationInformation : public HLSFunctionIR
    //@}
 #endif
 
-   static std::string extract_bambu_provided_name(unsigned int prec_in, unsigned int prec_out, const HLS_managerConstRef HLSMgr, technology_nodeRef& current_fu);
+   static std::string extract_bambu_provided_name(unsigned int prec_in, unsigned int prec_out, const HLS_managerConstRef hls_manager, technology_nodeRef& current_fu);
 
    void print(std::ostream& os) const;
 
@@ -1018,8 +1018,8 @@ class AllocationInformation : public HLSFunctionIR
     */
    bool CanBeChained(const vertex first_statement, const vertex second_statement) const;
 };
-typedef refcount<AllocationInformation> AllocationInformationRef;
-typedef refcount<const AllocationInformation> AllocationInformationConstRef;
+using AllocationInformationRef = refcount<AllocationInformation>;
+using AllocationInformationConstRef = refcount<const AllocationInformation>;
 
 /**
  * @struct updatecopy_HLS_constraints_functor

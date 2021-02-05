@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -161,7 +161,9 @@ DesignFlowStep_Status pipeline_controller::InternalExec()
          THROW_ASSERT(GetPointer<operation>(op_tn)->time_m, "Time model not available for operation: " + GET_NAME(data, op));
          structural_managerRef CM = GetPointer<functional_unit>(tn)->CM;
          if(!CM)
+         {
             continue;
+         }
          structural_objectRef top = CM->get_circ();
          THROW_ASSERT(top, "expected");
          auto* fu_module = GetPointer<module>(top);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -162,17 +162,17 @@ class allocation : public HLSFunctionStep
    /**
     * Build the proxy function in Verilog
     */
-   void BuildProxyFunctionVerilog(functional_unit* orig_fu);
+   void BuildProxyFunctionVerilog(functional_unit* current_fu);
 
    /**
     * Build the proxy function in VHDL
     */
-   void BuildProxyFunctionVHDL(functional_unit* orig_fu);
+   void BuildProxyFunctionVHDL(functional_unit* current_fu);
 
    /**
     * Build the proxy function
     */
-   void BuildProxyFunction(functional_unit* orig_fu);
+   void BuildProxyFunction(functional_unit* current_fu);
 
    void add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos, bool proxy_constrained);
    void add_resource_to_fu_list(std::string channels_type, const OpGraphConstRef g, technology_nodeRef current_fu, CustomOrderedSet<vertex> vertex_analysed, node_kind_prec_infoRef node_info, unsigned int current_id,
@@ -206,7 +206,7 @@ class allocation : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::ALLOCATION);
+   allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::ALLOCATION);
 
    /**
     * Destructor.
