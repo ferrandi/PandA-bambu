@@ -802,7 +802,7 @@ tree_nodeRef IR_lowering::expand_mult_const(tree_nodeRef op0, unsigned long long
 
    for(opno = 1; opno < alg.ops; opno++)
    {
-      int log = alg.log[opno];
+      auto log = alg.log[opno];
       tree_nodeRef log_node;
 
       if(log == 0)

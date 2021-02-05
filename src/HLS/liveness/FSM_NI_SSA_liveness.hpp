@@ -54,7 +54,7 @@ class FSM_NI_SSA_liveness : public liveness_computer
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   FSM_NI_SSA_liveness(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   FSM_NI_SSA_liveness(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

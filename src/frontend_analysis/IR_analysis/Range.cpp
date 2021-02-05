@@ -1063,7 +1063,7 @@ RangeRef Range::udiv(const RangeConstRef& other) const
    return res;
 }
 
-#define DIV_HELPER(x, y) (x == Max) ? ((y < 0) ? Min : ((y == 0) ? 0 : Max)) : ((y == Max) ? 0 : ((x == Min) ? ((y < 0) ? Max : ((y == 0) ? 0 : Min)) : ((y == Min) ? 0 : ((x) / (y)))))
+#define DIV_HELPER(x, y) ((x) == Max) ? (((y) < 0) ? Min : (((y) == 0) ? 0 : Max)) : (((y) == Max) ? 0 : (((x) == Min) ? (((y) < 0) ? Max : (((y) == 0) ? 0 : Min)) : (((y) == Min) ? 0 : ((x) / (y)))))
 
 RangeRef Range::sdiv(const RangeConstRef& other) const
 {

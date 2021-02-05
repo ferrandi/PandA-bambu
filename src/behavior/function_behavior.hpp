@@ -578,7 +578,7 @@ class FunctionBehavior
     * @param subset is the set of subgraph vertices
     * @return the refcount to the subgraph
     */
-   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& subset) const;
+   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& statements) const;
 
    /**
     * This method returns the basic block graphs.
@@ -889,7 +889,7 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckBBReachability(const vertex first_basic_block, const vertex second_basic_block) const;
 
    /**
     * Check if a path from first_operation to second_operation exists in control flow graph with feedback
@@ -905,7 +905,7 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBFeedbackReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckBBFeedbackReachability(const vertex first_basic_block, const vertex second_basic_block) const;
 
    /**
     * Return the version of the basic block intermediate representation

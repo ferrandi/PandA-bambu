@@ -157,7 +157,7 @@ struct VHDL_writer : public language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool& first_port_analyzed) override;
+   void write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool& first_port_analyzed) override;
    void write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed) override;
    /**
     * Write the end part in a module declaration.

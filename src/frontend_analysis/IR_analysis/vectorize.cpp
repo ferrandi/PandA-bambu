@@ -1767,9 +1767,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
             const auto element_type = tree_helper::CGetType(GET_NODE(gp->res));
-            /// vector of boolean types are mapped on vector of unsigned integer
+            /// vector of Boolean types are mapped on vector of unsigned integer
             const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
+            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
             const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
             bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(GET_NODE(gp->res))->index);
@@ -1872,9 +1872,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
             const auto element_type = tree_helper::CGetType(GET_NODE(ga->op0));
-            /// vector of boolean types are mapped on vector of integer
+            /// vector of Boolean types are mapped on vector of integer
             const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
+            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
             const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
             bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(tn)->index);
@@ -2370,7 +2370,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, gimple_assign_tree_node_schema;
                   unsigned int bit_field_ref_index = TM->new_tree_node_id();
                   const auto element_type = tree_helper::CGetType(GET_NODE(ga->op0));
-                  /// vector of boolean types are mapped on vector of integer
+                  /// vector of Boolean types are mapped on vector of integer
                   const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
                   const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
                   const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
@@ -2924,9 +2924,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
                      unsigned int bit_field_ref_index = TM->new_tree_node_id();
                      const auto element_type = tree_helper::CGetType(GET_NODE(gp->res));
-                     /// vector of boolean types are mapped on vector of integer
+                     /// vector of Boolean types are mapped on vector of integer
                      const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-                     const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
+                     const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
                      const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
                      bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
                      bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(GET_NODE(gp->res))->index);
@@ -3080,6 +3080,10 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
 bool Vectorize::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    if(bb_version != 0)
    {
       return false;

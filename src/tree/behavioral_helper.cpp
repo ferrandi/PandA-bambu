@@ -1225,8 +1225,8 @@ std::string BehavioralHelper::PrintVarDeclaration(unsigned int var, var_pp_funct
       {
          return_value += " __attribute__((packed))";
       }
-      if(dn and ((dn->orig and GetPointer<var_decl>(curr_tn) and GetPointer<var_decl>(GET_NODE(dn->orig)) and GetPointer<var_decl>(curr_tn)->algn != GetPointer<var_decl>(GET_NODE(dn->orig))->algn) ||
-                 (GetPointer<var_decl>(curr_tn) and GetPointer<var_decl>(curr_tn)->algn == 128)))
+      if(dn && ((dn->orig and (GetPointer<var_decl>(curr_tn)) && (GetPointer<var_decl>(GET_NODE(dn->orig))) && (GetPointer<var_decl>(curr_tn)->algn != GetPointer<var_decl>(GET_NODE(dn->orig))->algn)) ||
+                ((GetPointer<var_decl>(curr_tn)) && (GetPointer<var_decl>(curr_tn)->algn == 128))))
       {
          return_value += " __attribute__ ((aligned (" + boost::lexical_cast<std::string>(GetPointer<var_decl>(curr_tn)->algn / 8) + "))) ";
       }
@@ -2408,7 +2408,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          auto* ue = GetPointer<unary_expr>(node);
          res = res + " " + op + print_node(GET_INDEX_NODE(ue->op), v, vppf);
          auto* sa = GetPointer<ssa_name>(GET_NODE(ue->op));
-         if(sa and (sa->volatile_flag || GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K) and sa->var and GetPointer<var_decl>(GET_NODE(sa->var)))
+         if(sa and (sa->volatile_flag || (GET_NODE(sa->CGetDefStmt())->get_kind() == gimple_nop_K)) && (sa->var and GetPointer<var_decl>(GET_NODE(sa->var))))
          {
             res += " = 0";
          }

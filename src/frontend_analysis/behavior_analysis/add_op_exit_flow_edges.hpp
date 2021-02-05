@@ -75,7 +75,7 @@ class AddOpExitFlowEdges : public FunctionFrontendFlowStep
     * @param AppM is the application manager
     * @param function_id is the node id of the function analyzed.
     */
-   AddOpExitFlowEdges(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   AddOpExitFlowEdges(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

@@ -67,7 +67,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 #include "exceptions.hpp"
 #include <boost/lexical_cast.hpp>
 
-#define NO_TOKEN -1
+#define NO_TOKEN (-1)
 
 const int treeVocabularyTokenTypes::bisontokens[] = {
     TOK_BISON_GCC_VERSION, TOK_BISON_PLUGIN_VERSION, TOK_BISON_IDENTIFIER_NODE, TOK_BISON_TREE_LIST, TOK_BISON_TREE_VEC, TOK_BISON_BLOCK, TOK_BISON_VOID_TYPE, TOK_BISON_INTEGER_TYPE, TOK_BISON_REAL_TYPE, TOK_BISON_COMPLEX_TYPE,

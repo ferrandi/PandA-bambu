@@ -209,7 +209,7 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
          skip_check = true;
       }
    }
-   if(not tree_helper::is_a_vector(TM, GET_INDEX_NODE(ga->op0)) and tree_helper::is_an_array(TM, GET_INDEX_NODE(ga->op0)) and not tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op0)))
+   if((not tree_helper::is_a_vector(TM, GET_INDEX_NODE(ga->op0))) && tree_helper::is_an_array(TM, GET_INDEX_NODE(ga->op0)) && (not tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op0))))
    {
       skip_check = true;
    }

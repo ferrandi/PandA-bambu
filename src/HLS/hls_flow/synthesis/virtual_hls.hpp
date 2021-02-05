@@ -60,7 +60,7 @@ class virtual_hls : public HLSFunctionStep
     * Constructor
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   virtual_hls(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   virtual_hls(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

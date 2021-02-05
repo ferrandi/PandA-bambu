@@ -800,7 +800,7 @@ struct OpGraph : public graph
     * @param g is the bulk graph.
     * @param selector is the selector used to filter the bulk graph.
     */
-   OpGraph(const OpGraphsCollectionRef g, int selector);
+   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector);
 
    /**
     * Sub-graph constructor.
@@ -808,7 +808,7 @@ struct OpGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   OpGraph(const OpGraphsCollectionRef g, int selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
+   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
 
    /**
     * Destructor

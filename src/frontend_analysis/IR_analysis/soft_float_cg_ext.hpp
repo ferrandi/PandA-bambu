@@ -93,7 +93,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * @param fun_id is the function index
     * @param design_flow_manager is the design flow manager
     */
-   soft_float_cg_ext(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
+   soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

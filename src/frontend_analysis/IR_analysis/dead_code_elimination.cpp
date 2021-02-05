@@ -119,9 +119,12 @@ bool dead_code_elimination::HasToBeExecuted() const
    {
       return true;
    }
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    std::map<unsigned int, bool> cur_writing_memory;
    std::map<unsigned int, bool> cur_reading_memory;
-   const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    for(const auto i : AppM->CGetCallGraphManager()->get_called_by(function_id))
    {
       const tree_nodeRef curr_tn = AppM->get_tree_manager()->GetTreeNode(i);
@@ -784,7 +787,7 @@ DesignFlowStep_Status dead_code_elimination::InternalExec()
             for(auto curr_el : stmts_to_be_removed)
             {
                auto* ga = GetPointer<gimple_assign>(GET_NODE(curr_el));
-               if((ga and (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) or GetPointer<gimple_call>(GET_NODE(curr_el)))
+               if((ga && (GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)) || (GetPointer<gimple_call>(GET_NODE(curr_el))))
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call expr can be removed");
                   const CallGraphManagerRef cg_man = AppM->GetCallGraphManager();

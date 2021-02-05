@@ -170,7 +170,7 @@ struct bloc
     * Add a value to list of phi node.
     * @param a is a NODE_ID.
     */
-   void AddPhi(const tree_nodeRef a);
+   void AddPhi(const tree_nodeRef phi);
 
    /**
     * Add a statement in front of list of statements.

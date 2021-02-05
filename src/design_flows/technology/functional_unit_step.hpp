@@ -90,7 +90,7 @@ class FunctionalUnitStep : public virtual DesignFlowStep
     * Analyze all the cells built starting from a template
     * @param fu is the corresponding functional unit
     */
-   virtual void AnalyzeFu(const technology_nodeRef fu);
+   virtual void AnalyzeFu(const technology_nodeRef f_unit);
 
    /**
     * Create a template instance to be specialized

@@ -2916,7 +2916,7 @@ bool allocation::HasToBeExecuted() const
    {
       std::map<unsigned int, unsigned int> cur_bb_ver;
       const CallGraphManagerConstRef call_graph_manager = HLSMgr->CGetCallGraphManager();
-      CustomOrderedSet<unsigned int> funcs = call_graph_manager->GetReachedBodyFunctions();
+      const auto& funcs = call_graph_manager->GetReachedBodyFunctions();
       if(funId and funcs.find(funId) == funcs.end())
       {
          return false;

@@ -99,7 +99,7 @@ class call_graph_computation : public ApplicationFrontendFlowStep
     * @param AppM is the application manager
     * @param design_flow_manager is the design flow manager
     */
-   call_graph_computation(const ParameterConstRef Param, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+   call_graph_computation(const ParameterConstRef _parameters, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

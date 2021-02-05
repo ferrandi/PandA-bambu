@@ -76,7 +76,7 @@ void bloc::visit(tree_node_visitor* const v) const
 
 void bloc::PushFront(const tree_nodeRef statement)
 {
-   THROW_ASSERT(not GET_NODE(statement) or GET_NODE(statement)->get_kind() != gimple_phi_K, "Adding phi " + statement->ToString() + " to statements list");
+   THROW_ASSERT((not GET_NODE(statement)) || (GET_NODE(statement)->get_kind() != gimple_phi_K), "Adding phi " + statement->ToString() + " to statements list");
    if(list_of_stmt.size() and GET_NODE(list_of_stmt.front())->get_kind() != gimple_label_K)
    {
       list_of_stmt.push_front(statement);
@@ -86,7 +86,7 @@ void bloc::PushFront(const tree_nodeRef statement)
       list_of_stmt.insert(std::next(list_of_stmt.begin()), statement);
    }
    /// This check is necessary since during parsing of statement list statement has not yet been filled
-   if(GET_NODE(statement) and GetPointer<gimple_node>(GET_NODE(statement)))
+   if((GET_NODE(statement)) && (GetPointer<gimple_node>(GET_NODE(statement))))
    {
       GetPointer<gimple_node>(GET_NODE(statement))->bb_index = number;
    }
@@ -126,7 +126,7 @@ void bloc::PushFront(const tree_nodeRef statement)
 void bloc::PushBack(const tree_nodeRef statement)
 {
    THROW_ASSERT(number, "Trying to add " + statement->ToString() + " to entry");
-   THROW_ASSERT(not GET_NODE(statement) or GET_NODE(statement)->get_kind() != gimple_phi_K, "Adding phi " + statement->ToString() + " to statements list");
+   THROW_ASSERT((!GET_NODE(statement)) || (GET_NODE(statement)->get_kind() != gimple_phi_K), "Adding phi " + statement->ToString() + " to statements list");
    if(list_of_stmt.empty())
    {
       list_of_stmt.push_back(statement);
@@ -144,7 +144,7 @@ void bloc::PushBack(const tree_nodeRef statement)
       }
    }
    /// This check is necessary since during parsing of statement list statement has not yet been filled
-   if(GET_NODE(statement) and GetPointer<gimple_node>(GET_NODE(statement)))
+   if((GET_NODE(statement)) && (GetPointer<gimple_node>(GET_NODE(statement))))
    {
       GetPointer<gimple_node>(GET_NODE(statement))->bb_index = number;
       auto gn = GetPointer<gimple_node>(GET_NODE(statement));
@@ -423,7 +423,7 @@ void bloc::ReorderLUTs()
 void bloc::AddPhi(const tree_nodeRef phi)
 {
    /// This check is necessary since during parsing of statement list statement has not yet been filled
-   if(GET_NODE(phi) and GetPointer<gimple_phi>(GET_NODE(phi)))
+   if(GET_NODE(phi) && GetPointer<gimple_phi>(GET_NODE(phi)))
    {
       GetPointer<gimple_phi>(GET_NODE(phi))->bb_index = number;
    }
@@ -438,10 +438,10 @@ void bloc::AddPhi(const tree_nodeRef phi)
          }
       }
    }
-   if(GET_NODE(phi) and GetPointer<gimple_phi>(GET_NODE(phi)))
+   if(GET_NODE(phi) && GetPointer<gimple_phi>(GET_NODE(phi)))
    {
       auto gp = GetPointer<gimple_phi>(GET_NODE(phi));
-      if(GET_NODE(gp->res) and GetPointer<ssa_name>(GET_NODE(gp->res)))
+      if(GET_NODE(gp->res) && GetPointer<ssa_name>(GET_NODE(gp->res)))
       {
          auto sn = GetPointer<ssa_name>(GET_NODE(gp->res));
          sn->SetDefStmt(phi);

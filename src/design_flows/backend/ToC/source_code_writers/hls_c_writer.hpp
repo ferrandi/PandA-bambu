@@ -75,7 +75,7 @@ class HLSCWriter : public CWriter
     * used to print the equivalent memory initialization data for the HDL
     * simulator
     */
-   size_t WriteBinaryMemoryInit(const std::string& binary_string, const size_t data_size, std::string& bits_offset);
+   size_t WriteBinaryMemoryInit(const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
 
    size_t WriteBinaryMemoryInitToFile(std::ofstream& parameter_init_file, const std::string& binary_string, const size_t data_bitsize, std::string& bits_offset);
 
@@ -108,7 +108,7 @@ class HLSCWriter : public CWriter
     * removed when tesbench memory allocation and c testbench creation will
     * be executed as separate steps)
     */
-   void WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned int vector_index);
+   void WriteParamInitialization(const BehavioralHelperConstRef behavioral_helper, const std::map<std::string, std::string>& curr_test_vector, const unsigned int v_idx);
 
    /**
     * Writes a call to the top function to be tested, using its parameters.
@@ -182,7 +182,7 @@ class HLSCWriter : public CWriter
     * @param Param is the set of parameters
     * @param verbose tells if annotations
     */
-   HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef Param,
+   HLSCWriter(const HLSCBackendInformationConstRef hls_c_backend_information, const application_managerConstRef _AppM, const InstructionWriterRef instruction_writer, const IndentedOutputStreamRef indented_output_stream, const ParameterConstRef _parameters,
               bool verbose = true);
 
    /**

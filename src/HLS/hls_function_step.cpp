@@ -77,7 +77,7 @@ HLSFunctionStep::~HLSFunctionStep() = default;
 bool HLSFunctionStep::HasToBeExecuted() const
 {
    CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-   CustomOrderedSet<unsigned int> funcs = CGMan->GetReachedBodyFunctions();
+   const auto funcs = CGMan->GetReachedBodyFunctions();
    if(funId and funcs.find(funId) == funcs.end())
    {
       return false;

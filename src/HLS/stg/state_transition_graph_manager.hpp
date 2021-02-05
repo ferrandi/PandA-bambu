@@ -119,7 +119,7 @@ class StateTransitionGraphManager
     * Constructor of the class. It creates a new empty graph and it sets reference to hls class
     * @param HLS is the HLS data structure
     */
-   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef parameters);
+   StateTransitionGraphManager(const HLS_managerConstRef HLSMgr, hlsRef HLS, const ParameterConstRef _Param);
 
    /**
     * Destructor

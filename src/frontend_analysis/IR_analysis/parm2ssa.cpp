@@ -117,10 +117,10 @@ DesignFlowStep_Status parm2ssa::Exec()
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
 
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
+   const auto reached_body_fun_ids = CG->GetReachedBodyFunctions();
    AppM->clearParm2SSA();
 
-   for(unsigned int function_id : reached_body_fun_ids)
+   for(auto function_id : reached_body_fun_ids)
    {
       const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
       auto* fd = GetPointer<function_decl>(curr_tn);

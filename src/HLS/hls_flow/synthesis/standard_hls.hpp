@@ -59,7 +59,7 @@ class standard_hls : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   standard_hls(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   standard_hls(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

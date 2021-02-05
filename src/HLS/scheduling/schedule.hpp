@@ -302,7 +302,7 @@ class Schedule
     * @param op is the operation
     * @return the last clock cycle
     */
-   AbsControlStep get_cstep_end(const unsigned int op) const;
+   AbsControlStep get_cstep_end(const unsigned int statement_index) const;
 
    /**
     * Return the starting time of the operation

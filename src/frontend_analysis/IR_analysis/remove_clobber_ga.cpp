@@ -165,9 +165,9 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
                      {
                         res = var_substitution_table.find(GET_INDEX_NODE(res))->second;
                      }
-                     THROW_ASSERT(
-                         !(GetPointer<ssa_name>(GET_NODE(res)) and GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))->clobber),
-                         "unexpected condition");
+                     THROW_ASSERT((!(GetPointer<ssa_name>(GET_NODE(res))) && (GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))) &&
+                                   (GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))->clobber)),
+                                  "unexpected condition");
                      gp->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(TM->GetTreeReindex(GET_INDEX_NODE(res)), def_edge.second));
                   }
                }

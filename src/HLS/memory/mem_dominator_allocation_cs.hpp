@@ -49,7 +49,7 @@ class mem_dominator_allocation_cs : public mem_dominator_allocation
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   mem_dominator_allocation_cs(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
+   mem_dominator_allocation_cs(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization,
                                const HLSFlowStep_Type hls_flow_step_type);
 
    /**

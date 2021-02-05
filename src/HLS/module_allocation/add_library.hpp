@@ -92,7 +92,7 @@ class add_library : public HLSFunctionStep
     * Constructor
     * @param design_flow_manager is the design flow manager
     */
-   add_library(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   add_library(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor

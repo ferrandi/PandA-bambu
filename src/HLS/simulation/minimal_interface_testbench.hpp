@@ -64,7 +64,7 @@ class MinimalInterfaceTestbench : public TestbenchGenerationBaseStep
 
    void write_signals(const tree_managerConstRef TreeM, bool& withMemory, bool& hasMultiIrq) const override;
 
-   void write_slave_initializations(bool withMemory) const override;
+   void write_slave_initializations(bool with_memory) const override;
 
    /// specialize read_input_value_from_file for interface PI_RNONE
    void read_input_value_from_file_RNONE(const std::string& input_name, bool& first_valid_input, unsigned bitsize) const;

@@ -147,7 +147,7 @@ class TechnologyFlowStep : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& steps, const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Return the factory to create this type of steps

@@ -115,7 +115,7 @@ class CBackend : public DesignFlowStep
     * @param funParams is the list of function parameters
     * @param computed_variables is the set where the computed variables will be stored
     */
-   void compute_variables(const OpGraphConstRef inGraph, const CustomUnorderedSet<unsigned int>& gblVariables, std::list<unsigned int>& funParams, CustomUnorderedSet<unsigned int>& computed_variables);
+   void compute_variables(const OpGraphConstRef inGraph, const CustomUnorderedSet<unsigned int>& gblVariables, std::list<unsigned int>& funParams, CustomUnorderedSet<unsigned int>& vars);
 
    /**
     * Analyze a variable or a type to identify the includes to be added
@@ -200,7 +200,7 @@ class CBackend : public DesignFlowStep
     * @param file_name is the file to be created
     * @param Param is the set of input parameters
     */
-   CBackend(const Type type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef AppM, std::string file_name, const ParameterConstRef Param);
+   CBackend(const Type type, const CBackendInformationConstRef c_backend_information, const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef AppM, std::string file_name, const ParameterConstRef _parameters);
 
  public:
    /**

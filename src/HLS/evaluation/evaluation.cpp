@@ -168,7 +168,8 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   }
 #endif
 #if HAVE_EXPERIMENTAL
-                  else if(objective == "EDGES_REDUCTION_EVALUATION") ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+                  else if(objective == "EDGES_REDUCTION_EVALUATION")
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::EDGES_REDUCTION_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT
                   else if(objective == "FREQUENCY")
@@ -185,7 +186,8 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   }
 #endif
 #if HAVE_EXPERIMENTAL
-                     else if(objective == "NUM_AF_EDGES") ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
+                  else if(objective == "NUM_AF_EDGES")
+                     ret.insert(std::make_tuple(HLSFlowStep_Type::NUM_AF_EDGES_EVALUATION, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::ALL_FUNCTIONS));
 #endif
 #if HAVE_LIBRARY_CHARACTERIZATION_BUILT && HAVE_SIMULATION_WRAPPER_BUILT
                   else if(objective == "TIME" || objective == "TOTAL_TIME")

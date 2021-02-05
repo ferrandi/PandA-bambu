@@ -75,7 +75,7 @@ class CBackendStepFactory : public DesignFlowStepFactory
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef application_manager, const ParameterConstRef param);
+   CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef application_manager, const ParameterConstRef _parameters);
 
    /**
     * Destructor

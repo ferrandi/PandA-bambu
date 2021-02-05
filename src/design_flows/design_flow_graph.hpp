@@ -73,7 +73,7 @@ struct DesignFlowStepInfo : public NodeInfo
    /**
     * Constructor
     */
-   DesignFlowStepInfo(const DesignFlowStepRef step_ref, const bool unnecessary);
+   DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step, const bool unnecessary);
 };
 using DesignFlowStepInfoRef = refcount<DesignFlowStepInfo>;
 using DesignFlowStepInfoConstRef = refcount<const DesignFlowStepInfo>;
@@ -87,7 +87,7 @@ struct DesignFlowDependenceInfo : public EdgeInfo
    DesignFlowDependenceInfo();
 
    /**
-    * Desturctor
+    * Destructor
     */
    ~DesignFlowDependenceInfo() override;
 };
