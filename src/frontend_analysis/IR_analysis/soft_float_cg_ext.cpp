@@ -204,7 +204,10 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
    else
    {
       _version = refcount<FunctionVersion>(new FunctionVersion(function_v));
-      const auto insertion = funcFF.insert({function_v, _version});
+#if HAVE_ASSERTS
+      const auto insertion =
+#endif
+          funcFF.insert({function_v, _version});
       THROW_ASSERT(insertion.second, "");
    }
    const auto curr_tn = TreeM->GetTreeNode(function_id);
