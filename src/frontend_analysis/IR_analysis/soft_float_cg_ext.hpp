@@ -187,10 +187,16 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    std::vector<tree_nodeRef> nopConvert;
 
    /// SSA variable which requires cast renaming from standard to user-defined float format in all but given statements
-   CustomMap<ssa_name*, std::vector<unsigned int>> inputCastRename;
+   CustomMap<ssa_name*, std::vector<unsigned int>> inputInterface;
 
    /// SSA variable which requires cast renaming from user-defined to standard float format in given statements only
-   CustomMap<ssa_name*, std::vector<tree_nodeRef>> outputCastRename;
+   CustomMap<ssa_name*, std::vector<tree_nodeRef>> outputInterface;
+
+   /// Hardware implemented functions need parameters specified as real_type, thus it is necessary to add a view_convert
+   CustomMap<ssa_name*, std::vector<tree_nodeRef>> hwParam;
+
+   /// Hardware implemented functions return values as real_type, thus a view_convert is necessary
+   std::vector<ssa_name*> hwReturn;
 
    /// Tree manager
    const tree_managerRef TreeM;
@@ -210,8 +216,14 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    static tree_nodeRef float64_type;
    static tree_nodeRef float64_ptr_type;
 
+   static bool lowering_needed(const tree_managerRef& TreeM, const ssa_name* ssa);
+
    tree_nodeRef parm_int_type_for(const tree_nodeRef& type) const;
    tree_nodeRef int_type_for(const tree_nodeRef& type) const;
+
+   bool signature_lowering(function_decl* f_decl) const;
+
+   void ssa_lowering(ssa_name* ssa) const;
 
    /**
     *
@@ -239,7 +251,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * @param outFF Output float format, if nullptr will be deduced as standard IEEE 754 type from ssa bitwidth
     * @return tree_nodeRef New ssa_name tree reindex reference representing converted input ssa
     */
-   tree_nodeRef inPlaceCastRename(blocRef bb, tree_nodeRef stmt, tree_nodeRef ssa, refcount<FloatFormat> inFF, refcount<FloatFormat> outFF) const;
+   tree_nodeRef generate_interface(blocRef bb, tree_nodeRef stmt, tree_nodeRef ssa, refcount<FloatFormat> inFF, refcount<FloatFormat> outFF) const;
 
    /**
     * Cast real type constant from inFF to outFF format
@@ -291,6 +303,8 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * Fixes the var_decl duplication.
     */
    DesignFlowStep_Status InternalExec() override;
+
+   bool HasToBeExecuted() const override;
 };
 
 #endif
