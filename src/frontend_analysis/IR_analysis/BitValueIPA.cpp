@@ -93,7 +93,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:

@@ -90,7 +90,7 @@ DesignFlowStepSorter::DesignFlowStepSorter() = default;
 
 bool DesignFlowStepSorter::operator()(const DesignFlowStepRef x, const DesignFlowStepRef y) const
 {
-   return x->GetName() > y->GetName();
+   return x->GetName() < y->GetName();
 }
 
 DesignFlowStepSet::DesignFlowStepSet() : std::set<DesignFlowStepRef, DesignFlowStepSorter>(DesignFlowStepSorter())

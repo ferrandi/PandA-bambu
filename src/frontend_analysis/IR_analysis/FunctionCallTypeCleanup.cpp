@@ -318,7 +318,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
       {
          /// Workaround: this should be a precedence, but when this is added later for functions added during call graph extension is added as unnecessary and it is not updated before its execution
-         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

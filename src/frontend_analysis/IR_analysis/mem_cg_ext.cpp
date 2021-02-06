@@ -64,8 +64,8 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, MEM_CG_EXT, _design_flow_manager, _parameters)
+mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, MEM_CG_EXT, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -108,7 +108,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-DesignFlowStep_Status mem_cg_ext::InternalExec()
+DesignFlowStep_Status mem_cg_ext::Exec()
 {
    const CallGraphManagerRef CGMan = AppM->GetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
@@ -130,10 +130,6 @@ DesignFlowStep_Status mem_cg_ext::InternalExec()
       for(; ie_it != ie_end; ie_it++)
       {
          const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
-         if(caller_id != function_id)
-         {
-            continue;
-         }
          const auto tmp_it = reached_body_fun_ids.find(caller_id);
          if(tmp_it == reached_body_fun_ids.cend())
          {
