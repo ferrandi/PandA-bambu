@@ -378,7 +378,7 @@ DesignFlowStep_Status SwitchFix::InternalExec()
             /// create the gimple_multi_way_if node
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
             unsigned int gimple_multi_way_if_id = TM->new_tree_node_id();
-            IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+            IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
             TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
             auto new_gwi = GetPointer<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
 

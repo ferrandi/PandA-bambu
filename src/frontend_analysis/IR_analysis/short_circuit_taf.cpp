@@ -450,7 +450,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    /// create the assignment between condition for bb1 and the new ssa var
    unsigned int cond1_gimple_stmt_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa1_node_nid);
    IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond1_index);
    TM->create_tree_node(cond1_gimple_stmt_id, gimple_assign_K, IR_schema);
@@ -502,7 +502,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          IR_schema.clear();
          tree_nodeRef ssa_cond_node = TM->GetTreeReindex(ssa_node_nid);
          unsigned int cond_expr_id = TM->new_tree_node_id();
-         IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(res_type_index);
          IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(cond1_index);
          IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(op1);
@@ -511,7 +511,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
          IR_schema.clear();
          /// second, create the gimple assignment
          unsigned int gimple_stmt_id = TM->new_tree_node_id();
-         IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa_node_nid);
          IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond_expr_id);
          IR_schema[TOK(TOK_ORIG)] = boost::lexical_cast<std::string>(GET_INDEX_NODE(phi));
@@ -547,13 +547,13 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
       /// create !cond1
       IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
       IR_schema[TOK(TOK_OP)] = boost::lexical_cast<std::string>(cond1_index);
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       cond1_index = TM->new_tree_node_id();
       TM->create_tree_node(cond1_index, truth_not_expr_K, IR_schema);
       IR_schema.clear();
 
       unsigned int ncond_gimple_stmt_id = TM->new_tree_node_id();
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ncond_ssa_node_nid);
       IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond1_index);
       TM->create_tree_node(ncond_gimple_stmt_id, gimple_assign_K, IR_schema);
@@ -594,7 +594,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
 
    /// create the assignment between condition for bb2 and the new ssa var
    unsigned int cond2_gimple_stmt_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(ssa2_node_nid);
    IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond2_index);
    TM->create_tree_node(cond2_gimple_stmt_id, gimple_assign_K, IR_schema);
@@ -608,7 +608,7 @@ bool short_circuit_taf::create_gimple_cond(unsigned int bb1, unsigned int bb2, b
    IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    IR_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(cond1_index);
    IR_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(cond2_index);
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    unsigned int expr_index = TM->new_tree_node_id();
    if(or_type)
    {

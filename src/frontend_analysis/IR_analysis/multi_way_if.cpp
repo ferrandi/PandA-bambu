@@ -387,7 +387,7 @@ void multi_way_if::MergeCondMulti(const unsigned int pred_bb, const unsigned int
    /// create the gimple_multi_way_if node
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int gimple_multi_way_if_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
    auto new_gwi = GetPointer<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb;
@@ -448,7 +448,7 @@ void multi_way_if::MergeMultiMulti(const unsigned int pred_bb, const unsigned in
    /// create the gimple_multi_way_if node
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int gimple_multi_way_if_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
    auto new_gwi = GetPointer<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb;
@@ -559,7 +559,7 @@ void multi_way_if::MergeMultiCond(const unsigned int pred_bb, const unsigned int
    /// create the gimple_multi_way_if node
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int gimple_multi_way_if_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
    auto new_gwi = GetPointer<gimple_multi_way_if>(TM->get_tree_node_const(gimple_multi_way_if_id));
    new_gwi->bb_index = pred_bb;
@@ -648,7 +648,7 @@ void multi_way_if::MergeCondCond(unsigned int pred, unsigned int curr_bb)
    /// create the gimple_multi_way_if node
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    unsigned int gimple_multi_way_if_id = TM->new_tree_node_id();
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TM->create_tree_node(gimple_multi_way_if_id, gimple_multi_way_if_K, IR_schema);
    IR_schema.clear();
    tree_nodeRef gimple_multi_way_if_stmt = TM->GetTreeReindex(gimple_multi_way_if_id);

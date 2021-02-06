@@ -367,7 +367,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       /// Build the gimple nop where volatile ssa is defined
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> nop_IR_schema;
       const auto nop_id = TM->new_tree_node_id();
-      nop_IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      nop_IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       TM->create_tree_node(nop_id, gimple_nop_K, nop_IR_schema);
 
       unsigned int ssa_vers = TM->get_next_vers();
@@ -535,7 +535,7 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                tree_nodeRef phi_def_ssa_node = TM->GetTreeReindex(phi_def_ssa_node_nid);
 
                unsigned int phi_gimple_stmt_id = TM->new_tree_node_id();
-               IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+               IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                IR_schema[TOK(TOK_RES)] = boost::lexical_cast<std::string>(phi_def_ssa_node_nid);
                IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
                TM->create_tree_node(phi_gimple_stmt_id, gimple_phi_K, IR_schema);

@@ -809,7 +809,7 @@ tree_nodeRef tree_manipulation::create_translation_unit_decl() const
 {
    tree_nodeRef translation_unit_decl_node;
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    unsigned int translation_unit_decl_nid = this->TreeM->find(translation_unit_decl_K, IR_schema);
    if(!translation_unit_decl_nid)
    {
@@ -968,11 +968,11 @@ tree_nodeRef tree_manipulation::create_void_type() const
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(void_type_nid) + " (void_type)");
 
       /// Create the type_decl
-      ///@58 type_decl name: @63 type: @41 srcp: "<built-in>:0:0"
+      ///@58 type_decl name: @63 type: @41 srcp: BUILTIN_SRCP
       IR_schema.clear();
       IR_schema[TOK(TOK_NAME)] = STR(void_identifier_nid);
       IR_schema[TOK(TOK_TYPE)] = STR(void_type_nid);
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       this->TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
       void_node = TreeM->GetTreeReindex(void_type_nid);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(GET_INDEX_NODE(void_node)) + " (" + GET_NODE(void_node)->get_kind_text() + " void)");
@@ -1135,7 +1135,7 @@ tree_nodeRef tree_manipulation::create_boolean_type() const
 
       ///@55 type_decl name: @58 type: @48 srcp: "<built-in>:0:0"
       IR_schema[TOK(TOK_TYPE)] = STR(boolean_type_nid); //@48
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       this->TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(type_decl_nid) + " (type_decl boolean)");
 
@@ -1208,7 +1208,7 @@ tree_nodeRef tree_manipulation::create_default_unsigned_integer_type() const
       ///@20     type_decl        name: @41      type: @8       srcp:
       ///"<built-in>:0:0"
       IR_schema[TOK(TOK_TYPE)] = STR(integer_type_nid); //@8
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       this->TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(type_decl_nid) + " (type_decl unsigned_int)");
 
@@ -1279,7 +1279,7 @@ tree_nodeRef tree_manipulation::CreateDefaultUnsignedLongLongInt() const
       unsigned int max_node_nid = this->TreeM->new_tree_node_id();
 
       IR_schema[TOK(TOK_TYPE)] = STR(integer_type_nid); //@8
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       this->TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(type_decl_nid) + " (type_decl unsigned_int)");
 
@@ -1351,7 +1351,7 @@ tree_nodeRef tree_manipulation::create_default_integer_type() const
       ///@20     type_decl        name: @41      type: @8       srcp:
       ///"<built-in>:0:0"
       IR_schema[TOK(TOK_TYPE)] = STR(integer_type_nid); //@8
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       this->TreeM->create_tree_node(type_decl_nid, type_decl_K, IR_schema);
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Created node " + STR(type_decl_nid) + " (type_decl int)");
@@ -1677,7 +1677,7 @@ tree_nodeRef tree_manipulation::create_phi_node(tree_nodeRef& ssa_res, const std
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
    IR_schema[TOK(TOK_RES)] = STR(GET_INDEX_NODE(ssa_res));
    IR_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(scpe));
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    this->TreeM->create_tree_node(phi_node_nid, gimple_phi_K, IR_schema);
    tree_nodeRef phi_stmt = TreeM->GetTreeReindex(phi_node_nid);
    GetPointer<gimple_node>(GET_NODE(phi_stmt))->bb_index = bb_index;
@@ -1908,7 +1908,7 @@ void tree_manipulation::create_label(const blocRef& block, const unsigned int fu
 
    //@23     type_decl        name: @27      type: @15      srcp: "<built-in>":0
    IR_schema[TOK(TOK_NAME)] = boost::lexical_cast<std::string>(type_decl_name_nid);
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    unsigned int label_void_type_name_nid = TreeM->find(type_decl_K, IR_schema);
    unsigned int label_type_nid;
    if(!label_void_type_name_nid)
@@ -1939,7 +1939,7 @@ void tree_manipulation::create_label(const blocRef& block, const unsigned int fu
          IR_schema.clear();
          IR_schema[TOK(TOK_NAME)] = boost::lexical_cast<std::string>(type_decl_name_nid);
          IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(label_type_nid);
-         IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          TreeM->create_tree_node(label_void_type_name_nid, type_decl_K, IR_schema);
       }
       else
@@ -1955,7 +1955,7 @@ void tree_manipulation::create_label(const blocRef& block, const unsigned int fu
 
    unsigned int label_decl_nid = TreeM->new_tree_node_id(); // 242
    IR_schema[TOK(TOK_OP)] = boost::lexical_cast<std::string>(label_decl_nid);
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TreeM->create_tree_node(label_expr_nid, gimple_label_K, IR_schema);
    IR_schema.clear();
 
@@ -1964,7 +1964,7 @@ void tree_manipulation::create_label(const blocRef& block, const unsigned int fu
    IR_schema[TOK(TOK_NAME)] = boost::lexical_cast<std::string>(label_decl_name_nid);
    IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(label_type_nid);
    IR_schema[TOK(TOK_SCPE)] = boost::lexical_cast<std::string>(function_decl_nid);
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TreeM->create_tree_node(label_decl_nid, label_decl_K, IR_schema);
    IR_schema.clear();
 
@@ -2002,7 +2002,7 @@ void tree_manipulation::create_goto(const blocRef& block, const unsigned int, co
 
    //@23     type_decl        name: @27      type: @15      srcp: "<built-in>":0
    IR_schema[TOK(TOK_NAME)] = boost::lexical_cast<std::string>(type_decl_name_nid);
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    unsigned int label_void_type_name_nid = TreeM->find(type_decl_K, IR_schema);
    unsigned int label_type_nid;
    if(!label_void_type_name_nid)
@@ -2033,7 +2033,7 @@ void tree_manipulation::create_goto(const blocRef& block, const unsigned int, co
          IR_schema.clear();
          IR_schema[TOK(TOK_NAME)] = boost::lexical_cast<std::string>(type_decl_name_nid);
          IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(label_type_nid);
-         IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          TreeM->create_tree_node(label_void_type_name_nid, type_decl_K, IR_schema);
       }
       else
@@ -2048,7 +2048,7 @@ void tree_manipulation::create_goto(const blocRef& block, const unsigned int, co
    unsigned int goto_expr_nid = TreeM->new_tree_node_id(); // 60
    IR_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(label_type_nid);
    IR_schema[TOK(TOK_OP)] = boost::lexical_cast<std::string>(label_decl_nid);
-   IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    TreeM->create_tree_node(goto_expr_nid, gimple_goto_K, IR_schema);
    IR_schema.clear();
 
@@ -2169,13 +2169,13 @@ tree_nodeRef tree_manipulation::CreateOrExpr(const tree_nodeConstRef& first_cond
    const auto truth_or_expr_id = TreeM->new_tree_node_id();
    const auto bt = create_boolean_type();
    const auto type_index = bt->index;
-   truth_or_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   truth_or_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    truth_or_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_or_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
    truth_or_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    TreeM->create_tree_node(truth_or_expr_id, truth_or_expr_K, truth_or_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_or_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_or_expr_id), 0, BUILTIN_SRCP);
    if(block)
    {
       block->PushBack(ga);
@@ -2205,13 +2205,13 @@ tree_nodeRef tree_manipulation::CreateAndExpr(const tree_nodeConstRef& first_con
    const auto truth_and_expr_id = TreeM->new_tree_node_id();
    const auto bt = create_boolean_type();
    const auto type_index = bt->index;
-   truth_and_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   truth_and_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    truth_and_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_and_expr_schema[TOK(TOK_OP0)] = STR(first_condition->index);
    truth_and_expr_schema[TOK(TOK_OP1)] = STR(second_condition->index);
    TreeM->create_tree_node(truth_and_expr_id, truth_and_expr_K, truth_and_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_and_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_and_expr_id), 0, BUILTIN_SRCP);
    if(block)
    {
       block->PushBack(ga);
@@ -2241,12 +2241,12 @@ tree_nodeRef tree_manipulation::CreateNotExpr(const tree_nodeConstRef& condition
    const auto truth_not_expr_id = TreeM->new_tree_node_id();
    const auto bt = create_boolean_type();
    const auto type_index = bt->index;
-   truth_not_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   truth_not_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    truth_not_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    truth_not_expr_schema[TOK(TOK_OP)] = STR(condition->index);
    TreeM->create_tree_node(truth_not_expr_id, truth_not_expr_K, truth_not_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_not_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(truth_not_expr_id), 0, BUILTIN_SRCP);
    if(block)
    {
       block->PushBack(ga);
@@ -2281,7 +2281,7 @@ tree_nodeRef tree_manipulation::ExtractCondition(const tree_nodeRef& condition, 
       const auto bt = create_boolean_type();
       const auto type_index = bt->index;
 
-      auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), 0, "<built-in>:0:0");
+      auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(GET_INDEX_NODE(gc->op0)), 0, BUILTIN_SRCP);
       if(block)
       {
          block->PushBack(ga);
@@ -2298,7 +2298,7 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
 
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ne_schema, ga_schema;
    ne_schema[TOK(TOK_TYPE)] = STR(type->index);
-   ne_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   ne_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    ne_schema[TOK(TOK_OP)] = STR(operand->index);
    const auto ne_id = TreeM->new_tree_node_id();
    TreeM->create_tree_node(ne_id, nop_expr_K, ne_schema);
@@ -2313,7 +2313,7 @@ tree_nodeRef tree_manipulation::CreateNopExpr(const tree_nodeConstRef& operand, 
       return tree_nodeRef();
    }
 
-   auto ga = CreateGimpleAssign(TreeM->GetTreeReindex(type->index), min, max, TreeM->GetTreeReindex(ne_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(TreeM->GetTreeReindex(type->index), min, max, TreeM->GetTreeReindex(ne_id), 0, BUILTIN_SRCP);
    if(ssa_operand)
    {
       GetPointer<ssa_name>(GET_NODE(GetPointer<gimple_assign>(GET_NODE(ga))->op0))->use_set = ssa_operand->use_set;
@@ -2466,13 +2466,13 @@ tree_nodeRef tree_manipulation::CreateEqExpr(const tree_nodeConstRef& first_oper
    const auto bt = create_boolean_type();
    const auto type_index = bt->index;
    const auto eq_expr_id = TreeM->new_tree_node_id();
-   eq_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   eq_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    eq_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
    eq_expr_schema[TOK(TOK_OP0)] = STR(first_operand->index);
    eq_expr_schema[TOK(TOK_OP1)] = STR(second_operand->index);
    TreeM->create_tree_node(eq_expr_id, eq_expr_K, eq_expr_schema);
 
-   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(eq_expr_id), 0, "<built-in>:0:0");
+   auto ga = CreateGimpleAssign(bt, TreeM->CreateUniqueIntegerCst(0, type_index), TreeM->CreateUniqueIntegerCst(1, type_index), TreeM->GetTreeReindex(eq_expr_id), 0, BUILTIN_SRCP);
    if(block)
    {
       block->PushBack(ga);
@@ -2555,7 +2555,7 @@ tree_nodeRef tree_manipulation::CreateVectorBooleanType(const unsigned int numbe
    {
       vector_type_id = this->TreeM->new_tree_node_id();
 
-      IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+      IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
       this->TreeM->create_tree_node(vector_type_id, vector_type_K, IR_schema);
    }
    return TreeM->GetTreeReindex(vector_type_id);
@@ -2568,12 +2568,12 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
    auto funDecl = GetPointer<function_decl>(GET_NODE(tn));
    THROW_ASSERT(GET_NODE(funDecl->name)->get_kind() == identifier_node_K, "operator based function not supported ");
    auto function_name = tree_helper::print_function_name(TreeM, funDecl);
-   auto function_decl_id = TreeM->function_index(function_name+funNameSuffix);
+   auto function_decl_id = TreeM->function_index(function_name + funNameSuffix);
    if(function_decl_id)
    {
       return TreeM->GetTreeReindex(function_decl_id);
    }
-   auto funID_name = create_identifier_node(function_name+funNameSuffix);
+   auto funID_name = create_identifier_node(function_name + funNameSuffix);
    CustomUnorderedMapStable<unsigned int, unsigned int> remapping;
    tree_node_dup tnd(remapping, TreeM);
    remapping[GET_INDEX_NODE(funDecl->name)] = GET_INDEX_NODE(funID_name);
@@ -2581,7 +2581,7 @@ tree_nodeRef tree_manipulation::CloneFunction(const tree_nodeRef& tn, const std:
    {
       std::string function_name_mngl;
       tree_helper::get_mangled_fname(funDecl, function_name_mngl);
-      auto funID_name_mngl = create_identifier_node(function_name_mngl+funNameSuffix);
+      auto funID_name_mngl = create_identifier_node(function_name_mngl + funNameSuffix);
       remapping[GET_INDEX_NODE(funDecl->mngl)] = GET_INDEX_NODE(funID_name_mngl);
    }
    const unsigned int new_functionDecl = tnd.create_tree_node(GET_NODE(tn), true);

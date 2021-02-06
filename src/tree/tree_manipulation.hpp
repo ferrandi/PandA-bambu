@@ -668,7 +668,7 @@ class tree_manipulation
     * @param funNameSuffix is the suffix added to function_decl newly created
     * @return tree_reindex of the new function decl
     */
-   tree_nodeRef CloneFunction(const tree_nodeRef &tn, const std::string& funNameSuffix);
+   tree_nodeRef CloneFunction(const tree_nodeRef& tn, const std::string& funNameSuffix);
 };
 
 using tree_manipulationRef = refcount<tree_manipulation>;

@@ -74,6 +74,8 @@ REF_FORWARD_DECL(tree_node);
 enum class TreeVocabularyTokenTypes_TokenEnum;
 //@}
 
+#define BUILTIN_SRCP "<built-in>:0:0"
+
 /**
  * This class manages the tree structures extracted from the raw file.
  */

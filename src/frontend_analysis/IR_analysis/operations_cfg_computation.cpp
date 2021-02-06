@@ -201,7 +201,7 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       {
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
          const auto new_tree_node_id = TM->new_tree_node_id();
-         gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          TM->create_tree_node(new_tree_node_id, gimple_nop_K, gimple_nop_schema);
          auto gn = GetPointer<gimple_nop>(TM->get_tree_node_const(new_tree_node_id));
          gn->bb_index = block->number;

@@ -327,7 +327,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          {
             std::swap(first_value, second_value);
          }
-         comm_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         comm_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          comm_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          comm_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_value->index);
          comm_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(second_value->index);
@@ -353,7 +353,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
 
          /// Create the assign
          const auto gimple_node_id = TM->new_tree_node_id();
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(ssa_node_nid);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(comm_expr_id);
@@ -368,7 +368,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          /// Inserting last commutative expression
          comm_expr_schema.clear();
          const auto root_comm_expr_id = TM->new_tree_node_id();
-         comm_expr_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         comm_expr_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          comm_expr_schema[TOK(TOK_TYPE)] = boost::lexical_cast<std::string>(type_index);
          comm_expr_schema[TOK(TOK_OP0)] = boost::lexical_cast<std::string>(first_operand_of_second ? second_be->op0->index : second_be->op1->index);
          comm_expr_schema[TOK(TOK_OP1)] = boost::lexical_cast<std::string>(ssa_node_nid);
@@ -376,7 +376,7 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
 
          /// Create the assign
          const auto root_gimple_node_id = TM->new_tree_node_id();
-         gimple_assign_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+         gimple_assign_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
          gimple_assign_schema[TOK(TOK_TYPE)] = STR(type_index);
          gimple_assign_schema[TOK(TOK_OP0)] = STR(first_ga->op0->index);
          gimple_assign_schema[TOK(TOK_OP1)] = STR(root_comm_expr_id);

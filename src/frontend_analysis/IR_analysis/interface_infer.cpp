@@ -1495,7 +1495,7 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
 
    auto origGN = GetPointer<gimple_node>(GET_NODE(origStmt));
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-   gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+   gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
    const auto gimple_node_id = TM->new_tree_node_id();
    TM->create_tree_node(gimple_node_id, gimple_nop_K, gimple_nop_schema);
    auto gimple_nop_Node = TM->GetTreeReindex(gimple_node_id);

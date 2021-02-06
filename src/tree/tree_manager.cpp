@@ -702,7 +702,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
 
                         // Create a new node, the copy of the definition of ssa_name
                         IR_schema.clear();
-                        IR_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                        IR_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         IR_schema[TOK(TOK_OP0)] = STR(GET_INDEX_NODE(tree_reindexRef_sn));
                         IR_schema[TOK(TOK_OP1)] = STR(GET_INDEX_NODE(gm->op1));
                         if(gm->orig)
