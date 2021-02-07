@@ -165,7 +165,7 @@ class FunctionVersion
  */
 class soft_float_cg_ext : public FunctionFrontendFlowStep
 {
- protected:
+ private:
    enum InterfaceType
    {
       INTERFACE_TYPE_NONE,  // Cast rename not needed
@@ -173,10 +173,22 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
       INTERFACE_TYPE_OUTPUT // Cast rename before usage may be required
    };
 
+   /// Tree manager
+   const tree_managerRef TreeM;
+
+   /// tree manipulation
+   const tree_manipulationRef tree_man;
+
    function_decl* fd;
-   FunctionBehaviorConstRef FB;
-   std::vector<tree_nodeRef> paramBinding;
+   bool isTopFunction;
+   std::vector<tree_nodeRef> topReturn;
    bool bindingCompleted;
+   std::vector<tree_nodeRef> paramBinding;
+   /// when true IR has been modified
+   bool modified;
+
+   refcount<FunctionVersion> _version;
+
    tree_nodeRef int_type;
    tree_nodeRef int_ptr_type;
 
@@ -197,17 +209,6 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
 
    /// Hardware implemented functions return values as real_type, thus a view_convert is necessary
    std::vector<ssa_name*> hwReturn;
-
-   /// Tree manager
-   const tree_managerRef TreeM;
-
-   /// tree manipulation
-   const tree_manipulationRef tree_man;
-
-   /// when true IR has been modified
-   bool modified;
-
-   refcount<FunctionVersion> _version;
 
    static CustomMap<CallGraph::vertex_descriptor, refcount<FunctionVersion>> funcFF;
 
