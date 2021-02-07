@@ -64,8 +64,7 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, MEM_CG_EXT, _design_flow_manager, _parameters)
+mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, MEM_CG_EXT, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }

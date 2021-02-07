@@ -257,10 +257,10 @@ bool FunctionFrontendFlowStep::HasToBeExecuted0() const
 
 bool FunctionFrontendFlowStep::HasToBeExecuted() const
 {
-//   if(!HasToBeExecuted0())
-//   {
-//      return false;
-//   }
+   //   if(!HasToBeExecuted0())
+   //   {
+   //      return false;
+   //   }
    return bb_version != function_behavior->GetBBVersion();
 }
 

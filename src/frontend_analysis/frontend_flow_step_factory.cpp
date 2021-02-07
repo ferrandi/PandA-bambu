@@ -708,7 +708,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new ipa_point_to_analysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
-       case MEM_CG_EXT:
+      case MEM_CG_EXT:
       {
          return DesignFlowStepRef(new mem_cg_ext(AppM, design_flow_manager.lock(), parameters));
       }
