@@ -168,9 +168,10 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
  private:
    enum InterfaceType
    {
-      INTERFACE_TYPE_NONE,  // Cast rename not needed
-      INTERFACE_TYPE_INPUT, // Cast rename after definition may be required
-      INTERFACE_TYPE_OUTPUT // Cast rename before usage may be required
+      INTERFACE_TYPE_NONE = 0,   // Cast rename not needed
+      INTERFACE_TYPE_INPUT = 1,  // Cast rename after definition may be required
+      INTERFACE_TYPE_OUTPUT = 2, // Cast rename before usage may be required
+      INTERFACE_TYPE_REAL = 4    // Floating-point type must be persisted
    };
 
    /// Tree manager
@@ -239,9 +240,9 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * Recursive examine tree node
     * @param current_statement is the current analyzed statement
     * @param current_tree_node is the current tree node
-    * @param castRename
+    * @param castRename is the required interface type bitmask reported using InterfaceType enum
     */
-   void RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node, InterfaceType castRename);
+   void RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node, int castRename);
 
    /**
     * Generate necessary statements to convert ssa variable from inFF to outFF and insert them after stmt in bb

@@ -309,7 +309,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    const auto fn_name = tree_helper::print_type(TreeM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(function_behavior->CGetBehavioralHelper())));
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Function " + fn_name + " implementing " + _version->ToString() + " floating-point format");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---IO interface is " + STR((not _version->std_format() || _version->internal) ? "" : "not ") + "necessary");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---IO interface is " + STR((not _version->std_format() || _version->internal) ? "not " : "") + "necessary");
 
    const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    modified = false;
@@ -338,6 +338,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       {
          const auto ssa = ssa_uses.first;
          const auto ssa_ridx = TreeM->GetTreeReindex(ssa->index);
+         std::vector<tree_nodeRef>& out_ssa = outputInterface[ssa];
          for(const auto& call_stmt : ssa_uses.second)
          {
             const auto call_node = GetPointerS<gimple_node>(GET_NODE(call_stmt));
@@ -349,6 +350,8 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             const auto vc_ssa = GetPointerS<gimple_assign>(GET_NODE(vc_stmt))->op0;
             call_bb->PushBefore(vc_stmt, call_stmt);
             TreeM->ReplaceTreeNode(call_stmt, ssa_ridx, vc_ssa);
+            std::replace_if(
+                out_ssa.begin(), out_ssa.end(), [&](const tree_nodeRef& t) { return GET_INDEX_CONST_NODE(t) == GET_INDEX_CONST_NODE(call_stmt); }, vc_stmt);
          }
       }
       modified = true;
@@ -1262,9 +1265,10 @@ void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, const std::v
    THROW_ASSERT(res.second || *res.first->second == *calledFF, "Same function registered with different formats: " + res.first->second->ToString() + " and " + calledFF->ToString());
 }
 
-void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node, InterfaceType castRename)
+void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement, const tree_nodeRef current_tree_node, int type_interface)
 {
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
+   THROW_ASSERT((type_interface & 3) == INTERFACE_TYPE_NONE || (type_interface & 3) == INTERFACE_TYPE_INPUT || (type_interface & 3) == INTERFACE_TYPE_OUTPUT, "Required interface type must be unique (" + STR(type_interface) + ")");
    const auto curr_tn = GET_NODE(current_tree_node);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively (" + STR(current_tree_node->index) + " " + curr_tn->get_kind_text() + ") " + STR(current_tree_node));
    const auto current_srcp = [curr_tn]() -> std::string {
@@ -1300,7 +1304,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          return fn_FF->internal && _version->std_format() == fn_FF->std_format();
       }
    };
-   const auto ExaminateFunctionCall = [&](tree_nodeRef fn, const std::vector<tree_nodeRef>& args) -> bool {
+   const auto ExaminateFunctionCall = [&](tree_nodeRef fn) -> int {
       const auto ae = GetPointer<addr_expr>(GET_NODE(fn));
       if(ae)
       {
@@ -1313,28 +1317,19 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       {
          if(_version->std_format())
          {
-            return true;
+            return INTERFACE_TYPE_NONE;
          }
          THROW_UNREACHABLE("Function pointers not supported from user defined floating point format functions");
          // TODO: maybe it could be possible to only warn the user here to be careful about the pointed function definition and go on
       }
+
+      int type_i = is_internal_call(fn) ? INTERFACE_TYPE_NONE : INTERFACE_TYPE_OUTPUT;
       // Hardware implemented functions need arguments to still be real_type, thus it is necessary to add a view_convert operation before
       if(!AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
       {
-         for(const auto& arg : args)
-         {
-            if(GET_NODE(arg)->get_kind() == ssa_name_K)
-            {
-               const auto arg_ssa = GetPointerS<ssa_name>(GET_NODE(arg));
-               if(GET_NODE(arg_ssa->type)->get_kind() == real_type_K)
-               {
-                  hwParam[arg_ssa].push_back(current_statement);
-               }
-            }
-         }
-         return _version->std_format();
+         type_i |= INTERFACE_TYPE_REAL;
       }
-      return is_internal_call(fn);
+      return type_i;
    };
    switch(curr_tn->get_kind())
    {
@@ -1342,30 +1337,30 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case aggr_init_expr_K:
       {
          const auto ce = GetPointerS<const call_expr>(curr_tn);
-         const auto internal_call = ExaminateFunctionCall(ce->fn, ce->args);
+         type_interface = ExaminateFunctionCall(ce->fn);
          for(const auto& arg : ce->args)
          {
-            RecursiveExaminate(current_statement, arg, internal_call ? INTERFACE_TYPE_NONE : INTERFACE_TYPE_OUTPUT);
+            RecursiveExaminate(current_statement, arg, type_interface);
          }
          break;
       }
       case gimple_call_K:
       {
          const auto ce = GetPointerS<const gimple_call>(curr_tn);
-         const auto internal_call = ExaminateFunctionCall(ce->fn, ce->args);
+         type_interface = ExaminateFunctionCall(ce->fn);
          for(const auto& arg : ce->args)
          {
-            RecursiveExaminate(current_statement, arg, internal_call ? INTERFACE_TYPE_NONE : INTERFACE_TYPE_OUTPUT);
+            RecursiveExaminate(current_statement, arg, type_interface);
          }
          break;
       }
       case gimple_phi_K:
       {
          const auto gp = GetPointerS<const gimple_phi>(curr_tn);
-         RecursiveExaminate(current_statement, gp->res, castRename);
+         RecursiveExaminate(current_statement, gp->res, type_interface);
          for(const auto& de : gp->CGetDefEdgesList())
          {
-            RecursiveExaminate(current_statement, de.first, castRename);
+            RecursiveExaminate(current_statement, de.first, type_interface);
          }
          break;
       }
@@ -1377,21 +1372,18 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          {
             const auto ce = GetPointerS<const call_expr>(GET_NODE(ga->op1));
             const auto fn = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn)) ? GetPointerS<const addr_expr>(GET_CONST_NODE(ce->fn))->op : ce->fn;
-            // Hardware implemented functions need the return value to still be real_type, thus it is necessary to add a view_convert operation after
-            if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn))) != BUILTIN_WAIT_CALL && !AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
-            {
-               if(GET_NODE(ga->op0)->get_kind() == ssa_name_K)
+            const auto type_i = [&]() {
+               // Return values associated to non-internal calls need to be cast renamed to local float format
+               int ti = is_internal_call(fn) ? type_interface : INTERFACE_TYPE_INPUT;
+
+               // Hardware implemented functions need the return value to still be real_type, thus it is necessary to add a view_convert operation after
+               if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn))) != BUILTIN_WAIT_CALL && !AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
                {
-                  const auto ret_ssa = GetPointerS<ssa_name>(GET_NODE(ga->op0));
-                  if(GET_NODE(ret_ssa->type)->get_kind() == real_type_K)
-                  {
-                     hwReturn.push_back(ret_ssa);
-                  }
+                  ti |= INTERFACE_TYPE_REAL;
                }
-            }
-            const auto internal_call = is_internal_call(fn);
-            // Return values associated to non-internal calls need to be cast renamed to local float format
-            RecursiveExaminate(current_statement, ga->op0, internal_call ? castRename : INTERFACE_TYPE_INPUT);
+               return ti;
+            }();
+            RecursiveExaminate(current_statement, ga->op0, type_i);
          }
          else if(tree_helper::IsLoad(TreeM, current_statement, function_behavior->get_function_mem()))
          {
@@ -1400,7 +1392,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          }
          else
          {
-            RecursiveExaminate(current_statement, ga->op0, castRename);
+            RecursiveExaminate(current_statement, ga->op0, type_interface);
          }
          if(tree_helper::IsStore(TreeM, current_statement, function_behavior->get_function_mem()))
          {
@@ -1409,11 +1401,11 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          }
          else
          {
-            RecursiveExaminate(current_statement, ga->op1, castRename);
+            RecursiveExaminate(current_statement, ga->op1, type_interface);
          }
          if(ga->predicate)
          {
-            RecursiveExaminate(current_statement, ga->predicate, castRename);
+            RecursiveExaminate(current_statement, ga->predicate, type_interface);
          }
          break;
       }
@@ -1433,6 +1425,18 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          {
             // Real variables must all be converted to unsigned integers after softfloat lowering operations
             viewConvert.insert(SSA);
+
+            if(type_interface & INTERFACE_TYPE_REAL)
+            {
+               if(GET_INDEX_CONST_NODE(SSA->CGetDefStmt()) == GET_INDEX_CONST_NODE(current_statement))
+               {
+                  hwReturn.push_back(SSA);
+               }
+               else
+               {
+                  hwParam[SSA].push_back(current_statement);
+               }
+            }
          }
 
          // Search for ssa variables associated to input parameters
@@ -1454,9 +1458,9 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
 
          if(!_version->std_format() && GET_CONST_NODE(SSA->type)->get_kind() == real_type_K)
          {
-            if((!_version->internal && std::find(paramBinding.begin(), paramBinding.end(), curr_tn) != paramBinding.end()) || castRename == INTERFACE_TYPE_INPUT)
+            if((!_version->internal && std::find(paramBinding.begin(), paramBinding.end(), curr_tn) != paramBinding.end()) || type_interface & INTERFACE_TYPE_INPUT)
             {
-               if(castRename == INTERFACE_TYPE_OUTPUT)
+               if(type_interface & INTERFACE_TYPE_OUTPUT)
                {
                   // Considered ssa has been discovered to be a function parameter and is used in current statement as a non-internal function argument, thus conversion can be avoided
                   inputInterface[SSA].push_back(GET_INDEX_CONST_NODE(current_statement));
@@ -1468,7 +1472,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   inputInterface.insert({SSA, {}});
                }
             }
-            else if(castRename == INTERFACE_TYPE_OUTPUT)
+            else if(type_interface & INTERFACE_TYPE_OUTPUT)
             {
                // Add current output SSA to the output cast rename list for its uses in current statement
                outputInterface[SSA].push_back(current_statement);
@@ -1482,7 +1486,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          auto current = current_tree_node;
          while(current)
          {
-            RecursiveExaminate(current_statement, GetPointerS<const tree_list>(GET_CONST_NODE(current))->valu, castRename);
+            RecursiveExaminate(current_statement, GetPointerS<const tree_list>(GET_CONST_NODE(current))->valu, type_interface);
             current = GetPointerS<const tree_list>(GET_CONST_NODE(current))->chan;
          }
          break;
@@ -2002,67 +2006,67 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case CASE_TERNARY_EXPRESSION:
       {
          const auto te = GetPointerS<ternary_expr>(curr_tn);
-         RecursiveExaminate(current_statement, te->op0, castRename);
+         RecursiveExaminate(current_statement, te->op0, type_interface);
          if(te->op1)
          {
-            RecursiveExaminate(current_statement, te->op1, castRename);
+            RecursiveExaminate(current_statement, te->op1, type_interface);
          }
          if(te->op2)
          {
-            RecursiveExaminate(current_statement, te->op2, castRename);
+            RecursiveExaminate(current_statement, te->op2, type_interface);
          }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
       {
          const auto qe = GetPointerS<quaternary_expr>(curr_tn);
-         RecursiveExaminate(current_statement, qe->op0, castRename);
+         RecursiveExaminate(current_statement, qe->op0, type_interface);
          if(qe->op1)
          {
-            RecursiveExaminate(current_statement, qe->op1, castRename);
+            RecursiveExaminate(current_statement, qe->op1, type_interface);
          }
          if(qe->op2)
          {
-            RecursiveExaminate(current_statement, qe->op2, castRename);
+            RecursiveExaminate(current_statement, qe->op2, type_interface);
          }
          if(qe->op3)
          {
-            RecursiveExaminate(current_statement, qe->op3, castRename);
+            RecursiveExaminate(current_statement, qe->op3, type_interface);
          }
          break;
       }
       case lut_expr_K:
       {
          const auto le = GetPointerS<lut_expr>(curr_tn);
-         RecursiveExaminate(current_statement, le->op0, castRename);
-         RecursiveExaminate(current_statement, le->op1, castRename);
+         RecursiveExaminate(current_statement, le->op0, type_interface);
+         RecursiveExaminate(current_statement, le->op1, type_interface);
          if(le->op2)
          {
-            RecursiveExaminate(current_statement, le->op2, castRename);
+            RecursiveExaminate(current_statement, le->op2, type_interface);
          }
          if(le->op3)
          {
-            RecursiveExaminate(current_statement, le->op3, castRename);
+            RecursiveExaminate(current_statement, le->op3, type_interface);
          }
          if(le->op4)
          {
-            RecursiveExaminate(current_statement, le->op4, castRename);
+            RecursiveExaminate(current_statement, le->op4, type_interface);
          }
          if(le->op5)
          {
-            RecursiveExaminate(current_statement, le->op5, castRename);
+            RecursiveExaminate(current_statement, le->op5, type_interface);
          }
          if(le->op6)
          {
-            RecursiveExaminate(current_statement, le->op6, castRename);
+            RecursiveExaminate(current_statement, le->op6, type_interface);
          }
          if(le->op7)
          {
-            RecursiveExaminate(current_statement, le->op7, castRename);
+            RecursiveExaminate(current_statement, le->op7, type_interface);
          }
          if(le->op8)
          {
-            RecursiveExaminate(current_statement, le->op8, castRename);
+            RecursiveExaminate(current_statement, le->op8, type_interface);
          }
          break;
       }
@@ -2071,20 +2075,20 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          const auto co = GetPointerS<constructor>(curr_tn);
          for(const auto& idx_valu : co->list_of_idx_valu)
          {
-            RecursiveExaminate(current_statement, idx_valu.second, castRename);
+            RecursiveExaminate(current_statement, idx_valu.second, type_interface);
          }
          break;
       }
       case gimple_cond_K:
       {
          const auto gc = GetPointerS<gimple_cond>(curr_tn);
-         RecursiveExaminate(current_statement, gc->op0, castRename);
+         RecursiveExaminate(current_statement, gc->op0, type_interface);
          break;
       }
       case gimple_switch_K:
       {
          const auto se = GetPointerS<gimple_switch>(curr_tn);
-         RecursiveExaminate(current_statement, se->op0, castRename);
+         RecursiveExaminate(current_statement, se->op0, type_interface);
          break;
       }
       case gimple_multi_way_if_K:
@@ -2094,7 +2098,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          {
             if(cond.first)
             {
-               RecursiveExaminate(current_statement, cond.first, castRename);
+               RecursiveExaminate(current_statement, cond.first, type_interface);
             }
          }
          break;
@@ -2115,15 +2119,15 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       case gimple_for_K:
       {
          const auto gf = GetPointerS<const gimple_for>(curr_tn);
-         RecursiveExaminate(current_statement, gf->op0, castRename);
-         RecursiveExaminate(current_statement, gf->op1, castRename);
-         RecursiveExaminate(current_statement, gf->op2, castRename);
+         RecursiveExaminate(current_statement, gf->op0, type_interface);
+         RecursiveExaminate(current_statement, gf->op1, type_interface);
+         RecursiveExaminate(current_statement, gf->op2, type_interface);
          break;
       }
       case gimple_while_K:
       {
          const auto gw = GetPointerS<gimple_while>(curr_tn);
-         RecursiveExaminate(current_statement, gw->op0, castRename);
+         RecursiveExaminate(current_statement, gw->op0, type_interface);
          break;
       }
       case CASE_TYPE_NODES:
@@ -2136,15 +2140,15 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          const auto tmr = GetPointerS<target_mem_ref>(curr_tn);
          if(tmr->symbol)
          {
-            RecursiveExaminate(current_statement, tmr->symbol, castRename);
+            RecursiveExaminate(current_statement, tmr->symbol, type_interface);
          }
          if(tmr->base)
          {
-            RecursiveExaminate(current_statement, tmr->base, castRename);
+            RecursiveExaminate(current_statement, tmr->base, type_interface);
          }
          if(tmr->idx)
          {
-            RecursiveExaminate(current_statement, tmr->idx, castRename);
+            RecursiveExaminate(current_statement, tmr->idx, type_interface);
          }
          break;
       }
@@ -2153,31 +2157,34 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          const auto tmr = GetPointerS<target_mem_ref461>(curr_tn);
          if(tmr->base)
          {
-            RecursiveExaminate(current_statement, tmr->base, castRename);
+            RecursiveExaminate(current_statement, tmr->base, type_interface);
          }
          if(tmr->idx)
          {
-            RecursiveExaminate(current_statement, tmr->idx, castRename);
+            RecursiveExaminate(current_statement, tmr->idx, type_interface);
          }
          if(tmr->idx2)
          {
-            RecursiveExaminate(current_statement, tmr->idx2, castRename);
+            RecursiveExaminate(current_statement, tmr->idx2, type_interface);
          }
          break;
       }
       case real_cst_K:
       {
-         const auto cst = GetPointerS<real_cst>(curr_tn);
-         const auto bw = tree_helper::Size(curr_tn);
-         const auto fp_str = (cst->valx.front() == '-' && cst->valr.front() != cst->valx.front()) ? ("-" + cst->valr) : cst->valr;
-         const auto cst_val = convert_fp_to_bits(fp_str, bw);
-         const auto inFF = bw == 32 ? float32FF : float64FF;
-         const auto outFF = (_version->internal && not _version->std_format() && castRename != INTERFACE_TYPE_OUTPUT) ? _version->userRequired : inFF;
+         if(~type_interface & INTERFACE_TYPE_REAL)
+         {
+            const auto cst = GetPointerS<real_cst>(curr_tn);
+            const auto bw = tree_helper::Size(curr_tn);
+            const auto fp_str = (cst->valx.front() == '-' && cst->valr.front() != cst->valx.front()) ? ("-" + cst->valr) : cst->valr;
+            const auto cst_val = convert_fp_to_bits(fp_str, bw);
+            const auto inFF = bw == 32 ? float32FF : float64FF;
+            const auto outFF = (_version->internal && not _version->std_format() && type_interface != INTERFACE_TYPE_OUTPUT) ? _version->userRequired : inFF;
 
-         // Perform static constant value cast and replace real type constant with converted unsigned integer type constant
-         const auto int_cst = cstCast(cst_val, inFF, outFF);
-         TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_cst);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_cst)->ToString());
+            // Perform static constant value cast and replace real type constant with converted unsigned integer type constant
+            const auto int_cst = cstCast(cst_val, inFF, outFF);
+            TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_cst);
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_cst)->ToString());
+         }
          break;
       }
       case complex_cst_K:
