@@ -458,6 +458,10 @@ void commutative_expr_restructuring::Initialize()
 
 bool commutative_expr_restructuring::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    if(!FunctionFrontendFlowStep::HasToBeExecuted())
    {
       return false;

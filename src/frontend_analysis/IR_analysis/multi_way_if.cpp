@@ -761,7 +761,10 @@ bool multi_way_if::HasToBeExecuted() const
       return false;
    }
 #endif
-
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    /// Multi way if can be executed only after vectorization
    if(parameters->getOption<int>(OPT_gcc_openmp_simd))
    {
