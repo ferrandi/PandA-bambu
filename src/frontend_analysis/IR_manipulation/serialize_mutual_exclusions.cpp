@@ -112,6 +112,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool SerializeMutualExclusions::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return true;
 }
 

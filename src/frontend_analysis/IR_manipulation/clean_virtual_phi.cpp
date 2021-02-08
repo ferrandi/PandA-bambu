@@ -137,5 +137,9 @@ void CleanVirtualPhi::Initialize()
 
 bool CleanVirtualPhi::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }

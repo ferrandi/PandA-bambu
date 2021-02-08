@@ -134,6 +134,10 @@ bool SplitReturn::HasToBeExecuted() const
    {
       return false;
    }
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
    if(parameters->isOption(OPT_scheduling_algorithm) and parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
    {

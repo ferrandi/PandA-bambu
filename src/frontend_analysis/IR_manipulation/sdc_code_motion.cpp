@@ -111,6 +111,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool SDCCodeMotion::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
           GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
 }

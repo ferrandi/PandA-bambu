@@ -129,7 +129,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
+         if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING)
+         {
+            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UPDATE_SCHEDULE, SAME_FUNCTION));
+         }
 #endif
          break;
       }
@@ -758,7 +761,10 @@ bool multi_way_if::HasToBeExecuted() const
       return false;
    }
 #endif
-
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    /// Multi way if can be executed only after vectorization
    if(parameters->getOption<int>(OPT_gcc_openmp_simd))
    {

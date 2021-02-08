@@ -318,7 +318,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
       {
          /// Workaround: this should be a precedence, but when this is added later for functions added during call graph extension is added as unnecessary and it is not updated before its execution
-         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLED_FUNCTIONS));
+         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -327,11 +336,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLED_FUNCTIONS));
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
-         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(REMOVE_CLOBBER_GA, SAME_FUNCTION));
          break;
       }
       default:

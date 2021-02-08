@@ -2417,7 +2417,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case addr_expr_K:
       {
          auto* ue = GetPointer<addr_expr>(node);
-         if(GetPointer<component_ref>(GET_NODE(ue->op)) and has_bit_field(GET_INDEX_NODE(GetPointer<component_ref>(GET_NODE(ue->op))->op1)))
+         if(GetPointer<component_ref>(GET_NODE(ue->op)) && has_bit_field(GET_INDEX_NODE(GetPointer<component_ref>(GET_NODE(ue->op))->op1)))
          {
             THROW_ERROR_CODE(BITFIELD_EC, "Trying to get the address of a bitfield");
          }
@@ -2432,7 +2432,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             }
          }
          ///&array is printed back as array
-         if(GET_NODE(ue->op)->get_kind() == var_decl_K and tree_helper::CGetType(GET_NODE(ue->op))->get_kind() == array_type_K)
+         if(GET_NODE(ue->op)->get_kind() == var_decl_K && (tree_helper::CGetType(GET_NODE(ue->op))->get_kind() == array_type_K))
          {
             res += print_node(GET_INDEX_NODE(ue->op), v, vppf);
             break;
@@ -2501,7 +2501,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          else if(prec != algn && prec % algn)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Bitfield");
-            bool ui = (GetPointer<integer_type>(operand_type) and GetPointer<integer_type>(operand_type)->unsigned_flag) and (GetPointer<integer_type>(type) and not GetPointer<integer_type>(type)->unsigned_flag);
+            bool ui = (GetPointer<integer_type>(operand_type) and GetPointer<integer_type>(operand_type)->unsigned_flag) && (GetPointer<integer_type>(type) and not GetPointer<integer_type>(type)->unsigned_flag);
             if(ui)
             {
                res += "((" + tree_helper::print_type(TM, type->index) + ")(";
@@ -3117,11 +3117,11 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                res += boost::lexical_cast<std::string>(size / 8) + ")";
                break;
             }
-            if(not Param->getOption<bool>(OPT_without_transformation) and
-               ((is_a_struct(GET_INDEX_NODE(ms->op0)) or is_an_union(GET_INDEX_NODE(ms->op0))) and (is_a_struct(GET_INDEX_NODE(ms->op1)) or is_an_union(GET_INDEX_NODE(ms->op1))) and
+            if((not Param->getOption<bool>(OPT_without_transformation)) &&
+               ((is_a_struct(GET_INDEX_NODE(ms->op0)) || is_an_union(GET_INDEX_NODE(ms->op0))) && (is_a_struct(GET_INDEX_NODE(ms->op1)) || is_an_union(GET_INDEX_NODE(ms->op1))) &&
                 tree_helper::name_type(TM, tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ms->op0)))) != tree_helper::name_type(TM, tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ms->op1))))))
             {
-               THROW_ERROR_CODE(C_EC, "Implicit struct type defintion not supported in gimple assignment " + boost::lexical_cast<std::string>(index) + " - " +
+               THROW_ERROR_CODE(C_EC, "Implicit struct type definition not supported in gimple assignment " + boost::lexical_cast<std::string>(index) + " - " +
                                           tree_helper::name_type(TM, tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ms->op0)))) + " vs. " +
                                           tree_helper::name_type(TM, tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(ms->op1)))));
             }
@@ -3577,7 +3577,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   if(formal_arg != formal_arg_end and (is_a_struct(GET_INDEX_NODE(*actual_arg)) or is_an_union(GET_INDEX_NODE(*actual_arg))) and (is_a_struct(GET_INDEX_NODE(*formal_arg)) or is_an_union(GET_INDEX_NODE(*formal_arg))) and
                      (tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*actual_arg))) != tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*formal_arg)))))
                   {
-                     THROW_ERROR_CODE(C_EC, "Implicit struct type defintion not supported in gimple assignment " + boost::lexical_cast<std::string>(index));
+                     THROW_ERROR_CODE(C_EC, "Implicit struct type definition not supported in gimple assignment " + boost::lexical_cast<std::string>(index));
                   }
                   if(actual_arg != actual_args.begin())
                   {
@@ -3765,7 +3765,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   if(formal_arg != formal_arg_end and (is_a_struct(GET_INDEX_NODE(*actual_arg)) or is_an_union(GET_INDEX_NODE(*actual_arg))) and (is_a_struct(GET_INDEX_NODE(*formal_arg)) or is_an_union(GET_INDEX_NODE(*formal_arg))) and
                      (tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*actual_arg))) != tree_helper::GetRealType(TM, tree_helper::get_type_index(TM, GET_INDEX_NODE(*formal_arg)))))
                   {
-                     THROW_ERROR_CODE(C_EC, "Implicit struct type defintion not supported in gimple assignment " + boost::lexical_cast<std::string>(index));
+                     THROW_ERROR_CODE(C_EC, "Implicit struct type definition not supported in gimple assignment " + boost::lexical_cast<std::string>(index));
                   }
                   if(actual_arg != actual_args.begin())
                   {

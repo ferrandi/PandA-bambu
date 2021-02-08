@@ -99,17 +99,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
-#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
-         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
-#endif
-         /// Following precedence is to reduce invalidation; BIT_VALUE_OPT of called can invalidate DEAD_CODE_ELIMINATION of called and so this
-         relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
          if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
@@ -123,6 +112,17 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          }
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
+#endif
+         /// Following precedence is to reduce invalidation; BIT_VALUE_OPT of called can invalidate DEAD_CODE_ELIMINATION of called and so this
+         // relationships.insert(std::make_pair(BIT_VALUE_OPT, CALLED_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

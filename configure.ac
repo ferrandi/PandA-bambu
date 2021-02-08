@@ -159,8 +159,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor memset modf pow sqrt strchr strcasecmp ])
 
-
-AC_LANG([C++])
+AC_LANG_PUSH([C++])
 AC_TYPE_SIGNAL
 AC_STRUCT_TM
 
@@ -1449,6 +1448,7 @@ AM_CONDITIONAL(BUILD_ABC,  test "x$panda_USE_ABC" = xyes )
 LIB_SUITESPARSECONFIG=
 AM_CONDITIONAL(BUILD_GLPK, test "x$panda_USE_GLPK" = xyes)
 if test "x$panda_USE_GLPK" = xyes; then
+   AC_LANG_PUSH([C])
    if test "${DISTRO:0:8}" != "centos_6" && test "$DISTRO" != "ubuntu_12.04"; then
       LIB_SUITESPARSECONFIG=-lsuitesparseconfig
       AC_CHECK_LIB([suitesparseconfig],[SuiteSparse_malloc], [echo "Checking for libsuitesparseconfig... yes"], [echo "Checking for libsuitesparseconfig... no"; AC_MSG_ERROR("libsuitesparseconfig not found")])
@@ -1457,6 +1457,7 @@ if test "x$panda_USE_GLPK" = xyes; then
    AC_CHECK_LIB([colamd],[symamd], [echo "Checking for libcolamd... yes"], [echo "Checking for libcolamd... no"; AC_MSG_ERROR("libcolamd not found")], [${LIB_SUITESPARSECONFIG}])
    AC_CHECK_LIB([ltdl],[lt_dlerror], [echo "Checking for libltdl... yes"], [echo "Checking for libltd... no"; AC_MSG_ERROR("libltdl not found")])
    AC_CHECK_LIB([glpk],[glp_simplex], [echo "Checking for libglpk... yes"], [echo "Checking for libglpk... no"; AC_MSG_ERROR("libglpk not found")], [-lamd -lcolamd -lltdl -lgmp ${LIB_SUITESPARSECONFIG}])
+   AC_LANG_POP([C])
    AC_CHECK_HEADER([glpk.h],GLPK_NESTED_DIR=0,GLPK_NESTED_DIR=-1)
    if test "x$GLPK_NESTED_DIR" != "x0"; then
       AC_CHECK_HEADER([glpk/glpk.h],GLPK_NESTED_DIR=1, AC_MSG_ERROR("glpk.h not found"))
