@@ -115,13 +115,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool dead_code_elimination::HasToBeExecuted() const
 {
-   if(FunctionFrontendFlowStep::HasToBeExecuted())
-   {
-      return true;
-   }
    if(!HasToBeExecuted0())
    {
       return false;
+   }
+   if(FunctionFrontendFlowStep::HasToBeExecuted())
+   {
+      return true;
    }
    std::map<unsigned int, bool> cur_writing_memory;
    std::map<unsigned int, bool> cur_reading_memory;

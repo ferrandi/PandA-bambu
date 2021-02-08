@@ -983,6 +983,10 @@ bool MultipleEntryIfReduction::HasToBeExecuted() const
    {
       return false;
    }
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    const vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
    if(not frontend_step)
    {

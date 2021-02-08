@@ -200,6 +200,10 @@ void RemoveEndingIf::Initialize()
 
 bool RemoveEndingIf::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    /// If no schedule exists, this step has NOT to be executed
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and

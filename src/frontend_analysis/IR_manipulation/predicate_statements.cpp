@@ -95,6 +95,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          break;
       }
       default:
@@ -107,6 +108,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
 
 bool PredicateStatements::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }
 

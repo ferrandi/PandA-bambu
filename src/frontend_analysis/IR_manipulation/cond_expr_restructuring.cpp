@@ -518,6 +518,10 @@ void CondExprRestructuring::Initialize()
 
 bool CondExprRestructuring::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    if(!FunctionFrontendFlowStep::HasToBeExecuted())
    {
       return false;

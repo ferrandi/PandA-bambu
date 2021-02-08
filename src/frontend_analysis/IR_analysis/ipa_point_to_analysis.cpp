@@ -150,7 +150,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(IR_LOWERING, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
          break;
       }

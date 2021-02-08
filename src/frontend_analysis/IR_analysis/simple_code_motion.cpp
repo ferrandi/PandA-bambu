@@ -1283,6 +1283,10 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
 
 bool simple_code_motion::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(parameters->getOption<bool>(OPT_parse_pragma))
    {

@@ -104,7 +104,7 @@ bool DesignFlowStepNecessitySorter::operator()(const vertex x, const vertex y) c
 #if HAVE_UNORDERED
       return x < y;
 #else
-      return x_info->design_flow_step->GetName() > y_info->design_flow_step->GetName();
+      return x_info->design_flow_step->GetName() < y_info->design_flow_step->GetName();
 #endif
    }
 }
@@ -173,7 +173,7 @@ void DesignFlowManager::RecursivelyAddSteps(const DesignFlowStepSet& steps, cons
       {
          if(unnecessary)
          {
-            /// The step already exists and we are trying to readd as unnecessary; both if now it is unnecessary or not, nothing has to be done
+            /// The step already exists and we are trying to re-add as unnecessary; both if now it is unnecessary or not, nothing has to be done
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--This step already exist (unnecessary)");
             continue;
          }
@@ -729,6 +729,10 @@ void DesignFlowManager::Exec()
                   break;
                }
                case DesignFlowStep_Status::UNNECESSARY:
+               {
+                  target_ready = false;
+                  break;
+               }
                case DesignFlowStep_Status::UNEXECUTED:
                {
                   target_ready = false;

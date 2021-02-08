@@ -140,7 +140,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 #if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
 #endif
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
 #endif
          break;
       }
