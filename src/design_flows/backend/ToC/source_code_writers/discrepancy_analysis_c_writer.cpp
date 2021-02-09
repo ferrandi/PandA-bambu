@@ -494,13 +494,13 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                          {"__uint64_to_float32if", {0, "(float)"}},
                          {"__uint64_to_float64if", {1, "(double)"}},
                          {"__float32_to_int32_round_to_zeroif", {2, "(int)"}},
-                         {"__float32_to_int64_round_to_zeroif", {2, "(long long int)"}},
+                         {"__float32_to_int64_round_to_zeroif", {3, "(long long int)"}},
                          {"__float32_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
-                         {"__float32_to_uint64_round_to_zeroif", {2, "(unsigned long long int)"}},
+                         {"__float32_to_uint64_round_to_zeroif", {3, "(unsigned long long int)"}},
                          {"__float64_to_int32_round_to_zeroif", {2, "(int)"}},
-                         {"__float64_to_int64_round_to_zeroif", {2, "(long long int)"}},
+                         {"__float64_to_int64_round_to_zeroif", {3, "(long long int)"}},
                          {"__float64_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
-                         {"__float64_to_uint64_round_to_zeroif", {2, "(unsigned long long int)"}},
+                         {"__float64_to_uint64_round_to_zeroif", {3, "(unsigned long long int)"}},
                      };
                      static const std::map<std::string, std::pair<bool, std::string>> basic_binary_operations_relation = {
                          {"__float32_addif", {false, "+"}}, {"__float64_addif", {true, "+"}},  {"__float32_subif", {false, "-"}}, {"__float64_subif", {true, "-"}},          {"__float32_mulif", {false, "*"}},
@@ -513,34 +513,35 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                      const auto binary_op_relation = basic_binary_operations_relation.find(oper->get_name());
                      if(unary_op_relation != basic_unary_operations_relation.end())
                      {
-                        const auto view_convert = "*(" + std::string(binary_op_relation->second.first ? "double" : "float") + "*)&";
+                        const std::string view_convert = (unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
                         if(unary_op_relation->second.first < 2)
                         {
                            const auto computation = "(" + unary_op_relation->second.second + var1 + ")";
-                           const auto check_string0 = view_convert + var_name + "==" + computation;
-                           const auto check_string1 = (unary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + view_convert + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
-                           indented_output_stream->Append((unary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + view_convert + var_name +
-                                                          "," + var1 + ",0);\n");
+                           const auto check_string0 = view_convert + "(" + var_name + ")==" + computation;
+                           const auto check_string1 =
+                               (unary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + view_convert + "(" + var_name + ")," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
+                           indented_output_stream->Append((unary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + view_convert + "(" +
+                                                          var_name + ")," + var1 + ",0);\n");
                         }
                         else
                         {
-                           const auto computation = "(" + unary_op_relation->second.second + view_convert + var1 + ")";
+                           const auto computation = "(" + unary_op_relation->second.second + view_convert + "(" + var1 + "))";
                            const auto check_string0 = var_name + "==" + computation;
                            indented_output_stream->Append("if(" + var_name + "!=" + computation +
                                                           ") { printf(\"\\n\\n***********************************************************\\nERROR ON A BASIC FLOATING POINT OPERATION : %s : expected=%d res=%d "
                                                           "a=%a\\n***********************************************************\\n\\n\", \"" +
-                                                          check_string0 + "\", " + computation + ", " + var_name + ", " + view_convert + var1 + ");\nexit(1);\n}\n");
+                                                          check_string0 + "\", " + computation + ", " + var_name + ", " + view_convert + "(" + var1 + "));\nexit(1);\n}\n");
                         }
                      }
                      else if(binary_op_relation != basic_binary_operations_relation.end())
                      {
                         const auto var2 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(1)));
-                        const auto view_convert = "*(" + std::string(binary_op_relation->second.first ? "double" : "float") + "*)&";
-                        const auto computation = "(" + view_convert + var1 + binary_op_relation->second.second + view_convert + var2 + ")";
+                        const std::string view_convert = binary_op_relation->second.first ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
+                        const auto computation = "(" + view_convert + "(" + var1 + ")" + binary_op_relation->second.second + view_convert + "(" + var2 + "))";
                         const auto check_string0 = var_name + "==" + computation;
                         const auto check_string1 = (binary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + var_name + "," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
-                        indented_output_stream->Append((binary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + var_name + "," + var1 +
-                                                       "," + var2 + ");\n");
+                        indented_output_stream->Append((binary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + var_name + "," +
+                                                       view_convert + "(" + var1 + ")," + view_convert + "(" + var2 + "));\n");
                      }
                   }
                }
