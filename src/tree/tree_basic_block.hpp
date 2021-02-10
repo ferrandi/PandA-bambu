@@ -103,6 +103,8 @@ struct bloc
    /// consistency of ssa uses
    bool updated_ssa_uses;
 
+   void update_new_stmt(const tree_nodeRef& new_stmt);
+
  public:
    /// list_of_pred is the list of predecessors.
    std::vector<unsigned int> list_of_pred;
