@@ -210,9 +210,9 @@ static __FORCE_INLINE __bits32 __extractFloat32Frac(__float32 a)
 | Returns the exponent bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int16 __extractFloat32Exp(__float32 a)
+static __FORCE_INLINE __bits8 __extractFloat32Exp(__float32 a)
 {
-   return (a >> 23) & 0xFF;
+   return a >> 23;
 }
 
 /*----------------------------------------------------------------------------
@@ -1646,7 +1646,7 @@ static __FORCE_INLINE __float64 __float32_to_float64(__float32 a)
 #endif
       --aExp;
    }
-   return __packFloat64(aSign, aExp + 0x380, ((__bits64)aSig) << 29);
+   return __packFloat64(aSign, aExp + ((__int16)0x380), ((__bits64)aSig) << 29);
 }
 
 #ifdef FLOATX80
