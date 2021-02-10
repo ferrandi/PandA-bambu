@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2021 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@ class WB4Intercon_interface : public WB4_interface
    /**
     * Constructor.
     */
-   WB4Intercon_interface(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   WB4Intercon_interface(const ParameterConstRef Param, const HLS_managerRef HLSManager, unsigned int functionId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

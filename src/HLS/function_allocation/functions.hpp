@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -150,6 +150,6 @@ class functions
    static std::string get_function_name_cleaned(unsigned funID, const HLS_managerRef HLSMgr);
 };
 /// refcount definition of the class
-typedef refcount<functions> functionsRef;
+using functionsRef = refcount<functions>;
 
 #endif

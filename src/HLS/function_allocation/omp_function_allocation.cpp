@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -94,8 +94,12 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
    }
    CustomUnorderedSet<vertex> vertex_subset;
    for(const auto f_id : root_functions)
+   {
       for(const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
+      {
          vertex_subset.insert(call_graph_manager->GetVertex(reached_f_id));
+      }
+   }
    const auto call_graph = call_graph_manager->CGetCallSubGraph(vertex_subset);
    std::list<vertex> sorted_functions;
    call_graph->TopologicalSort(sorted_functions);
@@ -129,12 +133,14 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
       omp_functions->locking_functions.insert(call_graph_manager->get_function(boost::source(*ie, *call_graph)));
    }
    auto current_locks_allocation_candidates = omp_functions->locking_functions;
-   CustomOrderedSet<unsigned int> reached_body_functions = call_graph_manager->GetReachedBodyFunctions();
+   const auto reached_body_functions = call_graph_manager->GetReachedBodyFunctions();
    for(const auto function : boost::adaptors::reverse(sorted_functions))
    {
       const auto function_id = call_graph_manager->get_function(function);
       if(reached_body_functions.find(function_id) == reached_body_functions.end())
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name());
       if(current_locks_allocation_candidates.find(function_id) != current_locks_allocation_candidates.end())
       {
@@ -153,7 +159,9 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
                {
                   const auto source_id = call_graph_manager->get_function(boost::source(*ie, *call_graph));
                   if(reached_body_functions.find(source_id) == reached_body_functions.end())
+                  {
                      current_locks_allocation_candidates.insert(source_id);
+                  }
                }
                if(omp_functions->omp_for_wrappers.find(function_id) != omp_functions->omp_for_wrappers.end())
                {
@@ -175,7 +183,9 @@ DesignFlowStep_Status OmpFunctionAllocation::Exec()
             {
                const auto source_id = call_graph_manager->get_function(boost::source(*ie, *call_graph));
                if(reached_body_functions.find(source_id) == reached_body_functions.end())
+               {
                   current_locks_allocation_candidates.insert(source_id);
+               }
             }
             if(omp_functions->omp_for_wrappers.find(function_id) != omp_functions->omp_for_wrappers.end())
             {

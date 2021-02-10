@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,7 +80,7 @@ class xml_node
    /**
     * constructor
     */
-   explicit xml_node(std::string _name) : name(std::move(_name)), line(0)
+   explicit xml_node(const std::string& _name) : name(_name), line(0)
    {
    }
    /// destructor
@@ -89,7 +89,7 @@ class xml_node
    }
 
    /// type for list of xml nodes
-   typedef std::list<xml_nodeRef> node_list;
+   using node_list = std::list<xml_nodeRef>;
 
    /**
     * Print the class.
@@ -200,19 +200,29 @@ class xml_node
    {
       std::string::size_type lPos = 0;
       while((lPos = ioString.find("&amp;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 5, "&");
+      }
       lPos = 0;
       while((lPos = ioString.find("&lt;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 4, "<");
+      }
       lPos = 0;
       while((lPos = ioString.find("&gt;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 4, ">");
+      }
       lPos = 0;
       while((lPos = ioString.find("&apos;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 6, "\'");
+      }
       lPos = 0;
       while((lPos = ioString.find("&quot;", lPos)) != std::string::npos)
+      {
          ioString.replace(lPos++, 6, "\"");
+      }
    }
 };
 

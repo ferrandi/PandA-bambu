@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,7 +69,7 @@ class datapath_creator : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the type of algorithm used to create a datapath
     */
-   datapath_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_factory);
+   datapath_creator(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type);
 
    /**
     * Destructor.
@@ -77,6 +77,6 @@ class datapath_creator : public HLSFunctionStep
    ~datapath_creator() override;
 };
 /// refcount definition of the class
-typedef refcount<datapath_creator> datapath_creatorRef;
+using datapath_creatorRef = refcount<datapath_creator>;
 
 #endif

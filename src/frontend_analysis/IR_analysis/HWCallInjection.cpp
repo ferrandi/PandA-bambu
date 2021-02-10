@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2021 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -95,7 +95,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(RT)
    {
-      case(DEPENDENCE_RELATIONSHIP):
+      case(PRECEDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -103,7 +103,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          break;
       }
-      case(PRECEDENCE_RELATIONSHIP):
+      case(DEPENDENCE_RELATIONSHIP):
       {
          break;
       }
@@ -138,7 +138,9 @@ bool HWCallInjection::isHardwareCall(tree_nodeRef expr)
 
    // When the instruction is not a function call return false.
    if(!FD)
+   {
       return false;
+   }
 
    bool result = false;
    if(GET_NODE(FD)->get_kind() == function_decl_K)
@@ -149,7 +151,7 @@ bool HWCallInjection::isHardwareCall(tree_nodeRef expr)
       if(!result)
       {
          std::string name = tree_helper::name_function(TM, GET_INDEX_NODE(FD));
-         std::string cmdArg = Param->getOption<std::string>(OPT_additional_top);
+         auto cmdArg = Param->getOption<std::string>(OPT_additional_top);
 
          std::vector<std::string> additionalTops = SplitString(cmdArg, ",");
 
@@ -239,9 +241,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
       TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
       builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-      for(std::vector<tree_nodeRef>::const_iterator argItr = GC->args.begin(), argEnd = GC->args.end(); argItr != argEnd; ++argItr)
+      for(const auto& arg : GC->args)
       {
-         builtinGimpleCall->AddArg(*argItr);
+         builtinGimpleCall->AddArg(arg);
       }
 
       builtinGimpleCall->memuse = GC->memuse;
@@ -294,9 +296,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          TM->create_tree_node(HasReturnIdx, integer_cst_K, HasReturnMap);
          builtinGimpleCall->AddArg(TM->GetTreeReindex(HasReturnIdx));
 
-         for(std::vector<tree_nodeRef>::const_iterator argItr = CE->args.begin(), argEnd = CE->args.end(); argItr != argEnd; ++argItr)
+         for(const auto& arg : CE->args)
          {
-            builtinGimpleCall->AddArg(*argItr);
+            builtinGimpleCall->AddArg(arg);
          }
 
          if(auto* ssaRet = GetPointer<ssa_name>(GET_NODE(GA->op0)))
@@ -334,7 +336,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
          }
 
          if(!retVar)
+         {
             retVar = GET_INDEX_NODE(GA->op0);
+         }
 
          unsigned int addrExprReturnValue = TM->new_tree_node_id();
          std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> addrExprReturnValueMap;
@@ -402,5 +406,9 @@ void HWCallInjection::buildBuiltinCall(const blocRef block, const tree_nodeRef s
 
 bool HWCallInjection::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return not already_executed;
 }

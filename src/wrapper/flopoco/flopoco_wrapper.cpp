@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -164,41 +164,77 @@ flopoco_wrapper::flopoco_wrapper(int
 {
    // Get the target architecture
    if("Spartan-3" == FU_target)
+   {
       target = new flopoco::Spartan3();
+   }
    else if("Virtex-4" == FU_target)
+   {
       target = new flopoco::Virtex4();
+   }
    else if("Virtex-5" == FU_target)
+   {
       target = new flopoco::Virtex5();
+   }
    else if("Virtex-6" == FU_target)
+   {
       target = new flopoco::Virtex6();
-   else if(FU_target.find("Virtex-7") != std::string::npos) /// does not exist so we use Virtex 6 target
+   }
+   else if(FU_target.find("Virtex-7") != std::string::npos)
+   { /// does not exist so we use Virtex 6 target
       target = new flopoco::Virtex6();
-   else if(FU_target.find("Zynq") != std::string::npos) /// does not exist so we use Virtex 6 target
+   }
+   else if(FU_target.find("Zynq") != std::string::npos)
+   { /// does not exist so we use Virtex 6 target
       target = new flopoco::Virtex6();
-   else if(FU_target.find("Artix-7") != std::string::npos) /// does not exist so we use Virtex 6 target
+   }
+   else if(FU_target.find("Artix-7") != std::string::npos)
+   { /// does not exist so we use Virtex 6 target
       target = new flopoco::Virtex6();
+   }
    else if(FU_target.find("CycloneII") != std::string::npos)
+   {
       target = new flopoco::CycloneII();
+   }
    else if(FU_target.find("CycloneV") != std::string::npos)
+   {
       target = new flopoco::CycloneV();
+   }
    else if(FU_target.find("StratixII") != std::string::npos)
+   {
       target = new flopoco::StratixII();
+   }
    else if(FU_target.find("StratixIII") != std::string::npos)
+   {
       target = new flopoco::StratixIII();
+   }
    else if(FU_target.find("StratixIV") != std::string::npos)
+   {
       target = new flopoco::StratixIV();
+   }
    else if(FU_target.find("StratixV") != std::string::npos)
+   {
       target = new flopoco::StratixIV();
+   }
    else if(FU_target.find("LatticeECP3") != std::string::npos)
+   {
       target = new flopoco::CycloneII();
+   }
    else if("NG-medium" == FU_target)
+   {
       target = new flopoco::Virtex5();
+   }
    else if("NG-large" == FU_target)
+   {
       target = new flopoco::Virtex5();
+   }
    else if(FU_target.find("Generic") != std::string::npos)
+   {
       target = new flopoco::Virtex5();
+   }
    else
+   {
       THROW_UNREACHABLE("Non supported target architecture: " + FU_target);
+   }
 
    /// sollya initialization
    jmp_buf recover;
@@ -458,9 +494,13 @@ void flopoco_wrapper::add_FU(const std::string& FU_type, unsigned int FU_prec_in
    if(type != flopoco_wrapper::UT_IFIX2FP and type != flopoco_wrapper::UT_UFIX2FP)
    {
       if(type == flopoco_wrapper::UT_FF_CONV)
+      {
          op = new flopoco::InputIEEE(target, static_cast<int>(n_exp_in), static_cast<int>(n_mant_in), static_cast<int>(n_exp_out), static_cast<int>(n_mant_out));
+      }
       else
+      {
          op = new flopoco::InputIEEE(target, static_cast<int>(n_exp_in), static_cast<int>(n_mant_in), static_cast<int>(n_exp_in), static_cast<int>(n_mant_in));
+      }
       OPLIST.push_back(op);
       op->changeName(IN_WRAP_PREFIX + FU_name_stored);
       FUs[IN_WRAP_PREFIX + FU_name_stored] = op;
@@ -479,9 +519,13 @@ unsigned int flopoco_wrapper::get_FUPipelineDepth(const std::string& FU_name, co
    std::string FU_name_stored = ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter);
    unsigned int fu_pipe_depth = static_cast<unsigned int>(get_FU(WRAPPED_PREFIX + FU_name_stored)->getPipelineDepth());
    if(type != flopoco_wrapper::UT_IFIX2FP and type != flopoco_wrapper::UT_UFIX2FP)
+   {
       fu_pipe_depth += static_cast<unsigned int>(get_FU(IN_WRAP_PREFIX + FU_name_stored)->getPipelineDepth());
+   }
    if(type != flopoco_wrapper::UT_FP2UFIX and type != flopoco_wrapper::UT_FP2IFIX and type != flopoco_wrapper::UT_compare_expr)
+   {
       fu_pipe_depth += static_cast<unsigned int>(get_FU(OUT_WRAP_PREFIX + FU_name_stored)->getPipelineDepth());
+   }
    return fu_pipe_depth;
 }
 
@@ -507,14 +551,22 @@ void flopoco_wrapper::outputWrapVHDL(const std::string& FU_name_stored, std::ost
    // Write input port(s) generics
    const std::vector<std::string> p_in = get_ports(WRAPPED_PREFIX + FU_name_stored, 0, port_in, false);
    for(const auto& p_in_it : p_in)
+   {
       PP(os, "BITSIZE_" + p_in_it + ": integer := " + STR(FU_to_prec_it->second.first) + "; ");
+   }
    // Write output port(s) generics
    const std::vector<std::string> p_out = get_ports(WRAPPED_PREFIX + FU_name_stored, 0, port_out, false);
    for(auto p_out_it = p_out.begin(); p_out_it != p_out.end(); ++p_out_it)
+   {
       if(p_out_it + 1 != p_out.end())
+      {
          PP(os, "BITSIZE_" + *p_out_it + ": integer := " + STR(FU_to_prec_it->second.second) + ";");
+      }
       else
+      {
          PP(os, "BITSIZE_" + *p_out_it + ": integer := " + STR(FU_to_prec_it->second.second));
+      }
+   }
    PP(os, ");\n");
    PP(os, "port (\n");
    PP.indent();
@@ -540,13 +592,21 @@ void flopoco_wrapper::outputWrapVHDL(const std::string& FU_name_stored, std::ost
          PP(os, "port (\n");
          PP.indent();
          if(WRAPPED_PREFIX == prefixe)
+         {
             outputPortDeclaration(prefixe, FU_name_stored, os, wrapped, pipe_parameter);
+         }
          else if(IN_WRAP_PREFIX == prefixe)
+         {
             outputPortDeclaration(prefixe, FU_name_stored, os, in_wrap, pipe_parameter);
+         }
          else if(OUT_WRAP_PREFIX == prefixe)
+         {
             outputPortDeclaration(prefixe, FU_name_stored, os, out_wrap, pipe_parameter);
+         }
          else
+         {
             THROW_UNREACHABLE("Something wrong happened");
+         }
          PP.deindent();
          PP(os, ");\n");
          PP.deindent();
@@ -608,9 +668,13 @@ void flopoco_wrapper::outputPortMap(const std::string& FU_name_stored, std::ostr
    for(unsigned int i = 0; i < p_wrapped_in.size(); i++)
    {
       if(type == flopoco_wrapper::UT_ADDSUB && i == 1)
+      {
          mapping += p_wrapped_in.at(i) + " => wire_ADDSUB, ";
+      }
       else if(type == flopoco_wrapper::UT_SUB && i == 1)
+      {
          mapping += p_wrapped_in.at(i) + " => wire_SUB, ";
+      }
       else if(type == flopoco_wrapper::UT_IFIX2FP)
       {
          mapping += p_wrapped_in.at(i) + " => std_logic_vector(" + p_wrapped_in.at(i) + "), ";
@@ -620,14 +684,20 @@ void flopoco_wrapper::outputPortMap(const std::string& FU_name_stored, std::ostr
          mapping += p_wrapped_in.at(i) + " => std_logic_vector(" + p_wrapped_in.at(i) + "), ";
       }
       else
+      {
          mapping += p_wrapped_in.at(i) + " => wireIn" + STR(i + 1) + ", ";
+      }
    }
    for(unsigned int j = 0; j < p_wrapped_out.size(); j++)
    {
       if(type == flopoco_wrapper::UT_compare_expr)
+      {
          mapping += p_wrapped_out.at(j) + " => " + p_wrapped_out.at(j) + "(0 downto 0)";
+      }
       else
+      {
          mapping += p_wrapped_out.at(j) + " => wireOut" + STR(j + 1);
+      }
    }
    if(pipe_parameter != "" && pipe_parameter != "0")
    {
@@ -699,36 +769,50 @@ void flopoco_wrapper::outputSignals(const std::string& FU_name_stored, std::ostr
    n_bits_out = prec_out;
 
    if(type == flopoco_wrapper::UT_ADDSUB)
+   {
       Signals += "wire_ADDSUB, ";
+   }
    else if(type == flopoco_wrapper::UT_SUB)
+   {
       Signals += "wire_SUB, ";
+   }
    else if(type == flopoco_wrapper::UT_FF_CONV)
+   {
       n_bits_in = prec_out;
+   }
 
    if(type == flopoco_wrapper::UT_IFIX2FP or type == flopoco_wrapper::UT_UFIX2FP)
    {
       if(prec_in != prec_out)
+      {
          PP(os, "signal I_temp : std_logic_vector(" + STR(std::max(prec_in, prec_out) - 1) + " downto 0);\n");
+      }
    }
    else
    {
       size_t n_in_elements = p_in.size();
       for(unsigned int i = 0; i < n_in_elements; i++)
+      {
          Signals += "wireIn" + STR(i + 1) + (i + 1 != n_in_elements ? ", " : "");
+      }
       PP(os, "signal " + Signals + " : std_logic_vector(" + STR(n_bits_in + 1) + " downto 0);\n");
    }
    if(type == flopoco_wrapper::UT_FP2UFIX or type == flopoco_wrapper::UT_FP2IFIX)
    {
       Signals = "";
       for(unsigned int j = 0; j < p_out.size(); j++)
+      {
          Signals += "wireOut" + STR(j + 1) + (j + 1 != p_out.size() ? ", " : "");
+      }
       PP(os, "signal " + Signals + " : std_logic_vector(" + STR(n_bits_out - 1) + " downto 0);\n");
    }
    else if(type != flopoco_wrapper::UT_compare_expr)
    {
       Signals = "";
       for(unsigned int j = 0; j < p_out.size(); j++)
+      {
          Signals += "wireOut" + STR(j + 1) + (j + 1 != p_out.size() ? ", " : "");
+      }
       PP(os, "signal " + Signals + " : std_logic_vector(" + STR(n_bits_out + 1) + " downto 0);\n");
    }
 }
@@ -747,11 +831,17 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
    if(wrapped == c_type)
    {
       if(type != flopoco_wrapper::UT_IFIX2FP and type != flopoco_wrapper::UT_UFIX2FP)
+      {
          in_offset += FLOPOCO_ADDITIONAL_BITS;
+      }
       if(type != flopoco_wrapper::UT_FP2UFIX and type != flopoco_wrapper::UT_FP2IFIX and type != flopoco_wrapper::UT_compare_expr)
+      {
          out_offset += FLOPOCO_ADDITIONAL_BITS;
+      }
       if(type == flopoco_wrapper::UT_FF_CONV)
+      {
          n_bits_in = n_bits_out = prec_out;
+      }
       else if(type == flopoco_wrapper::UT_compare_expr)
       {
          n_bits_in = prec_in;
@@ -772,7 +862,9 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
          n_bits_out = prec_out;
       }
       else
+      {
          n_bits_in = n_bits_out = prec_in;
+      }
    }
    else if(out_wrap == c_type)
    {
@@ -789,6 +881,7 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
    }
    const std::vector<std::string> p_in = get_ports(FU_prefix + FU_name_stored, 0, port_in, false);
    for(const auto& p_in_it : p_in)
+   {
       if(top == c_type)
       {
          if(type == flopoco_wrapper::UT_IFIX2FP)
@@ -805,9 +898,14 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
          }
       }
       else if(static_cast<int>(n_bits_in) + in_offset > 0)
+      {
          PP(os, p_in_it + " : in std_logic_vector(" + STR(static_cast<int>(n_bits_in) + in_offset) + " downto 0);\n");
+      }
       else
+      {
          PP(os, p_in_it + " : in std_logic;\n");
+      }
+   }
    // Write clock and reset ports declaration, only for top and wrapped entities
    if(top == c_type)
    {
@@ -845,7 +943,9 @@ void flopoco_wrapper::outputPortDeclaration(const std::string& FU_prefix, const 
          }
       }
       else
+      {
          PP(os, *p_out_it + " : out std_logic_vector(" + STR(static_cast<int>(n_bits_out) + out_offset) + " downto 0)\n");
+      }
       if(p_out_it + 1 != p_out.end())
       {
          PP(os, ";\n");
@@ -914,7 +1014,9 @@ std::string flopoco_wrapper::writeVHDLcommon()
 {
    std::vector<flopoco::Operator*>* common_oplist = target->getGlobalOpListRef();
    if(!common_oplist || common_oplist->empty())
+   {
       return "";
+   }
    std::string filename = std::string("FloPoCo_common") + FILE_EXT;
    std::ofstream file(filename.c_str());
    if(!file.is_open())
@@ -945,9 +1047,13 @@ const std::vector<std::string> flopoco_wrapper::get_ports(const std::string& FU_
    {
       flopoco::Signal* sig = op->getIOListSignal(i);
       if(local_type == port_in && sig->type() == flopoco::Signal::in)
+      {
          ports.push_back(sig->getName());
+      }
       else if(local_type == port_out && sig->type() == flopoco::Signal::out)
+      {
          ports.push_back(sig->getName());
+      }
    }
    THROW_ASSERT(!check_ports || expected_ports == ports.size(), "Expected a different number of " + (local_type == port_in ? std::string("input") : std::string("output")) + " ports");
    return ports;
@@ -956,9 +1062,13 @@ const std::vector<std::string> flopoco_wrapper::get_ports(const std::string& FU_
 const std::string flopoco_wrapper::get_port(port_type local_type) const
 {
    if(local_type == rst)
+   {
       return "rst";
+   }
    else if(local_type == clk)
+   {
       return "clk";
+   }
    THROW_UNREACHABLE("Something went wrong!");
    return "";
 }

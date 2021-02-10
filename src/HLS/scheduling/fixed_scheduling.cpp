@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,7 @@ fixed_scheduling::~fixed_scheduling() = default;
 
 DesignFlowStep_Status fixed_scheduling::InternalExec()
 {
-   std::string File = parameters->getOption<std::string>("fixed_scheduling_file");
+   auto File = parameters->getOption<std::string>("fixed_scheduling_file");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Reading file: " + File);
    try

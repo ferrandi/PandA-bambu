@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -111,7 +111,7 @@ extern void yyerror(const CInitializationParserFunctorRef c_initialization_parse
 
 %expect 0
 
-%pure-parser
+%define api.pure
 %start c_initialization
 
 %%

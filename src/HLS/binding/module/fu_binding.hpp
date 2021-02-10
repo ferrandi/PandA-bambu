@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -146,7 +146,7 @@ class fu_binding
    /**
     * Add an instance of the current port
     */
-   structural_objectRef add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu, const std::string& name, const OpVertexSet& operations, structural_objectRef clock_port, structural_objectRef reset_port);
+   structural_objectRef add_gate(const HLS_managerRef HLSMgr, const hlsRef HLS, const technology_nodeRef fu, const std::string& name, const OpVertexSet& ops, structural_objectRef clock_port, structural_objectRef reset_port);
 
    /**
     * check the module parametrization
@@ -186,7 +186,7 @@ class fu_binding
     * @param function_id is the index of the function
     * @param parameters is the set of input parameters
     */
-   fu_binding(const HLS_managerConstRef HLS_mgr, const unsigned int function_id, const ParameterConstRef parameters);
+   fu_binding(const HLS_managerConstRef _HLSMgr, const unsigned int function_id, const ParameterConstRef parameters);
 
    fu_binding(const fu_binding& original);
 
@@ -213,7 +213,7 @@ class fu_binding
     * @param id is the identifier of the functional unit
     * @param index is the functional unit index
     */
-   void bind(const vertex& v, unsigned int id, unsigned int index = INFINITE_UINT);
+   void bind(const vertex& v, unsigned int unit, unsigned int index = INFINITE_UINT);
 
    /**
     * Returns the functional unit assigned to the vertex.
@@ -250,11 +250,15 @@ class fu_binding
     */
    unsigned int get_number(unsigned int unit) const
    {
-      std::map<unsigned int, unsigned int>::const_iterator it = allocation_map.find(unit);
+      auto it = allocation_map.find(unit);
       if(it != allocation_map.end())
+      {
          return it->second;
+      }
       else
+      {
          return 0;
+      }
    }
 
    /**
@@ -361,7 +365,7 @@ class fu_binding
 /**
  * RefCount type definition of the fu_binding class structure
  */
-typedef refcount<fu_binding> fu_bindingRef;
-typedef refcount<const fu_binding> fu_bindingConstRef;
+using fu_bindingRef = refcount<fu_binding>;
+using fu_bindingConstRef = refcount<const fu_binding>;
 
 #endif

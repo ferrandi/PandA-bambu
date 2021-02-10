@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -221,11 +221,11 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
       {
          script << " -c -voptargs=\"+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF +
-                       " \" -pedanticerrors -assertdebug -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;\" work." + top_filename + "_tb_top";
+                       R"( " -pedanticerrors -assertdebug -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" + top_filename + "_tb_top";
       }
       else
       {
-         script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF + "\" -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;\" work." + top_filename + "_tb_top";
+         script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF + R"(" -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" + top_filename + "_tb_top";
       }
    }
    script << " 2>&1 | tee " << log_file << std::endl << std::endl;

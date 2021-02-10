@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -384,7 +384,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
 {
    already_executed = true;
    bool changed = false;
-   const std::string tmp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+   const auto tmp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    const auto top_functions = parameters->getOption<std::string>(OPT_top_functions_names);
    auto new_top_functions = top_functions;
    THROW_ASSERT(aadl_information->top_functions_names.size(), "");

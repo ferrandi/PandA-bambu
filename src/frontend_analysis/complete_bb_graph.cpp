@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(PARALLEL_LOOP_SWAP, SAME_FUNCTION));
 #endif
 #if HAVE_BAMBU_BUILT
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(PHI_OPT, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(REMOVE_ENDING_IF, SAME_FUNCTION));
 #endif
 #if HAVE_ZEBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SHORT_CIRCUIT_STRUCTURING, SAME_FUNCTION));
@@ -94,7 +96,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
 #if HAVE_BAMBU_BUILT
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SDC_CODE_MOTION, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(MULTI_WAY_IF, SAME_FUNCTION));
 #endif
          break;
       }

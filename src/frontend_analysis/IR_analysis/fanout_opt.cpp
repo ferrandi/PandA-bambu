@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2020 Politecnico di Milano
+ *              Copyright (C) 2017-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -99,7 +99,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             case DesignFlowStep_Status::SUCCESS:
             {
                if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+               {
                   relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
+               }
                break;
             }
             case DesignFlowStep_Status::SKIPPED:
@@ -141,7 +143,9 @@ bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool)
       auto* temp_assign = GetPointer<gimple_assign>(GET_NODE(t));
       if(GET_NODE(temp_assign->op1)->get_kind() == mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == widen_mult_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_plus_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_mm_expr_K ||
          GET_NODE(temp_assign->op1)->get_kind() == ternary_pm_expr_K || GET_NODE(temp_assign->op1)->get_kind() == ternary_mp_expr_K)
+      {
          return true;
+      }
    }
    return false;
 }
@@ -149,7 +153,9 @@ bool fanout_opt::is_dest_relevant(tree_nodeRef t, bool)
 DesignFlowStep_Status fanout_opt::InternalExec()
 {
    if(parameters->IsParameter("disable-fanout_opt"))
+   {
       return DesignFlowStep_Status::SKIPPED;
+   }
    bool IR_changed = false;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
@@ -162,12 +168,10 @@ DesignFlowStep_Status fanout_opt::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block.first));
       for(const auto& stmt : block.second->CGetStmtList())
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-#endif
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining statement " + GET_NODE(stmt)->ToString());
          if(GET_NODE(stmt)->get_kind() == gimple_assign_K)
          {
@@ -186,9 +190,13 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                   for(auto dest_statement : ssa_defined->CGetUseStmts())
                   {
                      if(is_first_stmt)
+                     {
                         is_first_stmt = false;
+                     }
                      else if(is_dest_relevant(dest_statement.first, false))
+                     {
                         list_of_dest_statements.push_back(dest_statement.first);
+                     }
                   }
                   for(auto dest_statement : list_of_dest_statements)
                   {
@@ -225,9 +233,13 @@ DesignFlowStep_Status fanout_opt::InternalExec()
                for(auto dest_statement : ssa_defined->CGetUseStmts())
                {
                   if(is_first_stmt)
+                  {
                      is_first_stmt = false;
+                  }
                   else if(is_dest_relevant(dest_statement.first, true))
+                  {
                      list_of_dest_statements.push_back(dest_statement.first);
+                  }
                }
                for(auto dest_statement : list_of_dest_statements)
                {
@@ -259,7 +271,9 @@ DesignFlowStep_Status fanout_opt::InternalExec()
       if(IR_changed && schedule)
       {
          for(const auto& stmt : block.second->CGetStmtList())
+         {
             schedule->UpdateTime(GET_INDEX_NODE(stmt));
+         }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(block.first));
    }

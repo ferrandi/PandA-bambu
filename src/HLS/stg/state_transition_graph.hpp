@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -152,8 +152,8 @@ struct StateInfo : public NodeInfo
    }
 };
 /// refcount definition
-typedef refcount<StateInfo> StateInfoRef;
-typedef refcount<const StateInfo> StateInfoConstRef;
+using StateInfoRef = refcount<StateInfo>;
+using StateInfoConstRef = refcount<const StateInfo>;
 
 enum transition_type : int
 {
@@ -185,7 +185,7 @@ class TransitionInfo : public EdgeInfo
    bool epp_incrementValid{false};
 
  public:
-   TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
+   explicit TransitionInfo(OpGraphConstRef g) : op_function_graph(g)
    {
    }
 
@@ -238,8 +238,8 @@ class TransitionInfo : public EdgeInfo
    }
 };
 /// refcount about edge info
-typedef refcount<TransitionInfo> TransitionInfoRef;
-typedef refcount<const TransitionInfo> TransitionInfoConstRef;
+using TransitionInfoRef = refcount<TransitionInfo>;
+using TransitionInfoConstRef = refcount<const TransitionInfo>;
 
 /**
  * Structure holding information about the whole graph.
@@ -275,8 +275,8 @@ struct StateTransitionGraphInfo : public GraphInfo
    friend class StateTransitionGraph_constructor;
 };
 /// definition of the refcount
-typedef refcount<StateTransitionGraphInfo> StateTransitionGraphInfoRef;
-typedef refcount<const StateTransitionGraphInfo> StateTransitionGraphInfoConstRef;
+using StateTransitionGraphInfoRef = refcount<StateTransitionGraphInfo>;
+using StateTransitionGraphInfoConstRef = refcount<const StateTransitionGraphInfo>;
 
 /**
  * This structure defines the bulk for the state transition graph
@@ -311,8 +311,8 @@ class StateTransitionGraphsCollection : public graphs_collection
    }
 };
 /// refcount definition of the class
-typedef refcount<StateTransitionGraphsCollection> StateTransitionGraphsCollectionRef;
-typedef refcount<const StateTransitionGraphsCollection> StateTransitionGraphsCollectionConstRef;
+using StateTransitionGraphsCollectionRef = refcount<StateTransitionGraphsCollection>;
+using StateTransitionGraphsCollectionConstRef = refcount<const StateTransitionGraphsCollection>;
 
 /**
  * Class used to describe a state transition graph
@@ -420,8 +420,8 @@ struct StateTransitionGraph : public graph
    void WriteDot(const std::string& file_name, const int detail_level = 0) const;
 };
 /// refcount definition of the class
-typedef refcount<StateTransitionGraph> StateTransitionGraphRef;
-typedef refcount<const StateTransitionGraph> StateTransitionGraphConstRef;
+using StateTransitionGraphRef = refcount<StateTransitionGraph>;
+using StateTransitionGraphConstRef = refcount<const StateTransitionGraph>;
 
 /**
  * Functor template used to write the content of the nodes to a dotty file.
@@ -490,7 +490,9 @@ class last_intermediate_state
    vertex operator()(vertex top, vertex bottom)
    {
       if(not pipeline)
+      {
          return top;
+      }
       graph::in_edge_iterator in_edge, in_edge_end;
 #if HAVE_ASSERTS
       bool multiple_in_edges = false;
@@ -516,7 +518,7 @@ class last_intermediate_state
 class next_unique_state
 {
  public:
-   next_unique_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph)
+   explicit next_unique_state(StateTransitionGraphConstRef input_state_graph) : state_graph(input_state_graph)
    {
    }
 

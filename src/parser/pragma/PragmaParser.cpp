@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -110,7 +110,7 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
       /// search for function name
       if(search_function)
       {
-         std::string::size_type notwhite = output_line.find_first_of("(");
+         std::string::size_type notwhite = output_line.find_first_of('(');
          if(notwhite != std::string::npos)
          {
             std::string Token = input_line;
@@ -125,14 +125,18 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
 
             /// Pragma associated with called are added by pragma_analysis
             if(level == 0)
+            {
                PM->AddFunctionDefinitionPragmas(name_function, FunctionPragmas);
+            }
 
             name_function.clear();
             search_function = false;
             FunctionPragmas.clear();
          }
          else
+         {
             name_function += input_line + " ";
+         }
       }
       if(input_line.find("#pragma") != std::string::npos)
       {
@@ -163,7 +167,9 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
             if(!found)
             {
                for(auto& FloatingPragma : FloatingPragmas)
+               {
                   OpenPragmas[level].push_back(FloatingPragma);
+               }
                FloatingPragmas.clear();
             }
             found = true;
@@ -173,7 +179,9 @@ std::string PragmaParser::substitutePragmas(const std::string& OldFile)
             if(OpenPragmas.count(level))
             {
                for(auto& open_pragma : OpenPragmas[level])
+               {
                   fileOutput << std::string(STR_CST_pragma_function_end) + "(\"" << open_pragma << "\");" << std::endl;
+               }
                OpenPragmas[level].clear();
             }
             level--;
@@ -220,15 +228,21 @@ bool PragmaParser::analyze_pragma(std::string& Line)
 
    /// call_point_hw pragmas
    if(Line.find("call_point_hw") != std::string::npos)
+   {
       return recognize_call_point_hw_pragma(Line);
+   }
 
    /// issue pragmas
    if(Line.find("issue") != std::string::npos)
+   {
       return recognize_issue_pragma(Line);
+   }
 
    /// profiling pragmas
    if(Line.find("profiling") != std::string::npos)
+   {
       return recognize_profiling_pragma(Line);
+   }
 
    /// generate_hw pragmas
    if(Line.find("generate_hw") != std::string::npos)
@@ -247,7 +261,9 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
    std::string original_line = line;
    const pragma_manager::OmpPragmaType omp_pragma_type = pragma_manager::GetOmpPragmaType(line);
    if(omp_pragma_type == pragma_manager::OMP_UNKNOWN)
+   {
       THROW_ERROR("Unsupported openmp directive in line " + line);
+   }
    bool single_line_pragma = false;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Found directive " + pragma_manager::omp_directive_keywords[omp_pragma_type]);
    switch(omp_pragma_type)
@@ -302,7 +318,9 @@ bool PragmaParser::recognize_omp_pragma(std::string& line)
    }
 
    if(original_line.size())
+   {
       line += ", \"" + original_line.substr(1, original_line.size() - 1) + "\"";
+   }
    line += ");";
    return true;
 }
@@ -319,7 +337,9 @@ bool PragmaParser::recognize_call_point_hw_pragma(std::string& line) const
    line += "\"" + std::string(STR_CST_pragma_keyword_call_point_hw) + "\"";
    line += ", \"" + splitted[3] + "\"";
    if(splitted.size() == 5)
+   {
       line += ", \"" + splitted[4] + "\"";
+   }
    line += ");";
    return true;
 }

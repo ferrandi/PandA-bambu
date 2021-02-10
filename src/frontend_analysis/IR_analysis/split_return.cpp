@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -134,12 +134,20 @@ bool SplitReturn::HasToBeExecuted() const
    {
       return false;
    }
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
 #if HAVE_BAMBU_BUILT && HAVE_ILP_BUILT
    if(parameters->isOption(OPT_scheduling_algorithm) and parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING)
+   {
       return GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
+   }
    else
 #endif
+   {
       return FunctionFrontendFlowStep::HasToBeExecuted();
+   }
 }
 
 static void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVocabularyTokenTypes_TokenEnum, std::string>& gimple_return_schema, statement_list* sl, blocRef pred_block, blocRef bb_block, int DEBUG_PARAMETER(debug_level))
@@ -172,9 +180,13 @@ static void create_return_and_fix_cfg(const tree_managerRef TM, std::map<TreeVoc
       pred_block->list_of_succ.erase(std::find(pred_block->list_of_succ.begin(), pred_block->list_of_succ.end(), bb_index));
       pred_block->list_of_succ.push_back(new_basic_block_index);
       if(pred_block->true_edge == bb_index)
+      {
          pred_block->true_edge = new_basic_block_index;
+      }
       if(pred_block->false_edge == bb_index)
+      {
          pred_block->false_edge = new_basic_block_index;
+      }
       /// Fix gimple_multi_way_if
       if(pred_block->CGetStmtList().size())
       {
@@ -243,7 +255,9 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
                if(gr->op)
+               {
                   gimple_return_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(gr->op));
+               }
                gimple_return_schema[TOK(TOK_MEMUSE)] = STR(op_node_nid);
                auto pred_block = sl->list_of_bloc[def_edge.second];
                create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
@@ -267,7 +281,9 @@ DesignFlowStep_Status SplitReturn::InternalExec()
                gimple_return_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
                gimple_return_schema[TOK(TOK_SCPE)] = STR(GET_INDEX_NODE(gr->scpe));
                if(gr->op)
+               {
                   gimple_return_schema[TOK(TOK_OP)] = STR(GET_INDEX_NODE(gr->op));
+               }
                create_return_and_fix_cfg(TM, gimple_return_schema, sl, pred_block, bb_block, debug_level);
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Removing BB" + STR(bb_index));
@@ -278,7 +294,9 @@ DesignFlowStep_Status SplitReturn::InternalExec()
       }
    }
    for(auto bb_index : to_be_erase)
+   {
       list_of_bloc.erase(bb_index);
+   }
 
    if(isChanged)
    {

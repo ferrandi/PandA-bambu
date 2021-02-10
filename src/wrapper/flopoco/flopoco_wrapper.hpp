@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,7 +65,7 @@
 /// Default extension for generated files
 #define FILE_EXT ".vhdl"
 /// Name of the stored Functional Unit
-#define ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) FU_name + "_" + STR(FU_prec_in) + "_" + STR(FU_prec_out) + (pipe_parameter != "" ? "_" + pipe_parameter : "")
+#define ENCODE_NAME(FU_name, FU_prec_in, FU_prec_out, pipe_parameter) ((FU_name) + "_" + STR(FU_prec_in) + "_" + STR(FU_prec_out) + ((pipe_parameter) != "" ? "_" + (pipe_parameter) : ""))
 /// Additional bits in FloPoCo encoding with reference to IEEE-754 standard
 #define FLOPOCO_ADDITIONAL_BITS 2
 /// Prefix for the wrapper to the inputs
@@ -109,41 +109,11 @@ class flopoco_wrapper
    /// Pretty print functor object used to indent the generated code
    simple_indent PP;
    /// Port types
-   typedef enum
-   {
-      port_in,
-      port_out,
-      clk,
-      rst
-   } port_type;
+   using port_type = enum { port_in, port_out, clk, rst };
    /// Component types
-   typedef enum
-   {
-      top,
-      wrapped,
-      in_wrap,
-      out_wrap
-   } component_type;
+   using component_type = enum { top, wrapped, in_wrap, out_wrap };
    /// unit type
-   typedef enum
-   {
-      UT_ADD,
-      UT_SUB,
-      UT_MULT,
-      UT_DIV,
-      UT_FF_CONV,
-      UT_ADDSUB,
-      UT_UFIX2FP,
-      UT_IFIX2FP,
-      UT_FP2UFIX,
-      UT_FP2IFIX,
-      UT_EXP,
-      UT_SQRT,
-      UT_compare_expr,
-      UT_LOG,
-      UT_POW,
-      UT_UNKNOWN
-   } unit_type;
+   using unit_type = enum { UT_ADD, UT_SUB, UT_MULT, UT_DIV, UT_FF_CONV, UT_ADDSUB, UT_UFIX2FP, UT_IFIX2FP, UT_FP2UFIX, UT_FP2IFIX, UT_EXP, UT_SQRT, UT_compare_expr, UT_LOG, UT_POW, UT_UNKNOWN };
 
    unit_type type;
 
@@ -183,7 +153,7 @@ class flopoco_wrapper
     * @param FU_file is the name of the file, without extension, where the VHDL code should be put (i.e. "FPAdder", not "FPAdder.vhdl")
     * @param pipe_parameter is a string defining the design frequency, in case is not empty
     */
-   int InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& FU_file, const std::string& pipe_parameter);
+   int InternalWriteVHDL(const std::string& FU_name, const unsigned int FU_prec_in, const unsigned int FU_prec_out, const std::string& filename, const std::string& pipe_parameter);
 
    /**
     * Helper methods for automatic VHDL code generation:
@@ -295,6 +265,6 @@ class flopoco_wrapper
 };
 
 /// Refcount definition for the flopoco_wrapper class
-typedef refcount<flopoco_wrapper> flopoco_wrapperRef;
+using flopoco_wrapperRef = refcount<flopoco_wrapper>;
 
 #endif /* FLOPOCOWRAPPER_H */

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,9 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
 {
    long step_time = 0;
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       START_TIME(step_time);
+   }
    create_conflict_graph();
    /// coloring based on DSATUR 2 heuristic
    cg_vertices_size_type num_colors = dsatur2_coloring(cg, color);
@@ -85,7 +87,7 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
    const std::list<vertex>& support = HLS->Rliv->get_support();
 
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
@@ -98,19 +100,29 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
    }
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       STOP_TIME(step_time);
+   }
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "-->Register binding information for function " + HLSMgr->CGetFunctionBehavior(funId)->CGetBehavioralHelper()->get_function_name() + ":");
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level,
                   std::string("---Register allocation algorithm obtains ") + (num_colors == register_lower_bound ? "an optimal" : "a sub-optimal") + " result: " + std::to_string(num_colors) + " registers" +
                       (num_colors == register_lower_bound ? "" : ("(LB:" + STR(register_lower_bound) + ")")));
    if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+   {
       HLS->Rreg->print();
+   }
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "Time to perform register binding: " + print_cpu_time(step_time) + " seconds");
+   }
    INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "<--");
    if(output_level == OUTPUT_LEVEL_PEDANTIC)
+   {
       INDENT_OUT_MEX(OUTPUT_LEVEL_PEDANTIC, output_level, "");
+   }
    return DesignFlowStep_Status::SUCCESS;
 }

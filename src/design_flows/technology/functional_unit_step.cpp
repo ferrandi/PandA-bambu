@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -103,7 +103,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
    std::map<unsigned int, std::vector<std::string>> portsize_parameters;
    auto* fu_curr = GetPointer<functional_unit>(f_unit);
    if(fu_curr && fu_curr->fu_template_name != "")
+   {
       return; /// previous characterization is not considered
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + f_unit->get_name());
    bool isTemplate = false;
    bool no_constants = false;
@@ -119,14 +121,16 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
    const functional_unit::operation_vec& Ops = fu_curr->get_operations();
    auto ops_end = Ops.end();
    if(fu_base_name == READ_COND_STD)
+   {
       precision.insert(1);
+   }
    else
    {
       for(auto ops = Ops.begin(); ops != ops_end; ++ops)
       {
          auto* curr_op = GetPointer<operation>(*ops);
          is_commutative = is_commutative && curr_op->commutative;
-         std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it_end = curr_op->supported_types.end();
+         auto supported_type_it_end = curr_op->supported_types.end();
          if(curr_op->supported_types.begin() == curr_op->supported_types.end())
          {
             if(isTemplate)
@@ -140,7 +144,7 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          }
          else
          {
-            for(std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it = curr_op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
+            for(auto supported_type_it = curr_op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
             {
                auto prec_it_end = supported_type_it->second.end();
                auto prec_it = supported_type_it->second.begin();
@@ -158,7 +162,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                else
                {
                   for(; prec_it != prec_it_end; ++prec_it)
+                  {
                      precision.insert(*prec_it);
+                  }
                }
             }
          }
@@ -167,8 +173,8 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
          if(pipe_parameters_str != "")
          {
             std::vector<std::string> parameters_split = SplitString(pipe_parameters_str, "|");
-            const std::vector<std::string>::const_iterator pp_it_end = parameters_split.end();
-            for(std::vector<std::string>::const_iterator pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
+            const auto pp_it_end = parameters_split.end();
+            for(auto pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
                std::vector<std::string> precision_pipe_param_pair = SplitString(*pp_it, ":");
                THROW_ASSERT(precision_pipe_param_pair.size() == 2, "malformed pipe parameter string");
@@ -177,9 +183,15 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                if(precision_pipe_param_pair[0] == "*")
                {
                   for(unsigned int prec : precision)
-                     for(std::vector<std::string>::const_iterator param_it = pipe_params.begin(), param_it_end = pipe_params.end(); param_it != param_it_end; ++param_it)
-                        if(std::find(pipe_parameters[prec].begin(), pipe_parameters[prec].end(), *param_it) == pipe_parameters[prec].end())
-                           pipe_parameters[prec].push_back(*param_it);
+                  {
+                     for(const auto& pipe_param : pipe_params)
+                     {
+                        if(std::find(pipe_parameters[prec].begin(), pipe_parameters[prec].end(), pipe_param) == pipe_parameters[prec].end())
+                        {
+                           pipe_parameters[prec].push_back(pipe_param);
+                        }
+                     }
+                  }
                }
                else if(precision_pipe_param_pair[0] == "DSPs_y_sizes")
                {
@@ -194,21 +206,27 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                }
                else if(precision.find(boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])) != precision.end())
                {
-                  for(std::vector<std::string>::const_iterator param_it = pipe_params.begin(), param_it_end = pipe_params.end(); param_it != param_it_end; ++param_it)
-                     if(std::find(pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].begin(), pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end(), *param_it) ==
+                  for(const auto& pipe_param : pipe_params)
+                  {
+                     if(std::find(pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].begin(), pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end(), pipe_param) ==
                         pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].end())
-                        pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].push_back(*param_it);
+                     {
+                        pipe_parameters[boost::lexical_cast<unsigned int>(precision_pipe_param_pair[0])].push_back(pipe_param);
+                     }
+                  }
                }
                else
+               {
                   THROW_ERROR("malformed pipe parameter string");
+               }
             }
          }
          std::string portsize_parameters_str = curr_op->portsize_parameters;
          if(portsize_parameters_str != "")
          {
             std::vector<std::string> parameters_split = SplitString(portsize_parameters_str, "|");
-            const std::vector<std::string>::const_iterator pp_it_end = parameters_split.end();
-            for(std::vector<std::string>::const_iterator pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
+            const auto pp_it_end = parameters_split.end();
+            for(auto pp_it = parameters_split.begin(); pp_it != pp_it_end; ++pp_it)
             {
                std::vector<std::string> precision_portsize_param_pair = SplitString(*pp_it, ":");
                THROW_ASSERT(precision_portsize_param_pair.size() == 2, "malformed portsize parameter string");
@@ -217,26 +235,40 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                if(precision_portsize_param_pair[0] == "*")
                {
                   for(unsigned int prec : precision)
-                     for(std::vector<std::string>::const_iterator param_it = portsize_params.begin(), param_it_end = portsize_params.end(); param_it != param_it_end; ++param_it)
-                        if(std::find(portsize_parameters[prec].begin(), portsize_parameters[prec].end(), *param_it) == portsize_parameters[prec].end())
-                           portsize_parameters[prec].push_back(*param_it);
+                  {
+                     for(const auto& portsize_param : portsize_params)
+                     {
+                        if(std::find(portsize_parameters[prec].begin(), portsize_parameters[prec].end(), portsize_param) == portsize_parameters[prec].end())
+                        {
+                           portsize_parameters[prec].push_back(portsize_param);
+                        }
+                     }
+                  }
                }
                else if(precision.find(boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])) != precision.end())
                {
-                  for(std::vector<std::string>::const_iterator param_it = portsize_params.begin(), param_it_end = portsize_params.end(); param_it != param_it_end; ++param_it)
-                     if(std::find(portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].begin(), portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end(), *param_it) ==
+                  for(const auto& portsize_param : portsize_params)
+                  {
+                     if(std::find(portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].begin(), portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end(), portsize_param) ==
                         portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].end())
-                        portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].push_back(*param_it);
+                     {
+                        portsize_parameters[boost::lexical_cast<unsigned int>(precision_portsize_param_pair[0])].push_back(portsize_param);
+                     }
+                  }
                }
                else
+               {
                   THROW_ERROR("malformed portsize parameter string");
+               }
             }
          }
       }
    }
 
    if(Ops.begin() == Ops.end())
+   {
       is_commutative = false;
+   }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed parameters");
 
@@ -291,7 +323,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                structural_objectRef port_c = mod->get_in_port(i);
                if(port_c &&
                   (port_c->get_id() == CLOCK_PORT_NAME || port_c->get_id() == RESET_PORT_NAME || port_c->get_id() == START_PORT_NAME || (GetPointer<port_o>(port_c) && GetPointer<port_o>(port_c)->get_is_memory()) || port_c->get_id().find("sel_") == 0))
+               {
                   continue;
+               }
                ++n_port_to_be_specialized;
             }
             unsigned int constPort;
@@ -307,16 +341,22 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                for(size_t stage_index = 0; stage_index < n_iterations_pipe; ++stage_index)
                {
                   if(n_port_to_be_specialized <= 1 || !isTemplate || fu_base_name == MUX_GATE_STD || fu_base_name == DEMUX_GATE_STD || no_constants)
+                  {
                      constPort = n_ports; // Set constPort to in_port_size to immediately stop the loop after one iteration.
+                  }
                   else
+                  {
                      constPort = 0;
+                  }
                   has_first_synthesis_id = n_ports + 2;
                   for(; constPort < n_ports + 1; ++constPort)
                   {
                      structural_objectRef port_c = n_ports > constPort ? mod->get_in_port(constPort) : structural_objectRef();
                      if(port_c && (port_c->get_id() == CLOCK_PORT_NAME || port_c->get_id() == RESET_PORT_NAME || port_c->get_id() == START_PORT_NAME || (GetPointer<port_o>(port_c) && GetPointer<port_o>(port_c)->get_is_memory()) ||
                                    port_c->get_id().find("sel_") == 0))
+                     {
                         continue;
+                     }
                      std::string template_parameters;
                      fu_name = fu_base_name;
                      template_parameters = "";
@@ -326,9 +366,13 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                         {
                            structural_objectRef port = mod->get_in_port(iport);
                            if(port->get_id() == CLOCK_PORT_NAME || port->get_id() == RESET_PORT_NAME || port->get_id() == START_PORT_NAME || (GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_memory()) || port->get_id().find("sel_") == 0)
+                           {
                               continue;
+                           }
                            if(template_parameters != "")
+                           {
                               template_parameters += " ";
+                           }
                            THROW_ASSERT(port, "expected a port");
                            if(port->get_typeRef()->type == structural_type_descriptor::BOOL)
                            {
@@ -363,7 +407,9 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                            structural_objectRef port = mod->get_out_port(oport);
                            THROW_ASSERT(port, "expected a port");
                            if(port->get_id() == DONE_PORT_NAME || (GetPointer<port_o>(port)->get_is_memory()))
+                           {
                               continue;
+                           }
                            if((fu_base_name == "widen_mult_expr_FU" or fu_base_name == "ui_widen_mult_expr_FU") and DSP_y_to_DSP_x.find(prec) != DSP_y_to_DSP_x.end())
                            {
                               fu_name += "_" + STR(prec + DSP_y_to_DSP_x.find(prec)->second);
@@ -427,16 +473,22 @@ void FunctionalUnitStep::AnalyzeFu(const technology_nodeRef f_unit)
                         // Analyzing a template, specializations of that template won't be found in the library.
                         technology_nodeRef fun_unit;
                         if(GetPointer<functional_unit_template>(f_unit))
+                        {
                            fun_unit = GetPointer<functional_unit_template>(f_unit)->FU;
+                        }
                         else
+                        {
                            fun_unit = f_unit;
+                        }
                         tn = create_template_instance(fun_unit, fu_name, device, prec);
                         fu = GetPointer<functional_unit>(tn);
                         fu->fu_template_parameters = template_parameters;
                         TM->get_library_manager(LM)->add(tn);
                      }
                      else
+                     {
                         fu = GetPointer<functional_unit>(tn);
+                     }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing cell " + fu->get_name());
                      AnalyzeCell(fu, prec, portsize_parameters.find(prec)->second, portsize_index, pipe_parameters.find(prec)->second, stage_index, constPort, is_commutative, max_lut_size);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed cell " + fu->get_name());
@@ -457,8 +509,8 @@ void FunctionalUnitStep::Initialize()
    if(device->has_parameter("DSPs_y_sizes"))
    {
       THROW_ASSERT(device->has_parameter("DSPs_x_sizes"), "device description is not complete");
-      std::string DSPs_x_sizes = device->get_parameter<std::string>("DSPs_x_sizes");
-      std::string DSPs_y_sizes = device->get_parameter<std::string>("DSPs_y_sizes");
+      auto DSPs_x_sizes = device->get_parameter<std::string>("DSPs_x_sizes");
+      auto DSPs_y_sizes = device->get_parameter<std::string>("DSPs_y_sizes");
       std::vector<std::string> DSPs_x_sizes_vec = SplitString(DSPs_x_sizes, ",");
       std::vector<std::string> DSPs_y_sizes_vec = SplitString(DSPs_y_sizes, ",");
       for(size_t DSP_index = 0; DSP_index < DSPs_y_sizes_vec.size(); DSP_index++)
@@ -470,7 +522,7 @@ void FunctionalUnitStep::Initialize()
    }
 }
 
-technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template, std::string& name, const target_deviceRef& device, unsigned int prec)
+technology_nodeRef FunctionalUnitStep::create_template_instance(const technology_nodeRef& fu_template, const std::string& name, const target_deviceRef& device, unsigned int prec)
 {
    auto* curr_fu = GetPointer<functional_unit>(fu_template);
    THROW_ASSERT(curr_fu, "Null functional unit template");
@@ -501,10 +553,10 @@ technology_nodeRef FunctionalUnitStep::create_template_instance(const technology
          new_op->time_m->set_initiation_time(ii);
       }
       new_op->commutative = op->commutative;
-      std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it_end = op->supported_types.end();
+      auto supported_type_it_end = op->supported_types.end();
       if(op->supported_types.begin() != op->supported_types.end())
       {
-         for(std::map<std::string, std::vector<unsigned int>>::const_iterator supported_type_it = op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
+         for(auto supported_type_it = op->supported_types.begin(); supported_type_it != supported_type_it_end; ++supported_type_it)
          {
             new_op->supported_types[supported_type_it->first].push_back(prec);
          }

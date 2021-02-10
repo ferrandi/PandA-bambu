@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -136,7 +136,9 @@ DesignFlowStep_Status VarDeclFix::InternalExec()
    CustomUnorderedSet<unsigned int> already_visited_ae;
 
    for(const auto& arg : fd->list_of_args)
+   {
       recursive_examinate(arg, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+   }
 
    std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
    std::map<unsigned int, blocRef>::iterator it, it_end;
@@ -190,7 +192,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          recursive_examinate(gm->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
          recursive_examinate(gm->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
          if(gm->predicate)
+         {
             recursive_examinate(gm->predicate, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case gimple_nop_K:
@@ -220,7 +224,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
                std::string original_name = Normalize(GetPointer<identifier_node>(GET_NODE(dn->name))->strg);
                std::string name_id = tree_helper::normalized_ID(original_name);
                if(already_examinated_names.find(original_name) == already_examinated_names.end())
+               {
                   already_examinated_names.insert(original_name);
+               }
                else
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, name_id + " is a duplicated var_decl");
@@ -248,7 +254,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       {
          const ssa_name* sn = GetPointer<ssa_name>(curr_tn);
          if(sn->var)
+         {
             recursive_examinate(sn->var, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case tree_list_K:
@@ -287,9 +295,13 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
          recursive_examinate(te->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
          if(te->op1)
+         {
             recursive_examinate(te->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(te->op2)
+         {
             recursive_examinate(te->op2, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
@@ -297,11 +309,17 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
          recursive_examinate(qe->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
          if(qe->op1)
+         {
             recursive_examinate(qe->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(qe->op2)
+         {
             recursive_examinate(qe->op2, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(qe->op3)
+         {
             recursive_examinate(qe->op3, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case lut_expr_K:
@@ -310,19 +328,33 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          recursive_examinate(le->op0, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
          recursive_examinate(le->op1, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
          if(le->op2)
+         {
             recursive_examinate(le->op2, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(le->op3)
+         {
             recursive_examinate(le->op3, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(le->op4)
+         {
             recursive_examinate(le->op4, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(le->op5)
+         {
             recursive_examinate(le->op5, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(le->op6)
+         {
             recursive_examinate(le->op6, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(le->op7)
+         {
             recursive_examinate(le->op7, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(le->op8)
+         {
             recursive_examinate(le->op8, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case constructor_K:
@@ -352,15 +384,21 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
+         {
             if(cond.first)
+            {
                recursive_examinate(cond.first, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+            }
+         }
          break;
       }
       case gimple_return_K:
       {
          const gimple_return* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
+         {
             recursive_examinate(re->op, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case gimple_for_K:
@@ -423,7 +461,9 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
          {
             std::string name_id = GetPointer<identifier_node>(GET_NODE(td->name))->strg;
             if(already_examinated_type_names.find(name_id) == already_examinated_type_names.end())
+            {
                already_examinated_type_names.insert(name_id);
+            }
             else
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + name_id + " is a duplicated type");
@@ -449,22 +489,34 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
       {
          const target_mem_ref* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
+         {
             recursive_examinate(tmr->symbol, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(tmr->base)
+         {
             recursive_examinate(tmr->base, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(tmr->idx)
+         {
             recursive_examinate(tmr->idx, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case target_mem_ref461_K:
       {
          const target_mem_ref461* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
+         {
             recursive_examinate(tmr->base, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(tmr->idx)
+         {
             recursive_examinate(tmr->idx, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          if(tmr->idx2)
+         {
             recursive_examinate(tmr->idx2, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
+         }
          break;
       }
       case real_cst_K:

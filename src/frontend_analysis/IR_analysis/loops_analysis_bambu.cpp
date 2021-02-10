@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -107,7 +107,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             return false;
          }();
          if(is_simd)
+         {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SERIALIZE_MUTUAL_EXCLUSIONS, SAME_FUNCTION));
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -253,17 +255,23 @@ DesignFlowStep_Status LoopsAnalysisBambu::InternalExec()
       const tree_nodeRef def = [&]() -> tree_nodeRef {
          const auto temp_def = GET_NODE(*(defs.begin()));
          if(do_while)
+         {
             return temp_def;
+         }
          const auto gp = GetPointer<const gimple_phi>(temp_def);
          if(not gp)
+         {
             return tree_nodeRef();
+         }
          for(const auto& def_edge : gp->CGetDefEdgesList())
          {
             if(def_edge.second == last_bb_index)
             {
                const auto temp_sn = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
                if(not temp_sn)
+               {
                   return tree_nodeRef();
+               }
                return GET_NODE(temp_sn->CGetDefStmt());
             }
          }

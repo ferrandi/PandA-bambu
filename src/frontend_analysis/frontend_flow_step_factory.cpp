@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -457,7 +457,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -600,6 +599,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
+      case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif
@@ -708,6 +708,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new ipa_point_to_analysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
+      case MEM_CG_EXT:
+      {
+         return DesignFlowStepRef(new mem_cg_ext(AppM, design_flow_manager.lock(), parameters));
+      }
       case PARM2SSA:
       {
          return DesignFlowStepRef(new parm2ssa(AppM, design_flow_manager.lock(), parameters));
@@ -865,7 +869,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -1278,10 +1281,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new lut_transformation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-      case MEM_CG_EXT:
-      {
-         return DesignFlowStepRef(new mem_cg_ext(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
       case MEMORY_DATA_FLOW_ANALYSIS:
       {
          return DesignFlowStepRef(new MemoryDataFlowAnalysis(AppM, function_id, design_flow_manager.lock(), parameters));
@@ -1572,6 +1571,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
+      case MEM_CG_EXT:
       case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):

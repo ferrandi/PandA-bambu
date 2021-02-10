@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,9 +66,9 @@ REF_FORWARD_DECL(structural_object);
 /// Channel line  selector
 #define CHANNEL_SELECTOR 4
 /// All lines selector
-#define ALL_LINES_SELECTOR DATA_SELECTOR | CLOCK_SELECTOR | CHANNEL_SELECTOR
+#define ALL_LINES_SELECTOR (DATA_SELECTOR | CLOCK_SELECTOR | CHANNEL_SELECTOR)
 /// All but clock lines selector
-#define PURE_DATA_SELECTOR DATA_SELECTOR | CHANNEL_SELECTOR
+#define PURE_DATA_SELECTOR (DATA_SELECTOR | CHANNEL_SELECTOR)
 
 /**
  * Information associated with a circuit graph node.
@@ -195,7 +195,7 @@ struct cg_graph_info : public GraphInfo
    /**
     * Constructor
     */
-   cg_graph_info(vertex en, std::string en_name, vertex ex, std::string ex_name) : Entry(en), Exit(ex), Entry_name(std::move(en_name)), Exit_name(std::move(ex_name))
+   cg_graph_info(vertex en, const std::string& en_name, vertex ex, const std::string& ex_name) : Entry(en), Exit(ex), Entry_name(en_name), Exit_name(ex_name)
    {
    }
 

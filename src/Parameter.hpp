@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -193,18 +193,18 @@ class OptionMap : public std::map<std::string, std::string>
 
 #define DEFAULT_OPT_BASE 512
 #define OPT_READ_PARAMETERS_XML DEFAULT_OPT_BASE
-#define OPT_WRITE_PARAMETERS_XML DEFAULT_OPT_BASE + 1
-#define OPT_DEBUG_CLASSES DEFAULT_OPT_BASE + 2
-#define OPT_BENCHMARK_NAME DEFAULT_OPT_BASE + 3
-#define OPT_BENCHMARK_FAKE_PARAMETERS DEFAULT_OPT_BASE + 4
-#define INPUT_OPT_ERROR_ON_WARNING DEFAULT_OPT_BASE + 5
-#define OPT_OUTPUT_TEMPORARY_DIRECTORY DEFAULT_OPT_BASE + 6
-#define INPUT_OPT_PRINT_DOT DEFAULT_OPT_BASE + 7
-#define INPUT_OPT_SEED DEFAULT_OPT_BASE + 8
-#define INPUT_OPT_NO_CLEAN DEFAULT_OPT_BASE + 9
-#define INPUT_OPT_CONFIGURATION_NAME DEFAULT_OPT_BASE + 10
-#define INPUT_OPT_CFG_MAX_TRANSFORMATIONS DEFAULT_OPT_BASE + 11
-#define INPUT_OPT_PANDA_PARAMETER DEFAULT_OPT_BASE + 12
+#define OPT_WRITE_PARAMETERS_XML (DEFAULT_OPT_BASE + 1)
+#define OPT_DEBUG_CLASSES (DEFAULT_OPT_BASE + 2)
+#define OPT_BENCHMARK_NAME (DEFAULT_OPT_BASE + 3)
+#define OPT_BENCHMARK_FAKE_PARAMETERS (DEFAULT_OPT_BASE + 4)
+#define INPUT_OPT_ERROR_ON_WARNING (DEFAULT_OPT_BASE + 5)
+#define OPT_OUTPUT_TEMPORARY_DIRECTORY (DEFAULT_OPT_BASE + 6)
+#define INPUT_OPT_PRINT_DOT (DEFAULT_OPT_BASE + 7)
+#define INPUT_OPT_SEED (DEFAULT_OPT_BASE + 8)
+#define INPUT_OPT_NO_CLEAN (DEFAULT_OPT_BASE + 9)
+#define INPUT_OPT_CONFIGURATION_NAME (DEFAULT_OPT_BASE + 10)
+#define INPUT_OPT_CFG_MAX_TRANSFORMATIONS (DEFAULT_OPT_BASE + 11)
+#define INPUT_OPT_PANDA_PARAMETER (DEFAULT_OPT_BASE + 12)
 
 /// define the default tool short option string
 #define COMMON_SHORT_OPTIONS_STRING "hVv:d:"
@@ -221,15 +221,15 @@ class OptionMap : public std::map<std::string, std::string>
    }
 
 #define INPUT_OPT_CUSTOM_OPTIONS 1024
-#define INPUT_OPT_COMPUTE_SIZEOF 1 + INPUT_OPT_CUSTOM_OPTIONS
-#define INPUT_OPT_COMPILER 1 + INPUT_OPT_COMPUTE_SIZEOF
-#define INPUT_OPT_GCC_CONFIG 1 + INPUT_OPT_COMPILER
-#define INPUT_OPT_INCLUDE_SYSDIR 1 + INPUT_OPT_GCC_CONFIG
-#define INPUT_OPT_PARAM 1 + INPUT_OPT_INCLUDE_SYSDIR
-#define INPUT_OPT_READ_GCC_XML 1 + INPUT_OPT_PARAM
-#define INPUT_OPT_STD 1 + INPUT_OPT_READ_GCC_XML
-#define INPUT_OPT_USE_RAW 1 + INPUT_OPT_STD
-#define INPUT_OPT_WRITE_GCC_XML 1 + INPUT_OPT_USE_RAW
+#define INPUT_OPT_COMPUTE_SIZEOF (1 + INPUT_OPT_CUSTOM_OPTIONS)
+#define INPUT_OPT_COMPILER (1 + INPUT_OPT_COMPUTE_SIZEOF)
+#define INPUT_OPT_GCC_CONFIG (1 + INPUT_OPT_COMPILER)
+#define INPUT_OPT_INCLUDE_SYSDIR (1 + INPUT_OPT_GCC_CONFIG)
+#define INPUT_OPT_PARAM (1 + INPUT_OPT_INCLUDE_SYSDIR)
+#define INPUT_OPT_READ_GCC_XML (1 + INPUT_OPT_PARAM)
+#define INPUT_OPT_STD (1 + INPUT_OPT_READ_GCC_XML)
+#define INPUT_OPT_USE_RAW (1 + INPUT_OPT_STD)
+#define INPUT_OPT_WRITE_GCC_XML (1 + INPUT_OPT_USE_RAW)
 #define LAST_GCC_OPT INPUT_OPT_WRITE_GCC_XML
 
 /// define the GCC short option string
@@ -607,7 +607,9 @@ class Parameter
    bool removeOption(const enum enum_option name)
    {
       if(!isOption(name))
+      {
          return false;
+      }
       enum_options.erase(name);
       return true;
    }
@@ -630,7 +632,9 @@ class Parameter
    bool removeOption(const std::string& name)
    {
       if(!isOption(name))
+      {
          return false;
+      }
       Options.erase(name);
       return true;
    }
@@ -804,7 +808,7 @@ template <>
 void Parameter::setOption(const enum enum_option name, const ParametricListBased_Metric parametric_list_based_metric);
 #endif
 
-typedef refcount<Parameter> ParameterRef;
-typedef refcount<const Parameter> ParameterConstRef;
+using ParameterRef = refcount<Parameter>;
+using ParameterConstRef = refcount<const Parameter>;
 
 #endif

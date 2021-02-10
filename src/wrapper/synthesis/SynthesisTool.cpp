@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -336,9 +336,8 @@ std::string SynthesisTool::generate_bare_script(const std::vector<xml_script_nod
 
 xml_set_variable_tRef SynthesisTool::get_reserved_parameter(const std::string& name)
 {
-   for(auto i = xml_reserved_vars.begin(); i != xml_reserved_vars.end(); ++i)
+   for(auto& node : xml_reserved_vars)
    {
-      const xml_set_variable_tRef& node = *i;
       if(name == node->name)
       {
          return node;

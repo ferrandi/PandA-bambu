@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,7 +69,7 @@ void EucalyptusParameter::PrintProgramName(std::ostream& os) const
    os << "               | ____|   _  ___ __ _| |_   _ _ __ | |_ _   _ ___" << std::endl;
    os << "               |  _|| | | |/ __/ _` | | | | | '_ \\| __| | | / __|" << std::endl;
    os << "               | |__| |_| | (_| (_| | | |_| | |_) | |_| |_| \\__ \\" << std::endl;
-   os << "               |_____\\__,_|\\___\\__,_|_|\\__, | .__/ \\__|\\__,_|___/" << std::endl;
+   os << R"(               |_____\__,_|\___\__,_|_|\__, | .__/ \__|\__,_|___/)" << std::endl;
    os << "                                       |___/|_|" << std::endl;
    os << "********************************************************************************" << std::endl;
 }
@@ -169,15 +169,20 @@ int EucalyptusParameter::Exec()
          case 'w':
          {
             if(std::string(optarg) == "V")
+            {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
 #if HAVE_EXPERIMENTAL
-            else if(std::string(optarg) == "S")
-               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
+               else if(std::string(optarg) == "S") setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
 #endif
+            }
             else if(std::string(optarg) == "H")
+            {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VHDL));
+            }
             else
+            {
                throw "BadParameters: backend language not correctly specified";
+            }
             break;
          }
          case 0:

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,8 +92,13 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(MEM_CG_EXT, SAME_FUNCTION));
+         relationships.insert(std::make_pair(MEM_CG_EXT, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
@@ -148,19 +153,17 @@ bool BitValueIPA::HasToBeExecuted() const
 
 DesignFlowStep_Status BitValueIPA::Exec()
 {
-#ifndef NDEBUG
    if(not AppM->ApplyNewTransformation())
    {
       return DesignFlowStep_Status::UNCHANGED;
    }
-#endif
 
    BitLatticeManipulator::clear();
    fun_id_to_restart.clear();
 
    const CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
+   const auto reached_body_fun_ids = CGMan->GetReachedBodyFunctions();
    CustomOrderedSet<unsigned int> root_fun_ids = CGMan->GetRootFunctions();
    auto addressed_functions = CGMan->GetAddressedFunctions();
    root_fun_ids.insert(addressed_functions.begin(), addressed_functions.end());
@@ -168,19 +171,23 @@ DesignFlowStep_Status BitValueIPA::Exec()
    /// In case of indirect calls (e.g., pointer to function) no Bit Value IPA can be done.
    CustomUnorderedSet<vertex> vertex_subset;
    for(auto cvertex : reached_body_fun_ids)
+   {
       vertex_subset.insert(CGMan->GetVertex(cvertex));
+   }
    const CallGraphConstRef subgraph = CGMan->CGetCallSubGraph(vertex_subset);
    EdgeIterator e_it, e_it_end;
    for(boost::tie(e_it, e_it_end) = boost::edges(*subgraph); e_it != e_it_end; ++e_it)
    {
       const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(*e_it, *subgraph);
       if(info->indirect_call_points.size())
+      {
          return DesignFlowStep_Status::UNCHANGED;
+      }
    }
 
    // ---- initialization phase ----
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Initialize data structures");
-   for(unsigned int fu_id : reached_body_fun_ids)
+   for(auto fu_id : reached_body_fun_ids)
    {
       const std::string fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
@@ -310,14 +317,12 @@ DesignFlowStep_Status BitValueIPA::Exec()
          // --- backward ----
          if(not is_root)
          {
-#ifndef NDEBUG
             if(not AppM->ApplyNewTransformation())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
                break;
             }
-#endif
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Backward");
 
@@ -333,7 +338,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
                const auto tmp_it = reached_body_fun_ids.find(caller_id);
                if(tmp_it == reached_body_fun_ids.cend())
+               {
                   continue;
+               }
                const std::string caller_name = AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name();
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining caller \"" + caller_name + "\": id = " + STR(caller_id));
                const tree_nodeRef tn = TM->get_tree_node_const(caller_id);
@@ -399,11 +406,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined call point " + STR(i));
                   if(hard_break)
+                  {
                      break;
+                  }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined caller \"" + caller_name + "\": id = " + STR(caller_id));
                if(hard_break)
+               {
                   break;
+               }
             }
 
             update_current(res, fu_id);
@@ -415,9 +426,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             current.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
 
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), fu_node);
-#endif
          }
 
          // --- forward ---
@@ -511,11 +520,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + STR(stmt));
                   if(hard_break)
+                  {
                      break;
+                  }
                }
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(B->number));
                if(hard_break)
+               {
                   break;
+               }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed return statements in all BBs");
 
@@ -541,12 +554,10 @@ DesignFlowStep_Status BitValueIPA::Exec()
       int args_n = 0;
       for(const auto& pd : fd->list_of_args)
       {
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-#endif
 
          args_n++;
          const unsigned int pd_id = GET_INDEX_NODE(pd);
@@ -583,7 +594,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                         {
                            const auto def = ssa->CGetDefStmts();
                            THROW_ASSERT(not def.empty(), "ssa_name " + STR(GET_NODE(ssa_tn)) + " with id " + STR(ssa->index) + " has no def_stmts");
-                           if(def.size() == 1 and (GET_INDEX_NODE(ssa->var) == pd_id) and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+                           if((def.size() == 1) && (GET_INDEX_NODE(ssa->var) == pd_id) && ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) || ssa->volatile_flag))
                            {
                               // ssa is the first version of the parameter
                               THROW_ASSERT(prev_found == 0 or ssa->index == prev_found, "multiple ssa names are the first version of the same param\n"
@@ -619,11 +630,11 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      {
                         const tree_nodeRef ssa_tn = GET_NODE(s.first);
                         const auto* ssa = GetPointer<const ssa_name>(ssa_tn);
-                        if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
+                        if((ssa->var != nullptr) and (GET_NODE(ssa->var)->get_kind() == parm_decl_K))
                         {
                            const auto def = ssa->CGetDefStmts();
                            THROW_ASSERT(not def.empty(), "ssa_name " + STR(GET_NODE(ssa_tn)) + " with id " + STR(ssa->index) + " has no def_stmts");
-                           if(def.size() == 1 and (GET_INDEX_NODE(ssa->var) == pd_id) and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+                           if((def.size() == 1) && (GET_INDEX_NODE(ssa->var) == pd_id) && ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) || ssa->volatile_flag))
                            {
                               // ssa is the first version of the parameter
                               THROW_ASSERT(prev_found == 0 or ssa->index == prev_found, "multiple ssa names are the first version of the same param\n"
@@ -689,7 +700,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
                   const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
                   const auto tmp_it = reached_body_fun_ids.find(caller_id);
                   if(tmp_it == reached_body_fun_ids.cend())
+                  {
                      continue;
+                  }
                   const std::string caller_name = AppM->CGetFunctionBehavior(caller_id)->CGetBehavioralHelper()->get_function_name();
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->examining caller \"" + caller_name + "\": id = " + STR(caller_id));
                   const tree_nodeRef tn = TM->get_tree_node_const(caller_id);
@@ -845,11 +858,15 @@ DesignFlowStep_Status BitValueIPA::Exec()
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "param id: " + STR(pd_id) + " bitstring: " + bitstring_to_string(res));
                      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined call point " + STR(i));
                      if(hard_break)
+                     {
                         break;
+                     }
                   }
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--examined caller \"" + caller_name + "\": id = " + STR(caller_id));
                   if(hard_break)
+                  {
                      break;
+                  }
                }
 
                update_current(res, pd_id);
@@ -862,9 +879,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(pd_id) + " bitstring: " + STR(bitstring_to_string(best.at(pd_id))));
             }
 
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), pd);
-#endif
 
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Propagated bitvalue through parameter " + STR(GET_NODE(pd)) + " of function " + fu_name + " parm id: " + STR(pd_id));
          }
@@ -931,7 +946,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
       if(old_bitvalue->empty())
       {
          if(new_bitvalue != bitstring_to_string(create_u_bitstring(size)))
+         {
             restart = true;
+         }
       }
       else if(*old_bitvalue != new_bitvalue)
       {
@@ -953,7 +970,9 @@ DesignFlowStep_Status BitValueIPA::Exec()
             const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
             const auto tmp_it = reached_body_fun_ids.find(caller_id);
             if(tmp_it == reached_body_fun_ids.cend())
+            {
                continue;
+            }
             const FunctionEdgeInfoConstRef call_edge_info = cg->CGetFunctionEdgeInfo(*ie_it);
             if(not call_edge_info->direct_call_points.empty())
             {

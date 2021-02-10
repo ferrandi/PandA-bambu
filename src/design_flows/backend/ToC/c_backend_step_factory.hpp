@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,7 +75,7 @@ class CBackendStepFactory : public DesignFlowStepFactory
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef application_manager, const ParameterConstRef param);
+   CBackendStepFactory(const DesignFlowManagerConstRef design_flow_manager, const application_managerConstRef application_manager, const ParameterConstRef _parameters);
 
    /**
     * Destructor

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -152,7 +152,9 @@ int tree_panda_gcc_parameter::Exec()
 
       // no more options are available
       if(next_option == -1)
+      {
          break;
+      }
 
       switch(next_option)
       {
@@ -181,9 +183,13 @@ int tree_panda_gcc_parameter::Exec()
                ///
                std::string parameter(optarg);
                if(boost::algorithm::starts_with(parameter, "td="))
-                  setOption(OPT_gcc_standard, parameter.substr(parameter.find("=") + 1));
+               {
+                  setOption(OPT_gcc_standard, parameter.substr(parameter.find('=') + 1));
+               }
                else
+               {
                   THROW_ERROR("unexpected parameter: " + parameter);
+               }
             }
             break;
          }
@@ -191,11 +197,17 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options;
             if(optarg != nullptr)
+            {
                gcc_extra_options = "-M" + std::string(optarg);
+            }
             else
+            {
                gcc_extra_options = "-M";
+            }
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -210,7 +222,9 @@ int tree_panda_gcc_parameter::Exec()
                std::string gcc_extra_options;
                gcc_extra_options = "-i" + std::string(optarg);
                if(isOption(OPT_gcc_extra_options))
+               {
                   gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+               }
                setOption(OPT_gcc_extra_options, gcc_extra_options);
             }
             break;
@@ -219,7 +233,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-include " + std::string(optarg);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -228,7 +244,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-n" + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -242,7 +260,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MF " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -251,7 +271,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MT " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -260,7 +282,9 @@ int tree_panda_gcc_parameter::Exec()
             std::string parameter(optarg);
             std::string gcc_extra_options = "-MQ " + std::string(parameter);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -268,7 +292,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-x " + std::string(optarg);
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -276,7 +302,9 @@ int tree_panda_gcc_parameter::Exec()
          {
             std::string gcc_extra_options = "-t";
             if(isOption(OPT_gcc_extra_options))
+            {
                gcc_extra_options = getOption<std::string>(OPT_gcc_extra_options) + " " + gcc_extra_options;
+            }
             setOption(OPT_gcc_extra_options, gcc_extra_options);
             break;
          }
@@ -306,9 +334,13 @@ int tree_panda_gcc_parameter::Exec()
             bool exit_success = false;
             bool res = ManageGccOptions(next_option, optarg);
             if(res)
+            {
                res = ManageDefaultOptions(next_option, optarg, exit_success);
+            }
             if(exit_success)
+            {
                return EXIT_SUCCESS;
+            }
             if(res)
             {
                return PARAMETER_NOTPARSED;
@@ -387,9 +419,9 @@ void tree_panda_gcc_parameter::PrintProgramName(std::ostream& os) const
    os << "********************************************************************************" << std::endl;
    os << "   _                                             _" << std::endl;
    os << "  | |_ _ __ ___  ___       _ __   __ _ _ __   __| | __ _        __ _  ___ ___" << std::endl;
-   os << "  | __| '__/ _ \\/ _ \\_____| '_ \\ / _` | '_ \\ / _` |/ _` |_____ / _` |/ __/ __|" << std::endl;
+   os << R"(  | __| '__/ _ \/ _ \_____| '_ \ / _` | '_ \ / _` |/ _` |_____ / _` |/ __/ __|)" << std::endl;
    os << "  | |_| | |  __/  __/_____| |_) | (_| | | | | (_| | (_| |_____| (_| | (_| (__" << std::endl;
-   os << "   \\__|_|  \\___|\\___|     | .__/ \\__,_|_| |_|\\__,_|\\__,_|      \\__, |\\___\\___|" << std::endl;
+   os << R"(   \__|_|  \___|\___|     | .__/ \__,_|_| |_|\__,_|\__,_|      \__, |\___\___|)" << std::endl;
    os << "                          |_|                                  |___/" << std::endl;
    os << "********************************************************************************" << std::endl;
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -70,13 +70,15 @@ void conflict_based_register::create_conflict_graph()
 
    unsigned int cg_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
    for(unsigned int vi = 0; vi < cg_num_vertices; ++vi)
+   {
       boost::add_vertex(cg);
+   }
    color_vec.resize(cg_num_vertices);
    color = boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&>(&color_vec.front(), boost::get(boost::vertex_index, cg));
    /// conflict graph creation
    const std::list<vertex>& support = HLS->Rliv->get_support();
 
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
@@ -102,6 +104,7 @@ void conflict_based_register::create_conflict_graph()
    }
    /// variables of different size are in conflict
    for(unsigned int vj = 1; vj < cg_num_vertices; ++vj)
+   {
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
          if(!HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
@@ -112,4 +115,5 @@ void conflict_based_register::create_conflict_graph()
             THROW_ASSERT(in1, "unable to add edge");
          }
       }
+   }
 }

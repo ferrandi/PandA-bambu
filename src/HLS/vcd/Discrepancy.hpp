@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,8 +72,8 @@ struct CallSitesInfo
    CustomUnorderedSet<unsigned int> taken_addresses;
 };
 
-typedef refcount<CallSitesInfo> CallSitesInfoRef;
-typedef refcount<const CallSitesInfo> CallSitesInfoConstRef;
+using CallSitesInfoRef = refcount<CallSitesInfo>;
+using CallSitesInfoConstRef = refcount<const CallSitesInfo>;
 
 struct HWDiscrepancyInfo
 {
@@ -119,8 +119,8 @@ struct HWDiscrepancyInfo
    CustomUnorderedSet<unsigned int> fu_id_control_flow_skip;
 };
 
-typedef refcount<HWDiscrepancyInfo> HWDiscrepancyInfoRef;
-typedef refcount<const HWDiscrepancyInfo> HWDiscrepancyInfoConstRef;
+using HWDiscrepancyInfoRef = refcount<HWDiscrepancyInfo>;
+using HWDiscrepancyInfoConstRef = refcount<const HWDiscrepancyInfo>;
 
 struct Discrepancy
 {
@@ -228,6 +228,6 @@ struct Discrepancy
    }
 };
 
-typedef refcount<Discrepancy> DiscrepancyRef;
-typedef refcount<const Discrepancy> DiscrepancyConstRef;
+using DiscrepancyRef = refcount<Discrepancy>;
+using DiscrepancyConstRef = refcount<const Discrepancy>;
 #endif

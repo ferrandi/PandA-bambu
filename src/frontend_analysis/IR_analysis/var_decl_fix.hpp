@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -93,7 +93,7 @@ class VarDeclFix : public FunctionFrontendFlowStep
     * @param parameters is the set of input parameters
     * @param frontend_flow_step_type is the type of step; it is different for subclasses
     */
-   VarDeclFix(const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters, const FrontendFlowStepType frontend_flow_step_type = VAR_DECL_FIX);
+   VarDeclFix(const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters, const FrontendFlowStepType frontend_flow_step_type = VAR_DECL_FIX);
 
    /**
     * Destructor

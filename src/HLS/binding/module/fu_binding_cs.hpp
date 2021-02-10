@@ -13,7 +13,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -45,7 +45,7 @@
 class fu_binding_cs : public fu_binding
 {
  public:
-   fu_binding_cs(const HLS_managerConstRef HLS_mgr, const unsigned int function_id, const ParameterConstRef parameters);
+   fu_binding_cs(const HLS_managerConstRef _HLSMgr, const unsigned int function_id, const ParameterConstRef parameters);
 
    /**
     * Destructor

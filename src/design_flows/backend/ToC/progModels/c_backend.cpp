@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -151,7 +151,9 @@ DesignFlowStep_Status CBackend::Exec()
    indented_output_stream->Append(" - Date " + TimeStamp::GetCurrentTimeStamp());
    indented_output_stream->Append("\n");
    if(parameters->isOption(OPT_cat_args))
+   {
       indented_output_stream->Append(" * " + parameters->getOption<std::string>(OPT_program_name) + " executed with: " + parameters->getOption<std::string>(OPT_cat_args) + "\n");
+   }
    indented_output_stream->Append(" */\n");
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--CBackend: written panda header");
    // write cwriter specific header
@@ -175,7 +177,9 @@ void CBackend::Initialize()
 {
    writer->Initialize();
    if(boost::filesystem::exists(file_name))
+   {
       boost::filesystem::remove_all(file_name);
+   }
    already_visited.clear();
    if(c_backend_type == CB_HLS)
    {
@@ -241,10 +245,14 @@ void CBackend::writeImplementations()
    {
       const BehavioralHelperConstRef BH = AppM->CGetFunctionBehavior(it)->CGetBehavioralHelper();
       if(BH->function_has_to_be_printed(it))
+      {
          writer->WriteFunctionImplementation(it);
+      }
    }
    if(AppM->CGetCallGraphManager()->ExistsAddressedFunction())
+   {
       writer->WriteBuiltinWaitCall();
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Written implementations");
 }
 
@@ -487,7 +495,9 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                // be computed again after the call graph computation.
                const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
                if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+               {
                   break;
+               }
 
                const auto* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
 
@@ -502,7 +512,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                if(parameters->isOption(OPT_pretty_print))
                {
                   const auto* c_backend_step_factory = GetPointer<const CBackendStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("CBackend"));
-                  const std::string output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
+                  const auto output_file_name = parameters->getOption<std::string>(OPT_pretty_print);
                   const vertex c_backend_vertex = design_flow_manager.lock()->GetDesignFlowStep(CBackend::ComputeSignature(CBackend::CB_SEQUENTIAL));
                   const DesignFlowStepRef c_backend_step =
                       c_backend_vertex ? design_flow_graph->CGetDesignFlowStepInfo(c_backend_vertex)->design_flow_step : c_backend_step_factory->CreateCBackendStep(CBackend::CB_SEQUENTIAL, output_file_name, CBackendInformationConstRef());
@@ -561,7 +571,7 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                   // before this is executed. At that time the top
                   // function will be ready. The dependencies from HLS steps are
                   // added after the check on the call graph for this reason.
-                  const FrontendFlowStepFactory* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
+                  const auto* frontend_step_factory = GetPointer<const FrontendFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("Frontend"));
                   const vertex call_graph_computation_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FUNCTION_ANALYSIS));
                   const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
                   const DesignFlowStepRef cg_design_flow_step =
@@ -573,11 +583,13 @@ void CBackend::ComputeRelationships(DesignFlowStepSet& relationships, const Desi
                   // be computed again after the call graph computation.
                   const CallGraphManagerConstRef call_graph_manager = AppM->CGetCallGraphManager();
                   if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+                  {
                      break;
+                  }
                   const auto top_funs = call_graph_manager->GetRootFunctions();
                   THROW_ASSERT(top_funs.size() == 1, "");
                   const auto top_fu_id = *top_funs.begin();
-                  const HLSFlowStepFactory* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
+                  const auto* hls_step_factory = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"));
 
                   const vertex hls_top_function = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, HLSFlowStepSpecializationConstRef(), top_fu_id));
                   const DesignFlowStepRef hls_top_function_step = hls_top_function ? design_flow_graph->CGetDesignFlowStepInfo(hls_top_function)->design_flow_step : hls_step_factory->CreateHLSFlowStep(HLSFlowStep_Type::HLS_SYNTHESIS_FLOW, top_fu_id);

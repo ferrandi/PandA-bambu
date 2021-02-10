@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,8 +64,7 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : FunctionFrontendFlowStep(_AppM, _function_id, MEM_CG_EXT, _design_flow_manager, _parameters)
+mem_cg_ext::mem_cg_ext(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters) : ApplicationFrontendFlowStep(_AppM, MEM_CG_EXT, _design_flow_manager, _parameters)
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -89,11 +88,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          }
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -108,7 +107,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-DesignFlowStep_Status mem_cg_ext::InternalExec()
+DesignFlowStep_Status mem_cg_ext::Exec()
 {
    const CallGraphManagerRef CGMan = AppM->GetCallGraphManager();
    const CallGraphConstRef cg = CGMan->CGetCallGraph();
@@ -130,11 +129,11 @@ DesignFlowStep_Status mem_cg_ext::InternalExec()
       for(; ie_it != ie_end; ie_it++)
       {
          const unsigned int caller_id = CGMan->get_function(boost::source(*ie_it, *cg));
-         if(caller_id != function_id)
-            continue;
          const auto tmp_it = reached_body_fun_ids.find(caller_id);
          if(tmp_it == reached_body_fun_ids.cend())
+         {
             continue;
+         }
 
          const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(caller_id);
          const std::string caller_name = FB->CGetBehavioralHelper()->get_function_name();
@@ -160,11 +159,15 @@ DesignFlowStep_Status mem_cg_ext::InternalExec()
             {
                unsigned int i = *call_it;
                if(i == 0)
+               {
                   continue;
+               }
                const tree_nodeRef call_node = TM->get_tree_node_const(i);
                const tree_nodeRef call_node_reindex = TM->CGetTreeReindex(i);
                if(call_node->get_kind() != gimple_assign_K)
+               {
                   continue;
+               }
                const auto* ga = GetPointer<const gimple_assign>(call_node);
                if(GET_NODE(ga->op1)->get_kind() != call_expr_K && GET_NODE(ga->op1)->get_kind() != aggr_init_expr_K)
                {
@@ -217,7 +220,9 @@ DesignFlowStep_Status mem_cg_ext::InternalExec()
                         const auto* src_ptr_t = GetPointer<const pointer_type>(src_type);
                         unsigned int dst_size;
                         if(dst_ptr_t)
+                        {
                            dst_size = tree_helper::Size(dst_ptr_t->ptd);
+                        }
                         else
                         {
                            const auto* dst_rptr_t = GetPointer<const reference_type>(dst_type);
@@ -225,7 +230,9 @@ DesignFlowStep_Status mem_cg_ext::InternalExec()
                         }
                         unsigned int src_size;
                         if(src_ptr_t)
+                        {
                            src_size = tree_helper::Size(src_ptr_t->ptd);
+                        }
                         else
                         {
                            const auto* src_rptr_t = GetPointer<const reference_type>(src_type);
@@ -349,9 +356,13 @@ DesignFlowStep_Status mem_cg_ext::InternalExec()
    }
 
    if(changed_fu_ids.empty())
+   {
       return DesignFlowStep_Status::UNCHANGED;
+   }
    else
+   {
       return DesignFlowStep_Status::SUCCESS;
+   }
 }
 
 void mem_cg_ext::Initialize()

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -101,6 +101,6 @@ class VIVADO_xsim_wrapper : public SimulationTool
    void Clean() const override;
 };
 /// Refcount definition for the class
-typedef refcount<VIVADO_xsim_wrapper> VIVADO_xsim_wrapperRef;
+using VIVADO_xsim_wrapperRef = refcount<VIVADO_xsim_wrapper>;
 
 #endif

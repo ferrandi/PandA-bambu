@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -104,7 +104,7 @@ class CSE : public FunctionFrontendFlowStep
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
    /// define the type of the unique table key
-   typedef std::pair<enum kind, std::vector<unsigned int>> CSE_tuple_key_type;
+   using CSE_tuple_key_type = std::pair<enum kind, std::vector<unsigned int>>;
 
    /// check if the statement has an equivalent in the unique table
    tree_nodeRef hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table);
@@ -120,7 +120,7 @@ class CSE : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   CSE(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   CSE(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

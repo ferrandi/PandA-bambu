@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,8 +71,7 @@ class commandport_obj : public generic_obj
 {
  public:
    /// Available command types
-   typedef enum
-   {
+   using command_type = enum {
       OPERATION = 0,   /// operation enable
       CONDITION,       /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes to the datapath
       SWITCH,          /// switch value, it represents the value of the switch statement
@@ -82,11 +81,11 @@ class commandport_obj : public generic_obj
       UNBOUNDED,       /// signal representing a communication for an unbounded object (function call)
       MULTI_UNBOUNDED, /// signal representing when a multi unbounded call ends
       WRENABLE         /// enable for register writing
-   } command_type;
+   };
 
-   typedef std::pair<unsigned int, vertex> data_operation_pair;
+   using data_operation_pair = std::pair<unsigned int, vertex>;
    /// describe a transition from a source state to the target state plus the tree_node of the data transferred and the operation vertex where the computation is performed
-   typedef std::tuple<vertex, vertex, data_operation_pair> transition;
+   using transition = std::tuple<vertex, vertex, data_operation_pair>;
 
  private:
    /// TODO: substitute with a functor
@@ -117,7 +116,7 @@ class commandport_obj : public generic_obj
       THROW_ASSERT(mode == OPERATION or mode == CONDITION or mode == SWITCH or mode == MULTIIF or mode == UNBOUNDED, "Command mode not allowed into this constructor");
    }
 
-   commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name) : generic_obj(COMMAND_PORT, _name), elem(std::move(_elem)), mode(_mode), is_a_phi_write_enable(false)
+   commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name) : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
    {
       THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR or mode == MULTI_UNBOUNDED, "Selector port is wrong");
    }

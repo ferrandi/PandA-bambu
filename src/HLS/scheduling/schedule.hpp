@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -302,7 +302,7 @@ class Schedule
     * @param op is the operation
     * @return the last clock cycle
     */
-   AbsControlStep get_cstep_end(const unsigned int op) const;
+   AbsControlStep get_cstep_end(const unsigned int statement_index) const;
 
    /**
     * Return the starting time of the operation
@@ -342,9 +342,13 @@ class Schedule
    double get_slack(vertex op) const
    {
       if(op_slack.find(op) != op_slack.end())
+      {
          return op_slack.find(op)->second;
+      }
       else
+      {
          return 0.0;
+      }
    }
 
    /**
@@ -397,6 +401,6 @@ class Schedule
    void AddConnectionTimes(unsigned int first_operation, unsigned int second_operation, const double value);
 };
 /// Refcount definition of the class
-typedef refcount<Schedule> ScheduleRef;
-typedef refcount<const Schedule> ScheduleConstRef;
+using ScheduleRef = refcount<Schedule>;
+using ScheduleConstRef = refcount<const Schedule>;
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -219,12 +219,18 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
             label_decl_map[GET_INDEX_NODE(le->op)] = res;
          }
          else if(block->CGetPhiList().empty())
+         {
             res = get_first_node(front, f_name);
+         }
          else
+         {
             res = get_first_node(block->CGetPhiList().front(), f_name);
+         }
       }
       else if(block->CGetPhiList().size())
+      {
          res = get_first_node(block->CGetPhiList().front(), f_name);
+      }
       else if(*v_iter == fbb->CGetBBGraphInfo()->entry_vertex)
       {
          res = ENTRY;
@@ -243,7 +249,9 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
    for(boost::tie(v_iter, v_iter_end) = boost::vertices(*fbb); v_iter != v_iter_end; ++v_iter)
    {
       if(/* *v_iter == fbb->CGetBBGraphInfo()->entry_vertex || */ *v_iter == fbb->CGetBBGraphInfo()->exit_vertex)
+      {
          continue;
+      }
       const BBNodeInfoConstRef bb_node_info = fbb->CGetBBNodeInfo(*v_iter);
       const auto block = bb_node_info->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Building operation of basic block BB" + boost::lexical_cast<std::string>(block->number));
@@ -256,7 +264,9 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
             actual_name = get_first_node(front, f_name);
             THROW_ASSERT(actual_name == first_statement[block->number], "the name of the first vertice has to be the same of the label expression vertex");
             if(!empty_start_nodes())
+            {
                connect_start_nodes(ogc, actual_name);
+            }
             init_start_nodes(actual_name);
             build_operation_recursive(TM, ogc, front, f_name, block->number);
             bbgc->add_operation_to_bb(ogc->getIndex(actual_name), block->number);
@@ -268,7 +278,9 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          actual_name = get_first_node(phi, f_name);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing phi " + actual_name);
          if(!empty_start_nodes())
+         {
             connect_start_nodes(ogc, actual_name);
+         }
          init_start_nodes(actual_name);
          build_operation_recursive(TM, ogc, phi, f_name, block->number);
          bbgc->add_operation_to_bb(ogc->getIndex(actual_name), block->number);
@@ -287,7 +299,9 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
          actual_name = get_first_node(*s, f_name);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing operation " + actual_name);
          if(!empty_start_nodes())
+         {
             connect_start_nodes(ogc, actual_name);
+         }
          init_start_nodes(actual_name);
          build_operation_recursive(TM, ogc, *s, f_name, block->number);
          bbgc->add_operation_to_bb(ogc->getIndex(actual_name), block->number);
@@ -297,16 +311,24 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
       if(block->CGetStmtList().empty())
       {
          if(!block->CGetPhiList().empty())
+         {
             last_instruction = block->CGetPhiList().back();
+         }
          else
+         {
             last_instruction = tree_nodeRef();
+         }
       }
       else if(block->CGetStmtList().size() == 1 && skip_first_stmt)
       {
          if(block->CGetPhiList().size())
+         {
             last_instruction = block->CGetPhiList().back();
+         }
          else
+         {
             last_instruction = block->CGetStmtList().back();
+         }
       }
       else
       {
@@ -348,7 +370,9 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
             else
             {
                if(successor == block->true_edge)
+               {
                   connect_start_nodes(ogc, first_statement[successor], true, false);
+               }
                else if(successor == block->false_edge)
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Successor is on the false edge");
@@ -356,9 +380,13 @@ DesignFlowStep_Status operations_cfg_computation::InternalExec()
                   connect_start_nodes(ogc, first_statement[successor], false, true);
                }
                else if(last_instruction && GetPointer<gimple_goto>(GET_NODE(last_instruction)) && block->list_of_succ.size() > 1)
+               {
                   connect_start_nodes(ogc, first_statement[successor], true, true, successor);
+               }
                else
+               {
                   connect_start_nodes(ogc, first_statement[successor]);
+               }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered successor BB" + STR(successor));
          }
@@ -476,9 +504,13 @@ void operations_cfg_computation::connect_start_nodes(const operations_graph_cons
          ogc->add_edge_info(ogc->getIndex(Start_node), ogc->getIndex(next), CFG_SELECTOR, nodeid);
       }
       if(true_edge && !false_edge)
+      {
          ogc->add_edge_info(ogc->getIndex(Start_node), ogc->getIndex(next), CFG_SELECTOR, T_COND);
+      }
       if(false_edge && !true_edge)
+      {
          ogc->add_edge_info(ogc->getIndex(Start_node), ogc->getIndex(next), CFG_SELECTOR, F_COND);
+      }
    }
 }
 
@@ -530,9 +562,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             unsigned int size_dest = tree_helper::size(TM, GET_INDEX_NODE(fe->type));
             unsigned int size_from = tree_helper::size(TM, GET_INDEX_NODE(fe->op));
             if(size_from < 32)
+            {
                size_from = 32;
+            }
             else if(size_from > 32 && size_from < 64)
+            {
                size_from = 64;
+            }
             ogc->AddOperation(TM, actual_name, FLOAT_EXPR + STR("_") + STR(size_from) + "_to_" + STR(size_dest), bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
@@ -544,9 +580,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             bool is_unsigned = tree_helper::is_unsigned(TM, GET_INDEX_NODE(fte->type));
             unsigned int size_from = tree_helper::size(TM, GET_INDEX_NODE(fte->op));
             if(size_dest < 32)
+            {
                size_dest = 32;
+            }
             else if(size_dest > 32 && size_dest < 64)
+            {
                size_dest = 64;
+            }
             ogc->AddOperation(TM, actual_name, FIX_TRUNC_EXPR + STR("_") + STR(size_from) + "_to_" + (is_unsigned ? "u" : "") + STR(size_dest), bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
@@ -605,11 +645,15 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             ogc->AddOperation(TM, actual_name, ASSIGN, bb_index, me->index);
             ogc->add_type(actual_name, TYPE_ASSIGN);
             if(me->orig)
+            {
                ogc->add_type(actual_name, TYPE_WAS_GIMPLE_PHI);
+            }
             build_operation_recursive(TM, ogc, me->op1, f_name, bb_index);
          }
          if(me->predicate)
+         {
             ogc->add_type(actual_name, TYPE_PREDICATED);
+         }
          break;
       }
       case gimple_pragma_K:
@@ -650,10 +694,14 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             ogc->add_type(actual_name, TYPE_EXTERNAL);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---set as TYPE_EXTERNAL operation");
             if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
+            {
                ogc->add_type(actual_name, TYPE_LAST_OP);
+            }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
             if(fd->omp_atomic)
+            {
                ogc->add_type(actual_name, TYPE_ATOMIC);
+            }
 #endif
             ogc->add_called_function(actual_name, call_id);
          }
@@ -702,10 +750,14 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                ogc->AddOperation(TM, actual_name, fun_name, bb_index, ce->index);
                ogc->add_type(actual_name, TYPE_EXTERNAL);
                if(fun_name == "exit" || fun_name == "abort" || fun_name == "__builtin_exit" || fun_name == "__builtin_abort")
+               {
                   ogc->add_type(actual_name, TYPE_LAST_OP);
+               }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
                if(fd->omp_atomic)
+               {
                   ogc->add_type(actual_name, TYPE_ATOMIC);
+               }
 #endif
                ogc->add_called_function(actual_name, call_id);
             }
@@ -732,9 +784,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          THROW_ASSERT(le->op, "expected a gimple_label operand");
          auto* ld = GetPointer<label_decl>(GET_NODE(le->op));
          if(ld->artificial_flag)
+         {
             ogc->add_type(actual_name, TYPE_NOP);
+         }
          else
+         {
             ogc->add_type(actual_name, TYPE_LABEL);
+         }
          break;
       }
       case gimple_cond_K:
@@ -775,9 +831,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
 
          tree_nodeRef case_label_exprs;
          if(se->op1)
+         {
             case_label_exprs = GET_NODE(se->op1);
+         }
          else
+         {
             THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, std::string("op2 in gimple_switch not yet supported (") + boost::lexical_cast<std::string>(ind) + std::string(")"));
+         }
          if(case_label_exprs->get_kind() == tree_vec_K)
          {
             auto* tv = GetPointer<tree_vec>(case_label_exprs);
@@ -790,16 +850,24 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
                {
                   auto* cl = GetPointer<case_label_expr>(GET_NODE(*i));
                   if(cl->default_flag)
+                  {
                      connect_start_nodes(ogc, res, true, true, default_COND);
+                  }
                   else
+                  {
                      connect_start_nodes(ogc, res, true, true, GET_INDEX_NODE(*i));
+                  }
                }
                else
+               {
                   connect_start_nodes(ogc, res, true, true, GET_INDEX_NODE(*i));
+               }
             }
          }
          else
+         {
             THROW_ERROR(std::string("expected tree_vec in op1 in gimple_switch (") + boost::lexical_cast<std::string>(ind) + std::string(")"));
+         }
          break;
       }
       case CASE_UNARY_EXPRESSION:
@@ -824,9 +892,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
          build_operation_recursive(TM, ogc, te->op0, f_name, bb_index);
          if(te->op1)
+         {
             build_operation_recursive(TM, ogc, te->op1, f_name, bb_index);
+         }
          if(te->op2)
+         {
             build_operation_recursive(TM, ogc, te->op2, f_name, bb_index);
+         }
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, 0);
          ogc->add_type(actual_name, TYPE_GENERIC);
          break;
@@ -836,11 +908,17 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
          build_operation_recursive(TM, ogc, qe->op0, f_name, bb_index);
          if(qe->op1)
+         {
             build_operation_recursive(TM, ogc, qe->op1, f_name, bb_index);
+         }
          if(qe->op2)
+         {
             build_operation_recursive(TM, ogc, qe->op2, f_name, bb_index);
+         }
          if(qe->op3)
+         {
             build_operation_recursive(TM, ogc, qe->op3, f_name, bb_index);
+         }
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, 0);
          ogc->add_type(actual_name, TYPE_GENERIC);
          break;
@@ -851,19 +929,33 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
          build_operation_recursive(TM, ogc, le->op0, f_name, bb_index);
          build_operation_recursive(TM, ogc, le->op1, f_name, bb_index);
          if(le->op2)
+         {
             build_operation_recursive(TM, ogc, le->op2, f_name, bb_index);
+         }
          if(le->op3)
+         {
             build_operation_recursive(TM, ogc, le->op3, f_name, bb_index);
+         }
          if(le->op4)
+         {
             build_operation_recursive(TM, ogc, le->op4, f_name, bb_index);
+         }
          if(le->op5)
+         {
             build_operation_recursive(TM, ogc, le->op5, f_name, bb_index);
+         }
          if(le->op6)
+         {
             build_operation_recursive(TM, ogc, le->op6, f_name, bb_index);
+         }
          if(le->op7)
+         {
             build_operation_recursive(TM, ogc, le->op7, f_name, bb_index);
+         }
          if(le->op8)
+         {
             build_operation_recursive(TM, ogc, le->op8, f_name, bb_index);
+         }
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, 0);
          ogc->add_type(actual_name, TYPE_GENERIC);
          break;
@@ -886,9 +978,13 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
       {
          auto* ae = GetPointer<gimple_asm>(curr_tn);
          if(!ae->volatile_flag && (ae->in && ae->out))
+         {
             ogc->add_type(actual_name, TYPE_GENERIC);
+         }
          else
+         {
             ogc->add_type(actual_name, TYPE_GENERIC | TYPE_OPAQUE);
+         }
          ogc->AddOperation(TM, actual_name, curr_tn->get_kind_text(), bb_index, curr_tn->index);
          break;
       }

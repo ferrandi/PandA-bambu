@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,11 +105,17 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
                   THROW_ASSERT(omp_functions, "OMP_functions must not be null");
                   if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+                  {
                      found = true;
+                  }
                   if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+                  {
                      found = true;
+                  }
                   if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+                  {
                      found = true;
+                  }
                   if(found) // use new top_entity
                   {
                      const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
@@ -159,10 +165,10 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
 {
    structural_objectRef port1;
    unsigned int size1;
-   if(port1_name.find("[") != std::string::npos)
+   if(port1_name.find('[') != std::string::npos)
    {
-      const auto port1_base_name = port1_name.substr(0, port1_name.find("["));
-      const auto port1_index = port1_name.substr(port1_name.find("[") + 1, port1_name.size() - port1_base_name.size() - 2);
+      const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
+      const auto port1_index = port1_name.substr(port1_name.find('[') + 1, port1_name.size() - port1_base_name.size() - 2);
       const auto port1_vector = component1->find_member(port1_base_name, port_o_K, component1);
       THROW_ASSERT(port1_vector, port1_name + " is not in " + component1->get_path());
       port1 = GetPointer<port_o>(port1_vector)->get_port(boost::lexical_cast<unsigned int>(port1_index));
@@ -176,10 +182,10 @@ void module_interface::AddSignal(const structural_managerRef SM, const structura
    }
    structural_objectRef port2;
    unsigned int size2;
-   if(port2_name.find("[") != std::string::npos)
+   if(port2_name.find('[') != std::string::npos)
    {
-      const auto port2_base_name = port2_name.substr(0, port2_name.find("["));
-      const auto port2_index = port2_name.substr(port2_name.find("[") + 1, port2_name.size() - port2_base_name.size() - 2);
+      const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
+      const auto port2_index = port2_name.substr(port2_name.find('[') + 1, port2_name.size() - port2_base_name.size() - 2);
       const auto port2_vector = component2->find_member(port2_base_name, port_o_K, component2);
       THROW_ASSERT(port2_vector, port2_base_name + " is not in " + component2->get_path());
       port2 = GetPointer<port_o>(port2_vector)->get_port(boost::lexical_cast<unsigned int>(port2_index));
@@ -217,10 +223,10 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
 {
    structural_objectRef port1;
    unsigned int size1;
-   if(port1_name.find("[") != std::string::npos)
+   if(port1_name.find('[') != std::string::npos)
    {
-      const auto port1_base_name = port1_name.substr(0, port1_name.find("["));
-      const auto port1_index = port1_name.substr(port1_name.find("[") + 1, port1_name.size() - port1_base_name.size() - 2);
+      const auto port1_base_name = port1_name.substr(0, port1_name.find('['));
+      const auto port1_index = port1_name.substr(port1_name.find('[') + 1, port1_name.size() - port1_base_name.size() - 2);
       const auto port1_vector = component1->find_member(port1_base_name, port_o_K, component1);
       THROW_ASSERT(port1_vector, port1_name + " is not in " + component1->get_path());
       port1 = GetPointer<port_o>(port1_vector)->get_port(boost::lexical_cast<unsigned int>(port1_index));
@@ -234,10 +240,10 @@ void module_interface::AddConnection(const structural_managerRef SM, const struc
    }
    structural_objectRef port2;
    unsigned int size2;
-   if(port2_name.find("[") != std::string::npos)
+   if(port2_name.find('[') != std::string::npos)
    {
-      const auto port2_base_name = port2_name.substr(0, port2_name.find("["));
-      const auto port2_index = port2_name.substr(port2_name.find("[") + 1, port2_name.size() - port2_base_name.size() - 2);
+      const auto port2_base_name = port2_name.substr(0, port2_name.find('['));
+      const auto port2_index = port2_name.substr(port2_name.find('[') + 1, port2_name.size() - port2_base_name.size() - 2);
       const auto port2_vector = component2->find_member(port2_base_name, port_o_K, component2);
       THROW_ASSERT(port2_vector, port2_base_name + " is not in " + component2->get_path());
       port2 = GetPointer<port_o>(port2_vector)->get_port(boost::lexical_cast<unsigned int>(port2_index));
@@ -265,10 +271,10 @@ void module_interface::AddConstant(const structural_managerRef SM, const structu
 {
    structural_objectRef port;
    unsigned int size;
-   if(port_name.find("[") != std::string::npos)
+   if(port_name.find('[') != std::string::npos)
    {
-      const auto port_base_name = port_name.substr(0, port_name.find("["));
-      const auto port_index = port_name.substr(port_name.find("[") + 1, port_name.size() - port_base_name.size() - 2);
+      const auto port_base_name = port_name.substr(0, port_name.find('['));
+      const auto port_index = port_name.substr(port_name.find('[') + 1, port_name.size() - port_base_name.size() - 2);
       const auto port_vector = component->find_member(port_base_name, port_o_K, component);
       THROW_ASSERT(port_vector, port_name + " is not in " + component->get_path());
       port = GetPointer<port_o>(port_vector)->get_port(boost::lexical_cast<unsigned int>(port_index));
@@ -280,7 +286,9 @@ void module_interface::AddConstant(const structural_managerRef SM, const structu
       THROW_ASSERT(port, port_name + " is not in " + component->get_path());
       size = GetPointer<port_o>(port)->get_port_size();
       if(size < constant_size)
+      {
          GetPointer<port_o>(port)->type_resize(constant_size);
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Binding " + constant_value + " to " + component->get_id() + "::" + port_name);
    structural_objectRef constant(new constant_o(parameters->getOption<int>(OPT_debug_level), SM->get_circ(), constant_value));

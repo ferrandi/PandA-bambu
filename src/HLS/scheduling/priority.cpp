@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,7 +60,9 @@ priority_static_mobility::priority_static_mobility(const ASLAPRef& aslap)
    for(boost::tie(vIt, vEnd) = boost::vertices(*data); vIt != vEnd; vIt++)
    {
       if(!asap->is_scheduled(*vIt))
+      {
          continue;
+      }
       operator[](*vIt) = from_strongtype_cast<int>(-alap->get_cstep(*vIt).second + asap->get_cstep(*vIt).second); /// Note that usually high priority in list based means low mobility.
    }
 }
@@ -75,7 +77,9 @@ priority_dynamic_mobility::priority_dynamic_mobility(const ASLAPRef& aslap, cons
    for(boost::tie(vIt, vEnd) = boost::vertices(*data); vIt != vEnd; vIt++)
    {
       if(!asap->is_scheduled(*vIt))
+      {
          continue;
+      }
       operator[](*vIt) = from_strongtype_cast<int>(-alap->get_cstep(*vIt).second + asap->get_cstep(*vIt).second); /// Note that usually high priority in list based means low mobility.
    }
 }
@@ -94,12 +98,16 @@ bool priority_dynamic_mobility::update()
       return true;
    }
    else
+   {
       return false;
+   }
 }
 
 priority_fixed::priority_fixed(const CustomUnorderedMapUnstable<vertex, int>& priority_value)
 {
    auto it_end = priority_value.end();
    for(auto it = priority_value.begin(); it != it_end; ++it)
+   {
       operator[](it->first) = it->second;
+   }
 }

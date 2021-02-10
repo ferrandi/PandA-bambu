@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -352,7 +352,9 @@ struct technology_node
    friend std::ostream& operator<<(std::ostream& os, const technology_nodeRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 
@@ -361,8 +363,8 @@ struct technology_node
    static simple_indent PP;
 };
 /// refcount definition of the class
-typedef refcount<technology_node> technology_nodeRef;
-typedef refcount<const technology_node> technology_nodeConstRef;
+using technology_nodeRef = refcount<technology_node>;
+using technology_nodeConstRef = refcount<const technology_node>;
 
 /**
  * This class specifies the characteristic of a particular operation working on a given functional unit.
@@ -450,7 +452,7 @@ struct operation : public technology_node
     * @param owner is the refcount version of this.
     * @param TM is the technology manager.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device) override;
 
    /**
     * Add a operation node to an xml tree.
@@ -505,18 +507,10 @@ struct operation : public technology_node
  */
 struct functional_unit : public technology_node
 {
-   typedef enum
-   {
-      UNKNOWN = 0,
-      COMBINATIONAL,
-      STATETABLE,
-      FF,
-      LATCH,
-      PHYSICAL
-   } type_t;
+   using type_t = enum { UNKNOWN = 0, COMBINATIONAL, STATETABLE, FF, LATCH, PHYSICAL };
 
    /// Type definition of a vector of functional_unit.
-   typedef std::vector<technology_nodeRef> operation_vec;
+   using operation_vec = std::vector<technology_nodeRef>;
 
    /// return the logical type of the cell
    type_t logical_type;
@@ -608,7 +602,9 @@ struct functional_unit : public technology_node
       {
          auto del = std::find(list_of_operation.begin(), list_of_operation.end(), op_name_to_op[curr->get_name()]);
          if(del != list_of_operation.end())
+         {
             list_of_operation.erase(del);
+         }
       }
       list_of_operation.push_back(curr);
       op_name_to_op[curr->get_name()] = curr;
@@ -677,7 +673,7 @@ struct functional_unit : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* node, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* node, const technology_nodeRef fu, const ParameterConstRef Param, const target_deviceRef device) override;
 
 #if HAVE_BOOLEAN_PARSER_BUILT
    /**
@@ -782,7 +778,7 @@ struct functional_unit_template : public technology_node
     * @param node is a node of the xml tree.
     * @param owner is the refcount version of this.
     */
-   void xload(const xml_element* Enode, const technology_nodeRef owner, const ParameterConstRef Param, const target_deviceRef device) override;
+   void xload(const xml_element* Enode, const technology_nodeRef tnd, const ParameterConstRef Param, const target_deviceRef device) override;
 
    /**
     * Add a functional unit to an xml tree.

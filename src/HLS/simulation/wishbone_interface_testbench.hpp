@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,7 +69,7 @@ class WishboneInterfaceTestbench : public TestbenchGenerationBaseStep
    void write_wishbone_output_signal_declaration(bool& withMemory, bool& hasMultiIrq) const;
 
  public:
-   WishboneInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _AppM, const DesignFlowManagerConstRef design_flow_manager);
+   WishboneInterfaceTestbench(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

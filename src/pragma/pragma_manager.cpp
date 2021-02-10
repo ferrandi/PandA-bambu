@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -174,9 +174,13 @@ const std::list<std::string> pragma_manager::GetFunctionDefinitionPragmas(const 
 CustomUnorderedSet<std::string> pragma_manager::getFunctionCallPragmas(const std::string& Name) const
 {
    if(FunctionCallPragmas.find(Name) != FunctionCallPragmas.end())
+   {
       return FunctionCallPragmas.find(Name)->second;
+   }
    else
+   {
       return CustomUnorderedSet<std::string>();
+   }
 }
 
 void pragma_manager::AddFunctionDefinitionPragmas(const std::string& function_name, const CustomUnorderedSet<std::string>& pragmas)
@@ -282,7 +286,9 @@ unsigned int pragma_manager::AddOmpSimdPragma(const std::string& line) const
    TM->create_tree_node(simd_id, omp_simd_pragma_K, simd_tree_node_schema);
    auto* osp = GetPointer<omp_simd_pragma>(TM->get_tree_node_const(simd_id));
    if(line != "#pragma omp declare simd")
+   {
       osp->clauses = ExtractClauses(line.substr(line.find("#pragma omp declare simd ")));
+   }
 
    tree_node_schema[TOK(TOK_IS_BLOCK)] = boost::lexical_cast<std::string>(true);
    tree_node_schema[TOK(TOK_OPEN)] = boost::lexical_cast<std::string>(false);
@@ -299,7 +305,9 @@ CustomUnorderedMapUnstable<std::string, std::string> pragma_manager::ExtractClau
 {
    CustomUnorderedMapUnstable<std::string, std::string> clauses_map;
    if(!clauses_list.size())
+   {
       return clauses_map;
+   }
 
    std::string trimmed_clauses = clauses_list;
    bool inside_parentheses = false;
@@ -315,9 +323,13 @@ CustomUnorderedMapUnstable<std::string, std::string> pragma_manager::ExtractClau
          inside_parentheses = false;
          index--;
          if(index == 0)
+         {
             break;
+         }
          for(; index > 0 and trimmed_clauses[index - 1] == ' '; index--)
+         {
             trimmed_clauses.erase(index - 1, 1);
+         }
       }
       else if(trimmed_clauses[index - 1] == ' ' and inside_parentheses)
       {
@@ -329,10 +341,10 @@ CustomUnorderedMapUnstable<std::string, std::string> pragma_manager::ExtractClau
 
    for(auto clause : splitted)
    {
-      if(clause.find("(") != std::string::npos)
+      if(clause.find('(') != std::string::npos)
       {
-         const std::string key = clause.substr(0, clause.find("("));
-         const std::string value = clause.substr(clause.find("(") + 1, clause.size() - clause.find("(") - 2);
+         const std::string key = clause.substr(0, clause.find('('));
+         const std::string value = clause.substr(clause.find('(') + 1, clause.size() - clause.find('(') - 2);
          clauses_map[key] = value;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Clause " + key + ": " + value);
       }
@@ -472,7 +484,9 @@ void pragma_manager::CheckAddOmpSimd(const unsigned int function_index, const ve
       boost::tie(ei, ei_end) = boost::in_edges(current, *bb_cfg);
       current = boost::source(*ei, *bb_cfg);
       if(boost::out_degree(current, *bb_cfg) != 1 or bb_cfg->CGetBBNodeInfo(current)->loop_id != current_loop_id)
+      {
          break;
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not found");
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -206,7 +206,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
             }
          }
          for(auto vu : to_be_removed)
+         {
             gn->vuses.erase(gn->vuses.find(vu));
+         }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed stmt " + STR(stmt));
       }
@@ -253,7 +255,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
          /// Check if this use can be ignored because of transitive reduction
          bool skip = [&]() -> bool {
             if(definition_bb_index == use_bb_index)
+            {
                return false;
+            }
             if(vovers.find(virtual_ssa_definition.first) != vovers.end())
             {
                for(const auto& vover_stmt : vovers.find(virtual_ssa_definition.first)->second)
@@ -348,12 +352,16 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       while(current_loop->GetId() != loop_id)
       {
          for(auto cur_pair : current_loop->get_sp_back_edges())
+         {
             phi_headers.insert(cur_pair.second);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
          current_loop = current_loop->Parent();
       }
       for(auto cur_pair : current_loop->get_sp_back_edges())
+      {
          phi_headers.insert(cur_pair.second);
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Phi has to be added in header of loop " + STR(current_loop->GetId()));
 
       /// Build the gimple nop where volatile ssa is defined
@@ -368,7 +376,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
       ssa_IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
       ssa_IR_schema[TOK(TOK_VERS)] = STR(ssa_vers);
       if(sn->var)
+      {
          ssa_IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
+      }
       ssa_IR_schema[TOK(TOK_VOLATILE)] = STR(true);
       ssa_IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
       TM->create_tree_node(volatile_id, ssa_name_K, ssa_IR_schema);
@@ -514,7 +524,9 @@ DesignFlowStep_Status BuildVirtualPhi::InternalExec()
                IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
                IR_schema[TOK(TOK_VERS)] = STR(phi_ssa_vers);
                if(sn->var)
+               {
                   IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
+               }
                IR_schema[TOK(TOK_VOLATILE)] = STR(false);
                IR_schema[TOK(TOK_VIRTUAL)] = STR(true);
                TM->create_tree_node(phi_def_ssa_node_nid, ssa_name_K, IR_schema);
@@ -687,5 +699,9 @@ void BuildVirtualPhi::Initialize()
 
 bool BuildVirtualPhi::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }

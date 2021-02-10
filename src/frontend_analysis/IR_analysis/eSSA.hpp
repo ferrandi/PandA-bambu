@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,7 +62,6 @@ class eSSA : public FunctionFrontendFlowStep
 
  private:
    BBGraphRef DT;
-   unsigned int bb_ver;
    unsigned int bv_ver;
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
@@ -77,7 +76,7 @@ class eSSA : public FunctionFrontendFlowStep
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   eSSA(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   eSSA(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm);
 
    /**
     *  Destructor
