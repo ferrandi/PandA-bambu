@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -233,7 +233,9 @@ unsigned int tree_manager::function_index_mngl(const std::string& function_name)
          {
             auto* in = GetPointer<identifier_node>(mangled_id_name);
             if(!in->operator_flag)
+            {
                mangled_name = in->strg;
+            }
          }
       }
       std::string name = tree_helper::print_function_name(TM, fd);
@@ -463,7 +465,9 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
          collapse_into(funID, stmt_to_bloc, le->op0, removed_nodes);
          collapse_into(funID, stmt_to_bloc, le->op1, removed_nodes);
          if(le->op2)
+         {
             collapse_into(funID, stmt_to_bloc, le->op2, removed_nodes);
+         }
          if(le->op3)
          {
             collapse_into(funID, stmt_to_bloc, le->op3, removed_nodes);
@@ -653,15 +657,15 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                   }
 
                   // Copy the definition statement into each block the ssa variable is used in
-                  for(auto copy_block_it = copy_bloc_to_stmt.begin(); copy_block_it != copy_bloc_to_stmt.end(); ++copy_block_it)
+                  for(auto& copy_block_it : copy_bloc_to_stmt)
                   {
-                     const blocRef copy_block = list_of_bloc.find(copy_block_it->first)->second;
-                     std::vector<tree_nodeRef> copy_block_use_stmts = copy_block_it->second;
+                     const blocRef copy_block = list_of_bloc.find(copy_block_it.first)->second;
+                     std::vector<tree_nodeRef> copy_block_use_stmts = copy_block_it.second;
 
                      if(copy_block != curr_block)
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "Copying statement " + STR(GET_INDEX_NODE(sn->CGetDefStmt())) + " in block " + STR(copy_block_it->first) + " (!= " + STR((stmt_to_bloc.find(GET_INDEX_NODE(sn->CGetDefStmt())))->second) + ")");
+                                       "Copying statement " + STR(GET_INDEX_NODE(sn->CGetDefStmt())) + " in block " + STR(copy_block_it.first) + " (!= " + STR((stmt_to_bloc.find(GET_INDEX_NODE(sn->CGetDefStmt())))->second) + ")");
 
                         // Create a new ssa_node, identical to the one being analyzed, but with different version number
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
@@ -689,10 +693,10 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                         }
 
                         // Replace the occurrences of the considered ssa variable with the newly created ssa variable
-                        for(auto copy_block_uses_it = copy_block_use_stmts.begin(); copy_block_uses_it != copy_block_use_stmts.end(); ++copy_block_uses_it)
+                        for(auto& copy_block_use_stmt : copy_block_use_stmts)
                         {
-                           RecursiveReplaceTreeNode(*copy_block_uses_it, tn, tree_reindexRef_sn, *copy_block_uses_it, false);
-                           new_sn->AddUseStmt(*copy_block_uses_it);
+                           RecursiveReplaceTreeNode(copy_block_use_stmt, tn, tree_reindexRef_sn, copy_block_use_stmt, false);
+                           new_sn->AddUseStmt(copy_block_use_stmt);
                         }
 
                         // Create a new node, the copy of the definition of ssa_name
@@ -739,7 +743,7 @@ void tree_manager::collapse_into(const unsigned int& funID, CustomUnorderedMapUn
                            }
                         }
                         // Update stmt_to_bloc map
-                        stmt_to_bloc[GET_INDEX_NODE(tree_reindexRef_gm)] = copy_block_it->first;
+                        stmt_to_bloc[GET_INDEX_NODE(tree_reindexRef_gm)] = copy_block_it.first;
                      }
                      else
                      {
@@ -1115,7 +1119,9 @@ void tree_manager::RecursiveReplaceTreeNode(tree_nodeRef& tn, const tree_nodeRef
          RecursiveReplaceTreeNode(le->op0, old_node, new_node, stmt, false);
          RecursiveReplaceTreeNode(le->op1, old_node, new_node, stmt, false);
          if(le->op2)
+         {
             RecursiveReplaceTreeNode(le->op2, old_node, new_node, stmt, false);
+         }
          if(le->op3)
          {
             RecursiveReplaceTreeNode(le->op3, old_node, new_node, stmt, false);
@@ -1397,7 +1403,9 @@ void tree_manager::erase_usage_info(const tree_nodeRef& tn, const tree_nodeRef& 
          erase_usage_info(le->op0, stmt);
          erase_usage_info(le->op1, stmt);
          if(le->op2)
+         {
             erase_usage_info(le->op2, stmt);
+         }
          if(le->op3)
          {
             erase_usage_info(le->op3, stmt);
@@ -1611,7 +1619,9 @@ void tree_manager::insert_usage_info(const tree_nodeRef& tn, const tree_nodeRef&
          insert_usage_info(le->op0, stmt);
          insert_usage_info(le->op1, stmt);
          if(le->op2)
+         {
             insert_usage_info(le->op2, stmt);
+         }
          if(le->op3)
          {
             insert_usage_info(le->op3, stmt);
@@ -2262,16 +2272,16 @@ void tree_manager::merge_tree_managers(const tree_managerRef& source_tree_manage
    }
 
    /// compute the vertexes reached from all function_decl of source_tree_manager
-   for(auto it = source_tree_manager->function_decl_nodes.begin(); it != source_tree_manager->function_decl_nodes.end(); ++it)
+   for(auto& function_decl_node : source_tree_manager->function_decl_nodes)
    {
-      tree_nodeRef curr_tn = it->second;
+      tree_nodeRef curr_tn = function_decl_node.second;
       auto* fd = GetPointer<function_decl>(curr_tn);
-      if(remap.find(it->first) == remap.end())
+      if(remap.find(function_decl_node.first) == remap.end())
       {
-         remap[it->first] = new_tree_node_id(it->first);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function decl: old " + STR(it->first) + " - new " + STR(remap[it->first]));
+         remap[function_decl_node.first] = new_tree_node_id(function_decl_node.first);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function decl: old " + STR(function_decl_node.first) + " - new " + STR(remap[function_decl_node.first]));
          fd->visit(&TNR);
-         not_yet_remapped.insert(it->first);
+         not_yet_remapped.insert(function_decl_node.first);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Already remapped tree_node");

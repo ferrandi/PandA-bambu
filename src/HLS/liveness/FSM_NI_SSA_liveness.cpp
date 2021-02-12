@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -122,8 +122,12 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
       const CustomSet<unsigned int>& scalar_uses = data->CGetOpNodeInfo(exec_op)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::USE);
 
       for(const auto scalar_use : scalar_uses)
+      {
          if(HLSMgr->is_register_compatible(scalar_use))
+         {
             HLS->Rliv->set_live_out(current_state, scalar_use);
+         }
+      }
    }
 
    for(const auto& end_op : state_info->ending_operations)
@@ -131,8 +135,12 @@ static void update_liveout_with_prev(const HLS_managerRef HLSMgr, hlsRef HLS, co
       const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(end_op)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
 
       for(const auto scalar_def : scalar_defs)
+      {
          if(HLSMgr->is_register_compatible(scalar_def))
+         {
             HLS->Rliv->erase_el_live_out(current_state, scalar_def);
+         }
+      }
    }
 
    if(not state_info->moved_op_use_set.empty())
@@ -193,8 +201,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          const CustomSet<unsigned int>& scalar_defs = data->CGetOpNodeInfo(eoc)->GetVariables(FunctionBehavior_VariableType::SCALAR, FunctionBehavior_VariableAccessType::DEFINITION);
 
          for(const auto scalar_def : scalar_defs)
+         {
             if(HLSMgr->is_register_compatible(scalar_def))
+            {
                HLS->Rliv->add_op_definition(scalar_def, eoc);
+            }
+         }
 
          HLS->Rliv->add_state_for_ending_op(eoc, rosl);
       }
@@ -347,8 +359,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---prev_bb_index " + STR(prev_bb_index) + " != bb_index " + STR(bb_index));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---adding live out of BB " + STR(bb_index) + " to live out of state " + state_info->name);
          for(const auto lo : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_out())
+         {
             if(HLSMgr->is_register_compatible(lo))
+            {
                HLS->Rliv->set_live_out(rosl, lo);
+            }
+         }
       }
       else
       {
@@ -379,14 +395,20 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       }
 
       if(state_info->is_dummy)
+      {
          continue;
+      }
 
       if(state_info->is_duplicated)
       {
          unsigned int bb_index = *state_info->BB_ids.begin();
          for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in())
+         {
             if(HLSMgr->is_register_compatible(li))
+            {
                HLS->Rliv->set_live_in(osl, li);
+            }
+         }
 
          BOOST_FOREACH(EdgeDescriptor oe, boost::out_edges(osl, *astg))
          {
@@ -408,8 +430,12 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
       if(prev_bb_index != bb_index)
       {
          for(const auto li : fbb->CGetBBNodeInfo(bb_index_map[bb_index])->get_live_in())
+         {
             if(HLSMgr->is_register_compatible(li))
+            {
                HLS->Rliv->set_live_in(osl, li);
+            }
+         }
       }
       else
       {
@@ -479,9 +505,13 @@ DesignFlowStep_Status FSM_NI_SSA_liveness::InternalExec()
                if(state_info->is_duplicated && !state_info->all_paths)
                {
                   if(!state_info->isOriginalState && bb_index != state_info->sourceBb)
+                  {
                      continue;
+                  }
                   if(state_info->isOriginalState && bb_index == state_info->sourceBb)
+                  {
                      continue;
+                  }
                   unsigned int written_phi = HLSMgr->get_produced_value(HLS->functionId, roc);
                   if(state_info->moved_op_def_set.find(tree_var) != state_info->moved_op_def_set.end() or state_info->moved_op_use_set.find(written_phi) != state_info->moved_op_use_set.end())
                   {

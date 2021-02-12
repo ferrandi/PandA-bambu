@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -161,6 +161,6 @@ class ControllerCreatorBaseStep : public HLSFunctionStep
    void add_command_ports(structural_objectRef circuit, structural_managerRef SM);
 };
 /// refcount definition for the class
-typedef refcount<ControllerCreatorBaseStep> ControllerCreatorBaseStepRef;
+using ControllerCreatorBaseStepRef = refcount<ControllerCreatorBaseStep>;
 
 #endif

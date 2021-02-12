@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -139,5 +139,5 @@ class StorageValueInformation
     */
    bool are_value_bitsize_compatible(unsigned int storage_value_index1, unsigned int storage_value_index2) const;
 };
-typedef refcount<StorageValueInformation> StorageValueInformationRef;
+using StorageValueInformationRef = refcount<StorageValueInformation>;
 #endif

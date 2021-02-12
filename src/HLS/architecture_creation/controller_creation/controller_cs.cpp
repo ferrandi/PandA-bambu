@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,11 +69,17 @@ void controller_cs::add_common_ports(structural_objectRef circuit, structural_ma
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    bool found = false;
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+   {
       found = true;
+   }
    if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+   {
       found = true;
+   }
    if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+   {
       found = true;
+   }
    if(found) // function with selector
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Adding the selector port...");
@@ -85,7 +91,9 @@ void controller_cs::add_selector_register_file_port(structural_objectRef circuit
 {
    int num_slots = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!num_slots)
+   {
       num_slots = 1;
+   }
    structural_type_descriptorRef port_type = structural_type_descriptorRef(new structural_type_descriptor("bool", static_cast<unsigned>(num_slots)));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "  * Start adding Selector signal...");
    /// add selector port
@@ -99,13 +107,23 @@ void controller_cs::add_correct_transition_memory(std::string state_representati
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    bool found = false;
    if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+   {
       found = true;
+   }
    if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+   {
       found = true;
+   }
    if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+   {
       found = true;
-   if(found) // function with selector
+   }
+   if(found)
+   { // function with selector
       SM->add_NP_functionality(circuit, NP_functionality::FSM_CS, state_representation);
+   }
    else
+   {
       SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);
+   }
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,7 +76,7 @@ class NanoXploreBackendFlow : public BackendFlow
    /**
     * Constructor
     */
-   NanoXploreBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef manager);
+   NanoXploreBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef _target);
 
    /**
     * Destructor
@@ -94,6 +94,6 @@ class NanoXploreBackendFlow : public BackendFlow
    void ExecuteSynthesis() override;
 };
 /// Refcount definition for the class
-typedef refcount<NanoXploreBackendFlow> NanoXploreBackendFlowRef;
+using NanoXploreBackendFlowRef = refcount<NanoXploreBackendFlow>;
 
 #endif

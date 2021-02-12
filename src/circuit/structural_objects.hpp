@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -193,7 +193,7 @@ struct structural_type_descriptor
     * Object factory for module objects.
     * @param treenode is the treenode descriptor of the type.
     */
-   explicit structural_type_descriptor(std::string module_name) : type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(std::move(module_name)), treenode(treenode_DEFAULT)
+   explicit structural_type_descriptor(const std::string& module_name) : type(OTHER), size(size_DEFAULT), vector_size(vector_size_DEFAULT), id_type(module_name), treenode(treenode_DEFAULT)
    {
    }
 
@@ -271,7 +271,9 @@ struct structural_type_descriptor
    friend std::ostream& operator<<(std::ostream& os, const structural_type_descriptorRef o)
    {
       if(o)
+      {
          o->print(os);
+      }
       return os;
    }
 
@@ -307,7 +309,7 @@ struct structural_type_descriptor
 /**
  * RefCount type definition of the structural_type_descriptor class structure
  */
-typedef refcount<structural_type_descriptor> structural_type_descriptorRef;
+using structural_type_descriptorRef = refcount<structural_type_descriptor>;
 
 /**
  * Enumerative type for structural object classes, it is used with get_kind() function
@@ -576,7 +578,7 @@ class structural_object
     * Add a structural_object to an xml tree.
     * @param rootnode is the root node at which the xml representation of the structural object is attached.
     */
-   virtual void xwrite(xml_element* rootnode);
+   virtual void xwrite(xml_element* Enode);
 
 #if HAVE_TECHNOLOGY_BUILT
    /**
@@ -598,7 +600,9 @@ class structural_object
    friend std::ostream& operator<<(std::ostream& os, const structural_objectRef o)
    {
       if(o)
+      {
          o->print(os);
+      }
       return os;
    }
 
@@ -636,7 +640,7 @@ class structural_object
 /**
  * RefCount type definition of the structural_object class structure
  */
-typedef refcount<structural_object> structural_objectRef;
+using structural_objectRef = refcount<structural_object>;
 
 /**
  * This class describes a port associated with a component or a channel.
@@ -1149,9 +1153,13 @@ struct port_o : public structural_object
    std::string get_kind_text() const override
    {
       if(port_type == port_vector_o_K)
+      {
          return "port_vector_o";
+      }
       else
+      {
          return "port_o";
+      }
    }
    /**
     * return the type of the class
@@ -1605,7 +1613,7 @@ class constant_o : public structural_object
     * Return the ith element bounded to the connection.
     * @param n is the index of the port.
     */
-   structural_objectRef get_connection(unsigned int n) const;
+   structural_objectRef get_connection(unsigned int idx) const;
 
    /**
     * Return the number of ports associated with the connection
@@ -1705,7 +1713,7 @@ class signal_o : public structural_object
 
    bool is_connected(structural_objectRef s) const;
 
-   void substitute_port(structural_objectRef old_port, structural_objectRef new_port);
+   void substitute_port(structural_objectRef old_conn, structural_objectRef new_conn);
 
    /**
     * set the signal as critical with respect to the timing path
@@ -1820,9 +1828,13 @@ class signal_o : public structural_object
    std::string get_kind_text() const override
    {
       if(signal_type == signal_vector_o_K)
+      {
          return "signal_vector_o";
+      }
       else
+      {
          return "signal_o";
+      }
    }
    /**
     * return the type of the class
@@ -2036,7 +2048,7 @@ class module : public structural_object
     */
    void add_internal_object(structural_objectRef c);
 
-   void remove_internal_object(structural_objectRef c);
+   void remove_internal_object(structural_objectRef s);
 
    /**
     * Return the ith internal objects.

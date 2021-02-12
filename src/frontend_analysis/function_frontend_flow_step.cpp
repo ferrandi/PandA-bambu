@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -244,8 +244,23 @@ DesignFlowStep_Status FunctionFrontendFlowStep::Exec()
    return status;
 }
 
+bool FunctionFrontendFlowStep::HasToBeExecuted0() const
+{
+   CallGraphManagerConstRef CGMan = AppM->CGetCallGraphManager();
+   const auto funcs = CGMan->GetReachedBodyFunctions();
+   if(function_id and funcs.find(function_id) == funcs.end())
+   {
+      return false;
+   }
+   return true;
+}
+
 bool FunctionFrontendFlowStep::HasToBeExecuted() const
 {
+   //   if(!HasToBeExecuted0())
+   //   {
+   //      return false;
+   //   }
    return bb_version != function_behavior->GetBBVersion();
 }
 

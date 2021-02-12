@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -1038,7 +1038,7 @@ void BambuParameter::PrintProgramName(std::ostream& os) const
    os << "********************************************************************************" << std::endl;
    os << "                    ____                  _" << std::endl;
    os << "                   | __ )  __ _ _ __ ___ | |_   _   _" << std::endl;
-   os << "                   |  _ \\ / _` | \'_ ` _ \\| \'_ \\| | | |" << std::endl;
+   os << R"(                   |  _ \ / _` | '_ ` _ \| '_ \| | | |)" << std::endl;
    os << "                   | |_) | (_| | | | | | | |_) | |_| |" << std::endl;
    os << "                   |____/ \\__,_|_| |_| |_|_.__/ \\__,_|" << std::endl;
    os << std::endl;
@@ -1278,7 +1278,9 @@ int BambuParameter::Exec()
 
       // no more options are available
       if(next_option == -1)
+      {
          break;
+      }
 
       switch(next_option)
       {
@@ -1293,12 +1295,16 @@ int BambuParameter::Exec()
             for(const auto& counter : splitted)
             {
                if(top_function_names != "")
+               {
                   top_function_names += STR_CST_string_separator;
+               }
                top_function_names += counter;
             }
             setOption(OPT_top_functions_names, top_function_names);
             if(splitted.size() == 1)
+            {
                setOption(OPT_top_file, optarg);
+            }
             break;
          }
          case OPT_TOP_RTLDESIGN_NAME:
@@ -1489,21 +1495,29 @@ int BambuParameter::Exec()
          case OPT_FIXED_SCHED:
          {
             if(scheduling_set_p)
+            {
                THROW_ERROR("BadParameters: only one scheduler can be specified");
+            }
             scheduling_set_p = true;
             setOption(OPT_scheduling_algorithm, HLSFlowStep_Type::FIXED_SCHEDULING);
             if(optarg)
+            {
                setOption("fixed_scheduling_file", optarg);
+            }
             break;
          }
          case OPT_LIST_BASED: // enable list based scheduling
          {
             if(scheduling_set_p)
+            {
                THROW_ERROR("BadParameters: only one scheduler can be specified");
+            }
             scheduling_set_p = true;
             setOption(OPT_scheduling_algorithm, HLSFlowStep_Type::LIST_BASED_SCHEDULING);
             if(optarg)
+            {
                setOption(OPT_scheduling_priority, optarg);
+            }
             break;
          }
          case OPT_POST_RESCHEDULING:
@@ -1577,7 +1591,9 @@ int BambuParameter::Exec()
          {
             setOption(OPT_stg, true);
             if(optarg)
+            {
                setOption(OPT_stg_algorithm, optarg);
+            }
             break;
          }
          /// binding options
@@ -1643,9 +1659,13 @@ int BambuParameter::Exec()
          case 'C':
          {
             if(std::string(optarg) == "M")
+            {
                setOption(OPT_datapath_interconnection_algorithm, HLSFlowStep_Type::MUX_INTERCONNECTION_BINDING);
+            }
             else
+            {
                throw "BadParameters: interconnection binding not correctly specified";
+            }
             break;
          }
 #if HAVE_EXPERIMENTAL
@@ -1677,7 +1697,7 @@ int BambuParameter::Exec()
             {
                setOption(OPT_evaluation_mode, Evaluation_Mode::EXACT);
             }
-            std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
+            auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
             std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
             objective_string = "";
             for(const auto& objective : objective_vector)
@@ -1788,7 +1808,7 @@ int BambuParameter::Exec()
             {
                THROW_ERROR("Simulation is only supported with EXACT evaluation mode");
             }
-            std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
+            auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
             std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
             /*
              * look among the objectives of the evaluation. if "CYCLES" is
@@ -1882,23 +1902,37 @@ int BambuParameter::Exec()
          case OPT_RESET:
          {
             if(std::string(optarg) == "no")
+            {
                setOption(OPT_sync_reset, std::string(optarg));
+            }
             else if(std::string(optarg) == "async")
+            {
                setOption(OPT_sync_reset, std::string(optarg));
+            }
             else if(std::string(optarg) == "sync")
+            {
                setOption(OPT_sync_reset, std::string(optarg));
+            }
             else
+            {
                throw "BadParameters: reset type not correctly specified";
+            }
             break;
          }
          case OPT_LEVEL_RESET:
          {
             if(std::string(optarg) == "high")
+            {
                setOption(OPT_level_reset, true);
+            }
             else if(std::string(optarg) == "low")
+            {
                setOption(OPT_level_reset, false);
+            }
             else
+            {
                throw "BadParameters: reset edge type not correctly specified";
+            }
             break;
          }
          case OPT_DISABLE_REG_INIT_VALUE:
@@ -1910,12 +1944,16 @@ int BambuParameter::Exec()
          case 's':
          {
             if(scheduling_set_p and getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) != HLSFlowStep_Type::SDC_SCHEDULING)
+            {
                THROW_ERROR("BadParameters: only one scheduler can be specified");
+            }
             scheduling_set_p = true;
             setOption(OPT_scheduling_algorithm, HLSFlowStep_Type::SDC_SCHEDULING);
             std::string defines;
             if(isOption(OPT_gcc_defines))
+            {
                defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
+            }
             defines += std::string("PANDA_SDC");
             setOption(OPT_gcc_defines, defines);
             break;
@@ -1925,7 +1963,9 @@ int BambuParameter::Exec()
          {
             setOption(OPT_pipelining, "@ll");
             if(optarg)
+            {
                setOption(OPT_pipelining, optarg);
+            }
             break;
          }
          case OPT_SERIALIZE_MEMORY_ACCESSES:
@@ -1971,20 +2011,30 @@ int BambuParameter::Exec()
          {
             setOption(OPT_hls_div, "NR");
             if(optarg && std::string(optarg) == "nr1")
+            {
                setOption(OPT_hls_div, optarg);
+            }
             else if(optarg && std::string(optarg) == "nr2")
+            {
                setOption(OPT_hls_div, optarg);
+            }
             else if(optarg && std::string(optarg) == "as")
+            {
                setOption(OPT_hls_div, optarg);
+            }
             else if(optarg && std::string(optarg) == "none")
+            {
                setOption(OPT_hls_div, optarg);
+            }
             break;
          }
          case OPT_HLS_FPDIV:
          {
             setOption(OPT_hls_fpdiv, "SRT4");
             if(optarg && (std::string(optarg) == "G" || std::string(optarg) == "SF"))
+            {
                setOption(OPT_hls_fpdiv, optarg);
+            }
             break;
          }
          case OPT_CLOCK_PERIOD_RESOURCE_FRACTION:
@@ -2005,11 +2055,17 @@ int BambuParameter::Exec()
          case OPT_TIMING_MODEL:
          {
             if(std::string(optarg) == "SIMPLE")
+            {
                setOption(OPT_estimate_logic_and_connections, false);
+            }
             else if(std::string(optarg) == "EC")
+            {
                setOption(OPT_estimate_logic_and_connections, true);
+            }
             else
+            {
                throw "BadParameters: unknown timing model";
+            }
             break;
          }
          case OPT_REGISTERED_INPUTS:
@@ -2081,7 +2137,9 @@ int BambuParameter::Exec()
          {
             setOption(OPT_bram_high_latency, "_3");
             if(optarg && std::string(optarg) == "4")
+            {
                setOption(OPT_bram_high_latency, "_4");
+            }
             break;
          }
          case OPT_DO_NOT_EXPOSE_GLOBALS:
@@ -2113,15 +2171,20 @@ int BambuParameter::Exec()
          case 'w':
          {
             if(std::string(optarg) == "V")
+            {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VERILOG));
 #if HAVE_EXPERIMENTAL
-            else if(std::string(optarg) == "S")
-               setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
+               else if(std::string(optarg) == "S") setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::SYSTEMC));
 #endif
+            }
             else if(std::string(optarg) == "H")
+            {
                setOption(OPT_writer_language, static_cast<int>(HDLWriter_Language::VHDL));
+            }
             else
+            {
                throw "BadParameters: backend language not correctly specified";
+            }
             break;
          }
          case OPT_DYNAMIC_GENERATORS_DIR:
@@ -2279,10 +2342,13 @@ int BambuParameter::Exec()
          {
             auto num_acc = boost::lexical_cast<unsigned>(std::string(optarg));
             if((num_acc != 0) && ((num_acc & (num_acc - 1)) == 0))
+            {
                setOption(OPT_num_accelerators, std::string(optarg));
+            }
             else
+            {
                THROW_ERROR("Currently the number of physical accelerator has to be a power of two");
-            ;
+            };
             break;
          }
          case OPT_INPUT_CONTEXT_SWITCH:
@@ -2418,7 +2484,9 @@ int BambuParameter::Exec()
                   setOption(OPT_fu_binding_algorithm, HLSFlowStep_Type::UNIQUE_MODULE_BINDING);
                }
                else
+               {
                   throw "BadParameters: module binding option not correctly specified";
+               }
                break;
             }
             if(strcmp(long_options[option_index].name, "xml-memory-allocation") == 0)
@@ -2429,17 +2497,29 @@ int BambuParameter::Exec()
             if(strcmp(long_options[option_index].name, "memory-allocation-policy") == 0)
             {
                if(std::string(optarg) == "LSS")
+               {
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::LSS);
+               }
                else if(std::string(optarg) == "GSS")
+               {
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::GSS);
+               }
                else if(std::string(optarg) == "ALL_BRAM")
+               {
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+               }
                else if(std::string(optarg) == "NO_BRAM")
+               {
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::NO_BRAM);
+               }
                else if(std::string(optarg) == "EXT_PIPELINED_BRAM")
+               {
                   setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::EXT_PIPELINED_BRAM);
+               }
                else
+               {
                   throw "BadParameters: memory allocation policy option not correctly specified";
+               }
                break;
             }
             if(strcmp(long_options[option_index].name, "base-address") == 0)
@@ -2458,14 +2538,22 @@ int BambuParameter::Exec()
                {
                   setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_11);
                   if(not isOption(OPT_channels_number))
+                  {
                      setOption(OPT_channels_number, 1);
+                  }
                }
                else if(std::string(optarg) == CHANNELS_TYPE_MEM_ACC_N1)
+               {
                   setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_N1);
+               }
                else if(std::string(optarg) == CHANNELS_TYPE_MEM_ACC_NN)
+               {
                   setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_NN);
+               }
                else
+               {
                   throw "BadParameters: memory accesses type not correctly specified";
+               }
                break;
             }
             if(strcmp(long_options[option_index].name, "channels-number") == 0)
@@ -2476,25 +2564,41 @@ int BambuParameter::Exec()
             if(strcmp(long_options[option_index].name, "memory-ctrl-type") == 0)
             {
                if(std::string(optarg) == "D00")
+               {
                   setOption(OPT_memory_controller_type, optarg);
+               }
                else if(std::string(optarg) == "D10")
+               {
                   setOption(OPT_memory_controller_type, optarg);
+               }
                else if(std::string(optarg) == "D11")
+               {
                   setOption(OPT_memory_controller_type, optarg);
+               }
                else if(std::string(optarg) == "D21")
+               {
                   setOption(OPT_memory_controller_type, optarg);
+               }
                else
+               {
                   throw "BadParameters: memory controller type not correctly specified";
+               }
                break;
             }
             if(strcmp(long_options[option_index].name, "sparse-memory") == 0)
             {
                if(!optarg || std::string(optarg) == "on")
+               {
                   setOption(OPT_sparse_memory, true);
+               }
                else if(std::string(optarg) == "off")
+               {
                   setOption(OPT_sparse_memory, false);
+               }
                else
+               {
                   throw "BadParameters: sparse-memory option not expected";
+               }
                break;
             }
 #if HAVE_EXPERIMENTAL
@@ -2627,9 +2731,13 @@ int BambuParameter::Exec()
             bool exit_success = false;
             bool res = ManageGccOptions(next_option, optarg);
             if(res)
+            {
                res = ManageDefaultOptions(next_option, optarg, exit_success);
+            }
             if(exit_success)
+            {
                return EXIT_SUCCESS;
+            }
             if(res)
             {
                return PARAMETER_NOTPARSED;
@@ -2694,7 +2802,9 @@ int BambuParameter::Exec()
          setOption(OPT_input_file, input_file + GetPath(argv[optind]));
          setOption(OPT_input_format, static_cast<int>(Parameters_FileFormat::FF_RAW));
          if(!isOption(OPT_pretty_print))
+         {
             setOption(OPT_pretty_print, "_a.c");
+         }
       }
       else
       {
@@ -2714,7 +2824,9 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
    {
       std::string defines;
       if(isOption(OPT_gcc_defines))
+      {
          defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
+      }
       defines += "\'printf(fmt, ...)=\'";
       setOption(OPT_gcc_defines, defines);
    }
@@ -2722,19 +2834,25 @@ void BambuParameter::add_experimental_setup_gcc_options(bool kill_printf)
    {
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))
+      {
          optimizations = getOption<std::string>(OPT_gcc_optimizations);
+      }
       THROW_ASSERT(isOption(OPT_input_file), "Input file not specified");
       if(getOption<std::string>(OPT_input_file).find(STR_CST_string_separator) == std::string::npos && !isOption(OPT_top_design_name))
       {
          if(optimizations != "")
+         {
             optimizations = optimizations + STR_CST_string_separator;
+         }
          optimizations = optimizations + "whole-program";
          setOption(OPT_gcc_optimizations, optimizations);
       }
       if(isOption(OPT_top_design_name))
       {
          if(optimizations != "")
+         {
             optimizations = optimizations + STR_CST_string_separator;
+         }
          optimizations = optimizations + "no-ipa-cp" + STR_CST_string_separator + "no-ipa-cp-clone";
          setOption(OPT_gcc_optimizations, optimizations);
       }
@@ -2936,7 +3054,9 @@ void BambuParameter::CheckParameters()
    {
       std::string device_string = getOption<std::string>("device_name") + getOption<std::string>("device_speed") + getOption<std::string>("device_package");
       if(isOption("device_synthesis_tool") && getOption<std::string>("device_synthesis_tool") != "")
+      {
          device_string += "-" + getOption<std::string>("device_synthesis_tool");
+      }
       setOption(OPT_device_string, device_string);
    }
 
@@ -2974,7 +3094,9 @@ void BambuParameter::CheckParameters()
    /// controller options
    if(getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CONTROLLER_CREATOR or getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::FSM_CS_CONTROLLER_CREATOR or
       getOption<HLSFlowStep_Type>(OPT_controller_architecture) == HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR)
+   {
       setOption(OPT_stg, true);
+   }
 
    /// chaining options
    setOption(OPT_chaining_algorithm, HLSFlowStep_Type::SCHED_CHAINING);
@@ -2990,7 +3112,7 @@ void BambuParameter::CheckParameters()
    if(getOption<bool>(OPT_evaluation))
    {
       THROW_ASSERT(isOption(OPT_evaluation_objectives), "missing evaluation objectives");
-      std::string objective_string = getOption<std::string>(OPT_evaluation_objectives);
+      auto objective_string = getOption<std::string>(OPT_evaluation_objectives);
       THROW_ASSERT(not objective_string.empty(), "");
       std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
 
@@ -3060,22 +3182,30 @@ void BambuParameter::CheckParameters()
    if(getOption<bool>(OPT_do_not_expose_globals))
    {
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE && (!isOption(OPT_interface_type) || getOption<HLSFlowStep_Type>(OPT_interface_type) != HLSFlowStep_Type::WB4_INTERFACE_GENERATION))
+      {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+      }
    }
    tree_helper::debug_level = get_class_debug_level("tree_helper");
 
    bool flag_cpp;
    if(isOption(OPT_input_format) && getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
+   {
       flag_cpp = true;
+   }
    else
+   {
       flag_cpp = false;
+   }
 
    if(flag_cpp)
    {
       /// add -I <ac_types_dir> and -I <ac_math_dir>
       std::string includes = "-I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include")) + " -I " + relocate_compiler_path(std::string(PANDA_DATA_INSTALLDIR "/panda/ac_math/include"));
       if(isOption(OPT_gcc_includes))
+      {
          includes = getOption<std::string>(OPT_gcc_includes) + " " + includes;
+      }
       setOption(OPT_gcc_includes, includes);
       if(!isOption(OPT_gcc_standard))
       {
@@ -3086,30 +3216,44 @@ void BambuParameter::CheckParameters()
    if(getOption<std::string>(OPT_experimental_setup) == "VVD")
    {
       if(not isOption(OPT_gcc_opt_level))
+      {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O3);
+      }
       if(not isOption(OPT_channels_type))
+      {
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_NN);
+      }
       if(not isOption(OPT_channels_number))
+      {
          setOption(OPT_channels_number, 2);
+      }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+      {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+      }
       setOption(OPT_DSP_allocation_coefficient, 1.75);
       setOption(OPT_clock_period_resource_fraction, "0.875");
       setOption(OPT_do_not_expose_globals, true);
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 256);
+      }
       add_experimental_setup_gcc_options(!flag_cpp);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU092")
    {
       if(not isOption(OPT_gcc_opt_level))
+      {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O0);
+      }
       setOption(OPT_estimate_logic_and_connections, false);
       setOption(OPT_clock_period_resource_fraction, "0.9");
       setOption(OPT_DSP_margin_combinational, 1.3);
       setOption(OPT_skip_pipe_parameter, 1);
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 256);
+      }
       add_experimental_setup_gcc_options(!flag_cpp);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP" or getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
@@ -3227,7 +3371,9 @@ void BambuParameter::CheckParameters()
       }
       optimizations += tuning_optimizations;
       if(optimizations != "")
+      {
          setOption(OPT_gcc_optimizations, optimizations);
+      }
 #if 0
       std::string parameters;
       if(isOption(OPT_gcc_parameters))
@@ -3237,14 +3383,22 @@ void BambuParameter::CheckParameters()
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-BALANCED-MP")
       {
          if(not isOption(OPT_channels_type))
+         {
             setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_NN);
+         }
          if(not isOption(OPT_channels_number))
+         {
             setOption(OPT_channels_number, 2);
+         }
       }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+      {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+      }
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 256);
+      }
       add_experimental_setup_gcc_options(!flag_cpp);
       if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-TASTE")
       {
@@ -3265,59 +3419,95 @@ void BambuParameter::CheckParameters()
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE-MP")
    {
       if(not isOption(OPT_gcc_opt_level))
+      {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O3);
+      }
       if(not isOption(OPT_channels_type))
+      {
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_NN);
+      }
       if(not isOption(OPT_channels_number))
+      {
          setOption(OPT_channels_number, 2);
+      }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+      {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+      }
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 512);
+      }
       add_experimental_setup_gcc_options(!flag_cpp);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE")
    {
       if(not isOption(OPT_gcc_opt_level))
+      {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O3);
+      }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+      {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+      }
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 512);
+      }
       add_experimental_setup_gcc_options(!flag_cpp);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA-MP")
    {
       if(not isOption(OPT_gcc_opt_level))
+      {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Os);
+      }
       if(not isOption(OPT_channels_type))
+      {
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_NN);
+      }
       if(not isOption(OPT_channels_number))
+      {
          setOption(OPT_channels_number, 2);
+      }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+      {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+      }
       setOption(OPT_DSP_allocation_coefficient, 1.75);
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 256);
+      }
       add_experimental_setup_gcc_options(!flag_cpp);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA")
    {
       if(not isOption(OPT_gcc_opt_level))
+      {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::Os);
+      }
       if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+      {
          setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::ALL_BRAM);
+      }
       setOption(OPT_DSP_allocation_coefficient, 1.75);
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 256);
+      }
       add_experimental_setup_gcc_options(!flag_cpp);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU")
    {
       if(not isOption(OPT_gcc_opt_level))
+      {
          setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O0);
+      }
       if(not isOption(OPT_distram_threshold))
+      {
          setOption(OPT_distram_threshold, 256);
+      }
       add_experimental_setup_gcc_options(false);
    }
    else
@@ -3330,19 +3520,31 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_soft_float) && getOption<bool>(OPT_soft_float))
    {
       if(isOption(OPT_soft_fp) && getOption<bool>(OPT_soft_fp))
+      {
          add_bambu_library("soft-fp");
+      }
       else if(getOption<std::string>(OPT_hls_fpdiv) != "SRT4" && getOption<std::string>(OPT_hls_fpdiv) != "G")
+      {
          THROW_ERROR("--hls-fpdiv=SF requires --soft-fp option");
+      }
       else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
+      {
          add_bambu_library("softfloat_subnormals");
+      }
       else if(isOption(OPT_softfloat_norounding) && getOption<bool>(OPT_softfloat_norounding))
+      {
          add_bambu_library("softfloat_norounding");
+      }
       else
+      {
          add_bambu_library("softfloat");
+      }
    }
 
    if(isOption(OPT_hls_div) && getOption<std::string>(OPT_hls_div) != "none")
+   {
       add_bambu_library("hls-div" + getOption<std::string>(OPT_hls_div));
+   }
    add_bambu_library("hls-cdiv");
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
    if(getOption<bool>(OPT_parse_pragma))
@@ -3351,18 +3553,26 @@ void BambuParameter::CheckParameters()
       if(isOption(OPT_context_switch))
       {
          if(getOption<unsigned int>(OPT_channels_number) >= getOption<unsigned int>(OPT_memory_banks_number))
+         {
             THROW_ERROR("This configuration doesn't support a number of channel equal or greater than the number of memory_bank");
+         }
          if(getOption<std::string>(OPT_registered_inputs) != "auto")
+         {
             THROW_ERROR("Registered inputs option cannot be set for context switch architecture");
-         unsigned int v = getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
-         bool f;                                                        // the result goes here
+         }
+         auto v = getOption<unsigned int>(OPT_channels_number); // we want to see if v is a power of 2
+         bool f;                                                // the result goes here
          f = v && !(v & (v - 1));
          if(!f)
+         {
             THROW_ERROR("Number of channel must be a power of 2");
+         }
          v = getOption<unsigned int>(OPT_memory_banks_number); // we want to see if v is a power of 2
          f = v && !(v & (v - 1));
          if(!f)
+         {
             THROW_ERROR("Number of bank must be a power of 2");
+         }
          setOption(OPT_function_allocation_algorithm, HLSFlowStep_Type::OMP_FUNCTION_ALLOCATION_CS);
          setOption(OPT_memory_allocation_algorithm, HLSFlowStep_Type::DOMINATOR_MEMORY_ALLOCATION_CS);
          setOption(OPT_channels_type, MemoryAllocation_ChannelsType::MEM_ACC_CS);
@@ -3389,14 +3599,18 @@ void BambuParameter::CheckParameters()
 
    /// default for memory allocation policy
    if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::NONE)
+   {
       setOption(OPT_memory_allocation_policy, MemoryAllocation_Policy::LSS);
+   }
 
    /// base address and initial internal address checks
    if(isOption(OPT_initial_internal_address) && (getOption<unsigned long long int>(OPT_base_address) == 0 || getOption<unsigned int>(OPT_initial_internal_address) == 0))
    {
       std::string optimizations;
       if(isOption(OPT_gcc_optimizations))
+      {
          optimizations = getOption<std::string>(OPT_gcc_optimizations) + STR_CST_string_separator;
+      }
       setOption(OPT_gcc_optimizations, optimizations + "no-delete-null-pointer-checks");
    }
 
@@ -3413,25 +3627,37 @@ void BambuParameter::CheckParameters()
    if(isOption(OPT_channels_number) and getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11)
    {
       if(getOption<unsigned int>(OPT_channels_number) != 1)
+      {
          THROW_ERROR("the number of channels cannot be specified for MEM_ACC_11");
+      }
    }
    if(isOption(OPT_channels_number) and (getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1 or getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN))
    {
       if(getOption<unsigned int>(OPT_channels_number) > 2 and getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::NO_BRAM and
          getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM)
+      {
          THROW_ERROR("no more than two channels is supported for MEM_ACC_N1 and MEM_ACC_NN: try to add this option --memory-allocation-policy=NO_BRAM or --memory-allocation-policy=EXT_PIPELINED_BRAM");
+      }
    }
    if(getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_NN and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+   {
       THROW_ERROR("Wishbone 4 interface does not yet support multi-channel architectures (MEM_ACC_NN)");
+   }
 
    if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::ALL_BRAM and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+   {
       THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=ALL_BRAM");
+   }
 
    if(getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) == MemoryAllocation_Policy::EXT_PIPELINED_BRAM and isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION)
+   {
       THROW_ERROR("Wishbone 4 interface does not yet support --memory-allocation-policy=EXT_PIPELINED_BRAM");
+   }
 
    if(isOption(OPT_interface_type) and getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::WB4_INTERFACE_GENERATION and (isOption(OPT_clock_name) or isOption(OPT_reset_name) or isOption(OPT_start_name) or isOption(OPT_done_name)))
+   {
       THROW_ERROR("Wishbone 4 interface does not allow the renaming of the control signals");
+   }
 
    if(not getOption<bool>(OPT_gcc_include_sysdir))
    {
@@ -3500,7 +3726,9 @@ void BambuParameter::CheckParameters()
    if((isOption(OPT_generate_vcd) and getOption<bool>(OPT_generate_vcd)) or (isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy)))
    {
       if(not isOption(OPT_generate_testbench) or not getOption<bool>(OPT_generate_testbench))
+      {
          THROW_ERROR("Testbench generation required. (--generate-tb or --simulate undeclared).");
+      }
    }
    if((getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos) or (isOption(OPT_discrepancy) and getOption<bool>(OPT_discrepancy)))
    {
@@ -3517,7 +3745,7 @@ void BambuParameter::CheckParameters()
    /// In case copy input files
    if(isOption(OPT_file_input_data))
    {
-      std::string input_data = getOption<std::string>(OPT_file_input_data);
+      auto input_data = getOption<std::string>(OPT_file_input_data);
       std::vector<std::string> splitted = SplitString(input_data, ",");
       size_t i_end = splitted.size();
       for(size_t i = 0; i < i_end; i++)
@@ -3567,7 +3795,9 @@ void BambuParameter::CheckParameters()
    }
    /// When simd is enabled bit value analysis and optimization are disabled
    if(getOption<int>(OPT_gcc_openmp_simd))
+   {
       setOption(OPT_bitvalue_ipa, false);
+   }
 }
 
 void BambuParameter::SetDefaults()
@@ -3884,7 +4114,9 @@ void BambuParameter::SetDefaults()
 
    std::string defines;
    if(isOption(OPT_gcc_defines))
+   {
       defines = getOption<std::string>(OPT_gcc_defines) + STR_CST_string_separator;
+   }
    defines += "__BAMBU__";
    setOption(OPT_gcc_defines, defines);
 
@@ -3983,17 +4215,25 @@ void BambuParameter::add_bambu_library(std::string lib)
    if(is_subnormals && lib == "m")
    {
       if(isOption(OPT_libm_std_rounding) && getOption<int>(OPT_libm_std_rounding))
+      {
          VSuffix = "_subnormals_std";
+      }
       else
+      {
          VSuffix = "_subnormals";
+      }
    }
    else if(lib == "m")
    {
       if(isOption(OPT_libm_std_rounding) && getOption<int>(OPT_libm_std_rounding))
+      {
          VSuffix = "_std";
+      }
    }
    if(isOption(OPT_archive_files))
+   {
       archive_files = getOption<std::string>(OPT_archive_files) + STR_CST_string_separator;
+   }
 
 #endif
 

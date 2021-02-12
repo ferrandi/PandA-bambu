@@ -1129,6 +1129,8 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test2/multiarray.c \
 ./bambu_specific_test2/test_without_c.c \
 ./bambu_specific_test2/test_without_c.xml \
+./bambu_specific_test2/mod_test.c \
+./bambu_specific_test2/mod_test_c.xml \
 ./bambu_specific_test3.sh\
 ./bambu_specific_test3_list\
 ./bambu_specific_test4/ac_types1.cpp \
@@ -1261,6 +1263,10 @@ clang10_regression_simple_no_expose_globals.sh\
 clang11_regression_simple_default.sh\
 clang11_regression_simple_ext_pipelined.sh\
 clang11_regression_simple_no_expose_globals.sh\
+clang11_regression_simple_default_verilator.sh\
+clang11_regression_simple_ext_pipelined_verilator.sh\
+clang11_regression_simple_no_expose_globals_verilator.sh\
+gcc_regression_simple_verilator\
 softfloat-tests-clang4.sh\
 softfloat-tests-clang5.sh\
 softfloat-tests-clang6.sh\

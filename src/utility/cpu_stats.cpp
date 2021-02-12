@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -184,8 +184,8 @@ void util_print_cpu_stats(std::ostream& os)
 
    /* Get usage stats */
    (void)getrusage(RUSAGE_SELF, &rusage);
-   user = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec / 1000000;
-   system = rusage.ru_stime.tv_sec + rusage.ru_stime.tv_usec / 1000000;
+   user = rusage.ru_utime.tv_sec + rusage.ru_utime.tv_usec / 1000000.L;
+   system = rusage.ru_stime.tv_sec + rusage.ru_stime.tv_usec / 1000000.L;
    scale = (user + system) * 100.0L;
    if(scale == 0.0L)
    {

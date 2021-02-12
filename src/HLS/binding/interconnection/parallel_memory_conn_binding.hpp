@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@ class ParallelMemoryConnBinding : public conn_binding
    /**
     * Constructor.
     */
-   ParallelMemoryConnBinding(const BehavioralHelperConstRef BH, const ParameterConstRef parameters);
+   ParallelMemoryConnBinding(const BehavioralHelperConstRef _behavioral_helper, const ParameterConstRef parameters);
 
    /**
     * Destructor.

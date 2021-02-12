@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -131,7 +131,7 @@ class InstructionWriter
     * Writes a comment
     * @param comment is the string to be printed
     */
-   void WriteComment(const std::string& comment);
+   void WriteComment(const std::string& text);
 };
-typedef refcount<InstructionWriter> InstructionWriterRef;
+using InstructionWriterRef = refcount<InstructionWriter>;
 #endif

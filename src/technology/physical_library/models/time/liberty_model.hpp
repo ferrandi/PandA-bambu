@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -98,6 +98,6 @@ class liberty_model : public time_model
    double get_skew_value() const;
 };
 
-typedef refcount<liberty_model> liberty_modelRef;
+using liberty_modelRef = refcount<liberty_model>;
 
 #endif

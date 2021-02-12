@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -61,11 +61,11 @@
 
 /// Tree include
 #include "ext_tree_node.hpp"
+#include "string_manipulation.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_helper.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include  "string_manipulation.hpp"
 
 GimpleWriter::GimpleWriter(std::ostream& _os, const bool _use_uid) : os(_os), use_uid(_use_uid), current_node_index(0)
 {
@@ -238,9 +238,13 @@ void GimpleWriter::operator()(const unary_expr* obj, unsigned int& mask)
          THROW_UNREACHABLE("");
    }
    if(GET_NODE(obj->op)->get_kind() == function_decl_K)
+   {
       GetPointer<function_decl>(GET_NODE(obj->op))->name->visit(this);
+   }
    else
+   {
       obj->op->visit(this);
+   }
    obj->expr_node::visit(this);
 }
 
@@ -636,7 +640,7 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
    }
    else
    {
-      //try to get the type name
+      // try to get the type name
       auto obj_type = obj->get_kind();
       if(obj_type == integer_type_K)
       {
@@ -649,44 +653,44 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
          {
             if(it->prec > 64)
             {
-               os <<  "int __attribute__((vector_size(16)))";
+               os << "int __attribute__((vector_size(16)))";
             }
             else if(it->prec > 32)
             {
-               os <<  "long long int";
+               os << "long long int";
             }
             else if(it->prec > 16)
             {
-               os <<  "int";
+               os << "int";
             }
             else if(it->prec > 8)
             {
-               os <<  "short";
+               os << "short";
             }
             else
             {
-               os <<  "char";
+               os << "char";
             }
          }
          else if(obj->algn == 8)
          {
-            os <<  "char";
+            os << "char";
          }
          else if(obj->algn == 16)
          {
-            os <<  "short";
+            os << "short";
          }
          else if(obj->algn == 32)
          {
-            os <<  "int";
+            os << "int";
          }
          else if(obj->algn == 64)
          {
-            os <<  "long long";
+            os << "long long";
          }
          else if(obj->algn == 128)
          {
-            os <<  "int __attribute__((vector_size(16)))";
+            os << "int __attribute__((vector_size(16)))";
          }
          else
          {
@@ -695,7 +699,7 @@ void GimpleWriter::operator()(const type_node* obj, unsigned int& mask)
       }
       else if(obj_type == boolean_type_K)
       {
-         os <<  "_Bool";
+         os << "_Bool";
       }
       else if(obj_type == real_type_K)
       {
@@ -811,7 +815,9 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int& mask)
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
+            {
                os << ", ";
+            }
             (*arg)->visit(this);
          }
          os << ")";
@@ -829,7 +835,9 @@ void GimpleWriter::operator()(const call_expr* obj, unsigned int& mask)
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
+            {
                os << ", ";
+            }
             (*arg)->visit(this);
          }
          os << ")";
@@ -853,7 +861,9 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int& mask)
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
+            {
                os << ", ";
+            }
             (*arg)->visit(this);
          }
          os << ")";
@@ -871,7 +881,9 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int& mask)
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
+            {
                os << ", ";
+            }
             (*arg)->visit(this);
          }
          os << ")";
@@ -879,7 +891,9 @@ void GimpleWriter::operator()(const aggr_init_expr* obj, unsigned int& mask)
    }
    os << "ctor: " << obj->ctor;
    if(obj->slot)
+   {
       obj->slot->visit(this);
+   }
 }
 
 void GimpleWriter::operator()(const gimple_call* obj, unsigned int& mask)
@@ -899,7 +913,9 @@ void GimpleWriter::operator()(const gimple_call* obj, unsigned int& mask)
          for(arg = args.begin(); arg != arg_end; ++arg)
          {
             if(arg != args.begin())
+            {
                os << ", ";
+            }
             (*arg)->visit(this);
          }
          os << ")";
@@ -911,9 +927,13 @@ void GimpleWriter::operator()(const case_label_expr* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->default_flag)
+   {
       os << "default: ";
+   }
    else
+   {
       os << "case ";
+   }
    if(obj->op0 and obj->op1)
    {
       obj->op0->visit(this);
@@ -926,7 +946,9 @@ void GimpleWriter::operator()(const case_label_expr* obj, unsigned int& mask)
       os << ": ";
    }
    if(obj->got)
+   {
       obj->got->visit(this);
+   }
    obj->expr_node::visit(this);
 }
 
@@ -992,7 +1014,9 @@ void GimpleWriter::operator()(const field_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->name)
+   {
       obj->name->visit(this);
+   }
    obj->decl_node::visit(this);
    obj->attr::visit(this);
 }
@@ -1014,7 +1038,9 @@ void GimpleWriter::operator()(const function_decl* obj, unsigned int& mask)
    for(arg = list_of_args.begin(); arg != arg_end; ++arg)
    {
       if(arg != list_of_args.begin())
+      {
          os << ", ";
+      }
       const parm_decl* pd = GetPointer<parm_decl>(GET_NODE(*arg));
       pd->type->visit(this);
       os << " ";
@@ -1051,9 +1077,13 @@ void GimpleWriter::operator()(const gimple_assign* obj, unsigned int& mask)
    os << " = ";
    obj->op1->visit(this);
    if(obj->clobber)
+   {
       os << "clobber";
+   }
    if(obj->temporary_address)
+   {
       os << "addr";
+   }
    obj->gimple_node::visit(this);
 }
 
@@ -1131,7 +1161,9 @@ void GimpleWriter::operator()(const gimple_phi* obj, unsigned int& mask)
    for(const auto& def_edge : obj->CGetDefEdgesList())
    {
       if(def_edge != obj->CGetDefEdgesList().front())
+      {
          os << ", ";
+      }
       def_edge.first->visit(this);
       os << "(" << def_edge.second << ")";
    }
@@ -1167,7 +1199,9 @@ void GimpleWriter::operator()(const record_type* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(not obj->name or GET_CONST_NODE(obj->name)->get_kind() != type_decl_K)
+   {
       os << "struct ";
+   }
    obj->type_node::visit(this);
 }
 
@@ -1219,12 +1253,18 @@ void GimpleWriter::operator()(const ssa_name* obj, unsigned int& mask)
    }
    os << " ";
    if(obj->var)
+   {
       obj->var->visit(this);
+   }
    os << "_" << obj->vers;
    if(obj->orig_vers)
+   {
       os << "_[" << obj->orig_vers << "]";
+   }
    if(obj->default_flag)
+   {
       os << "(D)";
+   }
    //   if(obj->min) obj->min->visit(this);
    //   if(obj->max) obj->max->visit(this);
    obj->tree_node::visit(this);
@@ -1266,7 +1306,9 @@ void GimpleWriter::operator()(const statement_list* obj, unsigned int& mask)
          }
          stmt->visit(this);
          if(statement->get_kind() != gimple_cond_K and statement->get_kind() != gimple_label_K and statement->get_kind() != gimple_switch_K and statement->get_kind() != gimple_pragma_K)
+         {
             os << ";";
+         }
          os << std::endl;
       }
       if(block->second->true_edge and block->second->false_edge)
@@ -1350,19 +1392,33 @@ void GimpleWriter::operator()(const lut_expr* obj, unsigned int& mask)
    obj->op0->visit(this);
    obj->op1->visit(this);
    if(obj->op2)
+   {
       obj->op2->visit(this);
+   }
    if(obj->op3)
+   {
       obj->op3->visit(this);
+   }
    if(obj->op4)
+   {
       obj->op4->visit(this);
+   }
    if(obj->op5)
+   {
       obj->op5->visit(this);
+   }
    if(obj->op6)
+   {
       obj->op6->visit(this);
+   }
    if(obj->op7)
+   {
       obj->op7->visit(this);
+   }
    if(obj->op8)
+   {
       obj->op8->visit(this);
+   }
    obj->expr_node::visit(this);
    os << ")";
 }
@@ -1379,9 +1435,13 @@ void GimpleWriter::operator()(const template_parm_index* obj, unsigned int& mask
    obj->type->visit(this);
    obj->decl->visit(this);
    if(obj->constant_flag)
+   {
       os << "_C";
+   }
    if(obj->readonly_flag)
+   {
       os << "_R";
+   }
    os << "_" << obj->idx;
    os << "_" << obj->level;
    os << "_" << obj->orig_level;
@@ -1406,7 +1466,9 @@ void GimpleWriter::operator()(const tree_vec* obj, unsigned int& mask)
    for(op = obj->list_of_op.begin(); op != op_end; ++op)
    {
       if(op != obj->list_of_op.begin())
+      {
          os << ", ";
+      }
       (*op)->visit(this);
    }
    obj->tree_node::visit(this);
@@ -1435,7 +1497,9 @@ void GimpleWriter::operator()(const var_decl* obj, unsigned int& mask)
 {
    mask = NO_VISIT;
    if(obj->name)
+   {
       obj->name->visit(this);
+   }
    else
    {
       if(this->use_uid)
@@ -1459,7 +1523,9 @@ void GimpleWriter::operator()(const vector_cst* obj, unsigned int& mask)
    {
       obj->list_of_valu[i]->visit(this);
       if(i != (obj->list_of_valu).size() - 1)
+      {
          os << ", ";
+      }
    }
    os << " }";
 
@@ -1494,11 +1560,17 @@ void GimpleWriter::operator()(const type_pack_expansion* obj, unsigned int& mask
    mask = NO_VISIT;
    os << "type_pack_expansion ";
    if(obj->op)
+   {
       obj->op->visit(this);
+   }
    if(obj->param_packs)
+   {
       obj->param_packs->visit(this);
+   }
    if(obj->arg)
+   {
       obj->arg->visit(this);
+   }
    mask = NO_VISIT;
    obj->type_node::visit(this);
 }
@@ -1508,11 +1580,17 @@ void GimpleWriter::operator()(const expr_pack_expansion* obj, unsigned int& mask
    mask = NO_VISIT;
    os << "expr_pack_expansion ";
    if(obj->op)
+   {
       obj->op->visit(this);
+   }
    if(obj->param_packs)
+   {
       obj->param_packs->visit(this);
+   }
    if(obj->arg)
+   {
       obj->arg->visit(this);
+   }
    mask = NO_VISIT;
    obj->expr_node::visit(this);
 }
@@ -1792,7 +1870,9 @@ void GimpleWriter::operator()(const gimple_multi_way_if* obj, unsigned int& mask
    for(const auto& cond : obj->list_of_cond)
    {
       if(cond.first)
+      {
          cond.first->visit(this);
+      }
       os << ":" << cond.second << " ";
    }
    os << ")";

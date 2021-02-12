@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -98,8 +98,12 @@ DesignFlowStep_Status OmpFunctionAllocationCS::Exec()
    }
    CustomUnorderedSet<vertex> vertex_subset;
    for(const auto f_id : root_functions)
+   {
       for(const auto reached_f_id : call_graph_manager->GetReachedBodyFunctionsFrom(f_id))
+      {
          vertex_subset.insert(call_graph_manager->GetVertex(reached_f_id));
+      }
+   }
    const auto call_graph = call_graph_manager->CGetCallSubGraph(vertex_subset);
    std::list<vertex> sorted_functions;
    call_graph->TopologicalSort(sorted_functions);

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2020 Politecnico di Milano
+ *              Copyright (C) 2019-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -117,10 +117,10 @@ DesignFlowStep_Status parm2ssa::Exec()
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
 
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
+   const auto reached_body_fun_ids = CG->GetReachedBodyFunctions();
    AppM->clearParm2SSA();
 
-   for(unsigned int function_id : reached_body_fun_ids)
+   for(auto function_id : reached_body_fun_ids)
    {
       const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
       auto* fd = GetPointer<function_decl>(curr_tn);
@@ -129,7 +129,9 @@ DesignFlowStep_Status parm2ssa::Exec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + STR(function_id) + ": " + tree_helper::print_function_name(TM, fd));
 
       for(auto arg : fd->list_of_args)
+      {
          recursive_analysis(arg, srcp_default, already_visited_ae);
+      }
 
       std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
@@ -188,7 +190,9 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
                recursive_analysis(gm->op0, srcp, already_visited_ae);
                recursive_analysis(gm->op1, srcp, already_visited_ae);
                if(gm->predicate)
+               {
                   recursive_analysis(gm->predicate, srcp, already_visited_ae);
+               }
             }
          }
          break;
@@ -253,9 +257,13 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
          auto* te = GetPointer<ternary_expr>(curr_tn);
          recursive_analysis(te->op0, srcp, already_visited_ae);
          if(te->op1)
+         {
             recursive_analysis(te->op1, srcp, already_visited_ae);
+         }
          if(te->op2)
+         {
             recursive_analysis(te->op2, srcp, already_visited_ae);
+         }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
@@ -263,11 +271,17 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
          auto* qe = GetPointer<quaternary_expr>(curr_tn);
          recursive_analysis(qe->op0, srcp, already_visited_ae);
          if(qe->op1)
+         {
             recursive_analysis(qe->op1, srcp, already_visited_ae);
+         }
          if(qe->op2)
+         {
             recursive_analysis(qe->op2, srcp, already_visited_ae);
+         }
          if(qe->op3)
+         {
             recursive_analysis(qe->op3, srcp, already_visited_ae);
+         }
          break;
       }
       case lut_expr_K:
@@ -276,19 +290,33 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
          recursive_analysis(le->op0, srcp, already_visited_ae);
          recursive_analysis(le->op1, srcp, already_visited_ae);
          if(le->op2)
+         {
             recursive_analysis(le->op2, srcp, already_visited_ae);
+         }
          if(le->op3)
+         {
             recursive_analysis(le->op3, srcp, already_visited_ae);
+         }
          if(le->op4)
+         {
             recursive_analysis(le->op4, srcp, already_visited_ae);
+         }
          if(le->op5)
+         {
             recursive_analysis(le->op5, srcp, already_visited_ae);
+         }
          if(le->op6)
+         {
             recursive_analysis(le->op6, srcp, already_visited_ae);
+         }
          if(le->op7)
+         {
             recursive_analysis(le->op7, srcp, already_visited_ae);
+         }
          if(le->op8)
+         {
             recursive_analysis(le->op8, srcp, already_visited_ae);
+         }
          break;
       }
       case constructor_K:
@@ -318,15 +346,21 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
+         {
             if(cond.first)
+            {
                recursive_analysis(cond.first, srcp, already_visited_ae);
+            }
+         }
          break;
       }
       case gimple_return_K:
       {
          auto* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
+         {
             recursive_analysis(re->op, srcp, already_visited_ae);
+         }
          break;
       }
       case gimple_for_K:
@@ -361,22 +395,34 @@ void parm2ssa::recursive_analysis(tree_nodeRef& tn, const std::string& srcp, Cus
       {
          auto* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
+         {
             recursive_analysis(tmr->symbol, srcp, already_visited_ae);
+         }
          if(tmr->base)
+         {
             recursive_analysis(tmr->base, srcp, already_visited_ae);
+         }
          if(tmr->idx)
+         {
             recursive_analysis(tmr->idx, srcp, already_visited_ae);
+         }
          break;
       }
       case target_mem_ref461_K:
       {
          auto* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
+         {
             recursive_analysis(tmr->base, srcp, already_visited_ae);
+         }
          if(tmr->idx)
+         {
             recursive_analysis(tmr->idx, srcp, already_visited_ae);
+         }
          if(tmr->idx2)
+         {
             recursive_analysis(tmr->idx2, srcp, already_visited_ae);
+         }
          break;
       }
       case string_cst_K:

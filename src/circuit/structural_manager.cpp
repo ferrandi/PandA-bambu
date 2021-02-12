@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -111,8 +111,12 @@ bool structural_manager::check_bound(structural_objectRef src, structural_object
 {
    auto* p = GetPointer<port_o>(src);
    for(unsigned int i = 0; i < p->get_connections_size(); i++)
+   {
       if(p->get_connection(i) == sign)
+      {
          return true;
+      }
+   }
    return false;
 }
 
@@ -225,7 +229,9 @@ structural_objectRef structural_manager::add_port(std::string id, port_o::port_d
                      for(auto& token : tokens)
                      {
                         if(boost::algorithm::starts_with(token, id))
-                           equation = token.substr(token.find("=") + 1, token.size());
+                        {
+                           equation = token.substr(token.find('=') + 1, token.size());
+                        }
                      }
                      attributeRef function(new attribute(attribute::STRING, equation));
                      cp->add_attribute("function", function);
@@ -303,7 +309,9 @@ structural_objectRef structural_manager::add_port_vector(std::string id, port_o:
    cp->set_treenode(treenode);
    cp->set_type(type_descr);
    if(n_ports != port_o::PARAMETRIC_PORT)
+   {
       GetPointer<port_o>(cp)->add_n_ports(n_ports, cp);
+   }
    switch(owner->get_kind())
    {
       case channel_o_K:
@@ -365,7 +373,9 @@ structural_objectRef structural_manager::add_sign_vector(std::string id, unsigne
    cs->set_treenode(treenode);
    cs->set_type(sign_type);
    if(n_signs != signal_o::PARAMETRIC_SIGNAL)
+   {
       GetPointer<signal_o>(cs)->add_n_signals(n_signs, cs);
+   }
    switch(owner->get_kind())
    {
       case component_o_K:
@@ -622,7 +632,7 @@ void structural_manager::add_NP_functionality(structural_objectRef cir, NP_funct
 void structural_manager::SetParameter(const std::string& name, const std::string& value)
 {
    THROW_ASSERT((get_circ()->get_kind() == component_o_K), "Only components can have a Non SystemC functionality");
-   module* com = GetPointer<module>(get_circ());
+   auto* com = GetPointer<module>(get_circ());
    com->SetParameter(name, value);
 }
 
@@ -867,7 +877,7 @@ void structural_manager::add_connection(structural_objectRef src, structural_obj
 
 void structural_manager::WriteDot(const std::string& file_name, circuit_graph_type gt, graph* g) const
 {
-   const std::string output_directory = Param->getOption<std::string>(OPT_dot_directory);
+   const auto output_directory = Param->getOption<std::string>(OPT_dot_directory);
    std::ofstream f((output_directory + file_name).c_str());
 
    if(g == nullptr)
@@ -895,7 +905,9 @@ void structural_manager::print(std::ostream& os) const
       circ->print(os);
    }
    else
+   {
       os << "Error : empty circuit.\n";
+   }
 }
 
 const vertex& structural_manager::get_PI(const structural_objectRef) const
@@ -914,13 +926,19 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
       {
          auto* temp = GetPointer<port_o>(top_c->get_in_port(i));
          if(!temp)
+         {
             THROW_ERROR("not expected type of port");
+         }
          if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && !permissive)
+         {
             THROW_ERROR(std::string("Error : component " + obj->get_id() + " input port " + temp->get_id() + " is not bound\n"));
+         }
          else if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && permissive)
          {
             if(debug_level >= DEBUG_LEVEL_VERBOSE)
+            {
                THROW_WARNING("component " + obj->get_id() + " input port " + temp->get_id() + " is not bound");
+            }
          }
          else if(temp->get_kind() == port_vector_o_K)
          {
@@ -929,11 +947,15 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
                auto* tempi = GetPointer<port_o>(temp->get_port(w));
                THROW_ASSERT(tempi, "Expected a port got something of different");
                if(tempi->get_connections_size() == 0 && !permissive)
+               {
                   THROW_ERROR(std::string("Component " + obj->get_id() + " input port " + tempi->get_id() + " is not bound\n"));
+               }
                else if(tempi && tempi->get_connections_size() == 0 && permissive)
                {
                   if(debug_level >= DEBUG_LEVEL_VERBOSE)
+                  {
                      THROW_WARNING("component " + obj->get_id() + " input port " + tempi->get_id() + " is not bound");
+                  }
                }
             }
          }
@@ -942,13 +964,19 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
       {
          auto* temp = GetPointer<port_o>(top_c->get_out_port(i));
          if(!temp)
+         {
             THROW_ERROR("not expected type of port");
+         }
          if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && !permissive)
+         {
             THROW_ERROR(std::string("Error : component " + obj->get_id() + " output port " + temp->get_id() + " is not bound\n"));
+         }
          else if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && permissive)
          {
             if(debug_level >= DEBUG_LEVEL_VERBOSE)
+            {
                THROW_WARNING("component " + obj->get_id() + " output port " + temp->get_id() + " is not bound");
+            }
          }
          else if(temp->get_kind() == port_vector_o_K)
          {
@@ -957,11 +985,15 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
                auto* tempi = GetPointer<port_o>(temp->get_port(w));
                THROW_ASSERT(tempi, "Expected a port got something of different");
                if(tempi->get_connections_size() == 0 && !permissive)
+               {
                   THROW_ERROR(std::string("Error : component " + obj->get_id() + " output port " + tempi->get_id() + " is not bound\n"));
+               }
                else if(tempi->get_connections_size() == 0 && permissive)
                {
                   if(debug_level >= DEBUG_LEVEL_VERBOSE)
+                  {
                      THROW_WARNING("component " + obj->get_id() + " output port " + tempi->get_id() + " is not bound");
+                  }
                }
             }
          }
@@ -970,13 +1002,19 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
       {
          auto* temp = GetPointer<port_o>(top_c->get_in_out_port(i));
          if(!temp)
+         {
             THROW_ERROR("not expected type of port");
+         }
          if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && !permissive)
+         {
             THROW_ERROR(std::string("Error : component " + obj->get_id() + " in/output port " + temp->get_id() + " is not bound\n"));
+         }
          else if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && permissive)
          {
             if(debug_level >= DEBUG_LEVEL_VERBOSE)
+            {
                THROW_WARNING("component " + obj->get_id() + " in/output port " + temp->get_id() + " is not bound");
+            }
          }
          else if(temp->get_kind() == port_vector_o_K)
          {
@@ -985,11 +1023,15 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
                auto* tempi = GetPointer<port_o>(temp->get_port(w));
                THROW_ASSERT(tempi, "Expected a port got something of different");
                if(tempi->get_connections_size() == 0 && !permissive)
+               {
                   THROW_ERROR(std::string("Error : component " + obj->get_id() + " in/output port " + tempi->get_id() + " is not bound\n"));
+               }
                else if(tempi->get_connections_size() == 0 && permissive)
                {
                   if(debug_level >= DEBUG_LEVEL_VERBOSE)
+                  {
                      THROW_WARNING("component " + obj->get_id() + " in/output port " + tempi->get_id() + " is not bound");
+                  }
                }
             }
          }
@@ -998,13 +1040,19 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
       {
          auto* temp = GetPointer<port_o>(top_c->get_gen_port(i));
          if(!temp)
+         {
             THROW_ERROR("not expected type of port");
+         }
          if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && !permissive)
+         {
             THROW_ERROR(std::string("Error : component " + obj->get_id() + " generic port " + temp->get_id() + " is not bound\n"));
+         }
          else if(temp->get_kind() == port_o_K && temp->get_connections_size() == 0 && permissive)
          {
             if(debug_level >= DEBUG_LEVEL_VERBOSE)
+            {
                THROW_WARNING("component " + obj->get_id() + " generic port " + temp->get_id() + " is not bound");
+            }
          }
          else if(temp->get_kind() == port_vector_o_K)
          {
@@ -1013,11 +1061,15 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
                auto* tempi = GetPointer<port_o>(temp->get_port(w));
                THROW_ASSERT(tempi, "Expected a port got something of different");
                if(tempi->get_connections_size() == 0 && !permissive)
+               {
                   THROW_ERROR(std::string("Error : component " + obj->get_id() + " generic port " + tempi->get_id() + " is not bound\n"));
+               }
                else if(tempi->get_connections_size() == 0 && permissive)
                {
                   if(debug_level >= DEBUG_LEVEL_VERBOSE)
+                  {
                      THROW_WARNING("component " + obj->get_id() + " generic port " + tempi->get_id() + " is not bound");
+                  }
                }
             }
          }
@@ -1031,7 +1083,9 @@ void structural_manager::check_structure(structural_objectRef obj, bool permissi
          case component_o_K:
          {
             if(!top_c->get_internal_object(i)->get_black_box())
+            {
                check_structure(top_c->get_internal_object(i), permissive);
+            }
             break;
          }
          case constant_o_K:
@@ -1054,11 +1108,17 @@ void structural_manager::INIT(bool permissive)
 {
    check_structure(circuit, permissive);
    if(og)
+   {
       delete og;
+   }
    if(data_graph)
+   {
       delete data_graph;
+   }
    if(circuit_graph)
+   {
       delete circuit_graph;
+   }
    og = new graphs_collection(GraphInfoRef(new cg_graph_info), Param);
    data_graph = new graph(og, PURE_DATA_SELECTOR);
    circuit_graph = new graph(og, ALL_LINES_SELECTOR);
@@ -1072,7 +1132,9 @@ structural_objectRef structural_manager::add_module_from_technology_library(cons
    technology_nodeRef port_tec_node = TM->get_fu(fu_name, library_name);
    THROW_ASSERT(port_tec_node, std::string("gate not found: ") + fu_name + " " + std::string(" in library: ") + library_name);
    if(GetPointer<functional_unit_template>(port_tec_node))
+   {
       port_tec_node = GetPointer<functional_unit_template>(port_tec_node)->FU;
+   }
    THROW_ASSERT(port_tec_node, "port_tec_node is null");
    THROW_ASSERT(GetPointer<functional_unit>(port_tec_node), "GetPointer<functional_unit>(port_tec_node) is null");
    THROW_ASSERT(GetPointer<functional_unit>(port_tec_node)->CM, "GetPointer<functional_unit>(port_tec_node)->CM is null for " + fu_name);
@@ -1080,11 +1142,15 @@ structural_objectRef structural_manager::add_module_from_technology_library(cons
    THROW_ASSERT(curr_lib_instance->get_kind() == component_o_K, "Expected a component got something of different");
    structural_objectRef curr_gate = structural_objectRef(new component_o(debug_level, owner));
    if(!owner)
+   {
       circuit = curr_gate; // set the top component of the circuit manager.
+   }
    curr_lib_instance->copy(curr_gate);
    curr_gate->set_id(id);
    if(owner)
+   {
       GetPointer<module>(owner)->add_internal_object(curr_gate);
+   }
    return curr_gate;
 }
 #endif
@@ -1101,9 +1167,13 @@ void circuit_add_edge(typename boost::graph_traits<Graph>::vertex_descriptor A, 
    for(boost::tie(oi, oi_end) = boost::out_edges(A, g); oi != oi_end; oi++)
    {
       if(boost::target(*oi, g) != B)
+      {
          continue;
+      }
       if(GET_FROM_PORT(&g, *oi) == from1 && GET_TO_PORT(&g, *oi) == to1)
+      {
          return;
+      }
    }
    boost::tie(e, inserted) = boost::add_edge(A, B, EdgeProperty(selector), g);
    EDGE_ADD_FROM_PORT(&g, e, from1);
@@ -1136,13 +1206,19 @@ static void add_directed_edge_single(graphs_collection* bg, const std::map<struc
 
    // first detect the actual owner
    if(owner1 && owner1->get_kind() == port_vector_o_K)
+   {
       owner1 = owner1->get_owner();
+   }
    if(owner2 && owner2->get_kind() == port_vector_o_K)
+   {
       owner2 = owner2->get_owner();
+   }
 
    int edge_type = DATA_SELECTOR;
    if(GetPointer<port_o>(p_obj2)->get_is_clock() || GetPointer<port_o>(p_obj2)->get_is_clock())
+   {
       edge_type = CLOCK_SELECTOR;
+   }
 
    if(owner1 == owner2) // pass through signal
    {
@@ -1161,18 +1237,28 @@ static void add_directed_edge_single(graphs_collection* bg, const std::map<struc
       {
          src = module_vertex_rel.find(owner1)->second;
          if(GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::OUT)
+         {
             tgt = ex;
+         }
          else if(GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::IN)
+         {
             tgt = en;
+         }
          else if(GetPointer<port_o>(p_obj2)->get_port_direction() == port_o::IO)
          {
             if(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::IN)
+            {
                tgt = en;
+            }
             else
+            {
                tgt = ex;
+            }
          }
          else
+         {
             THROW_ERROR("Something wrong");
+         }
          if(GetPointer<port_o>(p_obj1)->get_port_direction() == port_o::IN)
          {
             std::swap(src, tgt);
@@ -1296,7 +1382,9 @@ static void add_directed_edge(graphs_collection* bg, const std::map<structural_o
 {
    // the port is not connected to any object
    if(!p2)
+   {
       return;
+   }
    THROW_ASSERT(p1, "not valid object");
 
    // std::cerr << "p1 is " << p1->get_kind_text() << std::endl;
@@ -1330,7 +1418,9 @@ static void add_directed_edge(graphs_collection* bg, const std::map<structural_o
          structural_objectRef owner1 = p1->get_owner();
          boost::graph_traits<graphs_collection>::vertex_descriptor v1;
          if(owner1 && owner1->get_kind() == port_vector_o_K)
+         {
             owner1 = owner1->get_owner();
+         }
          THROW_ASSERT(module_vertex_rel.find(owner1) != module_vertex_rel.end(), "module not found");
          v1 = module_vertex_rel.find(owner1)->second;
          circuit_add_edge(en, v1, DATA_SELECTOR, *bg, p2, p1, is_critical);
@@ -1344,9 +1434,13 @@ static void add_directed_edge(graphs_collection* bg, const std::map<structural_o
          structural_objectRef owner2 = p2->get_owner();
          boost::graph_traits<graphs_collection>::vertex_descriptor v1, v2;
          if(owner1 && owner1->get_kind() == port_vector_o_K)
+         {
             owner1 = owner1->get_owner();
-         if(owner1 == owner2) // top ports
+         }
+         if(owner1 == owner2)
+         { // top ports
             v1 = en;
+         }
          else
          {
             THROW_ASSERT(module_vertex_rel.find(owner1) != module_vertex_rel.end(), "module not found");
@@ -1385,7 +1479,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
    {
       structural_objectRef port = mod->get_in_port(p);
       if(GetPointer<port_o>(port)->get_critical())
+      {
          GET_NODE_INFO(bg, cg_node_info, v_en)->is_critical = true;
+      }
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Creating the PO node");
@@ -1399,7 +1495,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
    {
       structural_objectRef port = mod->get_out_port(p);
       if(GetPointer<port_o>(port)->get_critical())
+      {
          GET_NODE_INFO(bg, cg_node_info, v_ex)->is_critical = true;
+      }
    }
 
    // attach the graph property to the graph
@@ -1425,7 +1523,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
             GET_NODE_INFO(bg, cg_node_info, curr_v)->node_operation = GET_TYPE_NAME(mod_int);
             GET_NODE_INFO(bg, cg_node_info, curr_v)->reference = mod->get_internal_object(i);
             if(mod->get_internal_object(i)->get_kind() == component_o_K)
+            {
                GET_NODE_INFO(bg, cg_node_info, curr_v)->is_critical = GetPointer<module>(mod->get_internal_object(i))->get_critical();
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Creating the node for the instance " + mod_int->get_path());
             break;
          }
@@ -1466,7 +1566,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     - Single port");
                      const structural_objectRef& bounded = p->find_bounded_object();
                      if(!bounded)
+                     {
                         continue;
+                     }
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "     - Bounded object: " + bounded->get_path() + " - " + bounded->get_kind_text());
                      if(!(GetPointer<signal_o>(bounded) && !(GetPointer<signal_o>(bounded)->is_full_connected())))
                      {
@@ -1475,7 +1577,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                         if(p->get_critical())
                         {
                            if((GetPointer<port_o>(bounded)->get_critical()) or (GetPointer<signal_o>(bounded) && GetPointer<signal_o>(bounded)->get_critical()))
+                           {
                               is_critical = true;
+                           }
                         }
                         add_directed_edge(bg, module_vertex_rel, in_port, bounded, v_en, v_ex, is_critical);
                      }
@@ -1490,7 +1594,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      - Port: " + in_port_i->get_path());
                         const structural_objectRef& bounded = GetPointer<port_o>(pv->get_port(k))->find_bounded_object();
                         if(!bounded)
+                        {
                            continue;
+                        }
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "       - Bounded object: " + bounded->get_path() + " - " + bounded->get_kind_text());
                         if(!(GetPointer<signal_o>(bounded) && !(GetPointer<signal_o>(bounded)->is_full_connected())))
                         {
@@ -1528,7 +1634,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                      if(GetPointer<port_o>(out_port)->get_critical())
                      {
                         if(GetPointer<port_o>(target)->get_critical())
+                        {
                            is_critical = true;
+                        }
                      }
                      add_directed_edge(bg, module_vertex_rel, out_port, target, v_en, v_ex, is_critical);
                   }
@@ -1549,7 +1657,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                            const port_o* p = GetPointer<port_o>(pv->get_port(k));
                            const structural_objectRef& target = p->find_bounded_object();
                            if(!target)
+                           {
                               continue;
+                           }
                            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding direct edge from " + p->get_path() + " to " + target->get_path());
                            if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
                            {
@@ -1571,7 +1681,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   * In/Out port: " + mod_inst->get_in_out_port(j)->get_path());
                   const structural_objectRef& bounded = GetPointer<port_o>(mod_inst->get_in_out_port(j))->find_bounded_object();
                   if(!bounded)
+                  {
                      continue;
+                  }
                   if(mod_inst->get_in_out_port(j)->get_kind() == port_o_K)
                   {
                      add_directed_edge(bg, module_vertex_rel, mod_inst->get_in_out_port(j), bounded, v_en, v_ex);
@@ -1583,7 +1695,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                      {
                         const structural_objectRef& bounded_k = GetPointer<port_o>(pv->get_port(k))->find_bounded_object();
                         if(!bounded_k)
+                        {
                            continue;
+                        }
                         add_directed_edge(bg, module_vertex_rel, pv->get_port(k), bounded_k, v_en, v_ex);
                      }
                   }
@@ -1597,7 +1711,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "   * Generic port: " + mod_inst->get_gen_port(j)->get_path());
                   const structural_objectRef& bounded = GetPointer<port_o>(mod_inst->get_gen_port(j))->find_bounded_object();
                   if(!bounded)
+                  {
                      continue;
+                  }
                   if(mod_inst->get_gen_port(j)->get_kind() == port_o_K)
                   {
                      add_directed_edge(bg, module_vertex_rel, mod_inst->get_gen_port(j), bounded, v_en, v_ex);
@@ -1609,7 +1725,9 @@ void structural_manager::build_graph(const structural_objectRef& top, graphs_col
                      {
                         const structural_objectRef& bounded_k = GetPointer<port_o>(pv->get_port(k))->find_bounded_object();
                         if(!bounded_k)
+                        {
                            continue;
+                        }
                         add_directed_edge(bg, module_vertex_rel, pv->get_port(k), bounded_k, v_en, v_ex);
                      }
                   }
@@ -1643,7 +1761,9 @@ void structural_manager::xload(const xml_element* node, structural_managerRef co
    {
       const auto* Enode = GetPointer<const xml_element>(iter);
       if(!Enode || Enode->get_name() != GET_CLASS_NAME(component_o))
+      {
          continue;
+      }
       CM->get_circ()->xload(Enode, CM->get_circ(), CM);
    }
 }
@@ -1669,9 +1789,13 @@ void remove_port_connection(const structural_objectRef& obj)
    {
       structural_objectRef comp = pin->get_connection(j);
       if(GetPointer<port_o>(comp))
+      {
          GetPointer<port_o>(comp)->remove_connection(obj);
+      }
       if(GetPointer<signal_o>(comp))
+      {
          GetPointer<signal_o>(comp)->remove_port(obj);
+      }
    }
 }
 
@@ -1719,7 +1843,9 @@ void structural_manager::remove_module(structural_objectRef obj)
    auto* top = GetPointer<module>(top_obj);
    top->remove_internal_object(obj);
    for(const auto& k : remove)
+   {
       top->remove_internal_object(k);
+   }
 }
 
 void structural_manager::remove_connection(structural_objectRef, structural_objectRef)
@@ -1738,18 +1864,28 @@ void structural_manager::change_connection(structural_objectRef old_obj, structu
       structural_objectRef conn_comp = p_old->get_connection(i);
       // std::cerr << "change connection between " << old_obj->get_path() << " and " << conn_comp->get_path() << " - will be conneted to " << new_obj->get_path() << std::endl;
       if(GetPointer<signal_o>(conn_comp) and GetPointer<signal_o>(conn_comp)->get_owner()->get_kind() != signal_vector_o_K and conn_comp->get_owner() != owner)
+      {
          continue;
+      }
       if(GetPointer<port_o>(conn_comp) and conn_comp->get_owner() != owner and conn_comp->get_owner()->get_owner() != owner and (conn_comp->get_owner()->get_kind() != port_vector_o_K or conn_comp->get_owner()->get_owner() != owner))
+      {
          continue;
+      }
       if(GetPointer<port_o>(new_obj) and !GetPointer<port_o>(new_obj)->is_connected(conn_comp))
+      {
          add_connection(new_obj, conn_comp);
+      }
       if(GetPointer<port_o>(conn_comp))
+      {
          GetPointer<port_o>(conn_comp)->substitute_connection(old_obj, new_obj);
+      }
       else if(GetPointer<signal_o>(conn_comp))
       {
          GetPointer<signal_o>(conn_comp)->substitute_port(old_obj, new_obj);
       }
       else
+      {
          THROW_ERROR("Connected component not supported: " + std::string(conn_comp->get_kind_text()));
+      }
    }
 }

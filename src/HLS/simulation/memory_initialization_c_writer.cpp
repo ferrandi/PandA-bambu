@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2019-2020 Politecnico di Milano
+ *              Copyright (c) 2019-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,10 +62,16 @@ static bool is_all_8zeros(const std::string& str)
 {
    size_t size = str.size();
    if(size % 8 != 0 || size == 8)
+   {
       return false;
+   }
    for(size_t i = 0; i < size; ++i)
+   {
       if(str.at(i) != '0')
+      {
          return false;
+      }
+   }
    return true;
 }
 

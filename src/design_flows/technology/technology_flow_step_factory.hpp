@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,6 +86,6 @@ class TechnologyFlowStepFactory : public DesignFlowStepFactory
     * Create a scheduling design flow step
     * @param technology_design_flow_step_type is the type of step to be created
     */
-   DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type hls_flow_step_type) const;
+   DesignFlowStepRef CreateTechnologyFlowStep(const TechnologyFlowStep_Type technology_flow_step_type) const;
 };
 #endif

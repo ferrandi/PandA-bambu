@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2020 Politecnico di Milano
+ *              Copyright (C) 2014-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -136,7 +136,7 @@ class SDCScheduling : public Scheduling
     * @param target is the second operation
     * @param simultaneous tells if the two operations can be executed in the same clock cycle (chained) or not
     */
-   void AddDependenceConstraint(const meilp_solverRef solver, const vertex first_operation, const vertex second_operation, const bool simultaneous) const;
+   void AddDependenceConstraint(const meilp_solverRef solver, const vertex source, const vertex target, const bool simultaneous) const;
 
    /**
     * Add constraints to force consecutive execution of different pipeline stages

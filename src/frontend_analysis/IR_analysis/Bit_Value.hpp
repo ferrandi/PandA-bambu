@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -225,7 +225,7 @@ class Bit_Value : public FunctionFrontendFlowStep, public BitLatticeManipulator
     * @param function_id is the identifier of the function
     * @param design_flow_manager is the design flow manager
     */
-   Bit_Value(const ParameterConstRef Param, const application_managerRef _AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   Bit_Value(const ParameterConstRef Param, const application_managerRef AM, unsigned int f_id, const DesignFlowManagerConstRef dfm);
 
    /**
     *  Destructor

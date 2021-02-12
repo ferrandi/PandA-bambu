@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2021 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@ REF_FORWARD_DECL(tree_node);
 class CallGraphBuiltinCall : public FunctionFrontendFlowStep
 {
  private:
-   typedef std::map<std::string, CustomOrderedSet<unsigned int>> TypeDeclarationMap;
+   using TypeDeclarationMap = std::map<std::string, CustomOrderedSet<unsigned int>>;
    bool modified;
 
    /**

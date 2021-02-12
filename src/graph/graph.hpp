@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,7 +84,7 @@ CONSTREF_FORWARD_DECL(UVertexWriter);
 CONSTREF_FORWARD_DECL(VertexWriter);
 //@}
 
-typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, NodeInfoRef>, EdgeInfoRef, GraphInfoRef> boost_raw_graph;
+using boost_raw_graph = boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, NodeInfoRef>, EdgeInfoRef, GraphInfoRef>;
 
 struct RawGraph : public boost_raw_graph
 {
@@ -164,7 +164,9 @@ info_object* get_raw_edge_info(typename boost::graph_traits<Graph>::edge_descrip
    /// Note: reference has to be used since we want to modify the info associated with the edge
    EdgeInfoRef& info = g[e];
    if(!info)
+   {
       info = EdgeInfoRef(new info_object);
+   }
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr, "Function get_raw_edge_info: the edges associated with the graph used are not derived from info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
    return GetPointer<info_object>(info);
 }
@@ -218,16 +220,16 @@ struct EdgeProperty
     * Constructor with selector and property
     * @param _info is the property to be associated with the edge
     */
-   EdgeProperty(const int _selector, EdgeInfoRef _info) : selector(_selector), info(std::move(_info))
+   EdgeProperty(const int _selector, EdgeInfoRef _info) : selector(_selector), info(_info)
    {
    }
 };
 #if BOOST_VERSION >= 104600
-typedef boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>
-    boost_graphs_collection;
+using boost_graphs_collection =
+    boost::adjacency_list<boost::listS, boost::listS, boost::bidirectionalS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>;
 
-typedef boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>
-    undirected_boost_graphs_collection;
+using undirected_boost_graphs_collection =
+    boost::adjacency_list<boost::listS, boost::listS, boost::undirectedS, boost::property<boost::vertex_index_t, std::size_t, boost::property<boost::vertex_color_t, boost::default_color_type, NodeInfoRef>>, EdgeProperty, GraphInfoRef>;
 
 #define boost_CGetOpGraph_property(graph_arg) (graph_arg)[boost::graph_bundle]
 
@@ -420,11 +422,13 @@ struct graphs_collection : public boost_graphs_collection
          }
       }
       for(auto e0 : toBeRemoved)
+      {
          boost::remove_edge(e0, *this);
+      }
    }
 };
 
-typedef refcount<graphs_collection> graphs_collectionRef;
+using graphs_collectionRef = refcount<graphs_collection>;
 
 /**
  * bulk graph. All the edge of a graph are store in this object
@@ -487,7 +491,7 @@ struct undirected_graphs_collection : public undirected_boost_graphs_collection
    }
 };
 
-typedef refcount<undirected_graphs_collection> undirected_graphs_collectionRef;
+using undirected_graphs_collectionRef = refcount<undirected_graphs_collection>;
 
 /**
  * Function returning the reference to the edge information associated with the specified edge.
@@ -501,7 +505,9 @@ NodeInfoRef& Cget_node_infoRef(typename boost::graph_traits<Graph>::vertex_descr
 {
    NodeInfoRef& info = g[v];
    if(!info)
+   {
       info = NodeInfoRef(new info_object);
+   }
    return info;
 }
 
@@ -535,7 +541,9 @@ info_object* get_node_info(typename boost::graph_traits<Graph>::vertex_descripto
 {
    NodeInfoRef& info = g[v];
    if(!info)
+   {
       info = NodeInfoRef(new info_object);
+   }
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr, "Function get_node_info: the vertices associated with the graph used are not derived from info_object\n\tCheck the actual type of info_object and the type of the node of Graph");
    return GetPointer<info_object>(info);
 }
@@ -572,7 +580,9 @@ info_object* get_edge_info(typename boost::graph_traits<Graph>::edge_descriptor 
    /// Note: reference has to be used since we want to modify the info associated with the edge
    EdgeInfoRef& info = g[e].info;
    if(!info)
+   {
       info = EdgeInfoRef(new info_object);
+   }
    THROW_ASSERT(GetPointer<info_object>(info) != nullptr, "Function get_edge_info: the edges associated with the graph used are not derived from info_object\n\tCheck the actual type of info_object and the type of the edge of Graph");
    return GetPointer<info_object>(info);
 }
@@ -620,7 +630,7 @@ struct SelectVertex
     * Constructor
     * @param _subset is the set of vertices to be considered
     */
-   explicit SelectVertex(CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> _subset) : all(false), subset(std::move(_subset))
+   explicit SelectVertex(const CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor>& _subset) : all(false), subset(_subset)
    {
    }
 
@@ -632,7 +642,9 @@ struct SelectVertex
    bool operator()(const typename boost::graph_traits<Graph>::vertex_descriptor& v) const
    {
       if(all)
+      {
          return true;
+      }
       else
       {
          return (subset.find(v) != subset.end());
@@ -679,7 +691,7 @@ struct SelectEdge
     * @param _g is the graph
     * @param _subgraph_vertices is the set of vertices of the filtered graph
     */
-   SelectEdge(const int _selector, Graph* _g, CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(std::move(_subgraph_vertices))
+   SelectEdge(const int _selector, Graph* _g, const CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor>& _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(_subgraph_vertices)
    {
    }
 
@@ -687,16 +699,22 @@ struct SelectEdge
    bool operator()(const Edge& e) const
    {
       if(subgraph_vertices.empty())
+      {
          return selector & (*g)[e].selector;
+      }
       else
       {
          typename boost::graph_traits<Graph>::vertex_descriptor u, v;
          u = boost::source(e, *g);
          v = boost::target(e, *g);
          if(subgraph_vertices.find(v) != subgraph_vertices.end() && subgraph_vertices.find(u) != subgraph_vertices.end())
+         {
             return selector & (*g)[e].selector;
+         }
          else
+         {
             return false;
+         }
       }
    }
 };
@@ -933,7 +951,9 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
          {
             const boost::graph_traits<graphs_collection>::vertex_descriptor target = boost::target(*oe, *this);
             if(target == y)
+            {
                return true;
+            }
             if(encountered_vertices.find(target) == encountered_vertices.end())
             {
                encountered_vertices.insert(target);
@@ -1023,13 +1043,13 @@ struct graph : public boost::filtered_graph<boost_graphs_collection, SelectEdge<
    }
 
 #if BOOST_VERSION >= 104200
-   typedef boost::edge_property_type<graphs_collection>::type edge_property_type;
-   typedef boost::vertex_property_type<graphs_collection>::type vertex_property_type;
-   typedef boost::graph_property_type<graphs_collection>::type graph_property_type;
+   using edge_property_type = boost::edge_property_type<graphs_collection>::type;
+   using vertex_property_type = boost::vertex_property_type<graphs_collection>::type;
+   using graph_property_type = boost::graph_property_type<graphs_collection>::type;
 #endif
 };
-typedef refcount<graph> graphRef;
-typedef refcount<const graph> graphConstRef;
+using graphRef = refcount<graph>;
+using graphConstRef = refcount<const graph>;
 
 #if BOOST_VERSION >= 104600
 namespace boost
@@ -1041,22 +1061,22 @@ namespace boost
          template <class FilteredGraph, class Property, class Tag>
          struct bind_
          {
-            typedef typename FilteredGraph::graph_type Graph;
-            typedef property_map<Graph, Tag> Map;
-            typedef typename Map::type type;
-            typedef typename Map::const_type const_type;
+            using Graph = typename FilteredGraph::graph_type;
+            using Map = property_map<Graph, Tag>;
+            using type = typename Map::type;
+            using const_type = typename Map::const_type;
          };
       };
    } // namespace detail
    template <>
    struct vertex_property_selector<filtered_graph_tag>
    {
-      typedef detail::filtered_graph_property_selector type;
+      using type = detail::filtered_graph_property_selector;
    };
    template <>
    struct edge_property_selector<filtered_graph_tag>
    {
-      typedef detail::filtered_graph_property_selector type;
+      using type = detail::filtered_graph_property_selector;
    };
 
 } // namespace boost
@@ -1153,13 +1173,13 @@ struct ugraph : public boost::filtered_graph<undirected_boost_graphs_collection,
    }
 
 #if BOOST_VERSION >= 104200
-   typedef boost::edge_property_type<undirected_graphs_collection>::type edge_property_type;
-   typedef boost::vertex_property_type<undirected_graphs_collection>::type vertex_property_type;
-   typedef boost::graph_property_type<undirected_graphs_collection>::type graph_property_type;
+   using edge_property_type = boost::edge_property_type<undirected_graphs_collection>::type;
+   using vertex_property_type = boost::vertex_property_type<undirected_graphs_collection>::type;
+   using graph_property_type = boost::graph_property_type<undirected_graphs_collection>::type;
 #endif
 };
 
-typedef refcount<ugraph> ugraphRef;
+using ugraphRef = refcount<ugraph>;
 
 /**
  * Functor used to sort edges
@@ -1185,28 +1205,32 @@ struct ltedge
    bool operator()(const typename boost::graph_traits<Graph>::edge_descriptor first, const typename boost::graph_traits<Graph>::edge_descriptor second) const
    {
       if(boost::source(first, *g) < boost::source(second, *g))
+      {
          return true;
+      }
       if(boost::source(first, *g) > boost::source(second, *g))
+      {
          return false;
+      }
       return boost::target(first, *g) < boost::target(second, *g);
    }
 };
 
 /// vertex definition.
-typedef boost::graph_traits<graph>::vertex_descriptor vertex;
+using vertex = boost::graph_traits<graph>::vertex_descriptor;
 /// null vertex definition
 #define NULL_VERTEX boost::graph_traits<graph>::null_vertex()
 /// vertex_iterator definition.
-typedef boost::graph_traits<graph>::vertex_iterator VertexIterator;
+using VertexIterator = boost::graph_traits<graph>::vertex_iterator;
 
 /// in_edge_iterator definition.
-typedef boost::graph_traits<graph>::in_edge_iterator InEdgeIterator;
+using InEdgeIterator = boost::graph_traits<graph>::in_edge_iterator;
 /// out_edge_iterator definition.
-typedef boost::graph_traits<graph>::out_edge_iterator OutEdgeIterator;
+using OutEdgeIterator = boost::graph_traits<graph>::out_edge_iterator;
 /// edge_iterator definition.
-typedef boost::graph_traits<graph>::edge_iterator EdgeIterator;
+using EdgeIterator = boost::graph_traits<graph>::edge_iterator;
 /// edge definition.
-typedef boost::graph_traits<graph>::edge_descriptor EdgeDescriptor;
+using EdgeDescriptor = boost::graph_traits<graph>::edge_descriptor;
 
 /**
  * Definition of hash function for EdgeDescriptor
@@ -1227,30 +1251,30 @@ namespace std
 } // namespace std
 
 template <typename H>
-H AbslHashValue(H h, const EdgeDescriptor& m)
+H AbslHashValue(const H& h, const EdgeDescriptor& m)
 {
-   return H::combine(std::move(h), m.m_source, m.m_target);
+   return H::combine(h, m.m_source, m.m_target);
 }
 /// vertex definition.
-typedef boost::graph_traits<ugraph>::vertex_descriptor uvertex;
+using uvertex = boost::graph_traits<ugraph>::vertex_descriptor;
 /// null vertex definition
 #define NULL_UVERTEX boost::graph_traits<ugraph>::null_vertex()
 
 /// vertex definition for undirected_graphs_collection.
-typedef boost::graph_traits<undirected_graphs_collection>::vertex_descriptor UGCvertex;
+using UGCvertex = boost::graph_traits<undirected_graphs_collection>::vertex_descriptor;
 #define NULL_UGCVERTEX boost::graph_traits<undirected_graphs_collection>::null_vertex()
 
 /// vertex_iterator definition.
-typedef boost::graph_traits<ugraph>::vertex_iterator UVertexIterator;
+using UVertexIterator = boost::graph_traits<ugraph>::vertex_iterator;
 
 /// in_edge_iterator definition.
-typedef boost::graph_traits<ugraph>::in_edge_iterator UInEdgeIterator;
+using UInEdgeIterator = boost::graph_traits<ugraph>::in_edge_iterator;
 /// out_edge_iterator definition.
-typedef boost::graph_traits<ugraph>::out_edge_iterator UOutEdgeIterator;
+using UOutEdgeIterator = boost::graph_traits<ugraph>::out_edge_iterator;
 /// edge_iterator definition.
-typedef boost::graph_traits<ugraph>::edge_iterator UEdgeIterator;
+using UEdgeIterator = boost::graph_traits<ugraph>::edge_iterator;
 /// edge definition.
-typedef boost::graph_traits<ugraph>::edge_descriptor UEdgeDescriptor;
+using UEdgeDescriptor = boost::graph_traits<ugraph>::edge_descriptor;
 
 /**
  * Given a filtered graph and an index returns the vertex exploiting the boost::vertex applied on the original graph.
@@ -1281,9 +1305,13 @@ void ADD_UEDGE(typename boost::graph_traits<Graph>::vertex_descriptor A, typenam
    bool inserted;
    boost::tie(e, inserted) = boost::edge(A, B, g);
    if(inserted)
+   {
       g[e].selector = g[e].selector | selector;
+   }
    else
+   {
       boost::add_edge(A, B, selector, g);
+   }
 }
 
 /**

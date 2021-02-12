@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -200,6 +200,10 @@ void RemoveEndingIf::Initialize()
 
 bool RemoveEndingIf::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    /// If no schedule exists, this step has NOT to be executed
 #if HAVE_ILP_BUILT
    if(parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
@@ -222,13 +226,11 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Looking for feasible blocs");
    for(auto block : sl->list_of_bloc)
    {
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping remaining transformations because of reached limit of cfg transformations");
          break;
       }
-#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if a bloc has just 2 incoming and 1 outcoming");
       // The block should have 2 inc arcs from if and then BB and one outgoing to EXIT
       if(block.second->list_of_succ.size() == 1 and block.second->list_of_pred.size() == 2)
@@ -297,8 +299,8 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                            {
                               max = schedule->GetEndingTime(stmt->index);
                            }
-                           if(GET_NODE(stmt)->get_kind() == gimple_call_K or (GetPointer<const gimple_assign>(GET_NODE(stmt)) and (GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == call_expr_K ||
-                                                                                                                                   GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == aggr_init_expr_K)))
+                           if((GET_NODE(stmt)->get_kind() == gimple_call_K) || ((GetPointer<const gimple_assign>(GET_NODE(stmt))) && ((GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == call_expr_K) ||
+                                                                                                                                      (GET_NODE(GetPointer<const gimple_assign>(GET_NODE(stmt))->op1)->get_kind() == aggr_init_expr_K))))
                            {
                               return false;
                            }
@@ -324,9 +326,7 @@ DesignFlowStep_Status RemoveEndingIf::InternalExec()
                         }
 
                         bb_modified = true;
-#ifndef NDEBUG
                         AppM->RegisterTransformation(GetName(), last_stmt);
-#endif
                      }
                   }
                   else

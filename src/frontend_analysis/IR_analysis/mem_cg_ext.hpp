@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -43,16 +43,15 @@
 #ifndef MEM_CG_EXT_HPP
 #define MEM_CG_EXT_HPP
 
-// include superclass header
-#include "function_frontend_flow_step.hpp"
+#include "application_frontend_flow_step.hpp"
 
-class mem_cg_ext : public FunctionFrontendFlowStep
+class mem_cg_ext : public ApplicationFrontendFlowStep
 {
  protected:
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
  public:
-   mem_cg_ext(const application_managerRef AppM, const unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   mem_cg_ext(const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    ~mem_cg_ext() override;
 
@@ -60,7 +59,7 @@ class mem_cg_ext : public FunctionFrontendFlowStep
     * Execute the step
     * @return the exit status of this step
     */
-   DesignFlowStep_Status InternalExec() override;
+   DesignFlowStep_Status Exec() override;
 
    /**
     * Initialize the step (i.e., like a constructor, but executed just before exec

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -113,18 +113,26 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
    {
       const auto curr_bb = block.first;
       if(curr_bb == bloc::ENTRY_BLOCK_ID)
+      {
          continue;
+      }
       if(curr_bb == bloc::EXIT_BLOCK_ID)
+      {
          continue;
+      }
       for(const auto& stmt : block.second->CGetStmtList())
       {
          /// skip all non-clobber gimple_assign
          tree_nodeRef tn = GET_NODE(stmt);
          auto* ga = GetPointer<gimple_assign>(tn);
          if(!ga || !ga->clobber)
+         {
             continue;
+         }
          if(is_single_write_memory)
+         {
             var_substitution_table[GET_INDEX_NODE(ga->memdef)] = ga->memuse;
+         }
          stmt_to_be_removed[curr_bb].insert(stmt);
       }
    }
@@ -136,9 +144,13 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
       {
          const auto curr_bb = block.first;
          if(curr_bb == bloc::ENTRY_BLOCK_ID)
+         {
             continue;
+         }
          if(curr_bb == bloc::EXIT_BLOCK_ID)
+         {
             continue;
+         }
          for(const auto& phi : block.second->CGetPhiList())
          {
             auto* gp = GetPointer<gimple_phi>(GET_NODE(phi));
@@ -150,9 +162,11 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
                   {
                      tree_nodeRef res = var_substitution_table.find(GET_INDEX_NODE(def_edge.first))->second;
                      while(var_substitution_table.find(GET_INDEX_NODE(res)) != var_substitution_table.end())
+                     {
                         res = var_substitution_table.find(GET_INDEX_NODE(res))->second;
+                     }
                      THROW_ASSERT(
-                         !(GetPointer<ssa_name>(GET_NODE(res)) and GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))->clobber),
+                         !(GetPointer<ssa_name>(GET_NODE(res)) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt())) && GetPointer<gimple_assign>(GET_NODE(GetPointer<ssa_name>(GET_NODE(res))->CGetDefStmt()))->clobber),
                          "unexpected condition");
                      gp->ReplaceDefEdge(TM, def_edge, gimple_phi::DefEdge(TM->GetTreeReindex(GET_INDEX_NODE(res)), def_edge.second));
                   }
@@ -166,15 +180,19 @@ DesignFlowStep_Status remove_clobber_ga::InternalExec()
             auto* gn = GetPointer<gimple_node>(tn);
             THROW_ASSERT(gn, "unexpected condition");
             if(!gn->memuse)
+            {
                continue;
+            }
             if(var_substitution_table.find(GET_INDEX_NODE(gn->memuse)) != var_substitution_table.end())
+            {
                gn->memuse = TM->GetTreeReindex(GET_INDEX_NODE(var_substitution_table.find(GET_INDEX_NODE(gn->memuse))->second));
+            }
          }
       }
    }
 
    /// now remove the clobber gimple_assign
-   const std::map<unsigned int, CustomOrderedSet<tree_nodeRef>>::iterator stbr_it_end = stmt_to_be_removed.end();
+   const auto stbr_it_end = stmt_to_be_removed.end();
    for(auto stbr_it = stmt_to_be_removed.begin(); stbr_it != stbr_it_end; ++stbr_it)
    {
       unsigned int curr_bb = stbr_it->first;

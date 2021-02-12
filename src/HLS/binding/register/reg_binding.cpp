@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,18 +89,30 @@ reg_bindingRef reg_binding::create_reg_binding(const hlsRef& HLS, const HLS_mana
       auto omp_functions = GetPointer<OmpFunctions>(HLSMgr_->Rfuns);
       bool found = false;
       if(HLSMgr_->is_reading_writing_function(HLS->functionId) && omp_functions->kernel_functions.find(HLS->functionId) != omp_functions->kernel_functions.end())
+      {
          found = true;
+      }
       if(HLSMgr_->is_reading_writing_function(HLS->functionId) && omp_functions->parallelized_functions.find(HLS->functionId) != omp_functions->parallelized_functions.end())
+      {
          found = true;
+      }
       if(omp_functions->atomic_functions.find(HLS->functionId) != omp_functions->atomic_functions.end())
+      {
          found = true;
+      }
       if(found)
+      {
          return reg_bindingRef(new reg_binding_cs(HLS, HLSMgr_));
+      }
       else
+      {
          return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
+      }
    }
    else
+   {
       return reg_bindingRef(new reg_binding(HLS, HLSMgr_));
+   }
 }
 
 void reg_binding::print_el(const_iterator& it) const
@@ -117,7 +129,9 @@ CustomOrderedSet<unsigned int> reg_binding::get_vars(const unsigned int& r) cons
 
    auto rs_it_end = reg2storage_values.find(r)->second.end();
    for(auto rs_it = reg2storage_values.find(r)->second.begin(); rs_it != rs_it_end; ++rs_it)
+   {
       vars.insert(HLS->storage_value_information->get_variable_index(*rs_it));
+   }
    return vars;
 }
 
@@ -155,9 +169,13 @@ void reg_binding::specialise_reg(structural_objectRef& reg, unsigned int r)
    if(GetPointer<module>(reg)->get_in_port(0)->get_id() == CLOCK_PORT_NAME)
    {
       if(GetPointer<module>(reg)->get_in_port(1)->get_id() == RESET_PORT_NAME)
+      {
          offset = 2;
+      }
       else
+      {
          offset = 1;
+      }
    }
    if(STD_GET_SIZE(in_type) < max_bits)
    {
@@ -176,7 +194,7 @@ void reg_binding::compute_is_without_enable()
    std::map<unsigned int, unsigned int> n_in;
    std::map<unsigned int, unsigned int> n_out;
    const std::list<vertex>& support_set = HLS->Rliv->get_support();
-   const std::list<vertex>::const_iterator ss_it_end = support_set.end();
+   const auto ss_it_end = support_set.end();
    for(auto ss_it = support_set.begin(); ss_it != ss_it_end; ++ss_it)
    {
       vertex v = *ss_it;
@@ -186,9 +204,13 @@ void reg_binding::compute_is_without_enable()
       for(auto li_it = LI.begin(); li_it != li_it_end; ++li_it)
       {
          if(n_in.find(*li_it) == n_in.end())
+         {
             n_in[*li_it] = 1 + dummy_offset;
+         }
          else
+         {
             n_in[*li_it] = n_in[*li_it] + 1 + dummy_offset;
+         }
       }
       const CustomOrderedSet<unsigned int>& LO = HLS->Rliv->get_live_out(v);
       const CustomOrderedSet<unsigned int>::const_iterator lo_it_end = LO.end();
@@ -198,10 +220,14 @@ void reg_binding::compute_is_without_enable()
          {
             n_out[*lo_it] = 1 + dummy_offset;
             if(LI.find(*lo_it) != LI.end())
+            {
                n_out[*lo_it] = 2 + dummy_offset;
+            }
          }
          else
+         {
             n_out[*lo_it] = n_out[*lo_it] + 1 + dummy_offset;
+         }
       }
    }
 
@@ -213,9 +239,13 @@ void reg_binding::compute_is_without_enable()
       for(auto svs_it = store_vars_set.begin(); svs_it != svs_it_end && all_woe; ++svs_it)
       {
          if(n_in.find(*svs_it) == n_in.end() || n_out.find(*svs_it) == n_out.end())
+         {
             all_woe = false;
+         }
          if(n_in.find(*svs_it)->second != 1 || n_out.find(*svs_it)->second != 1)
+         {
             all_woe = false;
+         }
       }
       if(all_woe)
       {
@@ -241,7 +271,9 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
                for(unsigned int var : live_in)
                {
                   if(sv == HLS->storage_value_information->get_storage_value_index(v, var))
+                  {
                      stall_reg_table[index] = generic_objRef(new register_obj(index + used_regs));
+                  }
                }
             }
          }
@@ -249,9 +281,13 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
    }
    auto i = this->find(sv);
    if(i == this->end())
+   {
       this->insert(std::make_pair(sv, unique_table[index]));
+   }
    else
+   {
       i->second = unique_table[index];
+   }
    reg2storage_values[index].insert(sv);
 }
 
@@ -271,9 +307,13 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
    bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled() && !HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline();
 
    if(stallable_pipeline)
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs() + stall_reg_table.size()) + ", " + std::to_string(stall_reg_table.size()) + " introduced for supporting pipelined loops");
+   }
    else
+   {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Number of registers: " + std::to_string(get_used_regs()));
+   }
 
    if(!stallable_pipeline)
    {
@@ -297,7 +337,9 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
       SM->add_connection(clock_port, port_ck);
       structural_objectRef port_rst = reg_mod->find_member(RESET_PORT_NAME, port_o_K, reg_mod);
       if(port_rst != nullptr)
+      {
          SM->add_connection(reset_port, port_rst);
+      }
       regis->set_structural_obj(reg_mod);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "Register " + boost::lexical_cast<std::string>(i) + " successfully allocated");
       if(stallable_pipeline && stall_reg_table.find(i) != stall_reg_table.end())
@@ -334,14 +376,22 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
    std::string register_type_name;
-   std::string synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
+   auto synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
    if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
+   {
       register_type_name = register_STD;
+   }
    else if(synch_reset == "no")
+   {
       register_type_name = register_SE;
+   }
    else if(synch_reset == "sync")
+   {
       register_type_name = register_SRSE;
+   }
    else
+   {
       register_type_name = register_SARSE;
+   }
    return register_type_name;
 }

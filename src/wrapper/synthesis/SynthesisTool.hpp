@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,8 +89,7 @@ class SynthesisTool
 {
  public:
    /// supported synthesis tools
-   typedef enum
-   {
+   using type_t = enum {
       UNKNOWN = 0,
       DESIGN_COMPILER,
 #if HAVE_EXPERIMENTAL
@@ -118,7 +117,7 @@ class SynthesisTool
       LATTICE_FLOW,
       NXPYTHON_FLOW,
       BASH_FLOW
-   } type_t;
+   };
 
  protected:
    /// class containing information about the target device
@@ -167,7 +166,7 @@ class SynthesisTool
    /**
     * Constructor
     */
-   SynthesisTool(const ParameterConstRef& Param, std::string tool_exec, const target_deviceRef& device, const std::string& output_dir, std::string default_output_dir);
+   SynthesisTool(const ParameterConstRef& Param, std::string tool_exec, const target_deviceRef& device, const std::string& _flow_name, std::string default_output_dir);
 
    /**
     * Destructor
@@ -260,6 +259,6 @@ class SynthesisTool
    virtual std::string get_tool_exec() const;
 };
 /// refcount definition of the class
-typedef refcount<SynthesisTool> SynthesisToolRef;
+using SynthesisToolRef = refcount<SynthesisTool>;
 
 #endif

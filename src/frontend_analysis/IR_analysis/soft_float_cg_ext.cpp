@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -101,6 +101,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -226,23 +227,35 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                {
                   unsigned int bitsize_in = tree_helper::size(TreeM, op_expr_type_index);
                   if(bitsize_in < 32)
+                  {
                      bitsize_in = 32;
+                  }
                   else if(bitsize_in > 32 && bitsize_in < 64)
+                  {
                      bitsize_in = 64;
+                  }
                   unsigned int bitsize_out = tree_helper::size(TreeM, GET_INDEX_NODE(ue->type));
                   if(bitsize_in < 32)
+                  {
                      bitsize_in = 32;
+                  }
                   else if(bitsize_in > 32 && bitsize_in < 64)
+                  {
                      bitsize_in = 64;
+                  }
                   std::string bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   std::string bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   std::string fu_name;
                   if(op_expr_type->get_kind() != real_type_K)
                   {
                      if(tree_helper::is_unsigned(TreeM, op_expr_type_index))
+                     {
                         fu_name = "__uint" + bitsize_str_in + "_to_float" + bitsize_str_out + "if";
+                     }
                      else
+                     {
                         fu_name = "__int" + bitsize_str_in + "_to_float" + bitsize_str_out + "if";
+                     }
                      unsigned int called_function_id = TreeM->function_index(fu_name);
                      std::vector<tree_nodeRef> args;
                      args.push_back(ue->op);
@@ -339,9 +352,13 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   unsigned int bitsize_in = tree_helper::size(TreeM, op_expr_type_index);
                   unsigned int bitsize_out = tree_helper::size(TreeM, GET_INDEX_NODE(ue->type));
                   if(bitsize_out < 32)
+                  {
                      bitsize_out = 32;
+                  }
                   else if(bitsize_out > 32 && bitsize_out < 64)
+                  {
                      bitsize_out = 64;
+                  }
                   bool is_unsigned = tree_helper::is_unsigned(TreeM, GET_INDEX_NODE(ue->type));
                   std::string bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   std::string bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
@@ -466,13 +483,21 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
                   {
                      THROW_ASSERT(parameters->isOption(OPT_hls_fpdiv), "a default is expected");
                      if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "SRT4")
+                     {
                         fu_suffix = fu_suffix + "SRT4";
+                     }
                      else if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "G")
+                     {
                         fu_suffix = fu_suffix + "G";
+                     }
                      else if(parameters->getOption<std::string>(OPT_hls_fpdiv) == "SF")
+                     {
                         ; // do nothing
+                     }
                      else
+                     {
                         THROW_ERROR("FP-Division algorithm not supported:" + parameters->getOption<std::string>(OPT_hls_fpdiv));
+                     }
                   }
                   break;
                }
@@ -636,9 +661,13 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          const ternary_expr* te = GetPointer<ternary_expr>(curr_tn);
          RecursiveExaminate(current_statement, te->op0);
          if(te->op1)
+         {
             RecursiveExaminate(current_statement, te->op1);
+         }
          if(te->op2)
+         {
             RecursiveExaminate(current_statement, te->op2);
+         }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
@@ -646,11 +675,17 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          const quaternary_expr* qe = GetPointer<quaternary_expr>(curr_tn);
          RecursiveExaminate(current_statement, qe->op0);
          if(qe->op1)
+         {
             RecursiveExaminate(current_statement, qe->op1);
+         }
          if(qe->op2)
+         {
             RecursiveExaminate(current_statement, qe->op2);
+         }
          if(qe->op3)
+         {
             RecursiveExaminate(current_statement, qe->op3);
+         }
          break;
       }
       case lut_expr_K:
@@ -659,19 +694,33 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          RecursiveExaminate(current_statement, le->op0);
          RecursiveExaminate(current_statement, le->op1);
          if(le->op2)
+         {
             RecursiveExaminate(current_statement, le->op2);
+         }
          if(le->op3)
+         {
             RecursiveExaminate(current_statement, le->op3);
+         }
          if(le->op4)
+         {
             RecursiveExaminate(current_statement, le->op4);
+         }
          if(le->op5)
+         {
             RecursiveExaminate(current_statement, le->op5);
+         }
          if(le->op6)
+         {
             RecursiveExaminate(current_statement, le->op6);
+         }
          if(le->op7)
+         {
             RecursiveExaminate(current_statement, le->op7);
+         }
          if(le->op8)
+         {
             RecursiveExaminate(current_statement, le->op8);
+         }
          break;
       }
       case constructor_K:
@@ -701,15 +750,21 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
+         {
             if(cond.first)
+            {
                RecursiveExaminate(current_statement, cond.first);
+            }
+         }
          break;
       }
       case gimple_return_K:
       {
          const gimple_return* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
+         {
             RecursiveExaminate(current_statement, re->op);
+         }
          break;
       }
       case gimple_for_K:
@@ -735,22 +790,34 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       {
          const target_mem_ref* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
+         {
             RecursiveExaminate(current_statement, tmr->symbol);
+         }
          if(tmr->base)
+         {
             RecursiveExaminate(current_statement, tmr->base);
+         }
          if(tmr->idx)
+         {
             RecursiveExaminate(current_statement, tmr->idx);
+         }
          break;
       }
       case target_mem_ref461_K:
       {
          const target_mem_ref461* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
+         {
             RecursiveExaminate(current_statement, tmr->base);
+         }
          if(tmr->idx)
+         {
             RecursiveExaminate(current_statement, tmr->idx);
+         }
          if(tmr->idx2)
+         {
             RecursiveExaminate(current_statement, tmr->idx2);
+         }
          break;
       }
       case real_cst_K:

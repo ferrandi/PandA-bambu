@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -112,9 +112,9 @@ DesignFlowStep_Status string_cst_fix::Exec()
 {
    const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
    const tree_managerRef TM = AppM->get_tree_manager();
-   CustomOrderedSet<unsigned int> reached_body_fun_ids = CG->GetReachedBodyFunctions();
+   const auto reached_body_fun_ids = CG->GetReachedBodyFunctions();
 
-   for(unsigned int function_id : reached_body_fun_ids)
+   for(auto function_id : reached_body_fun_ids)
    {
       const tree_nodeRef curr_tn = TM->GetTreeNode(function_id);
       auto* fd = GetPointer<function_decl>(curr_tn);
@@ -122,7 +122,9 @@ DesignFlowStep_Status string_cst_fix::Exec()
       const std::string srcp_default = fd->include_name + ":" + STR(fd->line_number) + ":" + STR(fd->column_number);
 
       for(auto arg : fd->list_of_args)
+      {
          recursive_analysis(arg, srcp_default);
+      }
 
       std::map<unsigned int, blocRef>& blocks = sl->list_of_bloc;
       std::map<unsigned int, blocRef>::iterator it, it_end;
@@ -209,11 +211,15 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
             if(!gm->init_assignment)
             {
                if(GET_NODE(gm->op0)->get_kind() == var_decl_K && GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag && GET_NODE(gm->op1)->get_kind() == ssa_name_K)
+               {
                   GetPointer<var_decl>(GET_NODE(gm->op0))->readonly_flag = false;
+               }
                recursive_analysis(gm->op0, srcp);
                recursive_analysis(gm->op1, srcp);
                if(gm->predicate)
+               {
                   recursive_analysis(gm->predicate, srcp);
+               }
             }
          }
          break;
@@ -231,7 +237,9 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       {
          auto* sn = GetPointer<ssa_name>(curr_tn);
          if(sn->var)
+         {
             recursive_analysis(sn->var, srcp);
+         }
          break;
       }
       case tree_list_K:
@@ -270,9 +278,13 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          auto* te = GetPointer<ternary_expr>(curr_tn);
          recursive_analysis(te->op0, srcp);
          if(te->op1)
+         {
             recursive_analysis(te->op1, srcp);
+         }
          if(te->op2)
+         {
             recursive_analysis(te->op2, srcp);
+         }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
@@ -280,11 +292,17 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          auto* qe = GetPointer<quaternary_expr>(curr_tn);
          recursive_analysis(qe->op0, srcp);
          if(qe->op1)
+         {
             recursive_analysis(qe->op1, srcp);
+         }
          if(qe->op2)
+         {
             recursive_analysis(qe->op2, srcp);
+         }
          if(qe->op3)
+         {
             recursive_analysis(qe->op3, srcp);
+         }
          break;
       }
       case lut_expr_K:
@@ -293,19 +311,33 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
          recursive_analysis(le->op0, srcp);
          recursive_analysis(le->op1, srcp);
          if(le->op2)
+         {
             recursive_analysis(le->op2, srcp);
+         }
          if(le->op3)
+         {
             recursive_analysis(le->op3, srcp);
+         }
          if(le->op4)
+         {
             recursive_analysis(le->op4, srcp);
+         }
          if(le->op5)
+         {
             recursive_analysis(le->op5, srcp);
+         }
          if(le->op6)
+         {
             recursive_analysis(le->op6, srcp);
+         }
          if(le->op7)
+         {
             recursive_analysis(le->op7, srcp);
+         }
          if(le->op8)
+         {
             recursive_analysis(le->op8, srcp);
+         }
          break;
       }
       case constructor_K:
@@ -335,15 +367,21 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
+         {
             if(cond.first)
+            {
                recursive_analysis(cond.first, srcp);
+            }
+         }
          break;
       }
       case gimple_return_K:
       {
          auto* re = GetPointer<gimple_return>(curr_tn);
          if(re->op)
+         {
             recursive_analysis(re->op, srcp);
+         }
          break;
       }
       case gimple_for_K:
@@ -378,22 +416,34 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
       {
          auto* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->symbol)
+         {
             recursive_analysis(tmr->symbol, srcp);
+         }
          if(tmr->base)
+         {
             recursive_analysis(tmr->base, srcp);
+         }
          if(tmr->idx)
+         {
             recursive_analysis(tmr->idx, srcp);
+         }
          break;
       }
       case target_mem_ref461_K:
       {
          auto* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
+         {
             recursive_analysis(tmr->base, srcp);
+         }
          if(tmr->idx)
+         {
             recursive_analysis(tmr->idx, srcp);
+         }
          if(tmr->idx2)
+         {
             recursive_analysis(tmr->idx2, srcp);
+         }
          break;
       }
       case string_cst_K:
@@ -412,7 +462,9 @@ void string_cst_fix::recursive_analysis(tree_nodeRef& tn, const std::string& src
             tn = new_var_decl;
          }
          else
+         {
             tn = string_cst_map.find(GET_INDEX_NODE(tn))->second;
+         }
          break;
       }
       case real_cst_K:

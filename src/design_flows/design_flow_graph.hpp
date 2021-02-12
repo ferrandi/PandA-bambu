@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,10 +73,10 @@ struct DesignFlowStepInfo : public NodeInfo
    /**
     * Constructor
     */
-   DesignFlowStepInfo(const DesignFlowStepRef step_ref, const bool unnecessary);
+   DesignFlowStepInfo(const DesignFlowStepRef _design_flow_step, const bool unnecessary);
 };
-typedef refcount<DesignFlowStepInfo> DesignFlowStepInfoRef;
-typedef refcount<const DesignFlowStepInfo> DesignFlowStepInfoConstRef;
+using DesignFlowStepInfoRef = refcount<DesignFlowStepInfo>;
+using DesignFlowStepInfoConstRef = refcount<const DesignFlowStepInfo>;
 
 struct DesignFlowDependenceInfo : public EdgeInfo
 {
@@ -87,12 +87,12 @@ struct DesignFlowDependenceInfo : public EdgeInfo
    DesignFlowDependenceInfo();
 
    /**
-    * Desturctor
+    * Destructor
     */
    ~DesignFlowDependenceInfo() override;
 };
-typedef refcount<DesignFlowDependenceInfo> DesignFlowDependenceInfoRef;
-typedef refcount<const DesignFlowDependenceInfo> DesignFlowDependenceInfoConstRef;
+using DesignFlowDependenceInfoRef = refcount<DesignFlowDependenceInfo>;
+using DesignFlowDependenceInfoConstRef = refcount<const DesignFlowDependenceInfo>;
 
 struct DesignFlowGraphInfo : public GraphInfo
 {
@@ -103,8 +103,8 @@ struct DesignFlowGraphInfo : public GraphInfo
    /// The exit vertex of the graph
    vertex exit;
 };
-typedef refcount<DesignFlowGraphInfo> DesignFlowGraphInfoRef;
-typedef refcount<const DesignFlowGraphInfo> DesignFlowGraphInfoConstRef;
+using DesignFlowGraphInfoRef = refcount<DesignFlowGraphInfo>;
+using DesignFlowGraphInfoConstRef = refcount<const DesignFlowGraphInfo>;
 
 class DesignFlowGraphsCollection : public graphs_collection
 {
@@ -137,9 +137,13 @@ class DesignFlowGraphsCollection : public graphs_collection
    inline EdgeDescriptor AddDesignFlowDependence(const vertex source, const vertex target, const int selector)
    {
       if(ExistsEdge(source, target))
+      {
          return AddSelector(source, target, selector);
+      }
       else
+      {
          return InternalAddEdge(source, target, selector, EdgeInfoRef(new DesignFlowDependenceInfo()));
+      }
    }
 
    /**
@@ -149,8 +153,8 @@ class DesignFlowGraphsCollection : public graphs_collection
     */
    vertex AddDesignFlowStep(const DesignFlowStepRef design_flow_step, const bool unnecessary);
 };
-typedef refcount<DesignFlowGraphsCollection> DesignFlowGraphsCollectionRef;
-typedef refcount<const DesignFlowGraphsCollection> DesignFlowGraphsCollectionConstRef;
+using DesignFlowGraphsCollectionRef = refcount<DesignFlowGraphsCollection>;
+using DesignFlowGraphsCollectionConstRef = refcount<const DesignFlowGraphsCollection>;
 
 class DesignFlowGraph : public graph
 {
@@ -249,8 +253,8 @@ class DesignFlowGraph : public graph
                  const CustomMap<vertex, std::string>& vertex_names, const size_t writing_step_counter) const;
 #endif
 };
-typedef refcount<DesignFlowGraph> DesignFlowGraphRef;
-typedef refcount<const DesignFlowGraph> DesignFlowGraphConstRef;
+using DesignFlowGraphRef = refcount<DesignFlowGraph>;
+using DesignFlowGraphConstRef = refcount<const DesignFlowGraph>;
 
 /**
  * Functor used to write the content of the design flow step to dotty file

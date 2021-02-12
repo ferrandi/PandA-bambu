@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -99,7 +99,9 @@ TestbenchValuesXMLGeneration::TestbenchValuesXMLGeneration(const ParameterConstR
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
 }
 
 TestbenchValuesXMLGeneration::~TestbenchValuesXMLGeneration()
@@ -137,7 +139,9 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    const auto function_id = *(top_function_ids.begin());
    const auto behavioral_helper = HLSMgr->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    std::string output_file_name = output_directory + STR(STR_CST_testbench_generation_basename) + ".txt";
    std::ofstream output_stream(output_file_name.c_str(), std::ios::out);
    CInitializationParserRef c_initialization_parser = CInitializationParserRef(new CInitializationParser(parameters));
@@ -147,7 +151,9 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    output_stream << "//base address " + STR(base_address) << std::endl;
    std::string trimmed_value;
    for(unsigned int ind = 0; ind < 32; ind++)
+   {
       trimmed_value = trimmed_value + (((1LLU << (31 - ind)) & base_address) ? '1' : '0');
+   }
    output_stream << "b" + trimmed_value << std::endl;
 
    const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
@@ -155,12 +161,16 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
    // base address
    std::map<unsigned long long int, unsigned int> address;
    for(const auto& m : mem_vars)
+   {
       address[HLSMgr->Rmem->get_external_base_address(m.first)] = m.first;
+   }
 
    /// This is the lis of memory variables and of pointer parameters
    std::list<unsigned int> mem;
    for(const auto& ma : address)
+   {
       mem.push_back(ma.second);
+   }
 
    HLSMgr->RSim->simulationArgSignature.clear();
    const auto function_parameters = behavioral_helper->get_parameters();
@@ -171,7 +181,9 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
       // if the function has some pointer parameters some memory needs to be
       // reserved for the place where they point to
       if(behavioral_helper->is_a_pointer(function_parameter) && mem_vars.find(function_parameter) == mem_vars.end())
+      {
          mem.push_back(function_parameter);
+      }
    }
    unsigned int v_idx = 0;
 
@@ -189,7 +201,9 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          std::string param = behavioral_helper->PrintVariable(l);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering " + param);
          if(param[0] == '"')
+         {
             param = "@" + STR(l);
+         }
 
          bool is_memory = false;
          std::string test_v = "0";
@@ -198,7 +212,9 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          if(mem_vars.find(l) != mem_vars.end() and std::find(function_parameters.begin(), function_parameters.end(), l) == function_parameters.end())
          {
             if(v_idx > 0 && is_memory)
+            {
                continue; // memory has been already initialized
+            }
             is_memory = true;
             test_v = TestbenchGenerationBaseStep::print_var_init(TM, l, HLSMgr->Rmem);
          }
@@ -251,7 +267,9 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          if(next_object_offset > reserved_mem_bytes)
          {
             for(unsigned int padding = 0; padding < next_object_offset - reserved_mem_bytes; padding++)
+            {
                output_stream << "m00000000" << std::endl;
+            }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Cosidered parameter " + param);
       }
@@ -273,7 +291,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          if(behavioral_helper->is_a_pointer(function_parameter))
          {
             std::cerr << v_idx << " " << function_parameter << std::endl;
-            std::string memory_addr = STR(HLSMgr->RSim->param_address.at(v_idx).at(function_parameter));
+            auto memory_addr = STR(HLSMgr->RSim->param_address.at(v_idx).at(function_parameter));
             output_stream << "//parameter: " + behavioral_helper->PrintVariable(function_parameter) << " value: " << memory_addr << std::endl;
             output_stream << "p" << ConvertInBinary(memory_addr, 32, false, false) << std::endl;
          }

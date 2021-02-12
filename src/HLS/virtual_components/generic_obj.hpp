@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -108,7 +108,7 @@ class generic_obj
    /**
     * This is the constructor of the object class.
     */
-   generic_obj(const resource_type t, std::string _name) : type(t), name(std::move(_name))
+   generic_obj(const resource_type t, const std::string& _name) : type(t), name(_name)
    {
    }
 
@@ -203,7 +203,7 @@ class generic_obj
 };
 
 /// RefCount definition for generic_obj class
-typedef refcount<generic_obj> generic_objRef;
+using generic_objRef = refcount<generic_obj>;
 
 #if !HAVE_UNORDERED
 class GenericObjSorter : std::binary_function<generic_objRef, generic_objRef, bool>

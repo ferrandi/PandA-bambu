@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -436,8 +436,8 @@ struct OpNodeInfo : public TypedNodeInfo
     */
    void Print(std::ostream& stream, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format) const;
 };
-typedef refcount<OpNodeInfo> OpNodeInfoRef;
-typedef refcount<const OpNodeInfo> OpNodeInfoConstRef;
+using OpNodeInfoRef = refcount<OpNodeInfo>;
+using OpNodeInfoConstRef = refcount<const OpNodeInfo>;
 
 /**
  * Macro returning the index of the basic block which the node belongs to
@@ -557,8 +557,8 @@ class OpEdgeInfo : public CdfgEdgeInfo
    bool FlgEdgeF() const;
 };
 /// Refcount definition for OpEdgeInfo
-typedef refcount<OpEdgeInfo> OpEdgeInfoRef;
-typedef refcount<const OpEdgeInfo> OpEdgeInfoConstRef;
+using OpEdgeInfoRef = refcount<OpEdgeInfo>;
+using OpEdgeInfoConstRef = refcount<const OpEdgeInfo>;
 
 /**
  * information associated with the whole graph
@@ -595,8 +595,8 @@ struct OpGraphInfo : public GraphInfo
 };
 
 /// Refcount definition for OpGraphInfo
-typedef refcount<OpGraphInfo> OpGraphInfoRef;
-typedef refcount<const OpGraphInfo> OpGraphInfoConstRef;
+using OpGraphInfoRef = refcount<OpGraphInfo>;
+using OpGraphInfoConstRef = refcount<const OpGraphInfo>;
 
 #if HAVE_UNORDERED
 /**
@@ -750,9 +750,13 @@ class OpGraphsCollection : public graphs_collection
    inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
    {
       if(ExistsEdge(source, target))
+      {
          return AddSelector(source, target, selector);
+      }
       else
+      {
          return InternalAddEdge(source, target, selector, EdgeInfoRef(new OpEdgeInfo()));
+      }
    }
 
    /**
@@ -780,7 +784,7 @@ class OpGraphsCollection : public graphs_collection
 };
 
 /// Refcount definition for OpGraphsCollectionRef
-typedef refcount<OpGraphsCollection> OpGraphsCollectionRef;
+using OpGraphsCollectionRef = refcount<OpGraphsCollection>;
 
 /**
  * Class used to describe a particular graph with operations as nodes
@@ -796,7 +800,7 @@ struct OpGraph : public graph
     * @param g is the bulk graph.
     * @param selector is the selector used to filter the bulk graph.
     */
-   OpGraph(const OpGraphsCollectionRef g, int selector);
+   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector);
 
    /**
     * Sub-graph constructor.
@@ -804,7 +808,7 @@ struct OpGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   OpGraph(const OpGraphsCollectionRef g, int selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
+   OpGraph(const OpGraphsCollectionRef _op_graphs_collection, int selector, const CustomUnorderedSet<boost::graph_traits<OpGraphsCollection>::vertex_descriptor>& sub);
 
    /**
     * Destructor
@@ -922,7 +926,7 @@ struct OpGraph : public graph
 #endif
 };
 /// refcount definition of the class
-typedef refcount<OpGraph> OpGraphRef;
-typedef refcount<const OpGraph> OpGraphConstRef;
+using OpGraphRef = refcount<OpGraph>;
+using OpGraphConstRef = refcount<const OpGraph>;
 
 #endif

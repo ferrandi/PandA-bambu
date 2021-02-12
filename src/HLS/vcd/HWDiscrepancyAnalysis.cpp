@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -313,7 +313,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         if((not dst_info->is_dummy) and (*dst_info->BB_ids.begin() == next_bb_id))
                         {
                            THROW_ASSERT(not found_valid_next_state, "two neighbors of state S_" + STR(stg_info->vertex_to_state_id.at(current_state)) + " have the same BB id = " + STR(next_bb_id));
+#if HAVE_ASSERTS
                            found_valid_next_state = true;
+#endif
                            end_of_bb_execution = true;
                            taken_edge = e;
                            next_state = dst;
@@ -338,7 +340,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         const auto dst = boost::target(e, *stg);
                         if(dst == fsm_exit_node)
                         {
+#if HAVE_ASSERTS
                            found_valid_next_state = true;
+#endif
                            end_of_bb_execution = true;
                            taken_edge = e;
                            next_state = dst;
@@ -406,17 +410,25 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          unsigned int n_states = HLSMgr->get_HLS(f_id)->STG->get_number_of_states();
          bool one_hot_encoding = false;
          if(parameters->getOption<std::string>(OPT_fsm_encoding) == "one-hot")
+         {
             one_hot_encoding = true;
+         }
          else if(parameters->getOption<std::string>(OPT_fsm_encoding) == "auto" && vendor == "xilinx" && n_states < 256)
+         {
             one_hot_encoding = true;
+         }
 
          unsigned int bitsnumber = language_writer::bitnumber(n_states - 1);
          /// adjust in case states are not consecutive
          unsigned max_value = 0;
          for(const auto& s : stg_info->state_id_to_vertex)
+         {
             max_value = std::max(max_value, s.first);
+         }
          if(max_value != n_states - 1)
+         {
             bitsnumber = language_writer::bitnumber(max_value);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " ONE HOT" + STR(one_hot_encoding ? "  true" : " false"));
 
          const unsigned int state_bitsize = one_hot_encoding ? (max_value + 1) : bitsnumber;
@@ -428,7 +440,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          for(const auto& scope : Discr->f_id_to_scope.at(f_id))
          {
             if(scope_to_state_trace.find(scope) == scope_to_state_trace.end())
+            {
                continue;
+            }
             const auto& state_trace = scope_to_state_trace.at(scope);
             size_t scope_memory_usage = state_bitsize * state_trace.size();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---scope " + scope + " state_of_the_art memory usage (BITS): " + STR(scope_memory_usage));
@@ -516,7 +530,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             for(const auto& scope : Discr->f_id_to_scope.at(f_id))
             {
                if(scope_to_epp_trace.find(scope) == scope_to_epp_trace.end())
+               {
                   continue;
+               }
                const auto epp_trace = scope_to_epp_trace.at(scope);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " EPP TRACE LENGTH " + STR(epp_trace.size()));
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---f_id " + STR(f_id) + " scope " + scope + " expected baseline EPP TRACE LENGTH " + STR(f_id_epp_trace_memory_word_bitsize * epp_trace.size()));
@@ -550,7 +566,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
                         prev_epp_counter = epp_counter;
                      }
                      if(metadata_counter)
+                     {
                         compressed_epp_trace_with_metadata.emplace_back(metadata_counter - 1, prev_epp_counter);
+                     }
                   }
                   size_t scope_memory_usage = (f_id_epp_trace_memory_word_bitsize + i) * compressed_epp_trace_with_metadata.size();
                   scope_to_bits_to_usage[scope][i] = scope_memory_usage;
@@ -639,7 +657,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
             continue;
          }
       }
-      typedef boost::tokenizer<boost::char_separator<char>> tokenizer;
+      using tokenizer = boost::tokenizer<boost::char_separator<char>>;
       boost::char_separator<char> sep("/", nullptr);
       tokenizer module_path_tokens(scope, sep);
       tokenizer::iterator tok_iter;
@@ -647,7 +665,9 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
       for(tok_iter = module_path_tokens.begin(); tok_iter != tok_iter_end; ++tok_iter)
       {
          if(*tok_iter == top_module->get_id())
+         {
             break;
+         }
       }
       THROW_ASSERT(tok_iter != tok_iter_end, "unexpected condition");
       ++tok_iter;
@@ -670,7 +690,7 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
 
       const size_t trace_len = i.second.size() + 1; // use one entry more in the trace to avoid ever accessing out of bounds
       const size_t metadata_word_size = scope_to_best_metadata_bits.at(scope);
-      size_t data_word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
+      auto data_word_size = boost::lexical_cast<size_t>(GetPointer<module>(curr_module)->GetParameter("EPP_TRACE_BITSIZE"));
       if((Discr->hw_discrepancy_info->fu_id_to_max_epp_path_val.at(f_id) + 1) == (1ULL << data_word_size))
       {
          data_word_size++;
@@ -692,15 +712,23 @@ DesignFlowStep_Status HWDiscrepancyAnalysis::Exec()
          const auto metadata = id.first;
          const auto data = id.second;
          if(metadata >> metadata_word_size)
+         {
             THROW_ERROR("metadata " + STR(metadata) + " cannot be represented with " + STR(metadata_word_size) + " bits");
+         }
          if(data >> data_word_size)
+         {
             THROW_ERROR("data " + STR(data) + " cannot be represented with " + STR(data_word_size) + " bits");
+         }
          if(metadata_word_size)
+         {
             init_file << NumberToBinaryString(metadata, metadata_word_size);
+         }
          init_file << NumberToBinaryString(data, data_word_size) << std::endl;
       }
       if(metadata_word_size)
+      {
          init_file << NumberToBinaryString(0, metadata_word_size);
+      }
       init_file << NumberToBinaryString(invalid_epp_id, data_word_size) << std::endl;
       init_file.close();
       GetPointer<module>(curr_module)->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");

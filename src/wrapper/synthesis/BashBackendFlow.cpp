@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2020 Politecnico di Milano
+ *              Copyright (C) 2020-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,9 +74,11 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
-      std::string xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
+      auto xml_file_path = Param->getOption<std::string>(OPT_target_device_script);
       if(!boost::filesystem::exists(xml_file_path))
+      {
          THROW_ERROR("File \"" + xml_file_path + "\" does not exist!");
+      }
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "Importing scripts from file: " + xml_file_path);
       parser = XMLDomParserRef(new XMLDomParser(xml_file_path));
    }
@@ -85,11 +87,17 @@ BashBackendFlow::BashBackendFlow(const ParameterConstRef _Param, const std::stri
       const target_deviceRef device = target->get_target_device();
       std::string device_string;
       if(device->has_parameter("family"))
+      {
          device_string = device->get_parameter<std::string>("family");
+      }
       else
+      {
          device_string = "yosysOpenROAD";
+      }
       if(default_data.find(device_string) == default_data.end())
+      {
          THROW_ERROR("Device family \"" + device_string + "\" not supported!");
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Importing default scripts for target device family: " + device_string);
       parser = XMLDomParserRef(new XMLDomParser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/wrapper/synthesis/") + default_data[device_string]));
    }
@@ -115,7 +123,9 @@ void BashBackendFlow::xparse_utilization(const std::string& fn)
          {
             const auto* EnodeC = GetPointer<const xml_element>(iter_int);
             if(!EnodeC)
+            {
                continue;
+            }
 
             if(EnodeC->get_name() == "application")
             {
@@ -124,13 +134,17 @@ void BashBackendFlow::xparse_utilization(const std::string& fn)
                {
                   const auto* nodeS = GetPointer<const xml_element>(iter_sec);
                   if(!nodeS)
+                  {
                      continue;
+                  }
 
                   if(nodeS->get_name() == "section")
                   {
                      std::string stringID;
                      if(CE_XVM(stringID, nodeS))
+                     {
                         LOAD_XVM(stringID, nodeS);
+                     }
                      if(stringID == "BASH_SYNTHESIS_SUMMARY")
                      {
                         const xml_node::node_list list_item = nodeS->get_children();
@@ -138,10 +152,14 @@ void BashBackendFlow::xparse_utilization(const std::string& fn)
                         {
                            const auto* nodeIt = GetPointer<const xml_element>(it_item);
                            if(!nodeIt or nodeIt->get_name() != "item")
+                           {
                               continue;
+                           }
 
                            if(CE_XVM(stringID, nodeIt))
+                           {
                               LOAD_XVM(stringID, nodeIt);
+                           }
 
                            std::string value;
                            if(CE_XVM(value, nodeIt))
@@ -183,12 +201,18 @@ void BashBackendFlow::create_sdc(const DesignParametersRef dp)
    std::string sdc_filename = out_dir + "/" + dp->component_name + ".sdc";
    std::ofstream SDC_file(sdc_filename.c_str());
    if(dp->parameter_values.find(PARAM_clk_name) != dp->parameter_values.end() && !boost::lexical_cast<bool>(dp->parameter_values[PARAM_is_combinational]))
+   {
       SDC_file << "create_clock " << dp->parameter_values[PARAM_clk_name] << " -period " << dp->parameter_values[PARAM_clk_period] << std::endl;
+   }
    else
+   {
       SDC_file << "set_max_delay " + dp->parameter_values[PARAM_clk_period] + " -from [all_inputs] -to [all_outputs]\n";
+   }
 
    if(Param->isOption(OPT_backend_sdc_extensions))
+   {
       SDC_file << "source " + Param->getOption<std::string>(OPT_backend_sdc_extensions) + "\n";
+   }
    SDC_file.close();
    dp->parameter_values[PARAM_sdc_file] = sdc_filename;
 }
@@ -198,10 +222,12 @@ void BashBackendFlow::InitDesignParameters()
    /// determine if power optimization has to be performed
    bool pwr_enabled = false;
    if(Param->isOption("power_optimization") && Param->getOption<bool>("power_optimization"))
+   {
       pwr_enabled = true;
+   }
    actual_parameters->parameter_values[PARAM_power_optimization] = STR(pwr_enabled);
    const target_deviceRef device = target->get_target_device();
-   std::string device_name = device->get_parameter<std::string>("model");
+   auto device_name = device->get_parameter<std::string>("model");
    actual_parameters->parameter_values[PARAM_target_device] = device_name;
 
    std::string HDL_files = actual_parameters->parameter_values[PARAM_HDL_files];
@@ -210,7 +236,9 @@ void BashBackendFlow::InitDesignParameters()
    for(unsigned int v = 0; v < file_list.size(); v++)
    {
       if(v)
+      {
          sources_macro_list += " ";
+      }
       sources_macro_list += file_list[v];
       boost::filesystem::path file_path(file_list[v]);
    }
@@ -245,7 +273,9 @@ void BashBackendFlow::CheckSynthesisResults()
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, design_values[BASHBACKEND_DESIGN_DELAY]);
    }
    else
+   {
       lut_m->set_timing_value(LUT_model::COMBINATIONAL_DELAY, 0);
+   }
    if((output_level >= OUTPUT_LEVEL_VERY_PEDANTIC or (Param->IsParameter("DumpingTimingReport") and Param->GetParameter<int>("DumpingTimingReport"))) and
       ((actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report) != actual_parameters->parameter_values.end() and ExistFile(actual_parameters->parameter_values.find(PARAM_bash_backend_timing_report)->second))))
    {

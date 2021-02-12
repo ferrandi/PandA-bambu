@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,6 +80,6 @@ class CInitializationParser
     */
    void Parse(CInitializationParserFunctorRef c_initialization_parser_functor, const std::string& initialization_string) const;
 };
-typedef refcount<const CInitializationParser> CInitializationParserConstRef;
-typedef refcount<CInitializationParser> CInitializationParserRef;
+using CInitializationParserConstRef = refcount<const CInitializationParser>;
+using CInitializationParserRef = refcount<CInitializationParser>;
 #endif

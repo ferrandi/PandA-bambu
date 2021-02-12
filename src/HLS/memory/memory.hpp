@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -200,7 +200,9 @@ class memory
    void align(unsigned long long int& address, unsigned int alignment)
    {
       if(address % alignment != 0)
+      {
          address = ((address / alignment) + 1) * alignment;
+      }
    }
 
  public:
@@ -442,9 +444,13 @@ class memory
    void increment_n_mem_operations(unsigned int var)
    {
       if(n_mem_operations_per_var.find(var) == n_mem_operations_per_var.end())
+      {
          n_mem_operations_per_var[var] = 1;
+      }
       else
+      {
          ++n_mem_operations_per_var[var];
+      }
    }
 
    /**
@@ -826,6 +832,6 @@ class memory
    bool notEQ(refcount<memory> ref) const;
 };
 /// refcount definition of the class
-typedef refcount<memory> memoryRef;
+using memoryRef = refcount<memory>;
 
 #endif

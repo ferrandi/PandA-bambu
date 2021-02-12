@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -107,13 +107,13 @@ class XilinxBackendFlow : public BackendFlow
    /**
     * Fixed the parsing of timing results from xst
     */
-   void parse_timing(const std::string& fn);
+   void parse_timing(const std::string& log_file);
 
  public:
    /**
     * Constructor
     */
-   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef manager);
+   XilinxBackendFlow(const ParameterConstRef Param, const std::string& flow_name, const target_managerRef _target);
 
    /**
     * Destructor
@@ -131,6 +131,6 @@ class XilinxBackendFlow : public BackendFlow
    void ExecuteSynthesis() override;
 };
 /// Refcount definition for the class
-typedef refcount<XilinxBackendFlow> XilinxBackendFlowRef;
+using XilinxBackendFlowRef = refcount<XilinxBackendFlow>;
 
 #endif

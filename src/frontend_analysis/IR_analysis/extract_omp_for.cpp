@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -116,6 +116,10 @@ void ExtractOmpFor::Initialize()
 
 bool ExtractOmpFor::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }
 
@@ -207,11 +211,17 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             {
                const auto basic_block_info = basic_block_graph->CGetBBNodeInfo(*basic_block);
                if(*basic_block == basic_block_graph_info->entry_vertex or *basic_block == basic_block_graph_info->exit_vertex)
+               {
                   continue;
+               }
                if(basic_block_info->loop_id)
+               {
                   continue;
+               }
                if(not basic_block_info->block->CGetStmtList().size())
+               {
                   continue;
+               }
                if(boost::in_degree(*basic_block, *basic_block_graph) == 1 && boost::source(*(boost::in_edges(*basic_block, *basic_block_graph).first), *basic_block_graph) == basic_block_graph_info->entry_vertex)
                {
                   const auto& stm_list = basic_block_info->block->CGetStmtList();
@@ -237,7 +247,9 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
                      THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
                   }
                   if(GET_NODE(ga2->op1)->get_kind() == gt_expr_K)
+                  {
                      continue;
+                  }
                   else
                   {
                      THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
@@ -336,11 +348,17 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             {
                const auto basic_block_info = basic_block_graph->CGetBBNodeInfo(*basic_block);
                if(*basic_block == basic_block_graph_info->entry_vertex or *basic_block == basic_block_graph_info->exit_vertex)
+               {
                   continue;
+               }
                if(basic_block_info->loop_id)
+               {
                   continue;
+               }
                if(not basic_block_info->block->CGetStmtList().size())
+               {
                   continue;
+               }
                for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));

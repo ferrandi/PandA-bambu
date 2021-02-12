@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -60,11 +60,7 @@ class connection_obj
 {
  public:
    /// resource type
-   typedef enum
-   {
-      DIRECT_CONN,
-      BY_MUX
-   } element_t;
+   using element_t = enum { DIRECT_CONN, BY_MUX };
 
  protected:
    /// type of the connection
@@ -79,7 +75,7 @@ class connection_obj
     * @param _type is the type of the interconnection
     * @param _live_variable is the set of variables crossing the connection
     */
-   connection_obj(element_t _type, CustomOrderedSet<data_transfer> _live_variable) : type(_type), live_variable(std::move(_live_variable))
+   connection_obj(element_t _type, const CustomOrderedSet<data_transfer>& _live_variable) : type(_type), live_variable(_live_variable)
    {
    }
 
@@ -116,6 +112,6 @@ class connection_obj
 };
 
 /// RefCount definition for connection_obj class
-typedef refcount<connection_obj> connection_objRef;
+using connection_objRef = refcount<connection_obj>;
 
 #endif

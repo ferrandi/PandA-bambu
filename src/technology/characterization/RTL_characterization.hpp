@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -175,7 +175,7 @@ class RTLCharacterization : public FunctionalUnitStep
     * @param design_flow_manager is the design flow manager
     * @param parameters is the set of input parameters
     */
-   RTLCharacterization(const target_managerRef target, const std::string& component, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   RTLCharacterization(const target_managerRef target, const std::string& _cells, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     * Destructor

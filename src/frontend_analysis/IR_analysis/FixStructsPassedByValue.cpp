@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -148,7 +148,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
 
             unsigned int ptd_type_size = tree_helper::Size(p_type);
             if(ptd_type_size % 8)
+            {
                ptd_type_size += 8;
+            }
             ptd_type_size /= 8;
 
             // create new var_decl
@@ -253,7 +255,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
          }
 
          if(has_param_types)
+         {
             p_type_head = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head))->chan;
+         }
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed parameter " + STR(p_decl) + " with type " + STR(p_type));
       }
@@ -304,7 +308,7 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                }
                if(called_node->get_kind() == ssa_name_K)
                {
-                  const std::string called_ssa_name = STR(called_node);
+                  const auto called_ssa_name = STR(called_node);
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Indirect function call through ssa " + called_ssa_name);
                   const auto* f_ptr = GetPointer<const pointer_type>(tree_helper::CGetType(called_node));
                   THROW_ASSERT(f_ptr, "");
@@ -381,7 +385,9 @@ DesignFlowStep_Status FixStructsPassedByValue::InternalExec()
                   THROW_ASSERT(static_cast<bool>(has_param_types) == static_cast<bool>(p_type_head),
                                "function " + called_fu_name + " has " + STR(called_fd->list_of_args.size()) + " parameters, but argument " + STR(param_n) + " (" + STR(p_decl) + ") has not a corresponding underlying type in function_type");
                   if(has_param_types)
+                  {
                      p_type_head = GetPointer<const tree_list>(GET_CONST_NODE(p_type_head))->chan;
+                  }
 
                   if(tree_helper::is_an_union(TM, p_type->index) or tree_helper::is_a_struct(TM, p_type->index))
                   {
@@ -432,6 +438,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(BLOCK_FIX, SAME_FUNCTION));
          relationships.insert(std::make_pair(STRING_CST_FIX, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, CALLING_FUNCTIONS));
+         relationships.insert(std::make_pair(REBUILD_INITIALIZATION, CALLING_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

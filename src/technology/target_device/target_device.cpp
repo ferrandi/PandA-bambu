@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -129,11 +129,17 @@ void target_device::xload_device_parameters(const xml_element* dev_xml)
 
       bool is_bash_var = false;
       if(CE_XVM(is_bash_var, t_elem))
+      {
          LOAD_XVM(is_bash_var, t_elem);
+      }
       if(is_bash_var)
+      {
          bash_vars[t_elem->get_name()] = value;
+      }
       else
+      {
          parameters[t_elem->get_name()] = value;
+      }
       if(t_elem->get_name() == "model")
       {
          const_cast<Parameter*>(Param.get())->setOption("device_name", value);

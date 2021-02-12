@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -219,13 +219,11 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
    {
       const auto block = bb_cfg->CGetBBNodeInfo(*basic_block)->block;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Examining BB" + STR(block->number));
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached max cfg transformations");
          continue;
       }
-#endif
       /// Analyze if a basic block is a possible candidate
       if(block->CGetStmtList().empty())
       {
@@ -248,10 +246,14 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          {
             const auto ga = GetPointer<const gimple_assign>(GET_NODE(stmt));
             if(ga and ga->temporary_address)
+            {
                return true;
+            }
             /// We skip basic block containing gimple_call since it would require modification of the call graph
             if(GET_NODE(stmt)->get_kind() == gimple_call_K)
+            {
                return true;
+            }
          }
          return false;
       }();
@@ -303,7 +305,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
          auto new_block = blocRef(new bloc(new_bb_index));
          new_block->loop_id = block->loop_id;
          if(GetPointer<HLS_manager>(AppM) and GetPointer<HLS_manager>(AppM)->get_HLS(function_id))
+         {
             new_block->schedule = GetPointer<HLS_manager>(AppM)->get_HLS(function_id)->Rsch;
+         }
          new_block->SetSSAUsesComputed();
          sl->list_of_bloc[new_bb_index] = new_block;
 
@@ -322,7 +326,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             auto target_block = sl->list_of_bloc[succ];
             auto target_id = target_block->number;
             if(target_block->number != BB_EXIT)
+            {
                target_block->list_of_pred.push_back(new_bb_index);
+            }
             new_block->list_of_succ.push_back(target_id);
             if(block->true_edge == target_id)
             {
@@ -339,7 +345,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
             for(auto& cond : gmwi->list_of_cond)
             {
                if(cond.second == block->number)
+               {
                   cond.second = new_bb_index;
+               }
             }
          }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Created BB" + STR(new_bb_index));
@@ -738,7 +746,9 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
                         IR_schema[TOK(TOK_TYPE)] = STR(tree_helper::get_type_index(TM, sn->index));
                         IR_schema[TOK(TOK_VERS)] = STR(phi_ssa_vers);
                         if(sn->var)
+                        {
                            IR_schema[TOK(TOK_VAR)] = STR(sn->var->index);
+                        }
                         IR_schema[TOK(TOK_VOLATILE)] = STR(false);
                         IR_schema[TOK(TOK_VIRTUAL)] = STR(sn->virtual_flag);
                         TM->create_tree_node(phi_def_ssa_node_nid, ssa_name_K, IR_schema);
@@ -933,9 +943,7 @@ DesignFlowStep_Status MultipleEntryIfReduction::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Ended duplicated " + STR(block->number));
       sl->list_of_bloc.erase(block->number);
       executed_iteration++;
-#ifndef NDEBUG
       AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
-#endif
       break;
    } /// endfor-list_of_bloc
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -975,9 +983,15 @@ bool MultipleEntryIfReduction::HasToBeExecuted() const
    {
       return false;
    }
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    const vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::SIMPLE_CODE_MOTION, function_id));
    if(not frontend_step)
+   {
       return false;
+   }
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    const DesignFlowStepRef design_flow_step = design_flow_graph->CGetDesignFlowStepInfo(frontend_step)->design_flow_step;
    return GetPointer<const simple_code_motion>(design_flow_step)->IsScheduleBased();

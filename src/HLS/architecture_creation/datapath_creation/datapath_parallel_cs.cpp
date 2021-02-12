@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2016-2020 Politecnico di Milano
+ *              Copyright (c) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -155,7 +155,9 @@ DesignFlowStep_Status datapath_parallel_cs::InternalExec()
    structural_objectRef kernel_mod;
    int addr_kernel = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kernel)
+   {
       addr_kernel = 1;
+   }
    for(unsigned int i = 0; i < parameters->getOption<unsigned int>(OPT_num_accelerators); ++i)
    {
       std::string kernel_module_name = kernel_function_name + "_" + STR(i);
@@ -183,7 +185,7 @@ void datapath_parallel_cs::add_ports()
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Added standard port kernel");
    const structural_managerRef& SM = this->HLS->datapath;
    const structural_objectRef circuit = SM->get_circ();
-   unsigned int num_thread = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto num_thread = parameters->getOption<unsigned int>(OPT_num_accelerators);
    structural_type_descriptorRef bool_type = structural_type_descriptorRef(new structural_type_descriptor("bool", 0));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Start adding new ports");
    SM->add_port_vector(STR(DONE_PORT_NAME) + "_accelerator", port_o::OUT, num_thread, circuit, bool_type);
@@ -227,7 +229,9 @@ void datapath_parallel_cs::connect_module_kernel(structural_objectRef kernel_mod
       }
       std::cout << "Parameter: " << BH->PrintVariable(function_parameter) << std::endl;
       if(parameter_kernel != nullptr)
+      {
          SM->add_connection(parameter_datapath, parameter_kernel);
+      }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, " - Connected parameter port");
 
@@ -297,11 +301,15 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
    GetPointer<module>(mem_par_mod)->SetParameter("NUM_ACC", STR(parameters->getOption<unsigned int>(OPT_num_accelerators)));
    int addr_task = ceil_log2(parameters->getOption<unsigned long long int>(OPT_context_switch));
    if(!addr_task)
+   {
       addr_task = 1;
+   }
    GetPointer<module>(mem_par_mod)->SetParameter("ADDR_TASKS", STR(addr_task));
    int addr_kern = ceil_log2(parameters->getOption<unsigned long long>(OPT_num_accelerators));
    if(!addr_kern)
+   {
       addr_kern = 1;
+   }
    GetPointer<module>(mem_par_mod)->SetParameter("ADDR_ACC", STR(addr_kern));
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Parameter memory_ctrl_top set!");
 
@@ -310,8 +318,8 @@ void datapath_parallel_cs::instantiate_component_parallel(structural_objectRef c
 
 void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_par_mod)
 {
-   unsigned int memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
-   unsigned int num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
+   auto memory_channel = parameters->getOption<unsigned int>(OPT_channels_number);
+   auto num_kernel = parameters->getOption<unsigned int>(OPT_num_accelerators);
    for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_in_port_size(); j++) // resize input port
    {
       structural_objectRef port_i = GetPointer<module>(mem_par_mod)->get_in_port(j);
@@ -319,9 +327,13 @@ void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_p
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
          if(port_name.substr(0, 3) == "IN_")
+         {
             resize_dimension_bus_port(memory_channel, port_i);
+         }
          else
+         {
             resize_dimension_bus_port(num_kernel, port_i);
+         }
       }
    }
    for(unsigned int j = 0; j < GetPointer<module>(mem_par_mod)->get_out_port_size(); j++) // resize output port
@@ -331,9 +343,13 @@ void datapath_parallel_cs::resize_ctrl_parallel_ports(structural_objectRef mem_p
       {
          std::string port_name = GetPointer<port_o>(port_i)->get_id();
          if(port_name.substr(0, 4) == "OUT_")
+         {
             resize_dimension_bus_port(memory_channel, port_i);
+         }
          else
+         {
             resize_dimension_bus_port(num_kernel, port_i);
+         }
       }
    }
 }
@@ -346,13 +362,21 @@ void datapath_parallel_cs::resize_dimension_bus_port(unsigned int vector_size, s
    unsigned int bus_tag_bitsize = GetPointer<memory_cs>(HLSMgr->Rmem)->get_bus_tag_bitsize();
 
    if(GetPointer<port_o>(port)->get_is_data_bus())
+   {
       port->type_resize(bus_data_bitsize);
+   }
    else if(GetPointer<port_o>(port)->get_is_addr_bus())
+   {
       port->type_resize(bus_addr_bitsize);
+   }
    else if(GetPointer<port_o>(port)->get_is_size_bus())
+   {
       port->type_resize(bus_size_bitsize);
+   }
    else if(GetPointer<port_o>(port)->get_is_tag_bus())
+   {
       port->type_resize(bus_tag_bitsize);
+   }
 
    GetPointer<port_o>(port)->add_n_ports(vector_size, port);
 }

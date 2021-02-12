@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2020 Politecnico di Milano
+ *              Copyright (C) 2019-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -161,13 +161,19 @@ bool lut_transformation::CHECK_BIN_EXPR_BOOL_SIZE(binary_expr* be) const
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   {
       return false;
+   }
    if(tree_helper::is_int(TM, GET_INDEX_NODE((be->op0))) || tree_helper::is_int(TM, GET_INDEX_NODE((be->op1))))
+   {
       return false;
+   }
    return (tree_helper::Size(GET_NODE((be)->op0)) == 1 && tree_helper::Size(GET_NODE((be)->op1)) == 1);
 }
 bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int max) const
@@ -175,14 +181,20 @@ bool lut_transformation::CHECK_BIN_EXPR_INT_SIZE(binary_expr* be, unsigned int m
    auto b0 = tree_helper::CGetType(GET_CONST_NODE(be->op0));
    auto type_id0 = b0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    auto b1 = tree_helper::CGetType(GET_CONST_NODE(be->op1));
    auto type_id1 = b1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   {
       return false;
+   }
    bool is_simple_case = [&]() -> bool {
       if(GET_CONST_NODE(be->op1)->get_kind() != integer_cst_K)
+      {
          return false;
+      }
       auto* int_const = GetPointer<integer_cst>(GET_CONST_NODE(be->op1));
       auto k = be->get_kind();
       return (k == lt_expr_K || k == gt_expr_K) && int_const->value == 0;
@@ -194,13 +206,19 @@ bool lut_transformation::CHECK_COND_EXPR_SIZE(cond_expr* ce) const
    auto c0 = tree_helper::CGetType(GET_CONST_NODE(ce->op1));
    auto type_id0 = c0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    auto c1 = tree_helper::CGetType(GET_CONST_NODE(ce->op2));
    auto type_id1 = c1->index;
    if(tree_helper::is_real(TM, type_id1) || tree_helper::is_a_complex(TM, type_id1) || tree_helper::is_a_vector(TM, type_id1) || tree_helper::is_a_struct(TM, type_id1))
+   {
       return false;
+   }
    if(tree_helper::is_int(TM, GET_INDEX_NODE((ce->op1))) || tree_helper::is_int(TM, GET_INDEX_NODE((ce->op2))))
+   {
       return false;
+   }
    return tree_helper::Size(GET_NODE((ce)->op1)) == 1 && tree_helper::Size(GET_NODE((ce)->op2)) == 1;
 }
 bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
@@ -208,13 +226,17 @@ bool lut_transformation::CHECK_NOT_EXPR_SIZE(unary_expr* ne) const
    auto c0 = tree_helper::CGetType(GET_CONST_NODE(ne->op));
    auto type_id0 = c0->index;
    if(tree_helper::is_real(TM, type_id0) || tree_helper::is_a_complex(TM, type_id0) || tree_helper::is_a_vector(TM, type_id0) || tree_helper::is_a_struct(TM, type_id0))
+   {
       return false;
+   }
    if(tree_helper::is_int(TM, GET_INDEX_NODE((ne->op))))
+   {
       return false;
+   }
    return (tree_helper::Size(GET_NODE((ne)->op)) == 1);
 }
 
-#define VECT_CONTAINS(v, x) (std::find(v.begin(), v.end(), x) != v.end())
+#define VECT_CONTAINS(v, x) (std::find((v).begin(), (v).end(), x) != (v).end())
 
 bool lut_transformation::cannotBeLUT(tree_nodeRef op) const
 {
@@ -246,9 +268,13 @@ class klut_network_ext : public mockturtle::klut_network
          for(size_t i = 0; i < niter; ++i)
          {
             if(signedValues)
+            {
                b->push_back(b->at(msbPos));
+            }
             else
+            {
                b->push_back(this->get_constant(false));
+            }
          }
       }
       else if(a->size() < b->size())
@@ -258,9 +284,13 @@ class klut_network_ext : public mockturtle::klut_network
          for(size_t i = 0; i < niter; ++i)
          {
             if(signedValues)
+            {
                a->push_back(a->at(msbPos));
+            }
             else
+            {
                a->push_back(this->get_constant(false));
+            }
          }
       }
    }
@@ -362,7 +392,9 @@ class klut_network_ext : public mockturtle::klut_network
    {
       std::vector<signal> outputs;
       for(auto b : bits)
+      {
          outputs.push_back(b == false ? this->get_constant(false) : this->create_not(this->get_constant(false)));
+      }
 
       return outputs;
    }
@@ -378,7 +410,9 @@ class klut_network_ext : public mockturtle::klut_network
    signal create_lut(std::vector<signal> s, uint64_t f)
    {
       if(f == static_cast<uint64_t>(-1LL))
+      {
          return this->create_not(this->get_constant(false));
+      }
       kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
       std::stringstream resHex;
       resHex << std::hex << f;
@@ -386,10 +420,14 @@ class klut_network_ext : public mockturtle::klut_network
       if(tt.num_vars() > 1)
       {
          while((res0.size() << 2) < tt.num_bits())
+         {
             res0 = "0" + res0;
+         }
       }
       while((res0.size() << 2) > tt.num_bits() && tt.num_vars() > 1)
+      {
          res0 = res0.substr(1);
+      }
 
       kitty::create_from_hex_string(tt, res0);
       return create_node(s, tt);
@@ -408,7 +446,9 @@ class klut_network_ext : public mockturtle::klut_network
    {
       std::vector<signal> outputs;
       for(auto s : a)
+      {
          outputs.push_back(this->create_not(s));
+      }
       return outputs;
    }
 
@@ -535,13 +575,13 @@ struct klut_network_node
  * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `mockturtle::klut_network::signal`s
  * and returns a `mockturtle::klut_network::signal`.
  */
-typedef mockturtle::klut_network::signal (klut_network_ext::*klut_network_fn)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
+using klut_network_fn = mockturtle::klut_network::signal (klut_network_ext::*)(const mockturtle::klut_network::signal, const mockturtle::klut_network::signal);
 
 /**
  * Pointer that points to a function of `klut_network_ext`, that represents a binary operation between two `std::vector<mockturtle::klut_network::signal>`s
  * and returns a `std::vector<mockturtle::klut_network::signal>`.
  */
-typedef std::vector<mockturtle::klut_network::signal> (klut_network_ext::*klut_network_fn_v)(std::vector<mockturtle::klut_network::signal> const&, std::vector<mockturtle::klut_network::signal> const&, bool);
+using klut_network_fn_v = std::vector<mockturtle::klut_network::signal> (klut_network_ext::*)(const std::vector<mockturtle::klut_network::signal>&, const std::vector<mockturtle::klut_network::signal>&, bool);
 
 #pragma endregion
 
@@ -554,13 +594,19 @@ bool lut_transformation::CheckIfPI(tree_nodeRef in, unsigned int BB_index)
 {
    auto ssa = GetPointer<ssa_name>(GET_NODE(in));
    if(!ssa)
+   {
       THROW_ERROR("expected as in a ssa variable");
+   }
    tree_nodeRef def_stmt = GET_NODE(ssa->CGetDefStmt());
    if(def_stmt->get_kind() != gimple_assign_K)
+   {
       return true;
+   }
    auto* gaDef = GetPointer<gimple_assign>(def_stmt);
    if(gaDef->bb_index != BB_index)
+   {
       return true;
+   }
    return cannotBeLUT(gaDef->op1);
 }
 
@@ -576,16 +622,16 @@ bool lut_transformation::CheckIfProcessable(std::pair<unsigned int, blocRef> blo
 {
    auto& statements = block.second->CGetStmtList();
 
-   for(auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement)
+   for(const auto& statement : statements)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + (*currentStatement)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing CheckIfProcessable" + statement->ToString());
       // only gimple assignments are considered
-      if(GET_NODE(*currentStatement)->get_kind() != gimple_assign_K)
+      if(GET_NODE(statement)->get_kind() != gimple_assign_K)
       {
          continue;
       }
 
-      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
+      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(statement));
       enum kind code = GET_NODE(gimpleAssign->op1)->get_kind();
 
       if(code == lut_expr_K)
@@ -653,9 +699,13 @@ bool lut_transformation::CheckIfPO(gimple_assign* gimpleAssign)
       {
          auto* childGimpleAssign = GetPointer<gimple_assign>(GET_NODE(node.first));
          if(!childGimpleAssign)
+         {
             return true;
+         }
          if(cannotBeLUT(childGimpleAssign->op1))
+         {
             return true;
+         }
       }
    }
    return false;
@@ -696,7 +746,9 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
 {
    std::vector<bool> bits;
    for(size_t i = 0; i < size; ++i)
+   {
       bits.push_back((n & (1ULL << i)) ? true : false);
+   }
    return bits;
 }
 
@@ -908,25 +960,23 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    /// whether the BB has been modified
    bool modified = false;
 
-   for(auto currentStatement = statements.begin(); currentStatement != statements.end(); ++currentStatement)
+   for(const auto& statement : statements)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + (*currentStatement)->ToString());
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + statement->ToString());
 
-#ifndef NDEBUG
       if(!AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Reached max cfg transformations");
          continue;
       }
-#endif
 
-      if(GET_NODE(*currentStatement)->get_kind() != gimple_assign_K)
+      if(GET_NODE(statement)->get_kind() != gimple_assign_K)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Not a gimple assign");
          continue;
       }
 
-      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(*currentStatement));
+      auto* gimpleAssign = GetPointer<gimple_assign>(GET_NODE(statement));
       enum kind code1 = GET_NODE(gimpleAssign->op1)->get_kind();
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing code " + GET_NODE(gimpleAssign->op1)->get_kind_text());
 
@@ -966,7 +1016,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   pis_offset.push_back(0);
                }
                else
+               {
                   THROW_ERROR("unexpected condition: " + GET_NODE(op)->ToString());
+               }
 
                nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                ops.push_back(kop);
@@ -981,7 +1033,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1030,7 +1082,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   pis_offset.push_back(0);
                }
                else
+               {
                   THROW_ERROR("unexpected condition");
+               }
 
                nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                ops.push_back(kop);
@@ -1045,7 +1099,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1094,7 +1148,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   pis_offset.push_back(0);
                }
                else
+               {
                   THROW_ERROR("unexpected condition: " + GET_NODE(op)->ToString());
+               }
 
                nodeRefToSignal[GET_INDEX_NODE(op)] = kop;
                ops.push_back(kop);
@@ -1109,7 +1165,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1170,7 +1226,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op0)] = op1;
             }
             else
+            {
                THROW_ERROR("unexpected condition");
+            }
          }
 
          // if the second operand has already been processed then the previous signal is used
@@ -1196,7 +1254,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                nodeRefToSignal[GET_INDEX_NODE(binaryExpression->op1)] = op2;
             }
             else
+            {
                THROW_ERROR("unexpected condition");
+            }
          }
 
          res = (klut_e.*nodeCreateFn)(op1, op2);
@@ -1206,7 +1266,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po(res);
-            pos.push_back(*currentStatement);
+            pos.push_back(statement);
             pos_offset.push_back(0);
          }
 
@@ -1310,15 +1370,17 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          res = (klut_e.*nodeCreateFn)(op1, op2, isSigned);
          nodeRefToSignalBus[GET_INDEX_NODE(gimpleAssign->op0)] = res;
          if(res.size() == 1)
+         {
             nodeRefToSignal[GET_INDEX_NODE(gimpleAssign->op0)] = res.at(0);
+         }
          if(this->CheckIfPO(gimpleAssign))
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---is PO");
             klut_e.create_po_v(res);
 
             unsigned int index = 0;
-            std::for_each(res.begin(), res.end(), [&currentStatement, &pos, &pos_offset, &index](auto op) {
-               pos.push_back(*currentStatement);
+            std::for_each(res.begin(), res.end(), [&statement, &pos, &pos_offset, &index](auto op) {
+               pos.push_back(statement);
                pos_offset.push_back(index);
                ++index;
             });
@@ -1355,13 +1417,11 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
       std::vector<tree_nodeRef> prev_stmts_to_add;
       for(auto lut : luts)
       {
-#ifndef NDEBUG
          if(!AppM->ApplyNewTransformation())
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reached max cfg transformations");
             continue;
          }
-#endif
 
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---index: " + STR(lut.index));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "--- po_index: " + STR(lut.po_index));
@@ -1404,26 +1464,46 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                }
             }
             else if(internal_nets.find(in) != internal_nets.end())
+            {
                operand = internal_nets.find(in)->second;
+            }
             else
+            {
                THROW_ERROR("unexpected condition" + STR(p_index));
+            }
 
             if(p_index == 1)
+            {
                op1 = operand;
+            }
             else if(p_index == 2)
+            {
                op2 = operand;
+            }
             else if(p_index == 3)
+            {
                op3 = operand;
+            }
             else if(p_index == 4)
+            {
                op4 = operand;
+            }
             else if(p_index == 5)
+            {
                op5 = operand;
+            }
             else if(p_index == 6)
+            {
                op6 = operand;
+            }
             else if(p_index == 7)
+            {
                op7 = operand;
+            }
             else if(p_index == 8)
+            {
                op8 = operand;
+            }
             else
             {
                THROW_ERROR("unexpected number of inputs");
@@ -1450,7 +1530,9 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             auto* ssa_ga_op0 = GetPointer<ssa_name>(ga_op0);
             THROW_ASSERT(ssa_ga_op0, "unexpected condition");
             if(!lut.is_constant)
+            {
                internal_nets[lut.index] = gimpleAssign->op0;
+            }
 
             if(lut.is_constant)
             {
@@ -1494,10 +1576,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                   TM->ReplaceTreeNode(po_stmpt, gimpleAssign->op1, new_op1);
                }
             }
-
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), po_stmpt);
-#endif
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Modified statement " + GET_NODE(po_stmpt)->ToString());
          }
          else
@@ -1612,7 +1691,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
          if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, SAME_FUNCTION));
+         }
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
          break;
@@ -1640,12 +1721,20 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool lut_transformation::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    THROW_ASSERT(GetPointer<const HLS_manager>(AppM)->get_HLS_target(), "unexpected condition");
    const auto hls_target = GetPointer<const HLS_manager>(AppM)->get_HLS_target();
    THROW_ASSERT(hls_target->get_target_device()->has_parameter("max_lut_size"), "unexpected condition");
    auto max_lut_size0 = hls_target->get_target_device()->get_parameter<size_t>("max_lut_size");
    if(max_lut_size0 != 0 && not parameters->getOption<int>(OPT_gcc_openmp_simd))
+   {
       return FunctionFrontendFlowStep::HasToBeExecuted();
+   }
    else
+   {
       return false;
+   }
 }

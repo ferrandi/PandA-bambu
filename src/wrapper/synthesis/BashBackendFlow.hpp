@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2020 Politecnico di Milano
+ *              Copyright (C) 2020-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -90,6 +90,6 @@ class BashBackendFlow : public BackendFlow
    ~BashBackendFlow() override;
 };
 /// Refcount definition for the class
-typedef refcount<BashBackendFlow> BashBackendFlowRef;
+using BashBackendFlowRef = refcount<BashBackendFlow>;
 
 #endif

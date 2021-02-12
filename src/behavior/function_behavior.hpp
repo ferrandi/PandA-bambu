@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,7 +105,7 @@ class dominance;
 class ParallelRegionsGraphsCollection;
 class sequence_info;
 class xml_element;
-typedef unsigned int tree_class;
+using tree_class = unsigned int;
 //@}
 
 /// Struct representing memory information
@@ -119,7 +119,7 @@ struct memory_access
 
    memory_access(unsigned int _node_id, unsigned int _base_address, unsigned int _offset = 0);
 };
-typedef refcount<memory_access> memory_accessRef;
+using memory_accessRef = refcount<memory_access>;
 
 /// The access type to a variable
 enum class FunctionBehavior_VariableAccessType
@@ -578,7 +578,7 @@ class FunctionBehavior
     * @param subset is the set of subgraph vertices
     * @return the refcount to the subgraph
     */
-   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& subset) const;
+   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& statements) const;
 
    /**
     * This method returns the basic block graphs.
@@ -646,7 +646,9 @@ class FunctionBehavior
    friend std::ostream& operator<<(std::ostream& os, const FunctionBehaviorRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 
@@ -887,7 +889,7 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckBBReachability(const vertex first_basic_block, const vertex second_basic_block) const;
 
    /**
     * Check if a path from first_operation to second_operation exists in control flow graph with feedback
@@ -903,7 +905,7 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBFeedbackReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckBBFeedbackReachability(const vertex first_basic_block, const vertex second_basic_block) const;
 
    /**
     * Return the version of the basic block intermediate representation
@@ -930,8 +932,8 @@ class FunctionBehavior
    unsigned int UpdateBitValueVersion();
 };
 
-typedef refcount<FunctionBehavior> FunctionBehaviorRef;
-typedef refcount<const FunctionBehavior> FunctionBehaviorConstRef;
+using FunctionBehaviorRef = refcount<FunctionBehavior>;
+using FunctionBehaviorConstRef = refcount<const FunctionBehavior>;
 
 /**
  * The key comparison function for vertices set based on levels

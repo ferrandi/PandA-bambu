@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,9 +96,9 @@ class moduleGenerator
     */
    virtual ~moduleGenerator();
 
-   structural_type_descriptorRef getDataType(unsigned int variable, const FunctionBehaviorConstRef FB) const;
+   structural_type_descriptorRef getDataType(unsigned int variable, const FunctionBehaviorConstRef function_behavior) const;
 
-   void add_port_parameters(structural_objectRef generated_port, structural_objectRef currentPort);
+   void add_port_parameters(structural_objectRef generated_port, structural_objectRef original_port);
 
    std::string GenerateHDL(const module* mod, const std::string& hdl_template, std::vector<std::tuple<unsigned int, unsigned int>>& required_variables, const std::string& specializing_string, const FunctionBehaviorConstRef FB,
                            const std::string& path_dynamic_generators, HDLWriter_Language);
@@ -109,5 +109,5 @@ class moduleGenerator
 
    void create_generic_module(const std::string fuName, const std::string libraryId, const technology_managerRef TM, const std::string new_fu_name, TargetDevice_Type dv_type, const application_managerRef AppM);
 };
-typedef refcount<moduleGenerator> moduleGeneratorRef;
+using moduleGeneratorRef = refcount<moduleGenerator>;
 #endif

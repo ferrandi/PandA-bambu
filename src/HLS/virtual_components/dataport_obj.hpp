@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,7 @@ class dataport_obj : public generic_obj
    /**
     * Constructor
     */
-   dataport_obj(const std::string& _name, std::string _parameter, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), parameter(std::move(_parameter)), bitsize(_bitsize)
+   dataport_obj(const std::string& _name, const std::string& _parameter, unsigned int _bitsize) : generic_obj(DATA_PORT, _name), parameter(_parameter), bitsize(_bitsize)
    {
    }
 

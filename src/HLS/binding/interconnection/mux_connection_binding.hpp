@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,7 +73,7 @@ class mux_connection_binding : public conn_binding_creator
 {
  private:
    /// type representing a resource identifier
-   typedef std::pair<unsigned int, unsigned int> resource_id_type;
+   using resource_id_type = std::pair<unsigned int, unsigned int>;
 
    /// store the registers for each resource and for each port
    std::map<resource_id_type, std::map<unsigned int, CustomOrderedSet<unsigned int>>> regs_in;
@@ -170,7 +170,7 @@ class mux_connection_binding : public conn_binding_creator
     * Main constructor
     * @param design_flow_manager is the design flow manager
     */
-   mux_connection_binding(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   mux_connection_binding(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

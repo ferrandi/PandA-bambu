@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -105,8 +105,8 @@
  * Macro which writes on an output stream a string with its length. STRING_CST case
  */
 #define WRITE_STRGLNGT_STRING(os, field) \
-   (os << " "                            \
-       << "strg: \"" << (field) << "\" lngt: " << (field).size() + 1)
+   ((os) << " "                          \
+         << "strg: \"" << (field) << "\" lngt: " << (field).size() + 1)
 
 /**
  * Macro which writes on an output stream the srcp fields.

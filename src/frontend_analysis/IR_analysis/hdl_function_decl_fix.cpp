@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,7 +96,9 @@ DesignFlowStep_Status HDLFunctionDeclFix::Exec()
    {
       auto fd = GetPointer<function_decl>(TM->get_tree_node_const(function));
       if(not fd->name)
+      {
          continue;
+      }
       auto in = GetPointer<identifier_node>(GET_NODE(fd->name));
       const auto identifier = hdl_writer_type == HDLWriter_Language::VHDL ? boost::to_upper_copy<std::string>(in->strg) : in->strg;
       if(found_names.find(identifier) != found_names.end())

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -232,10 +232,14 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       {
          auto* me = GetPointer<gimple_assign>(curr_tn);
          if(GET_NODE(me->op0)->get_kind() != ssa_name_K)
+         {
             analyze_node(me->op0, ssa_uses);
+         }
          analyze_node(me->op1, ssa_uses);
          if(me->predicate)
+         {
             analyze_node(me->predicate, ssa_uses);
+         }
          break;
       }
       case gimple_nop_K:
@@ -278,7 +282,9 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       {
          auto* ue = GetPointer<unary_expr>(curr_tn);
          if(GET_NODE(ue->op)->get_kind() != function_decl_K)
+         {
             analyze_node(ue->op, ssa_uses);
+         }
          break;
       }
       case CASE_BINARY_EXPRESSION:
@@ -301,7 +307,9 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
          analyze_node(te->op0, ssa_uses);
          analyze_node(te->op1, ssa_uses);
          if(te->op2)
+         {
             analyze_node(te->op2, ssa_uses);
+         }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
@@ -310,9 +318,13 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
          analyze_node(qe->op0, ssa_uses);
          analyze_node(qe->op1, ssa_uses);
          if(qe->op2)
+         {
             analyze_node(qe->op2, ssa_uses);
+         }
          if(qe->op3)
+         {
             analyze_node(qe->op3, ssa_uses);
+         }
          break;
       }
       case lut_expr_K:
@@ -321,26 +333,40 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
          analyze_node(le->op0, ssa_uses);
          analyze_node(le->op1, ssa_uses);
          if(le->op2)
+         {
             analyze_node(le->op2, ssa_uses);
+         }
          if(le->op3)
+         {
             analyze_node(le->op3, ssa_uses);
+         }
          if(le->op4)
+         {
             analyze_node(le->op4, ssa_uses);
+         }
          if(le->op5)
+         {
             analyze_node(le->op5, ssa_uses);
+         }
          if(le->op6)
+         {
             analyze_node(le->op6, ssa_uses);
+         }
          if(le->op7)
+         {
             analyze_node(le->op7, ssa_uses);
+         }
          if(le->op8)
+         {
             analyze_node(le->op8, ssa_uses);
+         }
          break;
       }
       case constructor_K:
       {
          auto* c = GetPointer<constructor>(curr_tn);
          std::vector<std::pair<tree_nodeRef, tree_nodeRef>>& list_of_idx_valu = c->list_of_idx_valu;
-         std::vector<std::pair<tree_nodeRef, tree_nodeRef>>::const_iterator vend = list_of_idx_valu.end();
+         auto vend = list_of_idx_valu.end();
          for(auto i = list_of_idx_valu.begin(); i != vend; ++i)
          {
             analyze_node(i->second, ssa_uses);
@@ -359,11 +385,17 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       {
          auto* ae = GetPointer<gimple_asm>(curr_tn);
          if(ae->out)
+         {
             analyze_node(ae->out, ssa_uses);
+         }
          if(ae->in)
+         {
             analyze_node(ae->in, ssa_uses);
+         }
          if(ae->clob)
+         {
             analyze_node(ae->in, ssa_uses);
+         }
          break;
       }
       case gimple_goto_K:
@@ -378,9 +410,13 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
          while(tl)
          {
             if(tl->purp)
+            {
                analyze_node(tl->purp, ssa_uses);
+            }
             if(tl->valu)
+            {
                analyze_node(tl->valu, ssa_uses);
+            }
             tl = tl->chan ? GetPointer<tree_list>(GET_NODE(tl->chan)) : nullptr;
          }
          break;
@@ -389,8 +425,12 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(auto cond : gmwi->list_of_cond)
+         {
             if(cond.first)
+            {
                analyze_node(cond.first, ssa_uses);
+            }
+         }
          break;
       }
       case result_decl_K:
@@ -416,18 +456,26 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       {
          auto* gp = GetPointer<gimple_phi>(curr_tn);
          for(auto def_nodes : gp->CGetDefEdgesList())
+         {
             analyze_node(def_nodes.first, ssa_uses);
+         }
          break;
       }
       case target_mem_ref_K:
       {
          auto* tmr = GetPointer<target_mem_ref>(curr_tn);
          if(tmr->base)
+         {
             analyze_node(tmr->base, ssa_uses);
+         }
          if(tmr->symbol)
+         {
             analyze_node(tmr->symbol, ssa_uses);
+         }
          if(tmr->idx)
+         {
             analyze_node(tmr->idx, ssa_uses);
+         }
          /// step and offset are constants
          break;
       }
@@ -435,11 +483,17 @@ void use_counting::analyze_node(tree_nodeRef& tn, CustomOrderedSet<tree_nodeRef>
       {
          auto* tmr = GetPointer<target_mem_ref461>(curr_tn);
          if(tmr->base)
+         {
             analyze_node(tmr->base, ssa_uses);
+         }
          if(tmr->idx)
+         {
             analyze_node(tmr->idx, ssa_uses);
+         }
          if(tmr->idx2)
+         {
             analyze_node(tmr->idx2, ssa_uses);
+         }
          /// step and offset are constants
          break;
       }

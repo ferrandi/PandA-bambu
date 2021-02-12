@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -113,19 +113,25 @@ void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigne
       else
       {
          if(output_level > OUTPUT_LEVEL_VERBOSE)
+         {
             THROW_WARNING("Top RTL name refers to a HDL-only module");
+         }
          top_functions = saved_top_functions;
       }
       reachable_functions = CG->GetReachedBodyFunctionsFrom(*(top_functions.begin()));
    }
    else
+   {
       reachable_functions = CG->GetReachedBodyFunctions();
+   }
 
    for(auto v : topology_sorted_vertex)
    {
       auto fun_id = CG->get_function(v);
       if(reachable_functions.find(fun_id) != reachable_functions.end())
+      {
          sort_list.push_back(fun_id);
+      }
    }
 }
 
@@ -144,7 +150,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, WHOLE_APPLICATION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(IR_LOWERING, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, ALL_FUNCTIONS));
          break;
       }
@@ -158,7 +164,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MEM_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MEM_CG_EXT, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, ALL_FUNCTIONS));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(LUT_TRANSFORMATION, ALL_FUNCTIONS));
@@ -199,7 +205,9 @@ class worklist_queue
       std::pair<unsigned int, unsigned int> el = priority_queue_data.top();
       priority_queue_data.pop();
       while(!priority_queue_data.empty() && el.second == priority_queue_data.top().second)
+      {
          priority_queue_data.pop();
+      }
 
       return el.first;
    }
@@ -256,7 +264,9 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
          auto called_id = CG->get_function(tgt_vrtx);
          function_information_map[function]->called_functions.insert(called_id);
          if(function_information_map.find(called_id) != function_information_map.end())
+         {
             function_information_map[function]->preserving &= function_information_map[called_id]->preserving;
+         }
          else
          {
             std::string fun_name = tree_helper::name_function(TM, called_id);
@@ -266,7 +276,9 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
             }
             else if(fun_name != "signbit" && fun_name != "__builtin_signbit" && fun_name != "signbitf" && fun_name != "__builtin_signbitf" && fun_name != "fabs" && fun_name != "fabsf" && fun_name != "llabs" && fun_name != "labs" && fun_name != "abs" &&
                     fun_name != "putchar" && fun_name != "__builtin_putchar" && fun_name != "__bambu_read4c" && fun_name != "__bambu_readc" && fun_name != "abort" && fun_name != "exit")
+            {
                function_information_map[function]->preserving = false;
+            }
          }
       }
 
@@ -303,7 +315,9 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                         ssa->use_set = PointToSolutionRef(new PointToSolution());
                         ssa->use_set->Add(ae->op);
                         if(GET_NODE(ae->op)->get_kind() == function_decl_K)
+                        {
                            addr_taken_functions.insert(GET_INDEX_NODE(ae->op));
+                        }
                      }
                      else if(GET_NODE(ae->op)->get_kind() == mem_ref_K)
                      {
@@ -327,7 +341,9 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                      THROW_ASSERT(GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == ssa_name_K || GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == integer_cst_K,
                                   "expected a ssa_name as first operand of a pointer plus expression" + GET_NODE(stmt)->ToString());
                      if(GET_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0)->get_kind() == ssa_name_K)
+                     {
                         pointing_to_ssa_vars.insert(GET_INDEX_NODE(GetPointer<pointer_plus_expr>(GET_NODE(ga->op1))->op0));
+                     }
                   }
                   else if(GET_NODE(ga->op1)->get_kind() == mem_ref_K)
                   {
@@ -381,12 +397,16 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
                                 fun_name != "abs" && fun_name != "putchar" && fun_name != "__builtin_putchar" && fun_name != "__bambu_read4c" && fun_name != "__bambu_readc")
                         {
                            if(output_level > OUTPUT_LEVEL_VERBOSE)
+                           {
                               THROW_WARNING("function " + fun_name + " does not have a source C body so we have to be very restrictive on its parameters and on the usage of the value returned...");
+                           }
                            for(auto par : ce->args)
+                           {
                               if(GET_NODE(par)->get_kind() == ssa_name_K)
                               {
                                  pointing_to_ssa_vars.insert(GET_INDEX_NODE(par));
                               }
+                           }
                            pointing_to_ssa_vars.insert(GET_INDEX_NODE(ga->op0));
                         }
                      }

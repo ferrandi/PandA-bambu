@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -171,7 +171,9 @@ int main(int argc, char* argv[])
 
       auto output_level = parameters->getOption<int>(OPT_output_level);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
+      {
          parameters->PrintFullHeader(std::cerr);
+      }
 
       // Include sysdir
       if(parameters->getOption<bool>(OPT_gcc_include_sysdir))
@@ -264,7 +266,7 @@ int main(int argc, char* argv[])
       /// pretty printing
       if(parameters->isOption(OPT_pretty_print))
       {
-         std::string outFileName = parameters->getOption<std::string>(OPT_pretty_print);
+         auto outFileName = parameters->getOption<std::string>(OPT_pretty_print);
          const DesignFlowStepRef c_backend = GetPointer<const CBackendStepFactory>(c_backend_step_factory)->CreateCBackendStep(CBackend::CB_SEQUENTIAL, outFileName, CBackendInformationConstRef());
          design_flow_manager->AddStep(c_backend);
       }
@@ -295,12 +297,14 @@ int main(int argc, char* argv[])
       {
          std::ofstream ofile(parameters->getOption<std::string>(OPT_output_file), std::ios::out);
          for(auto files : {HLSMgr->aux_files, HLSMgr->hdl_files})
+         {
             for(auto file : files)
             {
                std::cerr << "File name: " << file << "\n";
                std::ifstream ifile(file, std::ios::in);
                ofile << ifile.rdbuf();
             }
+         }
       }
       return EXIT_SUCCESS; // Bambu tool has completed execution without errors
    }
@@ -309,25 +313,33 @@ int main(int argc, char* argv[])
    catch(const char* str)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << str << std::endl;
    }
    catch(const std::string& str)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << str << std::endl;
    }
    catch(std::exception& e)
    {
       std::cerr << e.what() << std::endl;
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
    }
    catch(...)
    {
       if(EXIT_SUCCESS == exit_code)
+      {
          exit_code = EXIT_FAILURE;
+      }
       std::cerr << "Unknown error type" << std::endl;
    }
 
@@ -341,7 +353,9 @@ int main(int argc, char* argv[])
       case EXIT_FAILURE:
       {
          if(parameters)
+         {
             parameters->PrintBugReport(std::cout);
+         }
          break;
       }
       default:

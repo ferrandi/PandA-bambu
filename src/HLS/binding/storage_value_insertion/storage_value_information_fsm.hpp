@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2019 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -82,5 +82,5 @@ class StorageValueInformationFsm : public StorageValueInformation
    void set_storage_value_index(vertex curr_state, unsigned int variable, unsigned int sv) override;
 };
 
-typedef refcount<StorageValueInformationFsm> StorageValueInformationFsmRef;
+using StorageValueInformationFsmRef = refcount<StorageValueInformationFsm>;
 #endif

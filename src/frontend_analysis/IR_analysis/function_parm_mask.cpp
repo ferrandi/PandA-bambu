@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -305,12 +305,10 @@ void function_parm_mask::instrumentViewConvert(function_decl* fd, long long sign
    std::vector<const ssa_name*> ssaParms;
 
    auto instrumentOp = [&](blocRef BB, tree_nodeRef stmt, tree_nodeRef old_ssa, bool afterBefore) {
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          return;
       }
-#endif
       THROW_ASSERT(GET_CONST_NODE(old_ssa)->get_kind() == ssa_name_K, "");
       const auto type_expr = GetPointer<const ssa_name>(GET_CONST_NODE(old_ssa))->type;
       const auto mask = TM->CreateUniqueIntegerCst(significand_mask, GET_INDEX_CONST_NODE(type_expr));
@@ -343,9 +341,7 @@ void function_parm_mask::instrumentViewConvert(function_decl* fd, long long sign
          BB->PushAfter(ga, stmt);
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       }
-#ifndef NDEBUG
       AppM->RegisterTransformation(GetName(), ga);
-#endif
    };
    auto instrumentOpAfter = [&](blocRef BB, tree_nodeRef stmt, tree_nodeRef old_ssa) { instrumentOp(BB, stmt, old_ssa, false); };
    auto instrumentOpBefore = [&](blocRef BB, tree_nodeRef stmt, tree_nodeRef old_ssa) { instrumentOp(BB, stmt, old_ssa, true); };
@@ -448,7 +444,7 @@ DesignFlowStep_Status function_parm_mask::Exec()
    }
 
    bool modified = false;
-   const std::string output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+   const auto output_temporary_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    for(const auto& source_file : AppM->input_files)
    {
       std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
@@ -478,7 +474,9 @@ DesignFlowStep_Status function_parm_mask::Exec()
                      std::string key = attr->get_name();
                      std::string value = attr->get_value();
                      if(key == "id")
+                     {
                         fname = value;
+                     }
                   }
 
                   if(fname == "")

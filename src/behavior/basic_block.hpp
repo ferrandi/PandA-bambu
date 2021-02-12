@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -171,8 +171,8 @@ struct BBNodeInfo : public NodeInfo
    const CustomOrderedSet<unsigned int>& get_live_out() const;
 };
 /// refcount definition of the class
-typedef refcount<BBNodeInfo> BBNodeInfoRef;
-typedef refcount<const BBNodeInfo> BBNodeInfoConstRef;
+using BBNodeInfoRef = refcount<BBNodeInfo>;
+using BBNodeInfoConstRef = refcount<const BBNodeInfo>;
 
 /**
  * Information associated with a basic block edge
@@ -238,8 +238,8 @@ struct BBEdgeInfo : public CdfgEdgeInfo
    unsigned long long get_epp_value() const;
 };
 /// refcount definition of the class
-typedef refcount<BBEdgeInfo> BBEdgeInfoRef;
-typedef refcount<const BBEdgeInfo> BBEdgeInfoConstRef;
+using BBEdgeInfoRef = refcount<BBEdgeInfo>;
+using BBEdgeInfoConstRef = refcount<const BBEdgeInfo>;
 
 /**
  * Information associated with the whole basic-block graph
@@ -268,8 +268,8 @@ struct BBGraphInfo : public GraphInfo
    BBGraphInfo(const application_managerConstRef AppM, const unsigned int function_index);
 };
 /// refcount definition of the class
-typedef refcount<BBGraphInfo> BBGraphInfoRef;
-typedef refcount<const BBGraphInfo> BBGraphInfoConstRef;
+using BBGraphInfoRef = refcount<BBGraphInfo>;
+using BBGraphInfoConstRef = refcount<const BBGraphInfo>;
 
 /**
  * This structure defines graphs where nodes are basic_blocks.
@@ -288,7 +288,7 @@ class BBGraphsCollection : public graphs_collection
     * @param bb_node_info is the info to be associated with the graph
     * @param parameters is the set of input parameters
     */
-   BBGraphsCollection(const BBGraphInfoRef bb_node_info, const ParameterConstRef parameters);
+   BBGraphsCollection(const BBGraphInfoRef bb_graph_info, const ParameterConstRef parameters);
 
    /**
     * Destructor
@@ -305,14 +305,18 @@ class BBGraphsCollection : public graphs_collection
    inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
    {
       if(ExistsEdge(source, target))
+      {
          return AddSelector(source, target, selector);
+      }
       else
+      {
          return InternalAddEdge(source, target, selector, EdgeInfoRef(new BBEdgeInfo()));
+      }
    }
 };
 /// refcount definition of the class
-typedef refcount<BBGraphsCollection> BBGraphsCollectionRef;
-typedef refcount<const BBGraphsCollection> BBGraphsCollectionConstRef;
+using BBGraphsCollectionRef = refcount<BBGraphsCollection>;
+using BBGraphsCollectionConstRef = refcount<const BBGraphsCollection>;
 
 /**
  * Class used to describe a particular graph with basic blocks as nodes
@@ -325,7 +329,7 @@ struct BBGraph : public graph
     * @param BBGraphsCollection is the bulk graph.
     * @param selector is the selector used to filter the bulk graph.
     */
-   BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector);
+   BBGraph(const BBGraphsCollectionRef _g, int selector);
 
    /**
     * Sub-graph constructor.
@@ -333,7 +337,7 @@ struct BBGraph : public graph
     * @param selector is the selector used to filter the bulk graph.
     * @param sub is the set of vertices on which the graph is filtered.
     */
-   BBGraph(const BBGraphsCollectionRef bb_graphs_collection, int selector, CustomUnorderedSet<vertex>& sub);
+   BBGraph(const BBGraphsCollectionRef _g, int selector, CustomUnorderedSet<vertex>& sub);
 
    /**
     * Destructor
@@ -415,8 +419,8 @@ struct BBGraph : public graph
    }
 };
 /// refcount definition of the class
-typedef refcount<BBGraph> BBGraphRef;
-typedef refcount<const BBGraph> BBGraphConstRef;
+using BBGraphRef = refcount<BBGraph>;
+using BBGraphConstRef = refcount<const BBGraph>;
 
 #if !HAVE_UNORDERED
 class BBVertexSorter : std::binary_function<vertex, vertex, bool>

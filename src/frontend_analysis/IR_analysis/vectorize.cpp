@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -267,7 +267,9 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          ClassifyTreeNode(loop_id, GET_NODE(ga->op0));
          ClassifyTreeNode(loop_id, GET_NODE(ga->op1));
          if(ga->vdef)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(ga->vdef));
+         }
 
          /// Check if the statement is the increment operation of an outer loop
          if(ga->predicate)
@@ -541,9 +543,13 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          ClassifyTreeNode(loop_id, GET_NODE(ar->op0));
          ClassifyTreeNode(loop_id, GET_NODE(ar->op1));
          if(ar->op2)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(ar->op2));
+         }
          if(ar->op3)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(ar->op3));
+         }
          transformations[tree_node->index] = SCALAR;
          break;
       }
@@ -577,19 +583,33 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
          ClassifyTreeNode(loop_id, GET_NODE(le->op0));
          ClassifyTreeNode(loop_id, GET_NODE(le->op1));
          if(le->op2)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(le->op2));
+         }
          if(le->op3)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(le->op3));
+         }
          if(le->op4)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(le->op4));
+         }
          if(le->op5)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(le->op5));
+         }
          if(le->op6)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(le->op6));
+         }
          if(le->op7)
+         {
             ClassifyTreeNode(loop_id, GET_NODE(le->op7));
+         }
          if(le->op8)
+         {
             ClassifyTreeNode(loop_id, le->op8);
+         }
          transformations[tree_node->index] = SCALAR;
          break;
       }
@@ -668,18 +688,30 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> ssa_tree_node_schema;
    const auto* sa = GetPointer<const ssa_name>(GET_NODE(ga->op0));
    if(sa->type)
+   {
       ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
+   }
    if(sa->var)
+   {
       ssa_tree_node_schema[TOK(TOK_VAR)] = STR(sa->var->index);
+   }
    ssa_tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
    if(sa->volatile_flag)
+   {
       ssa_tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+   }
    if(sa->virtual_flag)
+   {
       ssa_tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+   }
    if(sa->max)
+   {
       ssa_tree_node_schema[TOK(TOK_MAX)] = STR(sa->max->index);
+   }
    if(sa->min)
+   {
       ssa_tree_node_schema[TOK(TOK_MIN)] = STR(sa->min->index);
+   }
    unsigned int ssa_tree_node_index = TM->new_tree_node_id();
    TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
 
@@ -719,18 +751,30 @@ unsigned int Vectorize::DuplicateIncrement(const unsigned int loop_id, const tre
       /// First create the new ssa_name
       std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> dup_op_cond_tn_schema;
       if(cond_op->type)
+      {
          dup_op_cond_tn_schema[TOK(TOK_TYPE)] = STR(cond_op->type->index);
+      }
       if(cond_op->var)
+      {
          dup_op_cond_tn_schema[TOK(TOK_VAR)] = STR(cond_op->var->index);
+      }
       dup_op_cond_tn_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
       if(cond_op->volatile_flag)
+      {
          dup_op_cond_tn_schema[TOK(TOK_VOLATILE)] = STR(cond_op->volatile_flag);
+      }
       if(cond_op->virtual_flag)
+      {
          dup_op_cond_tn_schema[TOK(TOK_VIRTUAL)] = STR(cond_op->virtual_flag);
+      }
       if(cond_op->max)
+      {
          dup_op_cond_tn_schema[TOK(TOK_MAX)] = STR(cond_op->max->index);
+      }
       if(cond_op->min)
+      {
          dup_op_cond_tn_schema[TOK(TOK_MIN)] = STR(cond_op->min->index);
+      }
       unsigned int dup_op_cond_index = TM->new_tree_node_id();
       // cppcheck-suppress unreadVariable
       remapping[cond_op->index] = dup_op_cond_index;
@@ -1113,7 +1157,9 @@ void Vectorize::FixPhis()
       {
          const auto source = boost::source(*ie, *fcfg_bb_graph);
          if(source != whole_dominator)
+         {
             phi_inputs.insert(source);
+         }
       }
       for(const auto& phi : bb_node_info->block->CGetPhiList())
       {
@@ -1276,7 +1322,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             return false;
          }();
          if(is_simd)
+         {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SERIALIZE_MUTUAL_EXCLUSIONS, SAME_FUNCTION));
+         }
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -1308,7 +1356,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 DesignFlowStep_Status Vectorize::InternalExec()
 {
    if(parameters->IsParameter("vectorize") and parameters->GetParameter<std::string>("vectorize") == "disable")
+   {
       return DesignFlowStep_Status::UNCHANGED;
+   }
 
    /// Classify loop
    ClassifyLoop(function_behavior->GetLoops()->GetLoop(0), 0);
@@ -1424,11 +1474,15 @@ DesignFlowStep_Status Vectorize::InternalExec()
          /// Remove old statements
          const auto& old_statement_list = block->CGetStmtList();
          while(old_statement_list.size())
+         {
             block->RemoveStmt(old_statement_list.front());
+         }
          /// Remove old phis
          const auto& old_phi_list = block->CGetPhiList();
          while(old_phi_list.size())
+         {
             block->RemovePhi(old_phi_list.front());
+         }
          /// Add new statements
          for(const auto& new_stmt : new_statement_list)
          {
@@ -1607,19 +1661,31 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      THROW_ASSERT(GET_NODE(def_edge.first)->get_kind() == ssa_name_K, "");
                      const auto* sa = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
                      if(sa->type)
+                     {
                         ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
+                     }
                      if(sa->var)
+                     {
                         ssa_tree_node_schema[TOK(TOK_VAR)] = STR(sa->var->index);
+                     }
                      ssa_tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
                      ssa_tree_node_schema[TOK(TOK_ORIG_VERS)] = STR(sa->orig_vers);
                      if(sa->volatile_flag)
+                     {
                         ssa_tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+                     }
                      if(sa->virtual_flag)
+                     {
                         ssa_tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+                     }
                      if(sa->max)
+                     {
                         ssa_tree_node_schema[TOK(TOK_MAX)] = STR(sa->max->index);
+                     }
                      if(sa->min)
+                     {
                         ssa_tree_node_schema[TOK(TOK_MIN)] = STR(sa->min->index);
+                     }
                      unsigned int ssa_tree_node_index = TM->new_tree_node_id();
                      TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
                      version_to_ssa[i] = ssa_tree_node_index;
@@ -1646,18 +1712,30 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
                   const auto* sa = GetPointer<const ssa_name>(GET_NODE(def_edge.first));
                   if(sa->type)
+                  {
                      ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(sa->type->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
                   if(sa->var)
+                  {
                      ssa_tree_node_schema[TOK(TOK_VAR)] = STR(Transform(sa->var->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
                   ssa_tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
                   if(sa->volatile_flag)
+                  {
                      ssa_tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+                  }
                   if(sa->virtual_flag)
+                  {
                      ssa_tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+                  }
                   if(sa->max)
+                  {
                      ssa_tree_node_schema[TOK(TOK_MAX)] = STR(Transform(sa->max->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
                   if(sa->min)
+                  {
                      ssa_tree_node_schema[TOK(TOK_MIN)] = STR(Transform(sa->min->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
                   unsigned int ssa_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
 
@@ -1689,9 +1767,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
             const auto element_type = tree_helper::CGetType(GET_NODE(gp->res));
-            /// vector of boolean types are mapped on vector of unsigned integer
+            /// vector of Boolean types are mapped on vector of unsigned integer
             const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
+            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
             const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
             bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(GET_NODE(gp->res))->index);
@@ -1702,19 +1780,31 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
             const auto* sa = GetPointer<const ssa_name>(GET_NODE(gp->res));
             if(sa->type)
+            {
                ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
+            }
             if(sa->var)
+            {
                ssa_tree_node_schema[TOK(TOK_VAR)] = STR(sa->var->index);
+            }
             ssa_tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
             ssa_tree_node_schema[TOK(TOK_ORIG_VERS)] = STR(sa->orig_vers);
             if(sa->volatile_flag)
+            {
                ssa_tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+            }
             if(sa->virtual_flag)
+            {
                ssa_tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+            }
             if(sa->max)
+            {
                ssa_tree_node_schema[TOK(TOK_MAX)] = STR(sa->max->index);
+            }
             if(sa->min)
+            {
                ssa_tree_node_schema[TOK(TOK_MIN)] = STR(sa->min->index);
+            }
 
             unsigned int ssa_tree_node_index = TM->new_tree_node_id();
             TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
@@ -1740,7 +1830,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
          unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
          tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
          if(ga->orig)
+         {
             tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
+         }
          tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
          tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
          tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, 0, new_stmt_list, new_phi_list));
@@ -1780,9 +1872,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
             unsigned int bit_field_ref_index = TM->new_tree_node_id();
             const auto element_type = tree_helper::CGetType(GET_NODE(ga->op0));
-            /// vector of boolean types are mapped on vector of integer
+            /// vector of Boolean types are mapped on vector of integer
             const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
+            const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
             const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
             bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
             bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(tn)->index);
@@ -1793,19 +1885,31 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
             const auto* sa = GetPointer<const ssa_name>(GET_NODE(ga->op0));
             if(sa->type)
+            {
                ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
+            }
             if(sa->var)
+            {
                ssa_tree_node_schema[TOK(TOK_VAR)] = STR(sa->var->index);
+            }
             ssa_tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
             ssa_tree_node_schema[TOK(TOK_ORIG_VERS)] = STR(sa->orig_vers);
             if(sa->volatile_flag)
+            {
                ssa_tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+            }
             if(sa->virtual_flag)
+            {
                ssa_tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+            }
             if(sa->max)
+            {
                ssa_tree_node_schema[TOK(TOK_MAX)] = STR(sa->max->index);
+            }
             if(sa->min)
+            {
                ssa_tree_node_schema[TOK(TOK_MIN)] = STR(sa->min->index);
+            }
 
             unsigned int ssa_tree_node_index = TM->new_tree_node_id();
             TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
@@ -1852,14 +1956,18 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
                   if(ga->orig)
+                  {
                      tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
+                  }
                   tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                   tree_node_schema[TOK(TOK_ADDR)] = STR(ga->temporary_address);
                   tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
                   tree_node_schema[TOK(TOK_OP1)] = STR(Transform(ga->op1->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
                   tree_node_schema[TOK(TOK_OP0)] = STR(Transform(ga->op0->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
                   if(ga->predicate)
+                  {
                      tree_node_schema[TOK(TOK_PREDICATE)] = STR(Transform(ga->predicate->index, parallel_degree, scalar, new_stmt_list, new_phi_list));
+                  }
 
                   unsigned int new_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(new_tree_node_index, gimple_assign_K, tree_node_schema);
@@ -1925,7 +2033,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                   tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
                   if(ga->orig)
+                  {
                      tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
+                  }
                   tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                   tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
                   tree_node_schema[TOK(TOK_OP1)] = STR(constr->index);
@@ -1993,19 +2103,33 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                tree_node_schema[TOK(TOK_TYPE)] = STR(le->type->index);
                tree_node_schema[TOK(TOK_OP1)] = STR(Transform(le->op1->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
                if(le->op2)
+               {
                   tree_node_schema[TOK(TOK_OP2)] = STR(Transform(le->op2->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                if(le->op3)
+               {
                   tree_node_schema[TOK(TOK_OP3)] = STR(Transform(le->op3->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                if(le->op4)
+               {
                   tree_node_schema[TOK(TOK_OP4)] = STR(Transform(le->op4->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                if(le->op5)
+               {
                   tree_node_schema[TOK(TOK_OP5)] = STR(Transform(le->op5->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                if(le->op6)
+               {
                   tree_node_schema[TOK(TOK_OP6)] = STR(Transform(le->op6->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                if(le->op7)
+               {
                   tree_node_schema[TOK(TOK_OP7)] = STR(Transform(le->op7->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                if(le->op8)
+               {
                   tree_node_schema[TOK(TOK_OP8)] = STR(Transform(le->op8->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                unsigned int new_tree_node_id = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_id, tn->get_kind(), tree_node_schema);
                return_value = new_tree_node_id;
@@ -2023,9 +2147,13 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                tree_node_schema[TOK(TOK_OP0)] = STR(Transform(qe->op0->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
                tree_node_schema[TOK(TOK_OP1)] = STR(Transform(qe->op1->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
                if(qe->op2)
+               {
                   tree_node_schema[TOK(TOK_OP2)] = STR(Transform(qe->op2->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                if(qe->op3)
+               {
                   tree_node_schema[TOK(TOK_OP3)] = STR(Transform(qe->op3->index, parallel_degree, scalar_index, new_stmt_list, new_phi_list));
+               }
                unsigned int new_tree_node_id = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_id, tn->get_kind(), tree_node_schema);
                return_value = new_tree_node_id;
@@ -2077,19 +2205,31 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                {
                   const auto* sa = GetPointer<const ssa_name>(tn);
                   if(sa->type)
+                  {
                      tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
+                  }
                   if(sa->var)
+                  {
                      tree_node_schema[TOK(TOK_VAR)] = STR(sa->var->index);
+                  }
                   tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
                   tree_node_schema[TOK(TOK_ORIG_VERS)] = STR(sa->orig_vers);
                   if(sa->volatile_flag)
+                  {
                      tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+                  }
                   if(sa->virtual_flag)
+                  {
                      tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+                  }
                   if(sa->max)
+                  {
                      tree_node_schema[TOK(TOK_MAX)] = STR(sa->max->index);
+                  }
                   if(sa->min)
+                  {
                      tree_node_schema[TOK(TOK_MIN)] = STR(sa->min->index);
+                  }
 
                   unsigned int ssa_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(ssa_tree_node_index, ssa_name_K, tree_node_schema);
@@ -2195,7 +2335,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                unsigned int column_number = GetPointer<const srcp>(tn)->column_number;
                tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
                if(ga->orig)
+               {
                   tree_node_schema[TOK(TOK_ORIG)] = STR(ga->orig->index);
+               }
                tree_node_schema[TOK(TOK_CLOBBER)] = STR(ga->clobber);
                tree_node_schema[TOK(TOK_ADDR)] = STR(ga->temporary_address);
                tree_node_schema[TOK(TOK_INIT)] = STR(ga->init_assignment);
@@ -2228,7 +2370,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, gimple_assign_tree_node_schema;
                   unsigned int bit_field_ref_index = TM->new_tree_node_id();
                   const auto element_type = tree_helper::CGetType(GET_NODE(ga->op0));
-                  /// vector of boolean types are mapped on vector of integer
+                  /// vector of Boolean types are mapped on vector of integer
                   const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
                   const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
                   const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
@@ -2254,19 +2396,31 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             {
                const auto* sa = GetPointer<const ssa_name>(tn);
                if(sa->type)
+               {
                   tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(sa->type->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(sa->var)
+               {
                   tree_node_schema[TOK(TOK_VAR)] = STR(Transform(sa->var->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
                tree_node_schema[TOK(TOK_ORIG_VERS)] = STR(sa->orig_vers);
                if(sa->volatile_flag)
+               {
                   tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+               }
                if(sa->virtual_flag)
+               {
                   tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+               }
                if(sa->max)
+               {
                   tree_node_schema[TOK(TOK_MAX)] = STR(Transform(sa->max->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(sa->min)
+               {
                   tree_node_schema[TOK(TOK_MIN)] = STR(Transform(sa->min->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
 
                unsigned int new_tree_node_index = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_index, ssa_name_K, tree_node_schema);
@@ -2278,14 +2432,22 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                const auto* type = GetPointer<const type_node>(tn);
                tree_node_schema[TOK(TOK_QUAL)] = STR(static_cast<unsigned int>(type->qual));
                if(type->unql)
+               {
                   tree_node_schema[TOK(TOK_UNQL)] = STR(Transform(type->unql->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(type->scpe)
+               {
                   tree_node_schema[TOK(TOK_SCPE)] = STR(Transform(type->scpe->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(type->packed_flag)
+               {
                   tree_node_schema[TOK(TOK_PACKED)] = STR(type->packed_flag);
+               }
                tree_node_schema[TOK(TOK_SYSTEM)] = STR(false);
                if(type->algn)
+               {
                   tree_node_schema[TOK(TOK_ALGN)] = STR(type->algn);
+               }
                switch(type->get_kind())
                {
                   case pointer_type_K:
@@ -2390,11 +2552,17 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             {
                const auto* dn = GetPointer<const decl_node>(tn);
                if(dn->name)
+               {
                   tree_node_schema[TOK(TOK_NAME)] = STR(Transform(dn->name->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(dn->mngl)
+               {
                   tree_node_schema[TOK(TOK_MNGL)] = STR(Transform(dn->mngl->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(dn->orig)
+               {
                   tree_node_schema[TOK(TOK_ORIG)] = STR(dn->orig->index);
+               }
                if(dn->type)
                {
                   if(dn->get_kind() != type_decl_K)
@@ -2403,23 +2571,41 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   }
                }
                if(dn->scpe)
+               {
                   tree_node_schema[TOK(TOK_SCPE)] = STR(Transform(dn->scpe->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(dn->attributes)
+               {
                   tree_node_schema[TOK(TOK_ATTRIBUTES)] = STR(dn->attributes->index);
+               }
                if(dn->chan)
+               {
                   tree_node_schema[TOK(TOK_CHAN)] = STR(Transform(dn->chan->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+               }
                if(dn->artificial_flag)
+               {
                   tree_node_schema[TOK(TOK_ARTIFICIAL)] = STR(dn->artificial_flag);
+               }
                if(dn->packed_flag)
+               {
                   tree_node_schema[TOK(TOK_PACKED)] = STR(dn->packed_flag);
+               }
                if(dn->operating_system_flag)
+               {
                   tree_node_schema[TOK(TOK_OPERATING_SYSTEM)] = STR(dn->operating_system_flag);
+               }
                if(dn->library_system_flag)
+               {
                   tree_node_schema[TOK(TOK_LIBRARY_SYSTEM)] = STR(dn->library_system_flag);
+               }
                if(dn->libbambu_flag)
+               {
                   tree_node_schema[TOK(TOK_LIBBAMBU)] = STR(dn->libbambu_flag);
+               }
                if(dn->C_flag)
+               {
                   tree_node_schema[TOK(TOK_C)] = STR(dn->C_flag);
+               }
                std::string include_name = dn->get_kind() == type_decl_K and dn->include_name == "<built-in>" ? "<new>" : dn->include_name;
                unsigned int line_number = dn->line_number;
                unsigned int column_number = dn->column_number;
@@ -2430,9 +2616,13 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   {
                      const auto* td = GetPointer<const type_decl>(tn);
                      if(td->tmpl_parms)
+                     {
                         tree_node_schema[TOK(TOK_TMPL_PARMS)] = STR(Transform(td->tmpl_parms->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                     }
                      if(td->tmpl_args)
+                     {
                         tree_node_schema[TOK(TOK_TMPL_ARGS)] = STR(Transform(td->tmpl_args->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                     }
                      unsigned int new_tree_node_id = TM->new_tree_node_id();
                      TM->create_tree_node(new_tree_node_id, type_decl_K, tree_node_schema);
                      return_value = new_tree_node_id;
@@ -2442,15 +2632,25 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   {
                      const auto* vd = GetPointer<const var_decl>(tn);
                      if(vd->use_tmpl)
+                     {
                         tree_node_schema[TOK(TOK_USE_TMPL)] = STR(vd->use_tmpl);
+                     }
                      if(vd->static_static_flag)
+                     {
                         tree_node_schema[TOK(TOK_STATIC_STATIC)] = STR(vd->static_static_flag);
+                     }
                      if(vd->extern_flag)
+                     {
                         tree_node_schema[TOK(TOK_EXTERN)] = STR(vd->extern_flag);
+                     }
                      if(vd->static_flag)
+                     {
                         tree_node_schema[TOK(TOK_STATIC)] = STR(vd->static_flag);
+                     }
                      if(vd->init)
+                     {
                         tree_node_schema[TOK(TOK_INIT)] = STR(Transform(vd->init->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                     }
                      if(vd->size)
                      {
                         /// Size of new type
@@ -2458,13 +2658,21 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                         tree_node_schema[TOK(TOK_SIZE)] = STR(type->size->index);
                      }
                      if(vd->algn)
+                     {
                         tree_node_schema[TOK(TOK_ALGN)] = STR(vd->algn);
+                     }
                      if(vd->used)
+                     {
                         tree_node_schema[TOK(TOK_USED)] = STR(vd->used);
+                     }
                      if(vd->register_flag)
+                     {
                         tree_node_schema[TOK(TOK_REGISTER)] = STR(vd->register_flag);
+                     }
                      if(vd->smt_ann)
+                     {
                         tree_node_schema[TOK(TOK_SMT_ANN)] = STR(Transform(vd->smt_ann->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                     }
                      unsigned int new_tree_node_id = TM->new_tree_node_id();
                      TM->create_tree_node(new_tree_node_id, var_decl_K, tree_node_schema);
                      return_value = new_tree_node_id;
@@ -2527,9 +2735,13 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             {
                const auto* in = GetPointer<const identifier_node>(tn);
                if(in->operator_flag)
+               {
                   tree_node_schema[TOK(TOK_OPERATOR)] = STR(in->operator_flag);
+               }
                else
+               {
                   tree_node_schema[TOK(TOK_STRG)] = "vector_" + boost::replace_all_copy(in->strg, " ", "_");
+               }
                unsigned int new_tree_node_id = TM->new_tree_node_id();
                TM->create_tree_node(new_tree_node_id, identifier_node_K, tree_node_schema);
                return_value = new_tree_node_id;
@@ -2593,19 +2805,31 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                   THROW_ASSERT(GET_NODE(be->op1)->get_kind() == ssa_name_K, "Unexpected operand " + GET_NODE(be->op1)->get_kind_text());
                   const auto* sa = GetPointer<const ssa_name>(GET_NODE(be->op1));
                   if(sa->type)
+                  {
                      ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(Transform(sa->type->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
                   if(sa->var)
+                  {
                      ssa_tree_node_schema[TOK(TOK_VAR)] = STR(Transform(sa->var->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
                   ssa_tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
                   ssa_tree_node_schema[TOK(TOK_ORIG_VERS)] = STR(sa->orig_vers);
                   if(sa->volatile_flag)
+                  {
                      ssa_tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+                  }
                   if(sa->virtual_flag)
+                  {
                      ssa_tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+                  }
                   if(sa->max)
+                  {
                      ssa_tree_node_schema[TOK(TOK_MAX)] = STR(Transform(sa->max->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
                   if(sa->min)
+                  {
                      ssa_tree_node_schema[TOK(TOK_MIN)] = STR(Transform(sa->min->index, parallel_degree, 0, new_stmt_list, new_phi_list));
+                  }
 
                   unsigned int ssa_tree_node_index = TM->new_tree_node_id();
                   TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
@@ -2625,15 +2849,25 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
                unsigned int new_tree_node_id = TM->new_tree_node_id();
                if(tn->get_kind() == truth_or_expr_K)
+               {
                   TM->create_tree_node(new_tree_node_id, bit_ior_expr_K, tree_node_schema);
+               }
                else if(tn->get_kind() == truth_and_expr_K)
+               {
                   TM->create_tree_node(new_tree_node_id, bit_and_expr_K, tree_node_schema);
+               }
                else if(tn->get_kind() == lshift_expr_K)
+               {
                   TM->create_tree_node(new_tree_node_id, vec_lshift_expr_K, tree_node_schema);
+               }
                else if(tn->get_kind() == rshift_expr_K)
+               {
                   TM->create_tree_node(new_tree_node_id, vec_rshift_expr_K, tree_node_schema);
+               }
                else
+               {
                   TM->create_tree_node(new_tree_node_id, tn->get_kind(), tree_node_schema);
+               }
                return_value = new_tree_node_id;
                break;
             }
@@ -2645,7 +2879,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                TM->create_tree_node(new_tree_node_id, vector_cst_K, tree_node_schema);
                auto* new_tn = GetPointer<vector_cst>(TM->get_tree_node_const(new_tree_node_id));
                for(size_t i = 0; i < parallel_degree; i++)
+               {
                   new_tn->list_of_valu.push_back(TM->GetTreeReindex(tn->index));
+               }
                return_value = new_tree_node_id;
                break;
             }
@@ -2667,9 +2903,13 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                {
                   THROW_ASSERT(gp->virtual_flag or transformations.find(def_edge.first->index) == transformations.end() or transformations.find(def_edge.first->index)->second != SCALAR, "");
                   if(transformations.find(def_edge.first->index) == transformations.end() or transformations.find(def_edge.first->index)->second == SIMD)
+                  {
                      new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(Transform(def_edge.first->index, parallel_degree, 0, new_stmt_list, new_phi_list)), def_edge.second));
+                  }
                   else
+                  {
                      new_gp->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(def_edge.first->index), def_edge.second));
+                  }
                }
                return_value = new_tree_node_id;
                new_phi_list.push_back(TM->GetTreeReindex(return_value));
@@ -2684,9 +2924,9 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> bit_field_ref_tree_node_schema, ssa_tree_node_schema, gimple_assign_tree_node_schema;
                      unsigned int bit_field_ref_index = TM->new_tree_node_id();
                      const auto element_type = tree_helper::CGetType(GET_NODE(gp->res));
-                     /// vector of boolean types are mapped on vector of integer
+                     /// vector of Boolean types are mapped on vector of integer
                      const unsigned int bit_size = element_type->get_kind() != boolean_type_K ? tree_helper::Size(element_type) : 32;
-                     const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>((scalar - 1) * bit_size), TM->new_tree_node_id());
+                     const tree_nodeRef offset = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), ((static_cast<long long int>(scalar) - 1) * bit_size), TM->new_tree_node_id());
                      const tree_nodeRef size = tree_man->CreateIntegerCst(tree_man->create_default_unsigned_integer_type(), static_cast<long long int>(bit_size), TM->new_tree_node_id());
                      bit_field_ref_tree_node_schema[TOK(TOK_SRCP)] = include_name + ":" + boost::lexical_cast<std::string>(line_number) + ":" + boost::lexical_cast<std::string>(column_number);
                      bit_field_ref_tree_node_schema[TOK(TOK_TYPE)] = STR(tree_helper::CGetType(GET_NODE(gp->res))->index);
@@ -2697,19 +2937,31 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
                      const auto* sa = GetPointer<const ssa_name>(GET_NODE(gp->res));
                      if(sa->type)
+                     {
                         ssa_tree_node_schema[TOK(TOK_TYPE)] = STR(sa->type->index);
+                     }
                      if(sa->var)
+                     {
                         ssa_tree_node_schema[TOK(TOK_VAR)] = STR(sa->var->index);
+                     }
                      ssa_tree_node_schema[TOK(TOK_VERS)] = STR(TM->get_next_vers());
                      ssa_tree_node_schema[TOK(TOK_ORIG_VERS)] = STR(sa->orig_vers);
                      if(sa->volatile_flag)
+                     {
                         ssa_tree_node_schema[TOK(TOK_VOLATILE)] = STR(sa->volatile_flag);
+                     }
                      if(sa->virtual_flag)
+                     {
                         ssa_tree_node_schema[TOK(TOK_VIRTUAL)] = STR(sa->virtual_flag);
+                     }
                      if(sa->max)
+                     {
                         ssa_tree_node_schema[TOK(TOK_MAX)] = STR(sa->max->index);
+                     }
                      if(sa->min)
+                     {
                         ssa_tree_node_schema[TOK(TOK_MIN)] = STR(sa->min->index);
+                     }
 
                      unsigned int ssa_tree_node_index = TM->new_tree_node_id();
                      TM->create_tree_node(ssa_tree_node_index, ssa_name_K, ssa_tree_node_schema);
@@ -2828,6 +3080,10 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
 
 bool Vectorize::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    if(bb_version != 0)
    {
       return false;

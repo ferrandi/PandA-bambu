@@ -11,7 +11,7 @@
  *                     Politecnico di Milano - DEIB
  *                      System Architectures Group
  *           ***********************************************
- *            Copyright (C) 2004-2020 Politecnico di Milano
+ *            Copyright (C) 2004-2021 Politecnico di Milano
  *
  * This file is part of the PandA framework.
  *
@@ -53,7 +53,7 @@ class HWCallInjection : public FunctionFrontendFlowStep
 
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType RT) const override;
 
-   bool isHardwareCall(tree_nodeRef FD);
+   bool isHardwareCall(tree_nodeRef expr);
 
    void buildBuiltinCall(const blocRef block, const tree_nodeRef stmt);
 

@@ -54,6 +54,6 @@ class SimulationInformation
    bool results_available = false;
 };
 
-typedef refcount<SimulationInformation> SimulationInformationRef;
-typedef refcount<const SimulationInformation> SimulationInformationConstRef;
+using SimulationInformationRef = refcount<SimulationInformation>;
+using SimulationInformationConstRef = refcount<const SimulationInformation>;
 #endif
