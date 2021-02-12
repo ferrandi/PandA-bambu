@@ -661,9 +661,9 @@ namespace llvm
          case llvm::Intrinsic::fmuladd:
          {
             if(fd->getReturnType()->isFloatTy())
-               return "__float32_muladdif";
+               return "__float32_muladd";
             else if(fd->getReturnType()->isDoubleTy())
-               return "__float64_muladdif";
+               return "__float64_muladd";
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          }

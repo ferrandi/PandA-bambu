@@ -485,28 +485,34 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                   {
                      // FIXME: soft_float_cg_ext is performing floating-point lowering to unsigned int/long long, thus this piece of code should be updated accordingly
                      static const std::map<std::string, std::pair<unsigned int, std::string>> basic_unary_operations_relation = {
-                         {"__int32_to_float32if", {0, "(float)(int)"}},
-                         {"__int32_to_float64if", {1, "(double)(int)"}},
-                         {"__uint32_to_float32if", {0, "(float)"}},
-                         {"__uint32_to_float64if", {1, "(double)"}},
-                         {"__int64_to_float32if", {0, "(float)(long long int)"}},
-                         {"__int64_to_float64if", {1, "(double)(long long int)"}},
-                         {"__uint64_to_float32if", {0, "(float)"}},
-                         {"__uint64_to_float64if", {1, "(double)"}},
-                         {"__float32_to_int32_round_to_zeroif", {2, "(int)"}},
-                         {"__float32_to_int64_round_to_zeroif", {3, "(long long int)"}},
-                         {"__float32_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
-                         {"__float32_to_uint64_round_to_zeroif", {3, "(unsigned long long int)"}},
-                         {"__float64_to_int32_round_to_zeroif", {2, "(int)"}},
-                         {"__float64_to_int64_round_to_zeroif", {3, "(long long int)"}},
-                         {"__float64_to_uint32_round_to_zeroif", {2, "(unsigned int)"}},
-                         {"__float64_to_uint64_round_to_zeroif", {3, "(unsigned long long int)"}},
+                         {"__int32_to_float32", {0, "(float)(int)"}},
+                         {"__int8_to_float32", {0, "(float)(int)"}},
+                         {"__int16_to_float32", {0, "(float)(int)"}},
+                         {"__int32_to_float64", {1, "(double)(int)"}},
+                         {"__uint32_to_float32", {0, "(float)"}},
+                         {"__uint8_to_float32", {0, "(float)"}},
+                         {"__uint16_to_float32", {0, "(float)"}},
+                         {"__uint32_to_float64", {1, "(double)"}},
+                         {"__int64_to_float32", {0, "(float)(long long int)"}},
+                         {"__int64_to_float64", {1, "(double)(long long int)"}},
+                         {"__uint64_to_float32", {0, "(float)"}},
+                         {"__uint64_to_float64", {1, "(double)"}},
+                         {"__float64_to_float32", {2, "(float)"}},
+                         {"__float32_to_float64", {3, "(double)"}},
+                         {"__float32_to_int32_round_to_zero", {4, "(int)"}},
+                         {"__float32_to_int64_round_to_zero", {5, "(long long int)"}},
+                         {"__float32_to_uint32_round_to_zero", {4, "(unsigned int)"}},
+                         {"__float32_to_uint64_round_to_zero", {5, "(unsigned long long int)"}},
+                         {"__float64_to_int32_round_to_zero", {4, "(int)"}},
+                         {"__float64_to_int64_round_to_zero", {5, "(long long int)"}},
+                         {"__float64_to_uint32_round_to_zero", {4, "(unsigned int)"}},
+                         {"__float64_to_uint64_round_to_zero", {5, "(unsigned long long int)"}},
                      };
                      static const std::map<std::string, std::pair<bool, std::string>> basic_binary_operations_relation = {
-                         {"__float32_addif", {false, "+"}}, {"__float64_addif", {true, "+"}},  {"__float32_subif", {false, "-"}}, {"__float64_subif", {true, "-"}},          {"__float32_mulif", {false, "*"}},
-                         {"__float64_mulif", {true, "*"}},  {"__float32_divif", {false, "/"}}, {"__float64_divif", {true, "/"}},  {"__float32_leif", {false, "<="}},         {"__float64_leif", {true, "<="}},
-                         {"__float32_ltif", {false, "<"}},  {"__float64_ltif", {true, "<"}},   {"__float32_geif", {false, ">="}}, {"__float64_geif", {true, ">="}},          {"__float32_gtif", {false, ">"}},
-                         {"__float64_gtif", {true, ">"}},   {"__float32_eqif", {false, "=="}}, {"__float64_eqif", {true, "=="}},  {"__float32_ltgt_quietif", {false, "!="}}, {"__float64_ltgt_quietif", {true, "!="}},
+                         {"__float32_add", {false, "+"}}, {"__float64_add", {true, "+"}},  {"__float32_sub", {false, "-"}}, {"__float64_sub", {true, "-"}},          {"__float32_mul", {false, "*"}},
+                         {"__float64_mul", {true, "*"}},  {"__float32_div", {false, "/"}}, {"__float64_div", {true, "/"}},  {"__float32_le", {false, "<="}},         {"__float64_le", {true, "<="}},
+                         {"__float32_lt", {false, "<"}},  {"__float64_lt", {true, "<"}},   {"__float32_ge", {false, ">="}}, {"__float64_ge", {true, ">="}},          {"__float32_gt", {false, ">"}},
+                         {"__float64_gt", {true, ">"}},   {"__float32_eq", {false, "=="}}, {"__float64_eq", {true, "=="}},  {"__float32_ltgt_quiet", {false, "!="}}, {"__float64_ltgt_quiet", {true, "!="}},
                      };
                      const auto var1 = BHC->PrintVariable(GET_INDEX_NODE(actual_args.at(0)));
                      const auto unary_op_relation = basic_unary_operations_relation.find(oper->get_name());
@@ -514,14 +520,15 @@ void DiscrepancyAnalysisCWriter::writePostInstructionInfo(const FunctionBehavior
                      if(unary_op_relation != basic_unary_operations_relation.end())
                      {
                         const std::string view_convert = (unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert";
-                        if(unary_op_relation->second.first < 2)
+                        const std::string in_view_convert = (unary_op_relation->second.first & 2) ? ((~unary_op_relation->second.first & 1) ? "_Int64_ViewConvert" : "_Int32_ViewConvert") : "";
+                        if(unary_op_relation->second.first < 4)
                         {
-                           const auto computation = "(" + unary_op_relation->second.second + var1 + ")";
+                           const auto computation = "(" + unary_op_relation->second.second + in_view_convert + "(" + var1 + "))";
                            const auto check_string0 = view_convert + "(" + var_name + ")==" + computation;
                            const auto check_string1 =
                                (unary_op_relation->second.first ? "_FPs64Mismatch_" : "_FPs32Mismatch_") + std::string("(") + computation + ", " + view_convert + "(" + var_name + ")," + STR(Param->getOption<double>(OPT_max_ulp)) + ")";
                            indented_output_stream->Append((unary_op_relation->second.first ? "_CheckBuiltinFPs64_" : "_CheckBuiltinFPs32_") + std::string("(\"") + check_string0 + "\", " + check_string1 + "," + computation + "," + view_convert + "(" +
-                                                          var_name + ")," + var1 + ",0);\n");
+                                                          var_name + ")," + in_view_convert + "(" + var1 + "),0);\n");
                         }
                         else
                         {

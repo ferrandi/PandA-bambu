@@ -206,7 +206,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    CustomMap<ssa_name*, std::vector<tree_nodeRef>> outputInterface;
 
    /// Hardware implemented functions need parameters specified as real_type, thus it is necessary to add a view_convert
-   CustomMap<ssa_name*, std::vector<tree_nodeRef>> hwParam;
+   CustomMap<ssa_name*, std::set<unsigned int>> hwParam;
 
    /// Hardware implemented functions return values as real_type, thus a view_convert is necessary
    std::vector<ssa_name*> hwReturn;
