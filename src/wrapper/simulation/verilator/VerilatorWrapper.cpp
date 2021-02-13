@@ -158,7 +158,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
    script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
-#if HAVE_THREADS
+#if HAVE_THREADS && USE_PARALLEL_VERILATOR
    script << R"( OPT_FAST="-fstrict-aliasing -march=native" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
 #else
    script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
