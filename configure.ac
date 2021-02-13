@@ -308,7 +308,7 @@ AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits
 AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"])
 AC_ARG_ENABLE(icarus,              [  --enable-icarus              compile Icarus Verilog compiler],                      [panda_USE_ICARUS="$enableval"])
 AC_ARG_ENABLE(verilator,           [  --enable-verilator           compile Verilator Verilog compiler],                   [panda_USE_VERILATOR="$enableval"])
-AC_ARG_ENABLE(parallel-verilator,  [  --enable-parallel-verilator  enable parallel simulation with Verilator],            [panda_PARALLEL_VERILATOR="$enableval"], [panda_PARALLEL_VERILATOR="yes"])
+AC_ARG_ENABLE(parallel-verilator,  [  --enable-parallel-verilator  enable parallel simulation with Verilator],            [panda_PARALLEL_VERILATOR="$enableval"], [panda_PARALLEL_VERILATOR="no"])
 
 ################################################################################
 #                                                                              #

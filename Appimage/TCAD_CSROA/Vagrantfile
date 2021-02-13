@@ -6,8 +6,10 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder '.', '/vagrant', disabled: true
   config.vm.provider "virtualbox" do |vb|
      vb.memory = "4096"
-     vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
      vb.customize [ 'modifyvm', :id, '--vram', '64']
+     vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+     vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+     vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
      vb.name = "PandA-bambu-VM_64bit-Debian10-AppImage"
   end
   config.vm.provision "shell", inline: <<-SHELL
@@ -23,15 +25,15 @@ Vagrant.configure(2) do |config|
      chmod +x appimagetool-x86_64.AppImage
      wget https://github.com/AppImage/AppImageKit/releases/download/12/AppRun-x86_64 
      chmod +x AppRun-x86_64
-     wget https://github.com/niess/python-appimage/releases/download/python3.8/python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
-     chmod +x python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
-     ./python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage --appimage-extract
-     mv squashfs-root python3.8
-     rm -f python3.8.5-cp38-cp38-manylinux1_x86_64.AppImage
-     cd python3.8
-     tar cvJf ../python3.8.tar.xz *
+     wget https://github.com/niess/python-appimage/releases/download/python3.9/python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage
+     chmod +x python3.9.2-cp39-cp39-manylinux1_x86_64.AppImage
+     ./python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage --appimage-extract
+     mv squashfs-root python3.9
+     rm -f python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage
+     cd python3.9
+     tar cvJf ../python3.9.tar.xz *
      cd ..
-     rm -rf python3.8
+     rm -rf python3.9
      git clone https://github.com/ferrandi/PandA-bambu.git
      cd PandA-bambu
      git checkout SROA_TCAD_release
@@ -43,8 +45,8 @@ Vagrant.configure(2) do |config|
      make install-strip DESTDIR=/home/vagrant/PandA-bambu/build/dist
      cd /home/vagrant/PandA-bambu/build/dist
      rm -f usr/bin/eucalyptus  usr/bin/spider  usr/bin/tree-panda-gcc
-     tar xvf ../../../python3.8.tar.xz
-     rm python3.8.5.desktop  python.png
+     tar xvf ../../../python3.9.tar.xz
+     rm python3.9.1.desktop  python.png
      tar xvf ../../../clang+llvm-4.0.1-x86_64-linux-gnu-debian8.tar.xz
      rm -f `find . -name clang-tidy`
      rm -f `find .  -name clang-query`
@@ -55,7 +57,8 @@ Vagrant.configure(2) do |config|
      rm -f clang+llvm-4.0.1-x86_64-linux-gnu-debian8/lib/*.a
      mkdir lib
      mkdir lib/x86_64-linux-gnu/
-     cp /lib/x86_64-linux-gnu/libtinfo.so.5 lib/x86_64-linux-gnu/libtinfo.so.5
+     cp /lib/x86_64-linux-gnu/libtinfo.so.5.* lib/x86_64-linux-gnu/
+     ln -s /lib/x86_64-linux-gnu/libtinfo.so.5.* lib/x86_64-linux-gnu/libtinfo.so.5
      cp /usr/lib/libbdd.so.0.0.0 usr/lib/libbdd.so.0.0.0
      cd usr/lib/
      ln -s libbdd.so.0.0.0 libbdd.so.0
@@ -84,6 +87,7 @@ Vagrant.configure(2) do |config|
      echo "   exit 0" >> usr/bin/bambu_wrapper.sh
      echo "fi" >> usr/bin/bambu_wrapper.sh
      chmod +x usr/bin/bambu_wrapper.sh
+     tar xvf ../../../python3.9.tar.xz
      cd ..
      ../../appimagetool-x86_64.AppImage dist
      dd if=/dev/zero of=/EMPTY bs=1M
