@@ -103,15 +103,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
          {
-            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
             relationships.insert(std::make_pair(BIT_VALUE_IPA, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(RANGE_ANALYSIS, WHOLE_APPLICATION));
          }
          else
          {
             relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          }
-         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):

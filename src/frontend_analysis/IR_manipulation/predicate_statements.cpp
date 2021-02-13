@@ -79,10 +79,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
       {
          break;
       }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         break;
-      }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
@@ -95,7 +91,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionFrontendFlowSte
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
          break;
       }
       default:

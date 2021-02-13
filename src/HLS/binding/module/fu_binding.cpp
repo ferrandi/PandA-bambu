@@ -2958,7 +2958,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case parm_decl_K:
             case string_cst_K:
             {
-               THROW_ASSERT(mem->has_base_address(addr_expr_op_idx), "missing base address for: @" + STR(addr_expr_op_idx));
+               THROW_ASSERT(mem->has_base_address(addr_expr_op_idx), "missing base address for: " + ae->ToString());
                ull_value = mem->get_base_address(addr_expr_op_idx, 0);
                break;
             }
@@ -3030,7 +3030,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             }
             case function_decl_K:
             {
-               THROW_ASSERT(mem->has_base_address(addr_expr_op_idx), "missing base address for: @" + STR(addr_expr_op_idx));
+               THROW_ASSERT(mem->has_base_address(addr_expr_op_idx), "missing base address for: " + ae->ToString());
                ull_value = mem->get_base_address(addr_expr_op_idx, addr_expr_op_idx);
                break;
             }
@@ -3048,7 +3048,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                      auto base_code = base_node->get_kind();
                      if(base_code == var_decl_K)
                      {
-                        THROW_ASSERT(mem->has_base_address(base_index), "missing base address for: @" + STR(base_index));
+                        THROW_ASSERT(mem->has_base_address(base_index), "missing base address for: " + mr->ToString());
                         ull_value = mem->get_base_address(base_index, 0) + static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
                      }
                      else if(base_code == addr_expr_K)
@@ -3059,7 +3059,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
                         auto base1_code = base1_node->get_kind();
                         if(base1_code == var_decl_K)
                         {
-                           THROW_ASSERT(mem->has_base_address(base1_index), "missing base address for: @" + STR(base1_index));
+                           THROW_ASSERT(mem->has_base_address(base1_index), "missing base address for: " + base1->ToString());
                            ull_value = mem->get_base_address(base1_index, 0) + static_cast<unsigned int>(tree_helper::get_integer_cst_value(GetPointer<integer_cst>(offset)));
                         }
                         else

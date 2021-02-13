@@ -85,104 +85,6 @@ struct function_information
    }
 };
 
-void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigned int>& sort_list)
-{
-   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "compute function topological order...");
-   std::list<vertex> topology_sorted_vertex;
-   const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
-   CG->CGetCallGraph()->TopologicalSort(topology_sorted_vertex);
-
-   CustomOrderedSet<unsigned> reachable_functions;
-
-   /// check if the root function is an empty function: compiler optimizations may kill everything
-   auto top_functions = CG->GetRootFunctions();
-   /// the analysis has to be performed only on the reachable functions
-   if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
-   {
-      const auto saved_top_functions = top_functions;
-      top_functions.clear();
-      const auto top_function = AppM->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
-      if(top_function)
-      {
-         if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(AppM->get_tree_manager()->get_tree_node_const(top_function))))
-         {
-            THROW_ERROR("the top function is empty or the compiler killed all the statements");
-         }
-         top_functions.insert(top_function);
-      }
-      else
-      {
-         if(output_level > OUTPUT_LEVEL_VERBOSE)
-         {
-            THROW_WARNING("Top RTL name refers to a HDL-only module");
-         }
-         top_functions = saved_top_functions;
-      }
-      reachable_functions = CG->GetReachedBodyFunctionsFrom(*(top_functions.begin()));
-   }
-   else
-   {
-      reachable_functions = CG->GetReachedBodyFunctions();
-   }
-
-   for(auto v : topology_sorted_vertex)
-   {
-      auto fun_id = CG->get_function(v);
-      if(reachable_functions.find(fun_id) != reachable_functions.end())
-      {
-         sort_list.push_back(fun_id);
-      }
-   }
-}
-
-ipa_point_to_analysis::ipa_point_to_analysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
-    : ApplicationFrontendFlowStep(_AppM, IPA_POINT_TO_ANALYSIS, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
-{
-   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
-}
-
-ipa_point_to_analysis::~ipa_point_to_analysis() = default;
-
-const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ipa_point_to_analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
-{
-   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
-   switch(relationship_type)
-   {
-      case(DEPENDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
-         break;
-      }
-      case(INVALIDATION_RELATIONSHIP):
-      {
-         break;
-      }
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::make_pair(BIT_VALUE_OPT, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(CSE_STEP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(EXTRACT_PATTERNS, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(FANOUT_OPT, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(SPLIT_RETURN, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(LUT_TRANSFORMATION, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
-         break;
-      }
-      default:
-      {
-         THROW_UNREACHABLE("");
-      }
-   }
-   return relationships;
-}
-
 class worklist_queue
 {
  public:
@@ -231,6 +133,54 @@ class worklist_queue
 
    std::priority_queue<std::pair<unsigned int, unsigned int>, std::vector<std::pair<unsigned int, unsigned int>>, comp_functor> priority_queue_data;
 };
+
+ipa_point_to_analysis::ipa_point_to_analysis(const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager, const ParameterConstRef _parameters)
+    : ApplicationFrontendFlowStep(_AppM, IPA_POINT_TO_ANALYSIS, _design_flow_manager, _parameters), TM(_AppM->get_tree_manager())
+{
+   debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
+}
+
+ipa_point_to_analysis::~ipa_point_to_analysis() = default;
+
+const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>> ipa_point_to_analysis::ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const
+{
+   CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
+   switch(relationship_type)
+   {
+      case(DEPENDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(BIT_VALUE_OPT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(BUILD_VIRTUAL_PHI, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(CSE_STEP, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FANOUT_OPT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(SPLIT_RETURN, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(LUT_TRANSFORMATION, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
+         break;
+      }
+      case(INVALIDATION_RELATIONSHIP):
+      {
+         break;
+      }
+      default:
+      {
+         THROW_UNREACHABLE("");
+      }
+   }
+   return relationships;
+}
 
 DesignFlowStep_Status ipa_point_to_analysis::Exec()
 {
@@ -485,4 +435,54 @@ DesignFlowStep_Status ipa_point_to_analysis::Exec()
    }
 
    return DesignFlowStep_Status::SUCCESS;
+}
+
+void ipa_point_to_analysis::compute_function_topological_order(std::list<unsigned int>& sort_list)
+{
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "compute function topological order...");
+   std::list<vertex> topology_sorted_vertex;
+   const CallGraphManagerConstRef CG = AppM->CGetCallGraphManager();
+   CG->CGetCallGraph()->TopologicalSort(topology_sorted_vertex);
+
+   CustomOrderedSet<unsigned> reachable_functions;
+
+   /// check if the root function is an empty function: compiler optimizations may kill everything
+   auto top_functions = CG->GetRootFunctions();
+   /// the analysis has to be performed only on the reachable functions
+   if(parameters->isOption(OPT_top_design_name)) // top design function become the top_vertex
+   {
+      const auto saved_top_functions = top_functions;
+      top_functions.clear();
+      const auto top_function = AppM->get_tree_manager()->function_index(parameters->getOption<std::string>(OPT_top_design_name));
+      if(top_function)
+      {
+         if(tree_helper::is_a_nop_function_decl(GetPointer<function_decl>(AppM->get_tree_manager()->get_tree_node_const(top_function))))
+         {
+            THROW_ERROR("the top function is empty or the compiler killed all the statements");
+         }
+         top_functions.insert(top_function);
+      }
+      else
+      {
+         if(output_level > OUTPUT_LEVEL_VERBOSE)
+         {
+            THROW_WARNING("Top RTL name refers to a HDL-only module");
+         }
+         top_functions = saved_top_functions;
+      }
+      reachable_functions = CG->GetReachedBodyFunctionsFrom(*(top_functions.begin()));
+   }
+   else
+   {
+      reachable_functions = CG->GetReachedBodyFunctions();
+   }
+
+   for(auto v : topology_sorted_vertex)
+   {
+      auto fun_id = CG->get_function(v);
+      if(reachable_functions.find(fun_id) != reachable_functions.end())
+      {
+         sort_list.push_back(fun_id);
+      }
+   }
 }

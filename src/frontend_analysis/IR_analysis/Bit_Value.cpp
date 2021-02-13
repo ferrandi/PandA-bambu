@@ -61,6 +61,7 @@
 #include "call_graph.hpp"
 #include "call_graph_manager.hpp"
 #include "function_behavior.hpp"
+#include "op_graph.hpp"
 
 /// design_flows include
 #include "design_flow_manager.hpp"
@@ -1058,7 +1059,7 @@ void Bit_Value::initialize()
             // never analyze artificial calls
 #if HAVE_ASSERTS
             const FunctionBehaviorConstRef FB = AppM->CGetFunctionBehavior(function_id);
-            THROW_ASSERT(AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == "__internal_bambu_memcpy",
+            THROW_ASSERT(AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() == MEMCPY,
                          "function " + FB->CGetBehavioralHelper()->get_function_name() + " calls function " + AppM->CGetFunctionBehavior(called_id)->CGetBehavioralHelper()->get_function_name() + " with an artificial call: this should not happen");
 #endif
             continue;

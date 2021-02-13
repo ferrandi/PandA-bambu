@@ -282,10 +282,10 @@ DesignFlowStep_Status BitValueIPA::Exec()
       const std::string fu_name = AppM->CGetFunctionBehavior(fu_id)->CGetBehavioralHelper()->get_function_name();
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Analyzing function \"" + fu_name + "\": id = " + STR(fu_id));
 
-      const tree_nodeRef fu_node = TM->get_tree_node_const(fu_id);
+      const auto fu_node = TM->CGetTreeNode(fu_id);
       const auto* fd = GetPointer<const function_decl>(fu_node);
       THROW_ASSERT(fd and fd->body, "Node is not a function or it hasn't a body");
-      const tree_nodeConstRef fu_type = tree_helper::CGetType(fu_node);
+      const auto fu_type = tree_helper::CGetType(fu_node);
       THROW_ASSERT(fu_type->get_kind() == function_type_K || fu_type->get_kind() == method_type_K, "node " + STR(fu_id) + " is " + fu_type->get_kind_text());
       tree_nodeRef fret_type_node;
       if(fu_type->get_kind() == function_type_K)
@@ -425,7 +425,7 @@ DesignFlowStep_Status BitValueIPA::Exec()
             current.clear();
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---After mix id: " + STR(fu_id) + " bitstring: " + STR(bitstring_to_string(best.at(fu_id))));
 
-            AppM->RegisterTransformation(GetName(), fu_node);
+            AppM->RegisterTransformation(GetName(), tree_nodeConstRef());
          }
 
          // --- forward ---
@@ -746,8 +746,8 @@ DesignFlowStep_Status BitValueIPA::Exec()
                            const auto ap_node = GET_NODE(*ap);
                            const auto ap_kind = ap_node->get_kind();
                            THROW_ASSERT(is_handled_by_bitvalue(ap_id), "actual parameter not handled by bitvalue");
-                           THROW_ASSERT(tree_helper::is_int(TM, ap_id) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + STR(tree_helper::CGetType(GET_NODE(pd))) + "\nactual param " +
-                                                                                           STR(ap_node) + " type = " + STR(tree_helper::CGetType(ap_node)) + "\ndifferent signedness!");
+                           THROW_ASSERT(tree_helper::is_int(TM, ap_id) == parm_signed, "function " + caller_name + " calls function " + fu_name + "\nformal param " + STR(pd) + " type = " + tree_helper::CGetType(GET_NODE(pd))->ToString() +
+                                                                                           "\nactual param " + STR(ap_node) + " type = " + tree_helper::CGetType(ap_node)->ToString() + "\ndifferent signedness!");
                            if(ap_kind == ssa_name_K)
                            {
                               const auto* ssa = GetPointer<const ssa_name>(ap_node);

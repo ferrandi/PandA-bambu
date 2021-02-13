@@ -83,7 +83,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case(DEPENDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, CALLED_FUNCTIONS));
 #if HAVE_BAMBU_BUILT
          if(parameters->isOption(OPT_writer_language))
          {
@@ -95,14 +94,15 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(VAR_DECL_FIX, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
-         relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(PARM2SSA, WHOLE_APPLICATION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PARM_DECL_TAKEN_ADDRESS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(PARM2SSA, WHOLE_APPLICATION));
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(REBUILD_INITIALIZATION2, SAME_FUNCTION));
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
