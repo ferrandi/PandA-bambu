@@ -80,7 +80,7 @@ class CondExprRestructuring : public FunctionFrontendFlowStep
     * @param first is true if first operand has to be considered, false if second oeprand has to be considered
     * @return the chained gimple_assignment if all conditions hold
     */
-   tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first) const;
+   tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const;
 
    /**
     * Return the set of analyses in relationship with this design step
