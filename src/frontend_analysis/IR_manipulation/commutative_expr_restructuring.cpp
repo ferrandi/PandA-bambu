@@ -152,7 +152,7 @@ bool commutative_expr_restructuring::IsCommExprGimple(const tree_nodeConstRef tn
    return opKind == mult_expr_K || opKind == widen_mult_expr_K || opKind == widen_sum_expr_K || opKind == bit_ior_expr_K || opKind == bit_xor_expr_K || opKind == bit_and_expr_K || opKind == eq_expr_K || opKind == ne_expr_K || opKind == plus_expr_K;
 }
 
-tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeConstRef tn, const bool first) const
+tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const
 {
    const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
    const auto be = GetPointer<const binary_expr>(GET_NODE(ga->op1));
@@ -167,7 +167,7 @@ tree_nodeRef commutative_expr_restructuring::IsCommExprChain(const tree_nodeCons
    {
       return tree_nodeRef();
    }
-   if(sn->CGetNumberUses() > 1)
+   if(!is_third_node && sn->CGetNumberUses() > 1)
    {
       return tree_nodeRef();
    }
@@ -228,19 +228,19 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
          }
          bool first_operand_of_first = true;
          bool first_operand_of_second = true;
-         second_stmt = IsCommExprChain(*stmt, true);
+         second_stmt = IsCommExprChain(*stmt, true, false);
          if(not second_stmt)
          {
-            second_stmt = IsCommExprChain(*stmt, false);
+            second_stmt = IsCommExprChain(*stmt, false, false);
             first_operand_of_first = false;
          }
          if(second_stmt)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a second commutative expression: " + STR(second_stmt));
-            third_stmt = IsCommExprChain(second_stmt, true);
+            third_stmt = IsCommExprChain(second_stmt, true, true);
             if(not third_stmt)
             {
-               third_stmt = IsCommExprChain(second_stmt, false);
+               third_stmt = IsCommExprChain(second_stmt, false, true);
                first_operand_of_second = false;
             }
          }
@@ -296,16 +296,14 @@ DesignFlowStep_Status commutative_expr_restructuring::InternalExec()
             }
          }
 
-         /// As commutative expression time we consider the worst among the existing operation in the chain
          const auto comm_expr_time1 = allocation_information->GetTimeLatency((*stmt)->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of first operation is " + STR(comm_expr_time1));
          const auto comm_expr_time2 = allocation_information->GetTimeLatency(second_stmt->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of second operation is " + STR(comm_expr_time2));
          const auto comm_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of third operation is " + STR(comm_expr_time3));
-         const auto comm_time = std::max(comm_expr_time1, std::max(comm_expr_time2, comm_expr_time3));
-         const auto new_ending_time = operand_ready_time + 2 * comm_time;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand ready time " + STR(operand_ready_time) + " - Commutative expression time " + STR(comm_time) + " - New ending time " + STR(new_ending_time) + " - Old ending time " + STR(old_time));
+         const auto new_ending_time = operand_ready_time + std::max(comm_expr_time1, comm_expr_time3) + comm_expr_time2 + allocation_information->GetConnectionTime(third_ga->index, second_ga->index, schedule->get_cstep(third_ga->index));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand ready time " + STR(operand_ready_time) + " - New ending time " + STR(new_ending_time) + " - Old ending time " + STR(old_time));
          if(new_ending_time + EPSILON >= old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Increased execution time");
