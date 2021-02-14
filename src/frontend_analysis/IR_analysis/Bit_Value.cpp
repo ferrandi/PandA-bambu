@@ -918,14 +918,14 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

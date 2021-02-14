@@ -217,9 +217,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
           funcFF.insert({function_v, _version});
       THROW_ASSERT(insertion.second, "");
    }
-   int_type = not _version->std_format() ?
-                  tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(_version->userRequired->sign == bit_lattice::U) + _version->userRequired->exp_bits + _version->userRequired->frac_bits), true) :
-                  nullptr;
+   int_type = !_version->std_format() ? tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(_version->userRequired->sign == bit_lattice::U) + _version->userRequired->exp_bits + _version->userRequired->frac_bits), true) :
+                                        nullptr;
    int_ptr_type = int_type ? tree_man->create_pointer_type(int_type, GetPointer<integer_type>(GET_NODE(int_type))->algn) : nullptr;
 }
 
@@ -233,6 +232,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, CALLING_FUNCTIONS));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, CALLED_FUNCTIONS));
@@ -280,7 +280,7 @@ bool soft_float_cg_ext::HasToBeExecuted() const
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
    // Function using standard float formats are always internal
-   if(not _version->std_format())
+   if(!_version->std_format())
    {
       const auto CG = AppM->CGetCallGraphManager()->CGetCallGraph();
       InEdgeIterator ie, ie_end;
@@ -304,7 +304,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          }
       }
    }
-   THROW_ASSERT(not _version->std_format() || _version->internal, "An standard floating-point format function should be internal.");
+   THROW_ASSERT(!_version->std_format() || _version->internal, "An standard floating-point format function should be internal.");
 
 #ifndef NDEBUG
    const auto fn_name = tree_helper::print_type(TreeM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(function_behavior->CGetBehavioralHelper())));
@@ -428,6 +428,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
                   TreeM->ReplaceTreeNode(stmt_uses.first, parm_ridx, lowered_parm);
                }
                first_bb->PushFront(vc_stmt);
+               viewConvert.erase(parmSSA);
                modified = true;
             }
          }
@@ -1778,8 +1779,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          // Get operand type before recursive examination because floating point operands may be converted to unsigned integer during during recursion
          const auto expr_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
          // Propagate recursion with INTERFACE_TYPE_NONE to avoid cast rename of internal variables (input parameters and constant will be converted anyway)
-         RecursiveExaminate(current_statement, be->op0, (expr_type->get_kind() == real_type_K && curr_tn->get_kind() == unordered_expr_K) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
-         RecursiveExaminate(current_statement, be->op1, (expr_type->get_kind() == real_type_K && curr_tn->get_kind() == unordered_expr_K) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
+         RecursiveExaminate(current_statement, be->op0, (expr_type->get_kind() == real_type_K && (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K)) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
+         RecursiveExaminate(current_statement, be->op1, (expr_type->get_kind() == real_type_K && (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K)) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
          if(expr_type->get_kind() == real_type_K)
          {
             bool add_call = true;

@@ -7210,13 +7210,21 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          }
+         else
+         {
+            relationships.insert(std::make_pair(BLOCK_FIX, ALL_FUNCTIONS));
+            relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, ALL_FUNCTIONS));
+            relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+            relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
+         }
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case INVALIDATION_RELATIONSHIP:

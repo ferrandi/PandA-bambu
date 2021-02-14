@@ -107,21 +107,21 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> relationships;
    switch(relationship_type)
    {
-      case(PRECEDENCE_RELATIONSHIP):
-      {
-         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
-         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, SAME_FUNCTION));
-         break;
-      }
       case DEPENDENCE_RELATIONSHIP:
       {
-         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
          }
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         break;
+      }
+      case(PRECEDENCE_RELATIONSHIP):
+      {
+         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -130,7 +130,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
-               if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+               if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
                {
                   relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                }
