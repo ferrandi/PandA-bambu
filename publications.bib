@@ -1,17 +1,35 @@
+@ARTICLE {TC_SVELTO2021,
+  author = {M. Minutoli and V. Castellana and N. Saporetti and S. Devecchi and M. Lattuada and P. Fezzardi and A. Tumeo and F. Ferrandi},
+  journal = {IEEE Transactions on Computers},
+  title = {Svelto: High-Level Synthesis of Multi-Threaded Accelerators for Graph Analytics},
+  year = {2021},
+  volume = {},
+  number = {01},
+  issn = {1557-9956},
+  pages = {1-14},
+  keywords = {task analysis;parallel processing;computer architecture;dynamic scheduling;hardware;field programmable gate arrays;memory management},
+  doi = {10.1109/TC.2021.3057860},
+  publisher = {IEEE Computer Society},
+  address = {Los Alamitos, CA, USA},
+  month = {feb},
+  abstract={Graph analytics are an emerging class of irregular applications. Operating on very large datasets, they present unique behaviors, such as fine-grained, unpredictable memory accesses, and highly unbalanced task-level parallelism, that make existing general-purpose processors or accelerators (e.g., GPUs) suboptimal or difficult to program. To address these issues, research and industry are more and more relying on designs based on reconfigurable devices (Field Programmable Gate Arrays), sometimes even partially employing High-Level Synthesis (HLS) methods to accelerate the development of the accelerators. In this paper, we propose a novel architecture template for the automatic generation of accelerators for graph analytics and irregular applications. The architecture template includes a dynamic task scheduler, a parallel array of accelerators that enables supporting task-level parallelism with context switching, and a related multi-channel memory interface that decouples communication from computation and provides support for fine-grained atomic memory operations. We discuss the integration of the architectural template in an HLS flow, presenting the necessary modifications to enable automatic generation of the accelerators starting from OpenMP annotated code. We evaluate our approach by synthesizing custom designs for a set of graph database benchmark queries. We compare the synthesized accelerators with previous state-of-the-art methodologies for the synthesis of parallel architectures.},
+  pdf={https://re.public.polimi.it/retrieve/handle/11311/1161042/584239/tc_svelto.pdf}
+}
 @ARTICLE{TCAD-CODES2020,
   author={M. {Siracusa} and F. {Ferrandi}},
-  journal={IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems}, 
+  journal={IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, Best Paper Candidate of CODES+ISSS 2020}, 
   title={Tensor Optimization for High-Level Synthesis Design Flows}, 
-  year={2020. Best Paper Candidate of CODES+ISSS 2020},
+  year={2020},
   volume={39},
   number={11},
   pages={4217-4228},
   issn = {0278-0070},
+  month = {oct},
   url = {https://doi.org/10.1109/TCAD.2020.3012318},
   doi={10.1109/TCAD.2020.3012318},
   keywords = {Design  optimization,  field  programmable  gatearrays,  high-level  synthesis, memory  management.},
   abstract={Improving data locality of tensor data structures is a crucial optimization for maximizing the performance of Machine Learning and intensive Linear Algebra applications. While CPUs and GPUs improve data locality by means of automated caching mechanisms, FPGAs let the developer specify data structure allocation. Although this feature enables a high degree of customizability, the increasing complexity and memory footprint of modern applications prevent considering any manual approach to find an optimal allocation. For this reason, we propose a compiler optimization to automatically improve the tensor allocation of high-level software descriptions. The optimization is controlled by a flexible cost model that can be tuned by means of simple yet expressive callback functions. In this way, the user can tailor the optimization strategy with respect to the optimization goal. We tested our methodology integrating our optimization in the Bambu open-source HLS framework. In this setting, we achieved a 14% speedup on the digit recognition version proposed by the Rosetta benchmark. Moreover, we tested our optimization on the CHStone benchmark suite, achieving an average of 6% speedup. Finally, we applied our methodology on two industrial examples from the aerospace domain obtaining a 15% speedup. As a final step, we tested the versatility of our methodology inserting our optimization in the Clang software optimization flow achieving a 12% speedup on the Rosetta benchmark when running on CPU.},
-  pdf={https://re.public.polimi.it/retrieve/546479/09211479.pdf}
+  pdf={https://re.public.polimi.it/retrieve/584319/codes-isss2020.pdf}
   }
 
 @article{10.1145/3418086,

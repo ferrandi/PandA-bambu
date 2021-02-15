@@ -71,16 +71,17 @@ class commutative_expr_restructuring : public FunctionFrontendFlowStep
    bool IsCommExprGimple(const tree_nodeConstRef tn) const;
 
    /**
-    * Given a gimple_assign with cond_expr in the right part and one of its operand it checks:
+    * Given a gimple_assign with a commutative operation it checks:
     * - if operand is a ssa_name
     * - if operand is defined in the same basic block
-    * - if operand is defined in a gimple_assign whose right a part is another cond_expr
+    * - if operand is defined in a gimple_assign whose operand is another commutative operation
     * - if operand is on the relative critical path (i.e., it delays execution of tn
     * @param tn is the starting gimple_assign
-    * @param first is true if first operand has to be considered, false if second oeprand has to be considered
+    * @param first is true if first operand has to be considered, false if second operand has to be considered
+    * @param is_third_node if has to consider or not the number of uses
     * @return the chained gimple_assignment if all conditions hold
     */
-   tree_nodeRef IsCommExprChain(const tree_nodeConstRef tn, const bool first) const;
+   tree_nodeRef IsCommExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const;
 
    /**
     * Return the set of analyses in relationship with this design step

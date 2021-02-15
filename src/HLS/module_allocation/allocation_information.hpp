@@ -888,7 +888,6 @@ class AllocationInformation : public HLSFunctionIR
     * @param first_operation is the first operation
     * @param second_operation is the second operation; if it is null, the phi contribution is returned
     * @param cs is the control step in which second operation would be scheduled
-    * @param fu_type is the functional unit type to which the second operation would be assigned
     * @return the connection time
     */
    double GetConnectionTime(const unsigned int first_operation, const unsigned int second_operation, const AbsControlStep cs) const;

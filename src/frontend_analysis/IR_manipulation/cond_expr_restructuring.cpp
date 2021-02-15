@@ -146,7 +146,7 @@ bool CondExprRestructuring::IsCondExprGimple(const tree_nodeConstRef tn) const
    return GET_NODE(ga->op1)->get_kind() == cond_expr_K;
 }
 
-tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, const bool first) const
+tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const
 {
    const auto ga = GetPointer<const gimple_assign>(GET_CONST_NODE(tn));
    const auto ce = GetPointer<const cond_expr>(GET_NODE(ga->op1));
@@ -161,7 +161,7 @@ tree_nodeRef CondExprRestructuring::IsCondExprChain(const tree_nodeConstRef tn, 
    {
       return tree_nodeRef();
    }
-   if(sn->CGetNumberUses() > 1)
+   if(!is_third_node && sn->CGetNumberUses() > 1)
    {
       return tree_nodeRef();
    }
@@ -223,19 +223,19 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          }
          bool first_operand_of_first = true;
          bool first_operand_of_second = true;
-         second_stmt = IsCondExprChain(*stmt, true);
+         second_stmt = IsCondExprChain(*stmt, true, false);
          if(not second_stmt)
          {
-            second_stmt = IsCondExprChain(*stmt, false);
+            second_stmt = IsCondExprChain(*stmt, false, false);
             first_operand_of_first = false;
          }
          if(second_stmt)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Chained with a second cond_expr: " + STR(second_stmt));
-            third_stmt = IsCondExprChain(second_stmt, true);
+            third_stmt = IsCondExprChain(second_stmt, true, true);
             if(not third_stmt)
             {
-               third_stmt = IsCondExprChain(second_stmt, false);
+               third_stmt = IsCondExprChain(second_stmt, false, true);
                first_operand_of_second = false;
             }
          }
@@ -297,9 +297,8 @@ DesignFlowStep_Status CondExprRestructuring::InternalExec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of second operation is " + STR(cond_expr_time2));
          const auto cond_expr_time3 = allocation_information->GetTimeLatency(third_stmt->index, fu_binding::UNKNOWN).first;
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Delay of third operation is " + STR(cond_expr_time3));
-         const auto mux_time = std::max(cond_expr_time1, std::max(cond_expr_time2, cond_expr_time3));
-         const auto new_ending_time = operand_ready_time + 2 * mux_time;
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand ready time " + STR(operand_ready_time) + " - Mux time " + STR(mux_time) + " - New ending time " + STR(new_ending_time) + " - Old ending time " + STR(old_time));
+         const auto new_ending_time = operand_ready_time + std::max(cond_expr_time1, cond_expr_time3) + cond_expr_time2 + allocation_information->GetConnectionTime(third_ga->index, second_ga->index, schedule->get_cstep(third_ga->index));
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Operand ready time " + STR(operand_ready_time) + " - New ending time " + STR(new_ending_time) + " - Old ending time " + STR(old_time));
          if(new_ending_time + EPSILON >= old_time)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Increased execution time");
