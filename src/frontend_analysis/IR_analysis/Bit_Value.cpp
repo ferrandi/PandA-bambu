@@ -1058,9 +1058,9 @@ bool Bit_Value::update_IR()
          }
 #endif
       }
-#if HAVE_ASSERTS || !defined(NDEBUG)
       else if(kind == function_decl_K)
       {
+#if HAVE_ASSERTS || !defined(NDEBUG)
          const auto* fd = GetPointerS<const function_decl>(tn);
          THROW_ASSERT(fd, "not a function_decl");
          THROW_ASSERT(fd->index == function_id, "unexpected function id");
@@ -1073,8 +1073,8 @@ bool Bit_Value::update_IR()
           * res= true;
           */
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "fun id: " + STR(tn_id) + " bitstring: " + fd->bit_values);
-      }
 #endif
+      }
       else if(kind == integer_cst_K || kind == real_cst_K)
       {
          // do nothing, constants are recomputed every time
