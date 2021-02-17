@@ -425,7 +425,7 @@ void VarDeclFix::recursive_examinate(const tree_nodeRef& tn, CustomUnorderedSet<
             {
                recursive_examinate(ty->name, already_examinated_decls, already_examinated_names, already_examinated_type_names, already_visited_ae);
             }
-            else if(ty and (not ty->system_flag) and ty->name and GET_NODE(ty->name)->get_kind() == identifier_node_K)
+            else if(ty and (not ty->system_flag) and ty->name and (GET_NODE(ty->name)->get_kind() == identifier_node_K) and (ty->get_kind() != integer_type_K))
             {
                std::string name_id = GetPointer<identifier_node>(GET_NODE(ty->name))->strg;
                if(already_examinated_type_names.find(name_id) == already_examinated_type_names.end())
