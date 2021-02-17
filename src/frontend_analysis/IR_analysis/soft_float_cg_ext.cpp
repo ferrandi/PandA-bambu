@@ -274,7 +274,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool soft_float_cg_ext::HasToBeExecuted() const
 {
-   return FunctionFrontendFlowStep::HasToBeExecuted() && !modified;
+   static const bool is_enabled = parameters->getOption<bool>(OPT_soft_float);
+   return is_enabled && FunctionFrontendFlowStep::HasToBeExecuted0() && FunctionFrontendFlowStep::HasToBeExecuted() && !modified;
 }
 
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
@@ -1289,14 +1290,14 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
       static const auto mcpy_id = TreeM->function_index(MEMCPY);
       static const auto mset_id = TreeM->function_index(MEMSET);
       const auto fn_fd = GetPointerS<function_decl>(GET_NODE(fn));
-      if(tree_helper::print_function_name(TreeM, fn_fd) == BUILTIN_WAIT_CALL)
+      if(!AppM->CGetFunctionBehavior(fn_fd->index)->CGetBehavioralHelper()->has_implementation())
       {
-         if(_version->std_format())
+         if(!_version->std_format() && tree_helper::print_function_name(TreeM, fn_fd) == BUILTIN_WAIT_CALL)
          {
-            return true;
+            THROW_UNREACHABLE("Function pointers not supported from user defined floating point format functions");
+            // TODO: maybe it could be possible to only warn the user here to be careful about the pointed function definition and go on
          }
-         THROW_UNREACHABLE("Function pointers not supported from user defined floating point format functions");
-         // TODO: maybe it could be possible to only warn the user here to be careful about the pointed function definition and go on
+         return _version->std_format();
       }
       const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
       if(fn_fd->builtin_flag || fn_fd->index == mcpy_id || fn_fd->index == mset_id)
@@ -1779,8 +1780,10 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          // Get operand type before recursive examination because floating point operands may be converted to unsigned integer during during recursion
          const auto expr_type = tree_helper::CGetType(GET_CONST_NODE(be->op0));
          // Propagate recursion with INTERFACE_TYPE_NONE to avoid cast rename of internal variables (input parameters and constant will be converted anyway)
-         RecursiveExaminate(current_statement, be->op0, (expr_type->get_kind() == real_type_K && (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K)) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
-         RecursiveExaminate(current_statement, be->op1, (expr_type->get_kind() == real_type_K && (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K)) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
+         RecursiveExaminate(current_statement, be->op0,
+                            (expr_type->get_kind() == real_type_K && (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K || curr_tn->get_kind() == complex_expr_K)) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
+         RecursiveExaminate(current_statement, be->op1,
+                            (expr_type->get_kind() == real_type_K && (curr_tn->get_kind() == unordered_expr_K || curr_tn->get_kind() == ordered_expr_K || curr_tn->get_kind() == complex_expr_K)) ? INTERFACE_TYPE_REAL : INTERFACE_TYPE_NONE);
          if(expr_type->get_kind() == real_type_K)
          {
             bool add_call = true;
@@ -2193,9 +2196,23 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef current_statement,
          }
          break;
       }
+      case integer_cst_K:
+      //    {
+      //       const auto ic = GetPointerS<integer_cst>(curr_tn);
+      //       if(tree_helper::is_a_pointer(TreeM, GET_CONST_NODE(ic->type)->index))
+      //       {
+      //          const auto ptd_type = tree_helper::CGetPointedType(GET_CONST_NODE(ic->type));
+      //          if(ptd_type->get_kind() == real_type_K)
+      //          {
+      //             const auto int_ptr_cst = TreeM->CreateUniqueIntegerCst(ic->value, tree_helper::Size(ptd_type) == 32 ? GET_INDEX_CONST_NODE(float32_ptr_type) : GET_INDEX_CONST_NODE(float64_ptr_type));
+      //             TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_ptr_cst);
+      //             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real pointer type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_ptr_cst)->ToString());
+      //          }
+      //       }
+      //       break;
+      //    }
       case complex_cst_K:
       case string_cst_K:
-      case integer_cst_K:
       case field_decl_K:
       case function_decl_K:
       case label_decl_K:
