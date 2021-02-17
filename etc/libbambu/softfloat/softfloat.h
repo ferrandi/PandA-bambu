@@ -45,8 +45,8 @@ these four paragraphs for those parts of this code that are retained.
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE floating-point types.
 *----------------------------------------------------------------------------*/
-typedef __bits32 __float32;
-typedef __bits64 __float64;
+#define __float32 __bits32
+#define __float64 __bits64
 #ifdef FLOATX80
 typedef struct
 {

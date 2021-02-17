@@ -938,6 +938,63 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
+bool Bit_Value::HasToBeExecuted() const
+{
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
+   return (bitvalue_version != function_behavior->GetBitValueVersion()) or FunctionFrontendFlowStep::HasToBeExecuted();
+}
+
+void Bit_Value::Initialize()
+{
+   const std::string bambu_frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BAMBU_FRONTEND_FLOW);
+   not_frontend = design_flow_manager.lock()->GetStatus(bambu_frontend_flow_signature) == DesignFlowStep_Status::EMPTY;
+}
+
+DesignFlowStep_Status Bit_Value::InternalExec()
+{
+   initialize();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing initial backward");
+   backward();
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed initial backward");
+   mix();
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of initial backward:");
+   print_bitstring_map(best);
+   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
+   bool restart;
+   do
+   {
+      clear_current();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing forward");
+      forward();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed forward");
+      mix();
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of forward:");
+      print_bitstring_map(best);
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing backward");
+      backward();
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed backward");
+      restart = mix();
+      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at end of backward:");
+      print_bitstring_map(best);
+      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
+   } while(restart);
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of alg:");
+   print_bitstring_map(best);
+   auto changed = update_IR();
+   BitLatticeManipulator::clear();
+   direct_call_id_to_called_id.clear();
+   arguments.clear();
+   if(changed)
+   {
+      bitvalue_version = function_behavior->UpdateBitValueVersion();
+   }
+   return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
+}
+
 // prints the content of a bitstring map
 void Bit_Value::print_bitstring_map(const CustomUnorderedMap<unsigned int, std::deque<bit_lattice>>&
 #ifndef NDEBUG
@@ -960,37 +1017,35 @@ bool Bit_Value::update_IR()
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Updating IR");
    for(const auto& b : best)
    {
-      if(not AppM->ApplyNewTransformation())
-      {
-         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--");
-         return res;
-      }
       const unsigned int tn_id = b.first;
-      tree_nodeRef tn = TM->get_tree_node_const(tn_id);
+      const auto tn = TM->GetTreeNode(tn_id);
       const auto kind = tn->get_kind();
       if(kind == ssa_name_K)
       {
-         auto* ssa = GetPointer<ssa_name>(tn);
+         auto ssa = GetPointerS<ssa_name>(tn);
          THROW_ASSERT(ssa, "not ssa");
-         if(ssa->bit_values.empty() or ssa->bit_values.size() > b.second.size())
+         if(ssa->bit_values.empty() || ssa->bit_values.size() > b.second.size())
          {
+            if(!AppM->ApplyNewTransformation())
+            {
+               break;
+            }
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Variable: " + ssa->ToString() + " bitstring: " + ssa->bit_values + " -> " + bitstring_to_string(b.second));
             ssa->bit_values = bitstring_to_string(b.second);
             res = true;
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var id: " + STR(tn_id) + " bitstring: " + ssa->bit_values);
             AppM->RegisterTransformation(GetName(), tn);
          }
-         if(ssa->var != nullptr and GET_NODE(ssa->var)->get_kind() == parm_decl_K)
+#ifndef NDEBUG
+         if(ssa->var != nullptr && GET_NODE(ssa->var)->get_kind() == parm_decl_K)
          {
-            const auto def = ssa->CGetDefStmts();
-            THROW_ASSERT(not def.empty(), GET_NODE(tn)->ToString() + " is a ssa_name but has no def_stmts");
-            if(def.size() == 1 and ((GET_NODE((*def.begin()))->get_kind() == gimple_nop_K) or ssa->volatile_flag))
+            const auto def = ssa->CGetDefStmt();
+            THROW_ASSERT(def, GET_NODE(tn)->ToString() + " is a ssa_name but has no def_stmts");
+            if((GET_NODE(def)->get_kind() == gimple_nop_K) || ssa->volatile_flag)
             {
                // ssa is the first version of a parameter
-               THROW_ASSERT(ssa->bit_values.empty() or ssa->bit_values.size() <= b.second.size(), "old bit values string: " + STR(ssa->bit_values.size()) + "new bit value: " + STR(b.second.size()));
+               THROW_ASSERT(ssa->bit_values.empty() || ssa->bit_values.size() <= b.second.size(), "old bit values string: " + STR(ssa->bit_values.size()) + "new bit value: " + STR(b.second.size()));
                const tree_nodeRef p = GET_NODE(ssa->var);
-#ifndef NDEBUG
-               const auto* pd = GetPointer<const parm_decl>(p);
-#endif
+               const auto* pd = GetPointerS<const parm_decl>(p);
                /*
                 * don't update the bit values of parm_decl here because it would
                 * change how the bitvalue of this function is seen from outside.
@@ -1001,15 +1056,15 @@ bool Bit_Value::update_IR()
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var id: " + STR(tn_id) + " is first version of parameter: " + STR(pd->index));
             }
          }
+#endif
       }
+#if HAVE_ASSERTS || !defined(NDEBUG)
       else if(kind == function_decl_K)
       {
-#if HAVE_ASSERTS
-         const auto* fd = GetPointer<const function_decl>(tn);
-#endif
+         const auto* fd = GetPointerS<const function_decl>(tn);
          THROW_ASSERT(fd, "not a function_decl");
          THROW_ASSERT(fd->index == function_id, "unexpected function id");
-         THROW_ASSERT(fd->bit_values.empty() or fd->bit_values.size() <= b.second.size(), "old bit values string: " + STR(fd->bit_values.size()) + "new bit value: " + STR(b.second.size()));
+         THROW_ASSERT(fd->bit_values.empty() || fd->bit_values.size() <= b.second.size(), "old bit values string: " + STR(fd->bit_values.size()) + "new bit value: " + STR(b.second.size()));
          /*
           * don't update the bit values of function_decl here because it would
           * change how the bitvalue of this function is seen from outside.
@@ -1019,10 +1074,10 @@ bool Bit_Value::update_IR()
           */
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "fun id: " + STR(tn_id) + " bitstring: " + fd->bit_values);
       }
-      else if(kind == integer_cst_K or kind == real_cst_K)
+#endif
+      else if(kind == integer_cst_K || kind == real_cst_K)
       {
          // do nothing, constants are recomputed every time
-         ;
       }
       else
       {
@@ -1821,61 +1876,4 @@ void Bit_Value::clear_current()
          current[b.first] = b.second;
       }
    }
-}
-
-DesignFlowStep_Status Bit_Value::InternalExec()
-{
-   initialize();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing initial backward");
-   backward();
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed initial backward");
-   mix();
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of initial backward:");
-   print_bitstring_map(best);
-   PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
-   bool restart;
-   do
-   {
-      clear_current();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing forward");
-      forward();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed forward");
-      mix();
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of forward:");
-      print_bitstring_map(best);
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Performing backward");
-      backward();
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Performed backward");
-      restart = mix();
-      INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at end of backward:");
-      print_bitstring_map(best);
-      PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "");
-   } while(restart);
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "best at the end of alg:");
-   print_bitstring_map(best);
-   auto changed = update_IR();
-   BitLatticeManipulator::clear();
-   direct_call_id_to_called_id.clear();
-   arguments.clear();
-   if(changed)
-   {
-      bitvalue_version = function_behavior->UpdateBitValueVersion();
-   }
-   return changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;
-}
-
-void Bit_Value::Initialize()
-{
-   const std::string bambu_frontend_flow_signature = ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BAMBU_FRONTEND_FLOW);
-   not_frontend = design_flow_manager.lock()->GetStatus(bambu_frontend_flow_signature) == DesignFlowStep_Status::EMPTY;
-}
-
-bool Bit_Value::HasToBeExecuted() const
-{
-   if(!HasToBeExecuted0())
-   {
-      return false;
-   }
-   return (bitvalue_version != function_behavior->GetBitValueVersion()) or FunctionFrontendFlowStep::HasToBeExecuted();
 }

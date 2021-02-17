@@ -149,7 +149,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             default:
                THROW_UNREACHABLE("");
          }
-
          break;
       }
       default:
