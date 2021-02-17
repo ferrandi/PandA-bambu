@@ -8376,7 +8376,7 @@ VERILOG_PROVIDED="
 generate
 if(n_mem_elements == 1)
 begin
-  BRAM_MEMORY_CORE_SMALL #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_b), .BITSIZE_din_value_aggregated(BITSIZE_din_value_aggregated), .BITSIZE_be(BITSIZE_be), .BITSIZE_dout_a(BITSIZE_dout_a), .BITSIZE_dout_b(BITSIZE_dout_b), .MEMORY_INIT_file(MEMORY_INIT_file), .BRAM_BITSIZE(BRAM_BITSIZE), .n_byte_on_databus(n_byte_on_databus), .n_mem_elements(n_mem_elements), .n_bytes(n_bytes), .HIGH_LATENCY(HIGH_LATENCY)) BRAM_MEMORY_instance_small (.clock(clock), .bram_write0(bram_write), .bram_write1(bram_write), .memory_addr_a(memory_addr_a), .memory_addr_b(memory_addr_b), .din_value_aggregated(din_value_aggregated), .be(be), .dout_a(dout_a), .dout_b(dout_b));
+  BRAM_MEMORY_CORE_SMALL #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_b), .BITSIZE_din_value_aggregated(BITSIZE_din_value_aggregated), .BITSIZE_be(BITSIZE_be), .BITSIZE_dout_a(BITSIZE_dout_a), .BITSIZE_dout_b(BITSIZE_dout_b), .MEMORY_INIT_file(MEMORY_INIT_file), .n_byte_on_databus(n_byte_on_databus), .n_mem_elements(n_mem_elements), .n_bytes(n_bytes), .HIGH_LATENCY(HIGH_LATENCY)) BRAM_MEMORY_instance_small (.clock(clock), .bram_write0(bram_write), .bram_write1(bram_write), .memory_addr_a(memory_addr_a), .memory_addr_b(memory_addr_b), .din_value_aggregated(din_value_aggregated), .be(be), .dout_a(dout_a), .dout_b(dout_b));
 end
 else
 begin
@@ -8407,7 +8407,6 @@ end generate;
           <license>PANDA_LGPLv3</license>
           <structural_type_descriptor id_type="BRAM_MEMORY_CORE_SMALL"/>
           <parameter name="MEMORY_INIT_file">&quot;&quot;array.mem&quot;&quot;</parameter>
-          <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="n_byte_on_databus">4</parameter>
           <parameter name="n_mem_elements">4</parameter>
           <parameter name="n_bytes">4</parameter>
@@ -8444,7 +8443,7 @@ end generate;
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="BRAM_MEMORY_CORE_SMALL dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file BRAM_BITSIZE n_byte_on_databus n_mem_elements n_bytes HIGH_LATENCY"  VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="BRAM_MEMORY_CORE_SMALL dout_a dout_b memory_addr_a memory_addr_b din_value_aggregated be MEMORY_INIT_file n_byte_on_databus n_mem_elements n_bytes HIGH_LATENCY"  VERILOG_PROVIDED="
 reg bram_write01 1INIT_ZERO_VALUE;
 reg bram_write11 1INIT_ZERO_VALUE;
 reg [BITSIZE_memory_addr_a-1:0] memory_addr_a1 1INIT_ZERO_VALUE;
@@ -9196,7 +9195,7 @@ VERILOG_PROVIDED="
 generate
 if(n_mem_elements == 1)
 begin
-  BRAM_MEMORY_CORE_SMALL #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_a), .BITSIZE_din_value_aggregated((n_byte_on_databus)*8), .BITSIZE_be(n_byte_on_databus), .BITSIZE_dout_a((n_byte_on_databus/2)*8), .BITSIZE_dout_b((n_byte_on_databus/2)*8), .MEMORY_INIT_file(MEMORY_INIT_file), .BRAM_BITSIZE(BRAM_BITSIZE), .n_byte_on_databus(n_byte_on_databus/2), .n_mem_elements(n_mem_elements), .n_bytes(n_bytes), .HIGH_LATENCY(HIGH_LATENCY)) BRAM_MEMORY_instance_small (.clock(clock), .bram_write0(bram_write[0]), .bram_write1(bram_write[1]), .memory_addr_a(memory_addr_a[BITSIZE_memory_addr_a-1:0]), .memory_addr_b(memory_addr_a[2*BITSIZE_memory_addr_a-1:BITSIZE_memory_addr_a]), .din_value_aggregated({din_value_aggregated_swapped[2*BRAM_BITSIZE+(n_byte_on_databus/2)*8+memory_offset-1:2*BRAM_BITSIZE+memory_offset],din_value_aggregated_swapped[(n_byte_on_databus/2)*8+memory_offset-1:memory_offset]}), .be({be_swapped[n_byte_on_databus+n_byte_on_databus/2+n_byte_on_databus_offset-1:n_byte_on_databus+n_byte_on_databus_offset],be_swapped[n_byte_on_databus/2+n_byte_on_databus_offset-1:n_byte_on_databus_offset]}), .dout_a(dout_a[BRAM_BITSIZE-1:0]), .dout_b(dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE]));
+  BRAM_MEMORY_CORE_SMALL #(.BITSIZE_memory_addr_a(BITSIZE_memory_addr_a), .BITSIZE_memory_addr_b(BITSIZE_memory_addr_a), .BITSIZE_din_value_aggregated((n_byte_on_databus)*8), .BITSIZE_be(n_byte_on_databus), .BITSIZE_dout_a((n_byte_on_databus/2)*8), .BITSIZE_dout_b((n_byte_on_databus/2)*8), .MEMORY_INIT_file(MEMORY_INIT_file), .n_byte_on_databus(n_byte_on_databus/2), .n_mem_elements(n_mem_elements), .n_bytes(n_bytes), .HIGH_LATENCY(HIGH_LATENCY)) BRAM_MEMORY_instance_small (.clock(clock), .bram_write0(bram_write[0]), .bram_write1(bram_write[1]), .memory_addr_a(memory_addr_a[BITSIZE_memory_addr_a-1:0]), .memory_addr_b(memory_addr_a[2*BITSIZE_memory_addr_a-1:BITSIZE_memory_addr_a]), .din_value_aggregated({din_value_aggregated_swapped[2*BRAM_BITSIZE+(n_byte_on_databus/2)*8+memory_offset-1:2*BRAM_BITSIZE+memory_offset],din_value_aggregated_swapped[(n_byte_on_databus/2)*8+memory_offset-1:memory_offset]}), .be({be_swapped[n_byte_on_databus+n_byte_on_databus/2+n_byte_on_databus_offset-1:n_byte_on_databus+n_byte_on_databus_offset],be_swapped[n_byte_on_databus/2+n_byte_on_databus_offset-1:n_byte_on_databus_offset]}), .dout_a(dout_a[BRAM_BITSIZE-1:0]), .dout_b(dout_a[2*BRAM_BITSIZE-1:BRAM_BITSIZE]));
 end
 else
 begin
@@ -9207,7 +9206,7 @@ endgenerate
 VHDL_PROVIDED=
 "begin
 BRAM_MEMORY_CORE_SMALL_case : if (n_mem_elements = 1) generate
-  BRAM_MEMORY_CORE_SMALL_instance : BRAM_MEMORY_CORE_SMALL generic map (BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_memory_addr_b=&gt;BITSIZE_memory_addr_a, BITSIZE_din_value_aggregated=&gt;(n_byte_on_databus)*8, BITSIZE_be=&gt;n_byte_on_databus, BITSIZE_dout_a=&gt;(n_byte_on_databus/2)*8, BITSIZE_dout_b=&gt;(n_byte_on_databus/2)*8, MEMORY_INIT_file=&gt;MEMORY_INIT_file, BRAM_BITSIZE=&gt;BRAM_BITSIZE, n_byte_on_databus=&gt;n_byte_on_databus/2, n_mem_elements=&gt;n_mem_elements, n_bytes=&gt;n_bytes, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write0=&gt;bram_write(0), bram_write1=&gt;bram_write(1), memory_addr_a=&gt;memory_addr_a(BITSIZE_memory_addr_a-1 downto 0), memory_addr_b=&gt;memory_addr_a(2*BITSIZE_memory_addr_a-1 downto BITSIZE_memory_addr_a), din_value_aggregated=&gt;(din_value_aggregated_swapped(2*BRAM_BITSIZE+(n_byte_on_databus/2)*8+memory_offset-1 downto 2*BRAM_BITSIZE+memory_offset) &amp; din_value_aggregated_swapped((n_byte_on_databus/2)*8+memory_offset-1 downto memory_offset)), be=&gt;(be_swapped(n_byte_on_databus+n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus+n_byte_on_databus_offset) &amp; be_swapped(n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus_offset)), dout_a=&gt;dout_a(BRAM_BITSIZE-1 downto 0), dout_b=&gt;dout_a(2*BRAM_BITSIZE-1 downto BRAM_BITSIZE));
+  BRAM_MEMORY_CORE_SMALL_instance : BRAM_MEMORY_CORE_SMALL generic map (BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_memory_addr_b=&gt;BITSIZE_memory_addr_a, BITSIZE_din_value_aggregated=&gt;(n_byte_on_databus)*8, BITSIZE_be=&gt;n_byte_on_databus, BITSIZE_dout_a=&gt;(n_byte_on_databus/2)*8, BITSIZE_dout_b=&gt;(n_byte_on_databus/2)*8, MEMORY_INIT_file=&gt;MEMORY_INIT_file, n_byte_on_databus=&gt;n_byte_on_databus/2, n_mem_elements=&gt;n_mem_elements, n_bytes=&gt;n_bytes, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write0=&gt;bram_write(0), bram_write1=&gt;bram_write(1), memory_addr_a=&gt;memory_addr_a(BITSIZE_memory_addr_a-1 downto 0), memory_addr_b=&gt;memory_addr_a(2*BITSIZE_memory_addr_a-1 downto BITSIZE_memory_addr_a), din_value_aggregated=&gt;(din_value_aggregated_swapped(2*BRAM_BITSIZE+(n_byte_on_databus/2)*8+memory_offset-1 downto 2*BRAM_BITSIZE+memory_offset) &amp; din_value_aggregated_swapped((n_byte_on_databus/2)*8+memory_offset-1 downto memory_offset)), be=&gt;(be_swapped(n_byte_on_databus+n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus+n_byte_on_databus_offset) &amp; be_swapped(n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus_offset)), dout_a=&gt;dout_a(BRAM_BITSIZE-1 downto 0), dout_b=&gt;dout_a(2*BRAM_BITSIZE-1 downto BRAM_BITSIZE));
 end generate;
 TRUE_DUAL_PORT_BYTE_ENABLING_RAM_else : if(n_mem_elements /= 1) generate
   TRUE_DUAL_PORT_BYTE_ENABLING_RAM_instance : TRUE_DUAL_PORT_BYTE_ENABLING_RAM generic map (BITSIZE_memory_addr_a=&gt;BITSIZE_memory_addr_a, BITSIZE_memory_addr_b=&gt;BITSIZE_memory_addr_a, BITSIZE_din_value_aggregated=&gt;(n_byte_on_databus)*8, BITSIZE_be=&gt;n_byte_on_databus, BITSIZE_dout_a=&gt;(n_byte_on_databus/2)*8, BITSIZE_dout_b=&gt;(n_byte_on_databus/2)*8, MEMORY_INIT_file=&gt;MEMORY_INIT_file, BRAM_BITSIZE=&gt;BRAM_BITSIZE, n_byte_on_databus=&gt;n_byte_on_databus/2, n_mem_elements=&gt;n_mem_elements, HIGH_LATENCY=&gt;HIGH_LATENCY) port map (clock=&gt;clock, bram_write0=&gt;bram_write(0), bram_write1=&gt;bram_write(1), memory_addr_a=&gt;memory_addr_a(BITSIZE_memory_addr_a-1 downto 0), memory_addr_b=&gt;memory_addr_a(2*BITSIZE_memory_addr_a-1 downto BITSIZE_memory_addr_a), din_value_aggregated=&gt;(din_value_aggregated_swapped(2*BRAM_BITSIZE+(n_byte_on_databus/2)*8+memory_offset-1 downto 2*BRAM_BITSIZE+memory_offset) &amp; din_value_aggregated_swapped((n_byte_on_databus/2)*8+memory_offset-1 downto memory_offset)), be=&gt;(be_swapped(n_byte_on_databus+n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus+n_byte_on_databus_offset) &amp; be_swapped(n_byte_on_databus/2+n_byte_on_databus_offset-1 downto n_byte_on_databus_offset)), dout_a=&gt;dout_a(BRAM_BITSIZE-1 downto 0), dout_b=&gt;dout_a(2*BRAM_BITSIZE-1 downto BRAM_BITSIZE));
@@ -10659,7 +10658,6 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
           <parameter name="address_space_begin">0</parameter>
           <parameter name="address_space_rangesize">4</parameter>
           <parameter name="BUS_PIPELINED">1</parameter>
-          <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
@@ -10752,7 +10750,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BASE in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BASE in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
 IP_COMPONENT="STD_SP_BRAM" 
 VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
@@ -10766,8 +10764,8 @@ VERILOG_PROVIDED="
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(BRAM_BITSIZE/8);
-parameter n_byte_on_databus = BRAM_BITSIZE/8;
+parameter n_bytes = n_elements*(data_size/8);
+parameter n_byte_on_databus = data_size/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 
@@ -10848,8 +10846,8 @@ assign Sout_Rdata_ram =Sin_Rdata_ram;
 assign Sout_DataRdy = Sin_DataRdy;
 // Add assertion here
 // psl default clock = (posedge clock);
-// psl ERROR_SDS_data_ram_size: assert never {(BRAM_BITSIZE != in3 &amp;&amp; (sel_LOAD || sel_STORE)) || (BRAM_BITSIZE != proxy_in3 &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};
-// psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"
+// psl ERROR_SDS_data_ram_size: assert never {(data_size != in3 &amp;&amp; (sel_LOAD || sel_STORE)) || (data_size != proxy_in3 &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};
+// psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(data_size/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(data_size/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"
 VHDL_PROVIDED=
 "  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
@@ -10859,8 +10857,8 @@ VHDL_PROVIDED=
       return op2;
     end if;
   end integer_ternary_operator;
-  constant n_bytes           : integer := n_elements*(BRAM_BITSIZE/8);
-  constant n_byte_on_databus : integer := BRAM_BITSIZE/8;
+  constant n_bytes           : integer := n_elements*(data_size/8);
+  constant n_byte_on_databus : integer := data_size/8;
   constant n_mem_elements    : integer := n_bytes/(n_byte_on_databus) + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
   constant nbit_addr         : integer := integer_ternary_operator(BITSIZE_in2 &gt; BITSIZE_proxy_in2, BITSIZE_in2, BITSIZE_proxy_in2);
   constant nbit_read_addr    : integer := integer_ternary_operator(n_elements = 1, 1, integer(ceil(log2(real(n_elements)))));
@@ -10962,7 +10960,6 @@ begin
           <parameter name="address_space_begin">0</parameter>
           <parameter name="address_space_rangesize">4</parameter>
           <parameter name="BUS_PIPELINED">1</parameter>
-          <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
@@ -11055,7 +11052,7 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_BASE in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_SDS_BUS_BASE in1 in2 in3 out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_out1" 
 IP_COMPONENT="STD_SP_BRAM" 
 VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
@@ -11069,8 +11066,8 @@ VERILOG_PROVIDED="
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(BRAM_BITSIZE/8);
-parameter n_byte_on_databus = BRAM_BITSIZE/8;
+parameter n_bytes = n_elements*(data_size/8);
+parameter n_byte_on_databus = data_size/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 
@@ -11221,8 +11218,8 @@ endgenerate
 
 // Add assertion here
 // psl default clock = (posedge clock);
-// psl ERROR_SDS_data_ram_size: assert never {(BRAM_BITSIZE != in3 &amp;&amp; (sel_LOAD || sel_STORE)) || (BRAM_BITSIZE != proxy_in3 &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};
-// psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(BRAM_BITSIZE/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"
+// psl ERROR_SDS_data_ram_size: assert never {(data_size != in3 &amp;&amp; (sel_LOAD || sel_STORE)) || (data_size != proxy_in3 &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};
+// psl ERROR_SDS_alignment: assert never {(((in2-address_space_begin) %(data_size/8) != 0) &amp;&amp; (sel_LOAD || sel_STORE)) || (((proxy_in2-address_space_begin) %(data_size/8) != 0) &amp;&amp; (proxy_sel_LOAD || proxy_sel_STORE))};"
 VHDL_PROVIDED=
 "  function integer_ternary_operator(cond : boolean; op1 : integer; op2 : integer) return integer is
   begin
@@ -11232,8 +11229,8 @@ VHDL_PROVIDED=
       return op2;
     end if;
   end integer_ternary_operator;
-  constant n_bytes           : integer := n_elements*(BRAM_BITSIZE/8);
-  constant n_byte_on_databus : integer := BRAM_BITSIZE/8;
+  constant n_bytes           : integer := n_elements*(data_size/8);
+  constant n_byte_on_databus : integer := data_size/8;
   constant n_mem_elements    : integer := n_bytes/(n_byte_on_databus) + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
   constant nbit_addr         : integer := integer_ternary_operator(BITSIZE_in2 &gt; BITSIZE_proxy_in2, BITSIZE_in2, BITSIZE_proxy_in2);
   constant nbit_read_addr    : integer := integer_ternary_operator(n_elements = 1, 1, integer(ceil(log2(real(n_elements)))));
@@ -11458,7 +11455,6 @@ begin
           <parameter name="address_space_begin">0</parameter>
           <parameter name="address_space_rangesize">4</parameter>
           <parameter name="BUS_PIPELINED">1</parameter>
-          <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
@@ -11551,7 +11547,7 @@ begin
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BASE in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BASE in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY READ_ONLY_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
@@ -11563,9 +11559,9 @@ begin
     end
   endfunction
 `endif
-parameter n_byte_data = BRAM_BITSIZE/8;
+parameter n_byte_data = data_size/8;
 parameter n_bytes = n_elements*n_byte_data;
-parameter n_byte_on_databus = BRAM_BITSIZE/8;
+parameter n_byte_on_databus = data_size/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2
@@ -11774,7 +11770,6 @@ assign Sout_DataRdy = Sin_DataRdy;"/>
           <parameter name="address_space_begin">0</parameter>
           <parameter name="address_space_rangesize">4</parameter>
           <parameter name="BUS_PIPELINED">1</parameter>
-          <parameter name="BRAM_BITSIZE">32</parameter>
           <parameter name="PRIVATE_MEMORY">0</parameter>
           <parameter name="READ_ONLY_MEMORY">0</parameter>
           <parameter name="USE_SPARSE_MEMORY">1</parameter>
@@ -11867,7 +11862,7 @@ assign Sout_DataRdy = Sin_DataRdy;"/>
             <structural_type_descriptor type="VECTOR_BOOL" size="1" vector_size="1"/>
             <connected_objects/>
           </port_vector_o>
-          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED BRAM_BITSIZE PRIVATE_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="
+          <NP_functionality LIBRARY="ARRAY_1D_STD_BRAM_NN_SDS_BUS_BASE in1 in2 in3 sel_LOAD sel_STORE S_oe_ram S_we_ram out1 S_addr_ram S_Wdata_ram  Sin_Rdata_ram Sout_Rdata_ram S_data_ram_size Sin_DataRdy Sout_DataRdy MEMORY_INIT_file n_elements data_size address_space_begin address_space_rangesize BUS_PIPELINED PRIVATE_MEMORY USE_SPARSE_MEMORY HIGH_LATENCY proxy_in1 proxy_in2 proxy_in3 proxy_sel_LOAD proxy_sel_STORE proxy_out1" VERILOG_PROVIDED="
 `ifndef _SIM_HAVE_CLOG2
   function integer log2;
      input integer value;
@@ -11879,9 +11874,9 @@ assign Sout_DataRdy = Sin_DataRdy;"/>
     end
   endfunction
 `endif
-parameter n_byte_data = BRAM_BITSIZE/8;
+parameter n_byte_data = data_size/8;
 parameter n_bytes = n_elements*n_byte_data;
-parameter n_byte_on_databus = BRAM_BITSIZE/8;
+parameter n_byte_on_databus = data_size/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2

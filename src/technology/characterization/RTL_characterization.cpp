@@ -932,7 +932,8 @@ void RTLCharacterization::AnalyzeCell(functional_unit* fu, const unsigned int pr
          }
          spec_module->SetParameter("n_elements", STR(vec_size));
          spec_module->SetParameter("data_size", STR(elts_size));
-         spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
+         if(memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS && memory_type != MEMORY_TYPE_SYNCHRONOUS_SDS_BUS && memory_type != MEMORY_TYPE_ASYNCHRONOUS)
+            spec_module->SetParameter("BRAM_BITSIZE", STR(BRAM_BITSIZE));
          spec_module->SetParameter("BUS_PIPELINED", "1");
          spec_module->SetParameter("PRIVATE_MEMORY", "0");
       }
