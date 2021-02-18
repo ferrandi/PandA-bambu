@@ -2100,8 +2100,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_memory_splitted,
-                                        bool is_sparse_memory, bool is_sds)
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_memory_splitted, bool is_sparse_memory, bool is_sds)
 {
    auto* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
@@ -2171,8 +2170,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 }
 #define CHANGE_SDS_MEMORY_LAYOUT 0
 
-void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar, long long int& vec_size, unsigned int& elts_size, const memoryRef mem, bool is_memory_splitted, bool is_sds,
-                                       module* fu_module)
+void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar, long long int& vec_size, unsigned int& elts_size, const memoryRef mem, bool is_memory_splitted, bool is_sds, module* fu_module)
 {
    unsigned int bram_bitsize;
    unsigned int type_index;
@@ -2245,7 +2243,6 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       bram_bitsize = boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"));
    }
-
 
    unsigned int nbyte_on_memory = bram_bitsize / 8;
 
