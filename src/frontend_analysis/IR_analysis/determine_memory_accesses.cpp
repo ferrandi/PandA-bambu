@@ -112,7 +112,6 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::make_pair(NI_SSA_LIVENESS, SAME_FUNCTION)); // To postpone the step as much as possible
          break;
       }
       default:
@@ -136,12 +135,11 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    function_behavior->clean_function_mem();
    function_behavior->set_has_globals(false);
    function_behavior->clean_state_variable();
-   function_behavior->clean_dynamic_addresses();
+   function_behavior->clean_dynamic_address();
    function_behavior->clean_parm_decl_copied();
    function_behavior->clean_parm_decl_loaded();
    function_behavior->clean_parm_decl_stored();
    function_behavior->set_dereference_unknown_addr(false);
-   function_behavior->set_unaligned_accesses(false);
    function_behavior->set_has_undefined_function_receiveing_pointers(false);
    AppM->clean_written_objects();
 
