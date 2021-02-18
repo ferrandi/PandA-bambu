@@ -1613,7 +1613,6 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    if(ar)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
-      bool has_misaligned_indirect_ref = false;
       {
          unsigned int elmt_bitsize = 1;
          unsigned int type_index = tree_helper::get_type_index(TreeM, ar);
@@ -1651,62 +1650,17 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             {
                THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
                required_variables[0] = std::max(required_variables[0], tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, std::get<0>(vars[0]))));
-               if(tree_helper::is_a_misaligned_vector(TreeM, std::get<0>(vars[0])))
-               {
-                  has_misaligned_indirect_ref = true;
-               }
             }
             else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
             {
                THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
                produced_variables = std::max(produced_variables, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var)));
-               if(tree_helper::is_a_misaligned_vector(TreeM, out_var))
-               {
-                  has_misaligned_indirect_ref = true;
-               }
             }
          }
       }
       if(fu_module->ExistsParameter("BRAM_BITSIZE"))
       {
-         unsigned int accessed_bitsize = std::max(required_variables[0], produced_variables);
-         unsigned int bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
-         bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
-         if(unaligned_access_p || bram_bitsize != 8 || bus_data_bitsize != 8 || HLSMgr->Rmem->is_private_memory(ar))
-         {
-            if(has_misaligned_indirect_ref)
-            {
-               bram_bitsize = std::max(accessed_bitsize, bram_bitsize);
-            }
-            else if(accessed_bitsize / 2 > bram_bitsize)
-            {
-               while(accessed_bitsize / 2 > bram_bitsize)
-               {
-                  bram_bitsize *= 2;
-               }
-            }
-   #if 1
-            unsigned datasize = accessed_bitsize;
-            /// Round up to the next highest power of 2
-            datasize--;
-            datasize |= datasize >> 1;
-            datasize |= datasize >> 2;
-            datasize |= datasize >> 4;
-            datasize |= datasize >> 8;
-            datasize |= datasize >> 16;
-            datasize++;
-            if(datasize <= HLSMgr->Rmem->get_maxbram_bitsize() && bram_bitsize < datasize)
-            {
-               bram_bitsize = datasize;
-            }
-   #endif
-         }
-
-         if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())
-         {
-            THROW_ERROR("incorrect operation mapping on memory module");
-         }
-         fu_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
+         fu_module->SetParameter("BRAM_BITSIZE", STR(HLSMgr->Rmem->get_bram_bitsize()));
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
