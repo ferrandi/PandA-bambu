@@ -141,7 +141,6 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    function_behavior->clean_parm_decl_stored();
    function_behavior->set_dereference_unknown_addr(false);
    function_behavior->set_has_undefined_function_receiveing_pointers(false);
-   AppM->clean_written_objects();
 
    /// analyze formal parameters
    auto formal_it_end = fd->list_of_args.end();
