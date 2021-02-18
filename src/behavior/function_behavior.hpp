@@ -694,15 +694,9 @@ class FunctionBehavior
    void add_dynamic_address(unsigned int node_id);
 
    /**
-    * remove a variable from the dynamic address set
-    * @param node_id is the object stored in memory
-    */
-   void erase_dynamic_address(unsigned int node_id);
-
-   /**
     * remove all variables from the dynamic address set
     */
-   void clean_dynamic_addresses();
+   void clean_dynamic_address();
 
    /**
     * Checks if a variable has been allocated in memory

@@ -635,12 +635,7 @@ void FunctionBehavior::add_dynamic_address(unsigned int node_id)
    /// the object may be written once you have the address
 }
 
-void FunctionBehavior::erase_dynamic_address(unsigned int node_id)
-{
-   dynamic_address.erase(node_id);
-}
-
-void FunctionBehavior::clean_dynamic_addresses()
+void FunctionBehavior::clean_dynamic_address()
 {
    dynamic_address.clear();
 }
@@ -712,7 +707,6 @@ void FunctionBehavior::clean_parm_decl_stored()
 {
    parm_decl_stored.clear();
 }
-
 
 CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const application_managerConstRef AppM) const
 {
