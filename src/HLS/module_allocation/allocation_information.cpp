@@ -2660,7 +2660,6 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       double cur_exec_time = op_cur->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_cur) : time_m_execution_time(op_cur);
       double cur_exec_delta;
       technology_nodeRef f_unit_sds;
-      bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
       if(Rmem->is_sds_var(var))
       {
          if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY)
@@ -2704,15 +2703,6 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
          unsigned int type_index = tree_helper::get_type_index(TreeM, var);
          tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
          tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
-      }
-      else if(!unaligned_access_p && Rmem->get_bram_bitsize() == 8 && Rmem->get_bus_data_bitsize() == 8)
-      {
-         f_unit_sds = HLS_T->get_technology_manager()->get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS + latency_postfix, LIBRARY_STD_FU);
-         if(Rmem->is_private_memory(var))
-         {
-            is_private_correction = true;
-         }
-         elmt_bitsize = Rmem->get_bram_bitsize();
       }
       else
       {

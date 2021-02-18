@@ -2140,17 +2140,8 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    }
 
    /// specialize the number of elements in the array
-   bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
-   if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(ar))
-   {
-      fu_module->SetParameter("n_elements", STR((vec_size * elts_size) / 8));
-      fu_module->SetParameter("data_size", "8");
-   }
-   else
-   {
-      fu_module->SetParameter("n_elements", STR(vec_size));
-      fu_module->SetParameter("data_size", STR(elts_size));
-   }
+   fu_module->SetParameter("n_elements", STR(vec_size));
+   fu_module->SetParameter("data_size", STR(elts_size));
    if(HLSMgr->Rmem->is_private_memory(ar))
    {
       fu_module->SetParameter("PRIVATE_MEMORY", "1");
@@ -2224,14 +2215,6 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    if(is_sds)
    {
       bram_bitsize = elts_size;
-      bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
-      if(!unaligned_access_p && mem->get_bram_bitsize() == 8 && mem->get_bus_data_bitsize() == 8 && !mem->is_private_memory(ar))
-      {
-         vec_size = (vec_size * elts_size) / 8;
-         bram_bitsize = 8;
-         elts_size = 8;
-         is_sds = false;
-      }
 #if CHANGE_SDS_MEMORY_LAYOUT
       if(vd && vd->bit_values.size())
       {
