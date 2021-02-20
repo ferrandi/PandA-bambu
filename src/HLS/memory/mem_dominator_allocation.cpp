@@ -562,10 +562,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
                      {
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "STORE SSA pointer " + mr->op0->ToString() + " bit_values="  + ssa_addr->bit_values);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "STORE SSA pointer " + mr->op0->ToString() + " bit_values=" + ssa_addr->bit_values);
                         if(ssa_addr->bit_values == "0")
                         {
-                           n_last_zerobits = 60;//infinite alignment
+                           n_last_zerobits = 60; // infinite alignment
                         }
                         else
                         {
@@ -614,10 +614,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
                      {
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
-                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Load SSA pointer " + mr->op0->ToString() + " bit_values="  + ssa_addr->bit_values);
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Load SSA pointer " + mr->op0->ToString() + " bit_values=" + ssa_addr->bit_values);
                         if(ssa_addr->bit_values == "0")
                         {
-                           n_last_zerobits = 60;//infinite alignment
+                           n_last_zerobits = 60; // infinite alignment
                         }
                         else
                         {
@@ -658,7 +658,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                {
                   unsigned int elmt_bitsize = 1;
                   unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                  bool is_a_struct_union = (tree_helper::is_a_struct(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) || (tree_helper::is_an_union(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_a_complex(TreeM, type_index);
+                  bool is_a_struct_union = (tree_helper::is_a_struct(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) || (tree_helper::is_an_union(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) ||
+                                           tree_helper::is_a_complex(TreeM, type_index);
                   tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
                   tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
                   unsigned int mim_elmt_bitsize = elmt_bitsize;

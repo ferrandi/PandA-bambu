@@ -188,7 +188,7 @@ void TestbenchMemoryAllocation::AllocTestbenchMemory(void) const
                }
                unsigned int base_type_byte_size;
 
-               if(behavioral_helper->is_a_struct(ptd_base_type))
+               if(behavioral_helper->is_a_struct(ptd_base_type) || behavioral_helper->is_an_union(ptd_base_type))
                {
                   base_type_byte_size = tree_helper::size(TM, ptd_base_type) / 8;
                }

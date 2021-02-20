@@ -756,7 +756,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
                   indented_output_stream->Append("}\n");
                }
             }
-            else if(!reference_type_p && behavioral_helper->is_an_array(base_type))
+            else if(!reference_type_p && behavioral_helper->is_an_array(base_type) && !behavioral_helper->is_a_struct(base_type) && !behavioral_helper->is_an_union(base_type))
             {
                indented_output_stream->Append("for (__testbench_index2 = 0; __testbench_index2 < " + STR(splitted.size()) + "; ++__testbench_index2)\n{\n");
                unsigned int data_bitsize = tree_helper::get_array_data_bitsize(TM, base_type);

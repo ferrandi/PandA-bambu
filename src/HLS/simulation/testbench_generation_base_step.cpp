@@ -201,7 +201,7 @@ std::string TestbenchGenerationBaseStep::print_var_init(const tree_managerConstR
    }
    else if(!GetPointer<gimple_call>(tn))
    {
-      if(tree_helper::is_an_array(TreeM, var))
+      if(tree_helper::is_an_array(TreeM, var) && !tree_helper::is_a_struct(TreeM, var) && !tree_helper::is_an_union(TreeM, var))
       {
          unsigned int type_index;
          tree_helper::get_type_node(tn, type_index);

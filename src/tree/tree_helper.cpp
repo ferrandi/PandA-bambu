@@ -2721,74 +2721,75 @@ bool tree_helper::is_a_complex(const tree_managerConstRef& TM, const unsigned in
    return Type->get_kind() == complex_type_K;
 }
 
-// static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef> &listOfTypes, CustomUnorderedSet<unsigned int> &already_visited)
-//{
-//   if(already_visited.find(type->index) != already_visited.end())
-//      return;
-//   already_visited.insert(type->index);
-//   if(type->get_kind() == record_type_K)
-//   {
-//      const auto* rt = GetPointer<const record_type>(type);
-//      for(const auto& fld : rt->list_of_flds)
-//      {
-//         if(GET_CONST_NODE(fld)->get_kind() == type_decl_K)
-//         {
-//            continue;
-//         }
-//         if(GET_CONST_NODE(fld)->get_kind() == function_decl_K)
-//         {
-//            continue;
-//         }
-//         auto fdType = tree_helper::CGetType(GET_CONST_NODE(fld));
-//         if(fdType->get_kind() == record_type_K || fdType->get_kind() == union_type_K || fdType->get_kind() == array_type_K || fdType->get_kind() == vector_type_K)
-//            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-//         else
-//            listOfTypes.push_back(fdType);
-//      }
-//   }
-//   else if(type->get_kind() == union_type_K)
-//   {
-//      const auto* ut = GetPointer<const union_type>(type);
-//      for(const auto& fld : ut->list_of_flds)
-//      {
-//         auto fdType = tree_helper::CGetType(GET_CONST_NODE(fld));
-//         if(fdType->get_kind() == record_type_K || fdType->get_kind() == union_type_K || fdType->get_kind() == array_type_K || fdType->get_kind() == vector_type_K)
-//            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
-//         else
-//            listOfTypes.push_back(fdType);
-//      }
-//   }
-//   else if(type->get_kind() == array_type_K)
-//   {
-//      auto* at = GetPointer<const array_type>(type);
-//      THROW_ASSERT(at->elts, "elements type expected");
-//      getBuiltinFieldTypes(GET_NODE(at->elts), listOfTypes, already_visited);
-//   }
-//   else if(type->get_kind() == vector_type_K)
-//   {
-//      auto* vt = GetPointer<const vector_type>(type);
-//      THROW_ASSERT(vt->elts, "elements type expected");
-//      getBuiltinFieldTypes(GET_NODE(vt->elts), listOfTypes, already_visited);
-//   }
-//   else
-//      listOfTypes.push_back(type);
-//}
+static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_nodeConstRef>& listOfTypes, CustomUnorderedSet<unsigned int>& already_visited)
+{
+   if(already_visited.find(type->index) != already_visited.end())
+      return;
+   already_visited.insert(type->index);
+   if(type->get_kind() == record_type_K)
+   {
+      const auto* rt = GetPointer<const record_type>(type);
+      for(const auto& fld : rt->list_of_flds)
+      {
+         if(GET_CONST_NODE(fld)->get_kind() == type_decl_K)
+         {
+            continue;
+         }
+         if(GET_CONST_NODE(fld)->get_kind() == function_decl_K)
+         {
+            continue;
+         }
+         auto fdType = tree_helper::CGetType(GET_CONST_NODE(fld));
+         if(fdType->get_kind() == record_type_K || fdType->get_kind() == union_type_K || fdType->get_kind() == array_type_K || fdType->get_kind() == vector_type_K)
+            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
+         else
+            listOfTypes.push_back(fdType);
+      }
+   }
+   else if(type->get_kind() == union_type_K)
+   {
+      const auto* ut = GetPointer<const union_type>(type);
+      for(const auto& fld : ut->list_of_flds)
+      {
+         auto fdType = tree_helper::CGetType(GET_CONST_NODE(fld));
+         if(fdType->get_kind() == record_type_K || fdType->get_kind() == union_type_K || fdType->get_kind() == array_type_K || fdType->get_kind() == vector_type_K)
+            getBuiltinFieldTypes(fdType, listOfTypes, already_visited);
+         else
+            listOfTypes.push_back(fdType);
+      }
+   }
+   else if(type->get_kind() == array_type_K)
+   {
+      auto* at = GetPointer<const array_type>(type);
+      THROW_ASSERT(at->elts, "elements type expected");
+      getBuiltinFieldTypes(GET_NODE(at->elts), listOfTypes, already_visited);
+   }
+   else if(type->get_kind() == vector_type_K)
+   {
+      auto* vt = GetPointer<const vector_type>(type);
+      THROW_ASSERT(vt->elts, "elements type expected");
+      getBuiltinFieldTypes(GET_NODE(vt->elts), listOfTypes, already_visited);
+   }
+   else
+      listOfTypes.push_back(type);
+}
 
-// static bool same_size_fields(const tree_nodeConstRef& t)
-//{
-//   std::list<tree_nodeConstRef> listOfTypes;
-//   CustomUnorderedSet<unsigned int> already_visited;
-//   getBuiltinFieldTypes(t, listOfTypes, already_visited);
-//   auto sizeFlds = 0u;
-//   for(auto fldType : listOfTypes)
-//   {
-//      if(!sizeFlds)
-//         sizeFlds = tree_helper::Size(fldType);
-//      else if(sizeFlds != tree_helper::Size(fldType))
-//         return false;
-//   }
-//   return true;
-//}
+static bool same_size_fields(const tree_nodeConstRef& t)
+{
+   std::list<tree_nodeConstRef> listOfTypes;
+   CustomUnorderedSet<unsigned int> already_visited;
+   getBuiltinFieldTypes(t, listOfTypes, already_visited);
+   THROW_ASSERT(!listOfTypes.empty(), "at least one type is expected");
+   auto sizeFlds = 0u;
+   for(auto fldType : listOfTypes)
+   {
+      if(!sizeFlds)
+         sizeFlds = tree_helper::Size(fldType);
+      else if(sizeFlds != tree_helper::Size(fldType))
+         return false;
+   }
+   return true;
+}
 
 bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int index)
 {
@@ -2812,31 +2813,14 @@ bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int
    {
       return true;
    }
-   else if(Type->get_kind() == record_type_K)
+   else if(Type->get_kind() == record_type_K || Type->get_kind() == union_type_K)
    {
-      auto* rt = GetPointer<record_type>(Type);
-      if(rt->list_of_flds.size() != 1)
-      {
-         return false;
-      }
-      auto fd = GET_NODE(rt->list_of_flds[0]);
-      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
-      auto at_node = GET_NODE(GetPointer<field_decl>(fd)->type);
-      if(at_node->get_kind() == array_type_K)
-      {
-         return true;
-      }
-      else if(at_node->get_kind() == record_type_K)
-      {
-         return is_an_array(TM, GET_INDEX_NODE(GetPointer<field_decl>(fd)->type));
-      }
-      else
-      {
-         return false;
-      }
-      //      return same_size_fields(Type);
+      return same_size_fields(Type);
    }
-   return false;
+   else
+   {
+      return false;
+   }
 }
 
 bool tree_helper::is_a_pointer(const tree_managerConstRef& TM, const unsigned int index)
@@ -5184,7 +5168,15 @@ unsigned int tree_helper::get_array_data_bitsize(const tree_managerConstRef& TM,
       auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
       return get_array_data_bitsize(TM, at_index);
    }
-   THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
+   if(node->get_kind() == union_type_K)
+   {
+      auto* ut = GetPointer<union_type>(node);
+      auto fd = GET_NODE(ut->list_of_flds[0]);
+      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
+      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
+      return get_array_data_bitsize(TM, at_index);
+   }
+   THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index) + " " + node->get_kind_text());
    auto* at = GetPointer<array_type>(node);
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);
@@ -5209,13 +5201,10 @@ unsigned int tree_helper::get_array_data_bitsize(const tree_managerConstRef& TM,
 void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims, unsigned int& elts_bitsize)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
-   if(node->get_kind() == record_type_K)
+   if(node->get_kind() == record_type_K || node->get_kind() == union_type_K)
    {
-      auto* rt = GetPointer<record_type>(node);
-      auto fd = GET_NODE(rt->list_of_flds[0]);
-      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
-      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
-      get_array_dim_and_bitsize(TM, at_index, dims, elts_bitsize);
+      elts_bitsize = tree_helper::get_array_data_bitsize(TM, index);
+      dims.push_back(tree_helper::Size(node) / elts_bitsize);
       return;
    }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));
@@ -5263,13 +5252,10 @@ void tree_helper::get_array_dim_and_bitsize(const tree_managerConstRef& TM, cons
 void tree_helper::get_array_dimensions(const tree_managerConstRef& TM, const unsigned int index, std::vector<unsigned int>& dims)
 {
    tree_nodeRef node = TM->get_tree_node_const(index);
-   if(node->get_kind() == record_type_K)
+   if(node->get_kind() == record_type_K || node->get_kind() == union_type_K)
    {
-      auto* rt = GetPointer<record_type>(node);
-      auto fd = GET_NODE(rt->list_of_flds[0]);
-      THROW_ASSERT(fd->get_kind() == field_decl_K, "expected a field_decl");
-      auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
-      get_array_dimensions(TM, at_index, dims);
+      auto elmt_bitsize = tree_helper::get_array_data_bitsize(TM, index);
+      dims.push_back(tree_helper::Size(node) / elmt_bitsize);
       return;
    }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index));

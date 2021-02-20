@@ -2724,7 +2724,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             long long int offset = tree_helper::get_integer_cst_value(GetPointer<integer_cst>(GET_NODE(mr->op1)));
             unsigned int type = GET_INDEX_NODE(mr->type);
             std::string type_string = tree_helper::print_type(TM, type);
-            if(is_an_array(type))
+            if(GET_CONST_NODE(mr->type)->get_kind() == array_type_K)
             {
                size_t found_square_bracket = type_string.find('[');
                if(found_square_bracket != std::string::npos)
@@ -3092,7 +3092,8 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                res += print_node(GET_INDEX_NODE(*pragma), v, vppf) + "\n";
             }
             res = "";
-            if(is_an_array(GET_INDEX_NODE(ms->op0)))
+            auto rop_index = GET_INDEX_NODE(ms->op0);
+            if(is_an_array(rop_index) && !is_a_struct(rop_index) && !is_an_union(rop_index))
             {
                long long size = tree_helper::size(TM, GET_INDEX_NODE(ms->op0));
                res += "__builtin_memcpy(";

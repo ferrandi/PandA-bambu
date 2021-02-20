@@ -66,7 +66,7 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          unsigned int type = BH->get_type(array);
          std::string offset_str = this->operator()(offset);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
             size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
@@ -111,7 +111,7 @@ std::string std_var_pp_functor::operator()(unsigned int var) const
          unsigned int offset = BH->get_mem_ref_offset(pointed);
          unsigned int type = BH->get_type(pointed);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
             size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
@@ -185,7 +185,7 @@ std::string pointer_var_pp_functor::operator()(unsigned int var) const
       if(BH->is_an_addr_expr(var))
       {
          unsigned int pointed = BH->get_operand_from_unary_expr(var);
-         if(BH->is_an_array(pointed))
+         if(BH->is_an_array(pointed) && !BH->is_a_struct(pointed) && !BH->is_an_union(pointed))
          {
             return this->operator()(pointed);
          }
@@ -208,7 +208,7 @@ std::string pointer_var_pp_functor::operator()(unsigned int var) const
    }
    else
    {
-      if(BH->is_an_array(var))
+      if(BH->is_an_array(var) && !BH->is_a_struct(var) && !BH->is_an_union(var))
       {
          return BH->PrintVariable(var);
       }
@@ -246,7 +246,7 @@ std::string address_var_pp_functor::operator()(unsigned int var) const
    {
       if(addr_based_variables.find(var) != addr_based_variables.end())
       {
-         if(BH->is_an_array(var))
+         if(BH->is_an_array(var) && !BH->is_a_struct(var) && !BH->is_an_union(var))
          {
             return BH->PrintVariable(var);
          }
@@ -288,7 +288,7 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          unsigned int type = BH->get_type(array);
          std::string offset_str = this->operator()(offset);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
             size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
@@ -333,7 +333,7 @@ std::string isolated_var_pp_functor::operator()(unsigned int var) const
          unsigned int offset = BH->get_mem_ref_offset(pointed);
          unsigned int type = BH->get_type(pointed);
          std::string type_string = BH->print_type(type);
-         if(BH->is_an_array(type))
+         if(BH->is_an_array(type) && !BH->is_a_struct(type) && !BH->is_an_union(type))
          {
             size_t found_square_bracket = type_string.find('[');
             if(found_square_bracket != std::string::npos)
