@@ -970,7 +970,7 @@ bool Bit_Value::update_IR()
       const auto kind = tn->get_kind();
       if(kind == ssa_name_K)
       {
-         auto* ssa = GetPointer<ssa_name>(tn);
+         auto* ssa = GetPointerS<ssa_name>(tn);
          THROW_ASSERT(ssa, "not ssa");
          if(ssa->bit_values.empty() or ssa->bit_values.size() > b.second.size())
          {
@@ -987,10 +987,6 @@ bool Bit_Value::update_IR()
             {
                // ssa is the first version of a parameter
                THROW_ASSERT(ssa->bit_values.empty() or ssa->bit_values.size() <= b.second.size(), "old bit values string: " + STR(ssa->bit_values.size()) + "new bit value: " + STR(b.second.size()));
-               const tree_nodeRef p = GET_NODE(ssa->var);
-#ifndef NDEBUG
-               const auto* pd = GetPointer<const parm_decl>(p);
-#endif
                /*
                 * don't update the bit values of parm_decl here because it would
                 * change how the bitvalue of this function is seen from outside.
@@ -998,14 +994,14 @@ bool Bit_Value::update_IR()
                 * pd->bit_values = bitstring_to_string(b.second);
                 * res= true;
                 */
-               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var id: " + STR(tn_id) + " is first version of parameter: " + STR(pd->index));
+               INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "var id: " + STR(tn_id) + " is first version of parameter: " + STR(GetPointerS<const parm_decl>(GET_NODE(ssa->var))->index));
             }
          }
       }
       else if(kind == function_decl_K)
       {
 #if HAVE_ASSERTS
-         const auto* fd = GetPointer<const function_decl>(tn);
+         const auto* fd = GetPointerS<const function_decl>(tn);
 #endif
          THROW_ASSERT(fd, "not a function_decl");
          THROW_ASSERT(fd->index == function_id, "unexpected function id");
@@ -1072,7 +1068,7 @@ void Bit_Value::initialize()
    }
 
    tree_nodeRef tn = TM->get_tree_node_const(function_id);
-   auto* fd = GetPointer<function_decl>(tn);
+   auto* fd = GetPointerS<function_decl>(tn);
    THROW_ASSERT(fd && fd->body, "Node is not a function or it hasn't a body");
 
    /*
@@ -1088,7 +1084,7 @@ void Bit_Value::initialize()
       {
          continue;
       }
-      auto* p = GetPointer<parm_decl>(GET_NODE(parm_decl_node));
+      auto* p = GetPointerS<parm_decl>(GET_NODE(parm_decl_node));
       std::deque<bit_lattice> b = p->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(parm_decl_node))) : string_to_bitstring(p->bit_values);
       parm.insert(std::make_pair(p_decl_id, b));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Index node of parameter " + STR(GET_NODE(parm_decl_node)) + " inserted: " + STR(GET_INDEX_NODE(parm_decl_node)) + " bitstring: \"" + bitstring_to_string(b) + "\"");
@@ -1104,13 +1100,13 @@ void Bit_Value::initialize()
    tree_nodeRef fret_type_node;
    if(fu_type->get_kind() == function_type_K)
    {
-      const auto* ft = GetPointer<const function_type>(fu_type);
+      const auto* ft = GetPointerS<const function_type>(fu_type);
       ret_type_id = GET_INDEX_NODE(ft->retn);
       fret_type_node = GET_NODE(ft->retn);
    }
    else
    {
-      const auto* mt = GetPointer<const method_type>(fu_type);
+      const auto* mt = GetPointerS<const method_type>(fu_type);
       ret_type_id = GET_INDEX_NODE(mt->retn);
       fret_type_node = GET_NODE(mt->retn);
    }
@@ -1138,7 +1134,7 @@ void Bit_Value::initialize()
       }
    }
 
-   const auto* sl = GetPointer<const statement_list>(GET_NODE(fd->body));
+   const auto* sl = GetPointerS<const statement_list>(GET_NODE(fd->body));
    {
       /*
        * Compute initialization bitstrings for ssa loaded from ROMs. This
@@ -1163,14 +1159,14 @@ void Bit_Value::initialize()
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "stmt " + STR(stmt_node) + " kind: " + stmt_node->get_kind_text());
             if(stmt_node->get_kind() == gimple_assign_K)
             {
-               const auto* ga = GetPointer<const gimple_assign>(stmt_node);
+               const auto* ga = GetPointerS<const gimple_assign>(stmt_node);
                THROW_ASSERT(not ga->clobber, "");
-
+               auto op0_node = GET_NODE(ga->op0);
                // handle lhs
-               auto* lhs_ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
-               if(lhs_ssa)
+               if(op0_node->get_kind() == ssa_name_K)
                {
-                  unsigned int ssa_node_id = lhs_ssa->index;
+                  auto* lhs_ssa = GetPointerS<ssa_name>(op0_node);
+                  unsigned int ssa_node_id = GET_INDEX_NODE(ga->op0);
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "assignment index: " + STR(GET_INDEX_NODE(stmt)));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "LHS index: " + STR(ssa_node_id));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "operation kind: " + GET_NODE(ga->op1)->get_kind_text());
@@ -1199,7 +1195,7 @@ void Bit_Value::initialize()
                            tree_nodeRef var_node = TM->get_tree_node_const(base_index);
                            if(var_node->get_kind() == var_decl_K)
                            {
-                              auto* vd = GetPointer<var_decl>(var_node);
+                              auto* vd = GetPointerS<var_decl>(var_node);
                               if(vd->init)
                               {
                                  std::deque<bit_lattice> current_inf;
@@ -1209,12 +1205,12 @@ void Bit_Value::initialize()
                                  }
                                  else if(GET_NODE(vd->init)->get_kind() == integer_cst_K)
                                  {
-                                    auto* int_const = GetPointer<integer_cst>(GET_NODE(vd->init));
+                                    auto* int_const = GetPointerS<integer_cst>(GET_NODE(vd->init));
                                     current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_NODE(vd->init)), tree_helper::is_int(TM, GET_INDEX_NODE(int_const->type)));
                                  }
                                  else if(GET_NODE(vd->init)->get_kind() == real_cst_K)
                                  {
-                                    auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
+                                    auto* real_const = GetPointerS<real_cst>(GET_NODE(vd->init));
                                     const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
                                     THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
                                     if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
@@ -1264,7 +1260,7 @@ void Bit_Value::initialize()
                            {
                               if(private_variables.find(base_index) == private_variables.end())
                               {
-                                 auto* vd = GetPointer<var_decl>(var_node);
+                                 auto* vd = GetPointerS<var_decl>(var_node);
                                  std::deque<bit_lattice> current_inf;
                                  if(vd->init)
                                  {
@@ -1274,12 +1270,12 @@ void Bit_Value::initialize()
                                     }
                                     else if(GET_NODE(vd->init)->get_kind() == integer_cst_K)
                                     {
-                                       auto* int_const = GetPointer<integer_cst>(GET_NODE(vd->init));
+                                       auto* int_const = GetPointerS<integer_cst>(GET_NODE(vd->init));
                                        current_inf = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_NODE(vd->init)), tree_helper::is_int(TM, GET_INDEX_NODE(int_const->type)));
                                     }
                                     else if(GET_NODE(vd->init)->get_kind() == real_cst_K)
                                     {
-                                       auto* real_const = GetPointer<real_cst>(GET_NODE(vd->init));
+                                       auto* real_const = GetPointerS<real_cst>(GET_NODE(vd->init));
                                        const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
                                        THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
                                        if(real_const->valx.front() == '-' && real_const->valr.front() != real_const->valx.front())
@@ -1318,7 +1314,7 @@ void Bit_Value::initialize()
                                     std::deque<bit_lattice> cur_bitstring;
                                     if(cur_node->get_kind() == ssa_name_K)
                                     {
-                                       const auto* ssa = GetPointer<const ssa_name>(cur_node);
+                                       const auto* ssa = GetPointerS<const ssa_name>(cur_node);
                                        if(not is_handled_by_bitvalue(source_type->index))
                                        {
                                           INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Not handled by bitvalue");
@@ -1352,7 +1348,7 @@ void Bit_Value::initialize()
                                     else if(cur_node->get_kind() == integer_cst_K)
                                     {
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Integer constant");
-                                       const auto* cst = GetPointer<const integer_cst>(cur_node);
+                                       const auto* cst = GetPointerS<const integer_cst>(cur_node);
                                        cur_bitstring = create_bitstring_from_constant(cst->value, source_type_size, loaded_is_signed);
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "bitstring = " + bitstring_to_string(cur_bitstring));
                                        sign_reduce_bitstring(cur_bitstring, loaded_is_signed);
@@ -1362,7 +1358,7 @@ void Bit_Value::initialize()
                                     {
                                        THROW_ASSERT(source_type_size == 64 || source_type_size == 32, "Unhandled real type size (" + STR(source_type_size) + ")");
                                        INDENT_DBG_MEX(OUTPUT_LEVEL_PEDANTIC, debug_level, "Real constant");
-                                       const auto* cst = GetPointer<const real_cst>(cur_node);
+                                       const auto* cst = GetPointerS<const real_cst>(cur_node);
                                        if(cst->valx.front() == '-' && cst->valr.front() != cst->valx.front())
                                        {
                                           cur_bitstring = string_to_bitstring(convert_fp_to_string("-" + cst->valr, source_type_size));
@@ -1421,14 +1417,15 @@ void Bit_Value::initialize()
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "stmt " + STR(stmt_node) + " kind: " + stmt_node->get_kind_text());
          if(stmt_node->get_kind() == gimple_assign_K)
          {
-            const auto* ga = GetPointer<const gimple_assign>(stmt_node);
+            const auto* ga = GetPointerS<const gimple_assign>(stmt_node);
             THROW_ASSERT(not ga->clobber, "");
 
+            auto op0_node = GET_NODE(ga->op0);
             // handle lhs
-            auto* lhs_ssa = GetPointer<ssa_name>(GET_NODE(ga->op0));
-            if(lhs_ssa)
+            if(op0_node->get_kind() == ssa_name_K)
             {
-               unsigned int ssa_node_id = lhs_ssa->index;
+               auto* lhs_ssa = GetPointerS<ssa_name>(op0_node);
+               unsigned int ssa_node_id = GET_INDEX_NODE(ga->op0);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "assignment index: " + STR(GET_INDEX_NODE(stmt)));
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "LHS index: " + STR(ssa_node_id));
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "operation kind: " + GET_NODE(ga->op1)->get_kind_text());
@@ -1468,17 +1465,17 @@ void Bit_Value::initialize()
                   }*/
                   else if(GET_NODE(ga->op1)->get_kind() == call_expr_K || GET_NODE(ga->op1)->get_kind() == aggr_init_expr_K)
                   {
-                     auto* ce = GetPointer<call_expr>(GET_NODE(ga->op1));
+                     auto* ce = GetPointerS<call_expr>(GET_NODE(ga->op1));
                      if(GET_NODE(ce->fn)->get_kind() == addr_expr_K)
                      {
                         const auto addr_node = GET_NODE(ce->fn);
-                        const auto* ae = GetPointer<const addr_expr>(addr_node);
+                        const auto* ae = GetPointerS<const addr_expr>(addr_node);
                         const auto fu_decl_node = GET_NODE(ae->op);
                         THROW_ASSERT(fu_decl_node->get_kind() == function_decl_K, "node  " + STR(fu_decl_node) + " is not function_decl but " + fu_decl_node->get_kind_text());
                         const tree_nodeRef ret_type_node = tree_helper::GetFunctionReturnType(fu_decl_node);
                         if(is_handled_by_bitvalue(ret_type_node->index))
                         {
-                           const auto* called_fd = GetPointer<const function_decl>(fu_decl_node);
+                           const auto* called_fd = GetPointerS<const function_decl>(fu_decl_node);
                            const auto new_bitvalue = called_fd->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(ga->op0))) : string_to_bitstring(called_fd->bit_values);
                            if(best[ssa_node_id].empty())
                            {
@@ -1519,13 +1516,14 @@ void Bit_Value::initialize()
          }
          else if(stmt_node->get_kind() == gimple_asm_K)
          {
-            const auto* ga = GetPointer<const gimple_asm>(stmt_node);
+            const auto* ga = GetPointerS<const gimple_asm>(stmt_node);
             if(ga->out)
             {
-               auto* lhs_ssa = GetPointer<ssa_name>(GET_NODE(ga->out));
-               if(lhs_ssa)
+               auto ga_out_node = GET_NODE(ga->out);
+               if(ga_out_node->get_kind() == ssa_name_K)
                {
-                  unsigned int ssa_node_id = lhs_ssa->index;
+                  auto* lhs_ssa = GetPointerS<ssa_name>(ga_out_node);
+                  unsigned int ssa_node_id = GET_INDEX_NODE(ga->out);
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "asm index: " + STR(GET_INDEX_NODE(stmt)));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "out index: " + STR(ssa_node_id));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "output ssa_name: " + GET_NODE(ga->out)->get_kind_text());
@@ -1630,7 +1628,7 @@ void Bit_Value::initialize()
             }
             else if(GetPointer<integer_cst>(use_node))
             {
-               auto* int_const = GetPointer<integer_cst>(use_node);
+               auto* int_const = GetPointerS<integer_cst>(use_node);
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(ssa_use_node_id) + " -> " + STR(int_const->value));
                best[ssa_use_node_id] = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(use_node), tree_helper::is_int(TM, GET_INDEX_NODE(int_const->type)));
                if(tree_helper::is_int(TM, GET_INDEX_NODE(int_const->type)))
@@ -1642,7 +1640,7 @@ void Bit_Value::initialize()
             }
             else if(GetPointer<real_cst>(use_node))
             {
-               auto* real_const = GetPointer<real_cst>(use_node);
+               auto* real_const = GetPointerS<real_cst>(use_node);
                const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
                THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
                INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(ssa_use_node_id) + " -> " + STR(real_const->valr));
@@ -1671,7 +1669,7 @@ void Bit_Value::initialize()
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi operation");
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Phi index: " + STR(GET_INDEX_NODE(phi)));
-         auto* pn = GetPointer<gimple_phi>(GET_NODE(phi));
+         auto* pn = GetPointerS<gimple_phi>(GET_NODE(phi));
          bool is_virtual = pn->virtual_flag;
          if(not is_virtual)
          {
@@ -1696,7 +1694,7 @@ void Bit_Value::initialize()
             {
                if(GET_NODE(def_edge.first)->get_kind() == integer_cst_K)
                {
-                  auto* int_const = GetPointer<integer_cst>(GET_NODE(def_edge.first));
+                  auto* int_const = GetPointerS<integer_cst>(GET_NODE(def_edge.first));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(GET_INDEX_NODE(def_edge.first)) + " -> " + STR(int_const->value));
                   best[GET_INDEX_NODE(def_edge.first)] = create_bitstring_from_constant(int_const->value, BitLatticeManipulator::Size(GET_NODE(def_edge.first)), tree_helper::is_int(TM, GET_INDEX_NODE(def_edge.first)));
                   if(tree_helper::is_int(TM, GET_INDEX_NODE(int_const->type)))
@@ -1708,7 +1706,7 @@ void Bit_Value::initialize()
                }
                else if(GET_NODE(def_edge.first)->get_kind() == real_cst_K)
                {
-                  auto* real_const = GetPointer<real_cst>(GET_NODE(def_edge.first));
+                  auto* real_const = GetPointerS<real_cst>(GET_NODE(def_edge.first));
                   const auto real_size = BitLatticeManipulator::Size(GET_CONST_NODE(real_const->type));
                   THROW_ASSERT(real_size == 64 || real_size == 32, "Unhandled real type size (" + STR(real_size) + ")");
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Use constant: " + STR(GET_INDEX_NODE(def_edge.first)) + " -> " + STR(real_const->valr));
