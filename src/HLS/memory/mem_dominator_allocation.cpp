@@ -530,7 +530,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: point-to-set not resolved");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: point-to-set not resolved " + me->ToString());
                      all_pointers_resolved = false;
                   }
                }
