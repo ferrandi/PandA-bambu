@@ -1165,7 +1165,6 @@ void Bit_Value::initialize()
                // handle lhs
                if(op0_node->get_kind() == ssa_name_K)
                {
-                  auto* lhs_ssa = GetPointerS<ssa_name>(op0_node);
                   unsigned int ssa_node_id = GET_INDEX_NODE(ga->op0);
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "assignment index: " + STR(GET_INDEX_NODE(stmt)));
                   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "LHS index: " + STR(ssa_node_id));
@@ -1174,7 +1173,7 @@ void Bit_Value::initialize()
 
                   if(not is_handled_by_bitvalue(ssa_node_id))
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "variable " + STR(lhs_ssa) + " of type " + STR(tree_helper::CGetType(GET_NODE(ga->op0))) + " not considered id: " + STR(ssa_node_id));
+                     INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "variable " + STR(GetPointerS<ssa_name>(op0_node)) + " of type " + STR(tree_helper::CGetType(GET_NODE(ga->op0))) + " not considered id: " + STR(ssa_node_id));
                   }
                   else
                   {
