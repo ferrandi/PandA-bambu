@@ -5771,7 +5771,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
                   }
                   else
                   {
-                     THROW_ERROR(std::string("Node not yet supported: ") + node_type->get_kind_text() + STR(tn->algn));
+                     THROW_ERROR(std::string("Node not yet supported: ") + node_type->get_kind_text() + " with alignment " + STR(tn->algn));
                   }
                   break;
                }

@@ -56,6 +56,7 @@
 #include "Parameter.hpp"           // for Parameter
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_VERY_PEDANTIC
 #include "exceptions.hpp"          // for THROW_ASSERT, THROW_ERROR
+#include "math_function.hpp"       // for resize_to_1_8_16_32_64_128_256
 #include "string_manipulation.hpp" // for STR GET_CLASS
 
 /// tree includes
@@ -1445,7 +1446,7 @@ tree_nodeRef tree_manipulation::create_integer_type_with_prec(unsigned int prec,
 {
    std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> IR_schema;
 
-   IR_schema[TOK(TOK_ALGN)] = STR(prec);
+   IR_schema[TOK(TOK_ALGN)] = STR(resize_to_1_8_16_32_64_128_256_512(prec));
    IR_schema[TOK(TOK_PREC)] = STR(prec);
    IR_schema[TOK(TOK_UNSIGNED)] = STR(unsigned_p);
    unsigned int integer_type_nid = TreeM->find(integer_type_K, IR_schema);
