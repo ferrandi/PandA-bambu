@@ -230,7 +230,10 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, bool dup_fu
          else
             RET_NODE_ID_CASE_BODY(function_decl, node_id)
       case function_type_K:
-         RET_NODE_ID_CASE_BODY(function_type, node_id)
+         if(deep_copy)
+            CREATE_TREE_NODE_CASE_BODY(function_type, node_id)
+         else
+            RET_NODE_ID_CASE_BODY(function_type, node_id)
       case ge_expr_K:
          CREATE_TREE_NODE_CASE_BODY(ge_expr, node_id)
       case gimple_assign_K:
@@ -288,7 +291,10 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn, bool dup_fu
       case max_expr_K:
          CREATE_TREE_NODE_CASE_BODY(max_expr, node_id)
       case method_type_K:
-         RET_NODE_ID_CASE_BODY(method_type, node_id)
+         if(deep_copy)
+            CREATE_TREE_NODE_CASE_BODY(method_type, node_id)
+         else
+            RET_NODE_ID_CASE_BODY(method_type, node_id)
       case min_expr_K:
          CREATE_TREE_NODE_CASE_BODY(min_expr, node_id)
       case minus_expr_K:
@@ -1606,7 +1612,7 @@ void tree_node_dup::operator()(const var_decl* obj, unsigned int& mask)
    SET_VALUE(used, var_decl);
    SET_VALUE(register_flag, var_decl);
    SET_VALUE(readonly_flag, var_decl);
-   if(not deep_copy)
+   if(!deep_copy)
    {
       SET_VALUE(bit_values, var_decl);
    }
