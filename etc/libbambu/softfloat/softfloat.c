@@ -41,6 +41,33 @@ these four paragraphs for those parts of this code that are retained.
 #define COND_EXPR_MACRO32(cond, a, b) ((((__bits32)((((__sbits32)(cond)) << 31) >> 31)) & (a)) | ((~((__bits32)((((__sbits32)(cond)) << 31) >> 31))) & (b)))
 #define COND_EXPR_MACRO64(cond, a, b) ((((__bits64)((((__sbits64)(cond)) << 63) >> 63)) & (a)) | ((~((__bits64)((((__sbits64)(cond)) << 63) >> 63))) & (b)))
 
+#define IEEE32_FRAC_BITS 23
+#define IEEE32_EXP_BITS 8
+#define IEEE32_EXP_BIAS -127
+#define IEEE64_FRAC_BITS 52
+#define IEEE64_EXP_BITS 11
+#define IEEE64_EXP_BIAS -1023
+#define IEEE_SIGN -1
+#define IEEE_ROUNDING 1
+#define IEEE_NAN 1
+#define IEEE_ONE 1
+#ifdef NO_SUBNORMALS
+#define IEEE_SUBNORM 0
+#else
+#define IEEE_SUBNORM 1
+#endif
+#define IEEE_SIGN -1
+
+#define IEEE32_EXTRACT_FRAC IEEE32_FRAC_BITS
+#define IEEE32_EXTRACT_EXP IEEE32_EXP_BITS, IEEE32_FRAC_BITS
+#define IEEE32_EXTRACT_SIGN IEEE32_EXP_BITS, IEEE32_FRAC_BITS, IEEE_SIGN
+#define IEEE32_SPEC_ARGS IEEE32_EXP_BITS, IEEE32_FRAC_BITS, IEEE32_EXP_BIAS, IEEE_ROUNDING, IEEE_NAN, IEEE_ONE, IEEE_SUBNORM, IEEE_SIGN
+
+#define IEEE64_EXTRACT_FRAC IEEE64_FRAC_BITS
+#define IEEE64_EXTRACT_EXP IEEE64_EXP_BITS, IEEE64_FRAC_BITS
+#define IEEE64_EXTRACT_SIGN IEEE64_EXP_BITS, IEEE64_FRAC_BITS, IEEE_SIGN
+#define IEEE64_SPEC_ARGS IEEE64_EXP_BITS, IEEE64_FRAC_BITS, IEEE64_EXP_BIAS, IEEE_ROUNDING, IEEE_NAN, IEEE_ONE, IEEE_SUBNORM, IEEE_SIGN
+
 /// specific functions for the division
 #include "div_utilities"
 /// generic macros used to control bitsize of data
@@ -201,27 +228,27 @@ static __FORCE_INLINE __int64 __roundAndPackInt64(__flag zSign, __bits64 absZ0, 
 | Returns the fraction bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __bits32 __extractFloat32Frac(__float32 a)
+static __FORCE_INLINE __bits32 __extractFloat32Frac(__float32 a, __bits8 __frac_bits)
 {
-   return a & 0x007FFFFF;
+   return a & ((1 << __frac_bits) - 1);
 }
 
 /*----------------------------------------------------------------------------
 | Returns the exponent bits of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __bits8 __extractFloat32Exp(__float32 a)
+static __FORCE_INLINE __bits32 __extractFloat32Exp(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits)
 {
-   return a >> 23;
+   return (a >> __frac_bits) & ((1 << __exp_bits) - 1);
 }
 
 /*----------------------------------------------------------------------------
 | Returns the sign bit of the single-precision floating-point value `a'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __extractFloat32Sign(__float32 a)
+static __FORCE_INLINE __flag __extractFloat32Sign(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits8 __sign)
 {
-   return a >> 31;
+   return __sign == -1 ? (a >> (__exp_bits + __frac_bits)) : __sign;
 }
 
 /*----------------------------------------------------------------------------
@@ -1060,7 +1087,7 @@ static __FORCE_INLINE __float128 __normalizeRoundAndPackFloat128(__flag zSign, _
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __int32_to_float32(__int32 a)
+__float32 __int32_to_float32_ieee(__int32 a)
 {
    __flag zSign;
 
@@ -1072,7 +1099,7 @@ __float32 __int32_to_float32(__int32 a)
    return __normalizeRoundAndPackFloat32(zSign, 0x9C, zSign ? -a : a);
 }
 
-__float32 __int8_to_float32(__int8 a)
+__float32 __int8_to_float32_ieee(__int8 a)
 {
    __flag zSign;
 
@@ -1084,7 +1111,7 @@ __float32 __int8_to_float32(__int8 a)
    return __normalizeRoundAndPackFloat32(zSign, 0x9C, zSign ? -a : a);
 }
 
-__float32 __int16_to_float32(__int16 a)
+__float32 __int16_to_float32_ieee(__int16 a)
 {
    __flag zSign;
 
@@ -1102,7 +1129,7 @@ __float32 __int16_to_float32(__int16 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __uint32_to_float32(__uint32 a)
+__float32 __uint32_to_float32_ieee(__uint32 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1132,7 +1159,7 @@ __float32 __uint32_to_float32(__uint32 a)
    }
 }
 
-__float32 __uint8_to_float32(__uint8 a)
+__float32 __uint8_to_float32_ieee(__uint8 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1162,7 +1189,7 @@ __float32 __uint8_to_float32(__uint8 a)
    }
 }
 
-__float32 __uint16_to_float32(__uint16 a)
+__float32 __uint16_to_float32_ieee(__uint16 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1198,7 +1225,7 @@ __float32 __uint16_to_float32(__uint16 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __int32_to_float64(__int32 a)
+__float64 __int32_to_float64_ieee(__int32 a)
 {
    __flag zSign;
    __uint32 absA;
@@ -1214,7 +1241,7 @@ __float64 __int32_to_float64(__int32 a)
    return __packFloat64(zSign, 0x432 - shiftCount, zSig << shiftCount);
 }
 
-__float64 __uint32_to_float64(__uint32 absA)
+__float64 __uint32_to_float64_ieee(__uint32 absA)
 {
    __int8 shiftCount;
    __bits64 zSig;
@@ -1235,7 +1262,7 @@ __float64 __uint32_to_float64(__uint32 absA)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __int32_to_floatx80(__int32 a)
+__floatx80 __int32_to_floatx80_ieee(__int32 a)
 {
    __flag zSign;
    __uint32 absA;
@@ -1261,7 +1288,7 @@ __floatx80 __int32_to_floatx80(__int32 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __int32_to_float128(__int32 a)
+__float128 __int32_to_float128_ieee(__int32 a)
 {
    __flag zSign;
    __uint32 absA;
@@ -1285,7 +1312,7 @@ __float128 __int32_to_float128(__int32 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __int64_to_float32(__int64 a)
+__float32 __int64_to_float32_ieee(__int64 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1315,7 +1342,7 @@ __float32 __int64_to_float32(__int64 a)
    }
 }
 
-__float32 __uint64_to_float32(__uint64 absA)
+__float32 __uint64_to_float32_ieee(__uint64 absA)
 {
    __int8 shiftCount;
 
@@ -1347,7 +1374,7 @@ __float32 __uint64_to_float32(__uint64 absA)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __int64_to_float64(__int64 a)
+__float64 __int64_to_float64_ieee(__int64 a)
 {
    __flag zSign;
 
@@ -1361,7 +1388,7 @@ __float64 __int64_to_float64(__int64 a)
    return __normalizeRoundAndPackFloat64(zSign, 0x43C, zSign ? -a : a);
 }
 
-__float64 __uint64_to_float64(__uint64 a)
+__float64 __uint64_to_float64_ieee(__uint64 a)
 {
    __int16 zExp;
    __bits64 zSig;
@@ -1390,7 +1417,7 @@ __float64 __uint64_to_float64(__uint64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __int64_to_floatx80(__int64 a)
+__floatx80 __int64_to_floatx80_ieee(__int64 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1414,7 +1441,7 @@ __floatx80 __int64_to_floatx80(__int64 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __int64_to_float128(__int64 a)
+__float128 __int64_to_float128_ieee(__int64 a)
 {
    __flag zSign;
    __uint64 absA;
@@ -1455,16 +1482,16 @@ __float128 __int64_to_float128(__int64 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __float32_to_int32(__float32 a)
+__int32 __float32_to_int32_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
    __bits32 aSig;
    __bits64 aSig64;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    if((aExp == 0xFF) && aSig)
       aSign = 0;
    if(aExp)
@@ -1487,16 +1514,16 @@ __int32 __float32_to_int32(__float32 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __float32_to_int32_round_to_zero(__float32 a)
+__int32 __float32_to_int32_round_to_zero_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
    __bits32 aSig;
    __int32 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    shiftCount = aExp - 0x9E;
    if(0 <= shiftCount)
    {
@@ -1529,16 +1556,16 @@ __int32 __float32_to_int32_round_to_zero(__float32 a)
    return z;
 }
 
-__uint32 __float32_to_uint32_round_to_zero(__float32 a)
+__uint32 __float32_to_uint32_round_to_zero_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
    __bits32 aSig;
    __uint32 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    shiftCount = aExp - 0x9E;
    if(0 <= shiftCount)
    {
@@ -1575,16 +1602,16 @@ __uint32 __float32_to_uint32_round_to_zero(__float32 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __float32_to_int64(__float32 a)
+__int64 __float32_to_int64_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
    __bits32 aSig;
    __bits64 aSig64, aSigExtra;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    shiftCount = 0xBE - aExp;
    if(shiftCount < 0)
    {
@@ -1613,7 +1640,7 @@ __int64 __float32_to_int64(__float32 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __float32_to_int64_round_to_zero(__float32 a)
+__int64 __float32_to_int64_round_to_zero_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -1621,9 +1648,9 @@ __int64 __float32_to_int64_round_to_zero(__float32 a)
    __bits64 aSig64;
    __int64 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    shiftCount = aExp - 0xBE;
    if(0 <= shiftCount)
    {
@@ -1659,7 +1686,7 @@ __int64 __float32_to_int64_round_to_zero(__float32 a)
    return z;
 }
 
-__uint64 __float32_to_uint64_round_to_zero(__float32 a)
+__uint64 __float32_to_uint64_round_to_zero_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -1667,9 +1694,9 @@ __uint64 __float32_to_uint64_round_to_zero(__float32 a)
    __bits64 aSig64;
    __uint64 z;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    shiftCount = aExp - 0xBE;
    if(0 <= shiftCount)
    {
@@ -1704,15 +1731,15 @@ __uint64 __float32_to_uint64_round_to_zero(__float32 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __float32_to_float64(__float32 a)
+__float64 __float32_to_float64_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp;
    __bits32 aSig;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    if(aExp == 0xFF)
    {
       if(aSig)
@@ -1742,15 +1769,15 @@ __float64 __float32_to_float64(__float32 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __float32_to_floatx80(__float32 a)
+__floatx80 __float32_to_floatx80_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp;
    __bits32 aSig;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    if(aExp == 0xFF)
    {
       if(aSig)
@@ -1782,15 +1809,15 @@ __floatx80 __float32_to_floatx80(__float32 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float32_to_float128(__float32 a)
+__float128 __float32_to_float128_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp;
    __bits32 aSig;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    if(aExp == 0xFF)
    {
       if(aSig)
@@ -1820,7 +1847,7 @@ __float128 __float32_to_float128(__float32 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __float32_round_to_int(__float32 a)
+__float32 __float32_round_to_int_ieee(__float32 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -1828,10 +1855,10 @@ __float32 __float32_round_to_int(__float32 a)
    __int8 roundingMode;
    __float32 z;
 
-   aExp = __extractFloat32Exp(a);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
    if(0x96 <= aExp)
    {
-      if((aExp == 0xFF) && __extractFloat32Frac(a))
+      if((aExp == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC))
       {
          return __propagateFloat32NaN(a, a);
       }
@@ -1844,11 +1871,11 @@ __float32 __float32_round_to_int(__float32 a)
 #ifndef NO_PARAMETRIC
       __float_exception_flags |= float_flag_inexact;
 #endif
-      aSign = __extractFloat32Sign(a);
+      aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
       switch(__float_rounding_mode)
       {
          case float_round_nearest_even:
-            if((aExp == 0x7E) && __extractFloat32Frac(a))
+            if((aExp == 0x7E) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC))
             {
                return __packFloat32(aSign, 0x7F, 0);
             }
@@ -1873,7 +1900,7 @@ __float32 __float32_round_to_int(__float32 a)
    }
    else if(roundingMode != float_round_to_zero)
    {
-      if(__extractFloat32Sign(z) ^ (roundingMode == float_round_up))
+      if(__extractFloat32Sign(z, IEEE32_EXTRACT_SIGN) ^ (roundingMode == float_round_up))
       {
          z += roundBitsMask;
       }
@@ -1900,10 +1927,10 @@ static __FORCE_INLINE __float32 __addFloat32Sigs(__float32 a, __float32 b, __fla
    __bits32 aSig, bSig, zSig;
    __int16 expDiff;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
    expDiff = aExp - bExp;
    aSig <<= 6;
    bSig <<= 6;
@@ -1985,10 +2012,10 @@ static __FORCE_INLINE __float32 __subFloat32Sigs(__float32 a, __float32 b, __fla
    __bits32 aSig, bSig, zSig;
    __int16 expDiff;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
    expDiff = aExp - bExp;
    aSig <<= 7;
    bSig <<= 7;
@@ -2104,11 +2131,11 @@ static __FORCE_INLINE __float32 __addsubFloat32_old(__float32 a, __float32 b, __
    __bits8 a_c, b_c, nZeros, lb;
    _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal, swap, sAB, aSign, roundc, roundf, eZero, close, sRn, eMax, eMin, eTest0, eTest1, SigDiffSign, sb;
    __int8 eRf1_correction;
-   aSign = __extractFloat32Sign(a);
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
    a_c_zero = aExp == 0 && aSig == 0;
    a_c_inf = aExp == 0xFF && aSig == 0;
    a_c_nan = aExp == 0xFF && aSig != 0;
@@ -2131,8 +2158,8 @@ static __FORCE_INLINE __float32 __addsubFloat32_old(__float32 a, __float32 b, __
    a = swap ? tmp_swap : a;
    aSign = swap ? bSign : aSign;
    close = ((expDiff8 >> 1) == 0) && sAB;
-   aSig = __extractFloat32Frac(a);
-   bSigOrig = __extractFloat32Frac(b);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   bSigOrig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
    fAc1 = (aSig | 0x00800000) << 1;
    fAf3 = fAc1 << 2;
    BIT_RESIZE(fAf3, 27);
@@ -2142,7 +2169,7 @@ static __FORCE_INLINE __float32 __addsubFloat32_old(__float32 a, __float32 b, __
    BIT_RESIZE(fRc0, 26);
    fRc1 = fRc0;
    BIT_RESIZE(fRc1, 25);
-   eRc1 = __extractFloat32Exp(a);
+   eRc1 = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
    BIT_RESIZE(eRc1, 9);
    // nZeros = __CLZ25(fRc1);
    // shift_0 = fRc1 << nZeros;
@@ -2225,7 +2252,7 @@ static __FORCE_INLINE __float32 __addsubFloat32_old(__float32 a, __float32 b, __
 //#define VOLATILE_DEF volatile
 #define VOLATILE_DEF
 
-static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign)
+static __FORCE_INLINE __float32 __addsubFloat32_ieee(__float32 a, __float32 b, __flag bSign)
 {
    VOLATILE_DEF __bits32 aSig, bSig, shift_0;
    VOLATILE_DEF __bits8 aExp, bExp, expDiff8;
@@ -2253,19 +2280,19 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
 
 #ifdef NO_ROUNDING
 #define FRAC32_SHIFT 0
-#define FRAC32_FULL_BW 25
 #define FRAC32_ALMOST_BW 24
+#define FRAC32_FULL_BW 25
 #else
 #define FRAC32_SHIFT 2
-#define FRAC32_FULL_BW 27
 #define FRAC32_ALMOST_BW 26
+#define FRAC32_FULL_BW 27
 #endif
 
-   aSign = __extractFloat32Sign(a);
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
    _Bool aSig_null = aSig == 0;
    _Bool bSig_null = bSig == 0;
    _Bool aExp_null = aExp == 0;
@@ -2382,21 +2409,221 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
    return (((__bits32)aSign) << 31) | (((__bits32)RExp1) << 23) | RSig3;
 }
 
+static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   VOLATILE_DEF __bits32 aSig, bSig, shift_0;
+   VOLATILE_DEF __bits32 aExp, bExp, expDiff;
+   VOLATILE_DEF __bits8 nZeros, __exp_shift, __nzeros_bits;
+   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
+   VOLATILE_DEF __bits32 abs_a, abs_b;
+   VOLATILE_DEF __bits32 fA, fB, fB_shifted;
+   VOLATILE_DEF __bits64 fB_shift;
+   VOLATILE_DEF _Bool sb, LSB_bit, Guard_bit, Round_bit, Sticky_bit, round;
+   VOLATILE_DEF __bits32 fB_shifted_low, fBleft_shifted;
+   VOLATILE_DEF _Bool ge_frac_bits;
+   VOLATILE_DEF _Bool tmp_sign;
+   VOLATILE_DEF __bits32 tmp_exp;
+   VOLATILE_DEF __bits32 tmp_sig;
+   VOLATILE_DEF _Bool subnormal_exp_correction;
+   VOLATILE_DEF __bits32 fB_shifted1;
+   VOLATILE_DEF __bits32 fR0;
+   VOLATILE_DEF _Bool R_c_zero;
+   VOLATILE_DEF __bits8 RExp0, RExp1;
+   VOLATILE_DEF __bits32 RSig0, RSig1, RSig2, RSig3;
+   VOLATILE_DEF __bits32 RExp0RSig1, Rrounded;
+   VOLATILE_DEF _Bool overflow_to_infinite, saturation;
+   VOLATILE_DEF _Bool aExpMax, bExpMax;
+   VOLATILE_DEF __bits8 __frac_shift, __frac_full, __frac_almost;
+
+   __frac_shift = __rounding ? 2 : 0;
+   __frac_almost = __frac_bits + __frac_shift + 1;
+   __frac_full = __frac_almost + 1;
+
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   aSig = __extractFloat32Frac(a, __frac_bits);
+   aExp = __extractFloat32Exp(a, __exp_bits, __frac_bits);
+   bSig = __extractFloat32Frac(b, __frac_bits);
+   bExp = __extractFloat32Exp(b, __exp_bits, __frac_bits);
+   _Bool aSig_null = aSig == 0;
+   _Bool bSig_null = bSig == 0;
+   _Bool aExp_null = aExp == 0;
+   _Bool bExp_null = bExp == 0;
+   aExpMax = aExp == ((1 << __exp_bits) - 1);
+   a_c_nan = aExpMax && !aSig_null;
+   a_c_nan = __nan ? a_c_nan : 0;
+   a_c_normal = !aExp_null /*&& !aExp255*/; /// not really needed the second condition
+   a_c_normal = __one ? a_c_normal : 0;
+   bExpMax = bExp == ((1 << __exp_bits) - 1);
+   b_c_nan = bExpMax && !bSig_null;
+   b_c_nan = __nan ? b_c_nan : 0;
+   b_c_normal = !bExp_null /*&& !bExp255*/; /// not really needed the second condition
+   b_c_normal = __one ? b_c_normal : 0;
+   sAB = (aSign ^ bSign);
+
+   abs_a = a & ((1 << (__exp_bits + __frac_bits)) - 1);
+   abs_b = b & ((1 << (__exp_bits + __frac_bits)) - 1);
+
+   swap = (a_c_nan == b_c_nan && abs_a < abs_b) || a_c_nan < b_c_nan;
+
+   subnormal_exp_correction = (aExp_null && !aSig_null) ^ (bExp_null && !bSig_null);
+
+   tmp_exp = bExp;
+   bExp = swap ? aExp : bExp;
+   aExp = swap ? tmp_exp : aExp;
+
+   if(__subnorm)
+   {
+      expDiff = aExp - bExp - subnormal_exp_correction;
+   }
+   else
+   {
+      expDiff = aExp - bExp;
+   }
+   expDiff = expDiff & ((1 << __exp_bits) - 1);
+
+   tmp_sig = bSig;
+   bSig = swap ? aSig : bSig;
+   aSig = swap ? tmp_sig : aSig;
+
+   tmp_sign = bSign;
+   // bSign = swap ? aSign : bSign;
+   aSign = swap ? tmp_sign : aSign;
+
+   tmp_c_normal = b_c_normal;
+   b_c_normal = swap ? a_c_normal : b_c_normal;
+   a_c_normal = swap ? tmp_c_normal : a_c_normal;
+
+   fA = (aSig | (((__bits32)(a_c_normal)) << __frac_bits)) << __frac_shift;
+   fB = (bSig | (((__bits32)(b_c_normal)) << __frac_bits)) << __frac_shift;
+
+   __exp_shift = (__frac_bits > 1 ? (__frac_bits > 2 ? (__frac_bits > 4 ? (__frac_bits > 8 ? (__frac_bits > 16 ? 5 : 4) : 3) : 2) : 1) : 0);
+   ge_frac_bits = (expDiff & ((0xFFFFFFFF << __exp_shift) & ((1 << __exp_bits) - 1))) != 0;
+   if(__rounding)
+   {
+      fB_shift = ((__bits64)fB) << 32;
+      fB_shift = fB_shift >> ((expDiff | (__bits32)(((((__sbits32)ge_frac_bits) << 31) >> 31))) & ((1 << __exp_shift) - 1));
+      fB_shifted = fB_shift >> 32;
+      fBleft_shifted = fB_shift;
+
+      fB_shifted_low = fBleft_shifted;
+   }
+   else
+   {
+      fB_shifted = fB >> ((expDiff | (__bits32)(((((__sbits32)ge_frac_bits) << 31) >> 31))) & ((1 << __exp_shift) - 1));
+   }
+   fB_shifted = fB_shifted & ((1 << __frac_almost) - 1);
+
+   fB_shifted1 = ((__bits32)((((__sbits32)sAB) << 31) >> 31)) ^ fB_shifted;
+   fB_shifted1 = fB_shifted1 & ((1 << __frac_full) - 1);
+
+   sb = fB_shifted_low != 0;
+   sb = __rounding ? sb : 0;
+   fR0 = fA + fB_shifted1 + (sAB && (!sb));
+
+   fR0 = fR0 & ((1 << __frac_full) - 1);
+   count_leading_zero_runtime_macro_lshift(__frac_full, fR0, nZeros, shift_0);
+
+   __nzeros_bits = RUNTIME_CEIL_LOG2(__frac_full);
+   R_c_zero = nZeros == ((~0ULL) & ((1 << __nzeros_bits) - 1));
+   overflow_to_infinite = aExp == ((1 << __exp_bits) - (__nan ? 2 : 1)) && (fR0 >> __frac_almost) & 1;
+
+   if(__subnorm)
+   {
+      RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
+      RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
+   }
+   else
+   {
+      R_c_zero = R_c_zero || aExp < nZeros;
+      RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
+      RSig0 = shift_0;
+   }
+
+   if(__rounding)
+   {
+      LSB_bit = SELECT_BIT(RSig0, 3);
+      Guard_bit = SELECT_BIT(RSig0, 2);
+      Round_bit = SELECT_BIT(RSig0, 1);
+      Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
+      round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
+   }
+
+   RSig1 = (RSig0 >> (__frac_shift + 1)) & ((1 << __frac_bits) - 1);
+
+   RExp0RSig1 = (((__bits32)RExp0) << __frac_bits) | RSig1;
+
+   if(__rounding)
+   {
+      Rrounded = RExp0RSig1 + round;
+   }
+   else
+   {
+      Rrounded = RExp0RSig1;
+   }
+
+   if(__nan)
+   {
+      RExp1 = aExpMax || bExpMax ? ((1 << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1 << __exp_bits) - 1));
+      RSig2 = R_c_zero || aExpMax || bExpMax || overflow_to_infinite ? 0 : (Rrounded & ((1 << __frac_bits) - 1));
+   }
+   else
+   {
+      saturation = (Rrounded >> (__exp_bits + __frac_bits)) & 1;
+      RExp1 = saturation ? ((1 << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1 << __exp_bits) - 1));
+      RSig2 = (saturation ? (__bits32)((((__sbits32)!R_c_zero) << 31) >> 31) : Rrounded) & ((1 << __frac_bits) - 1);
+   }
+   aSign = aSign && (!R_c_zero || !sAB);
+
+   if(__nan)
+   {
+#ifdef NO_SIGNALLING
+      RSig3 = (((__bits32)(a_c_nan || b_c_nan || (sAB && aExpMax && bExpMax))) << (__frac_bits - 1)) | RSig2;
+#else
+      RSig3 = a_c_nan || b_c_nan || (sAB && aExpMax && bExpMax) ? (1 << (__frac_bits - 1)) | (aSig & ((1 << (__frac_bits - 1)) - 1)) : RSig2;
+#endif
+   }
+   else
+   {
+      RSig3 = RSig2;
+   }
+   return (((__bits32)aSign) << (__exp_bits + __frac_bits)) | (((__bits32)RExp1) << __frac_bits) | RSig3;
+}
+
 /*----------------------------------------------------------------------------
 | Returns the result of adding the single-precision floating-point values `a'
 | and `b'.  The operation is performed according to the IEC/IEEE Standard for
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __float32_add(__float32 a, __float32 b)
+__float32 __float32_add(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
 #ifndef DEFAULT
-   __flag bSign = __extractFloat32Sign(b);
-   return __addsubFloat32(a, b, bSign);
+   __flag bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
+   return __addsubFloat32(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 #else
    __flag aSign, bSign;
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, __exp_bits, __frac_bits, __sign);
+   bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
+   if(aSign == bSign)
+   {
+      return __addFloat32Sigs(a, b);
+   }
+   else
+   {
+      return __subFloat32Sigs(a, b);
+   }
+#endif
+}
+
+__float32 __float32_add_ieee(__float32 a, __float32 b)
+{
+#ifndef DEFAULT
+   __flag bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
+   return __addsubFloat32_ieee(a, b, bSign);
+#else
+   __flag aSign, bSign;
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign == bSign)
    {
       return __addFloat32Sigs(a, b, aSign);
@@ -2414,15 +2641,35 @@ __float32 __float32_add(__float32 a, __float32 b)
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __float32_sub(__float32 a, __float32 b)
+__float32 __float32_sub(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
 #ifndef DEFAULT
-   __flag bSign = __extractFloat32Sign(b) ^ 1;
-   return __addsubFloat32(a, b, bSign);
+   __flag bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign) ^ 1;
+   return __addsubFloat32(a, b, bSign, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 #else
    __flag aSign, bSign;
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
+   if(aSign == bSign)
+   {
+      return __subFloat32Sigs(a, b, aSign);
+   }
+   else
+   {
+      return __addFloat32Sigs(a, b, aSign);
+   }
+#endif
+}
+
+__float32 __float32_sub_ieee(__float32 a, __float32 b)
+{
+#ifndef DEFAULT
+   __flag bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN) ^ 1;
+   return __addsubFloat32(a, b, bSign, IEEE32_SPEC_ARGS);
+#else
+   __flag aSign, bSign;
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign == bSign)
    {
       return __subFloat32Sigs(a, b, aSign);
@@ -2442,7 +2689,7 @@ __float32 __float32_sub(__float32 a, __float32 b)
 typedef unsigned int SF_USItype __attribute__((mode(SI)));
 typedef unsigned int SF_UDItype __attribute__((mode(DI)));
 
-__float32 __float32_mul(__float32 a, __float32 b)
+__float32 __float32_mul_ieee(__float32 a, __float32 b)
 {
    VOLATILE_DEF __flag aSign, bSign, zSign;
    VOLATILE_DEF __int16 aExp, bExp, zExp;
@@ -2451,12 +2698,12 @@ __float32 __float32_mul(__float32 a, __float32 b)
    VOLATILE_DEF __bits32 zSig;
    VOLATILE_DEF __bits32 zSigminus1;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    zSign = aSign ^ bSign;
 
 #ifndef DEFAULT
@@ -2588,7 +2835,7 @@ __float32 __float32_mul(__float32 a, __float32 b)
 #endif
 }
 
-__float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
+__float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC)
 {
    _Bool signA;
    __int16 expA;
@@ -2612,15 +2859,15 @@ __float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
 
    /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-   signA = __extractFloat32Sign(uiA);
-   expA = __extractFloat32Exp(uiA);
-   sigA = __extractFloat32Frac(uiA);
-   signB = __extractFloat32Sign(uiB);
-   expB = __extractFloat32Exp(uiB);
-   sigB = __extractFloat32Frac(uiB);
-   signC = __extractFloat32Sign(uiC);
-   expC = __extractFloat32Exp(uiC);
-   sigC = __extractFloat32Frac(uiC);
+   signA = __extractFloat32Sign(uiA, IEEE32_EXTRACT_SIGN);
+   expA = __extractFloat32Exp(uiA, IEEE32_EXTRACT_EXP);
+   sigA = __extractFloat32Frac(uiA, IEEE32_EXTRACT_FRAC);
+   signB = __extractFloat32Sign(uiB, IEEE32_EXTRACT_SIGN);
+   expB = __extractFloat32Exp(uiB, IEEE32_EXTRACT_EXP);
+   sigB = __extractFloat32Frac(uiB, IEEE32_EXTRACT_FRAC);
+   signC = __extractFloat32Sign(uiC, IEEE32_EXTRACT_SIGN);
+   expC = __extractFloat32Exp(uiC, IEEE32_EXTRACT_EXP);
+   sigC = __extractFloat32Frac(uiC, IEEE32_EXTRACT_FRAC);
    signProd = signA ^ signB;
    /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
@@ -2854,7 +3101,7 @@ uiZ:
    BIT_RESIZE(current, 25);                            \
    current <<= 1;
 
-__float32 __float32_divSRT4(__float32 a, __float32 b)
+__float32 __float32_divSRT4_ieee(__float32 a, __float32 b)
 {
    // static const __bits8 tableR4[]= {0, 0, 1, 1, 2, 1, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7};
    VOLATILE_DEF _Bool aSign, bSign, zSign, q_i2, q_i1, q_i0, nq_i2;
@@ -2868,12 +3115,12 @@ __float32 __float32_divSRT4(__float32 a, __float32 b)
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
 #endif
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    zSign = aSign ^ bSign;
    _Bool aExp_null = aExp == 0;
    _Bool bExp_null = bExp == 0;
@@ -3016,19 +3263,19 @@ __float32 __float32_divSRT4(__float32 a, __float32 b)
    else
       return __packFloat32(zSign, 0xFF, 0);
 }
-__float32 __float32_divG(__float32 a, __float32 b)
+__float32 __float32_divG_ieee(__float32 a, __float32 b)
 {
    __flag aSign, bSign, zSign;
    __int16 aExp, bExp, zExp;
    __bits32 aSig, bSig, aSigInitial, bSigInitial, zSig;
    __bits32 c5, c4, c3, c2, c1, c0, shft, p1, bSigsqr1, bSigsqr2, p2, p3, p, ga0, gb0, ga1, gb1, rem0, rem, rnd;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    zSign = aSign ^ bSign;
 #ifndef DEFAULT
    __bits8 a_c, b_c, z_c;
@@ -3204,7 +3451,7 @@ __float32 __float32_divG(__float32 a, __float32 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __float32_rem(__float32 a, __float32 b)
+__float32 __float32_rem_ieee(__float32 a, __float32 b)
 {
    __flag aSign, bSign, zSign;
    __int16 aExp, bExp, expDiff;
@@ -3214,12 +3461,12 @@ __float32 __float32_rem(__float32 a, __float32 b)
    __bits32 alternateASig;
    __sbits32 sigMean;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
-   bSig = __extractFloat32Frac(b);
-   bExp = __extractFloat32Exp(b);
-   bSign = __extractFloat32Sign(b);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
+   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aExp == 0xFF)
    {
       if(aSig || ((bExp == 0xFF) && bSig))
@@ -3338,9 +3585,9 @@ __float32 __float32_sqrt(__float32 a)
    __bits32 aSig, zSig;
    __bits64 rem, term;
 
-   aSig = __extractFloat32Frac(a);
-   aExp = __extractFloat32Exp(a);
-   aSign = __extractFloat32Sign(a);
+   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
+   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
    if(aExp == 0xFF)
    {
       if(aSig)
@@ -3400,7 +3647,7 @@ roundAndPack:
 
 static __FORCE_INLINE __flag _Float32EQ(__float32 a, __float32 b)
 {
-   if(((__extractFloat32Exp(a) == ((__bits8)0xFF)) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == ((__bits8)0xFF)) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == ((__bits8)0xFF)) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == ((__bits8)0xFF)) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
       if(__float32_is_signaling_nan(a) || __float32_is_signaling_nan(b))
       {
@@ -3411,12 +3658,12 @@ static __FORCE_INLINE __flag _Float32EQ(__float32 a, __float32 b)
    return (a == b) || ((__bits32)((a | b) << 1) == 0);
 }
 
-__flag __float32_eq(__float32 a, __float32 b)
+__flag __float32_eq_ieee(__float32 a, __float32 b)
 {
    return _Float32EQ(a, b);
 }
 
-__flag __float32_ltgt_quiet(__float32 a, __float32 b)
+__flag __float32_ltgt_quiet_ieee(__float32 a, __float32 b)
 {
    return !_Float32EQ(a, b);
 }
@@ -3432,24 +3679,24 @@ static __FORCE_INLINE __flag _Float32LE(__float32 a, __float32 b)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
       __float_raise(float_flag_invalid);
       return 0;
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign || ((__bits32)((a | b) << 1) == 0);
    return (a == b) || (aSign ^ (a < b));
 }
 
-__flag __float32_le(__float32 a, __float32 b)
+__flag __float32_le_ieee(__float32 a, __float32 b)
 {
    return _Float32LE(a, b);
 }
 
-__flag __float32_ge(__float32 a, __float32 b)
+__flag __float32_ge_ieee(__float32 a, __float32 b)
 {
    return _Float32LE(b, a);
 }
@@ -3464,24 +3711,24 @@ static __FORCE_INLINE __flag _Float32LT(__float32 a, __float32 b)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
       __float_raise(float_flag_invalid);
       return 0;
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign && ((__bits32)((a | b) << 1) != 0);
    return (a != b) && (aSign ^ (a < b));
 }
 
-__flag __float32_lt(__float32 a, __float32 b)
+__flag __float32_lt_ieee(__float32 a, __float32 b)
 {
    return _Float32LT(a, b);
 }
 
-__flag __float32_gt(__float32 a, __float32 b)
+__flag __float32_gt_ieee(__float32 a, __float32 b)
 {
    return _Float32LT(b, a);
 }
@@ -3493,9 +3740,9 @@ __flag __float32_gt(__float32 a, __float32 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float32_eq_signaling(__float32 a, __float32 b)
+__flag __float32_eq_signaling_ieee(__float32 a, __float32 b)
 {
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
       __float_raise(float_flag_invalid);
       return 0;
@@ -3510,12 +3757,12 @@ __flag __float32_eq_signaling(__float32 a, __float32 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float32_le_quiet(__float32 a, __float32 b)
+__flag __float32_le_quiet_ieee(__float32 a, __float32 b)
 {
    __flag aSign, bSign;
    __int16 aExp, bExp;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
       if(__float32_is_signaling_nan(a) || __float32_is_signaling_nan(b))
       {
@@ -3523,8 +3770,8 @@ __flag __float32_le_quiet(__float32 a, __float32 b)
       }
       return 0;
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign || ((__bits32)((a | b) << 1) == 0);
    return (a == b) || (aSign ^ (a < b));
@@ -3537,11 +3784,11 @@ __flag __float32_le_quiet(__float32 a, __float32 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float32_lt_quiet(__float32 a, __float32 b)
+__flag __float32_lt_quiet_ieee(__float32 a, __float32 b)
 {
    __flag aSign, bSign;
 
-   if(((__extractFloat32Exp(a) == 0xFF) && __extractFloat32Frac(a)) || ((__extractFloat32Exp(b) == 0xFF) && __extractFloat32Frac(b)))
+   if(((__extractFloat32Exp(a, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC)) || ((__extractFloat32Exp(b, IEEE32_EXTRACT_EXP) == 0xFF) && __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC)))
    {
       if(__float32_is_signaling_nan(a) || __float32_is_signaling_nan(b))
       {
@@ -3549,8 +3796,8 @@ __flag __float32_lt_quiet(__float32 a, __float32 b)
       }
       return 0;
    }
-   aSign = __extractFloat32Sign(a);
-   bSign = __extractFloat32Sign(b);
+   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
+   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
    if(aSign != bSign)
       return aSign && ((__bits32)((a | b) << 1) != 0);
    return (a != b) && (aSign ^ (a < b));
@@ -3566,7 +3813,7 @@ __flag __float32_lt_quiet(__float32 a, __float32 b)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __float64_to_int32(__float64 a)
+__int32 __float64_to_int32_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -3595,7 +3842,7 @@ __int32 __float64_to_int32(__float64 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __float64_to_int32_round_to_zero(__float64 a)
+__int32 __float64_to_int32_round_to_zero_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -3641,7 +3888,7 @@ __int32 __float64_to_int32_round_to_zero(__float64 a)
    return z;
 }
 
-__uint32 __float64_to_uint32_round_to_zero(__float64 a)
+__uint32 __float64_to_uint32_round_to_zero_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -3692,7 +3939,7 @@ __uint32 __float64_to_uint32_round_to_zero(__float64 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __float64_to_int64(__float64 a)
+__int64 __float64_to_int64_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -3735,7 +3982,7 @@ __int64 __float64_to_int64(__float64 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __float64_to_int64_round_to_zero(__float64 a)
+__int64 __float64_to_int64_round_to_zero_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -3787,7 +4034,7 @@ __int64 __float64_to_int64_round_to_zero(__float64 a)
    return z;
 }
 
-__uint64 __float64_to_uint64_round_to_zero(__float64 a)
+__uint64 __float64_to_uint64_round_to_zero_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp, shiftCount;
@@ -3837,7 +4084,7 @@ __uint64 __float64_to_uint64_round_to_zero(__float64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __float64_to_float32(__float64 a)
+__float32 __float64_to_float32_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -3872,7 +4119,7 @@ __float32 __float64_to_float32(__float64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __float64_to_floatx80(__float64 a)
+__floatx80 __float64_to_floatx80_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -3907,7 +4154,7 @@ __floatx80 __float64_to_floatx80(__float64 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float64_to_float128(__float64 a)
+__float128 __float64_to_float128_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -3942,7 +4189,7 @@ __float128 __float64_to_float128(__float64 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __float64_round_to_int(__float64 a)
+__float64 __float64_round_to_int_ieee(__float64 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -4495,7 +4742,7 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __float64_add(__float64 a, __float64 b)
+__float64 __float64_add_ieee(__float64 a, __float64 b)
 {
 #ifndef DEFAULT
    __flag bSign = __extractFloat64Sign(b);
@@ -4522,7 +4769,7 @@ __float64 __float64_add(__float64 a, __float64 b)
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __float64_sub(__float64 a, __float64 b)
+__float64 __float64_sub_ieee(__float64 a, __float64 b)
 {
 #ifndef DEFAULT
    __flag bSign = __extractFloat64Sign(b) ^ 1;
@@ -4568,7 +4815,7 @@ static __FORCE_INLINE SF_UDItype _umul64(SF_UDItype u, SF_UDItype v)
    return (((SF_UDItype)tlast) << 32) | ((SF_UDItype)w0);
 }
 
-__float64 __float64_mul(__float64 a, __float64 b)
+__float64 __float64_mul_ieee(__float64 a, __float64 b)
 {
    __flag aSign, bSign, zSign;
    __int16 aExp, bExp, zExp;
@@ -4811,7 +5058,7 @@ __float64 __float64_mul(__float64 a, __float64 b)
    BIT_RESIZE(current, 54);                            \
    current <<= 1;
 
-__float64 __float64_divSRT4(__float64 a, __float64 b)
+__float64 __float64_divSRT4_ieee(__float64 a, __float64 b)
 {
    VOLATILE_DEF _Bool aSign, bSign, zSign, q_i2, q_i1, q_i0, nq_i2;
    VOLATILE_DEF _Bool MsbB = SELECT_BIT(b, 51), correction;
@@ -4938,7 +5185,7 @@ __float64 __float64_divSRT4(__float64 a, __float64 b)
       return __packFloat64(zSign, 0x7FF, 0);
 }
 
-__float64 __float64_divG(__float64 a, __float64 b)
+__float64 __float64_divG_ieee(__float64 a, __float64 b)
 {
    __flag aSign, bSign, zSign;
    __int16 aExp, bExp, zExp;
@@ -5094,7 +5341,7 @@ __float64 __float64_divG(__float64 a, __float64 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __float64_rem(__float64 a, __float64 b)
+__float64 __float64_rem_ieee(__float64 a, __float64 b)
 {
    __flag aSign, bSign, zSign;
    __int16 aExp, bExp, expDiff;
@@ -5268,12 +5515,12 @@ static __FORCE_INLINE __flag _Float64EQ(__float64 a, __float64 b)
    return (a == b) || ((__bits64)((a | b) << 1) == 0);
 }
 
-__flag __float64_eq(__float64 a, __float64 b)
+__flag __float64_eq_ieee(__float64 a, __float64 b)
 {
    return _Float64EQ(a, b);
 }
 
-__flag __float64_ltgt_quiet(__float64 a, __float64 b)
+__flag __float64_ltgt_quiet_ieee(__float64 a, __float64 b)
 {
    return !_Float64EQ(a, b);
 }
@@ -5301,12 +5548,12 @@ static __FORCE_INLINE __flag _Float64LE(__float64 a, __float64 b)
    return (a == b) || (aSign ^ (a < b));
 }
 
-__flag __float64_le(__float64 a, __float64 b)
+__flag __float64_le_ieee(__float64 a, __float64 b)
 {
    return _Float64LE(a, b);
 }
 
-__flag __float64_ge(__float64 a, __float64 b)
+__flag __float64_ge_ieee(__float64 a, __float64 b)
 {
    return _Float64LE(b, a);
 }
@@ -5333,12 +5580,12 @@ static __FORCE_INLINE __flag _Float64LT(__float64 a, __float64 b)
    return (a != b) && (aSign ^ (a < b));
 }
 
-__flag __float64_lt(__float64 a, __float64 b)
+__flag __float64_lt_ieee(__float64 a, __float64 b)
 {
    return _Float64LT(a, b);
 }
 
-__flag __float64_gt(__float64 a, __float64 b)
+__flag __float64_gt_ieee(__float64 a, __float64 b)
 {
    return _Float64LT(b, a);
 }
@@ -5350,7 +5597,7 @@ __flag __float64_gt(__float64 a, __float64 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float64_eq_signaling(__float64 a, __float64 b)
+__flag __float64_eq_signaling_ieee(__float64 a, __float64 b)
 {
    if(((__extractFloat64Exp(a) == 0x7FF) && __extractFloat64Frac(a)) || ((__extractFloat64Exp(b) == 0x7FF) && __extractFloat64Frac(b)))
    {
@@ -5367,7 +5614,7 @@ __flag __float64_eq_signaling(__float64 a, __float64 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float64_le_quiet(__float64 a, __float64 b)
+__flag __float64_le_quiet_ieee(__float64 a, __float64 b)
 {
    __flag aSign, bSign;
    __int16 aExp, bExp;
@@ -5394,7 +5641,7 @@ __flag __float64_le_quiet(__float64 a, __float64 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float64_lt_quiet(__float64 a, __float64 b)
+__flag __float64_lt_quiet_ieee(__float64 a, __float64 b)
 {
    __flag aSign, bSign;
 
@@ -5425,7 +5672,7 @@ __flag __float64_lt_quiet(__float64 a, __float64 b)
 | overflows, the largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __floatx80_to_int32(__floatx80 a)
+__int32 __floatx80_to_int32_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5453,7 +5700,7 @@ __int32 __floatx80_to_int32(__floatx80 a)
 | sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __floatx80_to_int32_round_to_zero(__floatx80 a)
+__int32 __floatx80_to_int32_round_to_zero_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5504,7 +5751,7 @@ __int32 __floatx80_to_int32_round_to_zero(__floatx80 a)
 | overflows, the largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __floatx80_to_int64(__floatx80 a)
+__int64 __floatx80_to_int64_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5544,7 +5791,7 @@ __int64 __floatx80_to_int64(__floatx80 a)
 | sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __floatx80_to_int64_round_to_zero(__floatx80 a)
+__int64 __floatx80_to_int64_round_to_zero_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -5591,7 +5838,7 @@ __int64 __floatx80_to_int64_round_to_zero(__floatx80 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __floatx80_to_float32(__floatx80 a)
+__float32 __floatx80_to_float32_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -5621,7 +5868,7 @@ __float32 __floatx80_to_float32(__floatx80 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __floatx80_to_float64(__floatx80 a)
+__float64 __floatx80_to_float64_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -5653,7 +5900,7 @@ __float64 __floatx80_to_float64(__floatx80 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __floatx80_to_float128(__floatx80 a)
+__float128 __floatx80_to_float128_ieee(__floatx80 a)
 {
    __flag aSign;
    __int16 aExp;
@@ -5679,7 +5926,7 @@ __float128 __floatx80_to_float128(__floatx80 a)
 | Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __floatx80_round_to_int(__floatx80 a)
+__floatx80 __floatx80_round_to_int_ieee(__floatx80 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -5908,7 +6155,7 @@ normalizeRoundAndPack:
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 floatx80_add(__floatx80 a, __floatx80 b)
+__floatx80 floatx80_add_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -5930,7 +6177,7 @@ __floatx80 floatx80_add(__floatx80 a, __floatx80 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __floatx80_sub(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_sub_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -5952,7 +6199,7 @@ __floatx80 __floatx80_sub(__floatx80 a, __floatx80 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __floatx80_mul(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_mul_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -6018,7 +6265,7 @@ __floatx80 __floatx80_mul(__floatx80 a, __floatx80 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __floatx80_div(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_div_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -6110,7 +6357,7 @@ __floatx80 __floatx80_div(__floatx80 a, __floatx80 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __floatx80_rem(__floatx80 a, __floatx80 b)
+__floatx80 __floatx80_rem_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, expDiff;
@@ -6295,7 +6542,7 @@ __floatx80 __floatx80_sqrt(__floatx80 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __floatx80_eq(__floatx80 a, __floatx80 b)
+__flag __floatx80_eq_ieee(__floatx80 a, __floatx80 b)
 {
    if(((__extractFloatx80Exp(a) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(a) << 1)) || ((__extractFloatx80Exp(b) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(b) << 1)))
    {
@@ -6333,12 +6580,12 @@ static __FORCE_INLINE __flag _Floatx80LE(__floatx80 a, __floatx80 b)
    return aSign ? __le128(b.high, b.low, a.high, a.low) : __le128(a.high, a.low, b.high, b.low);
 }
 
-__flag __floatx80_le(__floatx80 a, __floatx80 b)
+__flag __floatx80_le_ieee(__floatx80 a, __floatx80 b)
 {
    return _Floatx80LE(a, b);
 }
 
-__flag __floatx80_ge(__floatx80 a, __floatx80 b)
+__flag __floatx80_ge_ieee(__floatx80 a, __floatx80 b)
 {
    return _Floatx80LE(b, a);
 }
@@ -6368,12 +6615,12 @@ static __FORCE_INLINE __flag __Floatx80LT(__floatx80 a, __floatx80 b)
    return aSign ? __lt128(b.high, b.low, a.high, a.low) : __lt128(a.high, a.low, b.high, b.low);
 }
 
-__flag __floatx80_lt(__floatx80, __floatx80)
+__flag __floatx80_lt_ieee(__floatx80, __floatx80)
 {
    return __Floatx80LT(a, b);
 }
 
-__flag __floatx80_gt(__floatx80 a, __floatx80 b)
+__flag __floatx80_gt_ieee(__floatx80 a, __floatx80 b)
 {
    return __Floatx80LT(b, a);
 }
@@ -6385,7 +6632,7 @@ __flag __floatx80_gt(__floatx80 a, __floatx80 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __floatx80_eq_signaling(__floatx80 a, __floatx80 b)
+__flag __floatx80_eq_signaling_ieee(__floatx80 a, __floatx80 b)
 {
    if(((__extractFloatx80Exp(a) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(a) << 1)) || ((__extractFloatx80Exp(b) == 0x7FFF) && (__bits64)(__extractFloatx80Frac(b) << 1)))
    {
@@ -6402,7 +6649,7 @@ __flag __floatx80_eq_signaling(__floatx80 a, __floatx80 b)
 | to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __floatx80_le_quiet(__floatx80 a, __floatx80 b)
+__flag __floatx80_le_quiet_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -6430,7 +6677,7 @@ __flag __floatx80_le_quiet(__floatx80 a, __floatx80 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __floatx80_lt_quiet(__floatx80 a, __floatx80 b)
+__flag __floatx80_lt_quiet_ieee(__floatx80 a, __floatx80 b)
 {
    __flag aSign, bSign;
 
@@ -6465,7 +6712,7 @@ __flag __floatx80_lt_quiet(__floatx80 a, __floatx80 b)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __float128_to_int32(__float128 a)
+__int32 __float128_to_int32_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6496,7 +6743,7 @@ __int32 __float128_to_int32(__float128 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-__int32 __float128_to_int32_round_to_zero(__float128 a)
+__int32 __float128_to_int32_round_to_zero_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6550,7 +6797,7 @@ __int32 __float128_to_int32_round_to_zero(__float128 a)
 | largest integer with the same sign as `a' is returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __float128_to_int64(__float128 a)
+__int64 __float128_to_int64_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6593,7 +6840,7 @@ __int64 __float128_to_int64(__float128 a)
 | returned.
 *----------------------------------------------------------------------------*/
 
-__int64 __float128_to_int64_round_to_zero(__float128 a)
+__int64 __float128_to_int64_round_to_zero_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp, shiftCount;
@@ -6661,7 +6908,7 @@ __int64 __float128_to_int64_round_to_zero(__float128 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __float128_to_float32(__float128 a)
+__float32 __float128_to_float32_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -6698,7 +6945,7 @@ __float32 __float128_to_float32(__float128 a)
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __float128_to_float64(__float128 a)
+__float64 __float128_to_float64_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -6735,7 +6982,7 @@ __float64 __float128_to_float64(__float128 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__floatx80 __float128_to_floatx80(__float128 a)
+__floatx80 __float128_to_floatx80_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -6776,7 +7023,7 @@ __floatx80 __float128_to_floatx80(__float128 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float128_round_to_int(__float128 a)
+__float128 __float128_round_to_int_ieee(__float128 a)
 {
    __flag aSign;
    __int32 aExp;
@@ -7076,7 +7323,7 @@ normalizeRoundAndPack:
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float128_add(__float128 a, __float128 b)
+__float128 __float128_add_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -7098,7 +7345,7 @@ __float128 __float128_add(__float128 a, __float128 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float128_sub(__float128 a, __float128 b)
+__float128 __float128_sub_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -7120,7 +7367,7 @@ __float128 __float128_sub(__float128 a, __float128 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float128_mul(__float128 a, __float128 b)
+__float128 __float128_mul_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -7192,7 +7439,7 @@ __float128 __float128_mul(__float128 a, __float128 b)
 | the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float128_div(__float128 a, __float128 b)
+__float128 __float128_div_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, zExp;
@@ -7288,7 +7535,7 @@ __float128 __float128_div(__float128 a, __float128 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float128 __float128_rem(__float128 a, __float128 b)
+__float128 __float128_rem_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign, zSign;
    __int32 aExp, bExp, expDiff;
@@ -7483,7 +7730,7 @@ __float128 __float128_sqrt(__float128 a)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float128_eq(__float128 a, __float128 b)
+__flag __float128_eq_ieee(__float128 a, __float128 b)
 {
    if(((__extractFloat128Exp(a) == 0x7FFF) && (__extractFloat128Frac0(a) | __extractFloat128Frac1(a))) || ((__extractFloat128Exp(b) == 0x7FFF) && (__extractFloat128Frac0(b) | __extractFloat128Frac1(b))))
    {
@@ -7521,12 +7768,12 @@ static __FORCE_INLINE __flag _Float128LE(__float128 a, __float128 b)
    return aSign ? __le128(b.high, b.low, a.high, a.low) : __le128(a.high, a.low, b.high, b.low);
 }
 
-__flag __float128_le(__float128, __float128)
+__flag __float128_le_ieee(__float128, __float128)
 {
    return _Float128LE(a, b);
 }
 
-__flag __float128_ge(__float128 a, __float128 b)
+__flag __float128_ge_ieee(__float128 a, __float128 b)
 {
    return _Float128LE(b, a);
 }
@@ -7555,12 +7802,12 @@ static __FORCE_INLINE __flag _Float128LT(__float128 a, __float128 b)
    return aSign ? __lt128(b.high, b.low, a.high, a.low) : __lt128(a.high, a.low, b.high, b.low);
 }
 
-__flag __float128_lt(__float128 a, __float128 b)
+__flag __float128_lt_ieee(__float128 a, __float128 b)
 {
    return _Float128LT(a, b);
 }
 
-__flag __float128_gt(__float128 a, __float128 b)
+__flag __float128_gt_ieee(__float128 a, __float128 b)
 {
    return _Float128LT(b, a);
 }
@@ -7572,7 +7819,7 @@ __flag __float128_gt(__float128 a, __float128 b)
 | according to the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float128_eq_signaling(__float128 a, __float128 b)
+__flag __float128_eq_signaling_ieee(__float128 a, __float128 b)
 {
    if(((__extractFloat128Exp(a) == 0x7FFF) && (__extractFloat128Frac0(a) | __extractFloat128Frac1(a))) || ((__extractFloat128Exp(b) == 0x7FFF) && (__extractFloat128Frac0(b) | __extractFloat128Frac1(b))))
    {
@@ -7589,7 +7836,7 @@ __flag __float128_eq_signaling(__float128 a, __float128 b)
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float128_le_quiet(__float128 a, __float128 b)
+__flag __float128_le_quiet_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 
@@ -7617,7 +7864,7 @@ __flag __float128_le_quiet(__float128 a, __float128 b)
 | Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__flag __float128_lt_quiet(__float128 a, __float128 b)
+__flag __float128_lt_quiet_ieee(__float128 a, __float128 b)
 {
    __flag aSign, bSign;
 

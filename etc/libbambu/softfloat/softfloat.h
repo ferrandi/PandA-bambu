@@ -117,124 +117,126 @@ void __float_raise(__int8);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE integer-to-floating-point conversion routines.
 *----------------------------------------------------------------------------*/
-__float32 __int32_to_float32(__int32);
-__float32 __int8_to_float32(__int8 a);
-__float32 __int16_to_float32(__int16 a);
-__float32 __uint32_to_float32(__uint32);
-__float32 __uint8_to_float32(__uint8 a);
-__float32 __uint16_to_float32(__uint16 a);
-__float64 __int32_to_float64(__int32 a);
-__float64 __uint32_to_float64(__uint32 a);
+__float32 __int32_to_float32_ieee(__int32);
+__float32 __int8_to_float32_ieee(__int8 a);
+__float32 __int16_to_float32_ieee(__int16 a);
+__float32 __uint32_to_float32_ieee(__uint32);
+__float32 __uint8_to_float32_ieee(__uint8 a);
+__float32 __uint16_to_float32_ieee(__uint16 a);
+__float64 __int32_to_float64_ieee(__int32 a);
+__float64 __uint32_to_float64_ieee(__uint32 a);
 #ifdef FLOATX80
-__floatx80 __int32_to_floatx80(__int32);
+__floatx80 __int32_to_floatx80_ieee(__int32);
 #endif
 #ifdef FLOAT128
-__float128 __int32_to_float128(__int32);
+__float128 __int32_to_float128_ieee(__int32);
 #endif
-__float32 __int64_to_float32(__int64 a);
-__float32 __uint64_to_float32(__uint64 a);
-__float64 __int64_to_float64(__int64 a);
-__float64 __uint64_to_float64(__uint64 a);
+__float32 __int64_to_float32_ieee(__int64 a);
+__float32 __uint64_to_float32_ieee(__uint64 a);
+__float64 __int64_to_float64_ieee(__int64 a);
+__float64 __uint64_to_float64_ieee(__uint64 a);
 #ifdef FLOATX80
-__floatx80 __int64_to_floatx80(__int64);
+__floatx80 __int64_to_floatx80_ieee(__int64);
 #endif
 #ifdef FLOAT128
-__float128 __int64_to_float128(__int64);
+__float128 __int64_to_float128_ieee(__int64);
 #endif
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE single-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __float32_to_int32(__float32);
-__int32 __float32_to_int32_round_to_zero(__float32);
-__uint32 __float32_to_uint32_round_to_zero(__float32 a);
-__int64 __float32_to_int64(__float32);
-__int64 __float32_to_int64_round_to_zero(__float32);
-__uint64 __float32_to_uint64_round_to_zero(__float32);
-__float64 __float32_to_float64(__float32);
+__int32 __float32_to_int32_ieee(__float32);
+__int32 __float32_to_int32_round_to_zero_ieee(__float32);
+__uint32 __float32_to_uint32_round_to_zero_ieee(__float32 a);
+__int64 __float32_to_int64_ieee(__float32);
+__int64 __float32_to_int64_round_to_zero_ieee(__float32);
+__uint64 __float32_to_uint64_round_to_zero_ieee(__float32);
+__float64 __float32_to_float64_ieee(__float32);
 #ifdef FLOATX80
-__floatx80 __float32_to_floatx80(__float32);
+__floatx80 __float32_to_floatx80_ieee(__float32);
 #endif
 #ifdef FLOAT128
-__float128 __float32_to_float128(__float32);
+__float128 __float32_to_float128_ieee(__float32);
 #endif
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE single-precision operations.
 *----------------------------------------------------------------------------*/
-__float32 __float32_round_to_int(__float32);
-__float32 __float32_add(__float32, __float32);
-__float32 __float32_sub(__float32, __float32);
-__float32 __float32_mul(__float32, __float32);
-__float32 __float32_divG(__float32, __float32);
-__float32 __float32_divSRT4(__float32, __float32);
-__float32 __float32_rem(__float32, __float32);
+__float32 __float32_round_to_int_ieee(__float32);
+__float32 __float32_add(__float32, __float32, __bits8, __bits8, __sbits32, __flag, __flag, __flag, __flag, __sbits8);
+__float32 __float32_add_ieee(__float32, __float32);
+__float32 __float32_sub(__float32, __float32, __bits8, __bits8, __sbits32, __flag, __flag, __flag, __flag, __sbits8);
+__float32 __float32_sub_ieee(__float32, __float32);
+__float32 __float32_mul_ieee(__float32, __float32);
+__float32 __float32_divG_ieee(__float32, __float32);
+__float32 __float32_divSRT4_ieee(__float32, __float32);
+__float32 __float32_rem_ieee(__float32, __float32);
 __float32 __float32_sqrt(__float32);
-__flag __float32_eq(__float32, __float32);
-__flag __float32_le(__float32, __float32);
-__flag __float32_lt(__float32, __float32);
-__flag __float32_ge(__float32 a, __float32 b);
-__flag __float32_gt(__float32 a, __float32 b);
-__flag __float32_eq_signaling(__float32, __float32);
-__flag __float32_le_quiet(__float32, __float32);
-__flag __float32_lt_quiet(__float32, __float32);
-__flag __float32_is_signaling_nan(__float32);
-__flag __float32_ltgt_quiet(__float32 a, __float32 b);
+__flag __float32_eq_ieee(__float32, __float32);
+__flag __float32_le_ieee(__float32, __float32);
+__flag __float32_lt_ieee(__float32, __float32);
+__flag __float32_ge_ieee(__float32 a, __float32 b);
+__flag __float32_gt_ieee(__float32 a, __float32 b);
+__flag __float32_eq_signaling_ieee(__float32, __float32);
+__flag __float32_le_quiet_ieee(__float32, __float32);
+__flag __float32_lt_quiet_ieee(__float32, __float32);
+__flag __float32_is_signaling_nan_ieee(__float32);
+__flag __float32_ltgt_quiet_ieee(__float32 a, __float32 b);
 
-__float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC);
+__float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC);
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __float64_to_int32(__float64);
-__int32 __float64_to_int32_round_to_zero(__float64);
-__uint32 __float64_to_uint32_round_to_zero(__float64 a);
-__int64 __float64_to_int64(__float64);
-__int64 __float64_to_int64_round_to_zero(__float64);
-__uint64 __float64_to_uint64_round_to_zero(__float64 a);
-__float32 __float64_to_float32(__float64);
+__int32 __float64_to_int32_ieee(__float64);
+__int32 __float64_to_int32_round_to_zero_ieee(__float64);
+__uint32 __float64_to_uint32_round_to_zero_ieee(__float64 a);
+__int64 __float64_to_int64_ieee(__float64);
+__int64 __float64_to_int64_round_to_zero_ieee(__float64);
+__uint64 __float64_to_uint64_round_to_zero_ieee(__float64 a);
+__float32 __float64_to_float32_ieee(__float64);
 #ifdef FLOATX80
-__floatx80 __float64_to_floatx80(__float64);
+__floatx80 __float64_to_floatx80_ieee(__float64);
 #endif
 #ifdef FLOAT128
-__float128 __float64_to_float128(__float64);
+__float128 __float64_to_float128_ieee(__float64);
 #endif
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE double-precision operations.
 *----------------------------------------------------------------------------*/
-__float64 __float64_round_to_int(__float64);
-__float64 __float64_add(__float64, __float64);
-__float64 __float64_sub(__float64, __float64);
-__float64 __float64_mul(__float64, __float64);
-__float64 __float64_divSRT4(__float64, __float64);
-__float64 __float64_divG(__float64, __float64);
-__float64 __float64_rem(__float64, __float64);
+__float64 __float64_round_to_int_ieee(__float64);
+__float64 __float64_add_ieee(__float64, __float64);
+__float64 __float64_sub_ieee(__float64, __float64);
+__float64 __float64_mul_ieee(__float64, __float64);
+__float64 __float64_divSRT4_ieee(__float64, __float64);
+__float64 __float64_divG_ieee(__float64, __float64);
+__float64 __float64_rem_ieee(__float64, __float64);
 __float64 __float64_sqrt(__float64);
-__flag __float64_eq(__float64, __float64);
-__flag __float64_le(__float64, __float64);
-__flag __float64_lt(__float64, __float64);
-__flag __float64_ge(__float64 a, __float64 b);
-__flag __float64_gt(__float64 a, __float64 b);
-__flag __float64_eq_signaling(__float64, __float64);
-__flag __float64_le_quiet(__float64, __float64);
-__flag __float64_lt_quiet(__float64, __float64);
-__flag __float64_is_signaling_nan(__float64);
-__flag __float64_ltgt_quiet(__float64 a, __float64 b);
+__flag __float64_eq_ieee(__float64, __float64);
+__flag __float64_le_ieee(__float64, __float64);
+__flag __float64_lt_ieee(__float64, __float64);
+__flag __float64_ge_ieee(__float64 a, __float64 b);
+__flag __float64_gt_ieee(__float64 a, __float64 b);
+__flag __float64_eq_signaling_ieee(__float64, __float64);
+__flag __float64_le_quiet_ieee(__float64, __float64);
+__flag __float64_lt_quiet_ieee(__float64, __float64);
+__flag __float64_is_signaling_nan_ieee(__float64);
+__flag __float64_ltgt_quiet_ieee(__float64 a, __float64 b);
 
 #ifdef FLOATX80
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE extended double-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __floatx80_to_int32(__floatx80);
-__int32 __floatx80_to_int32_round_to_zero(__floatx80);
-__int64 __floatx80_to_int64(__floatx80);
-__int64 __floatx80_to_int64_round_to_zero(__floatx80);
-__float32 __floatx80_to_float32(__floatx80);
-__float64 __floatx80_to_float64(__floatx80);
+__int32 __floatx80_to_int32_ieee(__floatx80);
+__int32 __floatx80_to_int32_round_to_zero_ieee(__floatx80);
+__int64 __floatx80_to_int64_ieee(__floatx80);
+__int64 __floatx80_to_int64_round_to_zero_ieee(__floatx80);
+__float32 __floatx80_to_float32_ieee(__floatx80);
+__float64 __floatx80_to_float64_ieee(__floatx80);
 #ifdef FLOAT128
-__float128 __floatx80_to_float128(__floatx80);
+__float128 __floatx80_to_float128_ieee(__floatx80);
 #endif
 
 /*----------------------------------------------------------------------------
@@ -246,22 +248,22 @@ extern __int8 __floatx80_rounding_precision;
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE extended double-precision operations.
 *----------------------------------------------------------------------------*/
-__floatx80 __floatx80_round_to_int(__floatx80);
-__floatx80 floatx80_add(__floatx80, __floatx80);
-__floatx80 __floatx80_sub(__floatx80, __floatx80);
-__floatx80 __floatx80_mul(__floatx80, __floatx80);
-__floatx80 __floatx80_div(__floatx80, __floatx80);
-__floatx80 __floatx80_rem(__floatx80, __floatx80);
+__floatx80 __floatx80_round_to_int_ieee(__floatx80);
+__floatx80 floatx80_add_ieee(__floatx80, __floatx80);
+__floatx80 __floatx80_sub_ieee(__floatx80, __floatx80);
+__floatx80 __floatx80_mul_ieee(__floatx80, __floatx80);
+__floatx80 __floatx80_div_ieee(__floatx80, __floatx80);
+__floatx80 __floatx80_rem_ieee(__floatx80, __floatx80);
 __floatx80 __floatx80_sqrt(__floatx80);
-__flag __floatx80_eq(__floatx80, __floatx80);
-__flag __floatx80_le(__floatx80, __floatx80);
-__flag __floatx80_lt(__floatx80, __floatx80);
-__flag __floatx80_ge(__floatx80 a, __floatx80 b);
-__flag __floatx80_gt(__floatx80 a, __floatx80 b);
-__flag __floatx80_eq_signaling(__floatx80, __floatx80);
-__flag __floatx80_le_quiet(__floatx80, __floatx80);
-__flag __floatx80_lt_quiet(__floatx80, __floatx80);
-__flag __floatx80_is_signaling_nan(__floatx80);
+__flag __floatx80_eq_ieee(__floatx80, __floatx80);
+__flag __floatx80_le_ieee(__floatx80, __floatx80);
+__flag __floatx80_lt_ieee(__floatx80, __floatx80);
+__flag __floatx80_ge_ieee(__floatx80 a, __floatx80 b);
+__flag __floatx80_gt_ieee(__floatx80 a, __floatx80 b);
+__flag __floatx80_eq_signaling_ieee(__floatx80, __floatx80);
+__flag __floatx80_le_quiet_ieee(__floatx80, __floatx80);
+__flag __floatx80_lt_quiet_ieee(__floatx80, __floatx80);
+__flag __floatx80_is_signaling_nan_ieee(__floatx80);
 
 #endif
 
@@ -270,34 +272,34 @@ __flag __floatx80_is_signaling_nan(__floatx80);
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE quadruple-precision conversion routines.
 *----------------------------------------------------------------------------*/
-__int32 __float128_to_int32(__float128);
-__int32 __float128_to_int32_round_to_zero(__float128);
-__int64 __float128_to_int64(__float128);
-__int64 __float128_to_int64_round_to_zero(__float128);
-__float32 __float128_to_float32(__float128);
-__float64 __float128_to_float64(__float128);
+__int32 __float128_to_int32_ieee(__float128);
+__int32 __float128_to_int32_round_to_zero_ieee(__float128);
+__int64 __float128_to_int64_ieee(__float128);
+__int64 __float128_to_int64_round_to_zero_ieee(__float128);
+__float32 __float128_to_float32_ieee(__float128);
+__float64 __float128_to_float64_ieee(__float128);
 #ifdef FLOATX80
-__floatx80 __float128_to_floatx80(__float128);
+__floatx80 __float128_to_floatx80_ieee(__float128);
 #endif
 
 /*----------------------------------------------------------------------------
 | Software IEC/IEEE quadruple-precision operations.
 *----------------------------------------------------------------------------*/
-__float128 __float128_round_to_int(__float128);
-__float128 __float128_add(__float128, __float128);
-__float128 __float128_sub(__float128, __float128);
-__float128 __float128_mul(__float128, __float128);
-__float128 __float128_div(__float128, __float128);
-__float128 __float128_rem(__float128, __float128);
+__float128 __float128_round_to_int_ieee(__float128);
+__float128 __float128_add_ieee(__float128, __float128);
+__float128 __float128_sub_ieee(__float128, __float128);
+__float128 __float128_mul_ieee(__float128, __float128);
+__float128 __float128_div_ieee(__float128, __float128);
+__float128 __float128_rem_ieee(__float128, __float128);
 __float128 __float128_sqrt(__float128);
-__flag __float128_eq(__float128, __float128);
-__flag __float128_le(__float128, __float128);
-__flag __float128_lt(__float128, __float128);
-__flag __float128_ge(__float128 a, __float128 b);
-__flag __float128_gt(__float128 a, __float128 b);
-__flag __float128_eq_signaling(__float128, __float128);
-__flag __float128_le_quiet(__float128, __float128);
-__flag __float128_lt_quiet(__float128, __float128);
-__flag __float128_is_signaling_nan(__float128);
+__flag __float128_eq_ieee(__float128, __float128);
+__flag __float128_le_ieee(__float128, __float128);
+__flag __float128_lt_ieee(__float128, __float128);
+__flag __float128_ge_ieee(__float128 a, __float128 b);
+__flag __float128_gt_ieee(__float128 a, __float128 b);
+__flag __float128_eq_signaling_ieee(__float128, __float128);
+__flag __float128_le_quiet_ieee(__float128, __float128);
+__flag __float128_lt_quiet_ieee(__float128, __float128);
+__flag __float128_is_signaling_nan_ieee(__float128);
 
 #endif
