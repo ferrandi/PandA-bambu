@@ -67,6 +67,7 @@
 #include "design_flow_manager.hpp"
 
 /// frontend_analysis
+#include "Range.hpp"
 #include "application_frontend_flow_step.hpp"
 
 /// HLS include
@@ -917,14 +918,22 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case DEPENDENCE_RELATIONSHIP:
       {
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, SAME_FUNCTION));
+         relationships.insert(std::make_pair(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
          relationships.insert(std::make_pair(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
          relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
+#if HAVE_ILP_BUILT && HAVE_BAMBU_BUILT
+         relationships.insert(std::make_pair(SDC_CODE_MOTION, SAME_FUNCTION));
+#endif
          relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, SAME_FUNCTION));
          break;
       }
@@ -1032,6 +1041,7 @@ bool Bit_Value::update_IR()
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Variable: " + ssa->ToString() + " bitstring: " + ssa->bit_values + " -> " + bitstring_to_string(b.second));
             ssa->bit_values = bitstring_to_string(b.second);
+            // ssa->range = Range::fromBitValues(b.second, static_cast<Range::bw_t>(BitLatticeManipulator::Size(tn)), signed_var.count(ssa->index));
             res = true;
             AppM->RegisterTransformation(GetName(), tn);
          }
@@ -1139,12 +1149,12 @@ void Bit_Value::initialize()
    {
       unsigned int p_decl_id = GET_INDEX_NODE(parm_decl_node);
       const tree_nodeConstRef parm_type = tree_helper::CGetType(GET_NODE(parm_decl_node));
-      if(not is_handled_by_bitvalue(parm_type->index))
+      if(!is_handled_by_bitvalue(parm_type->index))
       {
          continue;
       }
       auto* p = GetPointer<parm_decl>(GET_NODE(parm_decl_node));
-      std::deque<bit_lattice> b = p->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(parm_decl_node))) : string_to_bitstring(p->bit_values);
+      std::deque<bit_lattice> b = p->bit_values.empty() ? (p->range ? p->range->getBitValues(tree_helper::is_int(TM, parm_type->index)) : create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(parm_decl_node)))) : string_to_bitstring(p->bit_values);
       parm.insert(std::make_pair(p_decl_id, b));
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Index node of parameter " + STR(GET_NODE(parm_decl_node)) + " inserted: " + STR(GET_INDEX_NODE(parm_decl_node)) + " bitstring: \"" + bitstring_to_string(b) + "\"");
    }
@@ -1170,7 +1180,7 @@ void Bit_Value::initialize()
       fret_type_node = GET_NODE(mt->retn);
    }
 
-   if(not is_handled_by_bitvalue(ret_type_id))
+   if(!is_handled_by_bitvalue(ret_type_id))
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "functions returning " + STR(fret_type_node) + " not considered: " + STR(ret_type_id));
    }
@@ -1178,7 +1188,7 @@ void Bit_Value::initialize()
    {
       if(fd->bit_values.empty())
       {
-         best[function_id] = create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
+         best[function_id] = fd->range ? fd->range->getBitValues(tree_helper::is_int(TM, ret_type_id)) : create_u_bitstring(BitLatticeManipulator::Size(fret_type_node));
       }
       else
       {
@@ -1534,7 +1544,8 @@ void Bit_Value::initialize()
                         if(is_handled_by_bitvalue(ret_type_node->index))
                         {
                            const auto* called_fd = GetPointer<const function_decl>(fu_decl_node);
-                           const auto new_bitvalue = called_fd->bit_values.empty() ? create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(ga->op0))) : string_to_bitstring(called_fd->bit_values);
+                           const auto new_bitvalue = called_fd->bit_values.empty() ? (called_fd->range ? called_fd->range->getBitValues(tree_helper::is_int(TM, ret_type_node->index)) : create_u_bitstring(BitLatticeManipulator::Size(GET_NODE(ga->op0)))) :
+                                                                                     string_to_bitstring(called_fd->bit_values);
                            if(best[ssa_node_id].empty())
                            {
                               best[ssa_node_id] = new_bitvalue;
