@@ -126,9 +126,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          {
             case DesignFlowStep_Status::SUCCESS:
             {
+               relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                if(restart_dead_code)
                {
-                  relationships.insert(std::make_pair(BIT_VALUE, SAME_FUNCTION));
                   relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
                }
                break;

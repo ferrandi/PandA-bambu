@@ -7205,26 +7205,31 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    {
       case DEPENDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(BIT_VALUE, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(COMPLETE_CALL_GRAPH, WHOLE_APPLICATION));
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            relationships.insert(std::make_pair(BIT_VALUE, WHOLE_APPLICATION));
+         }
+         relationships.insert(std::make_pair(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          if(requireESSA)
          {
-            relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
+            relationships.insert(std::make_pair(ESSA, WHOLE_APPLICATION));
          }
          else
          {
-            relationships.insert(std::make_pair(BLOCK_FIX, ALL_FUNCTIONS));
-            relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, ALL_FUNCTIONS));
-            relationships.insert(std::make_pair(IR_LOWERING, ALL_FUNCTIONS));
-            relationships.insert(std::make_pair(USE_COUNTING, ALL_FUNCTIONS));
+            relationships.insert(std::make_pair(BLOCK_FIX, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(EXTRACT_GIMPLE_COND_OP, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(IR_LOWERING, WHOLE_APPLICATION));
+            relationships.insert(std::make_pair(USE_COUNTING, WHOLE_APPLICATION));
+         }
+         if(parameters->isOption(OPT_soft_float) && parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, WHOLE_APPLICATION));
          }
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
       {
-         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-         relationships.insert(std::make_pair(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, WHOLE_APPLICATION));
          break;
       }
       case INVALIDATION_RELATIONSHIP:
@@ -7243,21 +7248,24 @@ void RangeAnalysis::ComputeRelationships(DesignFlowStepSet& relationships, const
 {
    if(relationship_type == INVALIDATION_RELATIONSHIP)
    {
+      const auto dfm = design_flow_manager.lock();
+      const auto design_flow_graph = dfm->CGetDesignFlowGraph();
       for(const auto f_id : fun_id_to_restart)
       {
-         const std::string dce_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::DEAD_CODE_ELIMINATION, f_id);
-         vertex frontend_dce = design_flow_manager.lock()->GetDesignFlowStep(dce_signature);
+         const auto dce_signature = FunctionFrontendFlowStep::ComputeSignature(DEAD_CODE_ELIMINATION, f_id);
+         const auto frontend_dce = dfm->GetDesignFlowStep(dce_signature);
          THROW_ASSERT(frontend_dce != NULL_VERTEX, "step " + dce_signature + " is not present");
-
-         const std::string bv_signature = FunctionFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE, f_id);
-         vertex frontend_bv = design_flow_manager.lock()->GetDesignFlowStep(bv_signature);
-         THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
-
-         const auto design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
-         const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
          const auto dce = design_flow_graph->CGetDesignFlowStepInfo(frontend_dce)->design_flow_step;
          relationships.insert(dce);
-         relationships.insert(bv);
+
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
+         {
+            const auto bv_signature = FunctionFrontendFlowStep::ComputeSignature(BIT_VALUE, f_id);
+            const auto frontend_bv = dfm->GetDesignFlowStep(bv_signature);
+            THROW_ASSERT(frontend_bv != NULL_VERTEX, "step " + bv_signature + " is not present");
+            const auto bv = design_flow_graph->CGetDesignFlowStepInfo(frontend_bv)->design_flow_step;
+            relationships.insert(bv);
+         }
       }
       fun_id_to_restart.clear();
    }
