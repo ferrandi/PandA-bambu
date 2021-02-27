@@ -5176,6 +5176,10 @@ unsigned int tree_helper::get_array_data_bitsize(const tree_managerConstRef& TM,
       auto at_index = GET_INDEX_NODE(GetPointer<field_decl>(fd)->type);
       return get_array_data_bitsize(TM, at_index);
    }
+   if(node->get_kind() != array_type_K)
+   {
+      return Size(node);
+   }
    THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index) + " " + node->get_kind_text());
    auto* at = GetPointer<array_type>(node);
    THROW_ASSERT(at->elts, "elements type expected");
