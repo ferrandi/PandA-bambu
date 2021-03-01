@@ -5180,7 +5180,6 @@ unsigned int tree_helper::get_array_data_bitsize(const tree_managerConstRef& TM,
    {
       return Size(node);
    }
-   THROW_ASSERT(node->get_kind() == array_type_K, "array_type expected: @" + STR(index) + " " + node->get_kind_text());
    auto* at = GetPointer<array_type>(node);
    THROW_ASSERT(at->elts, "elements type expected");
    tree_nodeRef elts = GET_NODE(at->elts);

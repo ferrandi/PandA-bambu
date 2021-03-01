@@ -1076,7 +1076,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          const tree_nodeRef curr_tn = TreeM->get_tree_node_const(var_index);
          auto* vd = GetPointer<var_decl>(curr_tn);
-         if((vd && vd->readonly_flag) || (HLSMgr->get_written_objects().find(var_index) == HLSMgr->get_written_objects().end() && !is_dynamic_address_used))
+         if((HLSMgr->get_written_objects().find(var_index) == HLSMgr->get_written_objects().end()) && (!is_dynamic_address_used || (vd && vd->readonly_flag)))
          {
             HLSMgr->Rmem->add_read_only_variable(var_index);
          }

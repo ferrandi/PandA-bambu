@@ -5451,7 +5451,7 @@ endgenerate"/>
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(data_size/8);
+parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
@@ -5705,8 +5705,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
     end
   endfunction
 `endif
-parameter n_byte_data = data_size/8;
-parameter n_bytes = n_elements*n_byte_data;
+parameter n_bytes = (n_elements*data_size)/8;
 parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
@@ -5751,8 +5750,7 @@ VHDL_PROVIDED=
          return op2;
       end if;
    end integer_ternary_operator;
-constant n_byte_data       : integer := data_size/8;
-constant n_bytes           : integer := n_elements*n_byte_data;
+constant n_bytes           : integer := (n_elements*data_size)/8;
 constant memory_bitsize    : integer := 2*BRAM_BITSIZE;
 constant n_byte_on_databus : integer := memory_bitsize/8;
 constant n_mem_elements    : integer := n_bytes/n_byte_on_databus + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
@@ -5905,7 +5903,7 @@ ADDRESS_DECODING_LOGIC_NN_instance : ADDRESS_DECODING_LOGIC_NN generic map (BITS
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(data_size/8);
+parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
@@ -5935,7 +5933,7 @@ VHDL_PROVIDED=
          return op2;
       end if;
    end integer_ternary_operator;
-constant n_bytes           : integer := n_elements*(data_size/8);
+constant n_bytes           : integer := (n_elements*data_size)/8;
 constant n_byte_on_databus : integer := BRAM_BITSIZE/8;
 constant n_mem_elements    : integer := n_bytes/n_byte_on_databus + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
 constant nbit_read_addr    : integer := integer_ternary_operator(n_mem_elements = 1, 1, integer(ceil(log2(real(n_mem_elements)))));
@@ -6191,8 +6189,7 @@ ARRAY_1D_STD_BRAM_NN_instance : ARRAY_1D_STD_BRAM_NN_SP generic map (BITSIZE_in1
     end
   endfunction
 `endif
-parameter n_byte_data = data_size/8;
-parameter n_bytes = n_elements*n_byte_data;
+parameter n_bytes = (n_elements*data_size)/8;
 parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
@@ -6237,8 +6234,7 @@ VHDL_PROVIDED=
          return op2;
       end if;
    end integer_ternary_operator;
-constant n_byte_data       : integer := data_size/8;
-constant n_bytes           : integer := n_elements*n_byte_data;
+constant n_bytes           : integer := (n_elements*data_size)/8;
 constant memory_bitsize    : integer := 2*BRAM_BITSIZE;
 constant n_byte_on_databus : integer := memory_bitsize/8;
 constant n_mem_elements    : integer := n_bytes/n_byte_on_databus + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
@@ -6391,7 +6387,7 @@ ADDRESS_DECODING_LOGIC_NN_instance : ADDRESS_DECODING_LOGIC_NN generic map (BITS
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(data_size/8);
+parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
@@ -6531,8 +6527,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
     end
   endfunction
 `endif
-parameter n_byte_data = data_size/8;
-parameter n_bytes = n_elements*n_byte_data;
+parameter n_bytes = (n_elements*data_size)/8;
 parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
@@ -9684,7 +9679,7 @@ endgenerate"/>
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(data_size/8);
+parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
@@ -9827,7 +9822,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(data_size/8);
+parameter n_bytes = (n_elements*data_size)/8;
 parameter n_byte_on_databus = BRAM_BITSIZE/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 `ifdef _SIM_HAVE_CLOG2
@@ -9967,8 +9962,7 @@ ADDRESS_DECODING_LOGIC #(.BITSIZE_memory_addr_a(nbit_read_addr), .BITSIZE_memory
     end
   endfunction
 `endif
-parameter n_byte_data = data_size/8;
-parameter n_bytes = n_elements*n_byte_data;
+parameter n_bytes = (n_elements*data_size)/8;
 parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
@@ -10123,8 +10117,7 @@ ADDRESS_DECODING_LOGIC_NN #(.BITSIZE_in1(BITSIZE_in1), .PORTSIZE_in1(PORTSIZE_in
     end
   endfunction
 `endif
-parameter n_byte_data = data_size/8;
-parameter n_bytes = n_elements*n_byte_data;
+parameter n_bytes = (n_elements*data_size)/8;
 parameter memory_bitsize = 2*BRAM_BITSIZE;
 parameter n_byte_on_databus = memory_bitsize/8;
 parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
@@ -10764,18 +10757,16 @@ VERILOG_PROVIDED="
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(data_size/8);
 parameter n_byte_on_databus = data_size/8;
-parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 
 `ifdef _SIM_HAVE_CLOG2
   parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : $clog2(n_byte_on_databus);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
   parameter nbits_address_space_rangesize = $clog2(address_space_rangesize); 
 `else
   parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : log2(n_byte_on_databus);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
   parameter nbits_address_space_rangesize = log2(address_space_rangesize); 
 `endif
   
@@ -10857,12 +10848,10 @@ VHDL_PROVIDED=
       return op2;
     end if;
   end integer_ternary_operator;
-  constant n_bytes           : integer := n_elements*(data_size/8);
   constant n_byte_on_databus : integer := data_size/8;
-  constant n_mem_elements    : integer := n_bytes/(n_byte_on_databus) + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
   constant nbit_addr         : integer := integer_ternary_operator(BITSIZE_in2 &gt; BITSIZE_proxy_in2, BITSIZE_in2, BITSIZE_proxy_in2);
   constant nbit_read_addr    : integer := integer_ternary_operator(n_elements = 1, 1, integer(ceil(log2(real(n_elements)))));
-  constant nbits_byte_offset : integer := integer_ternary_operator(n_byte_on_databus = 1, 0, integer(ceil(log2(real(n_byte_on_databus)))));
+  constant nbits_byte_offset : integer := integer_ternary_operator(n_byte_on_databus &lt;= 1, 0, integer(ceil(log2(real(n_byte_on_databus)))));
 
   constant nbits_address_space_rangesize  : integer := integer(ceil(log2(real(address_space_rangesize)))); 
   
@@ -11066,18 +11055,16 @@ VERILOG_PROVIDED="
     end
   endfunction
 `endif
-parameter n_bytes = n_elements*(data_size/8);
 parameter n_byte_on_databus = data_size/8;
-parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 
 `ifdef _SIM_HAVE_CLOG2
   parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : $clog2(n_byte_on_databus);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
   parameter nbits_address_space_rangesize = $clog2(address_space_rangesize);
 `else
   parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : log2(n_byte_on_databus);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
   parameter nbits_address_space_rangesize = log2(address_space_rangesize);
 `endif
   
@@ -11229,12 +11216,10 @@ VHDL_PROVIDED=
       return op2;
     end if;
   end integer_ternary_operator;
-  constant n_bytes           : integer := n_elements*(data_size/8);
   constant n_byte_on_databus : integer := data_size/8;
-  constant n_mem_elements    : integer := n_bytes/(n_byte_on_databus) + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
   constant nbit_addr         : integer := integer_ternary_operator(BITSIZE_in2 &gt; BITSIZE_proxy_in2, BITSIZE_in2, BITSIZE_proxy_in2);
   constant nbit_read_addr    : integer := integer_ternary_operator(n_elements = 1, 1, integer(ceil(log2(real(n_elements)))));
-  constant nbits_byte_offset : integer := integer_ternary_operator(n_byte_on_databus = 1, 0, integer(ceil(log2(real(n_byte_on_databus)))));
+  constant nbits_byte_offset : integer := integer_ternary_operator(n_byte_on_databus &lt;= 1, 0, integer(ceil(log2(real(n_byte_on_databus)))));
 
   constant nbits_address_space_rangesize  : integer := integer(ceil(log2(real(address_space_rangesize))));
   constant address_space_begin_u         : unsigned(nbit_addr-1 downto 0) := to_unsigned(address_space_begin, nbit_addr);
@@ -11345,9 +11330,9 @@ begin
 
    L7_A : process(relative_addr)
    begin
-      if (n_mem_elements=1) then
+      if (n_elements=1) then
          memory_addr_a &lt;= (others =&gt; &apos;0&apos;);
-      elsif (n_byte_on_databus=1) then
+      elsif (n_byte_on_databus&lt;=1) then
          memory_addr_a &lt;= relative_addr(nbit_read_addr-1 downto 0);
       else
          memory_addr_a &lt;= relative_addr(nbit_read_addr+nbits_byte_offset-1 downto nbits_byte_offset);
@@ -11559,17 +11544,14 @@ begin
     end
   endfunction
 `endif
-parameter n_byte_data = data_size/8;
-parameter n_bytes = n_elements*n_byte_data;
 parameter n_byte_on_databus = data_size/8;
-parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : $clog2(n_byte_on_databus);
+  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : log2(n_byte_on_databus);
+  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;
@@ -11591,11 +11573,11 @@ wire [nbit_addr*max_n_rw-1:0] tmp_addr;
 wire [nbit_addr*max_n_rw-1:0] relative_addr;
 integer index2;
 
-reg [data_size-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+reg [data_size-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
 end
 
 generate
@@ -11645,7 +11627,7 @@ generate
 genvar i7;
   for (i7=0; i7&lt;max_n_rw; i7=i7+1)
   begin : L7_A
-    if (n_mem_elements==1)
+    if (n_elements==1)
       assign memory_addr_a[(i7+1)*nbit_read_addr-1:i7*nbit_read_addr] = {nbit_read_addr{1&apos;b0}};
     else
       assign memory_addr_a[(i7+1)*nbit_read_addr-1:i7*nbit_read_addr] = relative_addr[nbit_read_addr+nbits_byte_offset-1+i7*nbit_addr:nbits_byte_offset+i7*nbit_addr];
@@ -11662,7 +11644,7 @@ endgenerate
 
 generate
 genvar i11, i12;
-  if(n_mem_elements==1)
+  if(n_elements==1)
   begin : single_element
     always @(posedge clock)
     begin
@@ -11874,19 +11856,16 @@ assign Sout_DataRdy = Sin_DataRdy;"/>
     end
   endfunction
 `endif
-parameter n_byte_data = data_size/8;
-parameter n_bytes = n_elements*n_byte_data;
 parameter n_byte_on_databus = data_size/8;
-parameter n_mem_elements = n_bytes/(n_byte_on_databus) + (n_bytes%(n_byte_on_databus) == 0 ? 0 : 1);
 parameter nbit_addr = BITSIZE_in2 &gt; BITSIZE_proxy_in2 ? BITSIZE_in2 : BITSIZE_proxy_in2;
 `ifdef _SIM_HAVE_CLOG2
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : $clog2(n_mem_elements);
+  parameter nbit_read_addr = n_elements == 1 ? 1 : $clog2(n_elements);
   parameter nbits_address_space_rangesize = $clog2(address_space_rangesize);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : $clog2(n_byte_on_databus);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : $clog2(n_byte_on_databus);
 `else
-  parameter nbit_read_addr = n_mem_elements == 1 ? 1 : log2(n_mem_elements);
+  parameter nbit_read_addr = n_elements == 1 ? 1 : log2(n_elements);
   parameter nbits_address_space_rangesize = log2(address_space_rangesize);
-  parameter nbits_byte_offset = n_byte_on_databus==1 ? 0 : log2(n_byte_on_databus);
+  parameter nbits_byte_offset = n_byte_on_databus&lt;=1 ? 0 : log2(n_byte_on_databus);
 `endif
 parameter max_n_writes = PORTSIZE_sel_STORE;
 parameter max_n_reads = PORTSIZE_sel_LOAD;
@@ -11916,11 +11895,11 @@ reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed 1INIT_ZERO_VALUE;
 reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered 1INIT_ZERO_VALUE;
 reg [PORTSIZE_S_oe_ram-1:0] oe_ram_cs_delayed_registered1 1INIT_ZERO_VALUE;
 
-reg [data_size-1:0] memory [0:n_mem_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
+reg [data_size-1:0] memory [0:n_elements-1] /* synthesis syn_ramstyle = &quot;no_rw_check&quot; */;
 
 initial
 begin
-  $readmemb(MEMORY_INIT_file, memory, 0, n_mem_elements-1);
+  $readmemb(MEMORY_INIT_file, memory, 0, n_elements-1);
 end
 
 generate
@@ -12003,7 +11982,7 @@ generate
 genvar i7;
   for (i7=0; i7&lt;max_n_rw; i7=i7+1)
   begin : L7_A
-    if (n_mem_elements==1)
+    if (n_elements==1)
       assign memory_addr_a[(i7+1)*nbit_read_addr-1:i7*nbit_read_addr] = {nbit_read_addr{1&apos;b0}};
     else
       assign memory_addr_a[(i7+1)*nbit_read_addr-1:i7*nbit_read_addr] = relative_addr[nbit_read_addr+nbits_byte_offset-1+i7*nbit_addr:nbits_byte_offset+i7*nbit_addr];
@@ -12034,7 +12013,7 @@ endgenerate
 
 generate
 genvar i11, i12;
-  if(n_mem_elements==1)
+  if(n_elements==1)
   begin : single_element
     always @(posedge clock)
     begin
