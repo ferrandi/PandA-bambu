@@ -147,7 +147,7 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
     * @param current_tree_node
     * @param current_scrp
     */
-   void replaceWithCall(const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_scrp);
+   void replaceWithCall(const FunctionVersionRef& fu_version, const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_scrp);
 
    /**
     * Recursive examine tree node
@@ -249,6 +249,11 @@ struct FloatFormat
       return std::tie(exp_bits, frac_bits, exp_bias, has_rounding, has_nan, has_one, has_subnorm, sign) != std::tie(other.exp_bits, other.frac_bits, other.exp_bias, other.has_rounding, other.has_nan, other.has_one, other.has_subnorm, other.sign);
    }
 
+   bool ieee_format() const
+   {
+      return ((exp_bits == 8 && frac_bits == 23 && exp_bias == -127) || (exp_bits == 11 && frac_bits == 52 && exp_bias == -1023)) && (has_rounding && has_nan && has_one && !has_subnorm && sign == bit_lattice::U);
+   }
+
    std::string mngl() const
    {
       return "e" + STR(+exp_bits) + "m" + STR(+frac_bits) + "b" + ((exp_bias < 0) ? ("_" + STR(-exp_bias)) : STR(exp_bias)) + (has_rounding ? "r" : "") + (has_nan ? "n" : "") + (has_one ? "h" : "") + (has_subnorm ? "s" : "") +
@@ -296,7 +301,7 @@ class FunctionVersion
 
    bool ieee_format() const
    {
-      return userRequired == nullptr;
+      return userRequired == nullptr || userRequired->ieee_format();
    }
 
    std::string ToString() const

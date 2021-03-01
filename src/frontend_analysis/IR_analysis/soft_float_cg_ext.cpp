@@ -117,6 +117,21 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       float32_ptr_type = tree_man->create_pointer_type(float32_type, 32);
       float64_type = tree_man->create_integer_type_with_prec(64, true);
       float64_ptr_type = tree_man->create_pointer_type(float64_type, 64);
+      if(parameters->isOption(OPT_softfloat_subnormal) && parameters->getOption<bool>(OPT_softfloat_subnormal))
+      {
+         float32FF->has_subnorm = true;
+         float64FF->has_subnorm = true;
+      }
+      if(parameters->isOption(OPT_softfloat_norounding) && parameters->getOption<bool>(OPT_softfloat_norounding))
+      {
+         float32FF->has_rounding = false;
+         float64FF->has_rounding = false;
+      }
+      if(parameters->isOption(OPT_softfloat_noexception) && parameters->getOption<bool>(OPT_softfloat_noexception))
+      {
+         float32FF->has_nan = false;
+         float64FF->has_nan = false;
+      }
    }
 
    if(funcFF.empty() && !parameters->getOption<std::string>(OPT_mask).empty())
@@ -152,9 +167,17 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          {
             userFF->has_rounding = format[4] == "1";
          }
+         else
+         {
+            userFF->has_rounding = float32FF->has_rounding;
+         }
          if(format.size() > 5)
          {
             userFF->has_nan = format[5] == "1";
+         }
+         else
+         {
+            userFF->has_nan = float32FF->has_nan;
          }
          if(format.size() > 6)
          {
@@ -163,6 +186,10 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          if(format.size() > 7)
          {
             userFF->has_subnorm = format[7] == "1";
+         }
+         else
+         {
+            userFF->has_subnorm = float32FF->has_subnorm;
          }
          if(format.size() > 8)
          {
@@ -1199,10 +1226,10 @@ tree_nodeRef soft_float_cg_ext::floatAbs(const tree_nodeRef& op, const FloatForm
    }
 }
 
-void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_srcp)
+void soft_float_cg_ext::replaceWithCall(const FunctionVersionRef& fu_version, const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_srcp)
 {
    unsigned int called_function_id;
-   if(_version->ieee_format())
+   if(fu_version->ieee_format())
    {
       called_function_id = TreeM->function_index(fu_name + "_ieee");
       THROW_ASSERT(called_function_id, "The library miss this function " + fu_name + "_ieee");
@@ -1214,7 +1241,7 @@ void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, std::vector<
       THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
       THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
 
-      const auto spec_suffix = (_version->userRequired != nullptr ? _version->userRequired->mngl() : "");
+      const auto spec_suffix = (fu_version->userRequired != nullptr ? fu_version->userRequired->mngl() : "");
       auto spec_function_id = TreeM->function_index(fu_name + spec_suffix);
       if(spec_function_id == 0)
       {
@@ -1222,7 +1249,7 @@ void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, std::vector<
          spec_function_id = GET_INDEX_CONST_NODE(spec_func);
          THROW_ASSERT(spec_function_id, "Error cloning function " + fu_name + " (" + STR(called_function_id) + ").");
 
-         const auto& float_version = _version->userRequired;
+         const auto& float_version = fu_version->userRequired;
          auto& version_args = versioning_args[spec_function_id];
 
          static const auto bool_type_index = tree_man->create_boolean_type()->index;
@@ -1257,7 +1284,7 @@ void soft_float_cg_ext::replaceWithCall(const std::string& fu_name, std::vector<
 
    // Update functions float format map
    const auto called_func_vertex = AppM->CGetCallGraphManager()->GetVertex(called_function_id);
-   const auto calledFF = FunctionVersionRef(new FunctionVersion(called_func_vertex, _version->userRequired));
+   const auto calledFF = FunctionVersionRef(new FunctionVersion(called_func_vertex, fu_version->userRequired));
 #if HAVE_ASSERTS
    const auto res =
 #endif
@@ -1531,13 +1558,16 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      bitsize_in = 64;
                   }
                   auto bitsize_out = tree_helper::Size(expr_type);
+                  FloatFormatRef outFF;
                   if(bitsize_out < 32)
                   {
                      bitsize_out = 32;
+                     outFF = float32FF;
                   }
                   else if(bitsize_out > 32 && bitsize_out < 64)
                   {
                      bitsize_out = 64;
+                     outFF = float64FF;
                   }
                   const auto bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
@@ -1552,7 +1582,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      {
                         fu_name = "__int" + bitsize_str_in + "_to_float" + bitsize_str_out;
                      }
-                     replaceWithCall(fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                     replaceWithCall(_version->ieee_format() ? FunctionVersionRef(new FunctionVersion(_version->function_vertex, outFF)) : _version, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
                      modified = true;
                   }
                   break;
@@ -1594,7 +1624,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      if(tree_helper::is_real(TreeM, op_expr_type->index))
                      {
                         const auto fu_name = "__float" + STR(bitsize_in) + "_to_float" + STR(bitsize_out);
-                        replaceWithCall(fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                        const auto inFF = bitsize_in == 32 ? float32FF : float64FF;
+                        replaceWithCall(FunctionVersionRef(new FunctionVersion(_version->function_vertex, inFF)), fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
                      }
                      else
                      {
@@ -1688,6 +1719,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                case fix_trunc_expr_K:
                {
                   const auto bitsize_in = tree_helper::Size(op_expr_type);
+                  const auto inFF = bitsize_in == 32 ? float32FF : (bitsize_in == 64 ? float64FF : nullptr);
                   auto bitsize_out = tree_helper::Size(expr_type);
                   if(bitsize_out < 32)
                   {
@@ -1701,7 +1733,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   const auto fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" + bitsize_str_out + "_round_to_zero";
-                  replaceWithCall(fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                  replaceWithCall(_version->ieee_format() ? FunctionVersionRef(new FunctionVersion(_version->function_vertex, inFF)) : _version, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
                   modified = true;
                   break;
                }
@@ -1985,9 +2017,10 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             if(add_call)
             {
                const auto bitsize = tree_helper::Size(expr_type);
+               const auto opFF = bitsize == 32 ? float32FF : (bitsize == 64 ? float64FF : nullptr);
                const auto bitsize_str = bitsize == 96 ? "x80" : STR(bitsize);
                const auto fu_name = "__float" + bitsize_str + "_" + fu_suffix;
-               replaceWithCall(fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
+               replaceWithCall(_version->ieee_format() ? FunctionVersionRef(new FunctionVersion(_version->function_vertex, opFF)) : _version, fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
                modified = true;
             }
          }

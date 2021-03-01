@@ -317,7 +317,8 @@
 #define OPT_SOFT_FLOAT (1 + OPT_SKIP_PIPE_PARAMETER)
 #define OPT_SOFTFLOAT_SUBNORMAL (1 + OPT_SOFT_FLOAT)
 #define OPT_SOFTFLOAT_NOROUNDING (1 + OPT_SOFTFLOAT_SUBNORMAL)
-#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOROUNDING)
+#define OPT_SOFTFLOAT_NOEXCEPTION (1 + OPT_SOFTFLOAT_NOROUNDING)
+#define OPT_SOFT_FP (1 + OPT_SOFTFLOAT_NOEXCEPTION)
 #define OPT_STG (1 + OPT_SOFT_FP)
 #define OPT_SPECULATIVE (1 + OPT_STG)
 #define INPUT_OPT_TEST_MULTIPLE_NON_DETERMINISTIC_FLOWS (1 + OPT_SPECULATIVE)
@@ -1188,6 +1189,7 @@ int BambuParameter::Exec()
 #endif
       {"softfloat-subnormal", no_argument, nullptr, OPT_SOFTFLOAT_SUBNORMAL},
       {"softfloat-norounding", no_argument, nullptr, OPT_SOFTFLOAT_NOROUNDING},
+      {"softfloat-noexception", no_argument, nullptr, OPT_SOFTFLOAT_NOEXCEPTION},
       {"libm-std-rounding", no_argument, nullptr, OPT_LIBM_STD_ROUNDING},
       {"soft-fp", no_argument, nullptr, OPT_SOFT_FP},
       {"hls-div", optional_argument, nullptr, OPT_HLS_DIV},
@@ -2005,8 +2007,12 @@ int BambuParameter::Exec()
          }
          case OPT_SOFTFLOAT_NOROUNDING:
          {
-            setOption(OPT_softfloat_subnormal, false);
             setOption(OPT_softfloat_norounding, true);
+            break;
+         }
+         case OPT_SOFTFLOAT_NOEXCEPTION:
+         {
+            setOption(OPT_softfloat_noexception, true);
             break;
          }
          case OPT_LIBM_STD_ROUNDING:
@@ -3549,10 +3555,6 @@ void BambuParameter::CheckParameters()
       else if(isOption(OPT_softfloat_subnormal) && getOption<bool>(OPT_softfloat_subnormal))
       {
          add_bambu_library("softfloat_subnormals");
-      }
-      else if(isOption(OPT_softfloat_norounding) && getOption<bool>(OPT_softfloat_norounding))
-      {
-         add_bambu_library("softfloat_norounding");
       }
       else
       {
