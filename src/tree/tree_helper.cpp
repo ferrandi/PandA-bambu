@@ -57,6 +57,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "math_function.hpp"
 
 #include "var_pp_functor.hpp"
 
@@ -2786,6 +2787,10 @@ static bool same_size_fields(const tree_nodeConstRef& t)
       if(!sizeFlds)
          sizeFlds = tree_helper::Size(fldType);
       else if(sizeFlds != tree_helper::Size(fldType))
+         return false;
+      else if(resize_to_1_8_16_32_64_128_256_512(sizeFlds) != sizeFlds)
+         return false;
+      else if(1 != sizeFlds)
          return false;
    }
    return true;
