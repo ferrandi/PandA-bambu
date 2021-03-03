@@ -78,6 +78,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, " .:: Creating Lattice Backend Flow ::.");
 
    default_data["LatticeECP3"] = "LatticeECP3.data";
+   default_data["LatticeECP5"] = "LatticeECP5.data";
    XMLDomParserRef parser;
    if(Param->isOption(OPT_target_device_script))
    {
@@ -99,7 +100,7 @@ LatticeBackendFlow::LatticeBackendFlow(const ParameterConstRef _Param, const std
       }
       else
       {
-         device_string = "LatticeECP3";
+         device_string = "LatticeECP5";
       }
       if(default_data.find(device_string) == default_data.end())
       {

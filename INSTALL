@@ -625,16 +625,16 @@ In case ISE is installed in /opt/Xilinx/14.6/ the solution is:
   $sudo ln -s /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 
 
-Notes on Debian/Ubuntu and Lattice Diamond 3.9
+Notes on Debian/Ubuntu and Lattice Diamond 3.12
 *************
 
 Lattice Diamond is currently distributed in rpm form for Linux distributions. To convert an rpm archive file into a .deb you can use the following instructions:
   $sudo apt-get install alien
-  $sudo alien --scripts diamond_3_9-base_x64-99-2-x86_64-linux.rpm
+  $sudo alien --scripts diamond_3_12-base-240-2-x86_64-linux.rpm
 once the package has been converted you can install with:
-  $sudo dpkg -i diamond-3-9-base-x64_3.9-100_amd64.deb
+  $sudo dpkg -i diamond-3-12-base_3.12-241_amd64.deb
 
-Device LFE335EA8FN484C requires a free license available from Lattice Semiconductor. Check this link to get the license: http://www.latticesemi.com/Support/Licensing/DiamondAndiCEcube2SoftwareLicensing/Versa
+Device LFE5U85F8BG756C requires a free license available from Lattice Semiconductor. Check this link to get the license: http://www.latticesemi.com/Support/Licensing/
 
 
 Notes on NanoXplore tools

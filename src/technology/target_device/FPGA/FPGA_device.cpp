@@ -100,6 +100,8 @@ void FPGA_device::load_devices(const target_deviceRef device)
    default_device_data["EP4SGX530KH40C2"] = "EP4SGX530KH40C2.data";
    default_device_data["5SGXEA7N2F45C1"] = "5SGXEA7N2F45C1.data";
    default_device_data["LFE335EA8FN484C"] = "LFE335EA8FN484C.data";
+   default_device_data["LFE5UM85F8BG756C"] = "LFE5UM85F8BG756C.data";
+   default_device_data["LFE5U85F8BG756C"] = "LFE5U85F8BG756C.data";
    default_device_data["nx1h35S"] = "nx1h35S.data";
    default_device_data["nx1h140tsp"] = "nx1h140tsp.data";
 
