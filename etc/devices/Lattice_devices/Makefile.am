@@ -5,4 +5,3 @@ EXTRA_DIST = LatticeECP3.xml LatticeECP5.xml LFE335EA8FN484C-seed.xml LFE335EA8F
 
 #do not touch the following line
 
-LatticeECP5.xml
