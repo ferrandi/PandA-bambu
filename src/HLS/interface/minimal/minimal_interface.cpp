@@ -313,8 +313,6 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    };
    if(!Has_intern_shared_data)
    {
-      std::cerr << "Has_extern_allocated_data" << Has_extern_allocated_data << "\n";
-      std::cerr << "Has_unknown_addresses" << Has_unknown_addresses << "\n";
       if(!Has_extern_allocated_data)
       {
          if(!with_master && with_slave)
