@@ -2159,7 +2159,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
       fu_module->SetParameter("READ_ONLY_MEMORY", "0");
    }
 }
-#define CHANGE_SDS_MEMORY_LAYOUT 1
+#define CHANGE_SDS_MEMORY_LAYOUT 0
 
 void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar, long long int& vec_size, unsigned int& elts_size, const memoryRef mem, bool is_memory_splitted, bool is_sds, module* fu_module)
 {
