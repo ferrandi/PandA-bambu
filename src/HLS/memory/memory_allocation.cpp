@@ -210,7 +210,6 @@ void memory_allocation::finalize_memory_allocation()
 {
    THROW_ASSERT(func_list.size(), "Empty list of functions to be analyzed");
    bool use_unknown_address = false;
-   bool pointer_conversion_happen = false;
    bool has_unaligned_accesses = false;
    bool assume_aligned_access_p = parameters->isOption(OPT_aligned_access) && parameters->getOption<bool>(OPT_aligned_access);
    const tree_managerRef TreeM = HLSMgr->get_tree_manager();
@@ -226,13 +225,6 @@ void memory_allocation::finalize_memory_allocation()
       }
 
       use_unknown_address |= FB->get_dereference_unknown_addr();
-
-      if(FB->get_pointer_type_conversion())
-      {
-         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "---This function performs pointer conversions: " + BH->get_function_name());
-      }
-
-      pointer_conversion_happen |= FB->get_pointer_type_conversion();
 
       if(FB->get_unaligned_accesses())
       {
@@ -584,7 +576,6 @@ void memory_allocation::finalize_memory_allocation()
    HLSMgr->Rmem->set_bram_bitsize(bram_bitsize);
    HLSMgr->Rmem->set_intern_shared_data(has_intern_shared_data);
    HLSMgr->Rmem->set_use_unknown_addresses(use_unknown_address);
-   HLSMgr->Rmem->set_pointer_conversion(pointer_conversion_happen);
    HLSMgr->Rmem->set_unaligned_accesses(has_unaligned_accesses);
 
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->");
@@ -599,12 +590,6 @@ void memory_allocation::finalize_memory_allocation()
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---ALL pointers have been resolved");
    }
-#if 0
-   if(pointer_conversion_happen)
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "At least one pointer conversion has been performed into the code");
-   else
-      INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "No pointer recast into the code");
-#endif
    if(has_unaligned_accesses)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Code has LOADs or STOREs with unaligned accesses");

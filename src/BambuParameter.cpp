@@ -776,7 +776,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                       and package (e.g.,: \"xc7z020,-1,clg484,VVD\")\n"
       << "            - Altera:  a string defining the device string (e.g. EP2C70F896C6)\n"
       << "            - Lattice: a string defining the device string (e.g.\n"
-      << "                       LFE335EA8FN484C)\n\n"
+      << "                       LFE5U85F8BG756C)\n\n"
       << "    --power-optimization\n"
       << "        Enable Xilinx power based optimization (default no).\n\n"
       << "    --no-iob\n"
@@ -3771,7 +3771,7 @@ void BambuParameter::CheckParameters()
                   "use --testbench-extra-gcc-flags=\"string\" to provide them");
    }
    setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(getOption<GccWrapper_CompilerTarget>(OPT_default_compiler)));
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C")
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
@@ -3779,13 +3779,13 @@ void BambuParameter::CheckParameters()
       }
    }
 #if !HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C")
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
    {
       THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support");
    }
 #endif
 #if HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") and
       !getOption<bool>(OPT_connect_iob))
    {
       THROW_WARNING("--no-iob cannot be used when target is a Lattice board");

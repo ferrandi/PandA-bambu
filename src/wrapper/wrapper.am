@@ -398,14 +398,16 @@ endif
     $(AM_CPPFLAGS)
   lib_Latticewrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB)
 
-wrapper/synthesis/lattice/LatticeBackendFlow.cpp : wrapper/synthesis/lattice/LatticeECP3.data
+wrapper/synthesis/lattice/LatticeBackendFlow.cpp : wrapper/synthesis/lattice/LatticeECP3.data wrapper/synthesis/lattice/LatticeECP5.data
 #The tab in this rule can't be replaced by blanks
 wrapper/synthesis/lattice/LatticeECP3.data: $(top_srcdir)/etc/devices/Lattice_devices/LatticeECP3.xml
 	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LatticeECP3.xml > wrapper/synthesis/lattice/LatticeECP3.data
+wrapper/synthesis/lattice/LatticeECP5.data: $(top_srcdir)/etc/devices/Lattice_devices/LatticeECP5.xml
+	gzip -c  $(top_srcdir)/etc/devices/Lattice_devices/LatticeECP5.xml > wrapper/synthesis/lattice/LatticeECP5.data
 
 
 wrapper_synthesis_lattice_dir = $(wrapper_synthesis_dir)/lattice
-wrapper_synthesis_lattice__DATA = wrapper/synthesis/lattice/LatticeECP3.data
+wrapper_synthesis_lattice__DATA = wrapper/synthesis/lattice/LatticeECP3.data wrapper/synthesis/lattice/LatticeECP5.data
 
   noinst_HEADERS += wrapper/synthesis/lattice/LatticeBackendFlow.hpp wrapper/synthesis/lattice/LatticeWrapper.hpp wrapper/synthesis/lattice/lattice_flow_wrapper.hpp 
   lib_Latticewrapper_la_SOURCES = wrapper/synthesis/lattice/LatticeBackendFlow.cpp wrapper/synthesis/lattice/LatticeWrapper.cpp wrapper/synthesis/lattice/lattice_flow_wrapper.cpp 

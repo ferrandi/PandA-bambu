@@ -237,6 +237,11 @@ class application_manager
    const CustomOrderedSet<unsigned int>& get_written_objects() const;
 
    /**
+    * @brief clean_written_objects clean the written object data structure
+    */
+   void clean_written_objects();
+
+   /**
     * set the value of the address bitsize
     * @param value is the new value
     */

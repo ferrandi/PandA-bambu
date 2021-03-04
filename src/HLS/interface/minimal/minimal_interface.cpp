@@ -249,6 +249,68 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
    }
 
+   auto do_not_expose_globals_case = [&]{
+      auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
+         structural_objectRef port1, port2;
+         structural_objectRef sign;
+         /// slave INs connections
+         port1 = wrappedObj->find_member(portS, port_o_K, wrappedObj);
+         port2 = wrappedObj->find_member(portM, port_o_K, wrappedObj);
+         if(port1->get_kind() == port_vector_o_K)
+         {
+            sign = SM_minimal_interface->add_sign_vector(port2->get_id() + "_INT", GetPointer<port_o>(port2)->get_ports_size(), interfaceObj, port2->get_typeRef());
+         }
+         else
+         {
+            sign = SM_minimal_interface->add_sign(port2->get_id() + "_INT", interfaceObj, port2->get_typeRef());
+         }
+         SM_minimal_interface->add_connection(port1, sign);
+         SM_minimal_interface->add_connection(sign, port2);
+         portsToSigConnect[port2] = sign;
+         portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
+      };
+      auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM) {
+         structural_objectRef port1In, port1Out, port2;
+         structural_objectRef sign;
+         /// slave INs connections
+         port2 = wrappedObj->find_member(portM, port_o_K, wrappedObj);
+         if(port2->get_kind() == port_vector_o_K)
+         {
+            sign = SM_minimal_interface->add_sign_vector(port2->get_id() + "_INT", GetPointer<port_o>(port2)->get_ports_size(), interfaceObj, port2->get_typeRef());
+         }
+         else
+         {
+            sign = SM_minimal_interface->add_sign(port2->get_id() + "_INT", interfaceObj, port2->get_typeRef());
+         }
+         port1In = wrappedObj->find_member(portSin, port_o_K, wrappedObj);
+         SM_minimal_interface->add_connection(port1In, sign);
+         portsToSigConnect[port2] = sign;
+
+         port1Out = wrappedObj->find_member(portSout, port_o_K, wrappedObj);
+         if(port1Out->get_kind() == port_vector_o_K)
+         {
+            sign = SM_minimal_interface->add_sign_vector(port1Out->get_id() + "_INT", GetPointer<port_o>(port1Out)->get_ports_size(), interfaceObj, port1Out->get_typeRef());
+         }
+         else
+         {
+            sign = SM_minimal_interface->add_sign(port1Out->get_id() + "_INT", interfaceObj, port1Out->get_typeRef());
+         }
+         SM_minimal_interface->add_connection(port1Out, sign);
+         SM_minimal_interface->add_connection(sign, port2);
+
+         portsToSkip.insert(wrappedObj->find_member(portSin, port_o_K, wrappedObj));
+         portsToSkip.insert(wrappedObj->find_member(portSout, port_o_K, wrappedObj));
+      };
+      manage_feedback1("S_oe_ram", "Mout_oe_ram");
+      manage_feedback1("S_we_ram", "Mout_we_ram");
+      manage_feedback1("S_addr_ram", "Mout_addr_ram");
+      manage_feedback1("S_Wdata_ram", "Mout_Wdata_ram");
+      manage_feedback1("S_data_ram_size", "Mout_data_ram_size");
+      manage_feedback2("Sin_DataRdy", "Sout_DataRdy", "M_DataRdy");
+      manage_feedback2("Sin_Rdata_ram", "Sout_Rdata_ram", "M_Rdata_ram");
+      portsToConstant.erase(portsToConstant.find(wrappedObj->find_member("Sin_DataRdy", port_o_K, wrappedObj)));
+      portsToConstant.erase(portsToConstant.find(wrappedObj->find_member("Sin_Rdata_ram", port_o_K, wrappedObj)));
+   };
    if(!Has_intern_shared_data)
    {
       if(!Has_extern_allocated_data)
@@ -303,6 +365,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             portsToSkip.insert(wrappedObj->find_member("Mout_addr_ram", port_o_K, wrappedObj));
             portsToSkip.insert(wrappedObj->find_member("Mout_Wdata_ram", port_o_K, wrappedObj));
             portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
+         }
+         else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
+         {
+            do_not_expose_globals_case();
          }
          else
          {
@@ -792,66 +858,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
          }
          else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
          {
-            auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
-               structural_objectRef port1, port2;
-               structural_objectRef sign;
-               /// slave INs connections
-               port1 = wrappedObj->find_member(portS, port_o_K, wrappedObj);
-               port2 = wrappedObj->find_member(portM, port_o_K, wrappedObj);
-               if(port1->get_kind() == port_vector_o_K)
-               {
-                  sign = SM_minimal_interface->add_sign_vector(port2->get_id() + "_INT", GetPointer<port_o>(port2)->get_ports_size(), interfaceObj, port2->get_typeRef());
-               }
-               else
-               {
-                  sign = SM_minimal_interface->add_sign(port2->get_id() + "_INT", interfaceObj, port2->get_typeRef());
-               }
-               SM_minimal_interface->add_connection(port1, sign);
-               SM_minimal_interface->add_connection(sign, port2);
-               portsToSigConnect[port2] = sign;
-               portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
-            };
-            auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM) {
-               structural_objectRef port1In, port1Out, port2;
-               structural_objectRef sign;
-               /// slave INs connections
-               port2 = wrappedObj->find_member(portM, port_o_K, wrappedObj);
-               if(port2->get_kind() == port_vector_o_K)
-               {
-                  sign = SM_minimal_interface->add_sign_vector(port2->get_id() + "_INT", GetPointer<port_o>(port2)->get_ports_size(), interfaceObj, port2->get_typeRef());
-               }
-               else
-               {
-                  sign = SM_minimal_interface->add_sign(port2->get_id() + "_INT", interfaceObj, port2->get_typeRef());
-               }
-               port1In = wrappedObj->find_member(portSin, port_o_K, wrappedObj);
-               SM_minimal_interface->add_connection(port1In, sign);
-               portsToSigConnect[port2] = sign;
-
-               port1Out = wrappedObj->find_member(portSout, port_o_K, wrappedObj);
-               if(port1Out->get_kind() == port_vector_o_K)
-               {
-                  sign = SM_minimal_interface->add_sign_vector(port1Out->get_id() + "_INT", GetPointer<port_o>(port1Out)->get_ports_size(), interfaceObj, port1Out->get_typeRef());
-               }
-               else
-               {
-                  sign = SM_minimal_interface->add_sign(port1Out->get_id() + "_INT", interfaceObj, port1Out->get_typeRef());
-               }
-               SM_minimal_interface->add_connection(port1Out, sign);
-               SM_minimal_interface->add_connection(sign, port2);
-
-               portsToSkip.insert(wrappedObj->find_member(portSin, port_o_K, wrappedObj));
-               portsToSkip.insert(wrappedObj->find_member(portSout, port_o_K, wrappedObj));
-            };
-            manage_feedback1("S_oe_ram", "Mout_oe_ram");
-            manage_feedback1("S_we_ram", "Mout_we_ram");
-            manage_feedback1("S_addr_ram", "Mout_addr_ram");
-            manage_feedback1("S_Wdata_ram", "Mout_Wdata_ram");
-            manage_feedback1("S_data_ram_size", "Mout_data_ram_size");
-            manage_feedback2("Sin_DataRdy", "Sout_DataRdy", "M_DataRdy");
-            manage_feedback2("Sin_Rdata_ram", "Sout_Rdata_ram", "M_Rdata_ram");
-            portsToConstant.erase(portsToConstant.find(wrappedObj->find_member("Sin_DataRdy", port_o_K, wrappedObj)));
-            portsToConstant.erase(portsToConstant.find(wrappedObj->find_member("Sin_Rdata_ram", port_o_K, wrappedObj)));
+            do_not_expose_globals_case();
          }
          else if(with_slave && (HLSMgr->Rmem->get_allocated_intern_memory() == 0))
          {

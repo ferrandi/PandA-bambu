@@ -2589,7 +2589,6 @@ void allocation::IntegrateTechnologyLibraries()
       bool is_async_var = false;
 
       THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != MemoryAllocation_ChannelsType::MEM_ACC_P1N, "unexpected condition");
-      bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
       if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11)
       {
          if(HLSMgr->Rmem->is_sds_var(var))
@@ -2618,10 +2617,6 @@ void allocation::IntegrateTechnologyLibraries()
                   current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_SDS, latency_postfix, HLS_C, var)));
                }
             }
-         }
-         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
-         {
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_SDS_BUS + latency_postfix);
          }
          else
          {
@@ -2657,10 +2652,6 @@ void allocation::IntegrateTechnologyLibraries()
                }
             }
          }
-         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
-         {
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_N1_SDS_BUS + latency_postfix);
-         }
          else
          {
             current_fu = get_fu(ARRAY_1D_STD_BRAM_N1 + latency_postfix);
@@ -2695,10 +2686,6 @@ void allocation::IntegrateTechnologyLibraries()
                   current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS + allocation_information->get_latency_string(get_synch_ram_latency(ARRAY_1D_STD_BRAM_NN_SDS, latency_postfix, HLS_C, var)));
                }
             }
-         }
-         else if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(var))
-         {
-            current_fu = get_fu(ARRAY_1D_STD_BRAM_NN_SDS_BUS + latency_postfix);
          }
          else
          {

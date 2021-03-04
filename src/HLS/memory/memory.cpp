@@ -89,7 +89,6 @@ memory::memory(const tree_managerRef _TreeM, unsigned long long int _off_base_ad
       maxbram_bitsize(0),
       intern_shared_data(false),
       use_unknown_addresses(false),
-      pointer_conversion(false),
       unaligned_accesses(false),
       all_pointers_resolved(false),
       implicit_memcpy(false),
@@ -949,10 +948,6 @@ bool memory::notEQ(refcount<memory> ref) const
       return true;
    }
    if(use_unknown_addresses != ref->use_unknown_addresses)
-   {
-      return true;
-   }
-   if(pointer_conversion != ref->pointer_conversion)
    {
       return true;
    }

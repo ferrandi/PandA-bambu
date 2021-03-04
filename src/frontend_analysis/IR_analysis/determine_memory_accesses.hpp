@@ -71,9 +71,6 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
    CustomUnorderedSet<unsigned int> already_visited_ae;
    CustomUnorderedSet<unsigned int> already_visited;
 
-   /// True if already executed
-   bool already_executed;
-
    /**
     * Analyze the given node ID to determine which variables have to be referred in memory
     */

@@ -219,6 +219,10 @@ flopoco_wrapper::flopoco_wrapper(int
    {
       target = new flopoco::CycloneII();
    }
+   else if(FU_target.find("LatticeECP5") != std::string::npos)
+   {
+      target = new flopoco::CycloneII();
+   }
    else if("NG-medium" == FU_target)
    {
       target = new flopoco::Virtex5();

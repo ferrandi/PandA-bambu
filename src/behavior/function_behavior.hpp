@@ -392,9 +392,6 @@ class FunctionBehavior
    /// the function dereference a pointer initialized with constant address.
    bool dereference_unknown_address;
 
-   /// true when at least one pointer conversion happen
-   bool pointer_type_conversion;
-
    bool unaligned_accesses;
 
    /// The version of basic block intermediate representation
@@ -697,15 +694,9 @@ class FunctionBehavior
    void add_dynamic_address(unsigned int node_id);
 
    /**
-    * remove a variable from the dynamic address set
-    * @param node_id is the object stored in memory
-    */
-   void erase_dynamic_address(unsigned int node_id);
-
-   /**
     * remove all variables from the dynamic address set
     */
-   void erase_all_dynamic_addresses();
+   void clean_dynamic_address();
 
    /**
     * Checks if a variable has been allocated in memory
@@ -716,6 +707,9 @@ class FunctionBehavior
     * Returns the set of memory variables
     */
    const CustomOrderedSet<unsigned int>& get_function_mem() const;
+
+   /// clean the function mem data structure
+   void clean_function_mem();
 
    /**
     * Returns the set of variables for which a dynamic address computation maybe required
@@ -728,9 +722,19 @@ class FunctionBehavior
    const CustomOrderedSet<unsigned int>& get_parm_decl_copied() const;
 
    /**
+    * @brief clean_parm_decl_copied clean parm_decl_copied data structure
+    */
+   void clean_parm_decl_copied();
+
+   /**
     * Returns the set of the actual parameters that has to be loaded into the formal parameter
     */
    const CustomOrderedSet<unsigned int>& get_parm_decl_loaded() const;
+
+   /**
+    * @brief clean_parm_decl_loaded clean parm_decl_loaded data structure
+    */
+   void clean_parm_decl_loaded();
 
    /**
     * Returns the set of the formal parameters that has to be stored into the formal parameter
@@ -738,7 +742,12 @@ class FunctionBehavior
    const CustomOrderedSet<unsigned int>& get_parm_decl_stored() const;
 
    /**
-    * Set the use of dereferences of unknown address.
+    * @brief clean_parm_decl_stored clean parm_decl_stored data structure
+    */
+   void clean_parm_decl_stored();
+
+   /**
+    * Set the use of dereference of unknown address.
     */
    inline void set_dereference_unknown_addr(bool f)
    {
@@ -746,27 +755,11 @@ class FunctionBehavior
    }
 
    /**
-    * Return true if the function has dereferences of unknown address.
+    * Return true if the function has dereference of unknown address.
     */
    inline bool get_dereference_unknown_addr() const
    {
       return dereference_unknown_address;
-   }
-
-   /**
-    * Set if a pointer conversion happen
-    */
-   inline void set_pointer_type_conversion(bool f)
-   {
-      pointer_type_conversion = f;
-   }
-
-   /**
-    * Return true if a pointer conversion happen
-    */
-   inline bool get_pointer_type_conversion() const
-   {
-      return pointer_type_conversion;
    }
 
    /**
@@ -836,6 +829,14 @@ class FunctionBehavior
    bool is_a_state_variable(unsigned int node_id) const
    {
       return state_variables.find(node_id) != state_variables.end();
+   }
+
+   /**
+    * @brief clean_state_variable initialize the state variable data structure
+    */
+   void clean_state_variable()
+   {
+      state_variables.clear();
    }
 
    /**

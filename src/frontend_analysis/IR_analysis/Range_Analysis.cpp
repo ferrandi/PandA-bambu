@@ -7211,6 +7211,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(ESSA, ALL_FUNCTIONS));
          }
          relationships.insert(std::make_pair(FUNCTION_PARM_MASK, WHOLE_APPLICATION));
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, ALL_FUNCTIONS));
          break;
       }
       case PRECEDENCE_RELATIONSHIP:
