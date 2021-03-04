@@ -2241,7 +2241,17 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
          for(auto init_value : init_string)
          {
-            init_file_a << init_value << std::endl;
+            THROW_ASSERT(elts_size, "unexpected condition");
+            if(elts_size != init_value.size() && (init_value.size() % elts_size == 0))
+            {
+               const auto n_elmts = init_value.size() / elts_size;
+               for(auto index=0u; index < n_elmts; ++index)
+               {
+                   init_file_a << init_value.substr(init_value.size()-elts_size-index*elts_size, elts_size) << std::endl;
+               }
+            }
+            else
+               init_file_a << init_value << std::endl;
          }
       }
       else
