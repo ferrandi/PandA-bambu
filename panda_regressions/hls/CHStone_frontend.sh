@@ -13,6 +13,10 @@ $(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu \
              --args="--configuration-name=CLANG6-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG6 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=CLANG7-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG7 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=CLANG8-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG8 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
+             --args="--configuration-name=CLANG8-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG9 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
+             --args="--configuration-name=CLANG8-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG10 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
+             --args="--configuration-name=CLANG8-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANG11 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
+             --args="--configuration-name=CLANG8-O3-wp-NN --simulate -O3 -fwhole-program --compiler=I386_CLANGVVD --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=GCC49-O0-wp-NN --simulate -O0 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=GCC49-O1-wp-NN --simulate -O1 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\
              --args="--configuration-name=GCC49-O2-wp-NN --simulate -O2 -fwhole-program --compiler=I386_GCC49 --clock-period=15 -D'printf(fmt, ...)=' --channels-type=MEM_ACC_NN --experimental-setup=BAMBU"\

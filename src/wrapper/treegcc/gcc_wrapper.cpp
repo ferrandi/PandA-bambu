@@ -72,6 +72,8 @@
 #include "config_HAVE_I386_CLANG8_MX32.hpp"
 #include "config_HAVE_I386_CLANG9_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG9_MX32.hpp"
+#include "config_HAVE_I386_CLANGVVD_COMPILER.hpp"
+#include "config_HAVE_I386_CLANGVVD_MX32.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -162,6 +164,15 @@
 #include "config_I386_CLANG9_SSA_PLUGIN.hpp"
 #include "config_I386_CLANG9_SSA_PLUGINCPP.hpp"
 #include "config_I386_CLANG9_TOPFNAME_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_ASTANALYZER_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_CSROA_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_EMPTY_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_EXE.hpp"
+#include "config_I386_CLANGVVD_EXPANDMEMOPS_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_GEPICANON_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_SSA_PLUGIN.hpp"
+#include "config_I386_CLANGVVD_SSA_PLUGINCPP.hpp"
+#include "config_I386_CLANGVVD_TOPFNAME_PLUGIN.hpp"
 #include "config_I386_CLANGPP10_EXE.hpp"
 #include "config_I386_CLANGPP11_EXE.hpp"
 #include "config_I386_CLANGPP4_EXE.hpp"
@@ -170,6 +181,7 @@
 #include "config_I386_CLANGPP7_EXE.hpp"
 #include "config_I386_CLANGPP8_EXE.hpp"
 #include "config_I386_CLANGPP9_EXE.hpp"
+#include "config_I386_CLANGPPVVD_EXE.hpp"
 #include "config_I386_CLANG_CPP10_EXE.hpp"
 #include "config_I386_CLANG_CPP11_EXE.hpp"
 #include "config_I386_CLANG_CPP4_EXE.hpp"
@@ -178,6 +190,7 @@
 #include "config_I386_CLANG_CPP7_EXE.hpp"
 #include "config_I386_CLANG_CPP8_EXE.hpp"
 #include "config_I386_CLANG_CPP9_EXE.hpp"
+#include "config_I386_CLANG_CPPVVD_EXE.hpp"
 #include "config_I386_CPP45_EXE.hpp"
 #include "config_I386_CPP46_EXE.hpp"
 #include "config_I386_CPP47_EXE.hpp"
@@ -261,6 +274,8 @@
 #include "config_I386_LLVM8_OPT_EXE.hpp"
 #include "config_I386_LLVM9_LINK_EXE.hpp"
 #include "config_I386_LLVM9_OPT_EXE.hpp"
+#include "config_I386_LLVMVVD_LINK_EXE.hpp"
+#include "config_I386_LLVMVVD_OPT_EXE.hpp"
 #include "config_NPROFILE.hpp"
 #include "config_SPARC_CPP_EXE.hpp"
 #include "config_SPARC_ELF_CPP.hpp"
@@ -348,7 +363,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    std::string command = compiler.gcc.string();
    if(cm == GccWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
       bool flag_cpp;
       if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
       {
@@ -375,6 +390,8 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       command = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
 #elif HAVE_I386_CLANG4_COMPILER
       command = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
+#elif HAVE_I386_CLANGVVD_COMPILER
+      command = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
 #else
       THROW_ERROR("unexpected condition");
 #endif
@@ -431,6 +448,12 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    {
       /// remove some extra option not compatible with clang
       boost::replace_all(command, "-mlong-double-64", "");
+#if HAVE_I386_CLANGVVD_COMPILER
+        if(Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
+        {
+           boost::replace_all(command, "-fhls", "");
+        }
+#endif
       std::string fname;
       bool addTopFName = false;
       if(isWholeProgram && compiler.is_clang)
@@ -728,7 +751,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
       disable_pragma_parsing = true;
    }
    if(disable_pragma_parsing ||
-      !(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER))
+      !(HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER))
    {
       THROW_WARNING("pragma analysis requires CLANG");
    }
@@ -1219,7 +1242,7 @@ void GccWrapper::InitializeGccParameters()
             }
             ReadParameters();
 
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
             {
                GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
 
@@ -1248,6 +1271,9 @@ void GccWrapper::InitializeGccParameters()
 #if HAVE_I386_CLANG11_COMPILER
                   || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+      #if HAVE_I386_CLANGVVD_COMPILER
+                        || compiler == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+      #endif
                )
                {
                   /// sanitize CLANG/LLVM options by removing unsupported GCC options
@@ -1539,6 +1565,19 @@ void GccWrapper::SetBambuDefault()
       return;
    }
 #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
+   {
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
+      optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
+      optimization_flags["builtin-memset"] = false;
+      optimization_flags["builtin-memcpy"] = false;
+      optimization_flags["builtin-memmove"] = false;
+      optimization_flags["builtin-bcmp"] = false;
+      optimization_flags["hls"] = true;
+      return;
+   }
+#endif
 
    /// parameters with enable
 
@@ -1733,7 +1772,7 @@ void GccWrapper::SetGccDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting front-end compiler defaults");
    const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
 #endif
    optimization_flags["stack-protector"] = false; // In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
@@ -1787,6 +1826,9 @@ void GccWrapper::SetGccDefault()
 #if HAVE_I386_CLANG11_COMPILER
             && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+      #if HAVE_I386_CLANGVVD_COMPILER
+                  && compiler != GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+      #endif
          )
          {
             optimization_flags["auto-inc-dec"] = false;
@@ -1968,6 +2010,12 @@ void GccWrapper::SetGccDefault()
                   break;
                }
 #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+               case(GccWrapper_CompilerTarget::CT_I386_CLANGVVD):
+               {
+                  break;
+               }
+#endif
 #if HAVE_ARM_COMPILER
                case(GccWrapper_CompilerTarget::CT_ARM_GCC):
                {
@@ -2040,12 +2088,15 @@ void GccWrapper::SetGccDefault()
 #if HAVE_I386_CLANG11_COMPILER
       && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
+      #if HAVE_I386_CLANGVVD_COMPILER
+            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+      #endif
    )
    {
       optimization_flags["ipa-pure-const"] = true; /// needed to correctly manage global variables
       optimization_flags["tree-dce"] = true;       /// needed to remove unnecessary computations
    }
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
    else
    {
       optimization_flags["vectorize"] = false;     /// disable vectorization
@@ -2076,7 +2127,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 {
    Compiler compiler;
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
-    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
+    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER  || HAVE_I386_CLANGVVD_COMPILER ||               \
     HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
    GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
@@ -2084,7 +2135,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
-    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
+    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER ||               \
     HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP && !Param->isOption(OPT_pretty_print))
@@ -2098,7 +2149,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
-    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
+    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER ||               \
     HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER || HAVE_SPARC_ELF_GCC
    std::string gcc_extra_options;
    if(Param->isOption(OPT_gcc_extra_options))
@@ -2108,7 +2159,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
-    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
+    HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER  || HAVE_I386_CLANGVVD_COMPILER||               \
     HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
    GccWrapper_CompilerTarget preferred_compiler;
    if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
@@ -2156,6 +2207,9 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG5_ASTANALYZER_PLUGIN;
 #elif HAVE_I386_CLANG4_COMPILER
       compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANG4_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
+#elif HAVE_I386_CLANGVVD_COMPILER
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANGVVD_ASTANALYZER_PLUGIN + plugin_ext;
       compiler.ASTAnalyzer_plugin_name = I386_CLANG4_ASTANALYZER_PLUGIN;
 #endif
    };
@@ -2668,6 +2722,33 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
       compiler.ASTAnalyzer_plugin_name = I386_CLANG11_ASTANALYZER_PLUGIN;
       compiler.llvm_link = relocate_compiler_path(I386_LLVM11_LINK_EXE);
       compiler.llvm_opt = relocate_compiler_path(I386_LLVM11_OPT_EXE);
+   }
+#endif
+
+#if HAVE_I386_CLANGVVD_COMPILER
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANGVVD))
+   {
+      compiler.is_clang = true;
+      compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
+      compiler.cpp = relocate_compiler_path(I386_CLANG_CPPVVD_EXE);
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
+      compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EMPTY_PLUGIN + plugin_ext;
+      compiler.empty_plugin_name = I386_CLANGVVD_EMPTY_PLUGIN;
+      compiler.ssa_plugin_obj = clang_plugin_dir + (flag_cpp ? I386_CLANGVVD_SSA_PLUGINCPP : I386_CLANGVVD_SSA_PLUGIN) + plugin_ext;
+      compiler.ssa_plugin_name = (flag_cpp ? I386_CLANGVVD_SSA_PLUGINCPP : I386_CLANGVVD_SSA_PLUGIN);
+      compiler.expandMemOps_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EXPANDMEMOPS_PLUGIN + plugin_ext;
+      compiler.expandMemOps_plugin_name = I386_CLANGVVD_EXPANDMEMOPS_PLUGIN;
+      compiler.GepiCanon_plugin_obj = clang_plugin_dir + I386_CLANGVVD_GEPICANON_PLUGIN + plugin_ext;
+      compiler.GepiCanon_plugin_name = I386_CLANGVVD_GEPICANON_PLUGIN;
+      compiler.CSROA_plugin_obj = clang_plugin_dir + I386_CLANGVVD_CSROA_PLUGIN + plugin_ext;
+      compiler.CSROA_plugin_name = I386_CLANGVVD_CSROA_PLUGIN;
+      compiler.topfname_plugin_obj = clang_plugin_dir + I386_CLANGVVD_TOPFNAME_PLUGIN + plugin_ext;
+      compiler.topfname_plugin_name = I386_CLANGVVD_TOPFNAME_PLUGIN;
+      compiler.ASTAnalyzer_plugin_obj = clang_plugin_dir + I386_CLANGVVD_ASTANALYZER_PLUGIN + plugin_ext;
+      compiler.ASTAnalyzer_plugin_name = I386_CLANGVVD_ASTANALYZER_PLUGIN;
+      compiler.llvm_link = relocate_compiler_path(I386_LLVMVVD_LINK_EXE);
+      compiler.llvm_opt = relocate_compiler_path(I386_LLVMVVD_OPT_EXE);
    }
 #endif
 
@@ -3315,12 +3396,12 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
 }
 
 std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
                                           optimization_level
 #endif
                                       ,
                                       const GccWrapper_CompilerTarget
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
                                           compiler
 #endif
                                       ,
@@ -3330,7 +3411,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #endif
                                       ,
                                       const std::string&
-#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+#if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
                                           expandMemOps_plugin_name
 #endif
                                       ,
@@ -3341,7 +3422,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                                       ,
                                       const std::string&
 #if HAVE_I386_CLANG4_COMPILER
-                                          //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+                                          //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
                                           GepiCanon_plugin_name
 #endif
                                       ,
@@ -3352,7 +3433,7 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
                                       ,
                                       const std::string&
 #if HAVE_I386_CLANG4_COMPILER
-                                          //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER
+                                          //|| HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || HAVE_I386_CLANGVVD_COMPILER
                                           CSROA_plugin_name
 #endif
                                       ,
@@ -3715,6 +3796,26 @@ std::string GccWrapper::clang_recipes(const GccWrapper_OptimizationSet
 #endif
 #if HAVE_I386_CLANG11_COMPILER
        if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG11)
+   {
+      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
+      recipe += " -" + expandMemOps_plugin_name;
+      /*
+            recipe += " -" + GepiCanon_plugin_name +
+                      "PS "
+                      "-" +
+                      GepiCanon_plugin_name +
+                      "COL "
+                      "-" +
+                      GepiCanon_plugin_name +
+                      "BVR ";
+      */
+      recipe += " -loop-unroll -simplifycfg ";
+   }
+   else
+#endif
+#if HAVE_I386_CLANGVVD_COMPILER
+       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
       const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";

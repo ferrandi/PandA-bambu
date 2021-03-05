@@ -68,6 +68,9 @@ include $(top_srcdir)/etc/clang_plugin/clang10.am
 ###### clang 11.0
 include $(top_srcdir)/etc/clang_plugin/clang11.am
 
+###### clang vvd
+include $(top_srcdir)/etc/clang_plugin/clangvvd.am
+
 clean :
 	rm -rf *.o *.so *.h bambuS2S-*
 

@@ -401,3 +401,26 @@ libhls_cdiv_clang11_a_SOURCES = $(common_libhls_cdiv_src)
 libhls_cdiv_clang11_a_CFLAGS = --compiler=I386_CLANG11  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
 libhls_cdiv_clang11_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANG11 $(common_treegccflags_clang) -C
 endif
+
+if BUILD_I386_CLANGVVD
+pkglib_LIBRARIES += libsoft-fp_clangvvd.a libhls-divNR_clangvvd.a libhls-divnr1_clangvvd.a libhls-divnr2_clangvvd.a libhls-divas_clangvvd.a  libhls-cdiv_clangvvd.a
+libsoft_fp_clangvvd_a_SOURCES = $(common_libsoft_fp_src)
+libsoft_fp_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libsoft_fp_clangvvd_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANGVVD $(common_treegccflags_clang) -C
+libhls_divNR_clangvvd_a_SOURCES = $(common_libhls_div_src)
+libhls_divNR_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD $(common_cflags_nr_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divNR_clangvvd_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANGVVD $(common_treegccflags_clang) -C
+libhls_divnr1_clangvvd_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr1_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=1 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr1_clangvvd_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANGVVD $(common_treegccflags_clang) -C
+libhls_divnr2_clangvvd_a_SOURCES = $(common_libhls_divnr_src)
+libhls_divnr2_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD  $(common_cflags_clang)  -I$(BOOST_DIR) -DUNROLL_FACTOR=2 --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divnr2_clangvvd_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANGVVD $(common_treegccflags_clang) -C
+libhls_divas_clangvvd_a_SOURCES = $(common_libhls_divas_src)
+libhls_divas_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_divas_clangvvd_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANGVVD $(common_treegccflags_clang) -C
+libhls_cdiv_clangvvd_a_SOURCES = $(common_libhls_cdiv_src)
+libhls_cdiv_clangvvd_a_CFLAGS = --compiler=I386_CLANGVVD  $(common_cflags_clang)  -I$(BOOST_DIR) --extra-gcc-options="-mllvm -inline-threshold=10000"
+libhls_cdiv_clangvvd_a_AR = $(top_builddir)/src/tree-panda-gcc --compiler=I386_CLANGVVD $(common_treegccflags_clang) -C
+endif
+

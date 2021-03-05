@@ -1266,6 +1266,9 @@ clang11_regression_simple_no_expose_globals.sh\
 clang11_regression_simple_default_verilator.sh\
 clang11_regression_simple_ext_pipelined_verilator.sh\
 clang11_regression_simple_no_expose_globals_verilator.sh\
+clangvvd_regression_simple_default.sh\
+clangvvd_regression_simple_ext_pipelined.sh\
+clangvvd_regression_simple_no_expose_globals.sh\
 gcc_regression_simple_verilator\
 softfloat-tests-clang4.sh\
 softfloat-tests-clang5.sh\
@@ -1275,6 +1278,7 @@ softfloat-tests-clang8.sh\
 softfloat-tests-clang9.sh\
 softfloat-tests-clang10.sh\
 softfloat-tests-clang11.sh\
+softfloat-tests-clangvvd.sh\
 libm-testsClang.sh\
 libm-testsClang4.sh\
 libm-testsClang5.sh\
@@ -1284,6 +1288,7 @@ libm-testsClang8.sh\
 libm-testsClang9.sh\
 libm-testsClang10.sh\
 libm-testsClang11.sh\
+libm-testsClangvvd.sh\
 CHStone_frontend1Clang.sh\
 gcc49_regression_simple_no_expose_globals_pretty_print.sh
 

@@ -170,7 +170,7 @@ namespace clang
       void writeXML_maskFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -231,7 +231,7 @@ namespace clang
       void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -275,7 +275,7 @@ namespace clang
       void writeXML_pipelineFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -313,7 +313,7 @@ namespace clang
       void writeFun2Params(const std::string& filename) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -381,10 +381,23 @@ namespace clang
 
          if(!mangleContext->shouldMangleDeclName(decl))
          {
+            delete mangleContext;
             return decl->getNameInfo().getName().getAsString();
          }
          std::string mangledName;
+         if(llvm::isa<CXXConstructorDecl>(decl) || llvm::isa<CXXDestructorDecl>(decl))
+         {
+            delete mangleContext;
+            return decl->getNameInfo().getName().getAsString();;
+         }
          llvm::raw_string_ostream ostream(mangledName);
+         if(mangleContext->shouldMangleCXXName(decl))
+         {
+            mangleContext->mangleCXXName(decl, ostream);
+            ostream.flush();
+            delete mangleContext;
+            return mangledName;
+         }
          mangleContext->mangleName(decl, ostream);
          ostream.flush();
          delete mangleContext;
