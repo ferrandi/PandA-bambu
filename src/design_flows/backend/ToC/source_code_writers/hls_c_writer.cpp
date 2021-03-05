@@ -1533,6 +1533,17 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef behavioral_he
          }
          break;
       }
+      case union_type_K:
+      {
+         const auto ut = GetPointer<const union_type>(type);
+         for(const auto& field : ut->list_of_flds)
+         {
+            const auto field_param = param + "." + behavioral_helper->PrintVariable(field->index);
+            WriteParamInMemory(behavioral_helper, field_param, tree_helper::get_type_index(TM, field->index), nesting_level + 1, input);
+            break;//only the first field will be considered
+         }
+         break;
+      }
       case array_type_K:
       {
          const auto at = GetPointer<const array_type>(type);
@@ -1558,7 +1569,6 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef behavioral_he
       case CharType_K:
       case enumeral_type_K:
       case complex_type_K:
-      case union_type_K:
       case function_type_K:
       case lang_type_K:
       case method_type_K:
