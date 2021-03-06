@@ -232,9 +232,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #if HAVE_I386_CLANG11_COMPILER
          && parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-      #if HAVE_I386_CLANGVVD_COMPILER
-               && parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANGVVD
-      #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+         && parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) != GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
       )
          compiler_flags += " -fexcess-precision=standard ";
    }
@@ -299,9 +299,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #if HAVE_I386_CLANG11_COMPILER
          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-      #if HAVE_I386_CLANGVVD_COMPILER
-               or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
-      #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
       )
       {
          compiler_flags += " -g -fsanitize=address -fno-omit-frame-pointer -fno-common ";
@@ -343,9 +343,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #if HAVE_I386_CLANG11_COMPILER
          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-      #if HAVE_I386_CLANGVVD_COMPILER
-               or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
-      #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
       )
       {
          compiler_flags += " -fsanitize=undefined -fsanitize-recover=undefined ";
@@ -457,9 +457,9 @@ DesignFlowStep_Status CTestbenchExecution::Exec()
 #if HAVE_I386_CLANG11_COMPILER
          or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-      #if HAVE_I386_CLANGVVD_COMPILER
-               or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
-      #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+         or parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
       )
       {
          exec_name.insert(0, "ASAN_OPTIONS='symbolize=1:redzone=2048' ");

@@ -894,9 +894,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M32)
                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-      #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
-                        || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
-      #endif
+#if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
                )
                   setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
                else
@@ -955,9 +955,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_MX32)
                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-      #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
-                        || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
-      #endif
+#if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_MX32)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
                )
                   setOption(OPT_gcc_m32_mx32, "-mx32");
                else
@@ -1016,9 +1016,9 @@ bool Parameter::ManageGccOptions(int next_option, char* optarg_param)
 #if(HAVE_I386_CLANG11_COMPILER && HAVE_I386_CLANG11_M64)
                   || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
-      #if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
-                        || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
-      #endif
+#if(HAVE_I386_CLANGVVD_COMPILER && HAVE_I386_CLANGVVD_M64)
+                  || getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+#endif
                )
                   setOption(OPT_gcc_m32_mx32, "-m64");
                else

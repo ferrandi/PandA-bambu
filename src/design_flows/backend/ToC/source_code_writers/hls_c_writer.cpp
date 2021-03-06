@@ -1540,7 +1540,7 @@ void HLSCWriter::WriteParamInMemory(const BehavioralHelperConstRef behavioral_he
          {
             const auto field_param = param + "." + behavioral_helper->PrintVariable(field->index);
             WriteParamInMemory(behavioral_helper, field_param, tree_helper::get_type_index(TM, field->index), nesting_level + 1, input);
-            break;//only the first field will be considered
+            break; // only the first field will be considered
          }
          break;
       }

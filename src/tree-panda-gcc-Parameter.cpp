@@ -542,9 +542,9 @@ void tree_panda_gcc_parameter::SetDefaults()
 #if HAVE_I386_CLANG11_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG11)
 #endif
-          #if HAVE_I386_CLANGVVD_COMPILER
-                                                     | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
-          #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
+#endif
 #if HAVE_ARM_COMPILER
                                            | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
 #endif

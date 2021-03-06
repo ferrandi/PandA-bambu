@@ -53,11 +53,11 @@
 
 /// Tree include
 #include "ext_tree_node.hpp"
+#include "math_function.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "math_function.hpp"
 
 #include "var_pp_functor.hpp"
 
