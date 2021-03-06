@@ -244,7 +244,8 @@
 #define OPT_DISTRAM_THRESHOLD (1 + OPT_DISABLE_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
 #define OPT_DO_NOT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
-#define OPT_ROM_DUPLICATION (1 + OPT_DO_NOT_EXPOSE_GLOBALS)
+#define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_EXPOSE_GLOBALS)
+#define OPT_ROM_DUPLICATION (1 + OPT_EXPOSE_GLOBALS)
 #define OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES (1 + OPT_ROM_DUPLICATION)
 #define OPT_DSE (1 + OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES)
 #define OPT_DSP_ALLOCATION_COEFFICIENT (1 + OPT_DSE)
@@ -634,6 +635,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when LOAD are performed (default 1).\n\n"
       << "    --do-not-expose-globals\n"
       << "        All global variables are considered local to the compilation units.\n\n"
+      << "    --expose-globals\n"
+      << "        All global variables can be accessed from outside the accelerator.\n\n"
       << "    --data-bus-bitsize=<bitsize>\n"
       << "        Set the bitsize of the external data bus.\n\n"
       << "    --addr-bus-bitsize=<bitsize>\n"
@@ -1142,6 +1145,7 @@ int BambuParameter::Exec()
       {"memory-ctrl-type", required_argument, nullptr, 0},
       {"sparse-memory", optional_argument, nullptr, 0},
       {"do-not-expose-globals", no_argument, nullptr, OPT_DO_NOT_EXPOSE_GLOBALS},
+      {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
       // interconnections
       {"interconnection", required_argument, nullptr, 'C'},
 #if HAVE_EXPERIMENTAL
@@ -2145,6 +2149,11 @@ int BambuParameter::Exec()
          case OPT_DO_NOT_EXPOSE_GLOBALS:
          {
             setOption(OPT_do_not_expose_globals, true);
+            break;
+         }
+         case OPT_EXPOSE_GLOBALS:
+         {
+            setOption(OPT_do_not_expose_globals, false);
             break;
          }
          case OPT_EXPERIMENTAL_SETUP:
@@ -3915,7 +3924,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_base_address, 1073741824); // 1Gbytes maximum address space reserved for the accelerator
    setOption(OPT_memory_controller_type, "D00");
    setOption(OPT_sparse_memory, true);
-   setOption(OPT_do_not_expose_globals, false);
+   setOption(OPT_do_not_expose_globals, true);
 
    /// -- Datapath -- //
    /// Datapath interconnection architecture
