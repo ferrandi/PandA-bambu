@@ -5750,7 +5750,7 @@ VHDL_PROVIDED=
          return op2;
       end if;
    end integer_ternary_operator;
-constant n_bytes           : integer := integer_ternary_operator((n_elements*data_size)/8 = 0, 2, (n_elements*data_size)/8);
+constant n_bytes           : integer := integer_ternary_operator((n_elements*data_size)/8 = 0, 1, (n_elements*data_size)/8);
 constant memory_bitsize    : integer := 2*BRAM_BITSIZE;
 constant n_byte_on_databus : integer := memory_bitsize/8;
 constant n_mem_elements    : integer := n_bytes/n_byte_on_databus + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
@@ -5933,7 +5933,7 @@ VHDL_PROVIDED=
          return op2;
       end if;
    end integer_ternary_operator;
-constant n_bytes           : integer := integer_ternary_operator((n_elements*data_size)/8 = 0, 2, (n_elements*data_size)/8);
+constant n_bytes           : integer := integer_ternary_operator((n_elements*data_size)/8 = 0, 1, (n_elements*data_size)/8);
 constant n_byte_on_databus : integer := BRAM_BITSIZE/8;
 constant n_mem_elements    : integer := n_bytes/n_byte_on_databus + integer_ternary_operator((n_bytes mod n_byte_on_databus) = 0, 0, 1);
 constant nbit_read_addr    : integer := integer_ternary_operator(n_mem_elements = 1, 1, integer(ceil(log2(real(n_mem_elements)))));
