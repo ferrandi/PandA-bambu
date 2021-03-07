@@ -100,9 +100,9 @@
 
 #include "call_graph_manager.hpp"
 
+#include "compiler_wrapper.hpp"
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
-#include "compiler_wrapper.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 

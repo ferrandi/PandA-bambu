@@ -133,9 +133,9 @@ enum class DiopsisInstrumentWriter_Type;
        profiling_method)(program_name)(read_parameter_xml)(revision)(seed)(task_threshold)(test_multiple_non_deterministic_flows)(test_single_non_deterministic_flow)(top_functions_names)(use_rtl)(xml_input_configuration)(xml_output_configuration)(       \
        write_parameter_xml)
 
-#define COMPILER_OPTIONS                                                                                                                                                                                                                                         \
-   (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(gcc_library_directories)(gcc_openmp_simd)(compiler_opt_level)(gcc_m32_mx32)(gcc_optimizations)(gcc_optimization_set)(gcc_parameters)(gcc_plugindir)( \
-       gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)(gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
+#define COMPILER_OPTIONS                                                                                                                                                                                                                          \
+   (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(gcc_library_directories)(gcc_openmp_simd)(compiler_opt_level)(gcc_m32_mx32)(gcc_optimizations)(gcc_optimization_set)(gcc_parameters)( \
+       gcc_plugindir)(gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)(gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
 
 #define GECCO_OPTIONS (algorithms)(analyses)
 

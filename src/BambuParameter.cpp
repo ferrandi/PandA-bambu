@@ -211,11 +211,11 @@
 #include "technology_node.hpp"
 
 /// Utility include
+#include "compiler_constants.hpp"
 #include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"
 #include "fileIO.hpp"
 #include "string_manipulation.hpp"
-#include "compiler_constants.hpp"
 #include "utility.hpp"
 #include <boost/filesystem.hpp>
 #include <boost/lexical_cast.hpp>

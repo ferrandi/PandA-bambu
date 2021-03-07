@@ -292,9 +292,9 @@
 #include "application_manager.hpp"
 
 /// Constants include
-#include "file_IO_constants.hpp"
 #include "compiler_constants.hpp"
 #include "compiler_xml.hpp"
+#include "file_IO_constants.hpp"
 
 /// Frontend include
 #include "Parameter.hpp"
@@ -613,7 +613,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
          {
             command += " -mllvm -panda-topfname=" + fname;
          }
-          command += "  -emit-llvm";
+         command += "  -emit-llvm";
       }
       else
       {
@@ -2957,7 +2957,6 @@ void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names,
    {
       boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
    }
-
 
    command += "-o " + executable_name + " ";
 
