@@ -154,8 +154,8 @@
 /// utility include
 #include "indented_output_stream.hpp"
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 
 /// Boost include
 #include <boost/range/adaptor/reversed.hpp>
@@ -485,13 +485,13 @@ void CWriter::WriteFunctionDeclaration(const unsigned int funId)
    const BehavioralHelperConstRef behavioral_helper = FB->CGetBehavioralHelper();
    const std::string& funName = behavioral_helper->get_function_name();
 #if HAVE_ARM_COMPILER
-   if(Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_ARM_GCC and behavioral_helper->is_var_args())
+   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_ARM_GCC and behavioral_helper->is_var_args())
    {
       THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ")produced using arm compiler can not be compiled by x86 compilers");
    }
 #endif
 #if HAVE_SPARC_COMPILER
-   if(Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_SPARC_GCC and behavioral_helper->is_var_args())
+   if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_SPARC_GCC and behavioral_helper->is_var_args())
    {
       THROW_ERROR_CODE(VARARGS_EC, "Source code containing vargs function (" + behavioral_helper->get_function_name() + ") produced using sparc compiler can not be compiled by x86 compilers");
    }

@@ -95,7 +95,7 @@ enum class HostProfiling_Method;
 #endif
 #if HAVE_FROM_C_BUILT
 enum class ActorGraphBackend_Type;
-enum class GccWrapper_CompilerTarget;
+enum class CompilerWrapper_CompilerTarget;
 #endif
 #if HAVE_DESIGN_ANALYSIS_BUILT
 enum class DesignAnalysis_Step;
@@ -133,8 +133,8 @@ enum class DiopsisInstrumentWriter_Type;
        profiling_method)(program_name)(read_parameter_xml)(revision)(seed)(task_threshold)(test_multiple_non_deterministic_flows)(test_single_non_deterministic_flow)(top_functions_names)(use_rtl)(xml_input_configuration)(xml_output_configuration)(       \
        write_parameter_xml)
 
-#define GCC_OPTIONS                                                                                                                                                                                                                                         \
-   (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(gcc_library_directories)(gcc_openmp_simd)(gcc_opt_level)(gcc_m32_mx32)(gcc_optimizations)(gcc_optimization_set)(gcc_parameters)(gcc_plugindir)( \
+#define COMPILER_OPTIONS                                                                                                                                                                                                                                         \
+   (gcc_config)(gcc_costs)(gcc_defines)(gcc_extra_options)(gcc_include_sysdir)(gcc_includes)(gcc_libraries)(gcc_library_directories)(gcc_openmp_simd)(compiler_opt_level)(gcc_m32_mx32)(gcc_optimizations)(gcc_optimization_set)(gcc_parameters)(gcc_plugindir)( \
        gcc_read_xml)(gcc_standard)(gcc_undefines)(gcc_warnings)(gcc_c)(gcc_E)(gcc_S)(gcc_write_xml)
 
 #define GECCO_OPTIONS (algorithms)(analyses)
@@ -157,7 +157,7 @@ enum class DiopsisInstrumentWriter_Type;
 
 #define EUCALIPTUS_OPTIONS (component_name)
 
-#define TREE_PANDA_GCC_OPTIONS (archive_files)(obj_files)(compress_archive)
+#define TREE_PANDA_COMPILER_OPTIONS (archive_files)(obj_files)(compress_archive)
 
 #define ZEBU_OPTIONS                                                                                                                                                                                                                                           \
    (alternative_metrics)(analysis_level)(blackbox)(cache_analysis)(compare_model_max_iterations)(compare_measure_regions)(compare_models)(cpus_number)(cuda_optimization)(examined_model)(default_fork_cost)(diopsis_instrumentation)(driving_component_type)( \
@@ -172,8 +172,8 @@ enum class DiopsisInstrumentWriter_Type;
 enum enum_option
 {
    BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, BAMBU_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, EUCALIPTUS_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, FRAMEWORK_OPTIONS)
-       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, GCC_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, GECCO_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, KOALA_OPTIONS)
-           BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SPIDER_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, TREE_PANDA_GCC_OPTIONS)
+       BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, COMPILER_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, GECCO_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, KOALA_OPTIONS)
+           BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SPIDER_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, SYNTHESIS_OPTIONS) BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, TREE_PANDA_COMPILER_OPTIONS)
                BOOST_PP_SEQ_FOR_EACH(OPTIONS_ENUM, BOOST_PP_EMPTY, ZEBU_OPTIONS)
 };
 
@@ -742,7 +742,7 @@ Parameters_FileFormat Parameter::getOption(const enum enum_option name) const;
 
 #if HAVE_FROM_C_BUILT
 template <>
-GccWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const;
+CompilerWrapper_CompilerTarget Parameter::getOption(const enum enum_option name) const;
 #endif
 
 #if HAVE_CODE_ESTIMATION_BUILT
@@ -764,11 +764,11 @@ DesignAnalysis_Step Parameter::getOption(const enum enum_option name) const;
 #endif
 
 #if HAVE_FROM_C_BUILT
-enum class GccWrapper_OptimizationSet;
+enum class CompilerWrapper_OptimizationSet;
 template <>
-GccWrapper_OptimizationSet Parameter::getOption(const enum enum_option name) const;
+CompilerWrapper_OptimizationSet Parameter::getOption(const enum enum_option name) const;
 template <>
-void Parameter::setOption(const enum enum_option name, const GccWrapper_OptimizationSet value);
+void Parameter::setOption(const enum enum_option name, const CompilerWrapper_OptimizationSet value);
 #endif
 
 #if HAVE_TO_C_BUILT

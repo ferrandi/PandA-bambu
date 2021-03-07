@@ -110,7 +110,7 @@ REF_FORWARD_DECL(TreeFlexLexer);
 #endif
 
 ///Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 /**
 * Defines
 */
@@ -667,7 +667,7 @@ bool pred;
              TOK_BISON_PLUGIN_VERSION
              string_id
              {
-                GccWrapper::CheckGccCompatibleVersion(data->gcc_version, data->curr_string);
+                CompilerWrapper::CheckCompilerCompatibleVersion(data->gcc_version, data->curr_string);
                 if(data->final_TM)
                    data->final_TM->merge_tree_managers(data->current_TM);
                 else if(data->current_TM)

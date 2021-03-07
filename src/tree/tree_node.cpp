@@ -49,7 +49,7 @@
 #include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
 #include "config_HAVE_TREE_PARSER_BUILT.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// RTL include

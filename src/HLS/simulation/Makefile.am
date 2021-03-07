@@ -36,7 +36,7 @@ lib_simulation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree  \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \
-   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 
 AM_YFLAGS = -d -l --report=state,lookahead,itemset

@@ -1242,7 +1242,7 @@ AM_CONDITIONAL(BUILD_BEAGLE, test "x$panda_USE_BEAGLE" = xyes)
 ################################## ARM Check ###################################
 if test "x$panda_USE_ARM_GCC" = xyes; then
    AC_CHECK_GCC_ARM_VERSION([4.5.0],[4.6.0])
-   AC_DEFINE(HAVE_ARM_COMPILER, 1, "Define if ARM-treegcc is used")
+   AC_DEFINE(HAVE_ARM_COMPILER, 1, "Define if ARM-compiler is used")
 fi
 AM_CONDITIONAL(BUILD_ARM_GCC, test "x$build_ARM_GCC" = xyes)
 AM_CONDITIONAL(BUILD_ARM_EMPTY_PLUGIN, test "x$build_ARM_EMPTY_PLUGIN" = xyes)
@@ -1265,7 +1265,7 @@ AC_SUBST(ARM_HOST_PLUGIN_COMPILER)
 if test "x$panda_USE_SPARC_GCC" = xyes; then
    AC_CHECK_SPARC_ELF
    AC_CHECK_GCC_SPARC_VERSION([4.5.0],[4.6.0])
-   AC_DEFINE(HAVE_SPARC_COMPILER, 1, "Define if SPARC-treegcc is used")
+   AC_DEFINE(HAVE_SPARC_COMPILER, 1, "Define if SPARC-compiler is used")
 fi
 AM_CONDITIONAL(BUILD_SPARC_GCC, test "x$build_SPARC_GCC" = xyes)
 AM_CONDITIONAL(BUILD_SPARC_EMPTY_PLUGIN, test "x$build_SPARC_EMPTY_PLUGIN" = xyes)
@@ -2146,7 +2146,7 @@ AM_CONDITIONAL(BUILD_LIB_FROM_TGFF,  test "x$panda_USE_LIB_FROM_TGFF" = xyes)
 if test "x$panda_USE_LIB_TREE_PARSER" = xyes; then
   AC_DEFINE(HAVE_TREE_PARSER_BUILT, 1, "Define if from tree parser library is built")
   AC_CONFIG_FILES(
-                   src/parser/treegcc/Makefile
+                   src/parser/compiler/Makefile
                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_TREE_PARSER, test "x$panda_USE_LIB_TREE_PARSER" = xyes)

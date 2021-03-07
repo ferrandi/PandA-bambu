@@ -102,7 +102,7 @@
 
 #include "constant_strings.hpp"
 #include "fileIO.hpp"
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 #include "math_function.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
@@ -327,12 +327,12 @@ std::string moduleGenerator::GenerateHDL(const module* mod, const std::string& h
    }
    File.close();
 
-   const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), GccWrapper_OptimizationSet::O0));
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler), CompilerWrapper_OptimizationSet::O0));
    std::string compiler_flags = " -lstdc++ -lm";
    // setup source files
    std::list<std::string> file_sources;
    file_sources.push_front(temp_generator_filename);
-   gcc_wrapper->CreateExecutable(file_sources, temp_generator_exec, compiler_flags, true);
+   compiler_wrapper->CreateExecutable(file_sources, temp_generator_exec, compiler_flags, true);
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "dynamic_generators @ Executing temp c++ file...");
    auto err = PandaSystem(parameters, temp_generator_exec, temp_generated_filename);

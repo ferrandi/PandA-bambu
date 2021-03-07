@@ -59,7 +59,7 @@
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree include

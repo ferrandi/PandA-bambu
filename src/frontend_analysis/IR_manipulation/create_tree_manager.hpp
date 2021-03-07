@@ -49,7 +49,7 @@
 /// Utility include
 #include "refcount.hpp"
 REF_FORWARD_DECL(application_manager);
-REF_FORWARD_DECL(GccWrapper);
+REF_FORWARD_DECL(CompilerWrapper);
 
 /**
  * Class that creates the tree_manager starting from the source code files
@@ -58,7 +58,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
 {
  private:
    /// The gcc wrapper
-   const GccWrapperRef gcc_wrapper;
+   const CompilerWrapperRef compiler_wrapper;
 
    /**
     * Return the set of analyses in relationship with this design step

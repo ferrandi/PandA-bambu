@@ -243,7 +243,7 @@ lib_interconnectionbinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/binding/register \
    -I$(top_srcdir)/src/HLS/binding/register/algorithms \
    -I$(top_srcdir)/src/HLS/binding/storage_value_insertion \
-   -I$(top_srcdir)/src/parser/treegcc\
+   -I$(top_srcdir)/src/parser/compiler\
    -I$(top_srcdir)/src/HLS/binding/interconnection/ \
    -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/liveness \
@@ -254,7 +254,7 @@ lib_interconnectionbinding_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/virtual_components \
    -I$(top_srcdir)/src/intermediate_representations \
    -I$(top_srcdir)/src/intermediate_representations/hls \
-   -I$(top_srcdir)/src/parser/treegcc \
+   -I$(top_srcdir)/src/parser/compiler \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/technology \
    -I$(top_srcdir)/src/technology/physical_library \
@@ -384,7 +384,7 @@ lib_exact_evaluation_la_CPPFLAGS = \
    -I$(top_srcdir)/src/wrapper/simulation \
    -I$(top_srcdir)/src/wrapper/simulation/modelsim \
    -I$(top_srcdir)/src/wrapper/synthesis/ \
-   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 lib_exact_evaluation_la_SOURCES=
 if BUILD_LIB_RTL
@@ -787,7 +787,7 @@ lib_module_generator_la_CPPFLAGS = \
    -I$(top_srcdir)/src/tree  \
    -I$(top_srcdir)/src/utility \
    -I$(top_srcdir)/src/wrapper/flopoco \
-   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 noinst_HEADERS += module_generator/moduleGenerator.hpp
 lib_module_generator_la_SOURCES = module_generator/moduleGenerator.cpp

@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file gcc_wrapper.hpp
+ * @file compiler_wrapper.hpp
  * @brief Implementation of the wrapper to Gcc for C sources.
  *
  * Implementation of the methods for the object for invoke the GCC compiler from sources and create the dump.
@@ -286,15 +286,15 @@
 #include "config_SPARC_SSA_PLUGIN.hpp"
 #include "config_SPARC_SSA_PLUGINCPP.hpp"
 /// Header include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 /// Behavior include
 #include "application_manager.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
-#include "treegcc_constants.hpp"
-#include "treegcc_xml.hpp"
+#include "compiler_constants.hpp"
+#include "compiler_xml.hpp"
 
 /// Frontend include
 #include "Parameter.hpp"
@@ -335,14 +335,14 @@
 #include "xml_dom_parser.hpp"
 #include "xml_helper.hpp"
 
-std::string GccWrapper::current_gcc_version;
+std::string CompilerWrapper::current_compiler_version;
 
-std::string GccWrapper::current_plugin_version;
+std::string CompilerWrapper::current_plugin_version;
 
-GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_CompilerTarget _compiler_target, const GccWrapper_OptimizationSet _OS)
-    : Param(_Param), compiler_target(_compiler_target), OS(_OS), output_level(_Param->getOption<int>(OPT_output_level)), debug_level(_Param->get_class_debug_level("GccWrapper"))
+CompilerWrapper::CompilerWrapper(const ParameterConstRef _Param, const CompilerWrapper_CompilerTarget _compiler_target, const CompilerWrapper_OptimizationSet _OS)
+    : Param(_Param), compiler_target(_compiler_target), OS(_OS), output_level(_Param->getOption<int>(OPT_output_level)), debug_level(_Param->get_class_debug_level("CompilerWrapper"))
 {
-   InitializeGccParameters();
+   InitializeCompilerParameters();
    if(Param->isOption(OPT_gcc_write_xml))
    {
       WriteXml(Param->getOption<std::string>(OPT_gcc_write_xml));
@@ -350,9 +350,9 @@ GccWrapper::GccWrapper(const ParameterConstRef _Param, const GccWrapper_Compiler
 }
 
 // destructor
-GccWrapper::~GccWrapper() = default;
+CompilerWrapper::~CompilerWrapper() = default;
 
-void GccWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, GccWrapper_CompilerMode cm)
+void CompilerWrapper::CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling " + original_file_name + "(transformed in " + real_file_name);
 
@@ -361,7 +361,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 
    const Compiler compiler = GetCompiler();
    std::string command = compiler.gcc.string();
-   if(cm == GccWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
+   if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER && !compiler.is_clang)
    {
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
@@ -403,7 +403,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       command += " -isystem /mingw64/include -isystem /mingw64/x86_64-w64-mingw32/include -isystem /mingw64/include/c++/v1/"; /// needed by clang compiler
 #endif
    if(((Param->isOption(OPT_discrepancy) and Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) and Param->getOption<bool>(OPT_discrepancy_hw))) and
-      (cm == GccWrapper_CompilerMode::CM_STD || cm == GccWrapper_CompilerMode::CM_EMPTY))
+      (cm == CompilerWrapper_CompilerMode::CM_STD || cm == CompilerWrapper_CompilerMode::CM_EMPTY))
    {
       command += " -D__BAMBU_DISCREPANCY__ ";
    }
@@ -420,7 +420,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    bool isWholeProgram =
        Param->isOption(OPT_gcc_optimizations) && Param->getOption<std::string>(OPT_gcc_optimizations).find("whole-program") != std::string::npos && Param->getOption<std::string>(OPT_gcc_optimizations).find("no-whole-program") == std::string::npos;
 
-   if(cm == GccWrapper_CompilerMode::CM_EMPTY)
+   if(cm == CompilerWrapper_CompilerMode::CM_EMPTY)
    {
       if(original_file_name == "-")
       {
@@ -445,14 +445,15 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          command += " -c -fplugin=" + compiler.empty_plugin_obj + " -fplugin-arg-" + compiler.empty_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
       }
    }
-   else if(cm == GccWrapper_CompilerMode::CM_ANALYZER)
+   else if(cm == CompilerWrapper_CompilerMode::CM_ANALYZER)
    {
       /// remove some extra option not compatible with clang
       boost::replace_all(command, "-mlong-double-64", "");
 #if HAVE_I386_CLANGVVD_COMPILER
-      if(Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
+      if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
       {
          boost::replace_all(command, "-fhls", "");
+         boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
       }
 #endif
       std::string fname;
@@ -487,7 +488,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
       }
 #endif
    }
-   else if(cm == GccWrapper_CompilerMode::CM_STD)
+   else if(cm == CompilerWrapper_CompilerMode::CM_STD)
    {
       std::string fname;
       bool addTopFName = false;
@@ -612,13 +613,14 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
          {
             command += " -mllvm -panda-topfname=" + fname;
          }
+          command += "  -emit-llvm";
       }
       else
       {
          command += " -c -fplugin=" + compiler.ssa_plugin_obj + " -fplugin-arg-" + compiler.ssa_plugin_name + "-outputdir=" + Param->getOption<std::string>(OPT_output_temporary_directory);
       }
    }
-   else if(cm == GccWrapper_CompilerMode::CM_LTO)
+   else if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
       command += " -c -flto -o " + Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + GetBaseName(real_file_name) + ".o ";
    }
@@ -628,7 +630,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
 
    std::string temporary_file_run_o;
-   if(cm != GccWrapper_CompilerMode::CM_LTO)
+   if(cm != CompilerWrapper_CompilerMode::CM_LTO)
    {
       if((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)))
       {
@@ -647,7 +649,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
 
    /// manage optimization level
    auto local_parameters_line = parameters_line;
-   if(cm == GccWrapper_CompilerMode::CM_LTO)
+   if(cm == CompilerWrapper_CompilerMode::CM_LTO)
    {
       boost::replace_all(local_parameters_line, "-O4", "");
       boost::replace_all(local_parameters_line, "-O3", "");
@@ -693,7 +695,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    }
 #endif
 
-   if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)) or cm == GccWrapper_CompilerMode::CM_LTO))
+   if(!((Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E)) or (Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S)) or cm == CompilerWrapper_CompilerMode::CM_LTO))
    {
       std::remove(temporary_file_run_o.c_str());
    }
@@ -721,7 +723,7 @@ void GccWrapper::CompileFile(const std::string& original_file_name, std::string&
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Compiled file");
 }
 
-void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files)
+void CompilerWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Invoking front-end compiler");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -732,8 +734,8 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
    }
 
    /// check for aligned option
-   const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
-   if(optimization_level == GccWrapper_OptimizationSet::O3 || optimization_level == GccWrapper_OptimizationSet::O4 || optimization_level == GccWrapper_OptimizationSet::O5)
+   const CompilerWrapper_OptimizationSet optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   if(optimization_level == CompilerWrapper_OptimizationSet::O3 || optimization_level == CompilerWrapper_OptimizationSet::O4 || optimization_level == CompilerWrapper_OptimizationSet::O5)
    {
       if(optimization_flags.find("tree-vectorize") == optimization_flags.end() || optimization_flags.find("tree-vectorize")->second)
       {
@@ -795,7 +797,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
          {
             analyzing_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
          }
-         CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1, GccWrapper_CompilerMode::CM_ANALYZER);
+         CompileFile(source_file.first, source_file.second, analyzing_compiling_parameters, source_files.size() > 1, CompilerWrapper_CompilerMode::CM_ANALYZER);
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Starting compilation of single files");
@@ -814,13 +816,13 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
       std::string leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Compiling file " + source_file.second);
       /// create obj
-      CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, source_files.size() > 1, enable_LTO ? GccWrapper_CompilerMode::CM_LTO : GccWrapper_CompilerMode::CM_STD);
+      CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1, enable_LTO ? CompilerWrapper_CompilerMode::CM_LTO : CompilerWrapper_CompilerMode::CM_STD);
       if(!Param->isOption(OPT_gcc_E) and !Param->isOption(OPT_gcc_S) and !enable_LTO)
       {
          if(!(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_tree_suffix))))
          {
             THROW_WARNING("Raw not created for file " + output_temporary_directory + "/" + leaf_name);
-            CompileFile(source_file.first, source_file.second, gcc_compiling_parameters, source_files.size() > 1, GccWrapper_CompilerMode::CM_EMPTY);
+            CompileFile(source_file.first, source_file.second, frontend_compiler_parameters, source_files.size() > 1, CompilerWrapper_CompilerMode::CM_EMPTY);
             /// Recomputing leaf_name since source_file.second should be modified in the previous call
             leaf_name = source_file.second == "-" ? "stdin-" : GetLeafFileName(source_file.second);
             if(not(boost::filesystem::exists(boost::filesystem::path(output_temporary_directory + "/" + leaf_name + STR_CST_gcc_empty_suffix))))
@@ -1050,7 +1052,7 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
       }
       if(compiler.is_clang)
       {
-         const auto recipe = clang_recipes(optimization_level, Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
+         const auto recipe = clang_recipes(optimization_level, Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler), compiler.expandMemOps_plugin_obj, compiler.expandMemOps_plugin_name, compiler.GepiCanon_plugin_obj,
                                            compiler.GepiCanon_plugin_name, compiler.CSROA_plugin_obj, compiler.CSROA_plugin_name, fname);
          command = compiler.llvm_opt.string() + recipe + temporary_file_o_bc;
          temporary_file_o_bc = boost::filesystem::path(Param->getOption<std::string>(OPT_output_temporary_directory) + "/" + boost::filesystem::unique_path(std::string(STR_CST_llvm_obj_file)).string()).string();
@@ -1155,15 +1157,15 @@ void GccWrapper::FillTreeManager(const tree_managerRef TM, std::map<std::string,
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Front-end compiler finished");
 }
 
-void GccWrapper::InitializeGccParameters()
+void CompilerWrapper::InitializeCompilerParameters()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Initializing gcc parameters");
-   GccWrapper_OptimizationSet optimization_set = OS;
+   CompilerWrapper_OptimizationSet optimization_set = OS;
    /// If we are compiling with sparc-elf-gcc
 #if HAVE_SPARC_COMPILER
-   if(compiler_target == GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC)
+   if(compiler_target == CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC)
    {
-      optimization_set = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+      optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    }
 #endif
 
@@ -1175,62 +1177,62 @@ void GccWrapper::InitializeGccParameters()
    {
       switch(optimization_set)
       {
-         case(GccWrapper_OptimizationSet::O0):
-         case(GccWrapper_OptimizationSet::O1):
-         case(GccWrapper_OptimizationSet::O2):
-         case(GccWrapper_OptimizationSet::O3):
-         case(GccWrapper_OptimizationSet::O4):
-         case(GccWrapper_OptimizationSet::O5):
-         case(GccWrapper_OptimizationSet::Og):
-         case(GccWrapper_OptimizationSet::Os):
-         case(GccWrapper_OptimizationSet::Ofast):
-         case(GccWrapper_OptimizationSet::Oz):
-            gcc_compiling_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
+         case(CompilerWrapper_OptimizationSet::O0):
+         case(CompilerWrapper_OptimizationSet::O1):
+         case(CompilerWrapper_OptimizationSet::O2):
+         case(CompilerWrapper_OptimizationSet::O3):
+         case(CompilerWrapper_OptimizationSet::O4):
+         case(CompilerWrapper_OptimizationSet::O5):
+         case(CompilerWrapper_OptimizationSet::Og):
+         case(CompilerWrapper_OptimizationSet::Os):
+         case(CompilerWrapper_OptimizationSet::Ofast):
+         case(CompilerWrapper_OptimizationSet::Oz):
+            frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_set) + " ");
             break;
 #if HAVE_BAMBU_BUILT
-         case GccWrapper_OptimizationSet::OSF:
-            gcc_compiling_parameters += (" -O3 -finline-limit=10000 --param inline-unit-growth=100000 ");
+         case CompilerWrapper_OptimizationSet::OSF:
+            frontend_compiler_parameters += (" -O3 -finline-limit=10000 --param inline-unit-growth=100000 ");
             break;
-         case(GccWrapper_OptimizationSet::OBAMBU):
+         case(CompilerWrapper_OptimizationSet::OBAMBU):
 #endif
 #if HAVE_TUCANO_BUILT
-         case(GccWrapper_OptimizationSet::OTUCANO):
+         case(CompilerWrapper_OptimizationSet::OTUCANO):
 #endif
 #if HAVE_ZEBU_BUILT
-         case(GccWrapper_OptimizationSet::OZEBU):
+         case(CompilerWrapper_OptimizationSet::OZEBU):
 #endif
             /// Filling optimizations map
 #if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
-            SetGccDefault();
+            SetCompilerDefault();
 
             switch(OS)
             {
 #if HAVE_BAMBU_BUILT
-               case(GccWrapper_OptimizationSet::OBAMBU):
+               case(CompilerWrapper_OptimizationSet::OBAMBU):
                   SetBambuDefault();
                   break;
 #endif
 #if HAVE_TUCANO_BUILT
-               case(GccWrapper_OptimizationSet::OTUCANO):
+               case(CompilerWrapper_OptimizationSet::OTUCANO):
                   break;
 #endif
 #if HAVE_ZEBU_BUILT
-               case(GccWrapper_OptimizationSet::OZEBU):
+               case(CompilerWrapper_OptimizationSet::OZEBU):
                   SetZebuDefault();
                   break;
 #endif
-               case(GccWrapper_OptimizationSet::O0):
-               case(GccWrapper_OptimizationSet::O1):
-               case(GccWrapper_OptimizationSet::O2):
-               case(GccWrapper_OptimizationSet::O3):
-               case(GccWrapper_OptimizationSet::O4):
-               case(GccWrapper_OptimizationSet::O5):
-               case(GccWrapper_OptimizationSet::Og):
-               case(GccWrapper_OptimizationSet::Os):
-               case(GccWrapper_OptimizationSet::Ofast):
-               case(GccWrapper_OptimizationSet::Oz):
+               case(CompilerWrapper_OptimizationSet::O0):
+               case(CompilerWrapper_OptimizationSet::O1):
+               case(CompilerWrapper_OptimizationSet::O2):
+               case(CompilerWrapper_OptimizationSet::O3):
+               case(CompilerWrapper_OptimizationSet::O4):
+               case(CompilerWrapper_OptimizationSet::O5):
+               case(CompilerWrapper_OptimizationSet::Og):
+               case(CompilerWrapper_OptimizationSet::Os):
+               case(CompilerWrapper_OptimizationSet::Ofast):
+               case(CompilerWrapper_OptimizationSet::Oz):
 #if HAVE_BAMBU_BUILT
-               case(GccWrapper_OptimizationSet::OSF):
+               case(CompilerWrapper_OptimizationSet::OSF):
 #endif
                {
                   THROW_UNREACHABLE("Unsupported optimization level " + WriteOptimizationLevel(OS));
@@ -1246,35 +1248,35 @@ void GccWrapper::InitializeGccParameters()
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
             {
-               GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+               CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
 
                if(false
 #if HAVE_I386_CLANG4_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG8
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG9
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG10
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANG11
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-                  || compiler == GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+                  || compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
                )
                {
@@ -1295,7 +1297,7 @@ void GccWrapper::InitializeGccParameters()
             }
 #endif
 
-            gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
+            frontend_compiler_parameters += (" " + WriteOptimizationsString() + " ");
 
             break;
 #endif
@@ -1310,16 +1312,16 @@ void GccWrapper::InitializeGccParameters()
    if(Param->isOption(OPT_gcc_standard))
    {
       auto standard = Param->getOption<std::string>(OPT_gcc_standard);
-      gcc_compiling_parameters += "--std=" + standard + " ";
+      frontend_compiler_parameters += "--std=" + standard + " ";
    }
 
    if(Param->isOption(OPT_gcc_E) and Param->getOption<bool>(OPT_gcc_E))
    {
-      gcc_compiling_parameters += "-E ";
+      frontend_compiler_parameters += "-E ";
    }
    if(Param->isOption(OPT_gcc_S) and Param->getOption<bool>(OPT_gcc_S))
    {
-      gcc_compiling_parameters += "-S ";
+      frontend_compiler_parameters += "-S ";
    }
    /// Adding defines
    if(Param->isOption(OPT_gcc_defines))
@@ -1329,7 +1331,7 @@ void GccWrapper::InitializeGccParameters()
       {
          std::string escaped_string = define;
          // add_escape(escaped_string, "\"");
-         gcc_compiling_parameters += "-D" + escaped_string + " ";
+         frontend_compiler_parameters += "-D" + escaped_string + " ";
       }
    }
 
@@ -1341,7 +1343,7 @@ void GccWrapper::InitializeGccParameters()
       {
          std::string escaped_string = undefine;
          // add_escape(escaped_string, "\"");
-         gcc_compiling_parameters += "-U" + escaped_string + " ";
+         frontend_compiler_parameters += "-U" + escaped_string + " ";
       }
    }
 
@@ -1351,20 +1353,20 @@ void GccWrapper::InitializeGccParameters()
       const auto warnings = Param->getOption<const CustomSet<std::string>>(OPT_gcc_warnings);
       for(const auto& warning : warnings)
       {
-         gcc_compiling_parameters += "-W" + warning + " ";
+         frontend_compiler_parameters += "-W" + warning + " ";
       }
    }
 #if HAVE_BAMBU_BUILT
-   if(OS == GccWrapper_OptimizationSet::OBAMBU)
+   if(OS == CompilerWrapper_OptimizationSet::OBAMBU)
    {
-      gcc_compiling_parameters += "-Wuninitialized ";
+      frontend_compiler_parameters += "-Wuninitialized ";
    }
 #endif
 
    /// Adding includes
    if(Param->isOption(OPT_gcc_includes))
    {
-      gcc_compiling_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
+      frontend_compiler_parameters += Param->getOption<std::string>(OPT_gcc_includes) + " ";
    }
 
    /// Adding libraries
@@ -1373,7 +1375,7 @@ void GccWrapper::InitializeGccParameters()
       const auto libraries = Param->getOption<const CustomSet<std::string>>(OPT_gcc_libraries);
       for(const auto& library : libraries)
       {
-         gcc_linking_parameters += "-l" + library + " ";
+         compiler_linking_parameters += "-l" + library + " ";
       }
    }
 
@@ -1383,7 +1385,7 @@ void GccWrapper::InitializeGccParameters()
       const auto library_directories = Param->getOption<const CustomSet<std::string>>(OPT_gcc_library_directories);
       for(const auto& library_directory : library_directories)
       {
-         gcc_linking_parameters += "-L" + library_directory + " ";
+         compiler_linking_parameters += "-L" + library_directory + " ";
       }
    }
 
@@ -1393,17 +1395,17 @@ void GccWrapper::InitializeGccParameters()
       const auto no_parse_files = Param->getOption<const CustomSet<std::string>>(OPT_no_parse_files);
       for(const auto& no_parse_file : no_parse_files)
       {
-         gcc_linking_parameters += no_parse_file + " ";
+         compiler_linking_parameters += no_parse_file + " ";
       }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Initialized gcc parameters");
 }
 
 #if HAVE_ZEBU_BUILT
-void GccWrapper::SetZebuDefault()
+void CompilerWrapper::SetZebuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Zebu tool...");
-   const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+   const CompilerWrapper_OptimizationSet opt_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Optimization level: " + WriteOptimizationLevel(opt_level));
 
    /// parameters with enable
@@ -1427,7 +1429,7 @@ void GccWrapper::SetZebuDefault()
    // FIXME: to be replaced with plugin; deactivated since it does not work with sparc-elf-gcc
    //   optimization_values["tree-parallelize-loops"]=1;///requires tree-loop-optimize
 
-   if(opt_level == GccWrapper_OptimizationSet::O1 or opt_level == GccWrapper_OptimizationSet::O2 or opt_level == GccWrapper_OptimizationSet::O3)
+   if(opt_level == CompilerWrapper_OptimizationSet::O1 or opt_level == CompilerWrapper_OptimizationSet::O2 or opt_level == CompilerWrapper_OptimizationSet::O3)
    {
       optimization_flags["guess-branch-probability"] = false; /// error in declaration of structure used probably by profiling.
       optimization_flags["tree-ch"] = false;
@@ -1436,7 +1438,7 @@ void GccWrapper::SetZebuDefault()
       optimization_flags["tree-sra"] = false;            /// Introduces conversion from struct to scalar
       optimization_flags["rename-registers"] = false;    /// cross compilation problems
    }
-   if(opt_level == GccWrapper_OptimizationSet::O2 or opt_level == GccWrapper_OptimizationSet::O3)
+   if(opt_level == CompilerWrapper_OptimizationSet::O2 or opt_level == CompilerWrapper_OptimizationSet::O3)
    {
       optimization_flags["optimize-sibling-calls"] = false; /// Execution error on 20020406-1.c
       optimization_flags["tree-pre"] = false;               /// some loop are incorrecty identified
@@ -1448,11 +1450,11 @@ void GccWrapper::SetZebuDefault()
 #endif
 
 #if HAVE_BAMBU_BUILT
-void GccWrapper::SetBambuDefault()
+void CompilerWrapper::SetBambuDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting parameters for Bambu tool...");
-   const GccWrapper_OptimizationSet opt_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
-   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+   const CompilerWrapper_OptimizationSet opt_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
+   CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER
    bool flag_cpp;
    if(Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_CPP)
@@ -1465,7 +1467,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1480,7 +1482,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1495,7 +1497,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1510,7 +1512,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1521,7 +1523,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG8)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1532,7 +1534,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG9)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1544,7 +1546,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG10)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1556,7 +1558,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG11)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1568,7 +1570,7 @@ void GccWrapper::SetBambuDefault()
    }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set parameters for bambu tool");
       optimization_flags["wrapv"] = true; /// bambu assumes two complement arithmetic
@@ -1593,28 +1595,28 @@ void GccWrapper::SetBambuDefault()
    /// NOTE: the false here is used to be sure that the first operand of the first or always exists
    if(false
 #if HAVE_I386_GCC46_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC46
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if HAVE_I386_GCC47_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC47
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC8
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
    )
    {
@@ -1626,31 +1628,31 @@ void GccWrapper::SetBambuDefault()
    /// NOTE: the false here is used to be sure that the first operand of the first or always exists
    if(false
 #if HAVE_I386_GCC45_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC45
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC45
 #endif
 #if HAVE_I386_GCC46_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC46
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC46
 #endif
 #if HAVE_I386_GCC47_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC47
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC8
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
    )
    {
@@ -1662,23 +1664,23 @@ void GccWrapper::SetBambuDefault()
 
    if(false
 #if HAVE_I386_GCC5_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      || compiler == GccWrapper_CompilerTarget::CT_I386_GCC8
+      || compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
    )
    {
       optimization_flags["tree-builtin-call-dce"] = false;
       optimization_flags["ivopts"] = false;
    }
-   if(opt_level == GccWrapper_OptimizationSet::O4)
+   if(opt_level == CompilerWrapper_OptimizationSet::O4)
    {
       optimization_flags["ivopts"] = true;
       optimization_flags["tree-loop-ivcanon"] = true;
@@ -1686,11 +1688,11 @@ void GccWrapper::SetBambuDefault()
       optimization_flags["vect-cost-model"] = false;
       optimization_flags["fast-math"] = true;
    }
-   if(opt_level == GccWrapper_OptimizationSet::O4 or opt_level == GccWrapper_OptimizationSet::O5)
+   if(opt_level == CompilerWrapper_OptimizationSet::O4 or opt_level == CompilerWrapper_OptimizationSet::O5)
    {
       if(true
 #if HAVE_I386_GCC49_COMPILER
-         and compiler != GccWrapper_CompilerTarget::CT_I386_GCC49
+         and compiler != CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
       )
       {
@@ -1703,25 +1705,25 @@ void GccWrapper::SetBambuDefault()
    ///-param option with with values
    if(false
 #if HAVE_I386_GCC47_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC47
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC47
 #endif
 #if HAVE_I386_GCC48_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC8
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
    )
    {
@@ -1729,22 +1731,22 @@ void GccWrapper::SetBambuDefault()
    }
    if(false
 #if HAVE_I386_GCC48_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC48
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC48
 #endif
 #if HAVE_I386_GCC49_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC49
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC49
 #endif
 #if HAVE_I386_GCC5_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC5
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC5
 #endif
 #if HAVE_I386_GCC6_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC6
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC6
 #endif
 #if HAVE_I386_GCC7_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC7
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC7
 #endif
 #if HAVE_I386_GCC8_COMPILER
-      or compiler == GccWrapper_CompilerTarget::CT_I386_GCC8
+      or compiler == CompilerWrapper_CompilerTarget::CT_I386_GCC8
 #endif
    )
    {
@@ -1770,67 +1772,67 @@ void GccWrapper::SetBambuDefault()
 }
 #endif
 
-void GccWrapper::SetGccDefault()
+void CompilerWrapper::SetCompilerDefault()
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Setting front-end compiler defaults");
-   const GccWrapper_OptimizationSet optimization_level = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_opt_level);
+   const CompilerWrapper_OptimizationSet optimization_level = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_compiler_opt_level);
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
-   GccWrapper_CompilerTarget compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+   CompilerWrapper_CompilerTarget compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
 #endif
    optimization_flags["stack-protector"] = false; // In Ubuntu 6.10 and later versions this option is enabled by default for C, C++, ObjC, ObjC++
 
    switch(optimization_level)
    {
-      case(GccWrapper_OptimizationSet::Os):
-      case(GccWrapper_OptimizationSet::Og):
-      case(GccWrapper_OptimizationSet::O1):
-      case(GccWrapper_OptimizationSet::O2):
-      case(GccWrapper_OptimizationSet::O3):
-      case(GccWrapper_OptimizationSet::O4):
-      case(GccWrapper_OptimizationSet::O5):
-      case(GccWrapper_OptimizationSet::Ofast):
-      case(GccWrapper_OptimizationSet::Oz):
+      case(CompilerWrapper_OptimizationSet::Os):
+      case(CompilerWrapper_OptimizationSet::Og):
+      case(CompilerWrapper_OptimizationSet::O1):
+      case(CompilerWrapper_OptimizationSet::O2):
+      case(CompilerWrapper_OptimizationSet::O3):
+      case(CompilerWrapper_OptimizationSet::O4):
+      case(CompilerWrapper_OptimizationSet::O5):
+      case(CompilerWrapper_OptimizationSet::Ofast):
+      case(CompilerWrapper_OptimizationSet::Oz):
       {
-         gcc_compiling_parameters += (" -O" + WriteOptimizationLevel(optimization_level) + " ");
+         frontend_compiler_parameters += (" -O" + WriteOptimizationLevel(optimization_level) + " ");
          break;
       }
 #if HAVE_BAMBU_BUILT
-      case GccWrapper_OptimizationSet::OSF:
-         gcc_compiling_parameters += (" -O3 -finline-limit=10000");
+      case CompilerWrapper_OptimizationSet::OSF:
+         frontend_compiler_parameters += (" -O3 -finline-limit=10000");
          break;
 #endif
-      case(GccWrapper_OptimizationSet::O0):
+      case(CompilerWrapper_OptimizationSet::O0):
       {
-         gcc_compiling_parameters += " -O1 ";
+         frontend_compiler_parameters += " -O1 ";
 
          if(true
 #if HAVE_I386_CLANG4_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG5
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG6
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG7
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG8
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG9
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG10
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG11
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-            && compiler != GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+            && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
          )
          {
@@ -1867,14 +1869,14 @@ void GccWrapper::SetGccDefault()
             switch(compiler_target)
             {
 #if HAVE_I386_GCC45_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC45):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC45):
                {
                   optimization_flags["tree-copy-prop"] = false;
                   break;
                }
 #endif
 #if HAVE_I386_GCC46_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC46):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC46):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1884,7 +1886,7 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_GCC47_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC47):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC47):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1894,7 +1896,7 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_GCC48_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC48):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC48):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1906,7 +1908,7 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_GCC49_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC49):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC49):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1918,7 +1920,7 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_GCC5_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC5):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC5):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1930,7 +1932,7 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_GCC6_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC6):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC6):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1942,7 +1944,7 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_GCC7_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC7):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC7):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1954,7 +1956,7 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_GCC8_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_GCC8):
+               case(CompilerWrapper_CompilerTarget::CT_I386_GCC8):
                {
                   optimization_flags["compare-elim"] = false;
                   optimization_flags["ipa-profile"] = false;
@@ -1966,75 +1968,75 @@ void GccWrapper::SetGccDefault()
                }
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG4):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG4):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG5):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG5):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG6):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG6):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG7):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG7):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG8):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG8):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG9):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG9):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG10):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG10):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANG11):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANG11):
                {
                   break;
                }
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-               case(GccWrapper_CompilerTarget::CT_I386_CLANGVVD):
+               case(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD):
                {
                   break;
                }
 #endif
 #if HAVE_ARM_COMPILER
-               case(GccWrapper_CompilerTarget::CT_ARM_GCC):
+               case(CompilerWrapper_CompilerTarget::CT_ARM_GCC):
                {
                   optimization_flags["tree-copy-prop"] = false;
                   break;
                }
 #endif
 #if HAVE_SPARC_COMPILER
-               case(GccWrapper_CompilerTarget::CT_SPARC_GCC):
-               case(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
+               case(CompilerWrapper_CompilerTarget::CT_SPARC_GCC):
+               case(CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC):
                {
                   optimization_flags["tree-copy-prop"] = false;
                   break;
                }
 #endif
-               case(GccWrapper_CompilerTarget::CT_NO_GCC):
+               case(CompilerWrapper_CompilerTarget::CT_NO_COMPILER):
                {
                   THROW_UNREACHABLE("Unexpected gcc target");
                   break;
@@ -2048,13 +2050,13 @@ void GccWrapper::SetGccDefault()
          break;
       }
 #if HAVE_BAMBU_BUILT
-      case(GccWrapper_OptimizationSet::OBAMBU):
+      case(CompilerWrapper_OptimizationSet::OBAMBU):
 #endif
 #if HAVE_TUCANO_BUILT
-      case(GccWrapper_OptimizationSet::OTUCANO):
+      case(CompilerWrapper_OptimizationSet::OTUCANO):
 #endif
 #if HAVE_ZEBU_BUILT
-      case(GccWrapper_OptimizationSet::OZEBU):
+      case(CompilerWrapper_OptimizationSet::OZEBU):
 #endif
       {
          THROW_UNREACHABLE("Unepected optimization level: " + WriteOptimizationLevel(optimization_level));
@@ -2068,31 +2070,31 @@ void GccWrapper::SetGccDefault()
    /// required by PandA
    if(true
 #if HAVE_I386_CLANG4_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG4
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG4
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG5
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG5
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG6
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG6
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG7
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG7
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG8
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG8
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG9
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG9
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG10
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG10
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANG11
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANG11
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-      && compiler != GccWrapper_CompilerTarget::CT_I386_CLANGVVD
+      && compiler != CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD
 #endif
    )
    {
@@ -2127,14 +2129,14 @@ void GccWrapper::SetGccDefault()
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Set front-end compiler defaults");
 }
 
-GccWrapper::Compiler GccWrapper::GetCompiler() const
+CompilerWrapper::Compiler CompilerWrapper::GetCompiler() const
 {
    Compiler compiler;
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
     HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
     HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
 #ifndef NDEBUG
-   GccWrapper_CompilerTarget compatible_compilers = Param->getOption<GccWrapper_CompilerTarget>(OPT_compatible_compilers);
+   CompilerWrapper_CompilerTarget compatible_compilers = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_compatible_compilers);
 #endif
 #endif
 
@@ -2165,17 +2167,17 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #if HAVE_I386_GCC45_COMPILER || HAVE_I386_GCC46_COMPILER || HAVE_I386_GCC47_COMPILER || HAVE_I386_GCC48_COMPILER || HAVE_I386_GCC49_COMPILER || HAVE_I386_GCC5_COMPILER || HAVE_I386_GCC6_COMPILER || HAVE_I386_GCC7_COMPILER || HAVE_I386_GCC8_COMPILER || \
     HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER ||               \
     HAVE_I386_CLANGVVD_COMPILER || HAVE_SPARC_COMPILER || HAVE_ARM_COMPILER
-   GccWrapper_CompilerTarget preferred_compiler;
-   if(compiler_target == GccWrapper_CompilerTarget::CT_NO_GCC)
+   CompilerWrapper_CompilerTarget preferred_compiler;
+   if(compiler_target == CompilerWrapper_CompilerTarget::CT_NO_COMPILER)
    {
-      preferred_compiler = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
+      preferred_compiler = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
    }
    else
    {
 #ifndef NDEBUG
       const bool debug_condition =
 #if HAVE_SPARC_COMPILER
-          (compiler_target == GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC) or
+          (compiler_target == CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC) or
 #endif
           (static_cast<int>(compiler_target) & static_cast<int>(compatible_compilers));
       THROW_ASSERT(debug_condition, "Required compiler is not among the compatible one: " + STR(static_cast<int>(compiler_target)) + " vs " + STR(static_cast<int>(compatible_compilers)));
@@ -2219,7 +2221,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    };
 #endif
 #if HAVE_I386_GCC45_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP45_EXE) : relocate_compiler_path(I386_GCC45_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP45_EXE);
@@ -2249,7 +2251,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
 #endif
 #if HAVE_I386_GCC46_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP46_EXE) : relocate_compiler_path(I386_GCC46_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP46_EXE);
@@ -2279,7 +2281,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
 #endif
 #if HAVE_I386_GCC47_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP47_EXE) : relocate_compiler_path(I386_GCC47_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP47_EXE);
@@ -2316,7 +2318,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
 #endif
 #if HAVE_I386_GCC48_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP48_EXE) : relocate_compiler_path(I386_GCC48_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP48_EXE);
@@ -2355,7 +2357,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
 #endif
 #if HAVE_I386_GCC49_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP49_EXE) : relocate_compiler_path(I386_GCC49_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP49_EXE);
@@ -2386,7 +2388,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
 #endif
 #if HAVE_I386_GCC5_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP5_EXE) : relocate_compiler_path(I386_GCC5_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP5_EXE);
@@ -2418,7 +2420,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_GCC6_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP6_EXE) : relocate_compiler_path(I386_GCC6_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP6_EXE);
@@ -2450,7 +2452,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_GCC7_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC7))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP7_EXE) : relocate_compiler_path(I386_GCC7_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP7_EXE);
@@ -2482,7 +2484,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_GCC8_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC8))
    {
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_GPP8_EXE) : relocate_compiler_path(I386_GCC8_EXE);
       compiler.cpp = relocate_compiler_path(I386_CPP8_EXE);
@@ -2514,7 +2516,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG4_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP4_EXE) : relocate_compiler_path(I386_CLANG4_EXE);
@@ -2541,7 +2543,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG5_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG5))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP5_EXE) : relocate_compiler_path(I386_CLANG5_EXE);
@@ -2568,7 +2570,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG6_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG6))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP6_EXE) : relocate_compiler_path(I386_CLANG6_EXE);
@@ -2595,7 +2597,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG7_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP7_EXE) : relocate_compiler_path(I386_CLANG7_EXE);
@@ -2622,7 +2624,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG8_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG8))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP8_EXE) : relocate_compiler_path(I386_CLANG8_EXE);
@@ -2649,7 +2651,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG9_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG9))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP9_EXE) : relocate_compiler_path(I386_CLANG9_EXE);
@@ -2676,7 +2678,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG10_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP10_EXE) : relocate_compiler_path(I386_CLANG10_EXE);
@@ -2703,7 +2705,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANG11_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG11))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPP11_EXE) : relocate_compiler_path(I386_CLANG11_EXE);
@@ -2730,12 +2732,12 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_I386_CLANGVVD_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANGVVD))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD))
    {
       compiler.is_clang = true;
       compiler.gcc = flag_cpp ? relocate_compiler_path(I386_CLANGPPVVD_EXE) : relocate_compiler_path(I386_CLANGVVD_EXE);
       compiler.cpp = relocate_compiler_path(I386_CLANG_CPPVVD_EXE);
-      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "");
+      compiler.extra_options = " -D_FORTIFY_SOURCE=0 " + gcc_extra_options + (flag_cpp ? EXTRA_CLANGPP_COMPILER_OPTION : "") + " -target fpga64-xilinx-linux-gnu";
       compiler.extra_options += " " + Param->getOption<std::string>(OPT_gcc_m32_mx32);
       compiler.empty_plugin_obj = clang_plugin_dir + I386_CLANGVVD_EMPTY_PLUGIN + plugin_ext;
       compiler.empty_plugin_name = I386_CLANGVVD_EMPTY_PLUGIN;
@@ -2757,7 +2759,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
 #endif
 
 #if HAVE_SPARC_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_GCC))
    {
       compiler.gcc = relocate_compiler_path(SPARC_GCC_EXE);
       compiler.cpp = relocate_compiler_path(SPARC_CPP_EXE);
@@ -2772,7 +2774,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
 #endif
 #if HAVE_SPARC_ELF_GCC
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_ELF_GCC))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_ELF_GCC))
    {
       compiler.gcc = SPARC_ELF_GCC;
       compiler.cpp = SPARC_ELF_CPP;
@@ -2780,7 +2782,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    }
 #endif
 #if HAVE_ARM_COMPILER
-   if(static_cast<int>(preferred_compiler) & static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC))
+   if(static_cast<int>(preferred_compiler) & static_cast<int>(CompilerWrapper_CompilerTarget::CT_ARM_GCC))
    {
       compiler.gcc = relocate_compiler_path(ARM_GCC_EXE);
       compiler.cpp = relocate_compiler_path(ARM_CPP_EXE);
@@ -2801,7 +2803,7 @@ GccWrapper::Compiler GccWrapper::GetCompiler() const
    return compiler;
 }
 
-void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
+void CompilerWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
 {
    /// This string contains the path and name of the compiler to be invoked
    const std::string cpp = GetCompiler().cpp.string();
@@ -2844,15 +2846,15 @@ void GccWrapper::GetSystemIncludes(std::vector<std::string>& includes) const
    includes = SplitString(list_of_dirs, " ");
 }
 
-void GccWrapper::GetGccConfig() const
+void CompilerWrapper::GetCompilerConfig() const
 {
-   QueryGccConfig("-v");
+   QueryCompilerConfig("-v");
 }
 
-void GccWrapper::QueryGccConfig(const std::string& gcc_option) const
+void CompilerWrapper::QueryCompilerConfig(const std::string& compiler_option) const
 {
    const std::string gcc = GetCompiler().gcc.string();
-   const std::string command = gcc + " " + gcc_option;
+   const std::string command = gcc + " " + compiler_option;
    const std::string output_file_name = Param->getOption<std::string>(OPT_output_temporary_directory) + STR_CST_file_IO_shell_output_file;
    int ret = PandaSystem(Param, command, output_file_name);
    if(IsError(ret))
@@ -2862,10 +2864,10 @@ void GccWrapper::QueryGccConfig(const std::string& gcc_option) const
    CopyStdout(output_file_name);
 }
 
-size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
+size_t CompilerWrapper::GetSourceCodeLines(const ParameterConstRef Param)
 {
 #ifndef NDEBUG
-   const int debug_level = Param->get_class_debug_level("GccWrapper");
+   const int debug_level = Param->get_class_debug_level("CompilerWrapper");
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Getting source code lines number");
    /// The output file
@@ -2901,16 +2903,16 @@ size_t GccWrapper::GetSourceCodeLines(const ParameterConstRef Param)
    return 0;
 }
 
-void GccWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters) const
+void CompilerWrapper::CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_compiler_options, bool no_frontend_compiler_parameters) const
 {
    std::list<std::string> sorted_file_names;
    for(const auto& file_name : file_names)
    {
       sorted_file_names.push_back(file_name);
    }
-   CreateExecutable(sorted_file_names, executable_name, extra_gcc_options, no_gcc_compiling_parameters);
+   CreateExecutable(sorted_file_names, executable_name, extra_compiler_options, no_frontend_compiler_parameters);
 }
-void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters) const
+void CompilerWrapper::CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_compiler_options, bool no_frontend_compiler_parameters) const
 {
    std::string file_names_string;
    bool has_cpp_file = false;
@@ -2930,7 +2932,7 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
 
    command += file_names_string + " ";
 
-   command += (no_gcc_compiling_parameters ? "" : gcc_compiling_parameters) + " " + AddSourceCodeIncludes(file_names) + " " + gcc_linking_parameters + " ";
+   command += (no_frontend_compiler_parameters ? "" : frontend_compiler_parameters) + " " + AddSourceCodeIncludes(file_names) + " " + compiler_linking_parameters + " ";
    if(!has_cpp_file && command.find("--std=c++14") != std::string::npos)
    {
       boost::replace_all(command, "--std=c++14", "");
@@ -2938,8 +2940,8 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
 
    command += "-D__NO_INLINE__ "; /// needed to avoid problem with glibc inlines
 
-   std::string local_compiler_extra_options = no_gcc_compiling_parameters ? "" : compiler.extra_options;
-   if(extra_gcc_options.find("-m32") != std::string::npos)
+   std::string local_compiler_extra_options = no_frontend_compiler_parameters ? "" : compiler.extra_options;
+   if(extra_compiler_options.find("-m32") != std::string::npos)
    {
       boost::replace_all(local_compiler_extra_options, "-mx32", "");
    }
@@ -2950,7 +2952,12 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
 #endif
 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Extra options are " + local_compiler_extra_options);
-   command += local_compiler_extra_options + " " + extra_gcc_options + " ";
+   command += local_compiler_extra_options + " " + extra_compiler_options + " ";
+   if(command.find("-target fpga64-xilinx-linux-gnu") != std::string::npos)
+   {
+      boost::replace_all(command, "-target fpga64-xilinx-linux-gnu", "");
+   }
+
 
    command += "-o " + executable_name + " ";
 
@@ -2973,7 +2980,7 @@ void GccWrapper::CreateExecutable(const std::list<std::string>& file_names, cons
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 }
 
-void GccWrapper::ReadParameters()
+void CompilerWrapper::ReadParameters()
 {
    if(Param->isOption(OPT_gcc_optimizations))
    {
@@ -3013,42 +3020,42 @@ void GccWrapper::ReadParameters()
    }
 }
 
-std::string GccWrapper::WriteOptimizationLevel(const GccWrapper_OptimizationSet optimization_level)
+std::string CompilerWrapper::WriteOptimizationLevel(const CompilerWrapper_OptimizationSet optimization_level)
 {
    switch(optimization_level)
    {
-      case(GccWrapper_OptimizationSet::O0):
+      case(CompilerWrapper_OptimizationSet::O0):
          return "0";
-      case(GccWrapper_OptimizationSet::O1):
+      case(CompilerWrapper_OptimizationSet::O1):
          return "1";
-      case(GccWrapper_OptimizationSet::O2):
+      case(CompilerWrapper_OptimizationSet::O2):
          return "2";
-      case(GccWrapper_OptimizationSet::O3):
+      case(CompilerWrapper_OptimizationSet::O3):
          return "3";
-      case(GccWrapper_OptimizationSet::O4):
+      case(CompilerWrapper_OptimizationSet::O4):
          return "4";
-      case(GccWrapper_OptimizationSet::O5):
+      case(CompilerWrapper_OptimizationSet::O5):
          return "5";
-      case(GccWrapper_OptimizationSet::Og):
+      case(CompilerWrapper_OptimizationSet::Og):
          return "g";
-      case(GccWrapper_OptimizationSet::Os):
+      case(CompilerWrapper_OptimizationSet::Os):
          return "s";
-      case(GccWrapper_OptimizationSet::Ofast):
+      case(CompilerWrapper_OptimizationSet::Ofast):
          return "fast";
-      case(GccWrapper_OptimizationSet::Oz):
+      case(CompilerWrapper_OptimizationSet::Oz):
          return "z";
 #if HAVE_BAMBU_BUILT
-      case(GccWrapper_OptimizationSet::OBAMBU):
+      case(CompilerWrapper_OptimizationSet::OBAMBU):
          return "bambu";
-      case(GccWrapper_OptimizationSet::OSF):
+      case(CompilerWrapper_OptimizationSet::OSF):
          return "softfloat";
 #endif
 #if HAVE_TUCANO_BUILT
-      case(GccWrapper_OptimizationSet::OTUCANO):
+      case(CompilerWrapper_OptimizationSet::OTUCANO):
          return "tucano";
 #endif
 #if HAVE_ZEBU_BUILT
-      case(GccWrapper_OptimizationSet::OZEBU):
+      case(CompilerWrapper_OptimizationSet::OZEBU):
          return "zebu";
 #endif
       default:
@@ -3059,7 +3066,7 @@ std::string GccWrapper::WriteOptimizationLevel(const GccWrapper_OptimizationSet 
    return "";
 }
 
-std::string GccWrapper::WriteOptimizationsString()
+std::string CompilerWrapper::WriteOptimizationsString()
 {
    std::string optimizations;
    /// Preparing optimizations string
@@ -3110,7 +3117,7 @@ std::string GccWrapper::WriteOptimizationsString()
    return optimizations;
 }
 
-void GccWrapper::ReadXml(const std::string& file_name)
+void CompilerWrapper::ReadXml(const std::string& file_name)
 {
    try
    {
@@ -3195,7 +3202,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                      }
                   }
                }
-               gcc_compiling_parameters += (" " + WriteOptimizationsString() + " ");
+               frontend_compiler_parameters += (" " + WriteOptimizationsString() + " ");
             }
             else if(root_child_element->get_name() == STR_XML_gcc_standard)
             {
@@ -3204,7 +3211,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                {
                   THROW_ERROR("Standard node without value");
                }
-               gcc_compiling_parameters += "--std=" + standard->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+               frontend_compiler_parameters += "--std=" + standard->get_attribute(STR_XML_gcc_value)->get_value() + " ";
             }
             else if(root_child_element->get_name() == STR_XML_gcc_defines)
             {
@@ -3221,7 +3228,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
-                  gcc_compiling_parameters += "-D" + define_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+                  frontend_compiler_parameters += "-D" + define_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
                }
             }
             else if(root_child_element->get_name() == STR_XML_gcc_undefines)
@@ -3239,7 +3246,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
-                  gcc_compiling_parameters += "-U" + undefine_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+                  frontend_compiler_parameters += "-U" + undefine_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
                }
             }
             else if(root_child_element->get_name() == STR_XML_gcc_warnings)
@@ -3257,7 +3264,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
-                  gcc_compiling_parameters += "-W" + warning_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+                  frontend_compiler_parameters += "-W" + warning_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
                }
             }
             else if(root_child_element->get_name() == STR_XML_gcc_includes)
@@ -3275,7 +3282,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
-                  gcc_compiling_parameters += "-I" + include_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+                  frontend_compiler_parameters += "-I" + include_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
                }
             }
             else if(root_child_element->get_name() == STR_XML_gcc_libraries)
@@ -3293,7 +3300,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
-                  gcc_linking_parameters += "-l" + library_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+                  compiler_linking_parameters += "-l" + library_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
                }
             }
             else if(root_child_element->get_name() == STR_XML_gcc_library_directories)
@@ -3311,7 +3318,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
                   {
                      THROW_ERROR("Optimization value node without name or value");
                   }
-                  gcc_compiling_parameters += "-L" + library_directory_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
+                  frontend_compiler_parameters += "-L" + library_directory_element->get_attribute(STR_XML_gcc_value)->get_value() + " ";
                }
             }
          }
@@ -3335,7 +3342,7 @@ void GccWrapper::ReadXml(const std::string& file_name)
    }
 }
 
-void GccWrapper::WriteXml(const std::string& file_name) const
+void CompilerWrapper::WriteXml(const std::string& file_name) const
 {
    xml_document document;
    xml_element* root = document.create_root_node(STR_XML_gcc_root);
@@ -3367,7 +3374,7 @@ void GccWrapper::WriteXml(const std::string& file_name) const
    document.write_to_file_formatted(file_name);
 }
 
-const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>& source_files) const
+const std::string CompilerWrapper::AddSourceCodeIncludes(const std::list<std::string>& source_files) const
 {
    std::string includes;
    /// Adding includes of original source code files
@@ -3378,7 +3385,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
 #ifdef _WIN32
       boost::replace_all(new_path, "\\", "/");
 #endif
-      if(gcc_compiling_parameters.find(new_path) == std::string::npos and includes.find(new_path) == std::string::npos)
+      if(frontend_compiler_parameters.find(new_path) == std::string::npos and includes.find(new_path) == std::string::npos)
       {
          includes += new_path;
       }
@@ -3386,7 +3393,7 @@ const std::string GccWrapper::AddSourceCodeIncludes(const std::list<std::string>
    return includes;
 }
 
-size_t GccWrapper::ConvertVersion(const std::string& version)
+size_t CompilerWrapper::ConvertVersion(const std::string& version)
 {
    size_t ret_value = 0;
    std::vector<std::string> version_tokens = SplitString(version, ".");
@@ -3399,14 +3406,14 @@ size_t GccWrapper::ConvertVersion(const std::string& version)
    return ret_value;
 }
 
-std::string GccWrapper::clang_recipes(
-    const GccWrapper_OptimizationSet
+std::string CompilerWrapper::clang_recipes(
+    const CompilerWrapper_OptimizationSet
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
         optimization_level
 #endif
     ,
-    const GccWrapper_CompilerTarget
+    const CompilerWrapper_CompilerTarget
 #if HAVE_I386_CLANG4_COMPILER || HAVE_I386_CLANG5_COMPILER || HAVE_I386_CLANG6_COMPILER || HAVE_I386_CLANG7_COMPILER || HAVE_I386_CLANG8_COMPILER || HAVE_I386_CLANG9_COMPILER || HAVE_I386_CLANG10_COMPILER || HAVE_I386_CLANG11_COMPILER || \
     HAVE_I386_CLANGVVD_COMPILER
         compiler
@@ -3481,9 +3488,9 @@ std::string GccWrapper::clang_recipes(
       }
    }
 #if HAVE_I386_CLANG4_COMPILER
-   if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG4)
+   if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
    {
-      if(optimization_level == GccWrapper_OptimizationSet::O2 || optimization_level == GccWrapper_OptimizationSet::O3)
+      if(optimization_level == CompilerWrapper_OptimizationSet::O2 || optimization_level == CompilerWrapper_OptimizationSet::O3)
       {
          std::string complex_recipe;
          complex_recipe += " -tti "
@@ -3697,7 +3704,7 @@ std::string GccWrapper::clang_recipes(
       }
       else
       {
-         const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+         const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
          recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
          recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
       }
@@ -3705,27 +3712,27 @@ std::string GccWrapper::clang_recipes(
    else
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG5)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
    else
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG6)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name + " -loop-unroll -simplifycfg ";
    }
    else
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG7)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
@@ -3743,9 +3750,9 @@ std::string GccWrapper::clang_recipes(
    else
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG8)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -disable-loop-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
@@ -3763,9 +3770,9 @@ std::string GccWrapper::clang_recipes(
    else
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG9)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
@@ -3783,9 +3790,9 @@ std::string GccWrapper::clang_recipes(
    else
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG10)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " -disable-slp-vectorization -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
@@ -3803,9 +3810,9 @@ std::string GccWrapper::clang_recipes(
    else
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANG11)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
@@ -3823,9 +3830,9 @@ std::string GccWrapper::clang_recipes(
    else
 #endif
 #if HAVE_I386_CLANGVVD_COMPILER
-       if(compiler == GccWrapper_CompilerTarget::CT_I386_CLANGVVD)
+       if(compiler == CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
    {
-      const auto opt_level = optimization_level == GccWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
+      const auto opt_level = optimization_level == CompilerWrapper_OptimizationSet::O0 ? "1" : WriteOptimizationLevel(optimization_level);
       recipe += " -O" + opt_level + " --disable-vector-combine -scalarizer ";
       recipe += " -" + expandMemOps_plugin_name;
       /*
@@ -3848,11 +3855,11 @@ std::string GccWrapper::clang_recipes(
    return " " + recipe + " ";
 }
 
-void GccWrapper::CheckGccCompatibleVersion(const std::string& gcc_version, const std::string& plugin_version)
+void CompilerWrapper::CheckCompilerCompatibleVersion(const std::string& compiler_version, const std::string& plugin_version)
 {
-   current_gcc_version = gcc_version;
+   current_compiler_version = compiler_version;
    current_plugin_version = plugin_version;
-   const size_t gcc_version_number = ConvertVersion(gcc_version);
+   const size_t compiler_version_number = ConvertVersion(compiler_version);
    const size_t plugin_version_number = ConvertVersion(plugin_version);
    const size_t minimum_plugin_version_number = ConvertVersion(STR_CST_gcc_min_plugin_version);
    const size_t maximum_plugin_version_number = ConvertVersion(STR_CST_gcc_max_plugin_version);
@@ -3860,19 +3867,19 @@ void GccWrapper::CheckGccCompatibleVersion(const std::string& gcc_version, const
    {
       THROW_ERROR("Plugin version not correct. Plugin version supported has to be in this range: [" + std::string(STR_CST_gcc_min_plugin_version) + "-" + std::string(STR_CST_gcc_max_plugin_version) + "]");
    }
-   if(std::string(STR_CST_gcc_supported_versions).find(gcc_version) != std::string::npos)
+   if(std::string(STR_CST_gcc_supported_versions).find(compiler_version) != std::string::npos)
    {
       return;
    }
-   if(gcc_version_number < ConvertVersion(STR_CST_gcc_first_not_supported))
+   if(compiler_version_number < ConvertVersion(STR_CST_gcc_first_not_supported))
    {
-      THROW_WARNING("GCC/CLANG " + gcc_version + " has not been tested with the PandA framework");
+      THROW_WARNING("GCC/CLANG " + compiler_version + " has not been tested with the PandA framework");
       return;
    }
-   THROW_ERROR("GCC/CLANG " + gcc_version + " is not supported by this version of the PandA framework");
+   THROW_ERROR("GCC/CLANG " + compiler_version + " is not supported by this version of the PandA framework");
 }
 
-size_t GccWrapper::CGetPointerSize(const ParameterConstRef parameters)
+size_t CompilerWrapper::CGetPointerSize(const ParameterConstRef parameters)
 {
    const auto gcc_m32_mx32 = parameters->getOption<std::string>(OPT_gcc_m32_mx32);
    if(gcc_m32_mx32 == "-m32" or gcc_m32_mx32 == "-m32 -mno-sse2")

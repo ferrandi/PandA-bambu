@@ -52,7 +52,7 @@
 #include "graph.hpp"
 #include "hls_manager.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree_node datastructure

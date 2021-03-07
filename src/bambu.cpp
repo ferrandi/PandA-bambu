@@ -108,8 +108,8 @@
 /// utility include
 #include "cpu_time.hpp"
 
-/// wrapper/treegcc includes
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler includes
+#include "compiler_wrapper.hpp"
 
 /**
  * Main file used to perform high-level synthesis starting from a C specification.
@@ -178,9 +178,9 @@ int main(int argc, char* argv[])
       // Include sysdir
       if(parameters->getOption<bool>(OPT_gcc_include_sysdir))
       {
-         const GccWrapperRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
+         const CompilerWrapperRef compiler_wrapper(new CompilerWrapper(parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
          std::vector<std::string> system_includes;
-         gcc_wrapper->GetSystemIncludes(system_includes);
+         compiler_wrapper->GetSystemIncludes(system_includes);
          std::vector<std::string>::const_iterator system_include, system_include_end = system_includes.end();
          for(system_include = system_includes.begin(); system_include != system_include_end; ++system_include)
          {
@@ -195,8 +195,8 @@ int main(int argc, char* argv[])
 
       if(parameters->getOption<bool>(OPT_gcc_config))
       {
-         const GccWrapperRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
-         gcc_wrapper->GetGccConfig();
+         const CompilerWrapperRef compiler_wrapper(new CompilerWrapper(parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
+         compiler_wrapper->GetCompilerConfig();
          if(not(parameters->getOption<bool>(OPT_no_clean)))
          {
             boost::filesystem::remove_all(parameters->getOption<std::string>(OPT_output_temporary_directory));
