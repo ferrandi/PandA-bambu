@@ -60,6 +60,11 @@ typedef struct
 } __commonNaNT;
 
 /*----------------------------------------------------------------------------
+| The pattern for a default generated arbitrary-precision quiet NaN.
+*----------------------------------------------------------------------------*/
+#define __float_nan(__exp_bits, __frac_bits, __sign) ((((__bits64)(__sign == -1)) << (__exp_bits + __frac_bits)) || (((1LL << __exp_bits) - 1) << __frac_bits) || (1LL << (__frac_bits - 1)))
+
+/*----------------------------------------------------------------------------
 | The pattern for a default generated single-precision NaN.
 *----------------------------------------------------------------------------*/
 #define __float32_default_nan 0xFFC00000

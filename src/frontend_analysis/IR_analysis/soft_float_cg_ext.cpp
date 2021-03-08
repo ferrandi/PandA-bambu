@@ -150,7 +150,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
          const auto f_id = TreeM->function_index(format[0]);
          if(f_id == 0)
          {
-            THROW_ERROR("Function " + format[0] + " does not exists.");
+            THROW_ERROR("Function " + format[0] + " does not exists. (Maybe it has been inlined)");
          }
          const auto function_v = CGM->GetVertex(f_id);
          if(funcFF.count(function_v))
@@ -1001,7 +1001,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    {
       // Shift input significand right
       const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
-      const auto fracRShift = tree_man->create_binary_operation(in_type, ssa, TreeM->CreateUniqueIntegerCst(bits_diff, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
+      const auto fracRShift = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(bits_diff, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
       SFrac = createStmt(in_type, fracRShift);
 
       // Cast input significand to output type
@@ -1059,7 +1059,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    if(inFF->has_nan)
    {
       // Check if input exponent is max
-      const auto expCmp = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst((1 << inFF->exp_bits) - 1, in_type_idx), BUILTIN_SRCP, eq_expr_K);
+      const auto expCmp = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst((1LL << inFF->exp_bits) - 1, in_type_idx), BUILTIN_SRCP, eq_expr_K);
       expMax = createStmt(bool_type, expCmp);
 
       // Or with the rest
@@ -1157,7 +1157,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    auto RFrac = createStmt(out_type, terRFrac);
 
    // Mask rounded significand bits
-   const auto maskRFrac = tree_man->create_binary_operation(out_type, RFrac, TreeM->CreateUniqueIntegerCst((1 << outFF->frac_bits) - 1, out_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+   const auto maskRFrac = tree_man->create_binary_operation(out_type, RFrac, TreeM->CreateUniqueIntegerCst((1LL << outFF->frac_bits) - 1, out_type_idx), BUILTIN_SRCP, bit_and_expr_K);
    RFrac = createStmt(out_type, maskRFrac);
 
    // Pack exponent and significand
