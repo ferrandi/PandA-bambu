@@ -999,14 +999,30 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    tree_nodeRef SFrac;
    if(inFF->frac_bits > outFF->frac_bits)
    {
-      // Shift input significand right
       const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
+
+      // Shift input significand right
       const auto fracRShift = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(bits_diff, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
       SFrac = createStmt(in_type, fracRShift);
 
       // Cast input significand to output type
       const auto fracCast = tree_man->CreateNopExpr(SFrac, out_type, tree_nodeRef(), tree_nodeRef());
       SFrac = createStmt(out_type, fracCast);
+
+      if(outFF->has_rounding)
+      {
+         // Mask discarded bits
+         const auto fracRMask = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst((1LL << bits_diff) - 1, in_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+         auto JBit = createStmt(in_type, fracRMask);
+
+         // Jam discarded bits
+         const auto fracRJam = tree_man->create_binary_operation(bool_type, JBit, TreeM->CreateUniqueIntegerCst(0, in_type_idx), BUILTIN_SRCP, ne_expr_K);
+         JBit = createStmt(bool_type, fracRJam);
+
+         // Or jamming with output significand
+         const auto fracJam = tree_man->create_binary_operation(out_type, SFrac, JBit, BUILTIN_SRCP, bit_ior_expr_K);
+         SFrac = createStmt(out_type, fracJam);
+      }
    }
    else if(inFF->frac_bits < outFF->frac_bits)
    {
@@ -1069,25 +1085,6 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 
    const auto expFix = inFF->exp_bias - outFF->exp_bias;
    const auto rangeDiff = ((1LL << outFF->exp_bits) - 1) - ((1LL << inFF->exp_bits) - 1);
-   // if((((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias)) && (expFix < 0 || (expFix > rangeDiff && !outFF->has_nan))) || ((inFF->has_rounding || outFF->has_rounding) && !outFF->has_nan))
-   // {
-   //    // Shift right rounded exponent to last bit
-   //    const auto rexpRShift = tree_man->create_binary_operation(exp_type, RExpFrac, TreeM->CreateUniqueIntegerCst(outFF->exp_bits + outFF->frac_bits, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
-   //    auto UnOvflow = createStmt(exp_type, rexpRShift);
-   //
-   //    // Mask last bit of fixed exponent
-   //    // TODO: maybe useless?
-   //    const auto fexpAnd = tree_man->create_binary_operation(exp_type, UnOvflow, TreeM->CreateUniqueIntegerCst(1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-   //    UnOvflow = createStmt(exp_type, fexpAnd);
-   //
-   //    // Cast to bool
-   //    const auto ufCast = tree_man->CreateNopExpr(UnOvflow, bool_type, tree_nodeRef(), tree_nodeRef());
-   //    UnOvflow = createStmt(bool_type, ufCast);
-   //
-   //    // Or with the rest
-   //    const auto nanOr = tree_man->create_binary_operation(bool_type, UnOvflow, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
-   //    out_nan = createStmt(bool_type, nanOr);
-   // }
 
    if(((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias)) && expFix > rangeDiff && outFF->has_nan)
    {
@@ -1107,10 +1104,6 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    // Ternary if for exponent nan
    const auto terRExp = tree_man->create_ternary_operation(out_type, out_nan, TreeM->CreateUniqueIntegerCst(((1LL << outFF->exp_bits) - 1), out_type_idx), RExp, BUILTIN_SRCP, cond_expr_K);
    RExp = createStmt(out_type, terRExp);
-
-   // // Mask rounded exponent bits
-   // const auto rexpMask = tree_man->create_binary_operation(out_type, RExpFrac, TreeM->CreateUniqueIntegerCst(((1LL << outFF->exp_bits) - 1), out_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-   // RExp = createStmt(expFrac_type, rexpMask);
 
    // Shift exponent left
    const auto expLShift = tree_man->create_binary_operation(out_type, RExp, TreeM->CreateUniqueIntegerCst(outFF->frac_bits, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
