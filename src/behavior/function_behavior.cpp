@@ -168,7 +168,6 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       parm_decl_stored(),
       parameters(_parameters),
       dereference_unknown_address(false),
-      pointer_type_conversion(false),
       unaligned_accesses(false),
       bb_version(1),
       bitvalue_version(1),
@@ -636,12 +635,7 @@ void FunctionBehavior::add_dynamic_address(unsigned int node_id)
    /// the object may be written once you have the address
 }
 
-void FunctionBehavior::erase_dynamic_address(unsigned int node_id)
-{
-   dynamic_address.erase(node_id);
-}
-
-void FunctionBehavior::erase_all_dynamic_addresses()
+void FunctionBehavior::clean_dynamic_address()
 {
    dynamic_address.clear();
 }
@@ -674,6 +668,11 @@ const CustomOrderedSet<unsigned int>& FunctionBehavior::get_function_mem() const
    return mem_nodeID;
 }
 
+void FunctionBehavior::clean_function_mem()
+{
+   mem_nodeID.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_dynamic_address() const
 {
    return dynamic_address;
@@ -684,14 +683,29 @@ const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_copied() c
    return parm_decl_copied;
 }
 
+void FunctionBehavior::clean_parm_decl_copied()
+{
+   parm_decl_copied.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_loaded() const
 {
    return parm_decl_loaded;
 }
 
+void FunctionBehavior::clean_parm_decl_loaded()
+{
+   parm_decl_loaded.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_stored() const
 {
    return parm_decl_stored;
+}
+
+void FunctionBehavior::clean_parm_decl_stored()
+{
+   parm_decl_stored.clear();
 }
 
 CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const application_managerConstRef AppM) const

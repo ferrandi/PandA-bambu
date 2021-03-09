@@ -837,7 +837,7 @@ void fu_binding::add_to_SM(const HLS_managerRef HLSMgr, const hlsRef HLS, struct
          specialise_fu(HLSMgr, HLS, curr_gate, fu_type_id, operations_set, var);
          std::string memory_type = GetPointer<functional_unit>(fu_lib_unit)->memory_type;
          std::string channels_type = GetPointer<functional_unit>(fu_lib_unit)->channels_type;
-         specialize_memory_unit(HLSMgr, HLS, curr_gate, var, base_address, rangesize, false, memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED && (channels_type == CHANNELS_TYPE_MEM_ACC_N1 || channels_type == CHANNELS_TYPE_MEM_ACC_NN),
+         specialize_memory_unit(HLSMgr, HLS, curr_gate, var, base_address, rangesize, memory_type == MEMORY_TYPE_SYNCHRONOUS_UNALIGNED && (channels_type == CHANNELS_TYPE_MEM_ACC_N1 || channels_type == CHANNELS_TYPE_MEM_ACC_NN),
                                 HLS->Param->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory),
                                 memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS || memory_type == MEMORY_TYPE_SYNCHRONOUS_SDS_BUS || memory_type == MEMORY_TYPE_ASYNCHRONOUS);
          check_parametrization(curr_gate);
@@ -1612,100 +1612,55 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 
    if(ar)
    {
-      bool has_misaligned_indirect_ref = false;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
-      unsigned int elmt_bitsize = 1;
-      unsigned int type_index = tree_helper::get_type_index(TreeM, ar);
-      tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
-      tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
+      {
+         unsigned int elmt_bitsize = 1;
+         unsigned int type_index = tree_helper::get_type_index(TreeM, ar);
+         tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
+         tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
 
-      if(allocation_information->is_direct_access_memory_unit(fu))
-      {
-         required_variables[0] = elmt_bitsize;
-         if(HLSMgr->Rmem->is_private_memory(ar))
+         if(allocation_information->is_direct_access_memory_unit(fu))
          {
-            bus_data_bitsize = std::max(bus_data_bitsize, elmt_bitsize);
-         }
-         required_variables[1] = bus_addr_bitsize;
-         if(HLSMgr->Rmem->is_private_memory(ar))
-         {
-            for(; elmt_bitsize >= (1u << bus_size_bitsize); ++bus_size_bitsize)
+            required_variables[0] = elmt_bitsize;
+            if(HLSMgr->Rmem->is_private_memory(ar))
             {
+               bus_data_bitsize = std::max(bus_data_bitsize, elmt_bitsize);
             }
-         }
-         required_variables[2] = bus_size_bitsize;
-         produced_variables = elmt_bitsize;
-      }
-      else
-      {
-         THROW_ERROR("Unit currently not supported: " + allocation_information->get_fu_name(fu).first);
-      }
-      const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
-      for(auto mapped_operation : mapped_operations)
-      {
-         PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  on BRAM = " + data->CGetOpNodeInfo(mapped_operation)->GetOperation() + " " + GET_NAME(data, mapped_operation));
-         const std::vector<HLS_manager::io_binding_type>& vars = HLSMgr->get_required_values(HLS->functionId, mapped_operation);
-         unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, mapped_operation);
-         if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
-         {
-            THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
-            required_variables[0] = std::max(required_variables[0], tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, std::get<0>(vars[0]))));
-            if(tree_helper::is_a_misaligned_vector(TreeM, std::get<0>(vars[0])))
+            required_variables[1] = bus_addr_bitsize;
+            if(HLSMgr->Rmem->is_private_memory(ar))
             {
-               has_misaligned_indirect_ref = true;
+               for(; elmt_bitsize >= (1u << bus_size_bitsize); ++bus_size_bitsize)
+               {
+               }
             }
+            required_variables[2] = bus_size_bitsize;
+            produced_variables = elmt_bitsize;
          }
-         else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
+         else
          {
-            THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
-            produced_variables = std::max(produced_variables, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var)));
-            if(tree_helper::is_a_misaligned_vector(TreeM, out_var))
+            THROW_ERROR("Unit currently not supported: " + allocation_information->get_fu_name(fu).first);
+         }
+         const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::CFG);
+         for(auto mapped_operation : mapped_operations)
+         {
+            PRINT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "  on BRAM = " + data->CGetOpNodeInfo(mapped_operation)->GetOperation() + " " + GET_NAME(data, mapped_operation));
+            const std::vector<HLS_manager::io_binding_type>& vars = HLSMgr->get_required_values(HLS->functionId, mapped_operation);
+            unsigned int out_var = HLSMgr->get_produced_value(HLS->functionId, mapped_operation);
+            if(GET_TYPE(data, mapped_operation) & TYPE_STORE)
             {
-               has_misaligned_indirect_ref = true;
+               THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
+               required_variables[0] = std::max(required_variables[0], tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, std::get<0>(vars[0]))));
+            }
+            else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
+            {
+               THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
+               produced_variables = std::max(produced_variables, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var)));
             }
          }
       }
-      unsigned int accessed_bitsize = std::max(required_variables[0], produced_variables);
-
-      unsigned int bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
-      bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
-      if(unaligned_access_p || bram_bitsize != 8 || bus_data_bitsize != 8 || HLSMgr->Rmem->is_private_memory(ar))
-      {
-         if(has_misaligned_indirect_ref)
-         {
-            bram_bitsize = std::max(accessed_bitsize, bram_bitsize);
-         }
-         else if(accessed_bitsize / 2 > bram_bitsize)
-         {
-            while(accessed_bitsize / 2 > bram_bitsize)
-            {
-               bram_bitsize *= 2;
-            }
-         }
-#if 1
-         unsigned datasize = elmt_bitsize;
-         /// Round up to the next highest power of 2
-         datasize--;
-         datasize |= datasize >> 1;
-         datasize |= datasize >> 2;
-         datasize |= datasize >> 4;
-         datasize |= datasize >> 8;
-         datasize |= datasize >> 16;
-         datasize++;
-         if(datasize <= HLSMgr->Rmem->get_maxbram_bitsize() && bram_bitsize < datasize)
-         {
-            bram_bitsize = datasize;
-         }
-#endif
-      }
-      if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())
-      {
-         THROW_ERROR("incorrect operation mapping on memory module");
-      }
-
       if(fu_module->ExistsParameter("BRAM_BITSIZE"))
       {
-         fu_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
+         fu_module->SetParameter("BRAM_BITSIZE", STR(HLSMgr->Rmem->get_bram_bitsize()));
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
@@ -2145,8 +2100,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Specialized " + fu_obj->get_path());
 }
 
-void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_doubled, bool is_memory_splitted,
-                                        bool is_sparse_memory, bool is_sds)
+void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRef HLS, structural_objectRef fu_obj, unsigned int ar, std::string& base_address, unsigned long long int rangesize, bool is_memory_splitted, bool is_sparse_memory, bool is_sds)
 {
    auto* fu_module = GetPointer<module>(fu_obj);
    /// base address specialization
@@ -2173,7 +2127,7 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
       init_file_b.open(GetPath(("0_" + init_filename).c_str()));
    }
    unsigned int elts_size;
-   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, ((is_doubled ? 2 : 1) * boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"))), is_memory_splitted, is_sds, fu_module);
+   fill_array_ref_memory(init_file_a, init_file_b, ar, vec_size, elts_size, HLSMgr->Rmem, is_memory_splitted, is_sds, fu_module);
    THROW_ASSERT(vec_size, "at least one element is expected");
    if(is_memory_splitted)
    {
@@ -2186,17 +2140,8 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
    }
 
    /// specialize the number of elements in the array
-   bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
-   if(!unaligned_access_p && HLSMgr->Rmem->get_bram_bitsize() == 8 && HLSMgr->Rmem->get_bus_data_bitsize() == 8 && !HLSMgr->Rmem->is_private_memory(ar))
-   {
-      fu_module->SetParameter("n_elements", STR((vec_size * elts_size) / 8));
-      fu_module->SetParameter("data_size", "8");
-   }
-   else
-   {
-      fu_module->SetParameter("n_elements", STR(vec_size));
-      fu_module->SetParameter("data_size", STR(elts_size));
-   }
+   fu_module->SetParameter("n_elements", STR(vec_size));
+   fu_module->SetParameter("data_size", STR(elts_size));
    if(HLSMgr->Rmem->is_private_memory(ar))
    {
       fu_module->SetParameter("PRIVATE_MEMORY", "1");
@@ -2216,9 +2161,9 @@ void fu_binding::specialize_memory_unit(const HLS_managerRef HLSMgr, const hlsRe
 }
 #define CHANGE_SDS_MEMORY_LAYOUT 0
 
-void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar, long long int& vec_size, unsigned int& elts_size, const memoryRef mem, unsigned int bram_bitsize, bool is_memory_splitted, bool is_sds,
-                                       module* fu_module)
+void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& init_file_b, unsigned int ar, long long int& vec_size, unsigned int& elts_size, const memoryRef mem, bool is_memory_splitted, bool is_sds, module* fu_module)
 {
+   unsigned int bram_bitsize;
    unsigned int type_index;
    tree_nodeRef ar_node = TreeM->get_tree_node_const(ar);
    tree_nodeRef init_node;
@@ -2269,26 +2214,20 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---elts_size " + STR(elts_size));
    if(is_sds)
    {
+      fu_module->SetParameter("ALIGNMENT", STR(elts_size));
       bram_bitsize = elts_size;
-      bool unaligned_access_p = parameters->isOption(OPT_unaligned_access) && parameters->getOption<bool>(OPT_unaligned_access);
-      if(!unaligned_access_p && mem->get_bram_bitsize() == 8 && mem->get_bus_data_bitsize() == 8 && !mem->is_private_memory(ar))
-      {
-         fu_module->SetParameter("BRAM_BITSIZE", "8");
-         vec_size = (vec_size * elts_size) / 8;
-         bram_bitsize = 8;
-         elts_size = 8;
-         is_sds = false;
-      }
-      else
-      {
-         fu_module->SetParameter("BRAM_BITSIZE", STR(elts_size));
-      }
 #if CHANGE_SDS_MEMORY_LAYOUT
       if(vd && vd->bit_values.size())
       {
          elts_size = element_precision = static_cast<unsigned int>(vd->bit_values.size());
       }
 #endif
+   }
+   else
+   {
+      bram_bitsize = boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"));
+      if(elts_size % 8)
+         elts_size = 8*(elts_size/8)+8;
    }
 
    unsigned int nbyte_on_memory = bram_bitsize / 8;
@@ -2302,9 +2241,19 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       if(is_sds && (element_precision == 0 || elts_size == element_precision))
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
-         for(auto init_value : init_string)
+         for(const auto &init_value : init_string)
          {
-            init_file_a << init_value << std::endl;
+            THROW_ASSERT(elts_size, "unexpected condition");
+            if(elts_size != init_value.size() && (init_value.size() % elts_size == 0))
+            {
+               const auto n_elmts = init_value.size() / elts_size;
+               for(auto index=0u; index < n_elmts; ++index)
+               {
+                   init_file_a << init_value.substr(init_value.size()-elts_size-index*elts_size, elts_size) << std::endl;
+               }
+            }
+            else
+               init_file_a << init_value << std::endl;
          }
       }
       else

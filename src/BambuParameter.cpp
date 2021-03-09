@@ -244,7 +244,8 @@
 #define OPT_DISTRAM_THRESHOLD (1 + OPT_DISABLE_IOB)
 #define OPT_DO_NOT_CHAIN_MEMORIES (1 + OPT_DISTRAM_THRESHOLD)
 #define OPT_DO_NOT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_CHAIN_MEMORIES)
-#define OPT_ROM_DUPLICATION (1 + OPT_DO_NOT_EXPOSE_GLOBALS)
+#define OPT_EXPOSE_GLOBALS (1 + OPT_DO_NOT_EXPOSE_GLOBALS)
+#define OPT_ROM_DUPLICATION (1 + OPT_EXPOSE_GLOBALS)
 #define OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES (1 + OPT_ROM_DUPLICATION)
 #define OPT_DSE (1 + OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES)
 #define OPT_DSP_ALLOCATION_COEFFICIENT (1 + OPT_DSE)
@@ -635,6 +636,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "        Define the external memory latency when LOAD are performed (default 1).\n\n"
       << "    --do-not-expose-globals\n"
       << "        All global variables are considered local to the compilation units.\n\n"
+      << "    --expose-globals\n"
+      << "        All global variables can be accessed from outside the accelerator.\n\n"
       << "    --data-bus-bitsize=<bitsize>\n"
       << "        Set the bitsize of the external data bus.\n\n"
       << "    --addr-bus-bitsize=<bitsize>\n"
@@ -777,7 +780,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "                       and package (e.g.,: \"xc7z020,-1,clg484,VVD\")\n"
       << "            - Altera:  a string defining the device string (e.g. EP2C70F896C6)\n"
       << "            - Lattice: a string defining the device string (e.g.\n"
-      << "                       LFE335EA8FN484C)\n\n"
+      << "                       LFE5U85F8BG756C)\n\n"
       << "    --power-optimization\n"
       << "        Enable Xilinx power based optimization (default no).\n\n"
       << "    --no-iob\n"
@@ -1156,6 +1159,7 @@ int BambuParameter::Exec()
       {"memory-ctrl-type", required_argument, nullptr, 0},
       {"sparse-memory", optional_argument, nullptr, 0},
       {"do-not-expose-globals", no_argument, nullptr, OPT_DO_NOT_EXPOSE_GLOBALS},
+      {"expose-globals", no_argument, nullptr, OPT_EXPOSE_GLOBALS},
       // interconnections
       {"interconnection", required_argument, nullptr, 'C'},
 #if HAVE_EXPERIMENTAL
@@ -2164,6 +2168,11 @@ int BambuParameter::Exec()
          case OPT_DO_NOT_EXPOSE_GLOBALS:
          {
             setOption(OPT_do_not_expose_globals, true);
+            break;
+         }
+         case OPT_EXPOSE_GLOBALS:
+         {
+            setOption(OPT_do_not_expose_globals, false);
             break;
          }
          case OPT_EXPERIMENTAL_SETUP:
@@ -3786,7 +3795,7 @@ void BambuParameter::CheckParameters()
                   "use --testbench-extra-gcc-flags=\"string\" to provide them");
    }
    setOption<unsigned int>(OPT_host_compiler, static_cast<unsigned int>(getOption<GccWrapper_CompilerTarget>(OPT_default_compiler)));
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C")
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
    {
       if(getOption<std::string>(OPT_simulator) == "VERILATOR")
       {
@@ -3794,13 +3803,13 @@ void BambuParameter::CheckParameters()
       }
    }
 #if !HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C")
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("CYCLES") != std::string::npos and isOption(OPT_device_string) and (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C"))
    {
       THROW_ERROR("Simulation of Lattice devices requires to enable Lattice support");
    }
 #endif
 #if HAVE_LATTICE
-   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" and
+   if(isOption(OPT_evaluation_objectives) and getOption<std::string>(OPT_evaluation_objectives).find("AREA") != std::string::npos and isOption(OPT_device_string) and (getOption<std::string>(OPT_device_string) == "LFE335EA8FN484C" or getOption<std::string>(OPT_device_string) == "LFE5UM85F8BG756C" or getOption<std::string>(OPT_device_string) == "LFE5U85F8BG756C") and
       !getOption<bool>(OPT_connect_iob))
    {
       THROW_WARNING("--no-iob cannot be used when target is a Lattice board");
@@ -3930,7 +3939,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_base_address, 1073741824); // 1Gbytes maximum address space reserved for the accelerator
    setOption(OPT_memory_controller_type, "D00");
    setOption(OPT_sparse_memory, true);
-   setOption(OPT_do_not_expose_globals, false);
+   setOption(OPT_do_not_expose_globals, true);
 
    /// -- Datapath -- //
    /// Datapath interconnection architecture

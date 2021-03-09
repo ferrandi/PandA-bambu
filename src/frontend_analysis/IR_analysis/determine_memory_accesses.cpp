@@ -69,7 +69,7 @@
 #include "tree_reindex.hpp"
 
 determine_memory_accesses::determine_memory_accesses(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
-    : FunctionFrontendFlowStep(_AppM, _function_id, DETERMINE_MEMORY_ACCESSES, _design_flow_manager, _parameters), behavioral_helper(function_behavior->CGetBehavioralHelper()), TM(_AppM->get_tree_manager()), already_executed(false)
+    : FunctionFrontendFlowStep(_AppM, _function_id, DETERMINE_MEMORY_ACCESSES, _design_flow_manager, _parameters), behavioral_helper(function_behavior->CGetBehavioralHelper()), TM(_AppM->get_tree_manager())
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -94,6 +94,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::make_pair(VAR_DECL_FIX, SAME_FUNCTION));
          }
          relationships.insert(std::make_pair(CALL_GRAPH_BUILTIN_CALL, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, CALLED_FUNCTIONS));
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
@@ -130,6 +131,16 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Node is not a function or it hasn't a body");
       return DesignFlowStep_Status::UNCHANGED;
    }
+   /// cleanup data structure
+   function_behavior->clean_function_mem();
+   function_behavior->set_has_globals(false);
+   function_behavior->clean_state_variable();
+   function_behavior->clean_dynamic_address();
+   function_behavior->clean_parm_decl_copied();
+   function_behavior->clean_parm_decl_loaded();
+   function_behavior->clean_parm_decl_stored();
+   function_behavior->set_dereference_unknown_addr(false);
+   function_behavior->set_has_undefined_function_receiveing_pointers(false);
 
    /// analyze formal parameters
    auto formal_it_end = fd->list_of_args.end();
@@ -161,7 +172,6 @@ DesignFlowStep_Status determine_memory_accesses::InternalExec()
    {
       AppM->CGetCallGraphManager()->CGetCallGraph()->WriteDot("call_graph_memory_analysis.dot");
    }
-   already_executed = true;
    /// mem clean up
    already_visited_ae.clear();
    already_visited.clear();
@@ -1469,5 +1479,5 @@ bool determine_memory_accesses::HasToBeExecuted() const
    {
       return false;
    }
-   return not already_executed;
+   return FunctionFrontendFlowStep::HasToBeExecuted();
 }

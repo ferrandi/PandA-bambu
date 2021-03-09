@@ -530,7 +530,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: point-to-set not resolved");
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---Pointers not resolved: point-to-set not resolved " + me->ToString());
                      all_pointers_resolved = false;
                   }
                }
@@ -562,15 +562,23 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
                      {
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
-                        for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "STORE SSA pointer " + mr->op0->ToString() + " bit_values=" + ssa_addr->bit_values);
+                        if(ssa_addr->bit_values == "0")
                         {
-                           if(*it == '0' || *it == 'X')
+                           n_last_zerobits = 60; // infinite alignment
+                        }
+                        else
+                        {
+                           for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
                            {
-                              ++n_last_zerobits;
-                           }
-                           else
-                           {
-                              break;
+                              if(*it == '0' || *it == 'X')
+                              {
+                                 ++n_last_zerobits;
+                              }
+                              else
+                              {
+                                 break;
+                              }
                            }
                         }
                      }
@@ -606,15 +614,23 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      if(GET_NODE(mr->op0)->get_kind() == ssa_name_K)
                      {
                         auto ssa_addr = GetPointer<ssa_name>(GET_NODE(mr->op0));
-                        for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
+                        INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Load SSA pointer " + mr->op0->ToString() + " bit_values=" + ssa_addr->bit_values);
+                        if(ssa_addr->bit_values == "0")
                         {
-                           if(*it == '0' || *it == 'X')
+                           n_last_zerobits = 60; // infinite alignment
+                        }
+                        else
+                        {
+                           for(auto it = ssa_addr->bit_values.rbegin(); it != ssa_addr->bit_values.rend(); ++it)
                            {
-                              ++n_last_zerobits;
-                           }
-                           else
-                           {
-                              break;
+                              if(*it == '0' || *it == 'X')
+                              {
+                                 ++n_last_zerobits;
+                              }
+                              else
+                              {
+                                 break;
+                              }
                            }
                         }
                      }
@@ -642,7 +658,8 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                {
                   unsigned int elmt_bitsize = 1;
                   unsigned int type_index = tree_helper::get_type_index(TreeM, var);
-                  bool is_a_struct_union = ((tree_helper::is_a_struct(TreeM, type_index)) && !tree_helper::is_an_array(TreeM, type_index)) || tree_helper::is_an_union(TreeM, type_index) || tree_helper::is_a_complex(TreeM, type_index);
+                  bool is_a_struct_union = (tree_helper::is_a_struct(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) || (tree_helper::is_an_union(TreeM, type_index) && !tree_helper::is_an_array(TreeM, type_index)) ||
+                                           tree_helper::is_a_complex(TreeM, type_index);
                   tree_nodeRef type_node = TreeM->get_tree_node_const(type_index);
                   tree_helper::accessed_greatest_bitsize(TreeM, type_node, type_index, elmt_bitsize);
                   unsigned int mim_elmt_bitsize = elmt_bitsize;
@@ -681,8 +698,6 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                   }
                   else if(alignment < value_bitsize)
                   {
-                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                    "---Variable " + STR(var) + " not sds because alignment " + STR(alignment) + " is less than the value loaded or written or than the size of the array elements " + STR(value_bitsize));
                      if(assume_aligned_access_p)
                      {
                         THROW_WARNING("Option --aligned-access have been specified on a function with not compiler-proved unaligned accesses:\n\tVariable " + BH->PrintVariable(var) + " could be accessed in unaligned way");
@@ -692,7 +707,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      {
                         HLSMgr->Rmem->set_sds_var(var, false);
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
-                                       "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) + " value_bitsize1=" + STR(value_bitsize));
+                                       "---Variable " + STR(var) + " not sds because alignment=" + STR(alignment) + " is less than the value loaded or written or than the size of the array elements=" + STR(value_bitsize));
                      }
                   }
                   else
@@ -713,7 +728,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                      HLSMgr->Rmem->set_sds_var(var, false);
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second));
                   }
-                  else if(alignment < var_size.find(var)->second)
+                  else if(alignment < value_bitsize)
                   {
                      if(assume_aligned_access_p)
                      {
@@ -726,6 +741,10 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
                         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
                                        "---Variable " + STR(var) + " not sds " + STR(value_bitsize) + " vs " + STR(var_size.find(var)->second) + " alignment=" + STR(alignment) + " value_bitsize2=" + STR(var_size.find(var)->second));
                      }
+                  }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + STR(var) + " sds " + STR(value_bitsize));
                   }
                }
                /// var referring vertex map
@@ -1057,7 +1076,7 @@ DesignFlowStep_Status mem_dominator_allocation::InternalExec()
          }
          const tree_nodeRef curr_tn = TreeM->get_tree_node_const(var_index);
          auto* vd = GetPointer<var_decl>(curr_tn);
-         if((vd && vd->readonly_flag) || (HLSMgr->get_written_objects().find(var_index) == HLSMgr->get_written_objects().end() && !is_dynamic_address_used))
+         if((HLSMgr->get_written_objects().find(var_index) == HLSMgr->get_written_objects().end()) && (!is_dynamic_address_used || (vd && vd->readonly_flag)))
          {
             HLSMgr->Rmem->add_read_only_variable(var_index);
          }

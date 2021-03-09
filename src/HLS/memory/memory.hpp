@@ -153,9 +153,6 @@ class memory
    /// Spec accesses data having an address unknown at compile time
    bool use_unknown_addresses;
 
-   /// true when at least one pointer conversion happen
-   bool pointer_conversion;
-
    /// true when LOADs or STOREs perform unaligned accesses
    bool unaligned_accesses;
 
@@ -694,23 +691,6 @@ class memory
    {
       return use_unknown_addresses;
    }
-
-   /**
-    * set if a pointer conversion happen
-    */
-   void set_pointer_conversion(bool accesses)
-   {
-      pointer_conversion = accesses;
-   }
-
-   /**
-    *return true in case at least one pointer conversion happen
-    */
-   bool has_pointer_conversion() const
-   {
-      return pointer_conversion;
-   }
-
    /**
     * set if LOADs or STOREs perform unaligned accesses
     */

@@ -338,15 +338,20 @@ CustomUnorderedMap<unsigned int, ActorGraphManagerRef> application_manager::GetA
 }
 #endif
 
+void application_manager::add_written_object(unsigned int node_id)
+{
+   // std::cerr << "Written object " << node_id << std::endl;
+   written_objects.insert(node_id);
+}
+
 const CustomOrderedSet<unsigned int>& application_manager::get_written_objects() const
 {
    return written_objects;
 }
 
-void application_manager::add_written_object(unsigned int node_id)
+void application_manager::clean_written_objects()
 {
-   // std::cerr << "Written object " << node_id << std::endl;
-   written_objects.insert(node_id);
+   written_objects.clear();
 }
 
 bool application_manager::ApplyNewTransformation() const

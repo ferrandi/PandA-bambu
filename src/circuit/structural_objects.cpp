@@ -495,7 +495,7 @@ structural_type_descriptor::structural_type_descriptor(unsigned int index, const
       vector_size = size;
       size = 1;
    }
-   else if(helper->is_an_array(index))
+   else if(helper->is_an_array(index) && !helper->is_a_struct(index) && !helper->is_an_union(index))
    {
       const unsigned int element_type = helper->GetElements(type_index);
       const auto element_size = static_cast<unsigned int>(helper->get_size(element_type));

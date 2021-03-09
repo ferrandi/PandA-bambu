@@ -112,8 +112,12 @@ void MemoryInitializationWriterBase::GoUp()
          expected_size = 0; /// Actual size depends on the pointed type
          break;
       case record_type_K:
+         expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
+         break;
       case union_type_K:
          expected_size = tree_helper::CGetFieldTypes(status.back().first).size();
+         if(expected_size > 1)
+            expected_size = 1;
          break;
       case boolean_type_K:
       case CharType_K:
@@ -164,7 +168,7 @@ void MemoryInitializationWriterBase::GoUp()
       default:
          THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "Not supported node: " + std::string(status.back().first->get_kind_text()));
    }
-   if(expected_size != 0 and expected_size != status.back().second)
+   if(expected_size != 0 and (expected_size != status.back().second))
    {
       THROW_ERROR("Missing data in C initialization for node of type " + status.back().first->get_kind_text() + " " + STR(expected_size) + " vs. " + STR(status.back().second));
    }

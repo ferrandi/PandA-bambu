@@ -1,5 +1,5 @@
 #!/bin/bash
-ARGS="-c=--clock-period=15 -c=--speculative-sdc-scheduling -c=--experimental-setup=BAMBU-BALANCED-MP -c=--device=xc7z020-1clg484-VVD -c=--compiler=I386_CLANG10"
+ARGS="-c=--clock-period=15 -c=--speculative-sdc-scheduling -c=--experimental-setup=BAMBU-BALANCED-MP -c=--device=xc7z020-1clg484-VVD -c=--aligned-access -c=--compiler=I386_CLANG10"
 script=$(readlink -e $0)
 root_dir=$(dirname $script)
 NAME=$(basename $0 .sh)

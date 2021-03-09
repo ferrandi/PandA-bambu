@@ -7,6 +7,8 @@ cp EP2C70F896C6/output/EP2C70F896C6.xml $root_dir/Altera_devices
 cp EP2C70F896C6-R/output/EP2C70F896C6-R.xml $root_dir/Altera_devices
 cp EP4SGX530KH40C2/output/EP4SGX530KH40C2.xml $root_dir/Altera_devices
 cp LFE335EA8FN484C/output/LFE335EA8FN484C.xml $root_dir/Lattice_devices
+cp LFE5UM85F8BG756C/output/LFE5UM85F8BG756C.xml $root_dir/Lattice_devices
+cp LFE5U85F8BG756C/output/LFE5U85F8BG756C.xml $root_dir/Lattice_devices
 cp xc4vlx100-10ff1513/output/xc4vlx100-10ff1513.xml $root_dir/Xilinx_devices
 cp xc5vlx110t-1ff1136/output/xc5vlx110t-1ff1136.xml $root_dir/Xilinx_devices
 cp xc5vlx330t-2ff1738/output/xc5vlx330t-2ff1738.xml $root_dir/Xilinx_devices
