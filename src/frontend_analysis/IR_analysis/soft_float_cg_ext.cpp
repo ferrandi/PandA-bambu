@@ -988,8 +988,17 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       const auto expCast = tree_man->CreateNopExpr(Exp, exp_type, tree_nodeRef(), tree_nodeRef());
       FExp = createStmt(exp_type, expCast);
 
+      // Fix exponent for new encoding
       const auto expAdd = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(biasDiff, exp_type_idx), BUILTIN_SRCP, plus_expr_K);
       FExp = createStmt(exp_type, expAdd);
+
+      // Check if in exponent is null
+      const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
+      const auto ExpNull = createStmt(bool_type, expZero);
+
+      // Choose between zero and fixed exponent
+      const auto expVal = tree_man->create_ternary_operation(exp_type, ExpNull, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), FExp, BUILTIN_SRCP, cond_expr_K);
+      FExp = createStmt(exp_type, expVal);
    }
    else
    {
