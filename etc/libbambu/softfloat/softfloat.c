@@ -1929,132 +1929,6 @@ __float32 __float32_round_to_int_ieee(__float32 a)
 //#define VOLATILE_DEF volatile
 #define VOLATILE_DEF
 
-static __FORCE_INLINE __float32 __addsubFloat32_ieee(__float32 a, __float32 b, __flag bSign)
-{
-   VOLATILE_DEF __bits32 aSig, bSig, shift_0;
-   VOLATILE_DEF __bits8 aExp, bExp, expDiff8;
-   VOLATILE_DEF __bits8 nZeros;
-   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
-   VOLATILE_DEF __bits32 abs_a, abs_b;
-   VOLATILE_DEF __bits32 fA, fB, fB_shifted;
-   VOLATILE_DEF _Bool sb, LSB_bit, Guard_bit, Round_bit, Sticky_bit, round;
-   VOLATILE_DEF __bits32 fB_shifted_low;
-   VOLATILE_DEF _Bool ge_32;
-   VOLATILE_DEF _Bool tmp_sign;
-   VOLATILE_DEF __bits8 tmp_exp;
-   VOLATILE_DEF __bits32 tmp_sig;
-   VOLATILE_DEF _Bool subnormal_exp_correction;
-   VOLATILE_DEF __bits32 fB_shifted1;
-   VOLATILE_DEF __bits32 fR0;
-   VOLATILE_DEF _Bool R_c_zero;
-   VOLATILE_DEF __bits8 RExp0, RExp1;
-   VOLATILE_DEF __bits32 RSig0, RSig1, RSig2, RSig3;
-   VOLATILE_DEF __bits32 RExp0RSig1, Rrounded;
-   VOLATILE_DEF _Bool overflow_to_infinite;
-   VOLATILE_DEF _Bool aExp255, bExp255;
-
-   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
-   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
-   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
-   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
-   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
-   _Bool aSig_null = aSig == 0;
-   _Bool bSig_null = bSig == 0;
-   _Bool aExp_null = aExp == 0;
-   _Bool bExp_null = bExp == 0;
-   aExp255 = aExp == 0xFF;
-   a_c_nan = aExp255 && !aSig_null;
-   a_c_normal = !aExp_null /*&& !aExp255*/; /// not really needed the second condition
-   bExp255 = bExp == 0xFF;
-   b_c_nan = bExp255 && !bSig_null;
-   b_c_normal = !bExp_null /*&& !bExp255*/; /// not really needed the second condition
-   sAB = aSign ^ bSign;
-
-   abs_a = a;
-   BIT_RESIZE(abs_a, 31);
-   abs_b = b;
-   BIT_RESIZE(abs_b, 31);
-
-   swap = (a_c_nan == b_c_nan && abs_a < abs_b) || a_c_nan < b_c_nan;
-
-#ifdef NO_SUBNORMALS
-   subnormal_exp_correction = 0;
-#else
-   subnormal_exp_correction = (aExp_null && !aSig_null) ^ (bExp_null && !bSig_null);
-#endif
-
-   tmp_exp = bExp;
-   bExp = swap ? aExp : bExp;
-   aExp = swap ? tmp_exp : aExp;
-
-   expDiff8 = aExp - bExp - subnormal_exp_correction;
-
-   tmp_sig = bSig;
-   bSig = swap ? aSig : bSig;
-   aSig = swap ? tmp_sig : aSig;
-
-   tmp_sign = bSign;
-   // bSign = swap ? aSign : bSign;
-   aSign = swap ? tmp_sign : aSign;
-
-   tmp_c_normal = b_c_normal;
-   b_c_normal = swap ? a_c_normal : b_c_normal;
-   a_c_normal = swap ? tmp_c_normal : a_c_normal;
-
-   fA = (aSig | (((__bits32)a_c_normal) << 23)) << 2;
-   fB = (bSig | (((__bits32)b_c_normal) << 23)) << 2;
-
-   ge_32 = (expDiff8 & 224) != 0;
-   expDiff8 = VAL_RESIZE((expDiff8 | (__bits32)(((((__sbits32)ge_32) << 31) >> 31))), 5);
-
-   fB_shifted_low = fB & (~((~(0ULL)) << expDiff8));
-   fB_shifted = fB >> expDiff8;
-   BIT_RESIZE(fB_shifted, 26);
-
-   sb = fB_shifted_low != 0;
-   fB_shifted1 = ((__bits32)((((__sbits32)sAB) << 31) >> 31)) ^ fB_shifted;
-   BIT_RESIZE(fB_shifted1, 27);
-
-   fR0 = fA + fB_shifted1 + (sAB && (!sb));
-   BIT_RESIZE(fR0, 27);
-   count_leading_zero_lshift64_runtime_macro(27, fR0, nZeros, shift_0);
-
-   R_c_zero = nZeros == VAL_RESIZE((~0ULL), 5);
-   overflow_to_infinite = aExp == 254 && (fR0 >> 26) & 1;
-
-#ifdef NO_SUBNORMALS
-   R_c_zero = R_c_zero || aExp < nZeros;
-   RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
-   RSig0 = shift_0;
-#else
-   RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
-   RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
-#endif
-   LSB_bit = SELECT_BIT(RSig0, 3);
-   Guard_bit = SELECT_BIT(RSig0, 2);
-   Round_bit = SELECT_BIT(RSig0, 1);
-   Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
-   round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
-
-   RSig1 = VAL_RESIZE(RSig0 >> 3, 23);
-
-   RExp0RSig1 = (((__bits32)RExp0) << 23) | RSig1;
-
-   Rrounded = RExp0RSig1 + round;
-
-   RExp1 = aExp255 || bExp255 ? 0xFF : VAL_RESIZE(Rrounded >> 23, 8);
-   RSig2 = R_c_zero || aExp255 || bExp255 || overflow_to_infinite ? 0 : VAL_RESIZE(Rrounded, 23);
-
-   aSign = aSign && (!R_c_zero || !sAB);
-
-#ifdef NO_SIGNALLING
-   RSig3 = (((__bits32)(a_c_nan || b_c_nan || (sAB && aExp255 && bExp255))) << 22) | RSig2;
-#else
-   RSig3 = a_c_nan || b_c_nan || (sAB && aExp255 && bExp255) ? 1 << 22 | (aSig & ((1 << 22) - 1)) : RSig2;
-#endif
-   return (((__bits32)aSign) << 31) | (((__bits32)RExp1) << 23) | RSig3;
-}
-
 static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag bSign, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __bits32 aSig, bSig, shift_0;
@@ -2244,7 +2118,7 @@ __float32 __float32_add(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
 __float32 __float32_add_ieee(__float32 a, __float32 b)
 {
    __flag bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
-   return __addsubFloat32_ieee(a, b, bSign);
+   return __addsubFloat32(a, b, bSign, IEEE32_SPEC_ARGS);
 }
 
 /*----------------------------------------------------------------------------
@@ -2262,7 +2136,7 @@ __float32 __float32_sub(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
 __float32 __float32_sub_ieee(__float32 a, __float32 b)
 {
    __flag bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN) ^ 1;
-   return __addsubFloat32_ieee(a, b, bSign);
+   return __addsubFloat32(a, b, bSign, IEEE32_SPEC_ARGS);
 }
 
 /*----------------------------------------------------------------------------
@@ -2273,78 +2147,7 @@ __float32 __float32_sub_ieee(__float32 a, __float32 b)
 typedef unsigned int SF_USItype __attribute__((mode(SI)));
 typedef unsigned int SF_UDItype __attribute__((mode(DI)));
 
-__float32 __float32_mul_ieee(__float32 a, __float32 b)
-{
-   VOLATILE_DEF __flag aSign, bSign, zSign;
-   VOLATILE_DEF __int16 aExp, bExp;
-   VOLATILE_DEF __bits32 aSig, bSig;
-   VOLATILE_DEF __bits32 zSig;
-   VOLATILE_DEF __bits8 a_c, b_c, z_c;
-   VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-   VOLATILE_DEF __bits16 expSumPreSub, expSum, expPostNorm;
-   VOLATILE_DEF SF_UDItype sigProd, sigProdExt;
-   VOLATILE_DEF _Bool norm, expSigOvf0, expSigOvf2;
-   VOLATILE_DEF _Bool sticky, guard, round, expSigOvf1;
-   VOLATILE_DEF __bits32 expSig, expSigPostRound;
-   VOLATILE_DEF __bits8 excPostNorm;
-
-   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
-   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
-   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
-   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
-   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
-   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
-   zSign = aSign ^ bSign;
-
-   a_c_zero = aExp == 0 && aSig == 0;
-   a_c_inf = aExp == 0xFF && aSig == 0;
-   a_c_nan = aExp == 0xFF && aSig != 0;
-   a_c_normal = aExp != 0 && aExp != 0xFF;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
-
-   b_c_zero = bExp == 0 && bSig == 0;
-   b_c_inf = bExp == 0xFF && bSig == 0;
-   b_c_nan = bExp == 0xFF && bSig != 0;
-   b_c_normal = bExp != 0 && bExp != 0xFF;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
-
-   z_c = ((a_c >> 1 | b_c >> 1) << 1) | (((a_c >> 1) & (a_c & 1)) | ((b_c >> 1) & (b_c & 1)) | ((a_c & 1) & (b_c & 1)) | (1 & (~(a_c >> 1)) & ((~a_c) & 1) & (b_c >> 1)) | (1 & (~(b_c >> 1)) & ((~b_c) & 1) & (a_c >> 1)));
-
-   expSumPreSub = aExp + bExp;
-   expSum = expSumPreSub - 127;
-
-   aSig = (aSig | 0x00800000);
-   bSig = (bSig | 0x00800000);
-   sigProd = (SF_UDItype)(SF_USItype)(aSig) * (SF_USItype)(bSig);
-   norm = (sigProd >> 47) & 1;
-   expPostNorm = expSum + norm;
-   sigProdExt = sigProd << !norm;
-   sigProdExt = (sigProdExt & ((1ULL << 47) - 1)) << 1;
-   expSig = (expPostNorm << 23) | ((sigProdExt >> 25) & ((1 << 23) - 1));
-   expSigOvf0 = (expPostNorm >> 9) & 1;
-
-   sticky = (sigProdExt >> 24) & 1;
-   guard = (sigProdExt & ((1 << 24) - 1)) != 0;
-   round = sticky & ((guard & !((sigProdExt >> 25) & 1)) | ((sigProdExt >> 25) & 1));
-   expSigPostRound = expSig + round;
-   expSigOvf1 = round & (expSig == ((__bits32)-1));
-   expSigOvf2 = expSigOvf0 ^ expSigOvf1;
-   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> 31) & 1);
-   zSig = (((__bits32)zSign) << 31) | (expSigPostRound & ((1U << 31) - 1));
-   if(z_c == FP_CLS_NORMAL)
-      z_c = ((excPostNorm == 1) << 1) | (excPostNorm == 0);
-
-   if(z_c == FP_CLS_NORMAL)
-      return zSig;
-   else if(z_c == FP_CLS_ZERO)
-      return ((__bits32)zSign) << 31; // __packFloat32(zSign, 0, 0, IEEE32_PACK);
-   else if(z_c == FP_CLS_NAN)
-      return __float32_default_nan;
-   else
-      return (((__bits32)zSign) << 31) | 0x7F800000; // __packFloat32(zSign, 0xFF, 0, IEEE32_PACK);
-}
-
-__float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+static __FORCE_INLINE __float32 __Float32mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __flag aSign, bSign, zSign;
    VOLATILE_DEF __bits32 aExp, bExp;
@@ -2440,6 +2243,16 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
       return __float_nan(__exp_bits, __frac_bits, __sign);
    else
       return ((__bits32)zSign) << (__exp_bits + __frac_bits) | (((1 << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1 << __frac_bits) - 1));
+}
+
+__float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float32mul(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float32 __float32_mul_ieee(__float32 a, __float32 b)
+{
+   return __Float32mul(a, b, IEEE32_SPEC_ARGS);
 }
 
 __float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC)
@@ -2664,206 +2477,6 @@ uiZ:
 | IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-#ifndef UNROLL_FACTOR_F32_DIV
-#define UNROLL_FACTOR_F32_DIV 1
-#endif
-
-#define LOOP_BODY_F32_DIV_IEEE(z, n, data)             \
-   current_sel = (((current >> 22) & 15) << 1) | MsbB; \
-   q_i0 = (0xF1FFFF6C >> current_sel) & 1;             \
-   q_i1 = (0xFE00FFD0 >> current_sel) & 1;             \
-   q_i2 = SELECT_BIT(current_sel, 4);                  \
-   nq_i2 = !q_i2;                                      \
-   /*q_i = tableR4[current_sel];*/                     \
-   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;             \
-   positive |= (q_i1 << 1) | q_i0;                     \
-   positive <<= 2;                                     \
-   negative |= q_i2 << 1;                              \
-   negative <<= 2;                                     \
-   switch(q_i)                                         \
-   {                                                   \
-      case 1:                                          \
-         w = nbSig;                                    \
-         break;                                        \
-      case 7:                                          \
-         w = bSig;                                     \
-         break;                                        \
-      case 2:                                          \
-         w = nbSigx2;                                  \
-         break;                                        \
-      case 6:                                          \
-         w = bSigx2;                                   \
-         break;                                        \
-      case 3:                                          \
-         w = nbSigx3;                                  \
-         break;                                        \
-      case 5:                                          \
-         w = bSigx3;                                   \
-         break;                                        \
-      default: /*case 0: case 4:*/                     \
-         w = 0;                                        \
-         break;                                        \
-   }                                                   \
-   current = (current << 1) + w;                       \
-   BIT_RESIZE(current, 25);                            \
-   current <<= 1;
-
-__float32 __float32_divSRT4_ieee(__float32 a, __float32 b)
-{
-   // static const __bits8 tableR4[]= {0, 0, 1, 1, 2, 1, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7};
-   VOLATILE_DEF _Bool aSign, bSign, zSign, q_i2, q_i1, q_i0, nq_i2;
-   VOLATILE_DEF _Bool MsbB = SELECT_BIT(b, 22), correction;
-   VOLATILE_DEF __int16 aExp, bExp, zExp;
-   VOLATILE_DEF __bits32 aSig, bSig, nbSig, bSigx2, nbSigx2, zSig1, zSig0;
-   VOLATILE_DEF __bits32 zExpSig;
-   VOLATILE_DEF __bits32 bSigx3, nbSigx3, current, w, positive = 0, negative = 0;
-   VOLATILE_DEF __bits8 current_sel, q_i, index;
-   VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
-
-   aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
-   aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
-   aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
-   bSig = __extractFloat32Frac(b, IEEE32_EXTRACT_FRAC);
-   bExp = __extractFloat32Exp(b, IEEE32_EXTRACT_EXP);
-   bSign = __extractFloat32Sign(b, IEEE32_EXTRACT_SIGN);
-   zSign = aSign ^ bSign;
-   _Bool aExp255 = aExp == 255;
-   _Bool bExp255 = bExp == 255;
-   _Bool aExp_null = aExp == 0;
-   _Bool bExp_null = bExp == 0;
-   _Bool aSig_null = aSig == 0;
-   _Bool bSig_null = bSig == 0;
-   __bits8 a_c, b_c, z_c;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-#ifndef NO_SUBNORMALS
-   a_c_zero = aExp_null && aSig_null;
-#else
-   a_c_zero = aExp_null;
-#endif
-   a_c_inf = aExp255 && aSig_null;
-   a_c_nan = aExp255 && !aSig_null;
-   a_c_normal = !aExp255 && !a_c_zero;
-   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
-
-#ifndef NO_SUBNORMALS
-   b_c_zero = bExp_null && bSig_null;
-#else
-   b_c_zero = bExp_null;
-#endif
-   b_c_inf = bExp255 && bSig_null;
-   b_c_nan = bExp255 && !bSig_null;
-   b_c_normal = !bExp255 && !b_c_zero;
-   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
-   /*
-   00 00 11
-   00 01 00
-   00 10 00
-   00 11 11
-   01 00 10
-   01 01 01
-   01 10 00
-   01 11 11
-   10 00 10
-   10 01 10
-   10 10 11
-   10 11 11
-   11 00 11
-   11 01 11
-   11 10 11
-   11 11 11
-
-    0  1  3  2
-    4  5  7  6
-   12 13 15 14
-    8  9 11 10
-
-      00 01 11 10
-   00 1  0  1  0
-   01 1  0  1  0
-   11 1  1  1  1
-   10 1  1  1  1
-   I1 = a + c'd' + cd
-
-      00 01 11 10
-   00 1  0  1  0
-   01 0  1  1  0
-   11 1  1  1  1
-   10 0  0  1  1
-   I0 = ab + cd + ac + bd + a'b'c'd'
-   */
-   z_c = ((a_c >> 1 | (1 & (~(b_c >> 1)) & (~(b_c & 1))) | (1 & (b_c >> 1) & b_c)) << 1) |
-         ((1 & (a_c >> 1) & a_c) | (1 & (b_c >> 1) & b_c) | (1 & (a_c >> 1) & (b_c >> 1)) | (1 & a_c & b_c) | (1 & (~(a_c >> 1)) & (~(a_c & 1)) & (~(b_c >> 1)) & (~(b_c & 1))));
-
-#ifndef NO_SUBNORMALS
-   if(aExp_null && !a_c_zero)
-   {
-      unsigned int subnormal_lz, mshifted;
-      count_leading_zero_lshift_macro(23, aSig, subnormal_lz, mshifted);
-      aExp = -subnormal_lz;
-      aSig = SELECT_RANGE(mshifted, 21, 0) << 1;
-   }
-   if(bExp_null && !b_c_zero)
-   {
-      unsigned int subnormal_lz, mshifted;
-      count_leading_zero_lshift_macro(23, bSig, subnormal_lz, mshifted);
-      bExp = -subnormal_lz;
-      bSig = SELECT_RANGE(mshifted, 21, 0) << 1;
-   }
-#endif
-
-   aSig = aSig | 0x00800000U;
-   bSig = bSig | 0x00800000U;
-   nbSig = -bSig;
-   bSigx2 = bSig << 1;
-   nbSigx2 = -bSigx2;
-   bSigx3 = bSigx2 + bSig;
-   nbSigx3 = -bSigx3;
-   current = aSig;
-   for(index = 0; index < (13 / UNROLL_FACTOR_F32_DIV); ++index)
-   {
-      BOOST_PP_REPEAT(UNROLL_FACTOR_F32_DIV, LOOP_BODY_F32_DIV_IEEE, index);
-   }
-   BOOST_PP_REPEAT(BOOST_PP_MOD(13, UNROLL_FACTOR_F32_DIV), LOOP_BODY_F32_DIV_IEEE, index);
-
-   positive |= (current != 0) << 1;
-   negative |= (current >> 24) & 2;
-
-   negative <<= 1;
-   BIT_RESIZE(negative, 28);
-   zSig0 = positive - negative;
-   zSig0 >>= 1;
-   BIT_RESIZE(zSig0, 27);
-   correction = SELECT_BIT(zSig0, 26);
-   zSig1 = (zSig0 >> correction) | (zSig0 & 1);
-   BIT_RESIZE(zSig1, 25);
-   LSB_bit = SELECT_BIT(zSig1, 2);
-   Guard_bit = SELECT_BIT(zSig1, 1);
-   Round_bit = SELECT_BIT(zSig1, 0);
-   round = Guard_bit & (LSB_bit | Round_bit);
-   zExp = aExp - bExp + (0x7E | correction);
-   _Bool MSB1zExp = SELECT_BIT(zExp, 9);
-   _Bool MSB0zExp = SELECT_BIT(zExp, 8);
-   BIT_RESIZE(zExp, 9);
-   zExpSig = ((((__bits32)zExp) << 23) | (zSig1 >> 2)) + round;
-   _Bool MSBzExp = SELECT_BIT(zExpSig, 31);
-   _Bool ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
-   if(z_c == FP_CLS_NORMAL)
-   {
-      if(ovfCond)
-         return ((__bits32)zSign) << 31; // __packFloat32(zSign, 0, 0, IEEE32_PACK);
-      else if(MSBzExp || zExp == 255)
-         return (((__bits32)zSign) << 31) | 0x7F800000; // __packFloat32(zSign, 0xFF, 0, IEEE32_PACK);
-      else
-         return (zSign << 31) | SELECT_RANGE(zExpSig, 30, 0);
-   }
-   else if(z_c == FP_CLS_ZERO)
-      return (((__bits32)zSign) << 31); // __packFloat32(zSign, 0, 0, IEEE32_PACK);
-   else if(z_c == FP_CLS_NAN)
-      return ((a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << 31 | 0x7FC00000 | (a_c_nan ? aSig : (b_c_nan ? bSig : 0));
-   else
-      return (((__bits32)zSign) << 31) | 0x7F800000; // __packFloat32(zSign, 0xFF, 0, IEEE32_PACK);
-}
-
 #define LOOP_BODY_F32_DIV(z, n, data)                               \
    current_sel = (((current >> (__frac_p3 - 4)) & 15) << 1) | MsbB; \
    q_i0 = (0xF1FFFF6C >> current_sel) & 1;                          \
@@ -2904,7 +2517,7 @@ __float32 __float32_divSRT4_ieee(__float32 a, __float32 b)
    current = current & ((1 << (__frac_p3 - 1)) - 1);                \
    current <<= 1;
 
-__float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+static __FORCE_INLINE __float32 __Float32divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    // static const __bits8 tableR4[]= {0, 0, 1, 1, 2, 1, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7};
    VOLATILE_DEF __bits8 a_c, b_c, z_c;
@@ -3076,6 +2689,16 @@ __float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits
       return ((__bits32)(a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero)) << (__exp_bits + __frac_bits) | (__nan ? ((((1 << __exp_bits) - 1) << __frac_bits) | (1 << (__frac_bits - 1)) | (a_c_nan ? aSig : (b_c_nan ? bSig : 0))) : 0);
    else
       return (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (((1 << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1 << __frac_bits) - 1));
+}
+
+__float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float32divSRT4(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float32 __float32_divSRT4_ieee(__float32 a, __float32 b)
+{
+   return __Float32divSRT4(a, b, IEEE32_SPEC_ARGS);
 }
 
 __float32 __float32_divG_ieee(__float32 a, __float32 b)
@@ -3864,6 +3487,7 @@ __uint64 __float64_to_uint64_round_to_zero_ieee(__float64 a)
       z = -z;
    return z;
 }
+
 /*----------------------------------------------------------------------------
 | Returns the result of converting the double-precision floating-point value
 | `a' to the single-precision floating-point format.  The conversion is
@@ -4050,134 +3674,6 @@ __float64 __float64_round_to_int_ieee(__float64 a)
 | Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __float64 __addsubFloat64_ieee(__float64 a, __float64 b, __flag bSign)
-{
-   VOLATILE_DEF __bits64 aSig, bSig, shift_0;
-   VOLATILE_DEF __bits16 aExp, bExp, expDiff11;
-   VOLATILE_DEF __bits16 nZeros;
-   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
-   VOLATILE_DEF __bits64 abs_a, abs_b;
-   VOLATILE_DEF __bits64 fA, fB, fB_shifted;
-   VOLATILE_DEF __bits64 fB_shifted_low;
-   VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, Sticky_bit, round, sb;
-   VOLATILE_DEF _Bool ge_64;
-   VOLATILE_DEF _Bool tmp_sign;
-   VOLATILE_DEF __bits16 tmp_exp;
-   VOLATILE_DEF __bits64 tmp_sig;
-   VOLATILE_DEF _Bool subnormal_exp_correction;
-   VOLATILE_DEF __bits64 fB_shifted1;
-   VOLATILE_DEF __bits64 fR0;
-   VOLATILE_DEF _Bool R_c_zero;
-   VOLATILE_DEF __bits16 RExp0, RExp1;
-   VOLATILE_DEF __bits64 RSig0, RSig1, RSig2, RSig3;
-   VOLATILE_DEF __bits64 RExp0RSig1, Rrounded;
-   VOLATILE_DEF _Bool overflow_to_infinite;
-   VOLATILE_DEF _Bool aExp2047, bExp2047;
-
-   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
-   aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
-   aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
-   bSig = __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC);
-   bExp = __extractFloat64Exp(b, IEEE64_EXTRACT_EXP);
-   _Bool aSig_null = aSig == 0;
-   _Bool bSig_null = bSig == 0;
-   _Bool aExp_null = aExp == 0;
-   _Bool bExp_null = bExp == 0;
-   aExp2047 = aExp == 0x7FF;
-   a_c_nan = aExp2047 && !aSig_null;
-   a_c_normal = !aExp_null /*&& !aExp2047*/; /// not really needed the second condition
-   bExp2047 = bExp == 0x7FF;
-   b_c_nan = bExp2047 && !bSig_null;
-   b_c_normal = !bExp_null /*&& !bExp2047*/; /// not really needed the second condition
-
-   sAB = aSign ^ bSign;
-
-   abs_a = a;
-   BIT_RESIZE(abs_a, 63);
-   abs_b = b;
-   BIT_RESIZE(abs_b, 63);
-
-   swap = (a_c_nan == b_c_nan && abs_a < abs_b) || a_c_nan < b_c_nan;
-
-#ifdef NO_SUBNORMALS
-   subnormal_exp_correction = 0;
-#else
-   subnormal_exp_correction = (aExp_null && !aSig_null) ^ (bExp_null && !bSig_null);
-#endif
-
-   tmp_exp = bExp;
-   bExp = COND_EXPR_MACRO32(swap, aExp, bExp);
-   aExp = COND_EXPR_MACRO32(swap, tmp_exp, aExp);
-
-   expDiff11 = aExp - bExp - subnormal_exp_correction;
-
-   tmp_sig = bSig;
-   bSig = COND_EXPR_MACRO64(swap, aSig, bSig);
-   aSig = COND_EXPR_MACRO64(swap, tmp_sig, aSig);
-
-   tmp_sign = bSign;
-   // bSign = swap ? aSign : bSign;
-   aSign = swap ? tmp_sign : aSign;
-
-   tmp_c_normal = b_c_normal;
-   b_c_normal = swap ? a_c_normal : b_c_normal;
-   a_c_normal = swap ? tmp_c_normal : a_c_normal;
-
-   fA = (aSig | (((__bits64)a_c_normal) << 52)) << 2;
-   fB = (bSig | (((__bits64)b_c_normal) << 52)) << 2;
-
-   ge_64 = (expDiff11 & 1984) != 0;
-   expDiff11 = VAL_RESIZE((expDiff11 | (__bits32)(((((__sbits32)ge_64) << 31) >> 31))), 6);
-
-   fB_shifted_low = fB & (~((~(0ULL)) << expDiff11));
-   fB_shifted = fB >> expDiff11;
-   BIT_RESIZE(fB_shifted, 55);
-
-   sb = fB_shifted_low != 0;
-   fB_shifted1 = ((__bits64)((((__sbits64)sAB) << 63) >> 63)) ^ fB_shifted;
-   BIT_RESIZE(fB_shifted1, 56);
-
-   fR0 = fA + fB_shifted1 + (sAB && (!sb));
-   BIT_RESIZE(fR0, 56);
-   count_leading_zero_lshift64_macro(56, fR0, nZeros, shift_0);
-
-   R_c_zero = nZeros == VAL_RESIZE((~0ULL), 6);
-   overflow_to_infinite = aExp == 2046 && (fR0 >> 55) & 1;
-
-#ifdef NO_SUBNORMALS
-   R_c_zero = R_c_zero || aExp < nZeros;
-   RExp0 = R_c_zero ? 0 : aExp - nZeros + 1;
-   RSig0 = shift_0;
-#else
-   RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
-   RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
-#endif
-   LSB_bit = SELECT_BIT(RSig0, 3);
-   Guard_bit = SELECT_BIT(RSig0, 2);
-   Round_bit = SELECT_BIT(RSig0, 1);
-   Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
-   round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
-
-   RSig1 = VAL_RESIZE(RSig0 >> 3, 52);
-
-   RExp0RSig1 = (((__bits64)RExp0) << 52) | RSig1;
-
-   Rrounded = RExp0RSig1 + round;
-
-   RExp1 = aExp2047 || bExp2047 ? 0x7FF : VAL_RESIZE(Rrounded >> 52, 11);
-
-   RSig2 = R_c_zero || aExp2047 || bExp2047 || overflow_to_infinite ? 0 : VAL_RESIZE(Rrounded, 52);
-
-   aSign = aSign && (!R_c_zero || !sAB);
-
-#ifdef NO_SIGNALLING
-   RSig3 = (((__bits64)(a_c_nan || b_c_nan || (sAB && aExp2047 && bExp2047))) << 51) | RSig2;
-#else
-   RSig3 = a_c_nan || b_c_nan || (sAB && aExp2047 && bExp2047) ? 1ULL << 51 | (aSig & ((1ULL << 51) - 1)) : RSig2;
-#endif
-   return (((__bits64)aSign) << 63) | (((__bits64)RExp1) << 52) | RSig3;
-}
-
 static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag bSign, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __bits64 aSig, bSig, shift_0;
@@ -4363,7 +3859,7 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
 __float64 __float64_add_ieee(__float64 a, __float64 b)
 {
    __flag bSign = __extractFloat64Sign(b, IEEE64_EXTRACT_SIGN);
-   return __addsubFloat64_ieee(a, b, bSign);
+   return __addsubFloat64(a, b, bSign, IEEE64_SPEC_ARGS);
 }
 
 __float64 __float64_add(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
@@ -4381,7 +3877,7 @@ __float64 __float64_add(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
 __float64 __float64_sub_ieee(__float64 a, __float64 b)
 {
    __flag bSign = __extractFloat64Sign(b, IEEE64_EXTRACT_SIGN) ^ 1;
-   return __addsubFloat64_ieee(a, b, bSign);
+   return __addsubFloat64(a, b, bSign, IEEE64_SPEC_ARGS);
 }
 
 __float64 __float64_sub(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
@@ -4415,127 +3911,7 @@ static __FORCE_INLINE SF_UDItype _umul64(SF_UDItype u, SF_UDItype v)
    return (((SF_UDItype)tlast) << 32) | ((SF_UDItype)w0);
 }
 
-__float64 __float64_mul_ieee(__float64 a, __float64 b)
-{
-   __bits8 a_c, b_c, z_c;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-   __flag aSign, bSign, zSign;
-   __int16 aExp, bExp, zExp;
-   __bits64 aSig, bSig;
-
-   aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
-   aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
-   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
-   bSig = __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC);
-   bExp = __extractFloat64Exp(b, IEEE64_EXTRACT_EXP);
-   bSign = __extractFloat64Sign(b, IEEE64_EXTRACT_SIGN);
-   zSign = aSign ^ bSign;
-
-   a_c_zero = aExp == 0 && aSig == 0;
-   a_c_inf = aExp == 0x7FF && aSig == 0;
-   a_c_nan = aExp == 0x7FF && aSig != 0;
-   a_c_normal = aExp != 0 && aExp != 0x7FF;
-   a_c = ((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) | ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
-
-   b_c_zero = bExp == 0 && bSig == 0;
-   b_c_inf = bExp == 0x7FF && bSig == 0;
-   b_c_nan = bExp == 0x7FF && bSig != 0;
-   b_c_normal = bExp != 0 && bExp != 0x7FF;
-   b_c = ((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) | ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
-
-   z_c = ((a_c >> 1 | b_c >> 1) << 1) | (((a_c >> 1) & (a_c & 1)) | ((b_c >> 1) & (b_c & 1)) | ((a_c & 1) & (b_c & 1)) | (1 & (~(a_c >> 1)) & ((~a_c) & 1) & (b_c >> 1)) | (1 & (~(b_c >> 1)) & ((~b_c) & 1) & (a_c >> 1)));
-
-   __bits16 expSumPreSub = aExp + bExp;
-   __bits16 bias = 1023;
-   __bits16 expSum = expSumPreSub - bias;
-   __bits16 expPostNorm;
-   _Bool norm, expSigOvf0, expSigOvf2;
-   _Bool sticky, guard, round, expSigOvf1;
-   __bits64 expSig, expSigPostRound, zSig;
-   __bits8 excPostNorm;
-
-   __bits64 sigProdHigh_52, sigProdLow_54, sigProdExtHigh_52, sigProdExtLow_54;
-   aSig = (aSig | 0x0010000000000000);
-   bSig = (bSig | 0x0010000000000000);
-
-#if 1
-   // start multi-part multiplication 53x53=>106
-   // karatsuba
-   // u = 2^27*u1+u0; //53bit -> u1=(53-K)bit u0=Kbit
-   // v = 2^27*v1+v0; //53bit -> v1=(53-K)bit v0=Kbit
-   // k0=u1*v1; // k0=2*(53-K)bit
-   // k1=u0*v0; // k1=2*Kbit
-   // k3=u0+u1; // k3=1+(max(K,53-K))bit
-   // k4=v0+v1; // k4=1+(max(K,53-K))bit
-   // k5=k3*k4; // k5=2*(1+(max(K,53-K)))bit
-   // u*v = 2^54*k0 + k1    + 2^27*(k5 - k0 - k1);
-   //       ^105:2*K   ^2*K-1:0   ^2*(1+(max(K,53-K)))-1:K
-   // possible values for K=[31:22]
-#define KARATSUBA_BITS 23
-   __bits64 u1, u0, v1, v0, k0, k1, k2, k3, k4, k5, k6, k7, res_2K_0, res_106_2K;
-   u0 = aSig & ((1ULL << KARATSUBA_BITS) - 1);
-   u1 = (aSig >> KARATSUBA_BITS) & ((1ULL << (53 - KARATSUBA_BITS)) - 1);
-   v0 = bSig & ((1ULL << KARATSUBA_BITS) - 1);
-   v1 = (bSig >> KARATSUBA_BITS) & ((1ULL << (53 - KARATSUBA_BITS)) - 1);
-   k0 = u1 * v1;
-   k1 = u0 * v0;
-   k3 = u0 + u1;
-   k4 = v0 + v1;
-   k5 = k3 * k4;
-   k6 = k5 - k0 - k1;
-   k7 = (k1 >> KARATSUBA_BITS) + k6;
-   res_2K_0 = (k1 & ((1ULL << KARATSUBA_BITS) - 1)) | ((k7 & ((1ULL << KARATSUBA_BITS) - 1)) << KARATSUBA_BITS);
-   res_106_2K = (k7 >> KARATSUBA_BITS) + k0;
-#if KARATSUBA_BITS == 27
-   sigProdLow_54 = res_2K_0;
-   sigProdHigh_52 = res_106_2K;
-#elif KARATSUBA_BITS < 27
-   sigProdLow_54 = ((res_106_2K & ((1ULL << (54 - 2 * KARATSUBA_BITS)) - 1)) << (2 * KARATSUBA_BITS)) | res_2K_0;
-   sigProdHigh_52 = res_106_2K >> (54 - 2 * KARATSUBA_BITS);
-#else
-   sigProdLow_54 = res_2K_0 & ((1ULL << 54) - 1);
-   sigProdHigh_52 = (res_106_2K << (2 * KARATSUBA_BITS - 54)) | ((res_2K_0 >> 54) & ((1ULL << (2 * KARATSUBA_BITS - 54)) - 1));
-#endif
-#else
-   __bits64 sigProdHigh, sigProdLow;
-   sigProdHigh = _umulh64(aSig, bSig);
-   sigProdLow = _umul64(aSig, bSig);
-   sigProdLow_54 = sigProdLow & ((1ULL << 54) - 1);
-   sigProdHigh_52 = ((sigProdHigh << 10) | ((sigProdLow >> 54) & ((1ULL << 10) - 1))) & ((1ULL << 52) - 1);
-#endif
-   norm = (sigProdHigh_52 >> (51)) & 1;
-   expPostNorm = expSum + norm;
-
-   sigProdExtLow_54 = ((sigProdLow_54 << 1) << !norm) & ((1ULL << 54) - 1);
-   sigProdLow_54 = ((sigProdLow_54 >> 52) & 3) >> norm;
-   sigProdHigh_52 = sigProdHigh_52 << !norm;
-   sigProdExtHigh_52 = ((sigProdHigh_52 << 1) | sigProdLow_54) & ((1ULL << 52) - 1);
-   expSig = (((__bits64)expPostNorm) << 52) | sigProdExtHigh_52;
-
-   expSigOvf0 = (expPostNorm >> 12) & 1;
-   sticky = (sigProdExtLow_54 >> 53) & 1;
-   guard = (sigProdExtLow_54 & ((1ULL << 53) - 1)) != 0;
-   round = sticky & ((guard & !(sigProdExtHigh_52 & 1)) | (sigProdExtHigh_52 & 1));
-
-   expSigPostRound = expSig + round;
-   expSigOvf1 = round & (expSig == ((__bits64)-1));
-   expSigOvf2 = expSigOvf0 ^ expSigOvf1;
-   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> 63) & 1);
-   zSig = (((__bits64)zSign) << 63) | (expSigPostRound & ((1ULL << 63) - 1));
-   if(z_c == FP_CLS_NORMAL)
-      z_c = (excPostNorm == 1) << 1 | excPostNorm == 0;
-
-   if(z_c == FP_CLS_NORMAL)
-      return zSig;
-   else if(z_c == FP_CLS_ZERO)
-      return (((__bits64)zSign) << 63); // __packFloat64(zSign, 0, 0, IEEE64_PACK);
-   else if(z_c == FP_CLS_NAN)
-      return __float64_default_nan;
-   else
-      return (((__bits64)zSign) << 63) | LIT64(0x7FF0000000000000); // __packFloat64(zSign, 0x7FF, 0, IEEE64_PACK);
-}
-
-__float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+static __FORCE_INLINE __float64 __Float64mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign, bSign, zSign;
    __flag aExpMax, bExpMax;
@@ -4700,176 +4076,21 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
       return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) | (__nan ? 0ULL : ((1ULL << __frac_bits) - 1));
 }
 
+__float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float64mul(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float64 __float64_mul_ieee(__float64 a, __float64 b)
+{
+   return __Float64mul(a, b, IEEE64_SPEC_ARGS);
+}
+
 /*----------------------------------------------------------------------------
 | Returns the result of dividing the double-precision floating-point value `a'
 | by the corresponding value `b'.  The operation is performed according to
 | the IEC/IEEE Standard for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
-
-#ifndef UNROLL_FACTOR_F64_DIV
-#define UNROLL_FACTOR_F64_DIV 1
-#endif
-
-#define LOOP_BODY_F64_DIV_IEEE(z, n, data)             \
-   current_sel = (((current >> 51) & 15) << 1) | MsbB; \
-   q_i0 = (0xF1FFFF6C >> current_sel) & 1;             \
-   q_i1 = (0xFE00FFD0 >> current_sel) & 1;             \
-   q_i2 = SELECT_BIT(current_sel, 4);                  \
-   nq_i2 = !q_i2;                                      \
-   /*q_i = tableR4[current_sel];*/                     \
-   q_i = (q_i2 << 2) | (q_i1 << 1) | q_i0;             \
-   positive |= (q_i1 << 1) | q_i0;                     \
-   positive <<= 2;                                     \
-   negative |= q_i2 << 1;                              \
-   negative <<= 2;                                     \
-   switch(q_i)                                         \
-   {                                                   \
-      case 1:                                          \
-         w = nbSig;                                    \
-         break;                                        \
-      case 7:                                          \
-         w = bSig;                                     \
-         break;                                        \
-      case 2:                                          \
-         w = nbSigx2;                                  \
-         break;                                        \
-      case 6:                                          \
-         w = bSigx2;                                   \
-         break;                                        \
-      case 3:                                          \
-         w = nbSigx3;                                  \
-         break;                                        \
-      case 5:                                          \
-         w = bSigx3;                                   \
-         break;                                        \
-      default: /*case 0: case 4:*/                     \
-         w = 0;                                        \
-         break;                                        \
-   }                                                   \
-   current = (current << 1) + w;                       \
-   BIT_RESIZE(current, 54);                            \
-   current <<= 1;
-
-__float64 __float64_divSRT4_ieee(__float64 a, __float64 b)
-{
-   __bits8 a_c, b_c, z_c;
-   _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
-   VOLATILE_DEF _Bool aSign, bSign, zSign, q_i2, q_i1, q_i0, nq_i2;
-   VOLATILE_DEF _Bool MsbB = SELECT_BIT(b, 51), correction;
-   VOLATILE_DEF __int16 aExp, bExp, zExp;
-   VOLATILE_DEF __bits64 aSig, bSig, nbSig, bSigx2, nbSigx2, zSig1, zSig0;
-   VOLATILE_DEF __bits64 zExpSig;
-   VOLATILE_DEF __bits64 bSigx3, nbSigx3, current, w, positive = 0, negative = 0;
-   VOLATILE_DEF __bits8 current_sel, q_i, index;
-   VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
-   VOLATILE_DEF _Bool MSB1zExp, MSB0zExp, MSBzExp, ovfCond;
-
-   aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
-   aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
-   aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
-   bSig = __extractFloat64Frac(b, IEEE64_EXTRACT_FRAC);
-   bExp = __extractFloat64Exp(b, IEEE64_EXTRACT_EXP);
-   bSign = __extractFloat64Sign(b, IEEE64_EXTRACT_SIGN);
-   zSign = aSign ^ bSign;
-   _Bool aExp_null = aExp == 0;
-   _Bool bExp_null = bExp == 0;
-   _Bool aExp2047 = aExp == 2047;
-   _Bool bExp2047 = bExp == 2047;
-   _Bool aSig_null = aSig == 0;
-   _Bool bSig_null = bSig == 0;
-#ifndef NO_SUBNORMALS
-   a_c_zero = aExp_null && aSig_null;
-#else
-   a_c_zero = aExp_null;
-#endif
-   a_c_inf = aExp2047 && aSig_null;
-   a_c_nan = aExp2047 && !aSig_null;
-   a_c_normal = !aExp2047 && !a_c_zero;
-   a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
-
-#ifndef NO_SUBNORMALS
-   b_c_zero = bExp_null && bSig_null;
-#else
-   b_c_zero = bExp_null;
-#endif
-   b_c_inf = bExp2047 && bSig_null;
-   b_c_nan = bExp2047 && !bSig_null;
-   b_c_normal = !bExp2047 && !b_c_zero;
-   b_c = /*((b_c_zero << 1 | b_c_zero) & FP_CLS_ZERO) |*/ ((b_c_normal << 1 | b_c_normal) & FP_CLS_NORMAL) | ((b_c_inf << 1 | b_c_inf) & FP_CLS_INF) | ((b_c_nan << 1 | b_c_nan) & FP_CLS_NAN);
-
-   z_c = ((a_c >> 1 | (1 & (~(b_c >> 1)) & (~(b_c & 1))) | (1 & (b_c >> 1) & b_c)) << 1) |
-         ((1 & (a_c >> 1) & a_c) | (1 & (b_c >> 1) & b_c) | (1 & (a_c >> 1) & (b_c >> 1)) | (1 & a_c & b_c) | (1 & (~(a_c >> 1)) & (~(a_c & 1)) & (~(b_c >> 1)) & (~(b_c & 1))));
-
-#ifndef NO_SUBNORMALS
-   if(aExp_null && !a_c_zero)
-   {
-      unsigned long long int subnormal_lz, mshifted;
-      count_leading_zero_lshift_macro(52, aSig, subnormal_lz, mshifted);
-      aExp = -subnormal_lz;
-      aSig = SELECT_RANGE(mshifted, 50, 0) << 1;
-   }
-   if(bExp_null && !b_c_zero)
-   {
-      unsigned long long int subnormal_lz, mshifted;
-      count_leading_zero_lshift_macro(52, bSig, subnormal_lz, mshifted);
-      bExp = -subnormal_lz;
-      bSig = SELECT_RANGE(mshifted, 50, 0) << 1;
-   }
-#endif
-   aSig = aSig | LIT64(0x0010000000000000);
-   bSig = bSig | LIT64(0x0010000000000000);
-   nbSig = -bSig;
-   bSigx2 = bSig << 1;
-   nbSigx2 = -bSigx2;
-   bSigx3 = bSigx2 + bSig;
-   nbSigx3 = -bSigx3;
-   current = aSig;
-   for(index = 0; index < (28 / UNROLL_FACTOR_F64_DIV); ++index)
-   {
-      BOOST_PP_REPEAT(UNROLL_FACTOR_F64_DIV, LOOP_BODY_F64_DIV_IEEE, index);
-   }
-   BOOST_PP_REPEAT(BOOST_PP_MOD(28, UNROLL_FACTOR_F64_DIV), LOOP_BODY_F64_DIV_IEEE, index);
-
-   positive |= (current != 0) << 1;
-   negative |= (current >> 53) & 2;
-
-   negative <<= 1;
-   BIT_RESIZE(negative, 58);
-   zSig0 = positive - negative;
-   zSig0 >>= 1;
-   _Bool ZSig0LSB = SELECT_BIT(zSig0, 0);
-   zSig0 = (zSig0 >> 1) | ZSig0LSB;
-   BIT_RESIZE(zSig0, 56);
-   correction = SELECT_BIT(zSig0, 55);
-   zSig1 = (zSig0 >> correction) | (zSig0 & 1);
-   BIT_RESIZE(zSig1, 54);
-   LSB_bit = SELECT_BIT(zSig1, 2);
-   Guard_bit = SELECT_BIT(zSig1, 1);
-   Round_bit = SELECT_BIT(zSig1, 0);
-   round = Guard_bit & (LSB_bit | Round_bit);
-   zExp = aExp - bExp + (0x3FE | correction);
-   MSB1zExp = SELECT_BIT(zExp, 12);
-   MSB0zExp = SELECT_BIT(zExp, 11);
-   BIT_RESIZE(zExp, 12);
-   zExpSig = ((((__bits64)zExp) << 52) | (zSig1 >> 2)) + round;
-   MSBzExp = SELECT_BIT(zExpSig, 63);
-   ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
-   if(z_c == FP_CLS_NORMAL)
-   {
-      if(ovfCond)
-         return ((__bits64)zSign) << 63; // __packFloat64(zSign, 0, 0, IEEE64_PACK);
-      else if(MSBzExp || zExp == 2047)
-         return (((__bits64)zSign) << 63) | LIT64(0x7FF0000000000000); // __packFloat64(zSign, 0x7FF, 0, IEEE64_PACK);
-      else
-         return (((__bits64)zSign) << 63) | SELECT_RANGE(zExpSig, 62, 0);
-   }
-   else if(z_c == FP_CLS_ZERO)
-      return ((__bits64)zSign) << 63; // __packFloat64(zSign, 0, 0, IEEE64_PACK);
-   else if(z_c == FP_CLS_NAN)
-      return ((__bits64)((a_c_nan ? aSign : bSign) | (a_c_inf & b_c_inf) | (a_c_zero & b_c_zero))) << 63 | 0x7FF8000000000000 | (a_c_nan ? aSig : (b_c_nan ? bSig : 0));
-   else
-      return (((__bits64)zSign) << 63) | LIT64(0x7FF0000000000000); // __packFloat64(zSign, 0x7FF, 0, IEEE64_PACK);
-}
 
 #define LOOP_BODY_F64_DIV(z, n, data)                               \
    current_sel = (((current >> (__frac_p3 - 4)) & 15) << 1) | MsbB; \
@@ -4911,7 +4132,7 @@ __float64 __float64_divSRT4_ieee(__float64 a, __float64 b)
    current = current & ((1ULL << (__frac_p3 - 1)) - 1);             \
    current <<= 1;
 
-__float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+static __FORCE_INLINE __float64 __Float64divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __bits8 a_c, b_c, z_c;
    VOLATILE_DEF _Bool a_c_zero, b_c_zero, a_c_inf, b_c_inf, a_c_nan, b_c_nan, a_c_normal, b_c_normal;
@@ -5051,6 +4272,16 @@ __float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits
              (__nan ? ((((1ULL << __exp_bits) - 1) << __frac_bits) | (1ULL << (__frac_bits - 1)) | (a_c_nan ? aSig : (b_c_nan ? bSig : 0))) : (0ULL));
    else
       return (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((1ULL << __exp_bits) - 1) << __frac_bits) | (__nan ? 0ULL : ((1ULL << __frac_bits) - 1));
+}
+
+__float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
+{
+   return __Float64divSRT4(a, b, __exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}
+
+__float64 __float64_divSRT4_ieee(__float64 a, __float64 b)
+{
+   return __Float64divSRT4(a, b, IEEE64_SPEC_ARGS);
 }
 
 __float64 __float64_divG_ieee(__float64 a, __float64 b)
