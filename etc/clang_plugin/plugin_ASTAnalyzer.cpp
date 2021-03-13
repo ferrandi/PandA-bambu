@@ -512,6 +512,7 @@ namespace clang
             auto funName = getMangledName(FD);
             bool storeInfos = false;
             std::vector<MaskInfo> fpInfos;
+            auto par_index =0u;
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -519,6 +520,10 @@ namespace clang
                   MaskInfo userMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
                   auto parName = ND->getNameAsString();
                   auto maskInfoIT = mask_PragmaMap.find(parName);
+                  if(parName.empty())
+                  {
+                     parName = "P" + std::to_string(par_index);
+                  }
                   if(maskInfoIT != mask_PragmaMap.end())
                   {
                      userMaskInfo = maskInfoIT->second;
@@ -527,6 +532,7 @@ namespace clang
                   }
                   fpInfos.push_back(std::move(userMaskInfo));
                }
+               ++par_index;
             }
             MaskInfo returnMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
             const auto returnUI = mask_PragmaMap.find("@");
@@ -605,6 +611,7 @@ namespace clang
             auto funName = getMangledName(FD);
             Fun2Demangled[funName] = FD->getNameInfo().getName().getAsString();
             // llvm::errs()<<"funName:"<<funName<<"\n";
+            auto par_index =0u;
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -619,6 +626,10 @@ namespace clang
                   bool UDIT_p = false;
                   bool UDIT_attribute2_p = false;
                   bool UDIT_attribute3_p = false;
+                  if(parName.empty())
+                  {
+                     parName = "P" + std::to_string(par_index);
+                  }
 
                   if(interface_PragmaMap.find(parName) != interface_PragmaMap.end())
                   {
@@ -751,6 +762,7 @@ namespace clang
                      Fun2ParamInclude[funName].push_back("");
                   }
                }
+               ++par_index;
             }
 
             if(HLS_pipeline_PragmaMap.find(filename) != HLS_pipeline_PragmaMap.end())
