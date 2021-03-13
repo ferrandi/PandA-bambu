@@ -11,7 +11,7 @@ dnl switch to c
 AC_LANG_PUSH([C])
 
 if test "x$ac_clangvvd" = x; then
-   CLANG_TO_BE_CHECKED="/usr/bin/clang /usr/bin/clang-7"
+   CLANG_TO_BE_CHECKED=""
 else
    CLANG_TO_BE_CHECKED=$ac_clangvvd;
 fi
