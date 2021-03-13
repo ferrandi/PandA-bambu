@@ -636,7 +636,7 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --mem-delay-read=value\n"
       << "        Define the external memory latency when LOAD are performed (default 2).\n\n"
       << "    --mem-delay-write=value\n"
-      << "        Define the external memory latency when LOAD are performed (default 1).\n\n"
+      << "        Define the external memory latency when STORE are performed (default 1).\n\n"
       << "    --do-not-expose-globals\n"
       << "        All global variables are considered local to the compilation units.\n\n"
       << "    --expose-globals\n"
