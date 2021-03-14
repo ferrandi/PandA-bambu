@@ -102,8 +102,8 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    tree_nodeRef int_type;
    tree_nodeRef int_ptr_type;
 
-   // Real type variables to be aliased as integer type variables
-   CustomSet<ssa_name*> viewConvert;
+   // Real type variables to be aliased as integer type variables {ssa_name, internal_type}
+   CustomMap<ssa_name*, bool> viewConvert;
 
    // Real to integer view convert statements to be converted into nop statements
    std::vector<tree_nodeRef> nopConvert;
@@ -133,12 +133,11 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
 
    static bool lowering_needed(const tree_managerRef& TreeM, const ssa_name* ssa);
 
-   tree_nodeRef parm_int_type_for(const tree_nodeRef& type) const;
-   tree_nodeRef int_type_for(const tree_nodeRef& type) const;
+   tree_nodeRef int_type_for(const tree_nodeRef& type, bool use_internal) const;
 
    bool signature_lowering(function_decl* f_decl) const;
 
-   void ssa_lowering(ssa_name* ssa) const;
+   void ssa_lowering(ssa_name* ssa, bool internal_type) const;
 
    /**
     *
@@ -268,9 +267,12 @@ class FunctionVersion
    const CallGraph::vertex_descriptor function_vertex;
 
    // Float format required from the user
-   const FloatFormatRef userRequired;
+   FloatFormatRef userRequired;
 
-   // True if all function callers share this function float format
+   // Contains callers function versions'
+   std::vector<FunctionVersionRef> callers;
+
+   // True if all caller functions share this function float format or if this is a standard ieee format function
    bool internal;
 
    FunctionVersion() : function_vertex(nullptr), userRequired(nullptr), internal(true)

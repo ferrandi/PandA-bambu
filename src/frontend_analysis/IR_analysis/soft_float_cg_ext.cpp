@@ -70,6 +70,7 @@
 /// STL include
 #include "custom_map.hpp"
 #include <deque>
+#include <list>
 #include <string>
 
 /// Tree include
@@ -134,10 +135,11 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
       }
    }
 
-   if(funcFF.empty() && !parameters->getOption<std::string>(OPT_mask).empty())
+   if(funcFF.empty() && !parameters->getOption<std::string>(OPT_fp_format).empty())
    {
       const auto CGM = AppM->CGetCallGraphManager();
-      auto opts = SplitString(parameters->getOption<std::string>(OPT_mask), ",");
+      auto opts = SplitString(parameters->getOption<std::string>(OPT_fp_format), ",");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Soft-float fp format specialization required:");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       for(const auto& opt : opts)
       {
@@ -196,40 +198,106 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             userFF->sign = format[8] == "U" ? bit_lattice::U : (format[8] == "1" ? bit_lattice::ONE : bit_lattice::ZERO);
          }
          funcFF.insert({function_v, FunctionVersionRef(new FunctionVersion(function_v, userFF))});
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Function " + format[0] + " required specialized arithmetic: " + userFF->mngl());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, format[0] + " specialized with fp format " + userFF->mngl());
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
 
-      // Propagate floating-point arithmetic specialization over to called user's functions
-      /*
-      const auto ACG = AppM->CGetCallGraphManager()->CGetAcyclicCallGraph();
-      std::deque<CallGraph::vertex_descriptor> queue;
-      for(const auto& topf : AppM->CGetCallGraphManager()->GetRootFunctions())
+      // Propagate floating-point format specialization over to called functions
+      if(parameters->isOption(OPT_propagate_fp_format) && parameters->getOption<bool>(OPT_propagate_fp_format))
       {
-         queue.push_back(CGM->GetVertex(topf));
-      }
-      while(!queue.empty())
-      {
-         const auto function_v = queue.front();
-         queue.pop_front();
-         FloatFormat* ff = nullptr;
-         if(static_cast<bool>(funcFF.count(function_v)))
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Soft-float fp format propagation enabled:");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         for(const auto& root_func : CGM->GetRootFunctions())
          {
-            ff = funcFF.at(function_v).userRequired;
-         }
-
-         CallGraph::out_edge_iterator ei, ei_end;
-         for(boost::tie(ei, ei_end) = boost::out_edges(function_v, *ACG); ei != ei_end; ++ei)
-         {
-            const auto called = boost::target(*ei, *ACG);
-            queue.push_back(called);
-            if(ff != nullptr)
+            std::list<CallGraph::vertex_descriptor> func_sort;
+            CustomUnorderedSet<CallGraph::vertex_descriptor> reached_v;
+            const auto reached_from_top = CGM->GetReachedBodyFunctionsFrom(root_func);
+            for(const auto func_id : reached_from_top)
             {
-               funcFF[called].callersFF.insert(*ff);
+               reached_v.insert(CGM->GetVertex(func_id));
+            }
+            const auto TopCG = CGM->CGetCallSubGraph(reached_v);
+            TopCG->TopologicalSort(func_sort);
+
+            for(const auto func : func_sort)
+            {
+               // Initialize current function version
+               FunctionVersionRef current_v;
+               if(static_cast<bool>(funcFF.count(func)))
+               {
+                  current_v = funcFF.at(func);
+               }
+               else
+               {
+                  current_v = FunctionVersionRef(new FunctionVersion(func));
+#if HAVE_ASSERTS
+                  const auto insertion =
+#endif
+                      funcFF.insert({func, current_v});
+                  THROW_ASSERT(insertion.second, "");
+               }
+
+               // Check callers' function version
+               FloatFormatRef callers_ff = !current_v->callers.empty() ? current_v->callers.front()->userRequired : nullptr;
+               const auto common_null = callers_ff == nullptr;
+               for(const auto& caller : current_v->callers)
+               {
+                  const auto caller_null = caller->userRequired == nullptr;
+                  if((caller_null ^ common_null) || (!common_null && *callers_ff != *caller->userRequired))
+                  {
+                     callers_ff = nullptr;
+                     break;
+                  }
+               }
+
+               // Update current function fp format
+               if(current_v->userRequired == nullptr)
+               {
+                  current_v->userRequired = callers_ff;
+                  current_v->internal = true;
+               }
+               else if(callers_ff == nullptr)
+               {
+                  current_v->internal = current_v->callers.empty();
+               }
+               else if(*current_v->userRequired == *callers_ff)
+               {
+                  current_v->internal = *current_v->userRequired == *callers_ff;
+               }
+
+#ifndef NDEBUG
+               const auto func_id = AppM->CGetCallGraphManager()->get_function(func);
+#endif
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+                              "Analysing function " + tree_helper::print_type(TreeM, func_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(func_id)->CGetBehavioralHelper()))));
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FP format " + current_v->ToString());
+
+               // Propagate current fp format to the called functions
+               CallGraph::out_edge_iterator ei, ei_end;
+               for(boost::tie(ei, ei_end) = boost::out_edges(func, *TopCG); ei != ei_end; ++ei)
+               {
+                  const auto called = boost::target(*ei, *TopCG);
+                  FunctionVersionRef called_v;
+                  if(static_cast<bool>(funcFF.count(called)))
+                  {
+                     called_v = funcFF.at(called);
+                  }
+                  else
+                  {
+                     called_v = FunctionVersionRef(new FunctionVersion(called));
+#if HAVE_ASSERTS
+                     const auto insertion =
+#endif
+                         funcFF.insert({called, called_v});
+                     THROW_ASSERT(insertion.second, "");
+                  }
+                  called_v->callers.push_back(current_v);
+               }
             }
          }
-      };
-      */
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      }
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
    }
    THROW_ASSERT(AppM->CGetCallGraphManager()->IsVertex(function_id), "");
    const auto function_v = AppM->CGetCallGraphManager()->GetVertex(function_id);
@@ -309,8 +377,9 @@ bool soft_float_cg_ext::HasToBeExecuted() const
 
 DesignFlowStep_Status soft_float_cg_ext::InternalExec()
 {
-   // Function using standard float formats are always internal
-   if(!_version->ieee_format())
+   static const auto ff_already_propagated = parameters->isOption(OPT_propagate_fp_format) && parameters->getOption<bool>(OPT_propagate_fp_format);
+   // Check if current function needs IO fp format interface (avoid check if fp format propagation has already been computed)
+   if(!ff_already_propagated && !_version->ieee_format())
    {
       const auto CG = AppM->CGetCallGraphManager()->CGetCallGraph();
       InEdgeIterator ie, ie_end;
@@ -438,7 +507,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
             if(lowering_needed(TreeM, parmSSA))
             {
                const auto parm_ridx = TreeM->CGetTreeReindex(parmSSA->index);
-               const auto parm_type = parm_int_type_for(GET_NODE(parmSSA->type));
+               const auto parm_type = int_type_for(GET_NODE(parmSSA->type), _version->internal);
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Lowering top function parameter type of " + parmSSA->ToString() + ": " + GET_NODE(parmSSA->type)->ToString() + " -> " + GET_NODE(parm_type)->ToString());
                tree_nodeRef vc_stmt;
                if(GET_NODE(parm_type)->get_kind() == pointer_type_K)
@@ -532,7 +601,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
       for(const auto& ssa_var : viewConvert)
       {
-         ssa_lowering(ssa_var);
+         ssa_lowering(ssa_var.first, ssa_var.second);
       }
       modified = true;
       viewConvert.clear();
@@ -601,7 +670,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto ssaUses = SSA->CGetUseStmts();
 
          const auto convertedSSA = generate_interface(bb, defStmt, ssa, std::get<0>(if_info.second), _version->userRequired);
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Interface generated output " + GET_NODE(convertedSSA)->ToString());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Interface from " + std::get<0>(if_info.second)->mngl() + " to " + _version->userRequired->mngl() + " generated output " + GET_NODE(convertedSSA)->ToString());
 
          for(const auto& ssaUse : ssaUses)
          {
@@ -630,10 +699,18 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
          const auto ssa = TreeM->GetTreeReindex(SSA->index);
          const auto& useStmts = std::get<1>(if_info.second);
 
-         const auto defStmt = SSA->CGetDefStmt();
+         auto defStmt = SSA->CGetDefStmt();
          const auto gn = GetPointerS<gimple_node>(GET_NODE(defStmt));
          THROW_ASSERT(sl->list_of_bloc.count(gn->bb_index), "BB" + STR(gn->bb_index) + " not present in current function.");
-         const auto bb = sl->list_of_bloc.at(gn->bb_index);
+         auto bb = sl->list_of_bloc.at(gn->bb_index);
+         if(gn->get_kind() == gimple_nop_K)
+         {
+            THROW_ASSERT(bb->number == BB_ENTRY, "Parameter definition should be associated to entry block");
+            THROW_ASSERT(bb->list_of_succ.size() == 1, "Multiple successors after entry basic block.");
+            THROW_ASSERT(sl->list_of_bloc.count(bb->list_of_succ.front()), "BB " + STR(bb->list_of_succ.front()) + " not present in current function.");
+            defStmt = nullptr;
+            bb = sl->list_of_bloc.at(bb->list_of_succ.front());
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Output interface for " + SSA->ToString() + " will be inserted in BB" + STR(bb->number));
 
          const auto convertedSSA = generate_interface(bb, defStmt, ssa, _version->userRequired, std::get<0>(if_info.second));
@@ -665,31 +742,13 @@ bool soft_float_cg_ext::lowering_needed(const tree_managerRef& TreeM, const ssa_
    return (tree_helper::is_a_pointer(TreeM, ssa_type->index) && tree_helper::CGetPointedType(ssa_type)->get_kind() == real_type_K) || ssa_type->get_kind() == real_type_K;
 }
 
-tree_nodeRef soft_float_cg_ext::parm_int_type_for(const tree_nodeRef& type) const
-{
-   THROW_ASSERT(type, "");
-   if(tree_helper::is_a_pointer(TreeM, type->index))
-   {
-      return tree_helper::Size(tree_helper::CGetPointedType(type)) == 32 ? float32_ptr_type : float64_ptr_type;
-   }
-   if(!_version->internal || _version->ieee_format())
-   {
-      return tree_helper::Size(type) == 32 ? float32_type : float64_type;
-   }
-   else
-   {
-      THROW_ASSERT(int_type, "Internal integer type should have been defined before.");
-      return int_type;
-   }
-}
-
-tree_nodeRef soft_float_cg_ext::int_type_for(const tree_nodeRef& type) const
+tree_nodeRef soft_float_cg_ext::int_type_for(const tree_nodeRef& type, bool use_internal) const
 {
    if(tree_helper::is_a_pointer(TreeM, type->index))
    {
       return tree_helper::Size(tree_helper::CGetPointedType(type)) == 32 ? float32_ptr_type : float64_ptr_type;
    }
-   if(_version->ieee_format())
+   if(!use_internal || _version->ieee_format())
    {
       return tree_helper::Size(type) == 32 ? float32_type : float64_type;
    }
@@ -722,7 +781,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing return type " + GET_NODE(ft->retn)->ToString());
       if(GET_NODE(ft->retn)->get_kind() == real_type_K)
       {
-         const auto int_ret = parm_int_type_for(ft->retn);
+         const auto int_ret = int_type_for(ft->retn, _version->internal);
          const auto ret_type = GetPointerS<const type_node>(GET_CONST_NODE(int_ret));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Return type lowered to " + ret_type->ToString() + " " + STR(tree_helper::Size(GET_NODE(int_ret))));
          ft->retn = int_ret;
@@ -739,7 +798,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing return type " + GET_NODE(mt->retn)->ToString());
       if(GET_NODE(mt->retn)->get_kind() == real_type_K)
       {
-         const auto int_ret = parm_int_type_for(mt->retn);
+         const auto int_ret = int_type_for(mt->retn, _version->internal);
          const auto ret_type = GetPointerS<const type_node>(GET_CONST_NODE(int_ret));
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Return type lowered to " + ret_type->ToString() + " " + STR(tree_helper::Size(GET_NODE(int_ret))));
          mt->retn = int_ret;
@@ -758,7 +817,7 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Analysing parameter " + pd->ToString() + " of type " + parm_type->ToString());
       if((tree_helper::is_a_pointer(TreeM, parm_type->index) && tree_helper::CGetPointedType(parm_type)->get_kind() == real_type_K) || parm_type->get_kind() == real_type_K)
       {
-         const auto int_parm_type = parm_int_type_for(parm_type);
+         const auto int_parm_type = int_type_for(parm_type, _version->internal);
          const auto parm_int_type = GetPointerS<const type_node>(GET_CONST_NODE(int_parm_type));
          pd->algn = parm_int_type->algn;
          pd->argt = int_parm_type;
@@ -784,11 +843,11 @@ bool soft_float_cg_ext::signature_lowering(function_decl* f_decl) const
    return changed_parm || changed_type;
 }
 
-void soft_float_cg_ext::ssa_lowering(ssa_name* ssa) const
+void soft_float_cg_ext::ssa_lowering(ssa_name* ssa, bool internal_type) const
 {
    const auto ssa_type = GET_NODE(ssa->type);
    THROW_ASSERT(lowering_needed(TreeM, ssa), "Unexpected ssa type - " + ssa->ToString() + " " + ssa_type->ToString());
-   const auto vc_type = int_type_for(ssa_type);
+   const auto vc_type = int_type_for(ssa_type, internal_type);
    THROW_ASSERT(vc_type, "");
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Lowering " + ssa->ToString() + " type to " + GET_NODE(vc_type)->ToString());
 
@@ -857,72 +916,122 @@ void soft_float_cg_ext::ssa_lowering(ssa_name* ssa) const
 
 tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inFF, const FloatFormatRef& outFF) const
 {
-   bool Sign = inFF->sign != bit_lattice::U ? (inFF->sign == bit_lattice::ONE) : ((bits >> (inFF->exp_bits + inFF->frac_bits)) & 1ULL);
-   uint64_t exp = (bits >> inFF->frac_bits) & ((1ULL << inFF->exp_bits) - 1ULL);
-   uint64_t frac = bits & ((1ULL << inFF->frac_bits) - 1ULL);
+   uint64_t Sign, Exp, Frac;
 
-   bool expMax = exp == ((1ULL << inFF->exp_bits) - 1ULL);
-   bool nan = expMax & (bits >> (inFF->frac_bits - 1ULL));
-   uint64_t RExp;
-   uint64_t RFrac;
-   uint64_t out_val;
+   Sign = bits >> (inFF->exp_bits + inFF->frac_bits);
+   Exp = (bits >> (inFF->frac_bits)) & ((1ULL << inFF->exp_bits) - 1);
+   Frac = bits & ((1ULL << inFF->frac_bits) - 1);
 
-   bool out_nan;
+   uint64_t FExp, SFrac;
 
-   int64_t exp_fix;
-   int64_t range_diff;
-   uint64_t FExp;
-
-   uint8_t bits_diff;
-   uint64_t ExpFrac;
-   uint64_t RExpFrac;
-   bool round;
-
-   if(inFF->exp_bits != outFF->exp_bits || inFF->exp_bias != outFF->exp_bias)
+   if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
    {
-      exp_fix = inFF->exp_bias - outFF->exp_bias;
-      range_diff = ((1LL << outFF->exp_bits) - 1LL) - ((1LL << inFF->exp_bits) - 1LL);
-      FExp = exp + static_cast<uint64_t>(exp_fix);
+      const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
+      if(biasDiff + ((1 << outFF->exp_bits) - 1) < 0)
+      {
+         THROW_ERROR("Output fp format does not intersect with input fp format");
+         return nullptr;
+      }
+      const auto exp_zero = Exp == 0;
+      FExp = exp_zero ? 0 : (Exp + biasDiff);
    }
    else
    {
-      exp_fix = 0;
-      range_diff = 0;
-      FExp = exp;
+      FExp = Exp;
    }
 
    if(inFF->frac_bits > outFF->frac_bits)
    {
-      bits_diff = static_cast<uint8_t>(inFF->frac_bits - outFF->frac_bits);
-      ExpFrac = (FExp << outFF->frac_bits) | (frac >> bits_diff);
-      // round = (frac >> (bits_diff - 1U)) & 1U;
-      round = (frac & ((1ULL << bits_diff) - 1)) != 0; // IEEE conversion rounding
-      RExpFrac = ExpFrac + static_cast<uint64_t>(round & (inFF->has_rounding | outFF->has_rounding));
+      const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
+
+      SFrac = Frac >> bits_diff;
+
+      if(outFF->has_rounding)
+      {
+         const auto j_bit = (Frac & ((1ULL << bits_diff) - 1)) == 0;
+         SFrac = SFrac | j_bit;
+      }
    }
    else if(inFF->frac_bits < outFF->frac_bits)
    {
-      bits_diff = static_cast<uint8_t>(outFF->frac_bits - inFF->frac_bits);
-      RExpFrac = (FExp << (outFF->frac_bits)) | frac << bits_diff;
+      const auto bits_diff = outFF->frac_bits - inFF->frac_bits;
+      SFrac = Frac << bits_diff;
    }
    else
    {
-      RExpFrac = (FExp << outFF->frac_bits) | frac;
+      SFrac = Frac;
    }
 
-   out_nan = (inFF->sign != outFF->sign) & ((outFF->sign == bit_lattice::ONE) != Sign);
-   out_nan |= (inFF->has_nan & expMax);
-   out_nan |= (((inFF->exp_bits != outFF->exp_bits) | (inFF->exp_bias != outFF->exp_bias)) & (((exp_fix < 0) & (static_cast<int64_t>(FExp) < 0)) | ((exp_fix > range_diff) & (FExp > ((1ULL << outFF->exp_bits) - (outFF->has_nan ? 2ULL : 1ULL))))));
-   out_nan |= (inFF->has_rounding | outFF->has_rounding) & ((!outFF->has_nan) & (RExpFrac & (1ULL << (outFF->exp_bits + outFF->frac_bits))));
+   bool out_nan = false;
+   if(outFF->sign != bit_lattice::U && inFF->sign != outFF->sign)
+   {
+      if(inFF->sign == bit_lattice::U)
+      {
+         out_nan |= Sign != (outFF->sign == bit_lattice::ONE ? 1 : 0);
+      }
+      else
+      {
+         THROW_ERROR("Casting from fixed " + STR(inFF->sign == bit_lattice::ONE ? "negative" : "positive") + " type to fixed " + STR(outFF->sign == bit_lattice::ONE ? "negative" : "positive") + " type will always result in a static value.");
+         return nullptr;
+      }
+   }
 
-   RExp = out_nan ? ((1ULL << outFF->exp_bits) - 1ULL) : (RExpFrac >> outFF->frac_bits);
-   RFrac = (out_nan | ((inFF->sign != outFF->sign) & ((outFF->sign == bit_lattice::ONE) != Sign))) ? (outFF->has_nan ? (static_cast<uint64_t>(nan) << (outFF->frac_bits - 1ULL)) : ((1ULL << outFF->frac_bits) - 1ULL)) :
-                                                                                                     (RExpFrac & ((1ULL << outFF->frac_bits) - 1ULL));
+   if(inFF->has_nan)
+   {
+      out_nan |= Exp == ((1ULL << inFF->exp_bits) - 1);
+   }
 
-   out_val = (RExp << outFF->frac_bits) | RFrac;
+   const auto expFix = inFF->exp_bias - outFF->exp_bias;
+   const auto rangeDiff = ((1LL << outFF->exp_bits) - 1) - ((1LL << inFF->exp_bits) - 1);
+   if(((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias)) && expFix > rangeDiff && outFF->has_nan)
+   {
+      out_nan |= FExp > ((1ULL << outFF->exp_bits) - 2);
+   }
+
+   uint64_t RExp, NFrac, RFrac;
+
+   RExp = out_nan ? ((1ULL << outFF->exp_bits) - 1) : FExp;
+   RExp <<= outFF->frac_bits;
+
+   if(outFF->sign != bit_lattice::U && inFF->sign != outFF->sign)
+   {
+      out_nan |= Sign;
+   }
+   if(outFF->has_nan)
+   {
+      if(inFF->has_nan)
+      {
+         const auto in_nan = (Exp == ((1ULL << inFF->exp_bits) - 1)) && (Frac != 0);
+         NFrac = in_nan ? ((1ULL << outFF->frac_bits) - 1) : 0;
+      }
+      else
+      {
+         NFrac = 0;
+      }
+   }
+   else
+   {
+      NFrac = ((1ULL << outFF->frac_bits) - 1);
+   }
+
+   RFrac = out_nan ? NFrac : SFrac;
+
+   uint64_t out_val = RExp | RFrac;
+
    if(outFF->sign == bit_lattice::U)
    {
-      out_val = (static_cast<uint64_t>(Sign) << (outFF->exp_bits + outFF->frac_bits)) | out_val;
+      uint64_t FSign;
+      if(inFF->sign != bit_lattice::U)
+      {
+         FSign = inFF->sign == bit_lattice::ONE ? (1ULL << (outFF->exp_bits + outFF->frac_bits)) : 0;
+      }
+      else
+      {
+         FSign = Sign << (outFF->exp_bits + outFF->frac_bits);
+      }
+      out_val |= FSign;
    }
+
    return TreeM->CreateUniqueIntegerCst(static_cast<int64_t>(out_val), GET_INDEX_NODE(tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true)));
 }
 
@@ -953,7 +1062,8 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 
    const auto bool_type = tree_man->create_boolean_type();
    const auto in_type = GetPointerS<ssa_name>(GET_NODE(ssa))->type;
-   THROW_ASSERT(tree_helper::Size(GET_NODE(in_type)) == static_cast<unsigned int>(static_cast<uint8_t>(inFF->sign == bit_lattice::U) + inFF->exp_bits + inFF->frac_bits), "");
+   THROW_ASSERT(tree_helper::Size(GET_NODE(in_type)) == static_cast<unsigned int>(static_cast<uint8_t>(inFF->sign == bit_lattice::U) + inFF->exp_bits + inFF->frac_bits),
+                "Input type size " + STR(tree_helper::Size(GET_NODE(in_type))) + "bits with fp format " + inFF->mngl());
    const auto in_type_idx = GET_INDEX_NODE(in_type);
    const auto out_type = tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
    const auto out_type_idx = GET_INDEX_NODE(out_type);
@@ -1053,7 +1163,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 
    auto out_nan = TreeM->CreateUniqueIntegerCst(0, GET_INDEX_NODE(bool_type));
    tree_nodeRef sign_test;
-   if(inFF->sign != outFF->sign)
+   if(outFF->sign != bit_lattice::U && inFF->sign != outFF->sign)
    {
       if(inFF->sign == bit_lattice::U)
       {
@@ -1118,7 +1228,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    const auto expLShift = tree_man->create_binary_operation(out_type, RExp, TreeM->CreateUniqueIntegerCst(outFF->frac_bits, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
    RExp = createStmt(out_type, expLShift);
 
-   if(inFF->sign != outFF->sign)
+   if(outFF->sign != bit_lattice::U && inFF->sign != outFF->sign)
    {
       THROW_ASSERT(sign_test, "Sign test should have been computed here.");
 
@@ -1132,7 +1242,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       if(inFF->has_nan)
       {
          THROW_ASSERT(expMax, "");
-         // Shift input significand to get msb
+         // Check if input significand is different from zero
          const auto nfracNull = tree_man->create_binary_operation(bool_type, Frac, TreeM->CreateUniqueIntegerCst(0, in_type_idx), BUILTIN_SRCP, ne_expr_K);
          auto nanFrac = createStmt(bool_type, nfracNull);
 
@@ -1299,7 +1409,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
    THROW_ASSERT(current_tree_node->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    THROW_ASSERT((type_interface & 3) == INTERFACE_TYPE_NONE || (type_interface & 3) == INTERFACE_TYPE_INPUT || (type_interface & 3) == INTERFACE_TYPE_OUTPUT, "Required interface type must be unique (" + STR(type_interface) + ")");
    const auto curr_tn = GET_NODE(current_tree_node);
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively (" + STR(current_tree_node->index) + " " + curr_tn->get_kind_text() + ") " + STR(current_tree_node));
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Update recursively (ti=" + STR(type_interface) + ") (" + STR(current_tree_node->index) + " " + curr_tn->get_kind_text() + ") " + STR(current_tree_node));
    const auto current_srcp = [curr_tn]() -> std::string {
       const auto srcp_tn = GetPointer<const srcp>(curr_tn);
       if(srcp_tn)
@@ -1321,13 +1431,13 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          return _version->ieee_format();
       }
-      const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
       if(fn_fd->builtin_flag || fn_fd->index == mcpy_id || fn_fd->index == mset_id)
       {
          return _version->ieee_format();
       }
       else
       {
+         const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
          THROW_ASSERT(static_cast<bool>(funcFF.count(fn_v)), "Called function should have been already computed.");
          const auto& fn_FF = funcFF.at(fn_v);
          return fn_FF->internal && _version->ieee_format() == fn_FF->ieee_format();
@@ -1453,17 +1563,20 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          if(lowering_needed(TreeM, SSA))
          {
             // Real variables must all be converted to unsigned integers after softfloat lowering operations
-            viewConvert.insert(SSA);
+            viewConvert.insert({SSA, type_interface == INTERFACE_TYPE_NONE});
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Lowering required for current variable");
 
             if(type_interface & INTERFACE_TYPE_REAL)
             {
                if(GET_INDEX_CONST_NODE(SSA->CGetDefStmt()) == GET_INDEX_CONST_NODE(current_statement))
                {
                   hwReturn.push_back(SSA);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal input interface required");
                }
                else
                {
                   hwParam[SSA].insert(GET_INDEX_CONST_NODE(current_statement));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Internal output interface required");
                }
             }
          }
@@ -1479,9 +1592,9 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                THROW_ASSERT(argIt != args.end(), "parm_decl associated with ssa_name not found in function parameters");
                const auto arg_pos = static_cast<size_t>(argIt - args.begin());
                THROW_ASSERT(arg_pos < args.size(), "Computed parameter position outside actual parameters number");
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Variable " + SSA->ToString() + " is defined from parameter " + STR(arg_pos));
                paramBinding[arg_pos] = curr_tn;
                bindingCompleted = std::find(paramBinding.begin(), paramBinding.end(), nullptr) == paramBinding.end();
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Variable " + SSA->ToString() + " is defined from parameter " + STR(arg_pos));
             }
          }
 
@@ -1490,6 +1603,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             const auto ssa_ff = tree_helper::Size(GET_CONST_NODE(SSA->type)) == 32 ? float32FF : float64FF;
             if((!_version->internal && std::find(paramBinding.begin(), paramBinding.end(), curr_tn) != paramBinding.end()) || type_interface & INTERFACE_TYPE_INPUT)
             {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Input interface required for current parameter");
                if(type_interface & INTERFACE_TYPE_OUTPUT)
                {
                   // Considered ssa has been discovered to be a function parameter and is used in current statement as a non-internal function argument, thus conversion can be avoided
@@ -1502,6 +1616,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   {
                      std::get<1>(iif->second).push_back(GET_INDEX_CONST_NODE(current_statement));
                   }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping input interface for current parameter");
                   break;
                }
                if(!static_cast<bool>(inputInterface.count(SSA)))
@@ -1512,15 +1627,25 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             }
             else if(type_interface & INTERFACE_TYPE_OUTPUT)
             {
-               // Add current output SSA to the output cast rename list for its uses in current statement
-               const auto oif = outputInterface.find(SSA);
-               if(oif == outputInterface.end())
+               const auto iif = inputInterface.find(SSA);
+               if(iif != inputInterface.end())
                {
-                  outputInterface.insert({SSA, {ssa_ff, {current_statement}}});
+                  std::get<1>(iif->second).push_back(GET_INDEX_CONST_NODE(current_statement));
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Uninterfaced value forward required");
                }
                else
                {
-                  std::get<1>(oif->second).push_back(current_statement);
+                  // Add current output SSA to the output cast rename list for its uses in current statement
+                  const auto oif = outputInterface.find(SSA);
+                  if(oif == outputInterface.end())
+                  {
+                     outputInterface.insert({SSA, {ssa_ff, {current_statement}}});
+                  }
+                  else
+                  {
+                     std::get<1>(oif->second).push_back(current_statement);
+                  }
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Output interface required for current variable use");
                }
             }
          }
@@ -2043,12 +2168,12 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             if(curr_tn->get_kind() == mem_ref_K)
             {
                const auto mr = GetPointerS<mem_ref>(curr_tn);
-               mr->type = int_type_for(GET_NODE(mr->type));
+               mr->type = int_type_for(GET_NODE(mr->type), true);
             }
             else if(curr_tn->get_kind() == pointer_plus_expr_K)
             {
                const auto pp = GetPointerS<pointer_plus_expr>(curr_tn);
-               pp->type = int_type_for(GET_NODE(pp->type));
+               pp->type = int_type_for(GET_NODE(pp->type), true);
             }
             else
             {

@@ -336,7 +336,8 @@
 #define OPT_VISUALIZER (1 + OPT_VHDL_LIBRARY_PARAMETER)
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
-#define OPT_MASK (1 + OPT_RANGE_ANALYSIS_MODE)
+#define OPT_FP_FORMAT (1 + OPT_RANGE_ANALYSIS_MODE)
+#define OPT_PROPAGATE_FP_FORMAT (1 + OPT_FP_FORMAT)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -806,11 +807,11 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --max-ulp\n"
       << "        Define the maximal ULP (Unit in the last place, i.e., is the spacing\n"
       << "        between floating-point numbers) accepted.\n\n"
-      << "    --mask\n"
+      << "    --fp-format\n"
       << "        Define arbitrary precision floating-point format by type or by function.\n"
       << "        <func_name>*<exp_bits>*<frac_bits>*<exp_bias>*<round>*<nan>*<one>*<sub>*<sign>* (use comma separated list for multiple definitions)\n"
       << "           func_name - Set arbitrary floating-point format for a specific function\n"
-      << "                       To modify all single or double-precision formats use @32 and @64 respectively\n"
+      << "                       (Arbitrary floating-point format will apply to specified function only, use --propaget-fp-format to extend it to called functions)"
       << "            exp_bits - Number of bits used by the exponent\n"
       << "           frac_bits - Number of bits used by the fractional value\n"
       << "            exp_bias - Bias applied to the unsigned value represented by the exponent bits\n"
@@ -819,6 +820,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "              one    - Floating-point representation will exploit hidden-one convention (default=1)\n"
       << "              sub    - Floating-point representation will exploit subnormals (default=0)\n"
       << "           sign_bit  - Set sign bit to a fixed value (1 or 0) or leave it data dependant (default=U)\n\n"
+      << "    --propagate-fp-format\n"
+      << "        Propagate user-defined floating-point format to called function when possible\n\n"
       << "    --hls-div=<method>\n"
       << "        Perform the high-level synthesis of integer division and modulo\n"
       << "        operations starting from a C library based implementation or a HDL component:\n"
@@ -1264,7 +1267,8 @@ int BambuParameter::Exec()
       {"discrepancy-only", required_argument, nullptr, OPT_DISCREPANCY_ONLY},
       {"discrepancy-permissive-ptrs", no_argument, nullptr, OPT_DISCREPANCY_PERMISSIVE_PTRS},
       {"range-analysis-mode", optional_argument, nullptr, OPT_RANGE_ANALYSIS_MODE},
-      {"mask", optional_argument, nullptr, OPT_MASK},
+      {"fp-format", optional_argument, nullptr, OPT_FP_FORMAT},
+      {"propagate-fp-format", optional_argument, nullptr, OPT_PROPAGATE_FP_FORMAT},
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
       {"num-accelerators", required_argument, nullptr, OPT_NUM_ACCELERATORS},
       {"context_switch", optional_argument, nullptr, OPT_INPUT_CONTEXT_SWITCH},
@@ -2360,9 +2364,14 @@ int BambuParameter::Exec()
             setOption(OPT_range_analysis_mode, optarg);
             break;
          }
-         case OPT_MASK:
+         case OPT_FP_FORMAT:
          {
-            setOption(OPT_mask, optarg);
+            setOption(OPT_fp_format, optarg);
+            break;
+         }
+         case OPT_PROPAGATE_FP_FORMAT:
+         {
+            setOption(OPT_propagate_fp_format, true);
             break;
          }
 #if HAVE_FROM_PRAGMA_BUILT && HAVE_BAMBU_BUILT
@@ -4172,7 +4181,8 @@ void BambuParameter::SetDefaults()
    setOption(OPT_no_return_zero, false);
    setOption(OPT_bitvalue_ipa, true);
    setOption(OPT_range_analysis_mode, "");
-   setOption(OPT_mask, "");
+   setOption(OPT_fp_format, "");
+   setOption(OPT_propagate_fp_format, false);
 
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);
