@@ -65,7 +65,7 @@
 /// Parameter include
 #include "Parameter.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// Tree include
@@ -84,7 +84,7 @@
 #endif
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 #include "dbgPrintHelper.hpp"
 #include "utility.hpp"
@@ -258,8 +258,8 @@ void tree_manager::print(std::ostream& os) const
 #endif
        os);
 
-   os << STOK(TOK_GCC_VERSION) << ": \"" << GccWrapper::current_gcc_version << "\"\n";
-   os << STOK(TOK_PLUGIN_VERSION) << ": \"" << GccWrapper::current_plugin_version << "\"\n";
+   os << STOK(TOK_GCC_VERSION) << ": \"" << CompilerWrapper::current_compiler_version << "\"\n";
+   os << STOK(TOK_PLUGIN_VERSION) << ": \"" << CompilerWrapper::current_plugin_version << "\"\n";
 
    unsigned int node_index = 0;
    for(node_index = 0; node_index <= last_node_id; node_index++)

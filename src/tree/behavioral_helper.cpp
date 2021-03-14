@@ -69,12 +69,12 @@
 #if HAVE_FROM_PRAGMA_BUILT
 #include "pragma_constants.hpp"
 #endif
-#include "treegcc_constants.hpp"
+#include "compiler_constants.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 #if HAVE_RTL_BUILT
@@ -104,8 +104,8 @@
 
 #include "type_casting.hpp"
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 
 std::map<std::string, unsigned int> BehavioralHelper::used_name;
 
@@ -2759,7 +2759,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
       case bit_field_ref_K:
       {
 #if HAVE_SPARC_COMPILER
-         if(Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_SPARC_GCC)
+         if(Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_SPARC_GCC)
          {
             THROW_ERROR_CODE(BITFIELD_EC, "Bitfield not supported by sparc cross compiler");
          }

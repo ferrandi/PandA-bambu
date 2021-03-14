@@ -31,19 +31,20 @@
  *
  */
 /**
- * @file gcc_wrapper.hpp
- * @brief Wrapper to Gcc for C sources.
+ * @file compiler_wrapper.hpp
+ * @brief Wrapper to the frontend compiler for C/C++ sources.
  *
- * A object used to invoke the GCC compiler from sources and create the dump.
+ * A object used to invoke the frontend compiler from sources and create the dump.
  *
  * @author Christian Pilato <pilato@elet.polimi.it>
  * @author Marco Lattuada <lattuada@elet.polimi.it>
+ * @author Fabrizio Ferrandi <lattuada@elet.polimi.it>
  * $Date$
  * Last modified by $Author$
  *
  */
-#ifndef GCC_WRAPPER_HPP
-#define GCC_WRAPPER_HPP
+#ifndef COMPILER_WRAPPER_HPP
+#define COMPILER_WRAPPER_HPP
 
 /// Autoheader include
 #include "config_HAVE_ARM_COMPILER.hpp"
@@ -57,6 +58,7 @@
 #include "config_HAVE_I386_CLANG7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG8_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG9_COMPILER.hpp"
+#include "config_HAVE_I386_CLANGVVD_COMPILER.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -90,7 +92,7 @@ REF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(tree_manager);
 
 /// Possible optimization sets
-enum class GccWrapper_OptimizationSet
+enum class CompilerWrapper_OptimizationSet
 {
    O0,    /**< -O0 */
    O1,    /**< -O1 */
@@ -103,23 +105,23 @@ enum class GccWrapper_OptimizationSet
    Oz,    /**< -Oz */
    Ofast, /**< -Ofast */
 #if HAVE_BAMBU_BUILT
-   OBAMBU, /**< Bambu optimizationss + OPT_gcc_opt_level */
+   OBAMBU, /**< Bambu optimizationss + OPT_compiler_opt_level */
    OSF,    /**< Bambu optimizations for soft float: O3 + -finline-limit=10000 */
 #endif
 #if HAVE_TUCANO_BUILT
-   OTUCANO, /**< Tucano optimizations + OPT_gcc_opt_level */
+   OTUCANO, /**< Tucano optimizations + OPT_compiler_opt_level */
 #endif
 #if HAVE_ZEBU_BUILT
-   OZEBU, /**< Zebu optimizations + OPT_gcc_opt_level */
+   OZEBU, /**< Zebu optimizations + OPT_compiler_opt_level */
 #endif
 };
 
 /**
  * target of the compiler
  */
-enum class GccWrapper_CompilerTarget
+enum class CompilerWrapper_CompilerTarget
 {
-   CT_NO_GCC = 0,
+   CT_NO_COMPILER = 0,
 #if HAVE_I386_GCC45_COMPILER
    CT_I386_GCC45 = 1,
 #endif
@@ -171,16 +173,19 @@ enum class GccWrapper_CompilerTarget
 #if HAVE_I386_CLANG11_COMPILER
    CT_I386_CLANG11 = 65536,
 #endif
+#if HAVE_I386_CLANGVVD_COMPILER
+   CT_I386_CLANGVVD = 131072,
+#endif
 #if HAVE_ARM_COMPILER
-   CT_ARM_GCC = 131072,
+   CT_ARM_GCC = 262144,
 #endif
 #if HAVE_SPARC_COMPILER
-   CT_SPARC_GCC = 262144,
-   CT_SPARC_ELF_GCC = 524288
+   CT_SPARC_GCC = 524288,
+   CT_SPARC_ELF_GCC = 1048576
 #endif
 };
 
-enum class GccWrapper_CompilerMode
+enum class CompilerWrapper_CompilerMode
 {
    CM_STD = 0,
    CM_EMPTY,
@@ -189,11 +194,11 @@ enum class GccWrapper_CompilerMode
 };
 
 /**
- * @class GccWrapper
- * Main class for wrapping the GCC compiler. It allows an XML configuration file to be specified where the parameters
+ * @class CompilerWrapper
+ * Main class for wrapping the frontend compiler. It allows an XML configuration file to be specified where the parameters
  * and the related values are stored.
  */
-class GccWrapper
+class CompilerWrapper
 {
  private:
    /// Class storing information of a compiler
@@ -203,7 +208,7 @@ class GccWrapper
       /// The cpp executable
       boost::filesystem::path cpp;
 
-      /// The gcc executable
+      /// The compiler frontend executable
       boost::filesystem::path gcc;
 
       /// The extra_options
@@ -258,16 +263,16 @@ class GccWrapper
    const ParameterConstRef Param;
 
    /// The target compiler to be used
-   const GccWrapper_CompilerTarget compiler_target;
+   const CompilerWrapper_CompilerTarget compiler_target;
 
    /// The set of optimizations to be applied
-   const GccWrapper_OptimizationSet OS;
+   const CompilerWrapper_OptimizationSet OS;
 
-   /// The gcc parameters line for compiling a file
-   std::string gcc_compiling_parameters;
+   /// The frontend compiler parameters line for compiling a file
+   std::string frontend_compiler_parameters;
 
-   /// The gcc parameters line for creating an executable
-   std::string gcc_linking_parameters;
+   /// The compiler parameters for executable creation
+   std::string compiler_linking_parameters;
 
    /// The set of files for which tree manager has already been computed
    CustomSet<std::string> already_processed_files;
@@ -288,14 +293,14 @@ class GccWrapper
    std::map<std::string, int> optimization_values;
 
    /**
-    * Invoke gcc to compile file(s)
+    * Invoke the frontend compiler to compile file(s)
     * @param original_file_name is the original file passed through command line; this information is necessary to retrieve include directory
     * @param real_rile_name stores the source code file which is actually compiled; the function can modified it in case of empty file
-    * @param parameters_line are the parameters to be passed to gcc
+    * @param parameters_line are the parameters to be passed to the frontend compiler
     * @param multiple_files is the true in case multiple files are considered.
     * @param cm is the mode in which we compile
     */
-   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, GccWrapper_CompilerMode cm);
+   void CompileFile(const std::string& original_file_name, std::string& real_file_name, const std::string& parameters_line, bool multiple_files, CompilerWrapper_CompilerMode cm);
 
    /**
     * Return the compiler for a given target
@@ -304,11 +309,11 @@ class GccWrapper
    Compiler GetCompiler() const;
 
    /**
-    * Initialize the gcc parameters line
+    * Initialize the frontend compiler parameters line
     * @param OS is the optimizations set to be considered
     * @return the string with the parameters
     */
-   void InitializeGccParameters();
+   void InitializeCompilerParameters();
 
 #if HAVE_BAMBU_BUILT || HAVE_TUCANO_BUILT || HAVE_ZEBU_BUILT
    /**
@@ -317,36 +322,36 @@ class GccWrapper
    void ReadParameters();
 
    /**
-    * Set the default options for gcc
+    * Set the default options for the frontend compiler
     */
-   void SetGccDefault();
+   void SetCompilerDefault();
 #endif
 
 #if HAVE_BAMBU_BUILT
    /**
-    * Set the default options for gcc in bambu
+    * Set the default options for the frontend compiler in bambu
     */
    void SetBambuDefault();
 #endif
 
 #if HAVE_ZEBU_BUILT
    /**
-    * Set the default options for gcc in zebu
+    * Set the default options for the frontend compiler in zebu
     */
    // cppcheck-suppress unusedPrivateFunction
    void SetZebuDefault();
 #endif
 
    /**
-    * Write the string containing gcc optimization options
-    * @return the string with optimization options to be passed to the gcc
+    * Write the string containing the frontend compiler optimization options
+    * @return the string with optimization options to be passed to the frontend compiler
     */
    std::string WriteOptimizationsString();
 
    /**
     * Add includes of source file directories
     * @param source_files are the source files to be considered
-    * @return the string to be passed to gcc
+    * @return the string to be passed to the frontend compiler
     */
    const std::string AddSourceCodeIncludes(const std::list<std::string>& source_files) const;
 
@@ -357,12 +362,12 @@ class GccWrapper
     */
    static size_t ConvertVersion(const std::string& version);
 
-   std::string clang_recipes(const GccWrapper_OptimizationSet optimization_level, const GccWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
+   std::string clang_recipes(const CompilerWrapper_OptimizationSet optimization_level, const CompilerWrapper_CompilerTarget compiler_target, const std::string& expandMemOps_plugin_obj, const std::string& expandMemOps_plugin_name,
                              const std::string& GepiCanon_plugin_obj, const std::string& GepiCanon_plugin_name, const std::string& CSROA_plugin_obj, const std::string& CSROA_plugin_name, const std::string& fname);
 
  public:
-   /// The version of the gcc
-   static std::string current_gcc_version;
+   /// The version of the frontend compiler
+   static std::string current_compiler_version;
 
    /// The version of the plugin
    static std::string current_plugin_version;
@@ -373,12 +378,12 @@ class GccWrapper
     * @param compiler is the compiler to be used
     * @param OS is the optimization set
     */
-   GccWrapper(const ParameterConstRef Param, const GccWrapper_CompilerTarget _compiler_target, const GccWrapper_OptimizationSet OS);
+   CompilerWrapper(const ParameterConstRef Param, const CompilerWrapper_CompilerTarget _compiler_target, const CompilerWrapper_OptimizationSet OS);
 
    /**
     * Destructor
     */
-   ~GccWrapper();
+   ~CompilerWrapper();
 
    /**
     * This function fills the tree manager with the nodes created from a set of source files
@@ -388,20 +393,20 @@ class GccWrapper
    void FillTreeManager(const tree_managerRef TM, std::map<std::string, std::string>& source_files);
 
    /**
-    * Return the list of gcc system include
+    * Return the list of the frontend compiler system includes
     * @param includes is where result will be stored
     */
    void GetSystemIncludes(std::vector<std::string>& includes) const;
 
    /**
-    * Dump the gcc configuration
+    * Dump the frontend compiler configuration
     */
-   void GetGccConfig() const;
+   void GetCompilerConfig() const;
 
    /**
     * Function that print of stdout some useful information passing the given option
     */
-   void QueryGccConfig(const std::string& gcc_option) const;
+   void QueryCompilerConfig(const std::string& compiler_option) const;
 
    /**
     * Return the total number of lines of the benchmark
@@ -414,26 +419,26 @@ class GccWrapper
     * Create an executable starting from source code
     * @param file_names is the list of string; it must be a list since in some cases the order matters
     * @param executable_name is the name of the executable
-    * @param extra_gcc_options is extra options to be used only for this compilation
+    * @param extra_compiler_options is extra options to be used only for this compilation
     */
-   void CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters = false) const;
+   void CreateExecutable(const std::list<std::string>& file_names, const std::string& executable_name, const std::string& extra_compiler_options, bool no_frontend_compiler_parameters = false) const;
 
    /**
     * Create an executable starting from source code
     * @param file_names is the set of filename
     * @param executable_name is the name of the executable
-    * @param extra_gcc_options is extra options to be used only for this compilation
+    * @param extra_compiler_options is extra options to be used only for this compilation
     */
-   void CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_gcc_options, bool no_gcc_compiling_parameters = false) const;
+   void CreateExecutable(const CustomSet<std::string>& file_names, const std::string& executable_name, const std::string& extra_compiler_options, bool no_frontend_compiler_parameters = false) const;
 
    /**
-    * Read gcc configuration from file
+    * Read the frontend compiler configuration from file
     * @param file_name is the name of the file
     */
    void ReadXml(const std::string& file_name);
 
    /**
-    * Write gcc configuration on file
+    * Write the frontend compiler configuration on file
     * @param file_name is the name of the file
     */
    void WriteXml(const std::string& file_name) const;
@@ -443,14 +448,14 @@ class GccWrapper
     * @param optimization_level is the optimization level to be printed
     * @return the optimization level in string format
     */
-   static std::string WriteOptimizationLevel(const GccWrapper_OptimizationSet optimization_level);
+   static std::string WriteOptimizationLevel(const CompilerWrapper_OptimizationSet optimization_level);
 
    /**
-    * Check if the combination gcc-plugin is supported; if not it throws error
-    * @param gcc_version is the gcc version in form x.x.x
+    * Check if the gcc-plugin is supported; if not it throws error
+    * @param gcc_version is the frontend compiler version in form x.x.x
     * @param plugin_version is the plugin version in form x.x
     */
-   static void CheckGccCompatibleVersion(const std::string& gcc_version, const std::string& plugin_version);
+   static void CheckCompilerCompatibleVersion(const std::string& compiler_version, const std::string& plugin_version);
 
    /**
     * Return the size of the pointer in bit
@@ -460,8 +465,8 @@ class GccWrapper
    static size_t CGetPointerSize(const ParameterConstRef parameters);
 };
 
-/// Refcount definition for the GccWrapper class
-using GccWrapperRef = refcount<GccWrapper>;
-using GccWrapperConstRef = refcount<const GccWrapper>;
+/// Refcount definition for the CompilerWrapper class
+using CompilerWrapperRef = refcount<CompilerWrapper>;
+using CompilerWrapperConstRef = refcount<const CompilerWrapper>;
 
 #endif

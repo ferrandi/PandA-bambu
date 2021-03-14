@@ -31,7 +31,7 @@
  *
 */
 /*!
-  \page src_wrapper_treegcc Treegcc wrapper
+  \page src_wrapper_compiler Treegcc wrapper
 
 This project reads the input files and invocates the GCC compiler in order to produce the dump that the different tools will be tranform in the intermediate representation.
 */

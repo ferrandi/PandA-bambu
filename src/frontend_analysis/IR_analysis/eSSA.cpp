@@ -68,8 +68,8 @@
 #include "tree_manipulation.hpp"
 #include "tree_reindex.hpp"
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #include "Range.hpp"

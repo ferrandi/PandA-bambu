@@ -74,8 +74,8 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #define TOSTRING(id) boost::lexical_cast<std::string>(id)
@@ -346,7 +346,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
       case var_decl_K:
       {
 #if HAVE_I386_GCC45_COMPILER
-         if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC45)
+         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC45)
          {
             if(tree_helper::is_volatile(AppM->get_tree_manager(), tree_node->index))
             {
@@ -492,7 +492,7 @@ void VarComputation::RecursivelyAnalyze(const vertex op_vertex, const tree_nodeC
          const auto* te = GetPointer<const ternary_expr>(tree_node);
          /// GCC 4.5 plugin does not writer vuse for component ref of volatile variable
 #if HAVE_I386_GCC45_COMPILER
-         if(parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler) == GccWrapper_CompilerTarget::CT_I386_GCC45)
+         if(parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler) == CompilerWrapper_CompilerTarget::CT_I386_GCC45)
          {
             if(te->get_kind() == component_ref_K)
             {

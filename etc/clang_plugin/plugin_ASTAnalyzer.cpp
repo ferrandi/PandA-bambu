@@ -170,7 +170,7 @@ namespace clang
       void writeXML_maskFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -231,7 +231,7 @@ namespace clang
       void writeXML_interfaceFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -275,7 +275,7 @@ namespace clang
       void writeXML_pipelineFile(const std::string& filename, const std::string& TopFunctionName) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -313,7 +313,7 @@ namespace clang
       void writeFun2Params(const std::string& filename) const
       {
          std::error_code EC;
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
          llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);
@@ -381,10 +381,23 @@ namespace clang
 
          if(!mangleContext->shouldMangleDeclName(decl))
          {
+            delete mangleContext;
             return decl->getNameInfo().getName().getAsString();
          }
          std::string mangledName;
+         if(llvm::isa<CXXConstructorDecl>(decl) || llvm::isa<CXXDestructorDecl>(decl))
+         {
+            delete mangleContext;
+            return decl->getNameInfo().getName().getAsString();;
+         }
          llvm::raw_string_ostream ostream(mangledName);
+         if(mangleContext->shouldMangleCXXName(decl))
+         {
+            mangleContext->mangleCXXName(decl, ostream);
+            ostream.flush();
+            delete mangleContext;
+            return mangledName;
+         }
          mangleContext->mangleName(decl, ostream);
          ostream.flush();
          delete mangleContext;
@@ -499,6 +512,7 @@ namespace clang
             auto funName = getMangledName(FD);
             bool storeInfos = false;
             std::vector<MaskInfo> fpInfos;
+            auto par_index =0u;
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -506,6 +520,10 @@ namespace clang
                   MaskInfo userMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
                   auto parName = ND->getNameAsString();
                   auto maskInfoIT = mask_PragmaMap.find(parName);
+                  if(parName.empty())
+                  {
+                     parName = "P" + std::to_string(par_index);
+                  }
                   if(maskInfoIT != mask_PragmaMap.end())
                   {
                      userMaskInfo = maskInfoIT->second;
@@ -514,6 +532,7 @@ namespace clang
                   }
                   fpInfos.push_back(std::move(userMaskInfo));
                }
+               ++par_index;
             }
             MaskInfo returnMaskInfo = {mt_Invalid, false, 0, 0, 0, 0};
             const auto returnUI = mask_PragmaMap.find("@");
@@ -592,6 +611,7 @@ namespace clang
             auto funName = getMangledName(FD);
             Fun2Demangled[funName] = FD->getNameInfo().getName().getAsString();
             // llvm::errs()<<"funName:"<<funName<<"\n";
+            auto par_index =0u;
             for(const auto par : FD->parameters())
             {
                if(const ParmVarDecl* ND = dyn_cast<ParmVarDecl>(par))
@@ -606,6 +626,10 @@ namespace clang
                   bool UDIT_p = false;
                   bool UDIT_attribute2_p = false;
                   bool UDIT_attribute3_p = false;
+                  if(parName.empty())
+                  {
+                     parName = "P" + std::to_string(par_index);
+                  }
 
                   if(interface_PragmaMap.find(parName) != interface_PragmaMap.end())
                   {
@@ -738,6 +762,7 @@ namespace clang
                      Fun2ParamInclude[funName].push_back("");
                   }
                }
+               ++par_index;
             }
 
             if(HLS_pipeline_PragmaMap.find(filename) != HLS_pipeline_PragmaMap.end())

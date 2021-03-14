@@ -56,7 +56,7 @@
 /// Behavior include
 #include "basic_block.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// Tree include

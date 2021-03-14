@@ -66,7 +66,7 @@
 #endif
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 /// Utility include
 #include "Parameter.hpp"
@@ -75,7 +75,7 @@
 
 create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager)
     : ApplicationFrontendFlowStep(_AppM, CREATE_TREE_MANAGER, _design_flow_manager, _parameters),
-      gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), parameters->getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set)))
+      compiler_wrapper(new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler), parameters->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set)))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -230,13 +230,13 @@ DesignFlowStep_Status create_tree_manager::Exec()
 #if !RELEASE
       // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
-         gcc_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
+         compiler_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
 #endif
-      gcc_wrapper->FillTreeManager(TreeM, AppM->input_files);
+      compiler_wrapper->FillTreeManager(TreeM, AppM->input_files);
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
-         gcc_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
+         compiler_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
 #endif
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)

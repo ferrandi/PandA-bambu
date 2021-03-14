@@ -72,7 +72,7 @@
 #include "boost/filesystem/path.hpp"
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 #define FILENAME_NORM(name) ((boost::filesystem::path(name)).normalize().string())
@@ -964,8 +964,8 @@ void CheckSystemType::build_include_structures()
    //   inclNameToPath[FILENAME_NORM("soft-fp/bambu-arch.h")] = FILENAME_NORM("stdlib.h");
 
    std::vector<std::string> Splitted;
-   const GccWrapperConstRef gcc_wrapper(new GccWrapper(parameters, GccWrapper_CompilerTarget::CT_NO_GCC, GccWrapper_OptimizationSet::O0));
-   gcc_wrapper->GetSystemIncludes(Splitted);
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(parameters, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, CompilerWrapper_OptimizationSet::O0));
+   compiler_wrapper->GetSystemIncludes(Splitted);
 
    for(auto& tok_iter : Splitted)
    {

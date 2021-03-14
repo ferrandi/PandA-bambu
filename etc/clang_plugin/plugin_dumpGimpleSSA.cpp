@@ -68,7 +68,7 @@
 #include "llvm/Transforms/IPO.h"
 #include "llvm/Transforms/Scalar.h"
 #include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
 #include "llvm/Transforms/Utils.h"
 #endif
 #include <sstream>

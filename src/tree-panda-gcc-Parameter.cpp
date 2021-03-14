@@ -49,6 +49,7 @@
 #include "config_HAVE_I386_CLANG7_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG8_COMPILER.hpp"
 #include "config_HAVE_I386_CLANG9_COMPILER.hpp"
+#include "config_HAVE_I386_CLANGVVD_COMPILER.hpp"
 #include "config_HAVE_I386_GCC45_COMPILER.hpp"
 #include "config_HAVE_I386_GCC46_COMPILER.hpp"
 #include "config_HAVE_I386_GCC47_COMPILER.hpp"
@@ -92,7 +93,7 @@
 #include <getopt.h>
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 #define OPT_PRINT_FILE_NAME 256
 #define OPT_INCLUDE 257
@@ -310,10 +311,10 @@ int tree_panda_gcc_parameter::Exec()
          }
          case OPT_PRINT_FILE_NAME:
          {
-            const GccWrapper_OptimizationSet optimization_set = getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+            const CompilerWrapper_OptimizationSet optimization_set = getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
             refcount<tree_panda_gcc_parameter> param(this, null_deleter());
-            GccWrapperRef Wrap = GccWrapperRef(new GccWrapper(param, GccWrapper_CompilerTarget::CT_NO_GCC, optimization_set));
-            Wrap->QueryGccConfig("--print-file-name=" + std::string(optarg));
+            CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(param, CompilerWrapper_CompilerTarget::CT_NO_COMPILER, optimization_set));
+            Wrap->QueryCompilerConfig("--print-file-name=" + std::string(optarg));
             return EXIT_SUCCESS;
          }
          case OPT_START_GROUP:
@@ -434,7 +435,7 @@ void tree_panda_gcc_parameter::SetDefaults()
    /// Output level
    setOption(OPT_output_level, OUTPUT_LEVEL_NONE);
 
-   setOption(OPT_gcc_opt_level, GccWrapper_OptimizationSet::O0);
+   setOption(OPT_compiler_opt_level, CompilerWrapper_OptimizationSet::O0);
 
    setOption(OPT_print_dot, false);
 
@@ -451,99 +452,104 @@ void tree_panda_gcc_parameter::SetDefaults()
 
    // -- GCC options -- //
 #if HAVE_I386_GCC47_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47));
 #elif HAVE_I386_GCC46_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46));
 #elif HAVE_I386_GCC45_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45));
 #elif HAVE_I386_GCC48_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48));
 #elif HAVE_I386_GCC49_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49));
 #elif HAVE_I386_GCC5_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5));
 #elif HAVE_I386_GCC6_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6));
 #elif HAVE_I386_GCC7_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC7));
 #elif HAVE_I386_GCC8_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC8));
 #elif HAVE_I386_CLANG4_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4));
 #elif HAVE_I386_CLANG5_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG5));
 #elif HAVE_I386_CLANG6_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG6));
 #elif HAVE_I386_CLANG7_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7));
 #elif HAVE_I386_CLANG8_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG8));
 #elif HAVE_I386_CLANG9_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG9));
 #elif HAVE_I386_CLANG10_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10));
 #elif HAVE_I386_CLANG11_COMPILER
-   setOption(OPT_default_compiler, static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG11));
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11));
+#elif HAVE_I386_CLANGVVD_COMPILER
+   setOption(OPT_default_compiler, static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD));
 #else
    THROW_ERROR("No GCC compiler available");
 #endif
    setOption(OPT_compatible_compilers, 0
 #if HAVE_I386_GCC45_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC45)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC45)
 #endif
 #if HAVE_I386_GCC46_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC46)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC46)
 #endif
 #if HAVE_I386_GCC47_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC47)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC47)
 #endif
 #if HAVE_I386_GCC48_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC48)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC48)
 #endif
 #if HAVE_I386_GCC49_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC49)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC49)
 #endif
 #if HAVE_I386_GCC5_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC5)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC5)
 #endif
 #if HAVE_I386_GCC6_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC6)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC6)
 #endif
 #if HAVE_I386_GCC7_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC7)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC7)
 #endif
 #if HAVE_I386_GCC8_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_GCC8)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_GCC8)
 #endif
 #if HAVE_I386_CLANG4_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG4)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG4)
 #endif
 #if HAVE_I386_CLANG5_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG5)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG5)
 #endif
 #if HAVE_I386_CLANG6_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG6)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG6)
 #endif
 #if HAVE_I386_CLANG7_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG7)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG7)
 #endif
 #if HAVE_I386_CLANG8_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG8)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG8)
 #endif
 #if HAVE_I386_CLANG9_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG9)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG9)
 #endif
 #if HAVE_I386_CLANG10_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG10)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG10)
 #endif
 #if HAVE_I386_CLANG11_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_I386_CLANG11)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANG11)
+#endif
+#if HAVE_I386_CLANGVVD_COMPILER
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_I386_CLANGVVD)
 #endif
 #if HAVE_ARM_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_ARM_GCC)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_ARM_GCC)
 #endif
 #if HAVE_SPARC_COMPILER
-                                           | static_cast<int>(GccWrapper_CompilerTarget::CT_SPARC_GCC)
+                                           | static_cast<int>(CompilerWrapper_CompilerTarget::CT_SPARC_GCC)
 #endif
    );
    setOption(OPT_gcc_m32_mx32, "-m32 -mno-sse2");
@@ -556,9 +562,9 @@ void tree_panda_gcc_parameter::SetDefaults()
    setOption(OPT_gcc_openmp_simd, 0);
    setOption(OPT_no_clean, false);
 #if HAVE_BAMBU_BUILT
-   setOption(OPT_gcc_optimization_set, GccWrapper_OptimizationSet::OBAMBU);
+   setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OBAMBU);
 #elif HAVE_ZEBU_BUILT
-   setOption(OPT_gcc_optimization_set, GccWrapper_OptimizationSet::OZEBU);
+   setOption(OPT_gcc_optimization_set, CompilerWrapper_OptimizationSet::OZEBU);
 #else
    setOption(OPT_gcc_optimization_set, OS_OZEBU);
 #endif

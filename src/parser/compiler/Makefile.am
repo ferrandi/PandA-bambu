@@ -1,9 +1,9 @@
-#this file is src/parser/treegcc/Makefile.am
-noinst_LTLIBRARIES = lib_treegccparser.la
+#this file is src/parser/compiler/Makefile.am
+noinst_LTLIBRARIES = lib_compilerparser.la
 AM_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR)
 METASOURCES = AUTO
 
-lib_treegccparser_la_CPPFLAGS = \
+lib_compilerparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src \
    -I$(top_srcdir)/src/constants \
    -I$(top_srcdir)/src/graph \
@@ -11,21 +11,21 @@ lib_treegccparser_la_CPPFLAGS = \
    -I$(top_srcdir)/src/polixml \
    -I$(top_srcdir)/src/tree \
    -I$(top_srcdir)/src/utility \
-   -I$(top_srcdir)/src/wrapper/treegcc \
+   -I$(top_srcdir)/src/wrapper/compiler \
    $(AM_CPPFLAGS)
 
 if BUILD_LIB_CODE_ESTIMATION
-   lib_treegccparser_la_CPPFLAGS += \
+   lib_compilerparser_la_CPPFLAGS += \
       -I$(top_srcdir)/src/utility/probability_distribution
 endif
 
 if BUILD_LIB_MAPPING
-  lib_treegccparser_la_CPPFLAGS += \
+  lib_compilerparser_la_CPPFLAGS += \
      -I$(top_srcdir)/src/machine
 endif
 
 if BUILD_LIB_RTL
-   lib_treegccparser_la_CPPFLAGS += \
+   lib_compilerparser_la_CPPFLAGS += \
       -I$(top_srcdir)/src/rtl
 endif
 
@@ -34,7 +34,7 @@ AM_LFLAGS = -L -B -+  -olex.yy.c
 
 noinst_HEADERS = token_interface.hpp parse_tree.hpp treeLexer.hpp
 
-lib_treegccparser_la_SOURCES = treeParser.ypp treeLexer.lpp parse_tree.cpp token_interface.cpp
+lib_compilerparser_la_SOURCES = treeParser.ypp treeLexer.lpp parse_tree.cpp token_interface.cpp
 
 if BISON_2_7_OR_GREATER
 BUILT_SOURCES = treeParser.hpp treeLexer.cpp treeParser.cpp
@@ -48,7 +48,7 @@ CLEANFILES = $(BUILT_SOURCES) *.output
 
 DOX_TAGFILES=
 
-PRJ_DOC = treegcc.doc
+PRJ_DOC = compiler.doc
 EXTRA_DIST = $(PRJ_DOC)
 
 #do not touch the following line

@@ -44,7 +44,7 @@
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include <llvm/IR/Verifier.h>
 #include <llvm/Transforms/Scalar.h>
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
 #include "llvm/Transforms/Utils.h"
 #endif
 #if __clang_major__ >= 10

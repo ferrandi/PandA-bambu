@@ -71,7 +71,7 @@
 #include <boost/lexical_cast.hpp>
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 static char* alloc_long_option(char* argv[], int& i, int& dec)
 {
@@ -205,9 +205,9 @@ int main(int argc, char* argv_orig[])
             }
          }
 
-         const GccWrapper_OptimizationSet optimization_set = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set);
-         const GccWrapper_CompilerTarget compiler_target = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
-         GccWrapperRef Wrap = GccWrapperRef(new GccWrapper(Param, compiler_target, optimization_set));
+         const CompilerWrapper_OptimizationSet optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+         const CompilerWrapper_CompilerTarget compiler_target = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+         CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(Param, compiler_target, optimization_set));
 
          const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
 

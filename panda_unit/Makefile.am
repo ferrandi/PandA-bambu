@@ -62,7 +62,7 @@ program_tests_CPPFLAGS = $(all_includes) -I$(BOOST_DIR) -I$(ABSEIL_DIR) \
      -I$(top_srcdir)/src/technology/physical_library/models \
      -I$(top_srcdir)/src/technology/target_technology \
      -I$(top_srcdir)/src/technology/target_device \
-     -I$(top_srcdir)/src/wrapper/treegcc \
+     -I$(top_srcdir)/src/wrapper/compiler \
       $(AM_CPPFLAGS)
 
 if BUILD_LIB_ILP
@@ -119,7 +119,7 @@ endif
 if BUILD_LIB_PARSER
 if BUILD_LIB_FROM_C
   program_tests_CPPFLAGS += \
-     -I$(top_srcdir)/src/parser/treegcc
+     -I$(top_srcdir)/src/parser/compiler
 endif
 endif
 

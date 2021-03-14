@@ -54,7 +54,7 @@ bambu_CPPFLAGS = -DPKGLIBDIR="\"$(pkglibdir)\"" -DPKGDATADIR="\"$(pkgdatadir)\""
      -I$(top_srcdir)/src/technology/physical_library/models \
      -I$(top_srcdir)/src/technology/target_technology \
      -I$(top_srcdir)/src/technology/target_device \
-     -I$(top_srcdir)/src/wrapper/treegcc \
+     -I$(top_srcdir)/src/wrapper/compiler \
       $(AM_CPPFLAGS)
 
 if BUILD_LIB_ILP

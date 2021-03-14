@@ -49,7 +49,7 @@
 /// The first version of gcc not suppoted
 #define STR_CST_gcc_first_not_supported "9.0.0"
 
-/// The temporary directory used by treegcc
+/// The temporary directory used by compiler
 #define STR_CST_gcc_include "__include"
 
 /// The maximum version of the plugin supported

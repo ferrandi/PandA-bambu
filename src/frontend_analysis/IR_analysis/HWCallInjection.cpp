@@ -42,7 +42,7 @@
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
 #include "token_interface.hpp"

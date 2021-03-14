@@ -96,8 +96,8 @@
 #include "tree_manager.hpp"
 #include "tree_reindex.hpp"
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 const std::map<bit_lattice, std::map<bit_lattice, std::map<bit_lattice, std::deque<bit_lattice>>>> Bit_Value::plus_expr_map = {
@@ -865,7 +865,7 @@ unsigned int Bit_Value::pointer_resizing(unsigned int output_id) const
    }
    else
    {
-      address_bitsize = static_cast<unsigned int>(GccWrapper::CGetPointerSize(parameters));
+      address_bitsize = static_cast<unsigned int>(CompilerWrapper::CGetPointerSize(parameters));
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Pointer bitsize " + STR(address_bitsize));
    }
    return address_bitsize;

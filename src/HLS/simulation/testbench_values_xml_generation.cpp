@@ -290,7 +290,7 @@ DesignFlowStep_Status TestbenchValuesXMLGeneration::Exec()
          std::string param = behavioral_helper->PrintVariable(function_parameter);
          if(behavioral_helper->is_a_pointer(function_parameter))
          {
-            //std::cerr << v_idx << " " << function_parameter << std::endl;
+            // std::cerr << v_idx << " " << function_parameter << std::endl;
             auto memory_addr = STR(HLSMgr->RSim->param_address.at(v_idx).at(function_parameter));
             output_stream << "//parameter: " + behavioral_helper->PrintVariable(function_parameter) << " value: " << memory_addr << std::endl;
             output_stream << "p" << ConvertInBinary(memory_addr, 32, false, false) << std::endl;

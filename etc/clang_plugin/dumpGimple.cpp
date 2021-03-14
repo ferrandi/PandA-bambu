@@ -263,7 +263,7 @@ namespace llvm
          outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          stream(create_file_name_string(_outdir_name, _InFile), EC, sys::fs::FA_Read | sys::fs::FA_Write),
 #else
          stream(create_file_name_string(_outdir_name, _InFile), EC, llvm::sys::fs::F_RW),
@@ -2894,6 +2894,8 @@ namespace llvm
          return 8;
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
+      if(!ty->isSized())
+         return 8;
       return std::max(8u, 8 * DL->getABITypeAlignment(ty));
    }
 

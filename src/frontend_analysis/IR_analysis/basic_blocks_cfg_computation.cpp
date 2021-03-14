@@ -75,7 +75,7 @@
 /// STL include
 #include <list>
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree include
