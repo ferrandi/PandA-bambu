@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -359,7 +359,12 @@ class liveness
    bool are_in_conflict(vertex op1, vertex op2) const;
 
    // activate conflicts with reachability computation
-   void compute_conflicts_with_reachability(hlsRef _HLS)
+   // void compute_conflicts_with_reachability(hlsRef _HLS)
+   //{
+   //   HLS = _HLS;
+   //}
+
+   void set_HLS(hlsRef _HLS)
    {
       HLS = _HLS;
    }
@@ -402,6 +407,6 @@ class liveness
 };
 
 // refcount definition for class
-typedef refcount<liveness> livenessRef;
+using livenessRef = refcount<liveness>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -97,6 +97,7 @@ using CustomMap = OrderedMapStd<T, U>;
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Woverflow"
 #pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma GCC diagnostic ignored "-Wstrict-overflow"
 #if __GNUC__ == 4 && __GNUC_MINOR__ == 8
 #pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wundef"
@@ -136,13 +137,13 @@ using CustomMap = OrderedMapStd<T, U>;
 #pragma clang diagnostic pop
 #endif
 
-template <class T, class U, class Hash = absl::container_internal::hash_default_hash<T>, class Eq = absl::container_internal::hash_default_eq<T>, class Alloc = std::allocator<std::pair<const T, U>>>
+template <class T, class U, class Hash = typename absl::flat_hash_map<T, U>::hasher, class Eq = typename absl::flat_hash_map<T, U>::key_equal, class Alloc = std::allocator<std::pair<const T, U>>>
 using CustomUnorderedMap = absl::flat_hash_map<T, U, Hash, Eq, Alloc>;
 
-template <class T, class U, class Hash = absl::container_internal::hash_default_hash<T>, class Eq = absl::container_internal::hash_default_eq<T>, class Alloc = std::allocator<std::pair<const T, U>>>
+template <class T, class U, class Hash = typename absl::flat_hash_map<T, U>::hasher, class Eq = typename absl::flat_hash_map<T, U>::key_equal, class Alloc = std::allocator<std::pair<const T, U>>>
 using CustomUnorderedMapStable = absl::node_hash_map<T, U, Hash, Eq, Alloc>;
 
-template <class T, class U, class Hash = absl::container_internal::hash_default_hash<T>, class Eq = absl::container_internal::hash_default_eq<T>, class Alloc = std::allocator<std::pair<const T, U>>>
+template <class T, class U, class Hash = typename absl::flat_hash_map<T, U>::hasher, class Eq = typename absl::flat_hash_map<T, U>::key_equal, class Alloc = std::allocator<std::pair<const T, U>>>
 using CustomUnorderedMapUnstable = absl::flat_hash_map<T, U, Hash, Eq, Alloc>;
 
 template <typename T, typename U>

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,7 +88,7 @@ class top_entity : public HLSFunctionStep
     * @param design_flow_manager is the design flow manager
     * @param top_entity_type is the type of top entity to be created
     */
-   top_entity(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
+   top_entity(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::TOP_ENTITY_CREATION);
 
    /**
     * Destructor

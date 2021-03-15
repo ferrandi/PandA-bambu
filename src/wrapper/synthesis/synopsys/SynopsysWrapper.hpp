@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,8 +51,7 @@ class SynopsysWrapper : public SynthesisTool
 {
  public:
    /// implemented wrappers
-   typedef enum
-   {
+   using wrapper_t = enum {
       UNDEFINED = 0,
 #if HAVE_EXPERIMENTAL
       PRIME_TIME,
@@ -60,7 +59,7 @@ class SynopsysWrapper : public SynthesisTool
       LIBRARY_COMPILER,
 #endif
       DESIGN_COMPILER
-   } wrapper_t;
+   };
 
    /**
     * Constructor
@@ -102,6 +101,6 @@ class SynopsysWrapper : public SynthesisTool
    static SynthesisToolRef CreateWrapper(wrapper_t type, const ParameterConstRef& Param, const target_deviceRef& _device, const std::string& output_dir);
 };
 /// Refcount definition for the class
-typedef refcount<SynopsysWrapper> SynopsysWrapperRef;
+using SynopsysWrapperRef = refcount<SynopsysWrapper>;
 
 #endif

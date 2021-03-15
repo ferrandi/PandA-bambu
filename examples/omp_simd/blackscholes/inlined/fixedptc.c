@@ -36,7 +36,7 @@ fixedpt_div(fixedpt A, fixedpt B)
  * be returned, meaning there will be invalid, bogus digits outside the
  * specified precisions.
  */
-fixedpt_str(fixedpt A, char *str, int max_dec)
+void fixedpt_str(fixedpt A, char *str, int max_dec)
 {
 	int ndec = 0, slen = 0;
 	char tmp[12] = {0};

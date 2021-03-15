@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -570,6 +570,31 @@
       }                                                                                                                                                                                                   \
       SHIFTED = _result_lshifted >> (BOOST_PP_SUB(64, man_bits));                                                                                                                                         \
       BIT_RESIZE(COUNT, CEIL_LOG2(man_bits));                                                                                                                                                             \
+   }
+
+#define count_leading_zero_macro_lshift64(man_bits, MAN_IN_ORIG, COUNT, SHIFTED)                              \
+   {                                                                                                          \
+      BOOLTYPE _result_5 = 0;                                                                                 \
+      BOOLTYPE _result_4, _result_3, _result_2, _result_1, _result_0;                                         \
+      UDATATYPE _result = 0, _result_lshifted;                                                                \
+      UDATATYPE MAN_IN;                                                                                       \
+      MAN_IN = ((UDATATYPE)MAN_IN_ORIG);                                                                      \
+      _result_lshifted = MAN_IN;                                                                              \
+      _result_5 = SELECT_RANGE(MAN_IN, BOOST_PP_SUB(man_bits, 1), BOOST_PP_SUB(man_bits, 32)) == 0;           \
+      _result_lshifted = _result_5 ? (_result_lshifted << 32) : _result_lshifted;                             \
+      _result_4 = SELECT_RANGE(_result_lshifted, BOOST_PP_SUB(man_bits, 1), BOOST_PP_SUB(man_bits, 16)) == 0; \
+      _result_lshifted = _result_4 ? _result_lshifted << 16 : _result_lshifted;                               \
+      _result_3 = SELECT_RANGE(_result_lshifted, BOOST_PP_SUB(man_bits, 1), BOOST_PP_SUB(man_bits, 8)) == 0;  \
+      _result_lshifted = _result_3 ? _result_lshifted << 8 : _result_lshifted;                                \
+      _result_2 = SELECT_RANGE(_result_lshifted, BOOST_PP_SUB(man_bits, 1), BOOST_PP_SUB(man_bits, 4)) == 0;  \
+      _result_lshifted = _result_2 ? _result_lshifted << 4 : _result_lshifted;                                \
+      _result_1 = SELECT_RANGE(_result_lshifted, BOOST_PP_SUB(man_bits, 1), BOOST_PP_SUB(man_bits, 2)) == 0;  \
+      _result_lshifted = _result_1 ? _result_lshifted << 2 : _result_lshifted;                                \
+      _result_0 = SELECT_BIT(_result_lshifted, BOOST_PP_SUB(man_bits, 1)) == 0;                               \
+      SHIFTED = _result_0 ? _result_lshifted << 1 : _result_lshifted;                                         \
+      VECTORIZE_VALUE(_result, 6)                                                                             \
+      COUNT = _result;                                                                                        \
+      BIT_RESIZE(COUNT, CEIL_LOG2(man_bits));                                                                 \
    }
 
 #endif

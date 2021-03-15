@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,7 +78,7 @@ GenerateFuList::GenerateFuList(const target_managerRef _target, const DesignFlow
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this));
    if(parameters->getOption<std::string>(OPT_component_name) != "all")
    {
-      std::string to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
+      auto to_be_splitted(parameters->getOption<std::string>(OPT_component_name));
       const auto splitted = SplitString(to_be_splitted, ",");
       for(const auto& component_to_be_characterized : splitted)
       {
@@ -194,7 +194,9 @@ void GenerateFuList::AnalyzeCell(functional_unit* fu, const unsigned int, const 
    {
       has_first_synthesis_id = constPort;
       if(current_list != "")
+      {
          cells.insert(current_list);
+      }
       current_list = component + "-" + fu->get_name();
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed " + fu->get_name());

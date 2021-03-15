@@ -1,5 +1,10 @@
 #include "module_lib.h"
 
+#ifdef BAMBU_PROFILING
+volatile void __builtin_bambu_time_start();
+volatile void __builtin_bambu_time_stop();
+#endif
+
 int main()
 {
   uint32_t param1=10;

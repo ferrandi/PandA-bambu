@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,6 +88,6 @@ class trce_wrapper : public XilinxWrapper
    ~trce_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<trce_wrapper> trce_wrapperRef;
+using trce_wrapperRef = refcount<trce_wrapper>;
 
 #endif

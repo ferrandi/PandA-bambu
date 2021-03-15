@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -140,7 +140,7 @@ class MultipleEntryIfReduction : public FunctionFrontendFlowStep
    ~MultipleEntryIfReduction() override;
 
    /**
-    * Extract patterns from the GCC IR.
+    * Extract patterns from the IR.
     * @return the exit status of this step
     */
    DesignFlowStep_Status InternalExec() override;

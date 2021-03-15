@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,6 +86,6 @@ class par_wrapper : public XilinxWrapper
    ~par_wrapper() override;
 };
 /// Refcount definition for the class
-typedef refcount<par_wrapper> par_wrapperRef;
+using par_wrapperRef = refcount<par_wrapper>;
 
 #endif

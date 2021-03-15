@@ -39,6 +39,7 @@
 #include "absl/meta/type_traits.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace compare_internal {
 
 using value_type = int8_t;
@@ -175,6 +176,14 @@ class weak_equality
                                    weak_equality v) noexcept {
     return 0 != v.value_;
   }
+  friend constexpr bool operator==(weak_equality v1,
+                                   weak_equality v2) noexcept {
+    return v1.value_ == v2.value_;
+  }
+  friend constexpr bool operator!=(weak_equality v1,
+                                   weak_equality v2) noexcept {
+    return v1.value_ != v2.value_;
+  }
 
  private:
   compare_internal::value_type value_;
@@ -217,6 +226,14 @@ class strong_equality
   friend constexpr bool operator!=(compare_internal::OnlyLiteralZero<>,
                                    strong_equality v) noexcept {
     return 0 != v.value_;
+  }
+  friend constexpr bool operator==(strong_equality v1,
+                                   strong_equality v2) noexcept {
+    return v1.value_ == v2.value_;
+  }
+  friend constexpr bool operator!=(strong_equality v1,
+                                   strong_equality v2) noexcept {
+    return v1.value_ != v2.value_;
   }
 
  private:
@@ -305,6 +322,14 @@ class partial_ordering
                                    partial_ordering v) noexcept {
     return v.is_ordered() && 0 >= v.value_;
   }
+  friend constexpr bool operator==(partial_ordering v1,
+                                   partial_ordering v2) noexcept {
+    return v1.value_ == v2.value_;
+  }
+  friend constexpr bool operator!=(partial_ordering v1,
+                                   partial_ordering v2) noexcept {
+    return v1.value_ != v2.value_;
+  }
 
  private:
   compare_internal::value_type value_;
@@ -388,6 +413,14 @@ class weak_ordering
   friend constexpr bool operator>=(compare_internal::OnlyLiteralZero<>,
                                    weak_ordering v) noexcept {
     return 0 >= v.value_;
+  }
+  friend constexpr bool operator==(weak_ordering v1,
+                                   weak_ordering v2) noexcept {
+    return v1.value_ == v2.value_;
+  }
+  friend constexpr bool operator!=(weak_ordering v1,
+                                   weak_ordering v2) noexcept {
+    return v1.value_ != v2.value_;
   }
 
  private:
@@ -480,6 +513,14 @@ class strong_ordering
                                    strong_ordering v) noexcept {
     return 0 >= v.value_;
   }
+  friend constexpr bool operator==(strong_ordering v1,
+                                   strong_ordering v2) noexcept {
+    return v1.value_ == v2.value_;
+  }
+  friend constexpr bool operator!=(strong_ordering v1,
+                                   strong_ordering v2) noexcept {
+    return v1.value_ != v2.value_;
+  }
 
  private:
   compare_internal::value_type value_;
@@ -551,6 +592,7 @@ constexpr absl::weak_ordering do_three_way_comparison(const Compare &compare,
 }
 
 }  // namespace compare_internal
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_TYPES_COMPARE_H_

@@ -75,7 +75,7 @@ uint32_t num_inverters( Ntk const& ntk )
     }
   } );
 
-  return inverted_nodes.size();
+  return static_cast<uint32_t>( inverted_nodes.size() );
 }
 
 /*! \brief Counts fanins which are primary inputs.

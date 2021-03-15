@@ -51,7 +51,7 @@ CMPtype __gesf2(SFtype a, SFtype b)
 
 strong_alias(__gesf2, __gtsf2);
 
-inline CMPtype __float32_geif(SFtype a, SFtype b)
+CMPtype __float32_geif(SFtype a, SFtype b)
 {
    return __gesf2(a, b);
 }

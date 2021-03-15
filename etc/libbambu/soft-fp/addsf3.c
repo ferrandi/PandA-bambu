@@ -49,7 +49,7 @@ SFtype __addsf3(SFtype a, SFtype b)
    return r;
 }
 
-inline SFtype __float32_addif(SFtype a, SFtype b)
+SFtype __float32_addif(SFtype a, SFtype b)
 {
    return __addsf3(a, b);
 }

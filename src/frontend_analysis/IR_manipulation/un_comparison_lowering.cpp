@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -124,17 +124,29 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
             const std::string srcp_string = be->include_name + ":" + STR(be->line_number) + ":" + STR(be->column_number);
             enum kind new_kind = last_tree_K;
             if(be->get_kind() == unlt_expr_K)
+            {
                new_kind = ge_expr_K;
+            }
             else if(be->get_kind() == unge_expr_K)
+            {
                new_kind = lt_expr_K;
+            }
             else if(be->get_kind() == ungt_expr_K)
+            {
                new_kind = le_expr_K;
+            }
             else if(be->get_kind() == unle_expr_K)
+            {
                new_kind = gt_expr_K;
+            }
             else if(be->get_kind() == ltgt_expr_K)
+            {
                new_kind = eq_expr_K;
+            }
             else
+            {
                THROW_UNREACHABLE("");
+            }
             auto booleanType = tree_man->create_boolean_type();
             auto new_be = tree_man->create_binary_operation(booleanType, be->op0, be->op1, srcp_string, new_kind);
             auto new_ga = tree_man->CreateGimpleAssign(booleanType, TreeM->CreateUniqueIntegerCst(0, booleanType->index), TreeM->CreateUniqueIntegerCst(1, booleanType->index), new_be, 0, srcp_string);
@@ -149,7 +161,9 @@ DesignFlowStep_Status UnComparisonLowering::InternalExec()
                TreeM->ReplaceTreeNode(stmt, ga->op1, new_nop);
             }
             else
+            {
                TreeM->ReplaceTreeNode(stmt, ga->op1, new_not);
+            }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Transformed into " + STR(stmt));
             modified = true;
          }

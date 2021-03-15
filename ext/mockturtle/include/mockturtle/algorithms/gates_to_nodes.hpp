@@ -32,14 +32,18 @@
 
 #pragma once
 
+#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <string>
+#include <vector>
 
 #include <fmt/format.h>
+#include <kitty/dynamic_truth_table.hpp>
 #include <kitty/operations.hpp>
 #include <kitty/print.hpp>
 
+#include "simulation.hpp"
 #include "../traits.hpp"
 #include "../utils/node_map.hpp"
 
@@ -126,6 +130,44 @@ NtkDest gates_to_nodes( NtkSource const& ntk )
   } );
 
   return dest;
+}
+
+/*! \brief Creates a new network with a single node per output.
+ *
+ * This method can be applied to networks with a small number of primary inputs,
+ * to collapse all the logic of an output into a single node.  The returning
+ * network must support arbitrary node functions, e.g., `klut_network`.
+ */
+template<class NtkDest, class NtkSrc>
+NtkDest single_node_network( NtkSrc const& src )
+{
+  static_assert( is_network_type_v<NtkDest>, "NtkDest is not a network type" );
+  static_assert( has_create_pi_v<NtkDest>, "NtkDest does not implement the create_pi method" );
+  static_assert( has_create_po_v<NtkDest>, "NtkDest does not implement the create_po method" );
+  static_assert( has_create_node_v<NtkDest>, "NtkDest does not implement the create_node method" );
+  static_assert( is_network_type_v<NtkSrc>, "NtkSrc is not a network type" );
+  static_assert( has_num_pis_v<NtkSrc>, "NtkSrc does not implement the num_pis method" );
+
+  NtkDest ntk;
+  std::vector<signal<NtkDest>> pis( src.num_pis() );
+  std::generate( pis.begin(), pis.end(), [&]() { return ntk.create_pi(); } );
+
+  default_simulator<kitty::dynamic_truth_table> sim( src.num_pis() );
+  const auto tts = simulate<kitty::dynamic_truth_table>( src, sim );
+
+  for ( auto tt : tts )
+  {
+    const auto support = kitty::min_base_inplace( tt );
+    const auto small_tt = kitty::shrink_to( tt, static_cast<unsigned int>( support.size() ) );
+    std::vector<signal<NtkDest>> children( support.size() );
+    for ( auto i = 0u; i < support.size(); ++i )
+    {
+      children[i] = pis[support[i]];
+    }
+    ntk.create_po( ntk.create_node( children, small_tt ) );
+  }
+
+  return ntk;
 }
 
 } /* namespace mockturtle */

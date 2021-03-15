@@ -33,6 +33,7 @@
 #pragma once
 
 #include <cstdint>
+#include <stack>
 #include <vector>
 
 #include "../traits.hpp"
@@ -42,6 +43,13 @@
 
 namespace mockturtle
 {
+
+struct fanout_view_params
+{
+  bool update_on_add{true};
+  bool update_on_modified{true};
+  bool update_on_delete{true};
+};
 
 /*! \brief Implements `foreach_fanout` methods for networks.
  *
@@ -64,8 +72,9 @@ template<typename Ntk>
 class fanout_view<Ntk, true> : public Ntk
 {
 public:
-  fanout_view( Ntk const& ntk ) : Ntk( ntk )
+  fanout_view( Ntk const& ntk, fanout_view_params const& ps = {} ) : Ntk( ntk )
   {
+    (void)ps;
   }
 };
 
@@ -77,13 +86,94 @@ public:
   using node    = typename Ntk::node;
   using signal  = typename Ntk::signal;
 
-  fanout_view( Ntk const& ntk ) : Ntk( ntk ), _fanout( ntk )
+  explicit fanout_view( fanout_view_params const& ps = {} )
+    : Ntk()
+    , _fanout( *this )
+    , _ps( ps )
   {
     static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
     static_assert( has_foreach_node_v<Ntk>, "Ntk does not implement the foreach_node method" );
     static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the foreach_fanin method" );
 
     update_fanout();
+
+    if ( _ps.update_on_add )
+    {
+      Ntk::events().on_add.push_back( [this]( auto const& n ) {
+        _fanout.resize();
+        Ntk::foreach_fanin( n, [&, this]( auto const& f ) {
+          _fanout[f].push_back( n );
+        } );
+      } );
+    }
+
+    if ( _ps.update_on_modified )
+    {
+      Ntk::events().on_modified.push_back( [this]( auto const& n, auto const& previous ) {
+        (void)previous;
+        for ( auto const& f : previous ) {
+          _fanout[f].erase( std::remove( _fanout[f].begin(), _fanout[f].end(), n ), _fanout[f].end() );
+        }
+        Ntk::foreach_fanin( n, [&, this]( auto const& f ) {
+          _fanout[f].push_back( n );
+        } );
+      } );
+    }
+
+    if ( _ps.update_on_delete )
+    {
+      Ntk::events().on_delete.push_back( [this]( auto const& n ) {
+        _fanout[n].clear();
+        Ntk::foreach_fanin( n, [&, this]( auto const& f ) {
+          _fanout[f].erase( std::remove( _fanout[f].begin(), _fanout[f].end(), n ), _fanout[f].end() );
+        } );
+      } );
+    }
+  }
+
+  explicit fanout_view( Ntk const& ntk, fanout_view_params const& ps = {} )
+    : Ntk( ntk )
+    , _fanout( ntk )
+    , _ps( ps )
+  {
+    static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
+    static_assert( has_foreach_node_v<Ntk>, "Ntk does not implement the foreach_node method" );
+    static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the foreach_fanin method" );
+
+    update_fanout();
+
+    if ( _ps.update_on_add )
+    {
+      Ntk::events().on_add.push_back( [this]( auto const& n ) {
+        _fanout.resize();
+        Ntk::foreach_fanin( n, [&, this]( auto const& f ) {
+          _fanout[f].push_back( n );
+        } );
+      } );
+    }
+
+    if ( _ps.update_on_modified )
+    {
+      Ntk::events().on_modified.push_back( [this]( auto const& n, auto const& previous ) {
+        (void)previous;
+        for ( auto const& f : previous ) {
+          _fanout[f].erase( std::remove( _fanout[f].begin(), _fanout[f].end(), n ), _fanout[f].end() );
+        }
+        Ntk::foreach_fanin( n, [&, this]( auto const& f ) {
+          _fanout[f].push_back( n );
+        } );
+      } );
+    }
+
+    if ( _ps.update_on_delete )
+    {
+      Ntk::events().on_delete.push_back( [this]( auto const& n ) {
+        _fanout[n].clear();
+        Ntk::foreach_fanin( n, [&, this]( auto const& f ) {
+          _fanout[f].erase( std::remove( _fanout[f].begin(), _fanout[f].end(), n ), _fanout[f].end() );
+        } );
+      } );
+    }
   }
 
   template<typename Fn>
@@ -98,50 +188,36 @@ public:
     compute_fanout();
   }
 
-  void resize_fanout()
-  {
-    _fanout.resize();
-  }
-
   std::vector<node> fanout( node const& n ) const /* deprecated */
   {
-    return _fanout[ n ];
+    return _fanout[n];
   }
 
-  void set_fanout( node const& n, std::vector<node> const& fanout )
+  void substitute_node( node const& old_node, signal const& new_signal )
   {
-    _fanout[ n ] = fanout;
-  }
+    std::stack<std::pair<node, signal>> to_substitute;
+    to_substitute.push( {old_node, new_signal} );
 
-  void add_fanout( node const& n, node const& p )
-  {
-    _fanout[ n ].emplace_back( p );
-  }
+    while ( !to_substitute.empty() )
+    {
+      const auto [_old, _new] = to_substitute.top();
+      to_substitute.pop();
 
-  void remove_fanout( node const& n, node const& p )
-  {
-    auto &f = _fanout[ n ];
-    f.erase( std::remove( f.begin(), f.end(), p ), f.end() );
-  }
+      const auto parents = _fanout[_old];
+      for ( auto n : parents )
+      {
+        if ( const auto repl = Ntk::replace_in_node( n, _old, _new ); repl )
+        {
+          to_substitute.push( *repl );
+        }
+      }
 
-  void substitute_node_of_parents( std::vector<node> const& parents, node const& old_node, signal const& new_signal ) /* deprecated */
-  {
-    Ntk::substitute_node_of_parents( parents, old_node, new_signal );
+      /* check outputs */
+      Ntk::replace_in_outputs( _old, _new );
 
-    std::vector<node> old_node_fanout = _fanout[ old_node ];
-    std::sort( old_node_fanout.begin(), old_node_fanout.end() );
-
-    std::vector<node> parents_copy( parents );
-    std::sort( parents_copy.begin(), parents_copy.end() );
-
-    _fanout[ old_node ] = {};
-
-    std::vector<node> intersection;
-    std::set_intersection( parents_copy.begin(), parents_copy.end(), old_node_fanout.begin(), old_node_fanout.end(),
-                           std::back_inserter( intersection ) );
-
-    resize_fanout();
-    set_fanout( this->get_node( new_signal ), intersection );
+      /* reset fan-in of old node */
+      Ntk::take_out_node( _old );
+    }
   }
 
 private:
@@ -151,7 +227,7 @@ private:
 
     this->foreach_gate( [&]( auto const& n ){
         this->foreach_fanin( n, [&]( auto const& c ){
-            auto& fanout = _fanout[ c ];
+            auto& fanout = _fanout[c];
             if ( std::find( fanout.begin(), fanout.end(), n ) == fanout.end() )
             {
               fanout.push_back( n );
@@ -161,9 +237,10 @@ private:
   }
 
   node_map<std::vector<node>, Ntk> _fanout;
+  fanout_view_params _ps;
 };
 
 template<class T>
-fanout_view(T const&) -> fanout_view<T>;
+fanout_view( T const&, fanout_view_params const& ps = {} ) -> fanout_view<T>;
 
 } // namespace mockturtle

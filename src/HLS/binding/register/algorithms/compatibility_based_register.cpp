@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -76,11 +76,13 @@ void compatibility_based_register::create_compatibility_graph()
 
    boost::numeric::ublas::noalias(conflict_map) = boost::numeric::ublas::zero_matrix<bool>(CG_num_vertices, CG_num_vertices);
    for(unsigned int vi = 0; vi < CG_num_vertices; ++vi)
+   {
       verts.push_back(boost::add_vertex(CG));
+   }
 
    /// compatibility graph creation
    const std::list<vertex>& support = HLS->Rliv->get_support();
-   const std::list<vertex>::const_iterator vEnd = support.end();
+   const auto vEnd = support.end();
    for(auto vIt = support.begin(); vIt != vEnd; ++vIt)
    {
       const CustomOrderedSet<unsigned int>& live = HLS->Rliv->get_live_in(*vIt);
@@ -97,14 +99,19 @@ void compatibility_based_register::create_compatibility_graph()
             unsigned int head = HLS->storage_value_information->get_storage_value_index(*vIt, *k_inner);
             THROW_ASSERT(head < CG_num_vertices, "wrong compatibility graph index");
             if(tail < head)
+            {
                conflict_map(tail, head) = true;
+            }
             else if(tail > head)
+            {
                conflict_map(head, tail) = true;
+            }
             ++k_inner;
          }
       }
    }
    for(unsigned int vj = 1; vj < CG_num_vertices; ++vj)
+   {
       for(unsigned int vi = 0; vi < vj; ++vi)
       {
          if(!conflict_map(vi, vj) && HLS->storage_value_information->are_value_bitsize_compatible(vi, vj))
@@ -120,6 +127,7 @@ void compatibility_based_register::create_compatibility_graph()
             }
          }
       }
+   }
 }
 
 bool compatibility_based_register::is_compatible(unsigned int sv1, unsigned int sv2) const

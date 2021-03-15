@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,8 +42,13 @@
 
 #include "llvm/Analysis/AliasAnalysis.h"
 #include "llvm/Analysis/AssumptionCache.h"
+#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
 #include "llvm/Analysis/DominanceFrontier.h"
 #include "llvm/Analysis/LazyValueInfo.h"
+#include "llvm/Analysis/LoopInfo.h"
+#include "llvm/Analysis/MemoryDependenceAnalysis.h"
+#include "llvm/Analysis/TargetTransformInfo.h"
+#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/PassManager.h"
@@ -51,25 +56,19 @@
 #include "llvm/PassRegistry.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
-//#include "llvm/Analysis/TypeBasedAliasAnalysis.h"
-//#include "llvm/Analysis/CFLSteensAliasAnalysis.h"
-#include "llvm/Analysis/MemoryDependenceAnalysis.h"
-#include "llvm/Analysis/TargetTransformInfo.h"
 #if __clang_major__ != 4
 #include "llvm/Analysis/MemorySSA.h"
 #else
 #include "llvm/Transforms/Utils/MemorySSA.h"
 #endif
-#include "llvm/Transforms/IPO.h"
-#include "llvm/Transforms/Scalar.h"
-#ifdef UNIFYFUNCTIONEXITNODES
-#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
-#endif
 #include "llvm-c/Transforms/Scalar.h"
 #include "llvm/CodeGen/Passes.h"
 #include "llvm/InitializePasses.h"
 #include "llvm/Support/MemoryBuffer.h"
-#if __clang_major__ >= 7
+#include "llvm/Transforms/IPO.h"
+#include "llvm/Transforms/Scalar.h"
+#include "llvm/Transforms/Utils/UnifyFunctionExitNodes.h"
+#if __clang_major__ >= 7 && !defined(VVD)
 #include "llvm/Transforms/Utils.h"
 #endif
 #include <sstream>
@@ -77,7 +76,6 @@
 #include <boost/tokenizer.hpp>
 
 #define PRINT_DBG_MSG 0
-//#define UNIFYFUNCTIONEXITNODES
 
 namespace llvm
 {
@@ -92,19 +90,13 @@ namespace llvm
 
       CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)() : ModulePass(ID)
       {
-         initializeLoopPassPass(*PassRegistry::getPassRegistry());
-         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeMemoryDependenceWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());
-         // initializeMemorySSAPrinterLegacyPassPass(*PassRegistry::getPassRegistry());
-         initializeAAResultsWrapperPassPass(*PassRegistry::getPassRegistry());
-         // initializeCFLSteensAAWrapperPassPass(*PassRegistry::getPassRegistry());
-         // initializeTypeBasedAAWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());
-         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());
-         initializeDominanceFrontierWrapperPassPass(*PassRegistry::getPassRegistry());
+         initializeLoopInfoWrapperPassPass(*PassRegistry::getPassRegistry());            //
+         initializeLazyValueInfoWrapperPassPass(*PassRegistry::getPassRegistry());       //
+         initializeMemorySSAWrapperPassPass(*PassRegistry::getPassRegistry());           //
+         initializeTargetTransformInfoWrapperPassPass(*PassRegistry::getPassRegistry()); //
+         initializeTargetLibraryInfoWrapperPassPass(*PassRegistry::getPassRegistry());   //
+         initializeAssumptionCacheTrackerPass(*PassRegistry::getPassRegistry());         //
+         initializeDominatorTreeWrapperPassPass(*PassRegistry::getPassRegistry());       //
       }
 
       std::string create_file_basename_string(const std::string& on, const std::string& original_filename)
@@ -139,7 +131,7 @@ namespace llvm
             if(BufOrErr)
             {
                std::unique_ptr<MemoryBuffer> Buffer = std::move(BufOrErr.get());
-               std::string buf = Buffer->getBuffer();
+               std::string buf = Buffer->getBuffer().data();
                std::stringstream ss(buf);
                std::string item;
                while(std::getline(ss, item, '\n'))
@@ -178,22 +170,14 @@ namespace llvm
       }
       void getAnalysisUsage(AnalysisUsage& AU) const override
       {
-         getLoopAnalysisUsage(AU);
-         AU.addRequired<MemoryDependenceWrapperPass>();
-         AU.addRequired<MemorySSAWrapperPass>();
-         //           AU.addRequired<MemorySSAPrinterLegacyPass>();
-         AU.addRequired<LazyValueInfoWrapperPass>();
-         AU.addRequired<AAResultsWrapperPass>();
-         //           AU.addRequired<CFLSteensAAWrapperPass>();
-         //           AU.addRequired<TypeBasedAAWrapperPass>();
-
+         AU.addRequired<LoopInfoWrapperPass>(); //
          AU.addPreserved<MemorySSAWrapperPass>();
-         // AU.addPreserved<MemorySSAPrinterLegacyPass>();
-         AU.addRequired<TargetTransformInfoWrapperPass>();
-         AU.addRequired<TargetLibraryInfoWrapperPass>();
-         AU.addRequired<AssumptionCacheTracker>();
-         AU.addRequired<DominatorTreeWrapperPass>();
-         AU.addRequired<DominanceFrontierWrapperPass>();
+         AU.addRequired<MemorySSAWrapperPass>();           //
+         AU.addRequired<LazyValueInfoWrapperPass>();       //
+         AU.addRequired<TargetTransformInfoWrapperPass>(); //
+         AU.addRequired<TargetLibraryInfoWrapperPass>();   //
+         AU.addRequired<AssumptionCacheTracker>();         //
+         AU.addRequired<DominatorTreeWrapperPass>();       //
       }
    };
    template <>
@@ -208,15 +192,16 @@ namespace llvm
 #if CPP_LANGUAGE
 // static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>> XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACppEarly), "Custom Value Range Based optimization step: LLVM pass", false /* Only looks at CFG */, false /* Analysis
 // Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false>>
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false> >
     XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSACpp), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */, false /* Analysis Pass */);
 #else
 // static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA)<true>> XPassEarly(CLANG_VERSION_STRING(_plugin_dumpGimpleSSAEarly), "Custom Value Range Based optimization step: LLVM pass", false /* Only looks at CFG */, false /* Analysis
 // Pass */);
-static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false>>
+static llvm::RegisterPass<llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false> >
     XPass(CLANG_VERSION_STRING(_plugin_dumpGimpleSSA), "Dump gimple ssa raw format starting from LLVM IR: LLVM pass", false /* Only looks at CFG */, false /* Analysis Pass */);
 #endif
 #endif
+#if ADD_RSP
 // This function is of type PassManagerBuilder::ExtensionFn
 static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
 {
@@ -226,17 +211,19 @@ static void loadPass(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerB
    PM.add(llvm::createBreakCriticalEdgesPass());
    PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < false > ());
 }
-static void loadPassEarly(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
-{
-   PM.add(llvm::createPromoteMemoryToRegisterPass());
-   PM.add(llvm::createGlobalOptimizerPass());
-   PM.add(llvm::createBreakCriticalEdgesPass());
-   PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < true > ());
-}
-// These constructors add our pass to a list of global extensions.
-#if ADD_RSP
-// static llvm::RegisterStandardPasses llvmtoolLoader_O0(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPassEarly);
+
 static llvm::RegisterStandardPasses llvmtoolLoader_Ox(llvm::PassManagerBuilder::EP_OptimizerLast, loadPass);
+
+//    static void loadPassEarly(const llvm::PassManagerBuilder&, llvm::legacy::PassManagerBase& PM)
+//    {
+//       PM.add(llvm::createPromoteMemoryToRegisterPass());
+//       PM.add(llvm::createGlobalOptimizerPass());
+//       PM.add(llvm::createBreakCriticalEdgesPass());
+//       PM.add(new llvm::CLANG_VERSION_SYMBOL(_plugin_dumpGimpleSSA) < true > ());
+//    }
+// These constructors add our pass to a list of global extensions.
+
+// static llvm::RegisterStandardPasses llvmtoolLoader_O0(llvm::PassManagerBuilder::EP_ModuleOptimizerEarly, loadPassEarly);
 #endif
 
 #ifdef _WIN32

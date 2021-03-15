@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -146,14 +146,14 @@ class operations_graph_constructor
     * @param bb_index is the basic block index associated with the operation.
     * @param node_id is the index of the tree node
     */
-   void AddOperation(const tree_managerRef TM, const std::string& source, const std::string& oper, unsigned int bb_index, const unsigned int node_id);
+   void AddOperation(const tree_managerRef TM, const std::string& src, const std::string& oper, unsigned int bb_index, const unsigned int node_id);
 
    /**
     * Add the type associated with a vertex.
     * @param source is the vertex name at which the type is associated.
     * @param type is an unsigned int representing the type associated with source.
     */
-   void add_type(const std::string& source, unsigned int type);
+   void add_type(const std::string& src, unsigned int type);
 
    /**
     * Constructor.

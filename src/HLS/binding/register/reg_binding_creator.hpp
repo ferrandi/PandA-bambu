@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,6 +79,6 @@ class reg_binding_creator : public HLSFunctionStep
    ~reg_binding_creator() override;
 };
 /// refcount definition of the class
-typedef refcount<reg_binding_creator> reg_binding_creatorRef;
+using reg_binding_creatorRef = refcount<reg_binding_creator>;
 
 #endif

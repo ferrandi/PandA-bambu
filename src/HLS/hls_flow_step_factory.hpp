@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -72,7 +72,7 @@ class HLSFlowStepFactory : public DesignFlowStepFactory
     * @param HLS_manager is the HLS manager
     * @param parameters is the set of input parameters
     */
-   HLSFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const HLS_managerRef _HLS_manager, const ParameterConstRef parameters);
+   HLSFlowStepFactory(const DesignFlowManagerConstRef design_flow_manager, const HLS_managerRef _HLS_mgr, const ParameterConstRef parameters);
 
    /**
     * Destructor

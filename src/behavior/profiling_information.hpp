@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -208,7 +208,7 @@ class ProfilingInformation
     * @param basic_block is the basic block
     * @return the absolute number of executions of a basic block
     */
-   unsigned long long int GetBBExecutions(const vertex basic_block) const;
+   unsigned long long int GetBBExecutions(const vertex bb_vertex) const;
 
    /**
     * Return the absolute number of the executions of an edge
@@ -272,6 +272,6 @@ class ProfilingInformation
    void Clear();
 };
 
-typedef refcount<ProfilingInformation> ProfilingInformationRef;
+using ProfilingInformationRef = refcount<ProfilingInformation>;
 
 #endif

@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -48,12 +48,12 @@ namespace kitty
   (more than 6 variables).  A small truth table fits into a single
   block and therefore dedicated optimizations are possible.
  */
-template<int NumVars, bool = ( NumVars <= 6 )>
+template<uint32_t NumVars, bool = ( NumVars <= 6 )>
 struct static_truth_table;
 
 /*! Truth table (for up to 6 variables) in which number of variables is known at compile time.
  */
-template<int NumVars>
+template<uint32_t NumVars>
 struct static_truth_table<NumVars, true>
 {
   /*! \cond PRIVATE */
@@ -75,7 +75,7 @@ struct static_truth_table<NumVars, true>
 
   /*! Returns number of blocks.
    */
-  inline auto num_blocks() const noexcept { return 1; }
+  inline auto num_blocks() const noexcept { return 1u; }
 
   /*! Returns number of bits.
    */
@@ -129,7 +129,7 @@ struct static_truth_table<NumVars, true>
 
     \param other Other truth table
   */
-  template<class TT, typename = std::enable_if_t<is_truth_table<TT>::value>>
+  template<class TT, typename = std::enable_if_t<is_truth_table<TT>::value && is_complete_truth_table<TT>::value>>
   static_truth_table<NumVars>& operator=( const TT& other )
   {
     if ( other.num_vars() == num_vars() )
@@ -156,13 +156,13 @@ public: /* fields */
 
 /*! Truth table (more than 6 variables) in which number of variables is known at compile time.
  */
-template<int NumVars>
+template<uint32_t NumVars>
 struct static_truth_table<NumVars, false>
 {
   /*! \cond PRIVATE */
   enum
   {
-    NumBlocks = ( NumVars <= 6 ) ? 1 : ( 1 << ( NumVars - 6 ) )
+    NumBlocks = ( NumVars <= 6 ) ? 1u : ( 1u << ( NumVars - 6 ) )
   };
 
   enum
@@ -272,7 +272,10 @@ public: /* fields */
   /*! \endcond */
 };
 
-template<int NumVars>
+template<uint32_t NumVars>
 struct is_truth_table<kitty::static_truth_table<NumVars>> : std::true_type {};
+
+template<uint32_t NumVars>
+struct is_complete_truth_table<kitty::static_truth_table<NumVars>> : std::true_type {};
 
 } // namespace kitty

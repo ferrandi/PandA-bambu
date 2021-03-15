@@ -1129,6 +1129,8 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test2/multiarray.c \
 ./bambu_specific_test2/test_without_c.c \
 ./bambu_specific_test2/test_without_c.xml \
+./bambu_specific_test2/mod_test.c \
+./bambu_specific_test2/mod_test_c.xml \
 ./bambu_specific_test3.sh\
 ./bambu_specific_test3_list\
 ./bambu_specific_test4/ac_types1.cpp \
@@ -1153,10 +1155,12 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_c2_none.c\
 ./bambu_specific_test4/simple_c3_none.c\
 ./bambu_specific_test4/simple_c1_in_valid.c\
+./bambu_specific_test4/simple_c1_valid_nested.c\
 ./bambu_specific_test4/simple_c1_in_ack.c\
 ./bambu_specific_test4/simple_c1_ack.c\
 ./bambu_specific_test4/simple_c3_ovalid.c \
 ./bambu_specific_test4/simple_c4_fifo.c \
+./bambu_specific_test4/simple_c4_axis.c \
 ./bambu_specific_test4/simple_c4_handshake.c \
 ./bambu_specific_test4/simple_c4_array.c \
 ./bambu_specific_test4/simple_c4_array_8bits.c \
@@ -1165,8 +1169,21 @@ gcc_regression_simple/zero-struct-1.c\
 ./bambu_specific_test4/simple_test.c \
 ./bambu_specific_test4/simpleif_c1_none.c \
 ./bambu_specific_test4/simpleif_c1_none_test.xml \
+./bambu_specific_test4/iterative_merge_sort.c \
+./bambu_specific_test4/iterative_merge_sort_sum.c \
 ./bambu_specific_test4.sh\
 ./bambu_specific_test4_list\
+./bambu_specific_test5/adders.c \
+./bambu_specific_test5/function_call.c \
+./bambu_specific_test5/if_clauses.c \
+./bambu_specific_test5/memory.c \
+./bambu_specific_test5/mixed_operations.c \
+./bambu_specific_test5/multipliers.c \
+./bambu_specific_test5.sh\
+./bambu_specific_test5_list\
+./bambu_specific_test6/sat_op.ll\
+./bambu_specific_test6.sh\
+./bambu_specific_test6_list\
 ./function_pointers.sh\
 ./function_pointers_list_bsearch\
 ./function_pointers_list_qsort\
@@ -1209,6 +1226,7 @@ gcc_regression_simple/zero-struct-1.c\
 ./test_libm_logf.sh\
 ./test_libm_expf.sh\
 ./test_libm_sqrtf.sh \
+./test_libm_sqrt.sh \
 ./test_softfloat_div32.c\
 ./test_softfloat_div32.sh\
 ./test_libm_powf.sh \
@@ -1233,15 +1251,44 @@ clang6_regression_simple_no_expose_globals.sh\
 clang7_regression_simple_default.sh\
 clang7_regression_simple_ext_pipelined.sh\
 clang7_regression_simple_no_expose_globals.sh\
+clang8_regression_simple_default.sh\
+clang8_regression_simple_ext_pipelined.sh\
+clang8_regression_simple_no_expose_globals.sh\
+clang9_regression_simple_default.sh\
+clang9_regression_simple_ext_pipelined.sh\
+clang9_regression_simple_no_expose_globals.sh\
+clang10_regression_simple_default.sh\
+clang10_regression_simple_ext_pipelined.sh\
+clang10_regression_simple_no_expose_globals.sh\
+clang11_regression_simple_default.sh\
+clang11_regression_simple_ext_pipelined.sh\
+clang11_regression_simple_no_expose_globals.sh\
+clang11_regression_simple_default_verilator.sh\
+clang11_regression_simple_ext_pipelined_verilator.sh\
+clang11_regression_simple_no_expose_globals_verilator.sh\
+clangvvd_regression_simple_default.sh\
+clangvvd_regression_simple_ext_pipelined.sh\
+clangvvd_regression_simple_no_expose_globals.sh\
+gcc_regression_simple_verilator\
 softfloat-tests-clang4.sh\
 softfloat-tests-clang5.sh\
 softfloat-tests-clang6.sh\
 softfloat-tests-clang7.sh\
+softfloat-tests-clang8.sh\
+softfloat-tests-clang9.sh\
+softfloat-tests-clang10.sh\
+softfloat-tests-clang11.sh\
+softfloat-tests-clangvvd.sh\
 libm-testsClang.sh\
 libm-testsClang4.sh\
 libm-testsClang5.sh\
 libm-testsClang6.sh\
 libm-testsClang7.sh\
+libm-testsClang8.sh\
+libm-testsClang9.sh\
+libm-testsClang10.sh\
+libm-testsClang11.sh\
+libm-testsClangvvd.sh\
 CHStone_frontend1Clang.sh\
 gcc49_regression_simple_no_expose_globals_pretty_print.sh
 

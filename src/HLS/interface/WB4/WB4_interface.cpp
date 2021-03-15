@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -114,7 +114,9 @@ DesignFlowStep_Status WB4_interface::InternalExec()
    build_WB4_complete_logic(SM_wb4_interface, wrappedObj, interfaceObj);
 
    if(!parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+   {
       memory::propagate_memory_parameters(HLS->top->get_circ(), SM_wb4_interface);
+   }
 
    // Generation completed
    HLS->top = SM_wb4_interface;
@@ -141,10 +143,12 @@ unsigned int WB4_interface::get_data_bus_bitsize()
 unsigned int WB4_interface::get_addr_bus_bitsize()
 {
    unsigned int addr_bus_bitsize = HLSMgr->get_address_bitsize();
-   unsigned int allocated_space = HLSMgr->Rmem->get_max_address();
+   unsigned long long int allocated_space = HLSMgr->Rmem->get_max_address();
    unsigned int parameter_addr_bit = 1;
    while(allocated_space >>= 1)
+   {
       ++parameter_addr_bit;
+   }
 
    return std::max(parameter_addr_bit, addr_bus_bitsize);
 }
@@ -223,11 +227,17 @@ void WB4_interface::connect_with_signal_name(structural_managerRef SM, structura
       SM->add_connection(sign, portB);
    }
    else if(!signA && signB)
+   {
       SM->add_connection(portA, signB);
+   }
    else if(!signB && signA)
+   {
       SM->add_connection(portB, signA);
+   }
    else if(signA && signB)
+   {
       SM->add_connection(signA, signB);
+   }
 }
 
 void WB4_interface::connect_with_signal_name(structural_managerRef SM, structural_objectRef A, std::string Asignal, structural_objectRef B, std::string Bsignal, const std::string& signalName)
@@ -319,8 +329,10 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
    }
 
    // check memory allocation consistency
-   if(HLSMgr->Rmem->get_max_address() > parameters->getOption<unsigned int>(OPT_base_address))
+   if(HLSMgr->Rmem->get_max_address() > parameters->getOption<unsigned long long int>(OPT_base_address))
+   {
       THROW_ERROR("Internal memory addresses overlap with the external addresses: change the base address value with --base-address");
+   }
 
    // Connect clock, start, reset and done port since they are always present
    SM->add_connection(interfaceObj->find_member(CLOCK_PORT_NAME, port_o_K, interfaceObj), wrappedObj->find_member(CLOCK_PORT_NAME, port_o_K, wrappedObj));
@@ -425,7 +437,7 @@ void WB4_interface::build_WB4_complete_logic(structural_managerRef SM, structura
             SM->add_connection(signControl, orGateControl->find_member("out1", port_o_K, orGateControl));
             PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Added control signal");
 
-            unsigned int base_address = HLSMgr->base_address;
+            unsigned long long int base_address = HLSMgr->base_address;
             bool Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
             bool Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses() && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::ALL_BRAM &&
                                          parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::EXT_PIPELINED_BRAM;

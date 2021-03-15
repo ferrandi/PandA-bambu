@@ -24,6 +24,8 @@
 /* NIST's proposed modification to SHA of 7/11/94 may be */
 /* activated by defining USE_MODIFIED_SHA */
 
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();
 
 /* SHA f()-functions */
 

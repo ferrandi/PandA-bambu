@@ -45,7 +45,7 @@ SFtype __floatdisf(DItype i)
    return a;
 }
 
-inline SFtype __int64_to_float32if(DItype i)
+SFtype __int64_to_float32if(DItype i)
 {
    return __floatdisf(i);
 }

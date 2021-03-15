@@ -32,17 +32,15 @@
 */
 #pragma once
 
-#include <iostream>
-
 #include "../networks/mig.hpp"
 #include "../traits.hpp"
+#include "../utils/cost_functions.hpp"
 #include "../utils/progress_bar.hpp"
 #include "../utils/stopwatch.hpp"
 #include "../views/cut_view.hpp"
 #include "../views/mffc_view.hpp"
 #include "../views/topo_view.hpp"
 #include "cleanup.hpp"
-#include "cut_rewriting.hpp"
 #include "detail/mffc_utils.hpp"
 #include "dont_cares.hpp"
 #include "simulation.hpp"
@@ -136,7 +134,6 @@ public:
 
   void run()
   {
-    const auto size = ntk.size();
     progress_bar pbar{ntk.size(), "refactoring |{0}| node = {1:>4}   cand = {2:>4}   est. reduction = {3:>5}", ps.progress};
 
     stopwatch t( st.time_total );
@@ -147,6 +144,7 @@ public:
       ntk.set_value( n, ntk.fanout_size( n ) );
     } );
 
+    const auto size = ntk.num_gates();
     ntk.foreach_gate( [&]( auto const& n, auto i ) {
       if ( i >= size )
       {
@@ -166,8 +164,8 @@ public:
       }
 
       std::vector<signal<Ntk>> leaves( mffc.num_pis() );
-      mffc.foreach_pi( [&]( auto const& n, auto j ) {
-        leaves[j] = ntk.make_signal( n );
+      mffc.foreach_pi( [&]( auto const& m, auto j ) {
+        leaves[j] = ntk.make_signal( m );
       } );
 
       default_simulator<kitty::dynamic_truth_table> sim( mffc.num_pis() );
@@ -212,6 +210,7 @@ public:
 
       if ( gain > 0 || ( ps.allow_zero_gain && gain == 0 ) )
       {
+
         ++_candidates;
         _estimated_gain += gain;
         ntk.substitute_node( n, new_f );
@@ -282,7 +281,7 @@ private:
 /*! \brief Boolean refactoring.
  *
  * This algorithm performs refactoring by collapsing maximal fanout-free cones
- * (MFFCs) into truth tables and recreate a new network structure from it.
+ * (MFFCs) into truth tables and recreating a new network structure from it.
  * The algorithm performs changes directly in the input network and keeps the
  * substituted structures dangling in the network.  They can be cleaned up using
  * the `cleanup_dangling` algorithm.
@@ -314,7 +313,7 @@ private:
  * \param pst Refactoring statistics
  * \param cost_fn Node cost function (a functor with signature `uint32_t(Ntk const&, node<Ntk> const&)`)
  */
-template<class Ntk, class RefactoringFn, class NodeCostFn = detail::unit_cost<Ntk>>
+template<class Ntk, class RefactoringFn, class NodeCostFn = unit_cost<Ntk>>
 void refactoring( Ntk& ntk, RefactoringFn&& refactoring_fn, refactoring_params const& ps = {}, refactoring_stats* pst = nullptr, NodeCostFn const& cost_fn = {} )
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );

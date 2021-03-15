@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -101,7 +101,9 @@ void AddOpExitFlowEdges::Initialize()
          for(boost::tie(edge, edge_end) = boost::edges(*flg); edge != edge_end; edge++)
          {
             if((GET_TYPE(flg, boost::target(*edge, *flg)) & TYPE_LAST_OP) != 0)
+            {
                function_behavior->ogc->RemoveSelector(*edge, FLG_SELECTOR);
+            }
          }
       }
    }

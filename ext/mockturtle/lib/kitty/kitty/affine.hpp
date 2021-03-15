@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -36,6 +36,7 @@
 #include "operators.hpp"
 #include "static_truth_table.hpp"
 #include "spectral.hpp"
+#include "traits.hpp"
 
 /*! \cond PRIVATE */
 #include "detail/linear_constants.hpp"
@@ -56,10 +57,10 @@ inline void delta_swap_inplace_opt( TT& tt, uint64_t delta, uint64_t omega )
   tt._bits[0] = tt._bits[0] ^ y ^ ( y << delta );
 }
 
-template<int NumVars>
+template<uint32_t NumVars>
 inline void delta_swap_inplace_opt( static_truth_table<NumVars, true>& tt, uint64_t delta, uint64_t omega )
 {
-  assert ( NumVars <= 6 );
+  assert( NumVars <= 6 );
   const uint64_t y = ( tt._bits ^ ( tt._bits >> delta ) ) & omega;
   tt._bits = tt._bits ^ y ^ ( y << delta );
 }
@@ -67,7 +68,7 @@ inline void delta_swap_inplace_opt( static_truth_table<NumVars, true>& tt, uint6
 template<typename TT>
 void permute_with_masks_inplace_opt( TT& tt, uint64_t const* masks )
 {
-  for ( auto k = 0; k < tt.num_vars(); ++k )
+  for ( auto k = 0u; k < tt.num_vars(); ++k )
   {
     delta_swap_inplace_opt( tt, uint64_t( 1 ) << k, masks[k] );
   }
@@ -115,6 +116,8 @@ inline void for_each_permutation_mask( unsigned num_vars, Fn&& fn )
 template<typename TT, typename Callback = decltype( detail::exact_spectral_canonization_null_callback )>
 TT exact_linear_canonization( const TT& tt, Callback&& fn = detail::exact_spectral_canonization_null_callback )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   detail::miller_spectral_canonization_impl<TT> impl( tt, false, false, false );
   return impl.run( fn ).first;
 }
@@ -123,11 +126,13 @@ TT exact_linear_canonization( const TT& tt, Callback&& fn = detail::exact_spectr
 template<typename TT>
 TT exact_linear_canonization_old( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   auto min = tt;
 
   detail::for_each_permutation_mask( tt.num_vars(), [&min, &tt]( const auto* mask ) {
     min = std::min( min, detail::permute_with_masks_opt( tt, mask ) );
-  });
+  } );
 
   return min;
 }
@@ -144,6 +149,8 @@ TT exact_linear_canonization_old( const TT& tt )
 template<typename TT>
 TT exact_linear_output_canonization( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   return std::min( exact_linear_canonization_old( tt ), exact_linear_canonization_old( ~tt ) );
 }
 
@@ -158,6 +165,8 @@ TT exact_linear_output_canonization( const TT& tt )
 template<typename TT, typename Callback = decltype( detail::exact_spectral_canonization_null_callback )>
 TT exact_affine_canonization( const TT& tt, Callback&& fn = detail::exact_spectral_canonization_null_callback )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   detail::miller_spectral_canonization_impl<TT> impl( tt, true, false, false );
   return impl.run( fn ).first;
 }
@@ -166,6 +175,8 @@ TT exact_affine_canonization( const TT& tt, Callback&& fn = detail::exact_spectr
 template<typename TT>
 TT exact_affine_canonization_old( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto num_vars = tt.num_vars();
 
   assert( num_vars >= 2 && num_vars <= 4 );
@@ -173,10 +184,10 @@ TT exact_affine_canonization_old( const TT& tt )
   auto copy = tt;
 
   const auto& flips = detail::flips[num_vars - 2u];
-  
+
   auto min = exact_linear_canonization_old( copy );
 
-  for ( int j = flips.size() - 1; j >= 0; --j )
+  for ( int j = static_cast<int>( flips.size() ) - 1; j >= 0; --j )
   {
     const auto pos = flips[j];
     flip_inplace( copy, pos );
@@ -199,6 +210,8 @@ TT exact_affine_canonization_old( const TT& tt )
 template<typename TT>
 TT exact_affine_output_canonization( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   return std::min( exact_affine_canonization_old( tt ), exact_affine_canonization_old( ~tt ) );
 }
 

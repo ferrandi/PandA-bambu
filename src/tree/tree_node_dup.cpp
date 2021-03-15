@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,7 +51,7 @@
 #include <utility>                 // for pair
 #include <vector>                  // for vector, vector<>::c...
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 #include "ext_tree_node.hpp"
@@ -588,6 +588,10 @@ unsigned int tree_node_dup::create_tree_node(const tree_nodeRef& tn)
          CREATE_TREE_NODE_CASE_BODY(gimple_multi_way_if, node_id)
       case extract_bit_expr_K:
          CREATE_TREE_NODE_CASE_BODY(extract_bit_expr, node_id)
+      case sat_plus_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
+      case sat_minus_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
       case do_stmt_K:
       case if_stmt_K:
       case for_stmt_K:
@@ -716,7 +720,7 @@ void tree_node_dup::operator()(const attr* obj, unsigned int& mask)
       }                                                                                                                \
    }
 
-#define SET_VALUE(field, type) dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field
+#define SET_VALUE(field, type) (dynamic_cast<type*>(curr_tree_node_ptr)->field = GetPointer<type>(source_tn)->field)
 
 void tree_node_dup::operator()(const srcp* obj, unsigned int& mask)
 {
@@ -1081,6 +1085,17 @@ void tree_node_dup::operator()(const function_decl* obj, unsigned int& mask)
    SET_VALUE(static_flag, function_decl);
    SET_VALUE(hwcall_flag, function_decl);
    SET_VALUE(reverse_restrict_flag, function_decl);
+   SET_VALUE(writing_memory, function_decl);
+   SET_VALUE(reading_memory, function_decl);
+   SET_VALUE(pipeline_enabled, function_decl);
+   SET_VALUE(simple_pipeline, function_decl);
+   SET_VALUE(initiation_time, function_decl);
+#if HAVE_FROM_PRAGMA_BUILT
+   SET_VALUE(omp_atomic, function_decl);
+   SET_VALUE(omp_body_loop, function_decl);
+   SET_VALUE(omp_critical, function_decl);
+   SET_VALUE(omp_for_wrapper, function_decl);
+#endif
    SET_NODE_ID(body, function_decl);
    SET_NODE_ID(inline_body, function_decl);
 }

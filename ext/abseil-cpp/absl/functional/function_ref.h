@@ -54,6 +54,7 @@
 #include "absl/meta/type_traits.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 // FunctionRef
 //
@@ -89,7 +90,7 @@ class FunctionRef<R(Args...)> {
   // Used to disable constructors for objects that are not compatible with the
   // signature of this FunctionRef.
   template <typename F,
-            typename FR = absl::base_internal::InvokeT<F, Args&&...>>
+            typename FR = absl::base_internal::invoke_result_t<F, Args&&...>>
   using EnableIfCompatible =
       typename std::enable_if<std::is_void<R>::value ||
                               std::is_convertible<FR, R>::value>::type;
@@ -132,6 +133,7 @@ class FunctionRef<R(Args...)> {
   absl::functional_internal::Invoker<R, Args...> invoker_;
 };
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_FUNCTIONAL_FUNCTION_REF_H_

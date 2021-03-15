@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,6 +47,7 @@
 #ifndef FUNCTION_BEHAVIOR_HPP
 #define FUNCTION_BEHAVIOR_HPP
 
+#include "config_HAVE_ASSERTS.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_HOST_PROFILING_BUILT.hpp"
 #include <deque>      // for deque
@@ -104,7 +105,7 @@ class dominance;
 class ParallelRegionsGraphsCollection;
 class sequence_info;
 class xml_element;
-typedef unsigned int tree_class;
+using tree_class = unsigned int;
 //@}
 
 /// Struct representing memory information
@@ -118,7 +119,7 @@ struct memory_access
 
    memory_access(unsigned int _node_id, unsigned int _base_address, unsigned int _offset = 0);
 };
-typedef refcount<memory_access> memory_accessRef;
+using memory_accessRef = refcount<memory_access>;
 
 /// The access type to a variable
 enum class FunctionBehavior_VariableAccessType
@@ -391,9 +392,6 @@ class FunctionBehavior
    /// the function dereference a pointer initialized with constant address.
    bool dereference_unknown_address;
 
-   /// true when at least one pointer conversion happen
-   bool pointer_type_conversion;
-
    bool unaligned_accesses;
 
    /// The version of basic block intermediate representation
@@ -411,8 +409,14 @@ class FunctionBehavior
    /// set of global variables
    CustomOrderedSet<unsigned int> state_variables;
 
-   /// when true pipelining has been requested for this function
-   bool pipelining_enabled;
+   /// true when pipelining is enabled for the function
+   bool pipeline_enabled;
+
+   /// true when the requested pipeline does not include unbounded functions
+   bool simple_pipeline;
+
+   /// used only for stallable pipelines
+   int initiation_time;
 
  public:
    /**
@@ -571,7 +575,7 @@ class FunctionBehavior
     * @param subset is the set of subgraph vertices
     * @return the refcount to the subgraph
     */
-   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& subset) const;
+   const OpGraphConstRef CGetOpGraph(FunctionBehavior::graph_type gt, const OpVertexSet& statements) const;
 
    /**
     * This method returns the basic block graphs.
@@ -639,7 +643,9 @@ class FunctionBehavior
    friend std::ostream& operator<<(std::ostream& os, const FunctionBehaviorRef& s)
    {
       if(s)
+      {
          s->print(os);
+      }
       return os;
    }
 
@@ -688,15 +694,9 @@ class FunctionBehavior
    void add_dynamic_address(unsigned int node_id);
 
    /**
-    * remove a variable from the dynamic address set
-    * @param node_id is the object stored in memory
-    */
-   void erase_dynamic_address(unsigned int node_id);
-
-   /**
     * remove all variables from the dynamic address set
     */
-   void erase_all_dynamic_addresses();
+   void clean_dynamic_address();
 
    /**
     * Checks if a variable has been allocated in memory
@@ -707,6 +707,9 @@ class FunctionBehavior
     * Returns the set of memory variables
     */
    const CustomOrderedSet<unsigned int>& get_function_mem() const;
+
+   /// clean the function mem data structure
+   void clean_function_mem();
 
    /**
     * Returns the set of variables for which a dynamic address computation maybe required
@@ -719,9 +722,19 @@ class FunctionBehavior
    const CustomOrderedSet<unsigned int>& get_parm_decl_copied() const;
 
    /**
+    * @brief clean_parm_decl_copied clean parm_decl_copied data structure
+    */
+   void clean_parm_decl_copied();
+
+   /**
     * Returns the set of the actual parameters that has to be loaded into the formal parameter
     */
    const CustomOrderedSet<unsigned int>& get_parm_decl_loaded() const;
+
+   /**
+    * @brief clean_parm_decl_loaded clean parm_decl_loaded data structure
+    */
+   void clean_parm_decl_loaded();
 
    /**
     * Returns the set of the formal parameters that has to be stored into the formal parameter
@@ -729,7 +742,12 @@ class FunctionBehavior
    const CustomOrderedSet<unsigned int>& get_parm_decl_stored() const;
 
    /**
-    * Set the use of dereferences of unknown address.
+    * @brief clean_parm_decl_stored clean parm_decl_stored data structure
+    */
+   void clean_parm_decl_stored();
+
+   /**
+    * Set the use of dereference of unknown address.
     */
    inline void set_dereference_unknown_addr(bool f)
    {
@@ -737,27 +755,11 @@ class FunctionBehavior
    }
 
    /**
-    * Return true if the function has dereferences of unknown address.
+    * Return true if the function has dereference of unknown address.
     */
    inline bool get_dereference_unknown_addr() const
    {
       return dereference_unknown_address;
-   }
-
-   /**
-    * Set if a pointer conversion happen
-    */
-   inline void set_pointer_type_conversion(bool f)
-   {
-      pointer_type_conversion = f;
-   }
-
-   /**
-    * Return true if a pointer conversion happen
-    */
-   inline bool get_pointer_type_conversion() const
-   {
-      return pointer_type_conversion;
    }
 
    /**
@@ -830,6 +832,14 @@ class FunctionBehavior
    }
 
    /**
+    * @brief clean_state_variable initialize the state variable data structure
+    */
+   void clean_state_variable()
+   {
+      state_variables.clear();
+   }
+
+   /**
     * @brief update the the packed variables status
     * @param packed is true when there is at least one packed variables
     */
@@ -845,14 +855,25 @@ class FunctionBehavior
    {
       return packed_vars;
    }
+
    bool is_pipelining_enabled() const
    {
-      return pipelining_enabled;
+      return pipeline_enabled;
    }
 
-   void set_pipelining_enabled(bool f)
+   bool build_simple_pipeline() const
    {
-      pipelining_enabled = f;
+      if(simple_pipeline)
+      {
+         THROW_ASSERT(pipeline_enabled, "Simple pipeline is true but pipeline is not enabled");
+      }
+      return simple_pipeline;
+   }
+
+   int get_initiation_time() const
+   {
+      THROW_ASSERT(pipeline_enabled && !simple_pipeline, "Should not request initiation time when pipeline is not enabled or simple pipeline is requested");
+      return initiation_time;
    }
 
    /**
@@ -869,7 +890,7 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckBBReachability(const vertex first_basic_block, const vertex second_basic_block) const;
 
    /**
     * Check if a path from first_operation to second_operation exists in control flow graph with feedback
@@ -885,7 +906,7 @@ class FunctionBehavior
     * @param second_basic_block is the second operation to be considered
     * @return true if there is a path from first_basic_block to second_basic_block in flcfg
     */
-   bool CheckBBFeedbackReachability(const vertex first_operation, const vertex second_operation) const;
+   bool CheckBBFeedbackReachability(const vertex first_basic_block, const vertex second_basic_block) const;
 
    /**
     * Return the version of the basic block intermediate representation
@@ -912,8 +933,8 @@ class FunctionBehavior
    unsigned int UpdateBitValueVersion();
 };
 
-typedef refcount<FunctionBehavior> FunctionBehaviorRef;
-typedef refcount<const FunctionBehavior> FunctionBehaviorConstRef;
+using FunctionBehaviorRef = refcount<FunctionBehavior>;
+using FunctionBehaviorConstRef = refcount<const FunctionBehavior>;
 
 /**
  * The key comparison function for vertices set based on levels
@@ -924,8 +945,10 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
    /// Topological sorted vertices
    const std::map<vertex, unsigned int>& ref;
 
-   /// Graph
+/// Graph
+#if HAVE_ASSERTS
    const graph* g;
+#endif
 
  public:
    /**
@@ -933,7 +956,14 @@ class op_vertex_order_by_map : std::binary_function<vertex, vertex, bool>
     * @param ref_ is the map with the topological sort of vertices
     * @param g_ is a graph used only for debugging purpose to print name of vertex
     */
-   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph* g_) : ref(ref_), g(g_)
+   op_vertex_order_by_map(const std::map<vertex, unsigned int>& ref_, const graph*
+#if HAVE_ASSERTS
+                                                                          g_)
+       : ref(ref_), g(g_)
+#else
+                          )
+       : ref(ref_)
+#endif
    {
    }
 

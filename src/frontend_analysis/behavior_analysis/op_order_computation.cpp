@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -141,7 +141,9 @@ DesignFlowStep_Status OpOrderComputation::InternalExec()
          if(toadd)
          {
             if(Cget_edge_info<OpEdgeInfo>(*o, *cfg) && CFG_TRUE_CHECK(cfg, *o))
+            {
                then = next;
+            }
             /// Vertex can be added to list
             if(next != then)
             {

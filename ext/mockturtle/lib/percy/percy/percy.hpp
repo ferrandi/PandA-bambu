@@ -12,6 +12,8 @@
 #include "tt_utils.hpp"
 #include "concurrentqueue.h"
 #include "partial_dag.hpp"
+#include "generators/partial_dag_generator.hpp"
+#include "generators/partial_dag3_generator.hpp"
 #include "solvers.hpp"
 #include "encoders.hpp"
 #include "cnf.hpp"
@@ -23,7 +25,6 @@
     Soeken's earlier exact synthesis algorithm, which has been integrated in
     the ABC synthesis package. That implementation is itself based on earlier
     work by Éen[1] and Knuth[2].
-
     [1] Niklas Éen, "Practical SAT – a tutorial on applied satisfiability
     solving," 2007, slides of invited talk at FMCAD.
     [2] Donald Ervin Knuth, "The Art of Computer Programming, Volume 4,
@@ -36,24 +37,6 @@ namespace percy
 	using std::chrono::time_point;
 
     const int PD_SIZE_CONST = 1000; // Some "impossibly large" number
-
-    static inline bool is_trivial(const kitty::dynamic_truth_table& tt)
-    {
-        kitty::dynamic_truth_table tt_check(tt.num_vars());
-
-        if (tt == tt_check || tt == ~tt_check) {
-            return true;
-        }
-
-        for (auto i = 0; i < tt.num_vars(); i++) {
-            kitty::create_nth_var(tt_check, i);
-            if (tt == tt_check || tt == ~tt_check) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 
     inline synth_result 
     std_synthesize(
@@ -383,7 +366,7 @@ namespace percy
                 }
                 // Add additional constraint.
                 if (spec.verbosity) {
-                    printf("  CEGAR difference at tt index %lld\n",
+                    printf("  CEGAR difference at tt index %ld\n",
                         first_one);
                 }
                 if (!encoder.create_tt_clauses(spec, first_one - 1)) {
@@ -559,7 +542,7 @@ namespace percy
                 }
                 // Add additional constraint.
                 if (spec.verbosity) {
-                    printf("  CEGAR difference at tt index %lld\n",
+                    printf("  CEGAR difference at tt index %ld\n",
                         first_one);
                 }
                 if (!encoder.create_tt_clauses(spec, dag, first_one - 1)) {
@@ -1180,8 +1163,15 @@ namespace percy
         while (true) {
             solver.restart();
             if (!encoder.encode(spec)) {
+              if ( spec.nr_steps < MAX_STEPS )
+              {
                 spec.nr_steps++;
                 continue;
+              }
+              else
+              {
+                return failure;
+              }
             }
 
             const auto status = solver.solve(spec.conflict_limit);
@@ -1191,12 +1181,78 @@ namespace percy
                 encoder.extract_mig(spec, mig);
                 return success;
             } else if (status == failure) {
+              if ( spec.nr_steps < MAX_STEPS )
+              {
                 spec.nr_steps++;
+                continue;
+              }
+              else
+              {
+                return failure;
+              }
             } else {
                 return timeout;
             }
         }
     }
+
+    inline synth_result
+    mig_synthesize(
+        spec& spec, 
+        mig& mig, 
+        solver_wrapper& solver, 
+        mig_encoder& encoder)
+    {
+        spec.preprocess();
+
+        // The special case when the Boolean chain to be synthesized
+        // consists entirely of trivial functions.
+        if (spec.nr_triv == spec.get_nr_out()) {
+            mig.reset(spec.get_nr_in(), spec.get_nr_out(), 0);
+            for (int h = 0; h < spec.get_nr_out(); h++) {
+                mig.set_output(h, (spec.triv_func(h) << 1) +
+                    ((spec.out_inv >> h) & 1));
+            }
+            return success;
+        }
+
+        spec.nr_steps = spec.initial_steps;
+        while (true) {
+            solver.restart();
+            if (!encoder.encode(spec)) {
+              if ( spec.nr_steps < MAX_STEPS )
+              {
+                spec.nr_steps++;
+                continue;
+              }
+              else
+              {
+                return failure;
+              }
+            }
+
+            const auto status = solver.solve(spec.conflict_limit);
+
+            if (status == success) {
+                //encoder.print_solver_state(spec);
+                encoder.extract_mig(spec, mig);
+                return success;
+            } else if (status == failure) {
+              if ( spec.nr_steps < MAX_STEPS )
+              {
+                spec.nr_steps++;
+                continue;
+              }
+              else
+              {
+                return failure;
+              }
+            } else {
+                return timeout;
+            }
+        }
+    }
+
 
     inline int get_init_imint(const spec& spec)
     {

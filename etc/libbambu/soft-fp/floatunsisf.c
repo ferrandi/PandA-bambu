@@ -45,7 +45,7 @@ SFtype __floatunsisf(USItype i)
    return a;
 }
 
-inline SFtype __uint32_to_float32if(USItype i)
+SFtype __uint32_to_float32if(USItype i)
 {
    return __floatunsisf(i);
 }

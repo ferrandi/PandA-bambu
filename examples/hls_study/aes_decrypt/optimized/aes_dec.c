@@ -80,42 +80,42 @@ decrypt (int statemt[32], int key[32], int type)
   switch (type)
     {
     case 128128:
-      round = 10;
+      i_round = 10;
       nb = 4;
       break;
     case 128192:
     case 192192:
-      round = 12;
+      i_round = 12;
       nb = 6;
       break;
     case 192128:
-      round = 12;
+      i_round = 12;
       nb = 4;
       break;
     case 128256:
     case 192256:
-      round = 14;
+      i_round = 14;
       nb = 8;
       break;
     case 256128:
-      round = 14;
+      i_round = 14;
       nb = 4;
       break;
     case 256192:
-      round = 14;
+      i_round = 14;
       nb = 6;
       break;
     case 256256:
-      round = 14;
+      i_round = 14;
       nb = 8;
       break;
     }
 
-  AddRoundKey (statemt, type, round);
+  AddRoundKey (statemt, type, i_round);
 
   InversShiftRow_ByteSub (statemt, nb);
 
-  for (i = round - 1; i >= 1; --i)
+  for (i = i_round - 1; i >= 1; --i)
     {
       AddRoundKey_InversMixColumn (statemt, nb, i);
       InversShiftRow_ByteSub (statemt, nb);

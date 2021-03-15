@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,7 +44,6 @@
 
 /// Autoheader include
 #include "config_HAVE_MENTOR_VISUALIZER_EXE.hpp"
-#include "config_HAVE_MODELSIM.hpp"
 #include "config_MENTOR_LICENSE.hpp"
 #include "config_MENTOR_MODELSIM_BIN.hpp"
 #include "config_MODELSIM_OPTIMIZER_FLAGS.hpp"
@@ -103,9 +102,6 @@ modelsimWrapper::~modelsimWrapper() = default;
 
 void modelsimWrapper::CheckExecution()
 {
-#if !HAVE_MODELSIM
-   THROW_ERROR("modelsim tools not correctly configured!");
-#endif
 }
 
 void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
@@ -175,11 +171,11 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
          script << MODELSIM_VLOG;
          if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -lint -fsmsingle -hazards -pedanticerrors -fsmverbose w -work work " + file;
          }
          else
          {
-            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -work work " + file;
+            script << std::string(" ") + MODELSIM_OPTIMIZER_FLAGS_DEF + " -sv -work work " + file;
          }
          script << std::endl << std::endl;
          script << "if [ $? -ne 0 ]; then" << std::endl;
@@ -225,11 +221,11 @@ void modelsimWrapper::GenerateScript(std::ostringstream& script, const std::stri
       if(Param->isOption(OPT_assert_debug) && Param->getOption<bool>(OPT_assert_debug))
       {
          script << " -c -voptargs=\"+acc -hazards " + MODELSIM_OPTIMIZER_FLAGS_DEF +
-                       " \" -pedanticerrors -assertdebug -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;\" work." + top_filename + "_tb_top";
+                       R"( " -pedanticerrors -assertdebug -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" + top_filename + "_tb_top";
       }
       else
       {
-         script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF + "\" -do \"set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;\" work." + top_filename + "_tb_top";
+         script << " -c -voptargs=\"" + MODELSIM_OPTIMIZER_FLAGS_DEF + R"(" -do "set StdArithNoWarnings 1; set StdNumNoWarnings 1; set NumericStdNoWarnings 1; onerror {quit -f -code 1;}; run -all; exit -f;" work.)" + top_filename + "_tb_top";
       }
    }
    script << " 2>&1 | tee " << log_file << std::endl << std::endl;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,5 +86,19 @@ class MemoryInitializationWriter : public MemoryInitializationWriterBase
     * Process an element
     */
    void Process(const std::string& content) override;
+
+   /**
+    * In this case the function does not activate anything
+    */
+   void ActivateFileInit(const std::string&) override
+   {
+   }
+
+   /**
+    * do nothing
+    */
+   void FinalizeFileInit() override
+   {
+   }
 };
 #endif

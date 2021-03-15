@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,7 +56,7 @@ class OmpBodyLoopSynthesisFlow : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   OmpBodyLoopSynthesisFlow(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   OmpBodyLoopSynthesisFlow(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

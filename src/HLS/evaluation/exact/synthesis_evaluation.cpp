@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -84,7 +84,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 #endif
 #if HAVE_VCD_BUILT
          if(parameters->isOption(OPT_discrepancy) and parameters->getOption<bool>(OPT_discrepancy))
+         {
             ret.insert(std::make_tuple(HLSFlowStep_Type::VCD_UTILITY, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::TOP_FUNCTION));
+         }
 #endif
          break;
       }
@@ -116,7 +118,7 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 DesignFlowStep_Status SynthesisEvaluation::InternalExec()
 {
    HLSMgr->get_backend_flow()->ExecuteSynthesis();
-   std::string objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
+   auto objective_string = parameters->getOption<std::string>(OPT_evaluation_objectives);
    std::vector<std::string> objective_vector = convert_string_to_vector<std::string>(objective_string, ",");
    bool printed_area = false;
    for(const auto& objective : objective_vector)
@@ -154,6 +156,16 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
             {
                HLSMgr->evaluations["FUNCTIONAL_ELEMENTS"] = std::vector<double>(1, functional_elements);
             }
+            double logic_area = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::LOGIC_AREA) : 0;
+            if(logic_area != 0.0)
+            {
+               HLSMgr->evaluations["LOGIC_AREA"] = std::vector<double>(1, logic_area);
+            }
+            double power = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::POWER) : 0;
+            if(power != 0.0)
+            {
+               HLSMgr->evaluations["POWER"] = std::vector<double>(1, power);
+            }
             double alms = GetPointer<clb_model>(area_m) ? GetPointer<clb_model>(area_m)->get_resource_value(clb_model::ALMS) : 0;
             if(alms != 0.0)
             {
@@ -167,7 +179,9 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double brams = 0;
          if(GetPointer<clb_model>(area_m))
+         {
             brams = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::BRAM);
+         }
          HLSMgr->evaluations["BRAMS"] = std::vector<double>(1, brams);
       }
       else if(objective == "CLOCK_SLACK")
@@ -197,7 +211,9 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double dsps = 0;
          if(GetPointer<clb_model>(area_m))
+         {
             dsps = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::DSP);
+         }
          HLSMgr->evaluations["DSPS"] = std::vector<double>(1, dsps);
       }
       else if(objective == "FREQUENCY" or objective == "TIME" or objective == "TOTAL_TIME" or objective == "AREAxTIME")
@@ -215,7 +231,9 @@ DesignFlowStep_Status SynthesisEvaluation::InternalExec()
          area_modelRef area_m = HLSMgr->get_backend_flow()->get_used_resources();
          double reg = 0;
          if(GetPointer<clb_model>(area_m))
+         {
             reg = GetPointer<clb_model>(area_m)->get_resource_value(clb_model::REGISTERS);
+         }
          HLSMgr->evaluations["REGISTERS"] = std::vector<double>(1, reg);
       }
    }

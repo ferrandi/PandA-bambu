@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -285,7 +285,7 @@ class meilp_solver
    /**
     * Set the verbosity (debug_level)
     */
-   void set_debug_level(int v);
+   void set_debug_level(int dl);
 
    /**
     * Set the variable priority

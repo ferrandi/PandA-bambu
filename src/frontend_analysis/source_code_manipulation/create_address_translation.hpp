@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,7 +88,7 @@ class CreateAddressTranslation : public ApplicationFrontendFlowStep
     * @param first_level is true if we are analyzing a parameter and not something inside a parameter
     * @param little_endianess tells if the parameter has little endianess
     */
-   void ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned int& bambu_address, unsigned int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess);
+   void ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned long long& bambu_address, unsigned long long int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess);
 
    /**
     * Return the set of analyses in relationship with this design step

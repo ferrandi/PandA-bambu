@@ -26,7 +26,11 @@ bool llvm::OrderedInstructions::dominates(const llvm::Instruction* InstA, const 
       auto OBB = OBBMap.find(IBB);
       if(OBB == OBBMap.end())
       {
-         OBB = OBBMap.insert({IBB, make_unique<OrderedBasicBlock>(IBB)}).first;
+#if __clang_major__ > 9
+         OBB = OBBMap.insert({IBB, std::make_unique<OrderedBasicBlock>(IBB)}).first;
+#else
+         OBB = OBBMap.insert({IBB, llvm::make_unique<OrderedBasicBlock>(IBB)}).first;
+#endif
       }
       return OBB->second->dominates(InstA, InstB);
    }

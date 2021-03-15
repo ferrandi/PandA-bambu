@@ -51,7 +51,7 @@ CMPtype __lesf2(SFtype a, SFtype b)
 
 strong_alias(__lesf2, __ltsf2);
 
-inline CMPtype __float32_leif(SFtype a, SFtype b)
+CMPtype __float32_leif(SFtype a, SFtype b)
 {
    return __lesf2(a, b);
 }

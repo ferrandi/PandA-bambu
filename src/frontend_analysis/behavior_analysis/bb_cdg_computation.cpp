@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -113,7 +113,9 @@ DesignFlowStep_Status BBCdgComputation::InternalExec()
    std::map<vertex, unsigned int> bb_sorted;
    unsigned int counter = 0;
    for(auto& bb_level : bb_levels)
+   {
       bb_sorted[bb_level] = ++counter;
+   }
    // iterate over outgoing edges of the basic block CFG.
    for(boost::tie(ei, ei_end) = boost::edges(*bb); ei != ei_end; ++ei)
    {

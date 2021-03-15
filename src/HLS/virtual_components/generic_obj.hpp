@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -95,11 +95,11 @@ class generic_obj
    const resource_type type;
 
    /// structural_object associated to element
-   structural_objectRef SM;
+   Wrefcount<structural_object> SM;
 
    /// output signal associated to element. It allows to connect multiple elements to output of this object.
    /// So broadcast communication is possible
-   structural_objectRef out_sign;
+   Wrefcount<structural_object> out_sign;
 
    /// connection obj id
    std::string name;
@@ -108,7 +108,7 @@ class generic_obj
    /**
     * This is the constructor of the object class.
     */
-   generic_obj(const resource_type t, std::string _name) : type(t), name(std::move(_name))
+   generic_obj(const resource_type t, const std::string& _name) : type(t), name(_name)
    {
    }
 
@@ -181,18 +181,18 @@ class generic_obj
     * Gets structural_object associated to this object
     * @return a reference to structural_object associated
     */
-   const structural_objectRef& get_structural_obj() const
+   const structural_objectRef get_structural_obj() const
    {
-      return SM;
+      return SM.lock();
    }
 
    /**
     * Gets structural_object of output signal associated to this object
     * @return a reference to structural_object of signal associated
     */
-   const structural_objectRef& get_out_sign() const
+   const structural_objectRef get_out_sign() const
    {
-      return out_sign;
+      return out_sign.lock();
    }
 
    /**
@@ -203,7 +203,7 @@ class generic_obj
 };
 
 /// RefCount definition for generic_obj class
-typedef refcount<generic_obj> generic_objRef;
+using generic_objRef = refcount<generic_obj>;
 
 #if !HAVE_UNORDERED
 class GenericObjSorter : std::binary_function<generic_objRef, generic_objRef, bool>

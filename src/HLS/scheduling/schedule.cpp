@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -100,7 +100,9 @@ const ControlStep AbsControlStep::UNKNOWN = ControlStep(std::numeric_limits<unsi
 bool AbsControlStep::operator<(const AbsControlStep& other) const
 {
    if(this->second != other.second)
+   {
       return this->second < other.second;
+   }
    return this->first < other.first;
 }
 
@@ -128,7 +130,9 @@ void Schedule::print(fu_bindingRef Rfu) const
    {
       const auto control_step = get_cstep(*sch_i);
       if(csteps_partitions.find(control_step) == csteps_partitions.end())
+      {
          csteps_partitions.insert(std::make_pair(control_step, OpVertexSet(g)));
+      }
       auto& control_step_ops = csteps_partitions.at(control_step);
       control_step_ops.insert(*sch_i);
    }
@@ -183,7 +187,9 @@ class ScheduleWriter : public GraphWriter
          os << ";}\n";
       }
       for(ControlStep level = ControlStep(1u); level < sch->get_csteps(); ++level)
+      {
          os << "CS" << level - 1u << "-> CS" << level << ";\n";
+      }
    }
 };
 
@@ -192,7 +198,9 @@ void Schedule::WriteDot(const std::string& file_name) const
    const BehavioralHelperConstRef helper = op_graph->CGetOpGraphInfo()->BH;
    std::string output_directory = parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const VertexWriterConstRef op_label_writer(new OpWriter(op_graph.get(), 0));
    const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(op_graph.get()));
    const GraphWriterConstRef graph_writer(new ScheduleWriter(op_graph, ScheduleConstRef(this, null_deleter())));
@@ -203,9 +211,13 @@ void Schedule::set_execution(const vertex& op, ControlStep c_step)
 {
    const auto operation_index = op_graph->CGetOpNodeInfo(op)->GetNodeId();
    if(op_starting_cycle.find(operation_index) == op_starting_cycle.end())
+   {
       op_starting_cycle.emplace(operation_index, c_step);
+   }
    else
+   {
       op_starting_cycle.at(operation_index) = c_step;
+   }
    starting_cycles_to_ops[c_step].insert(operation_index);
 }
 
@@ -213,9 +225,13 @@ void Schedule::set_execution_end(const vertex& op, ControlStep c_step_end)
 {
    const auto operation_index = op_graph->CGetOpNodeInfo(op)->GetNodeId();
    if(op_ending_cycle.find(operation_index) == op_ending_cycle.end())
+   {
       op_ending_cycle.emplace(operation_index, c_step_end);
+   }
    else
+   {
       op_ending_cycle.at(operation_index) = c_step_end;
+   }
 }
 
 bool Schedule::is_scheduled(const vertex& op) const
@@ -234,9 +250,13 @@ AbsControlStep Schedule::get_cstep(const vertex& op) const
    const auto operation_index = op_graph->CGetOpNodeInfo(op)->GetNodeId();
    THROW_ASSERT(is_scheduled(op), "Operation " + GET_NAME(op_graph, op) + " has not been scheduled");
    if(operation_index == ENTRY_ID)
+   {
       return AbsControlStep(BB_ENTRY, op_starting_cycle.at(operation_index));
+   }
    if(operation_index == EXIT_ID)
+   {
       return AbsControlStep(BB_EXIT, op_starting_cycle.at(operation_index));
+   }
    return AbsControlStep(GetPointer<const gimple_node>(TM->CGetTreeNode(operation_index))->bb_index, op_starting_cycle.at(operation_index));
 }
 
@@ -244,9 +264,13 @@ AbsControlStep Schedule::get_cstep(const unsigned int operation_index) const
 {
    THROW_ASSERT(op_starting_cycle.find(operation_index) != op_starting_cycle.end(), "Operation " + STR(operation_index) + " has not been scheduled");
    if(operation_index == ENTRY_ID)
+   {
       return AbsControlStep(BB_ENTRY, op_starting_cycle.at(operation_index));
+   }
    if(operation_index == EXIT_ID)
+   {
       return AbsControlStep(BB_EXIT, op_starting_cycle.at(operation_index));
+   }
    return AbsControlStep(GetPointer<const gimple_node>(TM->CGetTreeNode(operation_index))->bb_index, op_starting_cycle.at(operation_index));
 }
 
@@ -261,9 +285,13 @@ AbsControlStep Schedule::get_cstep_end(const unsigned int statement_index) const
    THROW_ASSERT(is_scheduled(statement_index), "Operation " + STR(statement_index) + " has not been scheduled");
    THROW_ASSERT(op_ending_cycle.find(statement_index) != op_ending_cycle.end(), "Ending step not stored");
    if(statement_index == ENTRY_ID)
+   {
       return AbsControlStep(BB_ENTRY, op_ending_cycle.at(statement_index));
+   }
    if(statement_index == EXIT_ID)
+   {
       return AbsControlStep(BB_EXIT, op_ending_cycle.at(statement_index));
+   }
    return AbsControlStep(GetPointer<const gimple_node>(TM->CGetTreeNode(statement_index))->bb_index, op_ending_cycle.at(statement_index));
 }
 
@@ -304,7 +332,9 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    /// The starting control step
    ControlStep starting_cs = ControlStep(0);
    if(not update_cs)
+   {
       starting_time = clock_period * from_strongtype_cast<double>(op_starting_cycle.at(operation_index));
+   }
    if(gn->get_kind() == gimple_assign_K)
    {
       tree_helper::compute_ssa_uses_rec_ptr(GetPointer<const gimple_assign>(tn)->op1, rhs_ssa_uses);
@@ -317,8 +347,12 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    {
       const auto gmwi = GetPointer<const gimple_multi_way_if>(tn);
       for(auto cond : gmwi->list_of_cond)
+      {
          if(cond.first)
+         {
             tree_helper::compute_ssa_uses_rec_ptr(cond.first, rhs_ssa_uses);
+         }
+      }
    }
    else if(gn->get_kind() == gimple_phi_K or gn->get_kind() == gimple_nop_K or gn->get_kind() == gimple_label_K)
    {
@@ -327,7 +361,9 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    {
       const auto gr = GetPointer<const gimple_return>(tn);
       if(gr->op)
+      {
          tree_helper::compute_ssa_uses_rec_ptr(gr->op, rhs_ssa_uses);
+      }
    }
    else if(gn->get_kind() == gimple_switch_K)
    {
@@ -343,9 +379,13 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    {
       const auto ga = GetPointer<const gimple_asm>(tn);
       if(ga->in)
+      {
          tree_helper::compute_ssa_uses_rec_ptr(ga->in, rhs_ssa_uses);
+      }
       if(ga->clob)
+      {
          tree_helper::compute_ssa_uses_rec_ptr(ga->clob, rhs_ssa_uses);
+      }
    }
    else
    {
@@ -386,13 +426,17 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
 
       /// Compute the control step
       if(get_cstep_end(def_gn->index).second > starting_cs)
+      {
          starting_cs = get_cstep_end(def_gn->index).second;
+      }
 
       /// Compute the remaining time
       const auto ending_time = ending_times.at(def_gn->index);
       const auto connection_time = allocation_information->GetConnectionTime(def_gn->index, operation_index, AbsControlStep(gn->bb_index, AbsControlStep::UNKNOWN));
       if(ending_time + connection_time >= starting_time)
+      {
          starting_time = ending_time + connection_time;
+      }
    }
    starting_times[operation_index] = starting_time;
    const auto cycles = allocation_information->GetCycleLatency(gn->index);
@@ -437,24 +481,36 @@ void Schedule::UpdateTime(const unsigned int operation_index, bool update_cs)
    {
       /// Remove the old scheduling
       if(is_scheduled(operation_index))
+      {
          starting_cycles_to_ops[op_starting_cycle.at(operation_index)].erase(operation_index);
+      }
       auto valS = ControlStep(static_cast<unsigned int>(floor(starting_times[operation_index] / clock_period)));
       if(op_starting_cycle.find(operation_index) == op_starting_cycle.end())
+      {
          op_starting_cycle.emplace(operation_index, valS);
+      }
       else
+      {
          op_starting_cycle.at(operation_index) = valS;
+      }
       auto valE = ControlStep(static_cast<unsigned int>(floor(ending_times[operation_index] / clock_period)));
       if(op_ending_cycle.find(operation_index) == op_ending_cycle.end())
+      {
          op_ending_cycle.emplace(operation_index, valE);
+      }
       else
+      {
          op_ending_cycle.at(operation_index) = valE;
+      }
    }
    if(allocation_information->IsVariableExecutionTime(operation_index) and updated_time)
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking if simultaneous operations have to be rescheduled");
       const auto reschedule = [&]() -> bool {
          if(not is_scheduled(operation_index))
+         {
             return false;
+         }
          for(const auto simultaneous_operation : starting_cycles_to_ops[op_starting_cycle.at(operation_index)])
          {
             if(allocation_information->IsVariableExecutionTime(simultaneous_operation))
@@ -557,7 +613,9 @@ FunctionFrontendFlowStep_Movable Schedule::CanBeMoved(const unsigned int stateme
       if(operation_margin > latency + allocation_information->GetConnectionTime(statement_index, 0, AbsControlStep(basic_block_index, current_cs)))
       {
          if(ending_time + latency > new_ending_time)
+         {
             new_ending_time = ending_time + latency;
+         }
          continue;
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
@@ -654,9 +712,13 @@ bool Schedule::CanBeChained(const unsigned int first_statement_index, const unsi
 bool Schedule::EvaluateCondsMerging(const unsigned statement_index, const unsigned int first_condition, const unsigned second_condition) const
 {
    if(not first_condition or not second_condition)
+   {
       return true;
+   }
    if(TM->CGetTreeNode(first_condition)->get_kind() == integer_cst_K or TM->CGetTreeNode(second_condition)->get_kind() == integer_cst_K)
+   {
       return true;
+   }
    const auto statement = GetPointer<const gimple_node>(TM->get_tree_node_const(statement_index));
    const auto or_result = tree_man->CreateOrExpr(TM->GetTreeReindex(first_condition), TM->GetTreeReindex(second_condition), blocRef());
    const auto or_ending_time = std::max(GetReadyTime(first_condition, statement->bb_index), GetReadyTime(second_condition, statement->bb_index)) +
@@ -915,7 +977,9 @@ double Schedule::GetBBEndingTime(const unsigned int basic_block_index) const
 double Schedule::GetEndingTime(const unsigned int operation_index) const
 {
    if(operation_index == ENTRY_ID or operation_index == EXIT_ID)
+   {
       return 0.0;
+   }
    THROW_ASSERT(ending_times.find(operation_index) != ending_times.end(), "Ending time of operation " + STR(TM->CGetTreeNode(operation_index)) + " not found");
    return ending_times.at(operation_index);
 }
@@ -923,7 +987,9 @@ double Schedule::GetEndingTime(const unsigned int operation_index) const
 double Schedule::GetStartingTime(const unsigned int operation_index) const
 {
    if(operation_index == ENTRY_ID or operation_index == EXIT_ID)
+   {
       return 0.0;
+   }
    THROW_ASSERT(starting_times.find(operation_index) != starting_times.end(), "Starting time of operation " + STR(operation_index) + " not found");
    return starting_times.at(operation_index);
 }
@@ -932,9 +998,13 @@ double Schedule::get_fo_correction(unsigned int first_operation, unsigned int se
 {
    const auto edge = std::pair<unsigned int, unsigned int>(first_operation, second_operation);
    if(connection_times.find(edge) != connection_times.end())
+   {
       return connection_times.at(edge);
+   }
    else
+   {
       return 0.0;
+   }
 }
 
 const std::string Schedule::PrintTimingInformation(const unsigned int statement_index) const
@@ -988,10 +1058,14 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
    {
       const auto node_id = op_graph->CGetOpNodeInfo(starting_operation)->GetNodeId();
       if(node_id == ENTRY_ID or node_id == EXIT_ID)
+      {
          continue;
+      }
       const auto stmt = TM->get_tree_node_const(node_id);
       if(stmt->get_kind() == gimple_phi_K)
+      {
          continue;
+      }
       const bool found = std::find(state_info->ending_operations.begin(), state_info->ending_operations.end(), starting_operation) != state_info->ending_operations.end();
       const auto ending_time =
           found ? ending_times.at(stmt->index) : starting_times.at(stmt->index) + (allocation_information->is_operation_PI_registered(stmt->index) ? 0.0 : allocation_information->GetTimeLatency(stmt->index, fu_binding::UNKNOWN).second);
@@ -1009,7 +1083,9 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
    {
       const auto node_id = op_graph->CGetOpNodeInfo(starting_operation)->GetNodeId();
       if(node_id == ENTRY_ID or node_id == EXIT_ID)
+      {
          continue;
+      }
       const auto stmt = TM->get_tree_node_const(node_id);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Stmt " + stmt->ToString() + " ends at " + STR(ending_times.at(stmt->index)));
       const bool found = std::find(state_info->ending_operations.begin(), state_info->ending_operations.end(), starting_operation) != state_info->ending_operations.end();
@@ -1043,8 +1119,12 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       {
          const auto gmwi = GetPointer<const gimple_multi_way_if>(stmt_tn);
          for(auto cond : gmwi->list_of_cond)
+         {
             if(cond.first)
+            {
                tree_helper::compute_ssa_uses_rec_ptr(cond.first, rhs_ssa_uses);
+            }
+         }
       }
       else if(gn->get_kind() == gimple_phi_K or gn->get_kind() == gimple_nop_K or gn->get_kind() == gimple_label_K)
       {
@@ -1053,7 +1133,9 @@ CustomSet<unsigned int> Schedule::ComputeCriticalPath(const StateInfoConstRef st
       {
          const auto gr = GetPointer<const gimple_return>(stmt_tn);
          if(gr->op)
+         {
             tree_helper::compute_ssa_uses_rec_ptr(gr->op, rhs_ssa_uses);
+         }
       }
       else if(gn->get_kind() == gimple_switch_K)
       {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,7 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-#define OUTPUT_FILE "__stdouterr"
+#define OUTPUT_FILE GetPath("__stdouterr")
 
 // constructor
 ToolManager::ToolManager(const ParameterConstRef& _Param) : Param(_Param), local(true), debug_level(_Param->get_class_debug_level(GET_CLASS(*this)))

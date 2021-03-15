@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,6 +42,8 @@
  */
 #include "IC_device.hpp"
 
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+
 /// technology includes
 #include "BackendFlow.hpp"
 #include "CMOS_technology.hpp"
@@ -63,9 +65,13 @@
 IC_device::IC_device(const ParameterConstRef _Param, const technology_managerRef _TM) : target_device(_Param, _TM, TargetDevice_Type::IC)
 {
    if(has_parameter("core_height"))
+   {
       core_height = get_parameter<double>("core_height");
+   }
    if(has_parameter("core_width"))
+   {
       core_width = get_parameter<double>("core_width");
+   }
    initialize();
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 }
@@ -99,9 +105,13 @@ void IC_device::set_dimension(double area)
 
          unsigned int rows = 1;
          if((float_height - floor(float_height)) < 0.5 and floor(float_height) > 0)
+         {
             rows = static_cast<unsigned int>(floor(float_height));
+         }
          else
+         {
             rows = static_cast<unsigned int>(ceil(float_height));
+         }
 
          std::cerr << "number of rows = " << rows << std::endl;
          core_height = (static_cast<double>(rows) * tech->get_parameter<double>("cell_height"));
@@ -127,15 +137,15 @@ void IC_device::initialize()
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Aspect ratio: " << parameters["aspect_ratio"]);
    PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Utilization factor: " << parameters["utilization_factor"]);
    if(has_parameter("clock_period"))
+   {
       PRINT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, output_level, "   Clock period: " << parameters["clock_period"] << " (" << 1.0 / get_parameter<double>("clock_period") << ")");
+   }
 }
 
 void IC_device::load_devices(const target_deviceRef device)
 {
    /// Load default resources
-   const char* builtin_technology = {
-#include "Nangate.data"
-   };
+   const char* builtin_technology = {"Nangate.data"};
 
    auto output_level = Param->getOption<int>(OPT_output_level);
 
@@ -144,7 +154,7 @@ void IC_device::load_devices(const target_deviceRef device)
 
    try
    {
-      XMLDomParser parser("builtin_technology", builtin_technology);
+      XMLDomParser parser(relocate_compiler_path(PANDA_DATA_INSTALLDIR "/panda/technology/target_device/IC/") + builtin_technology[0]);
       parser.Exec();
       if(parser)
       {
@@ -156,7 +166,7 @@ void IC_device::load_devices(const target_deviceRef device)
       /// update with specified device information
       if(Param->isOption(OPT_target_device_file))
       {
-         const auto file_name = Param->getOption<std::string>(OPT_target_device_file);
+         const auto file_name = GetPath(Param->getOption<std::string>(OPT_target_device_file));
          if(!boost::filesystem::exists(file_name))
          {
             THROW_ERROR("Device information file " + file_name + " does not exist!");

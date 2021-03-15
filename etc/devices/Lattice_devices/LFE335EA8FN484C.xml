@@ -38,7 +38,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -111,7 +111,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -184,7 +184,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -257,7 +257,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -329,7 +329,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -401,7 +401,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -482,7 +482,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -612,7 +612,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -742,7 +742,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -873,7 +873,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -1004,7 +1004,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -1135,7 +1135,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -1326,7 +1326,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -1457,7 +1457,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -1588,7 +1588,7 @@
             <parameter name="data_size">32</parameter>
             <parameter name="n_elements">1</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2004-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2004-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -1841,7 +1841,7 @@
       </cell>
       <cell>
         <name>ASSIGN_REAL_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:14</characterization_timestamp>
@@ -1849,7 +1849,7 @@
       </cell>
       <cell>
         <name>ASSIGN_SIGNED_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:14</characterization_timestamp>
@@ -1865,7 +1865,7 @@
       </cell>
       <cell>
         <name>ASSIGN_UNSIGNED_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:15</characterization_timestamp>
@@ -1873,7 +1873,7 @@
       </cell>
       <cell>
         <name>ASSIGN_VECTOR_BOOL_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:00:21</characterization_timestamp>
@@ -3923,10 +3923,11 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">35</attribute>
         <characterization_timestamp>2016-06-24T11:04:28</characterization_timestamp>
         <operation operation_name="__builtin_signbit" supported_types="REAL:32,64" execution_time="0.93800007128800544"/>
+        <operation operation_name="__builtin_signbitf" supported_types="REAL:32,64" execution_time="0.93800007128800544"/>
       </cell>
       <cell>
         <name>addr_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:04:19</characterization_timestamp>
@@ -3934,7 +3935,7 @@
       </cell>
       <cell>
         <name>assert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:04:19</characterization_timestamp>
@@ -9758,7 +9759,7 @@
       </cell>
       <cell>
         <name>fp_view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T11:30:37</characterization_timestamp>
@@ -10502,6 +10503,7 @@
         <attribute name="area" value_type="float64">5</attribute>
         <attribute name="REGISTERS" value_type="float64">7</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">5</attribute>
+        <characterization_timestamp>1970-01-01T00:00:00</characterization_timestamp>
         <operation operation_name="lut_expr" supported_types="UINT:4" execution_time="1.0129999999999999"/>
       </cell>
       <cell>
@@ -10950,7 +10952,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -10989,7 +10991,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11028,7 +11030,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11067,7 +11069,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11114,7 +11116,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11153,7 +11155,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11192,7 +11194,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11231,7 +11233,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11270,7 +11272,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11309,7 +11311,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11348,7 +11350,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11387,7 +11389,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11426,7 +11428,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11465,7 +11467,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11504,7 +11506,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11543,7 +11545,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11582,7 +11584,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11621,7 +11623,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11660,7 +11662,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11699,7 +11701,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11738,7 +11740,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11777,7 +11779,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11816,7 +11818,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11855,7 +11857,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11894,7 +11896,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11933,7 +11935,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -11972,7 +11974,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12010,7 +12012,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12048,7 +12050,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12079,14 +12081,14 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">24</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="16 16 16 2"/>
-        <characterization_timestamp>2017-02-20T23:00:19</characterization_timestamp>
+        <characterization_timestamp>2020-05-28T00:22:05</characterization_timestamp>
         <operation operation_name="mult_expr" commutative="1" supported_types="INT:16" pipe_parameters="2" cycles="3" initiation_time="1" stage_period="3.1099999999999999"/>
         <circuit>
           <component_o id="mult_expr_FU" path="mult_expr_FU">
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12124,7 +12126,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12155,14 +12157,14 @@
         <attribute name="LUT_FF_PAIRS" value_type="float64">27</attribute>
         <attribute name="DSP" value_type="float64">2</attribute>
         <template name="mult_expr_FU" parameter="18 18 32 1"/>
-        <characterization_timestamp>2017-02-20T23:00:19</characterization_timestamp>
+        <characterization_timestamp>2020-05-28T00:22:05</characterization_timestamp>
         <operation operation_name="mult_expr" commutative="1" supported_types="INT:18" pipe_parameters="1" cycles="2" initiation_time="1" stage_period="3.7400000000000002"/>
         <circuit>
           <component_o id="mult_expr_FU" path="mult_expr_FU">
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12200,7 +12202,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12247,7 +12249,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12293,7 +12295,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12332,7 +12334,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12371,7 +12373,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12410,7 +12412,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12449,7 +12451,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12488,7 +12490,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12527,7 +12529,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12566,7 +12568,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12605,7 +12607,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12643,7 +12645,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12681,7 +12683,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12719,7 +12721,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12757,7 +12759,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12795,7 +12797,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12833,7 +12835,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12871,7 +12873,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12909,7 +12911,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12948,7 +12950,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -12987,7 +12989,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13026,7 +13028,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13065,7 +13067,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13104,7 +13106,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13143,7 +13145,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13182,7 +13184,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13221,7 +13223,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13259,7 +13261,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13297,7 +13299,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13335,7 +13337,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13373,7 +13375,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13411,7 +13413,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13449,7 +13451,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13487,7 +13489,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13525,7 +13527,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13564,7 +13566,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13603,7 +13605,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13642,7 +13644,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13680,7 +13682,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13718,7 +13720,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -13756,7 +13758,7 @@
             <structural_type_descriptor id_type="mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -14420,6 +14422,296 @@
         <template name="rshift_expr_FU" parameter="8 8 8"/>
         <characterization_timestamp>2016-06-24T11:34:32</characterization_timestamp>
         <operation operation_name="rshift_expr" supported_types="INT:8" execution_time="2.4289999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">25</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">25</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:29:51</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="2.4239999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:29:51</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="1.0129999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">49</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">49</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:29:52</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="2.8959999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">97</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">97</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:29:52</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="3.8399999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">9</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">9</attribute>
+        <template name="sat_minus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:29:57</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="2.4289999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">26</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">26</attribute>
+        <template name="sat_minus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:29:57</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="2.4390000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">34</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
+        <template name="sat_minus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T18:29:57</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:16" execution_time="2.4390000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="sat_minus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:29:57</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="1.0129999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="sat_minus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T18:30:02</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:1" execution_time="1.0129999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">50</attribute>
+        <template name="sat_minus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:02</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="2.911"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">66</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">66</attribute>
+        <template name="sat_minus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T18:30:03</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:32" execution_time="2.911"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">98</attribute>
+        <template name="sat_minus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:04</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="3.855"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="sat_minus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T18:30:08</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:64" execution_time="3.855"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">9</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">9</attribute>
+        <template name="sat_minus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:08</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="2.7839999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_minus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">18</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
+        <template name="sat_minus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T18:30:08</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="INT:8" execution_time="2.2029999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">26</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">26</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:10</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.4390000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">1</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:14</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.62"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">50</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:14</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="2.911"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">98</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:15</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="3.855"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">10</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">10</attribute>
+        <template name="sat_plus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:16</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="2.4289999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">26</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">26</attribute>
+        <template name="sat_plus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:10</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="2.4390000000000001"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">33</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">33</attribute>
+        <template name="sat_plus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T18:30:20</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:16" execution_time="3.1909999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">1</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
+        <template name="sat_plus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:14</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="0.62"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="sat_plus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T18:30:20</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:1" execution_time="1.0129999999999999"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">50</attribute>
+        <template name="sat_plus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:14</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="2.911"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">65</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">65</attribute>
+        <template name="sat_plus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T18:30:22</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:32" execution_time="3.6629999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">98</attribute>
+        <template name="sat_plus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:15</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="3.855"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">129</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">129</attribute>
+        <template name="sat_plus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T18:30:23</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:64" execution_time="4.6070000000000002"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">10</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">10</attribute>
+        <template name="sat_plus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:16</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="2.4289999999999998"/>
+      </cell>
+      <cell>
+        <name>sat_plus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">17</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">17</attribute>
+        <template name="sat_plus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T18:30:26</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="INT:8" execution_time="2.9550000000000001"/>
       </cell>
       <cell>
         <name>ternary_alu_expr_FU_0_16_16_16</name>
@@ -21334,7 +21626,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21373,7 +21665,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21412,7 +21704,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21451,7 +21743,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21498,7 +21790,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21537,7 +21829,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21576,7 +21868,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21615,7 +21907,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21654,7 +21946,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21693,7 +21985,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21732,7 +22024,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21771,7 +22063,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21810,7 +22102,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21849,7 +22141,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21888,7 +22180,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21927,7 +22219,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -21966,7 +22258,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22005,7 +22297,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22044,7 +22336,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22083,7 +22375,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22122,7 +22414,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22161,7 +22453,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22200,7 +22492,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22239,7 +22531,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22278,7 +22570,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22317,7 +22609,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22356,7 +22648,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22394,7 +22686,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22432,7 +22724,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22470,7 +22762,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22508,7 +22800,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22546,7 +22838,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22584,7 +22876,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22631,7 +22923,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22677,7 +22969,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22716,7 +23008,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22755,7 +23047,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22794,7 +23086,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22833,7 +23125,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22872,7 +23164,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22911,7 +23203,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22950,7 +23242,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -22989,7 +23281,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23027,7 +23319,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23065,7 +23357,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23103,7 +23395,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23141,7 +23433,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23179,7 +23471,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23217,7 +23509,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23255,7 +23547,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23293,7 +23585,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23332,7 +23624,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23371,7 +23663,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23410,7 +23702,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23449,7 +23741,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23488,7 +23780,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23527,7 +23819,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23566,7 +23858,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23605,7 +23897,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23643,7 +23935,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23681,7 +23973,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23719,7 +24011,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23757,7 +24049,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23795,7 +24087,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23833,7 +24125,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23871,7 +24163,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23909,7 +24201,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23948,7 +24240,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -23987,7 +24279,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -24026,7 +24318,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -24064,7 +24356,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -24102,7 +24394,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -24140,7 +24432,7 @@
             <structural_type_descriptor id_type="ui_mult_expr_FU"/>
             <parameter name="PIPE_PARAMETER">0</parameter>
             <description>This component is part of the BAMBU/PANDA IP LIBRARY</description>
-            <copyright>Copyright (C) 2016-2020 Politecnico di Milano</copyright>
+            <copyright>Copyright (C) 2016-2021 Politecnico di Milano</copyright>
             <authors>Fabrizio Ferrandi &lt;fabrizio.ferrandi@polimi.it&gt;</authors>
             <license>PANDA_LGPLv3</license>
             <specialized>LATTICE-LatticeECP3</specialized>
@@ -24933,6 +25225,296 @@
         <template name="ui_rshift_expr_FU" parameter="8 8 8"/>
         <characterization_timestamp>2016-06-24T12:10:18</characterization_timestamp>
         <operation operation_name="rshift_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.4289999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">26</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">26</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:26</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.4390000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">2</attribute>
+        <attribute name="REGISTERS" value_type="float64">2</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">2</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:28</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0129999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">50</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:29</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="2.911"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">98</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:34</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="3.855"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">10</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">10</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:32</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.4289999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">26</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">26</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:35</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.4830000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">34</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T18:30:36</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.4830000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">1</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:38</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.62"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T18:30:40</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0129999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">50</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:42</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="2.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">66</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">66</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T18:30:43</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="2.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">98</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:45</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="3.899"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T18:30:47</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="3.899"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">10</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">10</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:47</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.4289999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_minus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">18</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
+        <template name="ui_sat_minus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T18:30:49</characterization_timestamp>
+        <operation operation_name="sat_minus_expr" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.2469999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_16_16</name>
+        <attribute name="area" value_type="float64">26</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">26</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 16 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:51</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.4830000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_1_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">1</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 1 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:54</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.62"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_32_32</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">50</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 32 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:54</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="2.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_64_64</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">98</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 64 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:56</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="3.899"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_0_8_8</name>
+        <attribute name="area" value_type="float64">9</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">9</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="0 8 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:57</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.7839999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_16_0_16</name>
+        <attribute name="area" value_type="float64">26</attribute>
+        <attribute name="REGISTERS" value_type="float64">32</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">26</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="16 0 16"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:51</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.4830000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_16_16_16</name>
+        <attribute name="area" value_type="float64">34</attribute>
+        <attribute name="REGISTERS" value_type="float64">48</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">34</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="16 16 16"/>
+        <characterization_timestamp>2020-11-19T18:31:01</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:16|VECTOR_BOOL:16" execution_time="2.4980000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_1_0_1</name>
+        <attribute name="area" value_type="float64">1</attribute>
+        <attribute name="REGISTERS" value_type="float64">1</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">1</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="1 0 1"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:54</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="0.62"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_1_1_1</name>
+        <attribute name="area" value_type="float64">3</attribute>
+        <attribute name="REGISTERS" value_type="float64">3</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">3</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="1 1 1"/>
+        <characterization_timestamp>2020-11-19T18:31:00</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:1|VECTOR_BOOL:1" execution_time="1.0129999999999999"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_32_0_32</name>
+        <attribute name="area" value_type="float64">50</attribute>
+        <attribute name="REGISTERS" value_type="float64">64</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">50</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="32 0 32"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:54</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="2.9550000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_32_32_32</name>
+        <attribute name="area" value_type="float64">66</attribute>
+        <attribute name="REGISTERS" value_type="float64">96</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">66</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="32 32 32"/>
+        <characterization_timestamp>2020-11-19T18:31:02</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:32|VECTOR_BOOL:32" execution_time="2.9700000000000002"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_64_0_64</name>
+        <attribute name="area" value_type="float64">98</attribute>
+        <attribute name="REGISTERS" value_type="float64">128</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">98</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="64 0 64"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:56</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="3.899"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_64_64_64</name>
+        <attribute name="area" value_type="float64">130</attribute>
+        <attribute name="REGISTERS" value_type="float64">192</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">130</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="64 64 64"/>
+        <characterization_timestamp>2020-11-19T18:31:03</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:64|VECTOR_BOOL:64" execution_time="3.9140000000000001"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_8_0_8</name>
+        <attribute name="area" value_type="float64">9</attribute>
+        <attribute name="REGISTERS" value_type="float64">16</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">9</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="8 0 8"/>
+        <characterizing_constant_value>6148914691236517205</characterizing_constant_value>
+        <characterization_timestamp>2020-11-19T18:30:57</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.7839999999999998"/>
+      </cell>
+      <cell>
+        <name>ui_sat_plus_expr_FU_8_8_8</name>
+        <attribute name="area" value_type="float64">18</attribute>
+        <attribute name="REGISTERS" value_type="float64">24</attribute>
+        <attribute name="LUT_FF_PAIRS" value_type="float64">18</attribute>
+        <template name="ui_sat_plus_expr_FU" parameter="8 8 8"/>
+        <characterization_timestamp>2020-11-19T18:31:05</characterization_timestamp>
+        <operation operation_name="sat_plus_expr" commutative="1" supported_types="UINT:8|VECTOR_BOOL:8" execution_time="2.262"/>
       </cell>
       <cell>
         <name>ui_ternary_alu_expr_FU_0_16_16_16</name>
@@ -27935,7 +28517,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_16_8_0_16_8</name>
-        <attribute name="area" value_type="float64">108</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">216</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">108</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="16 8 0 16 8"/>
@@ -27954,7 +28536,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_1_128_0_1_128</name>
-        <attribute name="area" value_type="float64">64</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">128</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">64</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="1 128 0 1 128"/>
@@ -27973,7 +28555,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_32_4_0_32_4</name>
-        <attribute name="area" value_type="float64">86</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">172</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">86</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="32 4 0 32 4"/>
@@ -27992,7 +28574,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_64_2_0_64_2</name>
-        <attribute name="area" value_type="float64">107</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">214</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">107</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="64 2 0 64 2"/>
@@ -28011,7 +28593,7 @@
       </cell>
       <cell>
         <name>ui_vec1_lshift_expr_FU_8_16_0_8_16</name>
-        <attribute name="area" value_type="float64">88</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">176</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">88</attribute>
         <template name="ui_vec1_lshift_expr_FU" parameter="8 16 0 8 16"/>
@@ -31549,7 +32131,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_16_8_0_16_8</name>
-        <attribute name="area" value_type="float64">126</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">251</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">126</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="16 8 0 16 8"/>
@@ -31568,7 +32150,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_1_128_0_1_128</name>
-        <attribute name="area" value_type="float64">128</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">255</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">128</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="1 128 0 1 128"/>
@@ -31587,7 +32169,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_32_4_0_32_4</name>
-        <attribute name="area" value_type="float64">118</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">235</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">118</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="32 4 0 32 4"/>
@@ -31606,7 +32188,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_64_2_0_64_2</name>
-        <attribute name="area" value_type="float64">118</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">235</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">118</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="64 2 0 64 2"/>
@@ -31625,7 +32207,7 @@
       </cell>
       <cell>
         <name>ui_vec_lshift_expr_FU_8_16_0_8_16</name>
-        <attribute name="area" value_type="float64">126</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">251</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">126</attribute>
         <template name="ui_vec_lshift_expr_FU" parameter="8 16 0 8 16"/>
@@ -36476,7 +37058,7 @@
       </cell>
       <cell>
         <name>ui_view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T13:03:38</characterization_timestamp>
@@ -46178,7 +46760,7 @@
       </cell>
       <cell>
         <name>view_convert_expr_FU</name>
-        <attribute name="area" value_type="float64">32</attribute>
+        <attribute name="area" value_type="float64">1</attribute>
         <attribute name="REGISTERS" value_type="float64">64</attribute>
         <attribute name="LUT_FF_PAIRS" value_type="float64">32</attribute>
         <characterization_timestamp>2016-06-24T13:27:09</characterization_timestamp>

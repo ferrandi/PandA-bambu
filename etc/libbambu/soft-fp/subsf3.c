@@ -49,7 +49,7 @@ SFtype __subsf3(SFtype a, SFtype b)
    return r;
 }
 
-inline SFtype __float32_subif(SFtype a, SFtype b)
+SFtype __float32_subif(SFtype a, SFtype b)
 {
    return __subsf3(a, b);
 }

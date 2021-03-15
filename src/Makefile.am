@@ -103,7 +103,7 @@ if BUILD_LIB_PARSER
   DIST_SUBDIRS += parser
 if BUILD_LIB_FROM_C
   AM_CPPFLAGS += \
-     -I$(top_srcdir)/src/parser/treegcc
+     -I$(top_srcdir)/src/parser/compiler
 endif
 endif
 

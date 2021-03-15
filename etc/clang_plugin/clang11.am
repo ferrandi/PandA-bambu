@@ -1,0 +1,441 @@
+###### clang 11.0
+
+CLANG11_LIBS=-Wl,--start-group $(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions -Wl,--end-group
+CLANG11_LIBSD=$(CLANG_LIBS) -lclangCrossTU -lclangToolingInclusions
+compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'
+
+if BUILD_I386_CLANG11_EMPTY_PLUGIN
+all: $(I386_CLANG11_EMPTY_PLUGIN)
+endif
+
+if BUILD_I386_CLANG11_SSA_PLUGIN
+all: $(I386_CLANG11_SSA_PLUGIN)
+endif
+
+if BUILD_I386_CLANG11_SSA_PLUGINCPP
+all: $(I386_CLANG11_SSA_PLUGINCPP)
+endif
+
+if BUILD_I386_CLANG11_EXPANDMEMOPS_PLUGIN
+all: $(I386_CLANG11_EXPANDMEMOPS_PLUGIN)
+endif
+
+if BUILD_I386_CLANG11_GEPICANON_PLUGIN
+all: $(I386_CLANG11_GEPICANON_PLUGIN)
+endif
+
+if BUILD_I386_CLANG11_CSROA_PLUGIN
+all: $(I386_CLANG11_CSROA_PLUGIN)
+endif
+
+if BUILD_I386_CLANG11_TOPFNAME_PLUGIN
+all: $(I386_CLANG11_TOPFNAME_PLUGIN)
+endif
+
+if BUILD_I386_CLANG11_ASTANALYZER_PLUGIN
+all: $(I386_CLANG11_ASTANALYZER_PLUGIN)
+endif
+
+$(I386_CLANG11_SSA_PLUGIN) : clang11_plugin_dumpGimpleSSA.so clang11_plugin_dumpGimpleSSA_opt.so
+clang11_plugin_dumpGimpleSSA_opt.so : clang11_plugin_dumpGimpleSSA.so
+if BUILD_PTAA
+clang11_plugin_dumpGimpleSSA.so : clang11_plugin_dumpGimpleSSA.o clang11_dumpGimple.o clang11_HardekopfLin_AA.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs` -lbdd';\
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
+	esac;\
+	obj_list='clang11_dumpGimple.o clang11_HardekopfLin_AA.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o';\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSA_opt.so;\
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSA.so ; \
+	fi;
+else
+clang11_plugin_dumpGimpleSSA.so : clang11_plugin_dumpGimpleSSA.o clang11_dumpGimple.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	obj_list='clang11_dumpGimple.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o';\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSA_opt.so;\
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_dumpGimpleSSA.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSA.so ; \
+	fi;	
+endif
+
+$(I386_CLANG11_SSA_PLUGINCPP) : clang11_plugin_dumpGimpleSSACpp.so clang11_plugin_dumpGimpleSSACpp_opt.so
+clang11_plugin_dumpGimpleSSACpp_opt.so : clang11_plugin_dumpGimpleSSACpp.so
+if BUILD_PTAA
+clang11_plugin_dumpGimpleSSACpp.so : clang11_plugin_dumpGimpleSSACpp.o clang11_dumpGimple.o clang11_HardekopfLin_AA.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs` -lbdd'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
+	esac;\
+	obj_list='clang11_dumpGimple.o clang11_HardekopfLin_AA.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o';\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSACpp_opt.so;\
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSACpp.so;\
+	fi;
+else
+clang11_plugin_dumpGimpleSSACpp.so : clang11_plugin_dumpGimpleSSACpp.o clang11_dumpGimple.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	obj_list='clang11_dumpGimple.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o';\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSACpp_opt.so;\
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_dumpGimpleSSACpp.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleSSACpp.so;\
+	fi;
+endif
+
+$(I386_CLANG11_EMPTY_PLUGIN) : clang11_plugin_dumpGimpleEmpty.so clang11_plugin_dumpGimpleEmpty_opt.so
+clang11_plugin_dumpGimpleEmpty_opt.so : clang11_plugin_dumpGimpleEmpty.so
+if BUILD_PTAA
+clang11_plugin_dumpGimpleEmpty.so : clang11_plugin_dumpGimpleEmpty.o clang11_dumpGimple.o clang11_HardekopfLin_AA.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs` -lbdd'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti -lbdd';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete -lbdd';;\
+	esac;\
+	obj_list='clang11_dumpGimple.o clang11_HardekopfLin_AA.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o';\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleEmpty_opt.so; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleEmpty.so; \
+	fi;
+else
+clang11_plugin_dumpGimpleEmpty.so : clang11_plugin_dumpGimpleEmpty.o clang11_dumpGimple.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	obj_list='clang11_dumpGimple.o clang11_RangeAnalysis.o clang11_eSSA.o clang11_my_OrderedInstructions.o clang11_my_OrderedBasicBlock.o';\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleEmpty_opt.so; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_dumpGimpleEmpty.o $$obj_list $$compile_options -o clang11_plugin_dumpGimpleEmpty.so; \
+	fi;
+endif
+
+$(I386_CLANG11_EXPANDMEMOPS_PLUGIN) : clang11_plugin_expandMemOps.so clang11_plugin_expandMemOps_opt.so
+clang11_plugin_expandMemOps_opt.so : clang11_plugin_expandMemOps.so
+clang11_plugin_expandMemOps.so : clang11_plugin_expandMemOps.o 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_expandMemOps.o $$compile_options -o clang11_plugin_expandMemOps_opt.so; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_expandMemOps.o $$compile_options -o clang11_plugin_expandMemOps.so; \
+	fi;
+
+$(I386_CLANG11_GEPICANON_PLUGIN) : clang11_plugin_GepiCanon.so clang11_plugin_GepiCanon_opt.so
+clang11_plugin_GepiCanon_opt.so : clang11_plugin_GepiCanon.so
+clang11_plugin_GepiCanon.so : clang11_plugin_GepiCanon.o clang11_GepiCanon.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_GepiCanon.o clang11_GepiCanon.o $$compile_options -o clang11_plugin_GepiCanon_opt.so; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_GepiCanon.o clang11_GepiCanon.o $$compile_options -o clang11_plugin_GepiCanon.so; \
+	fi;
+
+$(I386_CLANG11_CSROA_PLUGIN) : clang11_plugin_CSROA.so clang11_plugin_CSROA_opt.so
+clang11_plugin_CSROA_opt.so : clang11_plugin_CSROA.so
+clang11_plugin_CSROA.so : clang11_plugin_CSROA.o clang11_CSROA.o clang11_GepiCanon.o
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_CSROA.o clang11_GepiCanon.o clang11_CSROA.o $$compile_options -o clang11_plugin_CSROA_opt.so; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_CSROA.o clang11_GepiCanon.o clang11_CSROA.o $$compile_options -o clang11_plugin_CSROA.so; \
+	fi;
+
+$(I386_CLANG11_TOPFNAME_PLUGIN) : clang11_plugin_topfname.so clang11_plugin_topfname_opt.so
+clang11_plugin_topfname_opt.so : clang11_plugin_topfname.so
+clang11_plugin_topfname.so : clang11_plugin_topfname.o 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) opt_clang11_plugin_topfname.o $$compile_options -o clang11_plugin_topfname_opt.so; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_topfname.o $$compile_options -o clang11_plugin_topfname.so; \
+	fi;
+
+$(I386_CLANG11_ASTANALYZER_PLUGIN) : clang11_plugin_ASTAnalyzer.so
+clang11_plugin_ASTAnalyzer.so : clang11_plugin_ASTAnalyzer.o 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options='$(CLANG11_LIBS) -lversion `$(I386_LLVM_CONFIG11_EXE) --ldflags --libs --system-libs`'; \
+	    compile_options='';; \
+	  darwin*) \
+	    compile_options='-fPIC -shared -undefined dynamic_lookup -fno-rtti';; \
+	  *) \
+	    compile_options='-fPIC -shared -fno-rtti -Wl,-znodelete';;\
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) clang11_plugin_ASTAnalyzer.o $$compile_options -o clang11_plugin_ASTAnalyzer.so; \
+	fi;
+
+clang11_plugin_dumpGimpleEmpty.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang11_plugin_dumpGimpleEmpty.o; \
+	    $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleEmpty.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_dumpGimpleEmpty.o; \
+	fi;
+
+clang11_plugin_dumpGimpleSSA.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang11_plugin_dumpGimpleSSA.o;\
+	  $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_dumpGimpleSSA.o;\
+	fi;
+
+clang11_plugin_dumpGimpleSSACpp.o : $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I. -DCPP_LANGUAGE';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang11_plugin_dumpGimpleSSACpp.o;\
+	  $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_dumpGimpleSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_dumpGimpleSSACpp.o;\
+	fi;
+
+clang11_plugin_expandMemOps.o : $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang11_plugin_expandMemOps.o; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_expandMemOps.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_expandMemOps.o; \
+	fi;
+
+clang11_plugin_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang11_plugin_GepiCanon.o; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_GepiCanon.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_GepiCanon.o; \
+	fi;
+
+clang11_plugin_CSROA.o : $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/PtrIteratorSimplifyPass.hpp  $(top_srcdir)/etc/clang_plugin/ExpandMemOpsPass.hpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang11_plugin_CSROA.o; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_CSROA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_CSROA.o; \
+	fi;
+
+clang11_plugin_topfname.o : $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=0 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o opt_clang11_plugin_topfname.o; \
+	  $(I386_CLANG11_PLUGIN_COMPILER) -DADD_RSP=1 $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_topfname.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_topfname.o; \
+	fi;
+
+clang11_plugin_ASTAnalyzer.o : $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp 
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/plugin_ASTAnalyzer.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_plugin_ASTAnalyzer.o;\
+	fi;
+
+clang11_my_OrderedInstructions.o : $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedInstructions.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_my_OrderedInstructions.o;\
+	fi;
+
+clang11_my_OrderedBasicBlock.o : $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.cpp $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/my_OrderedBasicBlock.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_my_OrderedBasicBlock.o;\
+	fi;
+
+
+clang11_dumpGimple.o : $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(top_srcdir)/etc/clang_plugin/plugin_includes.hpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp  $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/dumpGimple.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_dumpGimple.o;\
+	fi;
+
+if BUILD_PTAA
+clang11_HardekopfLin_AA.o : $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	  $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/HardekopfLin_AA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_HardekopfLin_AA.o ; \
+	fi;
+endif
+
+clang11_RangeAnalysis.o : $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/RangeAnalysis.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_RangeAnalysis.o; \
+	fi;
+
+clang11_eSSA.o : $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(top_srcdir)/etc/clang_plugin/llvm/eSSA.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/llvm/eSSA.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_eSSA.o; \
+	fi;
+
+clang11_GepiCanon.o : $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.';; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/GepiCanonicalizationPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_GepiCanon.o; \
+	fi;
+
+
+clang11_CSROA.o : $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.hpp
+	case $(host_os) in \
+	  mingw*) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	    compile_options='';; \
+	  *) \
+	    compile_options=' -fPIC $(I386_LLVM11_CXXFLAGS) -DPANDA_PLUGIN_VERSION="$(PANDA_PLUGIN_VERSION)" $(WFLAGS) -I.'; \
+	esac;\
+	if test -n "$$compile_options"; then \
+	    $(I386_CLANG11_PLUGIN_COMPILER) $$compile_options -c $(top_srcdir)/etc/clang_plugin/CustomScalarReplacementOfAggregatesPass.cpp $(CLANG_PLUGIN_ADDITIONAL_OPTIONS) -o clang11_CSROA.o; \
+	fi;
+
+bambuS2S-11: $(top_srcdir)/etc/clang_plugin/bambuS2S.cpp
+	case $(host_os) in \
+	  darwin*) \
+	    $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG11_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG11_LIBSD)  -o $@;;\
+	  *) \
+	    $(I386_CLANG11_PLUGIN_COMPILER) $(BOOST_CPPFLAGS) -fno-rtti -O2 -std=c++14 `$(I386_LLVM_CONFIG11_EXE) --cppflags --ldflags --libs --system-libs` $^ $(CLANG11_LIBS)  -o $@;;\
+	esac;
+
+######

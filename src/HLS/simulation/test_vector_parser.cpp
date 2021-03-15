@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -35,11 +35,6 @@
  * @brief .
  *
  */
-
-#include "config_HAVE_I386_CLANG4_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG5_COMPILER.hpp"
-#include "config_HAVE_I386_CLANG6_COMPILER.hpp"
-
 #include "test_vector_parser.hpp"
 
 /// behavior include
@@ -85,8 +80,8 @@
 #include "fileIO.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 
 TestVectorParser::TestVectorParser(const ParameterConstRef _parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef _design_flow_manager) : HLS_step(_parameters, _HLSMgr, _design_flow_manager, HLSFlowStep_Type::TEST_VECTOR_PARSER)
 {
@@ -105,9 +100,13 @@ void TestVectorParser::ParseUserString(std::vector<std::map<std::string, std::st
    for(auto it = local_string.begin(), it_end = local_string.end(); it != it_end; ++it)
    {
       if(*it == ',')
+      {
          last_comma = it;
+      }
       else if(*it == '=' && last_comma != it_end)
+      {
          *last_comma = '$';
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Preprocessed string " + local_string);
    test_vectors.push_back(std::map<std::string, std::string>());
@@ -149,12 +148,16 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
       for(const auto function_parameter : behavioral_helper->get_parameters())
       {
          if(behavioral_helper->is_a_pointer(function_parameter))
+         {
             continue;
+         }
          std::string param = behavioral_helper->PrintVariable(function_parameter);
 
          long long int value = (rand() % 20);
          if(behavioral_helper->is_bool(function_parameter))
+         {
             value = value % 2;
+         }
          node->set_attribute(param, boost::lexical_cast<std::string>(value));
       }
 
@@ -174,7 +177,9 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
             const auto* Enode = GetPointer<const xml_element>(iter);
 
             if(!Enode || Enode->get_name() != "testbench")
+            {
                continue;
+            }
 
             std::map<std::string, std::string> test_vector;
 
@@ -190,8 +195,15 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                {
                   const auto test_directory = GetDirectory(input_xml_filename);
                   const auto input_file_name = BuildPath(test_directory, Enode->get_attribute(param + ":init_file")->get_value());
-                  const auto input_file = fileIO_istream_open(input_file_name);
-                  test_vector[param] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+                  if(input_file_name.size() > 4 && input_file_name.substr(input_file_name.size() - 4) == ".dat")
+                  {
+                     test_vector[param] = input_file_name;
+                  }
+                  else
+                  {
+                     const auto input_file = fileIO_istream_open(input_file_name);
+                     test_vector[param] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
+                  }
                }
                else if(!behavioral_helper->is_a_pointer(function_parameter))
                {
@@ -201,6 +213,14 @@ void TestVectorParser::ParseXMLFile(std::vector<std::map<std::string, std::strin
                {
                   HLSMgr->RSim->results_available = true;
                   test_vector[param + ":output"] = STR((Enode)->get_attribute(param + ":output")->get_value());
+               }
+               else if((Enode)->get_attribute(param + ":init_output_file"))
+               {
+                  HLSMgr->RSim->results_available = true;
+                  const auto test_directory = GetDirectory(input_xml_filename);
+                  const auto input_file_name = BuildPath(test_directory, Enode->get_attribute(param + ":init_output_file")->get_value());
+                  const auto input_file = fileIO_istream_open(input_file_name);
+                  test_vector[param + ":output"] = std::string(std::istreambuf_iterator<char>(*input_file), std::istreambuf_iterator<char>());
                }
             }
             if(behavioral_helper->GetFunctionReturnType(function_id) and ((Enode)->get_attribute("return")))

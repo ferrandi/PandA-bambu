@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -59,7 +59,6 @@ enum class MemoryAllocation_Policy
    ALL_BRAM,           /// all objects that need to be stored in memory are allocated on BRAMs
    NO_BRAM,            /// all objects that need to be stored in memory are allocated on an external memory
    EXT_PIPELINED_BRAM, /// all objects that need to be stored in memory are allocated on an external pipelined memory
-   INTERN_UNALIGNED,   /// all objects with an unaligned access are clustered on a single STD_BRAM
    NONE                /// no policy
 };
 
@@ -155,7 +154,7 @@ class memory_allocation : public HLS_step
     * @param design_flow_manager is the design flow manager
     * @param hls_flow_step_type is the algorithm to be used
     */
-   memory_allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
+   memory_allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type hls_flow_step_type,
                      const HLSFlowStepSpecializationConstRef hls_flow_step_specialization = HLSFlowStepSpecializationConstRef());
 
    /**

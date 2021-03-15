@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -77,13 +77,19 @@ HLSFunctionStep::~HLSFunctionStep() = default;
 bool HLSFunctionStep::HasToBeExecuted() const
 {
    CallGraphManagerConstRef CGMan = HLSMgr->CGetCallGraphManager();
-   CustomOrderedSet<unsigned int> funcs = CGMan->GetReachedBodyFunctions();
+   const auto funcs = CGMan->GetReachedBodyFunctions();
    if(funId and funcs.find(funId) == funcs.end())
+   {
       return false;
+   }
    if(bb_version == 0 or bb_version != HLSMgr->GetFunctionBehavior(funId)->GetBBVersion())
+   {
       return true;
+   }
    if(memory_version == 0 or memory_version != HLSMgr->GetMemVersion())
+   {
       return true;
+   }
    const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();
    vertex current_step = design_flow_manager.lock()->GetDesignFlowStep(GetSignature());
    InEdgeIterator ie, ie_end;
@@ -92,9 +98,13 @@ bool HLSFunctionStep::HasToBeExecuted() const
       vertex pre_dependence_vertex = boost::source(*ie, *design_flow_graph);
       const DesignFlowStepInfoConstRef pre_info = design_flow_graph->CGetDesignFlowStepInfo(pre_dependence_vertex);
       if(pre_info->status != DesignFlowStep_Status::SUCCESS and pre_info->status != DesignFlowStep_Status::EMPTY)
+      {
          continue;
+      }
       if(GetPointer<HLSFunctionStep>(pre_info->design_flow_step) && GetPointer<HLSFunctionStep>(pre_info->design_flow_step)->funId != funId)
+      {
          continue;
+      }
       return true;
    }
    return false;
@@ -104,7 +114,9 @@ void HLSFunctionStep::Initialize()
 {
    HLS_step::Initialize();
    if(funId)
+   {
       HLS = HLSMgr->get_HLS(funId);
+   }
 }
 
 const std::string HLSFunctionStep::GetSignature() const
@@ -140,7 +152,7 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
 
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Computed steps to be created");
-   for(auto const step_to_be_created : steps_to_be_created)
+   for(auto const& step_to_be_created : steps_to_be_created)
    {
       switch(std::get<2>(step_to_be_created))
       {
@@ -150,7 +162,9 @@ void HLSFunctionStep::ComputeRelationships(DesignFlowStepSet& design_flow_step_s
             for(auto const function : called_functions)
             {
                if(function == funId)
+               {
                   continue;
+               }
                std::string function_name = tree_helper::normalized_ID(tree_helper::name_function(TreeM, function));
                /// FIXME: temporary deactivated
                if(false) // function already implemented
@@ -192,7 +206,9 @@ DesignFlowStep_Status HLSFunctionStep::Exec()
 {
    const auto status = InternalExec();
    if(funId)
+   {
       bb_version = HLSMgr->GetFunctionBehavior(funId)->GetBBVersion();
+   }
    memory_version = HLSMgr->GetMemVersion();
    return status;
 }

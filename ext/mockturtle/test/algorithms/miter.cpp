@@ -30,7 +30,7 @@ TEST_CASE( "check equivalence of two XAGs as XAG miter", "[miter]" )
 
   CHECK( miter_ntk );
 
-  CHECK( simulate<kitty::static_truth_table<2>>( *miter_ntk )[0]._bits == 0b0000 );
+  CHECK( simulate<kitty::static_truth_table<2u>>( *miter_ntk )[0]._bits == 0b0000 );
 }
 
 TEST_CASE( "check equivalence of AIG and XAG as XMG miter", "[miter]" )
@@ -54,7 +54,7 @@ TEST_CASE( "check equivalence of AIG and XAG as XMG miter", "[miter]" )
 
   CHECK( miter_ntk );
 
-  CHECK( simulate<kitty::static_truth_table<2>>( *miter_ntk )[0]._bits == 0b0000 );
+  CHECK( simulate<kitty::static_truth_table<2u>>( *miter_ntk )[0]._bits == 0b0000 );
 }
 
 TEST_CASE( "check equivalence of AIG and XAG as k-LUT miter", "[miter]" )
@@ -78,5 +78,5 @@ TEST_CASE( "check equivalence of AIG and XAG as k-LUT miter", "[miter]" )
 
   CHECK( miter_ntk );
 
-  CHECK( simulate<kitty::static_truth_table<2>>( *miter_ntk )[0]._bits == 0b0000 );
+  CHECK( simulate<kitty::static_truth_table<2u>>( *miter_ntk )[0]._bits == 0b0000 );
 }

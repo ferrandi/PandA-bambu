@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2014-2020 Politecnico di Milano
+ *              Copyright (C) 2014-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -275,9 +275,13 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
             /// NOTE:: Chaining after unbound operation is not allowed
             const double current_op_execution_time = [&]() -> double {
                if(not allocation_information->is_operation_bounded(filtered_op_graph, current, allocation_information->GetFuType(current)))
+               {
                   return clock_period;
+               }
                if(GET_TYPE(filtered_op_graph, current) & TYPE_PHI)
+               {
                   return allocation_information->GetCondExprTimeLatency(filtered_op_graph->CGetOpNodeInfo(current)->GetNodeId());
+               }
                auto timeLatency = allocation_information->GetTimeLatency(current, fu_binding::UNKNOWN, allocation_information->GetCycleLatency(current) - 1);
                /// Stage period of first cycle of operations with registered inputs is 0
                return allocation_information->get_initiation_time(allocation_information->GetFuType(current), current) > 0 ?
@@ -294,7 +298,9 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
             for(boost::tie(ie, ie_end) = boost::in_edges(current, *filtered_op_graph); ie != ie_end; ie++)
             {
                if(((filtered_op_graph->GetSelector(*ie) & ~CDG_SELECTOR) == 0) and behavioral_helper->CanBeSpeculated(filtered_op_graph->CGetOpNodeInfo(boost::target(*ie, *filtered_op_graph))->GetNodeId()))
+               {
                   continue;
+               }
                const vertex source = boost::source(*ie, *filtered_op_graph);
                const auto connection_time = allocation_information->GetConnectionTime(source, current, AbsControlStep(bb_node_info->block->number, AbsControlStep::UNKNOWN));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Considering " + GET_NAME(filtered_op_graph, source));
@@ -313,7 +319,9 @@ void SDCScheduling::AddDelayConstraints(const meilp_solverRef solver, const OpGr
             for(boost::tie(ie, ie_end) = boost::in_edges(current, *filtered_op_graph); ie != ie_end; ie++)
             {
                if(((filtered_op_graph->GetSelector(*ie) & ~CDG_SELECTOR) == 0) and behavioral_helper->CanBeSpeculated(filtered_op_graph->CGetOpNodeInfo(boost::target(*ie, *filtered_op_graph))->GetNodeId()))
+               {
                   continue;
+               }
                const vertex source = boost::source(*ie, *filtered_op_graph);
                if(dead_operations.find(source) != dead_operations.end())
                {
@@ -536,9 +544,13 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 bool SDCScheduling::HasToBeExecuted() const
 {
    if(bb_version == 0)
+   {
       return Scheduling::HasToBeExecuted();
+   }
    else
+   {
       return false;
+   }
 }
 
 DesignFlowStep_Status SDCScheduling::InternalExec()
@@ -575,7 +587,9 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       /// Create the solver
       meilp_solverRef solver(meilp_solver::create_solver(static_cast<meilp_solver::supported_solvers>(parameters->getOption<int>(OPT_ilp_solver))));
       if(parameters->getOption<int>(OPT_ilp_max_time))
+      {
          solver->setMaximumSeconds(parameters->getOption<int>(OPT_ilp_max_time));
+      }
 
       if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
       {
@@ -608,7 +622,9 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          {
             const auto target = boost::target(*oe, *basic_block_graph);
             if(boost::in_degree(target, *basic_block_graph) < 2)
+            {
                continue;
+            }
             path_end_to_varindex[basic_block] = next_var_index;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Creating variable for path ending in BB" + STR(basic_block_graph->CGetBBNodeInfo(basic_block)->block->number));
             next_var_index++;
@@ -1127,7 +1143,9 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
             for(const auto other_operation : loop_operations)
             {
                if(operation == other_operation or not FB->CheckReachability(other_operation, operation))
+               {
                   continue;
+               }
                const std::string name = "last_" + GET_NAME(op_graph, other_operation) + "_" + GET_NAME(op_graph, operation);
                std::map<int, double> coeffs;
                coeffs[static_cast<int>(operation_to_varindex.find(std::pair<vertex, unsigned int>(operation, 0))->second)] = 1.0;
@@ -1212,7 +1230,9 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
       solver->objective_add(objective_coeffs, meilp_solver::min);
       if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC and loop_operations.size() > 2)
+      {
          solver->print_to_file(parameters->getOption<std::string>(OPT_output_temporary_directory) + "/" + FB->CGetBehavioralHelper()->get_function_name() + "_SDC_formulation_Loop_" + STR(loop_id));
+      }
 #ifndef NDEBUG
       if(debug_level >= DEBUG_LEVEL_VERY_PEDANTIC)
       {
@@ -1221,7 +1241,9 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
 #endif
       int ilp_result = solver->solve_ilp();
       if(ilp_result != 0)
+      {
          THROW_ERROR("Error in finding ilp solution");
+      }
 
 #ifndef NDEBUG
       for(auto const& temp_edge : temp_edges)
@@ -1244,12 +1266,18 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          HLS->Rsch->set_execution_end(operation, current_control_step + initial_ctrl_step + allocation_information->GetCycleLatency(operation) - 1);
          const unsigned int cycle_latency = allocation_information->GetCycleLatency(operation);
          if(last_relative_step < current_control_step + cycle_latency)
+         {
             last_relative_step = current_control_step + cycle_latency;
+         }
          /// set the binding information
          if(HLS->HLS_C->has_binding_to_fu(GET_NAME(filtered_op_graph, operation)))
+         {
             res_binding->bind(operation, allocation_information->GetFuType(operation), 0);
+         }
          else
+         {
             res_binding->bind(operation, allocation_information->GetFuType(operation));
+         }
       }
       initial_ctrl_step = last_relative_step + 1u;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
@@ -1475,7 +1503,9 @@ void SDCScheduling::Initialize()
       for(auto const operation : basic_block_graph->CGetBBNodeInfo(*basic_block)->statements_list)
       {
          if(HLS->operations.find(operation) != HLS->operations.end())
+         {
             filtered_operations.insert(operation);
+         }
       }
       for(const auto operation : filtered_operations)
       {

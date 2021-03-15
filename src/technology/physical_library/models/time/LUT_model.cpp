@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,6 +68,8 @@ bool LUT_model::is_timing_value(value_t val) const
 double LUT_model::get_timing_value(value_t val) const
 {
    if(!is_timing_value(val))
+   {
       return 0;
+   }
    return timing_results.find(val)->second;
 }

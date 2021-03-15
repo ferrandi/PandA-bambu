@@ -51,7 +51,7 @@ CMPtype __eqsf2(SFtype a, SFtype b)
 
 strong_alias(__eqsf2, __nesf2);
 
-inline CMPtype __float32_eq(SFtype a, SFtype b)
+CMPtype __float32_eq(SFtype a, SFtype b)
 {
    return __eqsf2(a, b);
 }

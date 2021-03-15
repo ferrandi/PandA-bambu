@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -96,7 +96,9 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
          ret.insert(std::make_tuple(synthesis_flow, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          ret.insert(std::make_tuple(parameters->getOption<HLSFlowStep_Type>(OPT_datapath_architecture), HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
          if(HLSMgr->get_HLS(funId))
+         {
             ret.insert(std::make_tuple(HLSMgr->get_HLS(funId)->controller_type, HLSFlowStepSpecializationConstRef(), HLSFlowStep_Relationship::SAME_FUNCTION));
+         }
          HLSFlowStep_Type top_entity_type;
 
          bool found = false;
@@ -105,11 +107,17 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
             auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
             THROW_ASSERT(omp_functions, "OMP_functions must not be null");
             if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+            {
                found = true;
+            }
             if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+            {
                found = true;
+            }
             if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+            {
                found = true;
+            }
             if(found) // use new top_entity
             {
                top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
@@ -149,6 +157,8 @@ DesignFlowStep_Status standard_hls::InternalExec()
 {
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    if(top_function_ids.find(funId) != top_function_ids.end())
+   {
       STOP_TIME(HLSMgr->HLS_execution_time);
+   }
    return DesignFlowStep_Status::EMPTY;
 }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,6 +69,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::make_pair(FIX_STRUCTS_PASSED_BY_VALUE, SAME_FUNCTION));
          relationships.insert(std::make_pair(FUNCTION_CALL_TYPE_CLEANUP, SAME_FUNCTION));
          relationships.insert(std::make_pair(IR_LOWERING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(COMPUTE_IMPLICIT_CALLS, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -113,7 +114,9 @@ DesignFlowStep_Status parm_decl_taken_address_fix::InternalExec()
             {
                auto* ae = GetPointer<addr_expr>(GET_NODE(ga->op1));
                if(GET_NODE(ae->op)->get_kind() == parm_decl_K)
+               {
                   parm_decl_addr.insert(GET_INDEX_NODE(ae->op));
+               }
             }
          }
       }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,6 +81,7 @@
 
 /// utility include
 #include "copyrights_strings.hpp"
+#include "fileIO.hpp"
 #include "string_manipulation.hpp"
 
 minimal_interface::minimal_interface(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type)
@@ -95,7 +96,9 @@ DesignFlowStep_Status minimal_interface::InternalExec()
 {
    const structural_managerRef SM = HLS->top;
    if(!SM)
+   {
       THROW_ERROR("Top component has not been created yet!");
+   }
 
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const BehavioralHelperConstRef BH = FB->CGetBehavioralHelper();
@@ -104,9 +107,13 @@ DesignFlowStep_Status minimal_interface::InternalExec()
    std::string module_name;
    structural_objectRef wrappedObj = SM->get_circ();
    if(is_top)
+   {
       module_name = BH->get_function_name();
+   }
    else
+   {
       module_name = wrappedObj->get_id() + "_minimal_interface";
+   }
 
    structural_managerRef SM_minimal_interface = structural_managerRef(new structural_manager(parameters));
    structural_type_descriptorRef module_type = structural_type_descriptorRef(new structural_type_descriptor(module_name));
@@ -126,7 +133,9 @@ DesignFlowStep_Status minimal_interface::InternalExec()
    build_wrapper(wrappedObj, interfaceObj, SM_minimal_interface);
 
    if(!is_top || !parameters->isOption(OPT_do_not_expose_globals) || !parameters->getOption<bool>(OPT_do_not_expose_globals))
+   {
       memory::propagate_memory_parameters(HLS->top->get_circ(), SM_minimal_interface);
+   }
    // Generation completed, the new created module substitutes the current top-level one
    HLS->top = SM_minimal_interface;
    return DesignFlowStep_Status::SUCCESS;
@@ -136,7 +145,9 @@ static bool compareMemVarsPair(std::pair<unsigned int, memory_symbolRef>& first,
 {
    bool result = false;
    if(first.second->get_address() < second.second->get_address())
+   {
       result = true;
+   }
 
    return result;
 }
@@ -145,7 +156,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
 {
    std::map<unsigned int, structural_objectRef> null_values;
 
-   unsigned int base_address = HLSMgr->base_address;
+   unsigned long long int base_address = HLSMgr->base_address;
    bool Has_extern_allocated_data = HLSMgr->Rmem->get_memory_address() - base_address > 0;
    bool Has_unknown_addresses = HLSMgr->Rmem->has_unknown_addresses();
    const auto cg_man = HLSMgr->CGetCallGraphManager();
@@ -162,9 +173,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       if(GetPointer<port_o>(port_obj)->get_is_memory())
       {
          if(GetPointer<port_o>(port_obj)->get_is_master())
+         {
             with_master = true;
+         }
          else if(GetPointer<port_o>(port_obj)->get_is_slave())
+         {
             with_slave = true;
+         }
       }
    }
 
@@ -188,6 +203,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    }
 
    std::map<structural_objectRef, structural_objectRef> portsToConnect;
+   std::map<structural_objectRef, structural_objectRef> portsToSigConnect;
 
    CustomOrderedSet<std::string> param_renamed;
    if(!DesignInterface.empty())
@@ -215,16 +231,86 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                {
                   auto p = wrappedObj->find_member(argName_string, port_o_K, wrappedObj);
                   THROW_ASSERT(p, "unexpected condition");
-                  portsToConstant.insert(p);
+                  bool is_direct = interfaceType == "m_axi" && HLSMgr->design_interface_attribute2.find(fname) != HLSMgr->design_interface_attribute2.end() &&
+                                   HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string) != HLSMgr->design_interface_attribute2.find(fname)->second.end() &&
+                                   HLSMgr->design_interface_attribute2.find(fname)->second.find(argName_string)->second == "direct";
+                  if(!is_direct)
+                  {
+                     portsToConstant.insert(p);
+                  }
                   param_renamed.insert(argName_string);
                }
                else
+               {
                   THROW_ERROR("unexpected parameter type for " + argName_string + "(" + interfaceType + ")");
+               }
             }
          }
       }
    }
 
+   auto do_not_expose_globals_case = [&] {
+      auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
+         structural_objectRef port1, port2;
+         structural_objectRef sign;
+         /// slave INs connections
+         port1 = wrappedObj->find_member(portS, port_o_K, wrappedObj);
+         port2 = wrappedObj->find_member(portM, port_o_K, wrappedObj);
+         if(port1->get_kind() == port_vector_o_K)
+         {
+            sign = SM_minimal_interface->add_sign_vector(port2->get_id() + "_INT", GetPointer<port_o>(port2)->get_ports_size(), interfaceObj, port2->get_typeRef());
+         }
+         else
+         {
+            sign = SM_minimal_interface->add_sign(port2->get_id() + "_INT", interfaceObj, port2->get_typeRef());
+         }
+         SM_minimal_interface->add_connection(port1, sign);
+         SM_minimal_interface->add_connection(sign, port2);
+         portsToSigConnect[port2] = sign;
+         portsToSkip.insert(wrappedObj->find_member(portS, port_o_K, wrappedObj));
+      };
+      auto manage_feedback2 = [&](const std::string& portSin, const std::string& portSout, const std::string& portM) {
+         structural_objectRef port1In, port1Out, port2;
+         structural_objectRef sign;
+         /// slave INs connections
+         port2 = wrappedObj->find_member(portM, port_o_K, wrappedObj);
+         if(port2->get_kind() == port_vector_o_K)
+         {
+            sign = SM_minimal_interface->add_sign_vector(port2->get_id() + "_INT", GetPointer<port_o>(port2)->get_ports_size(), interfaceObj, port2->get_typeRef());
+         }
+         else
+         {
+            sign = SM_minimal_interface->add_sign(port2->get_id() + "_INT", interfaceObj, port2->get_typeRef());
+         }
+         port1In = wrappedObj->find_member(portSin, port_o_K, wrappedObj);
+         SM_minimal_interface->add_connection(port1In, sign);
+         portsToSigConnect[port2] = sign;
+
+         port1Out = wrappedObj->find_member(portSout, port_o_K, wrappedObj);
+         if(port1Out->get_kind() == port_vector_o_K)
+         {
+            sign = SM_minimal_interface->add_sign_vector(port1Out->get_id() + "_INT", GetPointer<port_o>(port1Out)->get_ports_size(), interfaceObj, port1Out->get_typeRef());
+         }
+         else
+         {
+            sign = SM_minimal_interface->add_sign(port1Out->get_id() + "_INT", interfaceObj, port1Out->get_typeRef());
+         }
+         SM_minimal_interface->add_connection(port1Out, sign);
+         SM_minimal_interface->add_connection(sign, port2);
+
+         portsToSkip.insert(wrappedObj->find_member(portSin, port_o_K, wrappedObj));
+         portsToSkip.insert(wrappedObj->find_member(portSout, port_o_K, wrappedObj));
+      };
+      manage_feedback1("S_oe_ram", "Mout_oe_ram");
+      manage_feedback1("S_we_ram", "Mout_we_ram");
+      manage_feedback1("S_addr_ram", "Mout_addr_ram");
+      manage_feedback1("S_Wdata_ram", "Mout_Wdata_ram");
+      manage_feedback1("S_data_ram_size", "Mout_data_ram_size");
+      manage_feedback2("Sin_DataRdy", "Sout_DataRdy", "M_DataRdy");
+      manage_feedback2("Sin_Rdata_ram", "Sout_Rdata_ram", "M_Rdata_ram");
+      portsToConstant.erase(portsToConstant.find(wrappedObj->find_member("Sin_DataRdy", port_o_K, wrappedObj)));
+      portsToConstant.erase(portsToConstant.find(wrappedObj->find_member("Sin_Rdata_ram", port_o_K, wrappedObj)));
+   };
    if(!Has_intern_shared_data)
    {
       if(!Has_extern_allocated_data)
@@ -280,6 +366,10 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             portsToSkip.insert(wrappedObj->find_member("Mout_Wdata_ram", port_o_K, wrappedObj));
             portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
          }
+         else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
+         {
+            do_not_expose_globals_case();
+         }
          else
          {
             /// do nothing
@@ -287,7 +377,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
       else
       {
-         if(with_master && !Has_unknown_addresses)
+         if(with_master && !Has_unknown_addresses && HLSMgr->Rmem->get_ext_memory_variables().empty())
          {
             THROW_ASSERT(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) != (MemoryAllocation_ChannelsType::MEM_ACC_P1N), "unexpected condition");
             /// allocate the unique shared memory
@@ -295,7 +385,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             bool is_memory_splitted;
             std::string latency_postfix = "";
             if(parameters->getOption<std::string>(OPT_bram_high_latency) != "")
+            {
                latency_postfix = parameters->getOption<std::string>(OPT_bram_high_latency);
+            }
             if(parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_11 or parameters->getOption<MemoryAllocation_ChannelsType>(OPT_channels_type) == MemoryAllocation_ChannelsType::MEM_ACC_N1)
             {
                is_memory_splitted = false;
@@ -310,57 +402,83 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             unsigned int bus_addr_bitsize = HLSMgr->get_address_bitsize();
             unsigned int bus_size_bitsize = HLSMgr->Rmem->get_bus_size_bitsize();
             unsigned int bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
-            unsigned int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
-            unsigned int vec_size = n_bytes / (bus_data_bitsize / 8);
+            unsigned long long int n_bytes = HLSMgr->Rmem->get_memory_address() - base_address;
+            unsigned long long int vec_size = n_bytes / (bus_data_bitsize / 8);
             std::string init_filename = "shared_memory.mem";
-            std::ofstream init_file_a((init_filename).c_str());
-            std::ofstream init_file_b((+"0_" + init_filename).c_str());
+            std::ofstream init_file_a(GetPath((init_filename).c_str()));
+            std::ofstream init_file_b(GetPath((+"0_" + init_filename).c_str()));
 
-            module* shared_memory_module = GetPointer<module>(shared_memory);
+            auto* shared_memory_module = GetPointer<module>(shared_memory);
             shared_memory_module->SetParameter("address_space_begin", STR(base_address));
             shared_memory_module->SetParameter("address_space_rangesize", STR(n_bytes));
             if(parameters->isOption(OPT_sparse_memory) && parameters->getOption<bool>(OPT_sparse_memory))
+            {
                shared_memory_module->SetParameter("USE_SPARSE_MEMORY", "1");
+            }
             else
+            {
                shared_memory_module->SetParameter("USE_SPARSE_MEMORY", "0");
+            }
             if(is_memory_splitted)
             {
                shared_memory_module->SetParameter("MEMORY_INIT_file_a", "\"\"" + init_filename + "\"\"");
                shared_memory_module->SetParameter("MEMORY_INIT_file_b", "\"\"0_" + init_filename + "\"\"");
             }
             else
+            {
                shared_memory_module->SetParameter("MEMORY_INIT_file", "\"\"" + init_filename + "\"\"");
+            }
             shared_memory_module->SetParameter("n_elements", STR(vec_size));
             shared_memory_module->SetParameter("data_size", STR(bus_data_bitsize));
             shared_memory_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
-            if((Has_extern_allocated_data && parameters->getOption<MemoryAllocation_Policy>(OPT_memory_allocation_policy) != MemoryAllocation_Policy::INTERN_UNALIGNED) || Has_unknown_addresses)
+            if((Has_extern_allocated_data) || Has_unknown_addresses)
+            {
                shared_memory_module->SetParameter("BUS_PIPELINED", "0");
+            }
             else
+            {
                shared_memory_module->SetParameter("BUS_PIPELINED", "1");
+            }
             unsigned int n_ports = parameters->isOption(OPT_channels_number) ? parameters->getOption<unsigned int>(OPT_channels_number) : 0;
             for(unsigned int i = 0; i < shared_memory_module->get_in_port_size(); i++)
             {
                structural_objectRef port = shared_memory_module->get_in_port(i);
                if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
+               {
                   GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+               }
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
+               {
                   port->type_resize(bus_data_bitsize);
+               }
                else if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_addr_bus())
+               {
                   port->type_resize(bus_addr_bitsize);
+               }
                else if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_size_bus())
+               {
                   port->type_resize(bus_size_bitsize);
+               }
             }
             for(unsigned int i = 0; i < shared_memory_module->get_out_port_size(); i++)
             {
                structural_objectRef port = shared_memory_module->get_out_port(i);
                if(GetPointer<port_o>(port)->get_kind() == port_vector_o_K && GetPointer<port_o>(port)->get_ports_size() == 0)
+               {
                   GetPointer<port_o>(port)->add_n_ports(n_ports, port);
+               }
                if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_data_bus())
+               {
                   port->type_resize(bus_data_bitsize);
+               }
                else if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_addr_bus())
+               {
                   port->type_resize(bus_addr_bitsize);
+               }
                else if(GetPointer<port_o>(port) && GetPointer<port_o>(port)->get_is_size_bus())
+               {
                   port->type_resize(bus_size_bitsize);
+               }
             }
             const std::map<unsigned int, memory_symbolRef>& mem_vars = HLSMgr->Rmem->get_ext_memory_variables();
             unsigned int nbyte_on_memory = (bram_bitsize / 8);
@@ -371,22 +489,26 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             bool is_even = true;
             std::list<std::pair<unsigned int, memory_symbolRef>> mem_variables;
             for(const auto& mem_var : mem_vars)
+            {
                mem_variables.push_back(std::make_pair(mem_var.first, mem_var.second));
+            }
             mem_variables.sort(compareMemVarsPair);
 
             std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m_next;
-            for(std::list<std::pair<unsigned int, memory_symbolRef>>::const_iterator m = mem_variables.begin(); m != mem_variables.end(); ++m)
+            for(auto m = mem_variables.begin(); m != mem_variables.end(); ++m)
             {
                init_v = TestbenchGenerationBaseStep::print_var_init(HLSMgr->get_tree_manager(), m->first, HLSMgr->Rmem);
                std::vector<std::string> splitted = SplitString(init_v, ",");
                unsigned int byte_allocated = 0;
-               unsigned int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first) / 8;
+               unsigned long long int actual_byte = tree_helper::size(HLSMgr->get_tree_manager(), m->first) / 8;
                std::vector<std::string> eightbit_string;
                for(const auto& i : splitted)
                {
                   current_bits = i;
                   for(unsigned int base_index = 0; base_index < current_bits.size(); base_index = base_index + 8, ++byte_allocated)
+                  {
                      eightbit_string.push_back(current_bits.substr(current_bits.size() - 8 - base_index, 8));
+                  }
                }
                std::string str_bit;
                str_bit = "";
@@ -400,9 +522,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                      if(counter % nbyte_on_memory == 0)
                      {
                         if(is_even || !is_memory_splitted)
+                        {
                            init_file_a << str_bit << std::endl;
+                        }
                         else
+                        {
                            init_file_b << str_bit << std::endl;
+                        }
                         str_bit = "";
                         is_even = !is_even;
                      }
@@ -418,9 +544,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                      if(counter % nbyte_on_memory == 0)
                      {
                         if(is_even || !is_memory_splitted)
+                        {
                            init_file_a << str_bit << std::endl;
+                        }
                         else
+                        {
                            init_file_b << str_bit << std::endl;
+                        }
                         str_bit = "";
                         is_even = !is_even;
                      }
@@ -429,7 +559,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                /// alignment padding
                m_next = m;
                ++m_next;
-               unsigned int object_offset;
+               unsigned long long int object_offset;
                if(m_next != mem_variables.end())
                {
                   object_offset = HLSMgr->Rmem->get_base_address(m_next->first, HLS->functionId) - HLSMgr->Rmem->get_base_address(m->first, HLS->functionId);
@@ -441,16 +571,20 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                THROW_ASSERT(object_offset >= actual_byte, "more allocated memory than expected");
                if(object_offset > actual_byte)
                {
-                  for(unsigned int base_index = 0; base_index < object_offset - actual_byte; ++base_index)
+                  for(unsigned long long int base_index = 0; base_index < object_offset - actual_byte; ++base_index)
                   {
                      str_bit = "00000000" + str_bit;
                      counter++;
                      if(counter % nbyte_on_memory == 0)
                      {
                         if(is_even || !is_memory_splitted)
+                        {
                            init_file_a << str_bit << std::endl;
+                        }
                         else
+                        {
                            init_file_b << str_bit << std::endl;
+                        }
                         str_bit = "";
                         is_even = !is_even;
                      }
@@ -461,16 +595,24 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             structural_objectRef clock_port, reset_port;
             structural_objectRef port_ck = shared_memory->find_member(CLOCK_PORT_NAME, port_o_K, shared_memory);
             if(parameters->isOption(OPT_clock_name))
+            {
                clock_port = SM_minimal_interface->add_port(parameters->getOption<std::string>(OPT_clock_name), port_o::IN, interfaceObj, port_ck->get_typeRef());
+            }
             else
+            {
                clock_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_ck)->get_id(), port_o::IN, interfaceObj, port_ck->get_typeRef());
+            }
             SM_minimal_interface->add_connection(clock_port, port_ck);
 
             structural_objectRef port_rst = shared_memory->find_member(RESET_PORT_NAME, port_o_K, shared_memory);
             if(parameters->isOption(OPT_reset_name))
+            {
                reset_port = SM_minimal_interface->add_port(parameters->getOption<std::string>(OPT_reset_name), port_o::IN, interfaceObj, port_rst->get_typeRef());
+            }
             else
+            {
                reset_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_rst)->get_id(), port_o::IN, interfaceObj, port_rst->get_typeRef());
+            }
             SM_minimal_interface->add_connection(reset_port, port_rst);
 
             if(!with_slave)
@@ -481,41 +623,61 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port1 = shared_memory->find_member("S_oe_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_oe_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = shared_memory->find_member("S_we_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_we_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = shared_memory->find_member("S_addr_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_addr_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = shared_memory->find_member("S_Wdata_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_Wdata_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = shared_memory->find_member("S_data_ram_size", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
 
@@ -534,7 +696,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   }
                }
                else
+               {
                   SM_minimal_interface->add_connection(port1, null_values[GET_TYPE_SIZE(port1)]);
+               }
 
                port1 = shared_memory->find_member("Sin_Rdata_ram", port_o_K, shared_memory);
                if(null_values.find(GET_TYPE_SIZE(port1)) == null_values.end())
@@ -551,7 +715,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   }
                }
                else
+               {
                   SM_minimal_interface->add_connection(port1, null_values[GET_TYPE_SIZE(port1)]);
+               }
 
                /// master INs connections
                portsToConnect[wrappedObj->find_member("M_Rdata_ram", port_o_K, wrappedObj)] = shared_memory->find_member("Sout_Rdata_ram", port_o_K, shared_memory);
@@ -572,9 +738,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port1 = shared_memory->find_member("S_oe_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_oe_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj);
@@ -584,9 +754,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port1 = shared_memory->find_member("S_we_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_we_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = wrappedObj->find_member("S_we_ram", port_o_K, wrappedObj);
@@ -596,9 +770,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port1 = shared_memory->find_member("S_addr_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_addr_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = wrappedObj->find_member("S_addr_ram", port_o_K, wrappedObj);
@@ -608,9 +786,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port1 = shared_memory->find_member("S_Wdata_ram", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_Wdata_ram", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = wrappedObj->find_member("S_Wdata_ram", port_o_K, wrappedObj);
@@ -620,9 +802,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port1 = shared_memory->find_member("S_data_ram_size", port_o_K, shared_memory);
                port2 = wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
                port1 = wrappedObj->find_member("S_data_ram_size", port_o_K, wrappedObj);
@@ -632,18 +818,26 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port1 = wrappedObj->find_member("Sout_DataRdy", port_o_K, wrappedObj);
                port2 = shared_memory->find_member("Sin_DataRdy", port_o_K, shared_memory);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
 
                port1 = wrappedObj->find_member("Sout_Rdata_ram", port_o_K, wrappedObj);
                port2 = shared_memory->find_member("Sin_Rdata_ram", port_o_K, shared_memory);
                if(port1->get_kind() == port_vector_o_K)
+               {
                   sign = SM_minimal_interface->add_sign_vector(port1->get_id() + "_INT", GetPointer<port_o>(port1)->get_ports_size(), interfaceObj, port1->get_typeRef());
+               }
                else
+               {
                   sign = SM_minimal_interface->add_sign(port1->get_id() + "_INT", interfaceObj, port1->get_typeRef());
+               }
                SM_minimal_interface->add_connection(port1, sign);
                SM_minimal_interface->add_connection(sign, port2);
 
@@ -662,7 +856,11 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                portsToSkip.insert(wrappedObj->find_member("Mout_data_ram_size", port_o_K, wrappedObj));
             }
          }
-         else if(with_slave && HLSMgr->Rmem->get_allocated_intern_memory() == 0)
+         else if(with_slave && parameters->isOption(OPT_do_not_expose_globals))
+         {
+            do_not_expose_globals_case();
+         }
+         else if(with_slave && (HLSMgr->Rmem->get_allocated_intern_memory() == 0))
          {
             /// slave INs
             portsToConstant.insert(wrappedObj->find_member("S_oe_ram", port_o_K, wrappedObj));
@@ -694,9 +892,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                if(!ext_port)
                {
                   if(port_in->get_kind() == port_vector_o_K)
+                  {
                      ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                  }
                   else
+                  {
                      ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, int_port->get_typeRef());
+                  }
                }
                port_o::fix_port_properties(int_port, ext_port);
                SM_minimal_interface->add_connection(int_port, ext_port);
@@ -705,8 +907,18 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             {
                THROW_ASSERT(GetPointer<port_o>(int_port)->get_port_direction() == port_o::port_direction::OUT, "unexpected condition");
             }
+            else if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_M_AXI_OFF)
+            {
+               portsToConstant.insert(int_port);
+            }
+            else if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_M_AXI_DIRECT)
+            {
+               portsToConstant.insert(int_port);
+            }
             else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+            {
                THROW_ERROR("not yet supported port interface");
+            }
          }
          else
          {
@@ -718,14 +930,20 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                {
                   portsToSkip.insert(int_port);
                   if(port_in->get_kind() == port_vector_o_K)
+                  {
                      ext_port = SM_minimal_interface->add_port_vector(port_name + "_i", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                  }
                   else
+                  {
                      ext_port = SM_minimal_interface->add_port(port_name + "_i", port_o::IN, interfaceObj, int_port->get_typeRef());
+                  }
                   port_o::fix_port_properties(int_port, ext_port);
                   SM_minimal_interface->add_connection(int_port, ext_port);
                }
                else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+               {
                   THROW_ERROR("not yet supported port interface");
+               }
             }
             else
             {
@@ -737,14 +955,20 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                   {
                      portsToSkip.insert(int_port);
                      if(port_in->get_kind() == port_vector_o_K)
+                     {
                         ext_port = SM_minimal_interface->add_port_vector(port_name + "_dout", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                     }
                      else
+                     {
                         ext_port = SM_minimal_interface->add_port(port_name + "_dout", port_o::IN, interfaceObj, int_port->get_typeRef());
+                     }
                      port_o::fix_port_properties(int_port, ext_port);
                      SM_minimal_interface->add_connection(int_port, ext_port);
                   }
                   else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+                  {
                      THROW_ERROR("not yet supported port interface");
+                  }
                }
                else
                {
@@ -785,6 +1009,46 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                               portsToSkip.insert(int_port);
                            }
                         }
+                        else
+                        {
+                           /// check if we have axis master interface
+                           int_port = wrappedObj->find_member("_m_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                           if(int_port)
+                           {
+                              if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_WNONE)
+                              {
+                                 int_port = wrappedObj->find_member(port_name, port_o_K, wrappedObj);
+                                 THROW_ASSERT(int_port, "unexpected condition");
+                                 portsToSkip.insert(int_port);
+                              }
+                           }
+                           else
+                           {
+                              /// check if we have axis slave interface
+                              int_port = wrappedObj->find_member("_s_axis_" + port_name + "_TDATA", port_o_K, wrappedObj);
+                              if(int_port)
+                              {
+                                 if(GetPointer<port_o>(int_port)->get_port_interface() == port_o::port_interface::PI_RNONE)
+                                 {
+                                    portsToSkip.insert(int_port);
+                                    if(port_in->get_kind() == port_vector_o_K)
+                                    {
+                                       ext_port = SM_minimal_interface->add_port_vector("s_axis_" + port_name + "_TDATA", port_o::IN, GetPointer<port_o>(int_port)->get_ports_size(), interfaceObj, int_port->get_typeRef());
+                                    }
+                                    else
+                                    {
+                                       ext_port = SM_minimal_interface->add_port("s_axis_" + port_name + "_TDATA", port_o::IN, interfaceObj, int_port->get_typeRef());
+                                    }
+                                    port_o::fix_port_properties(int_port, ext_port);
+                                    SM_minimal_interface->add_connection(int_port, ext_port);
+                                 }
+                                 else if(GetPointer<port_o>(int_port)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
+                                 {
+                                    THROW_ERROR("not yet supported port interface");
+                                 }
+                              }
+                           }
+                        }
                      }
                   }
                }
@@ -808,13 +1072,19 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
 
       if(parameters->isOption(OPT_clock_name) && port_name == CLOCK_PORT_NAME)
+      {
          port_name = parameters->getOption<std::string>(OPT_clock_name);
+      }
       else if(parameters->isOption(OPT_reset_name) && port_name == RESET_PORT_NAME)
+      {
          port_name = parameters->getOption<std::string>(OPT_reset_name);
+      }
       else if(parameters->isOption(OPT_start_name) && port_name == START_PORT_NAME)
+      {
          port_name = parameters->getOption<std::string>(OPT_start_name);
+      }
 
-      if(portsToSkip.find(port_in) == portsToSkip.end() && portsToConnect.find(port_in) == portsToConnect.end() && portsToConstant.find(port_in) == portsToConstant.end())
+      if(portsToSkip.find(port_in) == portsToSkip.end() && portsToConnect.find(port_in) == portsToConnect.end() && portsToConstant.find(port_in) == portsToConstant.end() && portsToSigConnect.find(port_in) == portsToSigConnect.end())
       {
          if(GetPointer<port_o>(port_in)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
          {
@@ -823,9 +1093,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             if(!ext_port)
             {
                if(port_in->get_kind() == port_vector_o_K)
+               {
                   ext_port = SM_minimal_interface->add_port_vector(ext_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
+               }
                else
+               {
                   ext_port = SM_minimal_interface->add_port(ext_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+               }
             }
             port_o::fix_port_properties(port_in, ext_port);
             SM_minimal_interface->add_connection(port_in, ext_port);
@@ -837,7 +1111,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             if(!ext_port)
             {
                if(port_in->get_kind() == port_vector_o_K)
+               {
                   ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
+               }
                else
                {
                   if(port_in->get_typeRef()->type == structural_type_descriptor::UINT || port_in->get_typeRef()->type == structural_type_descriptor::INT)
@@ -846,7 +1122,9 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                      ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, vecbool);
                   }
                   else
+                  {
                      ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+                  }
                }
             }
             port_o::fix_port_properties(port_in, ext_port);
@@ -857,9 +1135,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       {
          structural_objectRef sign;
          if(port_in->get_kind() == port_vector_o_K)
+         {
             sign = SM_minimal_interface->add_sign_vector(port_in->get_id() + "_INT", GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
+         }
          else
+         {
             sign = SM_minimal_interface->add_sign(port_in->get_id() + "_INT", interfaceObj, port_in->get_typeRef());
+         }
          SM_minimal_interface->add_connection(port_in, sign);
          SM_minimal_interface->add_connection(sign, portsToConnect[port_in]);
       }
@@ -879,7 +1161,34 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
             }
          }
          else
+         {
             SM_minimal_interface->add_connection(port_in, null_values[GET_TYPE_SIZE(port_in)]);
+         }
+      }
+      else if(portsToSigConnect.find(port_in) != portsToSigConnect.end())
+      {
+         structural_objectRef ext_port = interfaceObj->find_member(port_name, port_o_K, interfaceObj);
+         if(!ext_port)
+         {
+            if(port_in->get_kind() == port_vector_o_K)
+            {
+               ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::IN, GetPointer<port_o>(port_in)->get_ports_size(), interfaceObj, port_in->get_typeRef());
+            }
+            else
+            {
+               if(port_in->get_typeRef()->type == structural_type_descriptor::UINT || port_in->get_typeRef()->type == structural_type_descriptor::INT)
+               {
+                  structural_type_descriptorRef vecbool = structural_type_descriptorRef(new structural_type_descriptor("bool", port_in->get_typeRef()->size));
+                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, vecbool);
+               }
+               else
+               {
+                  ext_port = SM_minimal_interface->add_port(port_name, port_o::IN, interfaceObj, port_in->get_typeRef());
+               }
+            }
+         }
+         port_o::fix_port_properties(port_in, ext_port);
+         SM_minimal_interface->add_connection(portsToSigConnect[port_in], ext_port);
       }
    }
 
@@ -887,39 +1196,57 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
    for(unsigned int i = 0; i < GetPointer<module>(wrappedObj)->get_out_port_size(); ++i)
    {
       structural_objectRef port_out = GetPointer<module>(wrappedObj)->get_out_port(i);
+      auto port_name = GetPointer<port_o>(port_out)->get_id();
       if(GetPointer<port_o>(port_out)->get_port_interface() != port_o::port_interface::PI_DEFAULT)
       {
-         if(GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WNONE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WVALID ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_RACK || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_READ ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_ADDRESS ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_CHIPENABLE || GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_WRITEENABLE ||
-            GetPointer<port_o>(port_out)->get_port_interface() == port_o::port_interface::PI_DOUT)
+         auto check_interfaces = [&](std::set<port_o::port_interface> interfList) -> bool { return interfList.find(GetPointer<port_o>(port_out)->get_port_interface()) != interfList.end(); };
+         if(check_interfaces({port_o::port_interface::PI_WNONE,        port_o::port_interface::PI_WVALID,     port_o::port_interface::PI_RACK,        port_o::port_interface::PI_READ,        port_o::port_interface::PI_WRITE,
+                              port_o::port_interface::PI_ADDRESS,      port_o::port_interface::PI_CHIPENABLE, port_o::port_interface::PI_WRITEENABLE, port_o::port_interface::PI_DOUT,        port_o::port_interface::M_AXI_AWVALID,
+                              port_o::port_interface::M_AXI_AWADDR,    port_o::port_interface::M_AXI_AWID,    port_o::port_interface::M_AXI_AWLEN,    port_o::port_interface::M_AXI_AWSIZE,   port_o::port_interface::M_AXI_AWBURST,
+                              port_o::port_interface::M_AXI_AWLOCK,    port_o::port_interface::M_AXI_AWCACHE, port_o::port_interface::M_AXI_AWPROT,   port_o::port_interface::M_AXI_AWQOS,    port_o::port_interface::M_AXI_AWREGION,
+                              port_o::port_interface::M_AXI_AWUSER,    port_o::port_interface::M_AXI_WVALID,  port_o::port_interface::M_AXI_WDATA,    port_o::port_interface::M_AXI_WSTRB,    port_o::port_interface::M_AXI_WLAST,
+                              port_o::port_interface::M_AXI_WID,       port_o::port_interface::M_AXI_WUSER,   port_o::port_interface::M_AXI_ARVALID,  port_o::port_interface::M_AXI_ARADDR,   port_o::port_interface::M_AXI_ARID,
+                              port_o::port_interface::M_AXI_ARLEN,     port_o::port_interface::M_AXI_ARSIZE,  port_o::port_interface::M_AXI_ARBURST,  port_o::port_interface::M_AXI_ARLOCK,   port_o::port_interface::M_AXI_ARCACHE,
+                              port_o::port_interface::M_AXI_ARPROT,    port_o::port_interface::M_AXI_ARQOS,   port_o::port_interface::M_AXI_ARREGION, port_o::port_interface::M_AXI_ARUSER,   port_o::port_interface::M_AXI_RREADY,
+                              port_o::port_interface::M_AXI_BREADY,    port_o::port_interface::M_AXI_BUSER,   port_o::port_interface::S_AXIL_AWVALID, port_o::port_interface::S_AXIL_AWREADY, port_o::port_interface::S_AXIL_AWADDR,
+                              port_o::port_interface::S_AXIL_WVALID,   port_o::port_interface::S_AXIL_WREADY, port_o::port_interface::S_AXIL_WDATA,   port_o::port_interface::S_AXIL_WSTRB,   port_o::port_interface::S_AXIL_ARVALID,
+                              port_o::port_interface::S_AXIL_ARREADY,  port_o::port_interface::S_AXIL_ARADDR, port_o::port_interface::S_AXIL_RVALID,  port_o::port_interface::S_AXIL_RREADY,  port_o::port_interface::S_AXIL_RDATA,
+                              port_o::port_interface::S_AXIL_RRESP,    port_o::port_interface::S_AXIL_BVALID, port_o::port_interface::S_AXIL_BREADY,  port_o::port_interface::S_AXIL_BRESP,   port_o::port_interface::PI_S_AXIS_TREADY,
+                              port_o::port_interface::PI_M_AXIS_TVALID}))
          {
             portsToSkip.insert(port_out);
-            auto port_name = GetPointer<port_o>(port_out)->get_id();
             std::string ext_name = port_name[0] == '_' ? port_name.substr(1) : port_name;
             structural_objectRef ext_port = interfaceObj->find_member(ext_name, port_o_K, interfaceObj);
             if(!ext_port)
             {
                if(port_out->get_kind() == port_vector_o_K)
+               {
                   ext_port = SM_minimal_interface->add_port_vector(ext_name, port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), interfaceObj, port_out->get_typeRef());
+               }
                else
+               {
                   ext_port = SM_minimal_interface->add_port(ext_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
+               }
             }
             port_o::fix_port_properties(port_out, ext_port);
             SM_minimal_interface->add_connection(port_out, ext_port);
          }
          else
-            THROW_ERROR("not yet supported port interface");
+         {
+            THROW_ERROR("not yet supported port interface" + STR(GetPointer<port_o>(port_out)->get_port_interface()));
+         }
       }
-      if(portsToSkip.find(port_out) == portsToSkip.end() && portsToConnect.find(port_out) == portsToConnect.end())
+      if(portsToSkip.find(port_out) == portsToSkip.end() && portsToConnect.find(port_out) == portsToConnect.end() && portsToSigConnect.find(port_out) == portsToSigConnect.end())
       {
-         auto port_name = GetPointer<port_o>(port_out)->get_id();
          if(parameters->isOption(OPT_done_name) && port_name == DONE_PORT_NAME)
+         {
             port_name = parameters->getOption<std::string>(OPT_done_name);
+         }
          structural_objectRef ext_port;
          if(port_out->get_kind() == port_vector_o_K)
+         {
             ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), interfaceObj, port_out->get_typeRef());
+         }
          else
          {
             if(port_out->get_typeRef()->type == structural_type_descriptor::INT)
@@ -959,10 +1286,36 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
                port_out = out0;
             }
             else
+            {
                ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
+            }
          }
          port_o::fix_port_properties(port_out, ext_port);
          SM_minimal_interface->add_connection(port_out, ext_port);
+      }
+      else if(portsToSigConnect.find(port_out) != portsToSigConnect.end())
+      {
+         structural_objectRef ext_port = interfaceObj->find_member(port_name, port_o_K, interfaceObj);
+         if(!ext_port)
+         {
+            if(port_out->get_kind() == port_vector_o_K)
+            {
+               ext_port = SM_minimal_interface->add_port_vector(port_name, port_o::OUT, GetPointer<port_o>(port_out)->get_ports_size(), interfaceObj, port_out->get_typeRef());
+            }
+            else
+            {
+               if(port_out->get_typeRef()->type == structural_type_descriptor::UINT || port_out->get_typeRef()->type == structural_type_descriptor::INT)
+               {
+                  THROW_ERROR("unexpected condition");
+               }
+               else
+               {
+                  ext_port = SM_minimal_interface->add_port(port_name, port_o::OUT, interfaceObj, port_out->get_typeRef());
+               }
+            }
+         }
+         port_o::fix_port_properties(port_out, ext_port);
+         SM_minimal_interface->add_connection(portsToSigConnect.find(port_out)->second, ext_port);
       }
       else if(port_out->get_kind() == port_vector_o_K && !GetPointer<port_o>(port_out)->find_bounded_object())
       {
@@ -985,9 +1338,13 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       structural_objectRef port_in_out = GetPointer<module>(wrappedObj)->get_in_out_port(i);
       structural_objectRef ext_port;
       if(port_in_out->get_kind() == port_vector_o_K)
+      {
          ext_port = SM_minimal_interface->add_port_vector(GetPointer<port_o>(port_in_out)->get_id(), port_o::IO, GetPointer<port_o>(port_in_out)->get_ports_size(), interfaceObj, port_in_out->get_typeRef());
+      }
       else
+      {
          ext_port = SM_minimal_interface->add_port(GetPointer<port_o>(port_in_out)->get_id(), port_o::IO, interfaceObj, port_in_out->get_typeRef());
+      }
       port_o::fix_port_properties(port_in_out, ext_port);
       SM_minimal_interface->add_connection(port_in_out, ext_port);
    }

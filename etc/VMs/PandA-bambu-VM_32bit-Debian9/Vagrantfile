@@ -6,8 +6,10 @@ Vagrant.configure(2) do |config|
   config.vm.synced_folder '.', '/vagrant', disabled: true
   config.vm.provider "virtualbox" do |vb|
      vb.memory = "4096"
-     vb.customize [ 'modifyvm', :id, '--uartmode1', 'disconnected']
      vb.customize [ 'modifyvm', :id, '--vram', '64']
+     vb.customize ["modifyvm", :id, "--cableconnected1", "on"]
+     vb.customize ["modifyvm", :id, "--uart1", "0x3F8", "4"]
+     vb.customize ["modifyvm", :id, "--uartmode1", "file", File::NULL]
      vb.name = "PandA-bambu-VM_32bit-Debian9"
   end
   config.vm.provision "shell", inline: <<-SHELL

@@ -754,10 +754,18 @@ acos_test (void)
   check_float ("acos (-1) == pi",  FUNC(acos) (identityFloat(-1)), M_PIl, 0, 0, 0);
   check_float ("acos (0.5) == M_PI_6l*2.0",  FUNC(acos) (identityFloat(0.5)), M_PI_6l*2.0, 0, 0, 0);
   check_float ("acos (-0.5) == M_PI_6l*4.0",  FUNC(acos) (identityFloat(-0.5)), M_PI_6l*4.0, 0, 0, 0);
+#ifndef FAITHFULLY_ROUNDED
   check_float ("acos (0.75) == 0.722734247813415611178377352641333362",  FUNC(acos) (identityFloat(0.75L)), 0.722734247813415611178377352641333362L, DELTA11, 0, 0);
+#else
+  check_float ("acos (0.75) == 0.722734247813415611178377352641333362",  FUNC(acos) (identityFloat(0.75L)), 0.722734247813415611178377352641333362L, 1, 0, 0);
+#endif
   check_float ("acos (2e-17) == 1.57079632679489659923132169163975144",  FUNC(acos) (identityFloat(2e-17L)), 1.57079632679489659923132169163975144L, 0, 0, 0);
   check_float ("acos (0.0625) == 1.50825556499840522843072005474337068",  FUNC(acos) (identityFloat(0.0625L)), 1.50825556499840522843072005474337068L, 0, 0, 0);
+#ifndef FAITHFULLY_ROUNDED
   print_max_error ("acos", DELTAacos, 0);
+#else
+  print_max_error ("acos", 1, 0);
+#endif
 }
 
 #ifndef NO_MAIN
@@ -3032,6 +3040,7 @@ hypot_test (void)
   check_float ("hypot (NaN, NaN) == NaN",  FUNC(hypot) (nan_value, nan_value), nan_value, 0, 0, 0);
 
   /* hypot (x,y) == hypot (+-x, +-y)  */
+#ifndef FAITHFULLY_ROUNDED
   check_float ("hypot (0.7, 12.4) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(0.7L), identityFloat(12.4L)), 12.419742348374220601176836866763271L, DELTA1101, 0, 0);
   check_float ("hypot (-0.7, 12.4) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(-0.7L), identityFloat(12.4L)), 12.419742348374220601176836866763271L, DELTA1102, 0, 0);
   check_float ("hypot (0.7, -12.4) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(0.7L), identityFloat(-12.4L)), 12.419742348374220601176836866763271L, DELTA1103, 0, 0);
@@ -3040,6 +3049,16 @@ hypot_test (void)
   check_float ("hypot (-12.4, 0.7) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(-12.4L), identityFloat(0.7L)), 12.419742348374220601176836866763271L, DELTA1106, 0, 0);
   check_float ("hypot (12.4, -0.7) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(12.4L), identityFloat(-0.7L)), 12.419742348374220601176836866763271L, DELTA1107, 0, 0);
   check_float ("hypot (-12.4, -0.7) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(-12.4L), identityFloat(-0.7L)), 12.419742348374220601176836866763271L, DELTA1108, 0, 0);
+#else
+  check_float ("hypot (0.7, 12.4) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(0.7L), identityFloat(12.4L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+  check_float ("hypot (-0.7, 12.4) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(-0.7L), identityFloat(12.4L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+  check_float ("hypot (0.7, -12.4) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(0.7L), identityFloat(-12.4L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+  check_float ("hypot (-0.7, -12.4) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(-0.7L), identityFloat(-12.4L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+  check_float ("hypot (12.4, 0.7) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(12.4L), identityFloat(0.7L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+  check_float ("hypot (-12.4, 0.7) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(-12.4L), identityFloat(0.7L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+  check_float ("hypot (12.4, -0.7) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(12.4L), identityFloat(-0.7L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+  check_float ("hypot (-12.4, -0.7) == 12.419742348374220601176836866763271",  FUNC(hypot) (identityFloat(-12.4L), identityFloat(-0.7L)), 12.419742348374220601176836866763271L, 1, 0, 0);
+#endif
 
   /*  hypot (x,0) == fabs (x)  */
   check_float ("hypot (0.75, 0) == 0.75",  FUNC(hypot) (identityFloat(0.75L), identityFloat(0)), 0.75L, 0, 0, 0);
@@ -3048,7 +3067,11 @@ hypot_test (void)
 
   check_float ("hypot (0.75, 1.25) == 1.45773797371132511771853821938639577",  FUNC(hypot) (identityFloat(0.75L), identityFloat(1.25L)), 1.45773797371132511771853821938639577L, 0, 0, 0);
 
+#ifndef FAITHFULLY_ROUNDED
   print_max_error ("hypot", DELTAhypot, 0);
+#else
+  print_max_error ("hypot", 8, 0);
+#endif
 }
 
 #ifndef NO_MAIN
@@ -4677,13 +4700,17 @@ void sqrt_test (void)
 
   check_float ("sqrt (2209) == 47",  FUNC(sqrt) (identityFloat(2209)), 47, 0, 0, 0);
   check_float ("sqrt (4) == 2",  FUNC(sqrt) (identityFloat(4)), 2, 0, 0, 0);
+#ifndef FAITHFULLY_ROUNDED
   check_float ("sqrt (2) == M_SQRT2l",  FUNC(sqrt) (identityFloat(2)), M_SQRT2l, 0, 0, 0);
+#else
+  check_float ("sqrt (2) == M_SQRT2l",  FUNC(sqrt) (identityFloat(2)), M_SQRT2l, 1, 0, 0);
+#endif  
   check_float ("sqrt (0.25) == 0.5",  FUNC(sqrt) (identityFloat(0.25)), 0.5, 0, 0, 0);
   check_float ("sqrt (6642.25) == 81.5",  FUNC(sqrt) (identityFloat(6642.25)), 81.5, 0, 0, 0);
   check_float ("sqrt (15190.5625) == 123.25",  FUNC(sqrt) (identityFloat(15190.5625L)), 123.25L, 0, 0, 0);
   check_float ("sqrt (0.75) == 0.866025403784438646763723170752936183",  FUNC(sqrt) (identityFloat(0.75L)), 0.866025403784438646763723170752936183L, 0, 0, 0);
 
-  print_max_error ("sqrt", 0, 0);
+  print_max_error ("sqrt", 1, 0);
 }
 
 

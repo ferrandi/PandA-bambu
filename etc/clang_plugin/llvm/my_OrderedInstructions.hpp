@@ -20,7 +20,11 @@
 #define LLVM_TRANSFORMS_UTILS_MYORDEREDINSTRUCTIONS_H
 
 #include "llvm/ADT/DenseMap.h"
+#if __clang_major__ >= 11
+#include "my_OrderedBasicBlock.hpp"
+#else
 #include "llvm/Analysis/OrderedBasicBlock.h"
+#endif
 #include "llvm/IR/Dominators.h"
 #include "llvm/IR/Operator.h"
 

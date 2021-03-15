@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,13 +48,12 @@
 /// Superclass include
 #include "design_flow_step.hpp"
 
-typedef enum
-{
+using ParserFlowStep_Type = enum ParserFlowStep_Type {
 #if HAVE_FROM_AADL_ASN_BUILT
    AADL,
    ASN,
 #endif
-} ParserFlowStep_Type;
+};
 
 class ParserFlowStep : public DesignFlowStep
 {

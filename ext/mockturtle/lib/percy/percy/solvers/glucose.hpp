@@ -113,7 +113,7 @@ namespace percy
 #endif
         }
 
-        synth_result solve(int)
+        synth_result solve(int cl)
         {
 #ifdef USE_GLUCOSE
             Glucose::vec<Glucose::Lit> litvec;

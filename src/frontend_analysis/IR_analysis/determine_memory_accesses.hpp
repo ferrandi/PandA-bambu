@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,9 +69,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
 
    /// Already visited address expression (used to avoid infinite recursion)
    CustomUnorderedSet<unsigned int> already_visited_ae;
-
-   /// True if already executed
-   bool already_executed;
+   CustomUnorderedSet<unsigned int> already_visited;
 
    /**
     * Analyze the given node ID to determine which variables have to be referred in memory
@@ -92,7 +90,7 @@ class determine_memory_accesses : public FunctionFrontendFlowStep
     * @param function_id is the node id of the function analyzed.
     * @param design_flow_manager is the design flow manager
     */
-   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int function_idi, const DesignFlowManagerConstRef design_flow_manager);
+   determine_memory_accesses(const ParameterConstRef parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

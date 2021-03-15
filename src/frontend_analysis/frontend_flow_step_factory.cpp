@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -117,7 +117,6 @@
 #include "commutative_expr_restructuring.hpp"
 #include "compute_implicit_calls.hpp"
 #include "cond_expr_restructuring.hpp"
-#include "constant_flop_wrapper.hpp"
 #endif
 #if HAVE_TASTE
 #include "create_address_translation.hpp"
@@ -153,6 +152,7 @@
 #include "extract_gimple_cond_op.hpp"
 #include "extract_patterns.hpp"
 #include "fanout_opt.hpp"
+#include "function_parm_mask.hpp"
 #endif
 #if HAVE_ZEBU_BUILT
 #include "FunctionPointerCallGraphComputation.hpp"
@@ -233,6 +233,10 @@
 #endif
 #if HAVE_HOST_PROFILING_BUILT
 #include "host_profiling.hpp"
+#endif
+#if HAVE_BAMBU_BUILT
+#include "Range_Analysis.hpp"
+#include "eSSA.hpp"
 #endif
 #if HAVE_BAMBU_BUILT
 #include "rebuild_initializations.hpp"
@@ -387,7 +391,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
       case COMPUTE_IMPLICIT_CALLS:
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
-      case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:
 #endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
@@ -398,6 +401,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
@@ -453,7 +457,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -581,6 +584,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -595,6 +599,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
+      case MEM_CG_EXT:
 #if HAVE_ZEBU_BUILT
       case POINTED_DATA_EVALUATION:
 #endif
@@ -604,6 +609,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::GenerateFrontendStep(FrontendFl
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
 #endif
 #if HAVE_ZEBU_BUILT
       case(SOURCE_CODE_STATISTICS):
@@ -667,6 +675,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       {
          return DesignFlowStepRef(new FindMaxCFGTransformations(AppM, design_flow_manager.lock(), parameters));
       }
+      case FUNCTION_PARM_MASK:
+      {
+         return DesignFlowStepRef(new function_parm_mask(AppM, design_flow_manager.lock(), parameters));
+      }
 #endif
       case(FUNCTION_ANALYSIS):
       {
@@ -696,6 +708,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
          return DesignFlowStepRef(new ipa_point_to_analysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
+      case MEM_CG_EXT:
+      {
+         return DesignFlowStepRef(new mem_cg_ext(AppM, design_flow_manager.lock(), parameters));
+      }
       case PARM2SSA:
       {
          return DesignFlowStepRef(new parm2ssa(AppM, design_flow_manager.lock(), parameters));
@@ -716,6 +732,12 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case(PRAGMA_SUBSTITUTION):
       {
          return DesignFlowStepRef(new PragmaSubstitution(AppM, design_flow_manager.lock(), parameters));
+      }
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
+      {
+         return DesignFlowStepRef(new RangeAnalysis(AppM, design_flow_manager.lock(), parameters));
       }
 #endif
 #if HAVE_ZEBU_BUILT
@@ -781,7 +803,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
       case COMPUTE_IMPLICIT_CALLS:
       case COMMUTATIVE_EXPR_RESTRUCTURING:
       case COND_EXPR_RESTRUCTURING:
-      case CONSTANT_FLOP_WRAPPER:
       case CSE_STEP:
 #endif
 #if HAVE_ZEBU_BUILT || HAVE_BAMBU_BUILT
@@ -792,6 +813,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #endif
       case DOM_POST_DOM_COMPUTATION:
 #if HAVE_BAMBU_BUILT
+      case ESSA:
       case(FANOUT_OPT):
       case MULTIPLE_ENTRY_IF_REDUCTION:
 #endif
@@ -847,7 +869,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateApplicationFrontendFlowSt
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -1101,10 +1122,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
       {
          return DesignFlowStepRef(new CondExprRestructuring(AppM, function_id, design_flow_manager.lock(), parameters));
       }
-      case CONSTANT_FLOP_WRAPPER:
-      {
-         return DesignFlowStepRef(new constant_flop_wrapper(parameters, AppM, function_id, design_flow_manager.lock()));
-      }
       case CSE_STEP:
       {
          return DesignFlowStepRef(new CSE(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1127,6 +1144,10 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new dom_post_dom_computation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #if HAVE_BAMBU_BUILT
+      case(ESSA):
+      {
+         return DesignFlowStepRef(new eSSA(parameters, AppM, function_id, design_flow_manager.lock()));
+      }
       case(FANOUT_OPT):
       {
          return DesignFlowStepRef(new fanout_opt(parameters, AppM, function_id, design_flow_manager.lock()));
@@ -1260,10 +1281,6 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
          return DesignFlowStepRef(new lut_transformation(parameters, AppM, function_id, design_flow_manager.lock()));
       }
 #endif
-      case MEM_CG_EXT:
-      {
-         return DesignFlowStepRef(new mem_cg_ext(AppM, function_id, design_flow_manager.lock(), parameters));
-      }
       case MEMORY_DATA_FLOW_ANALYSIS:
       {
          return DesignFlowStepRef(new MemoryDataFlowAnalysis(AppM, function_id, design_flow_manager.lock(), parameters));
@@ -1539,6 +1556,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
+      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
@@ -1553,6 +1571,7 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #if HAVE_BAMBU_BUILT
       case(IPA_POINT_TO_ANALYSIS):
 #endif
+      case MEM_CG_EXT:
       case PARM2SSA:
 #if HAVE_ZEBU_BUILT
       case(POINTED_DATA_EVALUATION):
@@ -1562,6 +1581,9 @@ const DesignFlowStepRef FrontendFlowStepFactory::CreateFunctionFrontendFlowStep(
 #endif
 #if HAVE_FROM_PRAGMA_BUILT
       case(PRAGMA_SUBSTITUTION):
+#endif
+#if HAVE_BAMBU_BUILT
+      case RANGE_ANALYSIS:
 #endif
 #if HAVE_ZEBU_BUILT
       case(SIZEOF_SUBSTITUTION):

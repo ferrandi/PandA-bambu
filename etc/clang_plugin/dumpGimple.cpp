@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -51,6 +51,9 @@
 #include "llvm/Analysis/LoopPass.h"
 #include "llvm/Analysis/ValueTracking.h"
 #include "llvm/IR/Attributes.h"
+#if __clang_major__ < 11
+#include "llvm/IR/CallSite.h"
+#endif
 #include "llvm/IR/CFG.h"
 #include "llvm/IR/ConstantRange.h"
 #include "llvm/IR/Constants.h"
@@ -65,6 +68,7 @@
 #include "llvm/IR/Metadata.h"
 #include "llvm/IR/Module.h"
 #include "llvm/IR/Operator.h"
+#include "llvm/IR/Type.h"
 #include "llvm/IR/Verifier.h"
 #include "llvm/Pass.h"
 #include "llvm/Support/ErrorHandling.h"
@@ -81,6 +85,7 @@
 #include "llvm/Analysis/TargetLibraryInfo.h"
 #include "llvm/Analysis/TargetTransformInfo.h"
 #include "llvm/CodeGen/IntrinsicLowering.h"
+#include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/InlineAsm.h"
 #include "llvm/IR/InstrTypes.h"
@@ -135,7 +140,8 @@ namespace llvm
           DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                      DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)
+                      DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -151,7 +157,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -165,7 +172,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -179,7 +187,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 
@@ -208,7 +217,8 @@ namespace llvm
            DEFGSCODE(GIMPLE_SSACOPY, "gimple_assign", GSS_WITH_OPS) DEFTREECODE(ALLOCAVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(ORIGVAR_DECL, "var_decl", tcc_declaration, 0) DEFTREECODE(INTEGER_CST_SIGNED, "integer_cst", tcc_constant, 0)
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
-                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2)};
+                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 
@@ -253,7 +263,7 @@ namespace llvm
          outdir_name(_outdir_name),
          InFile(_InFile),
          filename(create_file_name_string(_outdir_name, _InFile)),
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
          stream(create_file_name_string(_outdir_name, _InFile), EC, sys::fs::FA_Read | sys::fs::FA_Write),
 #else
          stream(create_file_name_string(_outdir_name, _InFile), EC, llvm::sys::fs::F_RW),
@@ -396,6 +406,10 @@ namespace llvm
    case llvm::Value::InstructionVal + llvm::Instruction::OPC: \
       return assignCode(t, GT(GIMPLE_ASSIGN));
 #include "llvm/IR/Instruction.def"
+#if __clang_major__ >= 10
+         case llvm::Value::InstructionVal + llvm::Instruction::FNeg:
+         case llvm::Value::InstructionVal + llvm::Instruction::Freeze:
+#endif
          case llvm::Value::InstructionVal + llvm::Instruction::Store:
          case llvm::Value::InstructionVal + llvm::Instruction::Load:
          case llvm::Value::InstructionVal + llvm::Instruction::Select:
@@ -444,6 +458,16 @@ namespace llvm
                   case llvm::Intrinsic::ssa_copy:
                      return assignCode(t, GT(GIMPLE_SSACOPY));
 #endif
+                  case llvm::Intrinsic::minnum:
+                  case llvm::Intrinsic::maxnum:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
+#if __clang_major__ > 7
+                  case llvm::Intrinsic::sadd_sat:
+                  case llvm::Intrinsic::uadd_sat:
+                  case llvm::Intrinsic::ssub_sat:
+                  case llvm::Intrinsic::usub_sat:
+                     return assignCode(t, GT(GIMPLE_ASSIGN));
+#endif
                   default:
                      llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
                      ci->print(llvm::errs(), true);
@@ -451,7 +475,12 @@ namespace llvm
                      llvm_unreachable("Plugin Error");
                }
             }
-            auto calledFun = ci->getCalledValue();
+#if __clang_major__ >= 11
+            auto calledFun = ci->getCalledOperand();
+#else
+            llvm::ImmutableCallSite CS(ci);
+            auto calledFun = CS.getCalledValue();
+#endif
             if(isa<llvm::InlineAsm>(calledFun))
                return assignCode(t, GT(GIMPLE_ASM));
             if(ci->getType()->isVoidTy() || ci->use_empty())
@@ -587,6 +616,22 @@ namespace llvm
             return "__builtin_trap";
          case llvm::Intrinsic::dbg_value:
             return "__builtin_debug_value";
+         case llvm::Intrinsic::vastart:
+            return "__builtin_va_start";
+         case llvm::Intrinsic::vaend:
+            return "__builtin_va_end";
+         case llvm::Intrinsic::vacopy:
+            return "__builtin_va_copy";
+#if __clang_major__ > 7
+         case llvm::Intrinsic::sadd_sat:
+            return "__llvm_sadd_sat";
+         case llvm::Intrinsic::uadd_sat:
+            return "__llvm_uadd_sat";
+         case llvm::Intrinsic::ssub_sat:
+            return "__llvm_ssub_sat";
+         case llvm::Intrinsic::usub_sat:
+            return "__llvm_usub_sat";
+#endif
          case llvm::Intrinsic::rint:
          {
             if(fd->getReturnType()->isFloatTy())
@@ -598,8 +643,37 @@ namespace llvm
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
          }
-         case Intrinsic::fmuladd:
-            return "__float32_muladdif";
+         case llvm::Intrinsic::fmuladd:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "__float32_muladdif";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "__float64_muladdif";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+         case llvm::Intrinsic::minnum:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "fminf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "fmin";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "fminl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
+         case llvm::Intrinsic::maxnum:
+         {
+            if(fd->getReturnType()->isFloatTy())
+               return "fmaxf";
+            else if(fd->getReturnType()->isDoubleTy())
+               return "fmax";
+            else if(fd->getReturnType()->isFP128Ty())
+               return "fmaxl";
+            fd->print(llvm::errs());
+            llvm_unreachable("Plugin Error");
+         }
          default:
             fd->print(llvm::errs());
             llvm_unreachable("Plugin Error");
@@ -780,33 +854,33 @@ namespace llvm
       }
       else if(auto* di = dyn_cast<llvm::DIVariable>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DISubprogram>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DILocation>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
          res.column = di->getColumn();
       }
       else if(auto* di = dyn_cast<llvm::DILexicalBlock>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
          res.column = di->getColumn();
       }
       else if(auto* di = dyn_cast<llvm::DIMacroFile>(llvm_obj))
       {
-         res.filename = di->getFile()->getFilename();
+         res.filename = di->getFile()->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
@@ -816,24 +890,24 @@ namespace llvm
       }
       else if(auto* di = dyn_cast<llvm::DIImportedEntity>(llvm_obj))
       {
-         // res.filename = di->getFile()->getFilename();
+         // res.filename = di->getFile()->getFilename().data();
          // res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DIObjCProperty>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DICompileUnit>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else if(auto* di = dyn_cast<llvm::DIFile>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else if(auto* di = dyn_cast<llvm::DICompositeType>(llvm_obj))
@@ -842,7 +916,7 @@ namespace llvm
             res = expand_location(di->getBaseType());
          else
          {
-            res.filename = di->getFilename();
+            res.filename = di->getFilename().data();
             res.file = res.filename.c_str();
             res.line = di->getLine();
          }
@@ -853,20 +927,20 @@ namespace llvm
             res = expand_location(di->getBaseType());
          else
          {
-            res.filename = di->getFilename();
+            res.filename = di->getFilename().data();
             res.file = res.filename.c_str();
             res.line = di->getLine();
          }
       }
       else if(auto* di = dyn_cast<llvm::DIType>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
          res.line = di->getLine();
       }
       else if(auto* di = dyn_cast<llvm::DINamespace>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
 #if __clang_major__ == 4
          res.line = di->getLine();
@@ -874,12 +948,12 @@ namespace llvm
       }
       else if(auto* di = dyn_cast<llvm::DIModule>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else if(auto* di = dyn_cast<llvm::DILexicalBlockFile>(llvm_obj))
       {
-         res.filename = di->getFilename();
+         res.filename = di->getFilename().data();
          res.file = res.filename.c_str();
       }
       else
@@ -960,12 +1034,45 @@ namespace llvm
       return ce->getPredicate();
    }
 
+   static Intrinsic::ID getIntrinsicIDTEC(const llvm::Instruction* inst)
+   {
+      auto ci = llvm::dyn_cast<const llvm::CallInst>(inst);
+      assert(ci);
+      if(ci->getCalledFunction() && ci->getCalledFunction()->isIntrinsic())
+      {
+         return ci->getCalledFunction()->getIntrinsicID();
+      }
+      return (Intrinsic::ID)0;
+   }
+   static Intrinsic::ID getIntrinsicIDTEC(const llvm::ConstantExpr* ce)
+   {
+#if __clang_major__ > 7
+#if __clang_major__ > 9
+      auto ci = llvm::dyn_cast<llvm::CallInst>(ce->getAsInstruction());
+#else
+      auto ci = llvm::dyn_cast<llvm::CallInst>(const_cast<llvm::ConstantExpr*>(ce)->getAsInstruction());
+#endif
+      assert(ci);
+      if(ci->getCalledFunction() && ci->getCalledFunction()->isIntrinsic())
+      {
+         return ci->getCalledFunction()->getIntrinsicID();
+      }
+#endif
+      return (Intrinsic::ID)0;
+   }
+
    template <class InstructionOrConstantExpr>
    DumpGimpleRaw::tree_codes DumpGimpleRaw::tree_expr_code(InstructionOrConstantExpr* inst)
    {
       auto opcode = inst->getOpcode();
       switch(opcode)
       {
+#if __clang_major__ >= 10
+         case llvm::Instruction::FNeg:
+            return GT(NEGATE_EXPR);
+         case llvm::Instruction::Freeze:
+            return GT(SSA_NAME);
+#endif
          case llvm::Instruction::Add:
             return GT(PLUS_EXPR);
          case llvm::Instruction::FAdd:
@@ -1012,7 +1119,17 @@ namespace llvm
          case llvm::Instruction::BitCast:
             return GT(VIEW_CONVERT_EXPR);
          case llvm::Instruction::Call:
-            return GT(CALL_EXPR);
+         {
+#if __clang_major__ > 7
+            auto CallID = getIntrinsicIDTEC(inst);
+            if(CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::uadd_sat)
+               return GT(SAT_PLUS_EXPR);
+            else if(CallID == llvm::Intrinsic::ssub_sat || CallID == llvm::Intrinsic::usub_sat)
+               return GT(SAT_MINUS_EXPR);
+            else
+#endif
+               return GT(CALL_EXPR);
+         }
          case llvm::Instruction::SExt:
          case llvm::Instruction::ZExt:
          case llvm::Instruction::Trunc:
@@ -1126,7 +1243,7 @@ namespace llvm
          auto ty = store.getValueOperand()->getType();
          auto type = assignCodeType(ty);
          auto written_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto funName = store.getFunction()->getName();
+         std::string funName = store.getFunction()->getName().data();
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(store.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
          if(store.getAlignment() && written_obj_size > (8 * store.getAlignment()) && !is_a_top_parameter)
@@ -1148,7 +1265,11 @@ namespace llvm
          av.alloc_inst = inst;
          std::set<const llvm::User*> visited;
          visited.insert(inst);
+#if __clang_major__ >= 10
+         const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*inst->getFunction());
+#else
          const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
          av.addr = temporary_addr_check(inst, visited, TLI);
          allocaVar = assignCode(&av, GT(ALLOCAVAR_DECL));
       }
@@ -1288,6 +1409,13 @@ namespace llvm
             else
                return false;
          }
+#if __clang_major__ > 7
+         case llvm::Instruction::Call:
+         {
+            auto CallID = getIntrinsicIDTEC(inst);
+            return (CallID == llvm::Intrinsic::sadd_sat || CallID == llvm::Intrinsic::ssub_sat);
+         }
+#endif
          default:
             return false;
       }
@@ -1370,6 +1498,10 @@ namespace llvm
          {
             return isSignedInstruction(inst);
          }
+         case llvm::Instruction::Call:
+         {
+            return isSignedInstruction(inst);
+         }
          default:
             return false;
       }
@@ -1435,6 +1567,10 @@ namespace llvm
          {
             return !isSignedInstruction(inst);
          }
+         case llvm::Instruction::Call:
+         {
+            return !isSignedInstruction(inst);
+         }
          default:
             return false;
       }
@@ -1486,7 +1622,11 @@ namespace llvm
             if(operand->getType()->isPointerTy() && PtoSets_AA)
             {
                auto varId = PtoSets_AA->PE(operand);
+#if __clang_major__ >= 10
+               const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*currentFunction);
+#else
                const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
                if(is_PTS(varId, TLI, true))
                {
                   const std::vector<u32>* pts = PtoSets_AA->pointsToSet(varId);
@@ -1820,7 +1960,7 @@ namespace llvm
          auto ty = load.getType();
          auto type = assignCodeType(ty);
          auto read_obj_size = ty->isSized() ? DL->getTypeAllocSizeInBits(ty) : 8ULL;
-         auto funName = load.getFunction()->getName();
+         std::string funName = load.getFunction()->getName().data();
          auto demangled = getDemangled(funName);
          bool is_a_top_parameter = isa<llvm::Argument>(load.getPointerOperand()) && (funName == TopFunctionName || demangled == TopFunctionName);
 
@@ -1844,6 +1984,21 @@ namespace llvm
          auto shiftedLeft = build2(GT(LSHIFT_EXPR), type, casted, MSB_posNode);
          return build2(GT(RSHIFT_EXPR), type, shiftedLeft, MSB_posNode);
       }
+      else if(isa<llvm::TruncInst>(inst) && cast<const llvm::TruncInst>(*inst).getType()->isIntegerTy())
+      {
+         assert(index == 0);
+         const llvm::TruncInst& tI = cast<const llvm::TruncInst>(*inst);
+         auto bw = tI.getType()->getIntegerBitWidth();
+         if(bw != 8 && bw != 16 && bw != 32 && bw != 64)
+         {
+            auto mask = (1ULL << bw) - 1;
+            if(uicTable.find(mask) == uicTable.end())
+               uicTable[mask] = assignCodeAuto(llvm::ConstantInt::get(llvm::Type::getInt64Ty(inst->getContext()), mask, false));
+            const void* maskNode = uicTable.find(mask)->second;
+            auto type = assignCodeType(tI.getType());
+            return build2(GT(BIT_AND_EXPR), type, getOperand(inst->getOperand(index), currentFunction), maskNode);
+         }
+      }
       return getSignedOperandIndex(inst, index, currentFunction);
    }
 
@@ -1856,7 +2011,12 @@ namespace llvm
    const char* DumpGimpleRaw::gimple_asm_string(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
-      auto calledFun = ci->getCalledValue();
+#if __clang_major__ >= 11
+      auto calledFun = ci->getCalledOperand();
+#else
+      llvm::ImmutableCallSite CS(ci);
+      auto calledFun = CS.getCalledValue();
+#endif
       assert(isa<llvm::InlineAsm>(calledFun));
       auto ia = cast<llvm::InlineAsm>(calledFun);
       return ia->getAsmString().c_str();
@@ -1916,7 +2076,12 @@ namespace llvm
    const void* DumpGimpleRaw::gimple_call_fn(const void* g)
    {
       const llvm::CallInst* ci = reinterpret_cast<const llvm::CallInst*>(g);
-      auto calledFun = ci->getCalledValue();
+#if __clang_major__ >= 11
+      auto calledFun = ci->getCalledOperand();
+#else
+      llvm::ImmutableCallSite CS(ci);
+      auto calledFun = CS.getCalledValue();
+#endif
       if(isa<llvm::Function>(calledFun))
       {
          auto type = assignCodeType(calledFun->getType());
@@ -2267,7 +2432,7 @@ namespace llvm
             {
                auto allocType = av->alloc_inst->getAllocatedType();
                auto typeSize = allocType->isSized() ? DL->getTypeAllocSizeInBits(allocType) : 8ULL;
-               algn = typeSize/8ULL;
+               algn = typeSize / 8ULL;
             }
          }
          return std::max(8u, 8 * algn);
@@ -2416,7 +2581,12 @@ namespace llvm
             return assignCode(ty, GT(ARRAY_TYPE));
          case llvm::Type::PointerTyID:
             return assignCode(ty, GT(POINTER_TYPE));
+#if __clang_major__ >= 11
+         case llvm::Type::FixedVectorTyID:
+         case llvm::Type::ScalableVectorTyID:
+#else
          case llvm::Type::VectorTyID:
+#endif
             return assignCode(ty, GT(VECTOR_TYPE));
          default:
          {
@@ -2509,7 +2679,12 @@ namespace llvm
                return assignCodeType(cast<llvm::ArrayType>(ty)->getElementType());
             case llvm::Type::PointerTyID:
                return assignCodeType(cast<llvm::PointerType>(ty)->getElementType());
+#if __clang_major__ >= 11
+            case llvm::Type::FixedVectorTyID:
+            case llvm::Type::ScalableVectorTyID:
+#else
             case llvm::Type::VectorTyID:
+#endif
                return assignCodeType(cast<llvm::VectorType>(ty)->getElementType());
             default:
             {
@@ -2595,7 +2770,12 @@ namespace llvm
          case llvm::Type::FunctionTyID:
          case llvm::Type::ArrayTyID:
          case llvm::Type::PointerTyID:
+#if __clang_major__ >= 11
+         case llvm::Type::FixedVectorTyID:
+         case llvm::Type::ScalableVectorTyID:
+#else
          case llvm::Type::VectorTyID:
+#endif
          default:
             llvm::errs() << "TYPE_PRECISION kind not supported\n";
             llvm_unreachable("Plugin Error");
@@ -2652,7 +2832,7 @@ namespace llvm
          auto st = cast<llvm::StructType>(ty);
          if(st->hasName())
          {
-            std::string declname = st->getName();
+            std::string declname = st->getName().data();
             if(identifierTable.find(declname) == identifierTable.end())
                identifierTable.insert(declname);
             const void* dn = identifierTable.find(declname)->c_str();
@@ -2714,6 +2894,8 @@ namespace llvm
          return 8;
       const llvm::Type* Cty = reinterpret_cast<const llvm::Type*>(t);
       llvm::Type* ty = const_cast<llvm::Type*>(NormalizeSignedTag(Cty));
+      if(!ty->isSized())
+         return 8;
       return std::max(8u, 8 * DL->getABITypeAlignment(ty));
    }
 
@@ -2815,7 +2997,7 @@ namespace llvm
    {
       const llvm::Function* fd = reinterpret_cast<const llvm::Function*>(t);
       bool nameAreKnown = false;
-      if(fd->hasName() && fun2params->find(fd->getName()) != fun2params->end() && fun2params->find(fd->getName())->second.size() == fd->arg_size())
+      if(fd->hasName() && fun2params->find(fd->getName().data()) != fun2params->end() && fun2params->find(fd->getName().data())->second.size() == fd->arg_size())
       {
          nameAreKnown = true;
       }
@@ -2826,7 +3008,7 @@ namespace llvm
       {
          res.push_back(assignCodeAuto(&par));
          if(nameAreKnown)
-            argNameTable[&par] = fun2params->find(fd->getName())->second[par_index];
+            argNameTable[&par] = fun2params->find(fd->getName().data())->second[par_index];
          ++par_index;
       }
       return res;
@@ -2881,7 +3063,7 @@ namespace llvm
       return getBB_index(BB);
    }
 
-   bool DumpGimpleRaw::gimple_has_mem_ops(const void* g) const
+   bool DumpGimpleRaw::gimple_has_mem_ops(const void* g)
    {
       if(TREE_CODE(g) == GT(GIMPLE_NOP))
          return false;
@@ -2891,7 +3073,11 @@ namespace llvm
          return false;
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
       return MSSA.getMemoryAccess(inst);
    }
 
@@ -2922,35 +3108,39 @@ namespace llvm
    /// This assumes that, for the purposes of MemorySSA, Use comes directly after
    /// MayClobber, with no potentially clobbering operations in between them.
    /// (Where potentially clobbering ops are memory barriers, aliased stores, etc.)
-   static bool areLoadsReorderable(const llvm::LoadInst* Use, const llvm::LoadInst* MayClobber)
-   {
-      bool VolatileUse = Use->isVolatile();
-      bool VolatileClobber = MayClobber->isVolatile();
-      // Volatile operations may never be reordered with other volatile operations.
-      if(VolatileUse && VolatileClobber)
-         return false;
-      // Otherwise, volatile doesn't matter here. From the language reference:
-      // 'optimizers may change the order of volatile operations relative to
-      // non-volatile operations.'"
-
-      // If a load is seq_cst, it cannot be moved above other loads. If its ordering
-      // is weaker, it can be moved above other loads. We just need to be sure that
-      // MayClobber isn't an acquire load, because loads can't be moved above
-      // acquire loads.
-      //
-      // Note that this explicitly *does* allow the free reordering of monotonic (or
-      // weaker) loads of the same address.
-      bool SeqCstUse = Use->getOrdering() == llvm::AtomicOrdering::SequentiallyConsistent;
-      bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(), llvm::AtomicOrdering::Acquire);
-      return !(SeqCstUse || MayClobberIsAcquire);
-   }
+   //    static bool areLoadsReorderable(const llvm::LoadInst* Use, const llvm::LoadInst* MayClobber)
+   //    {
+   //       bool VolatileUse = Use->isVolatile();
+   //       bool VolatileClobber = MayClobber->isVolatile();
+   //       // Volatile operations may never be reordered with other volatile operations.
+   //       if(VolatileUse && VolatileClobber)
+   //          return false;
+   //       // Otherwise, volatile doesn't matter here. From the language reference:
+   //       // 'optimizers may change the order of volatile operations relative to
+   //       // non-volatile operations.'"
+   //
+   //       // If a load is seq_cst, it cannot be moved above other loads. If its ordering
+   //       // is weaker, it can be moved above other loads. We just need to be sure that
+   //       // MayClobber isn't an acquire load, because loads can't be moved above
+   //       // acquire loads.
+   //       //
+   //       // Note that this explicitly *does* allow the free reordering of monotonic (or
+   //       // weaker) loads of the same address.
+   //       bool SeqCstUse = Use->getOrdering() == llvm::AtomicOrdering::SequentiallyConsistent;
+   //       bool MayClobberIsAcquire = isAtLeastOrStrongerThan(MayClobber->getOrdering(), llvm::AtomicOrdering::Acquire);
+   //       return !(SeqCstUse || MayClobberIsAcquire);
+   //    }
 
    void DumpGimpleRaw::serialize_vops(const void* g)
    {
       assert(TREE_CODE(g) != GT(GIMPLE_PHI_VIRTUAL));
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
       const llvm::MemoryUseOrDef* ma = MSSA.getMemoryAccess(inst);
       if(ma->getValueID() == llvm::Value::MemoryUseVal || ma->getValueID() == llvm::Value::MemoryDefVal)
       {
@@ -2971,7 +3161,7 @@ namespace llvm
          /// Serialize gimple pairs because of use after def chain
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
+         if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vuse");
          else
          {
@@ -2985,7 +3175,7 @@ namespace llvm
          serialize_child("vdef", vdef);
          std::set<llvm::MemoryAccess*> visited;
          auto startingMA = MSSA.getMemoryAccess(inst);
-         if(llvm::ImmutableCallSite(inst) || isa<llvm::FenceInst>(inst))
+         if(isa<llvm::CallInst>(inst) || isa<llvm::InvokeInst>(inst) || isa<llvm::FenceInst>(inst))
             serialize_gimple_aliased_reaching_defs(startingMA, MSSA, visited, inst->getFunction(), nullptr, "vover");
          else
          {
@@ -3123,12 +3313,20 @@ namespace llvm
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
             assert(modulePass);
+#if __clang_major__ >= 11
+            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
+#else
             llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+#endif
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
             auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+#if __clang_major__ >= 11
+            auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
+#else
             auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+#endif
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
 #else
@@ -3156,6 +3354,13 @@ namespace llvm
                if(i < active_size)
                   active_size = i;
             }
+            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+            //            if(!range.isFullSet() && !isSigned)
+            //            {
+            //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
+            //                  isSigned = true;
+            //            }
+
             if(obj_size != active_size)
             {
                uint64_t val;
@@ -3165,7 +3370,6 @@ namespace llvm
                }
                else
                   val = 0;
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
                if(!range.isFullSet())
                {
                   if(isSigned)
@@ -3193,7 +3397,6 @@ namespace llvm
             }
             else
             {
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
                if(!range.isFullSet())
                {
                   //               llvm::errs() << "Range:\n";
@@ -3221,7 +3424,7 @@ namespace llvm
                   inst->print(llvm::errs());
                   llvm::errs() << "\n";
 #endif
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMin() : range.getUnsignedMin())));
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMin().sextOrTrunc(64) : range.getUnsignedMin().zextOrTrunc(64))));
                }
                else
                   return nullptr;
@@ -3255,12 +3458,20 @@ namespace llvm
             llvm::BasicBlock* BB = inst->getParent();
             llvm::Function* currentFunction = inst->getFunction();
             assert(modulePass);
+#if __clang_major__ >= 11
+            llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction, &changed).getLVI();
+#else
             llvm::LazyValueInfo& LVI = modulePass->getAnalysis<llvm::LazyValueInfoWrapperPass>(*currentFunction).getLVI();
+#endif
             unsigned long long int zeroMask = 0;
 #if __clang_major__ != 4
             llvm::KnownBits KnownOneZero;
             auto AC = modulePass->getAnalysis<llvm::AssumptionCacheTracker>().getAssumptionCache(*currentFunction);
+#if __clang_major__ >= 11
+            const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction, &changed).getDomTree();
+#else
             const auto& DT = modulePass->getAnalysis<llvm::DominatorTreeWrapperPass>(*currentFunction).getDomTree();
+#endif
             KnownOneZero = llvm::computeKnownBits(inst, *DL, 0, &AC, inst, &DT);
             zeroMask = KnownOneZero.Zero.getZExtValue();
 #else
@@ -3288,6 +3499,12 @@ namespace llvm
                if(i < active_size)
                   active_size = i;
             }
+            llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
+            //            if(!range.isFullSet() && !isSigned)
+            //            {
+            //               if(range.getUnsignedMin().getZExtValue() > range.getUnsignedMax().getZExtValue())
+            //                  isSigned = true;
+            //            }
             if(obj_size != active_size)
             {
                uint64_t val;
@@ -3298,7 +3515,6 @@ namespace llvm
                }
                else
                   val = (1ULL << (active_size)) - 1;
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
                if(!range.isFullSet())
                {
                   if(isSigned)
@@ -3334,11 +3550,10 @@ namespace llvm
             }
             else
             {
-               llvm::ConstantRange range = LVI.getConstantRange(inst, BB, inst);
                if(!range.isFullSet())
                {
                   auto isSigned = CheckSignedTag(TREE_TYPE(t));
-                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMax() : range.getUnsignedMax())));
+                  return assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), (isSigned ? range.getSignedMax().sextOrTrunc(64) : range.getUnsignedMax().zextOrTrunc(64))));
                }
                else
                {
@@ -3608,7 +3823,10 @@ namespace llvm
       {
          snprintf(buffer, LOCAL_BUFFER_LEN, "valr: %-7s ", "\"Nan\"");
          stream << buffer;
-         snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"Nan\"");
+         if(d.isNegative())
+            snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"-Nan\"");
+         else
+            snprintf(buffer, LOCAL_BUFFER_LEN, "valx: %-7s ", "\"Nan\"");
          stream << buffer;
       }
       else
@@ -3889,7 +4107,11 @@ namespace llvm
          llvm::errs() << "@" << code_name << " @" << index << "\n";
          inst->print(llvm::errs());
          llvm::errs() << "\n";
+#if __clang_major__ >= 11
+         auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
          auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
          if(MSSA.getMemoryAccess(inst))
             llvm::errs() << "| " << *MSSA.getMemoryAccess(inst) << "\n";
       }
@@ -3949,7 +4171,12 @@ namespace llvm
             std::set<const llvm::User*> visited;
             auto currInst = reinterpret_cast<const llvm::User*>(g);
             visited.insert(currInst);
+#if __clang_major__ >= 10
+            auto castInst = reinterpret_cast<const llvm::Instruction*>(g);
+            const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(*castInst->getFunction());
+#else
             const llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
             if(temporary_addr_check(currInst, visited, TLI))
                serialize_string("addr");
             break;
@@ -4196,7 +4423,11 @@ namespace llvm
       const llvm::Function::BasicBlockListType& bblist = *reinterpret_cast<const llvm::Function::BasicBlockListType*>(t);
       llvm::Function* currentFunction = const_cast<llvm::Function*>(bblist.front().getParent());
       assert(modulePass);
+#if __clang_major__ >= 11
+      auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction, &changed).getLoopInfo();
+#else
       auto& LI = modulePass->getAnalysis<llvm::LoopInfoWrapperPass>(*currentFunction).getLoopInfo();
+#endif
       std::map<const llvm::Loop*, unsigned> loopLabes;
       if(!LI.empty())
       {
@@ -4221,7 +4452,11 @@ namespace llvm
             }
          }
       }
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction, &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*currentFunction).getMSSA();
+#endif
 
       for(const auto& BB : bblist)
       {
@@ -4846,7 +5081,15 @@ namespace llvm
          case llvm::Intrinsic::memmove:
          case llvm::Intrinsic::trap:
          case llvm::Intrinsic::rint:
-         case Intrinsic::fmuladd:
+         case llvm::Intrinsic::fmuladd:
+         case llvm::Intrinsic::minnum:
+         case llvm::Intrinsic::maxnum:
+#if __clang_major__ > 7
+         case llvm::Intrinsic::sadd_sat:
+         case llvm::Intrinsic::uadd_sat:
+         case llvm::Intrinsic::ssub_sat:
+         case llvm::Intrinsic::usub_sat:
+#endif
             return true;
          default:
             return false;
@@ -4857,6 +5100,9 @@ namespace llvm
       switch(id)
       {
          case llvm::Intrinsic::dbg_value:
+         case llvm::Intrinsic::vastart:
+         case llvm::Intrinsic::vaend:
+         case llvm::Intrinsic::vacopy:
             return true;
          default:
             return false;
@@ -4897,7 +5143,7 @@ namespace llvm
    {
       if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
       {
-         return VTy->getBitWidth() / 8;
+         return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
       }
       return Type->getPrimitiveSizeInBits() / 8;
    }
@@ -5125,7 +5371,13 @@ namespace llvm
       LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
 
       if(AlignCanBeUsed)
+      {
+#if __clang_major__ >= 11
+         LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), llvm::MaybeAlign(Align), IsVolatile);
+#else
          LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
+#endif
+      }
       else
          LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), IsVolatile);
 
@@ -5135,7 +5387,7 @@ namespace llvm
       LoopBuilder.CreateCondBr(LoopBuilder.CreateICmpULT(NewIndex, ActualCopyLen), LoopBB, NewBB);
    }
 
-   void DumpGimpleRaw::buildMetaDataMap(llvm::Module& M)
+   void DumpGimpleRaw::buildMetaDataMap(const llvm::Module& M)
    {
       for(auto& fun : M.getFunctionList())
       {
@@ -5180,7 +5432,9 @@ namespace llvm
       while(currFuncIterator != M.getFunctionList().end())
       {
          auto& F = *currFuncIterator;
+#if __clang_major__ != 4
          const llvm::TargetTransformInfo& TTI = modulePass->getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
+#endif
          auto fname = std::string(currFuncIterator->getName());
          llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
@@ -5370,8 +5624,14 @@ namespace llvm
       }
 
       llvm::ConstantInt* CI = cast<llvm::ConstantInt>(Addr->getOperand(OpNo));
-      llvm::SequentialType* InitTy = cast<llvm::SequentialType>(Init->getType());
-      uint64_t NumElts = InitTy->getNumElements();
+      auto initType = Init->getType();
+      uint64_t NumElts = 0;
+      if(dyn_cast<llvm::ArrayType>(initType))
+         NumElts = dyn_cast<llvm::ArrayType>(initType)->getNumElements();
+      else if(dyn_cast<llvm::VectorType>(initType))
+         NumElts = dyn_cast<llvm::VectorType>(initType)->getNumElements();
+      else
+         llvm_unreachable("unexpected case");
 
       // Break up the array into elements.
       for(uint64_t i = 0, e = NumElts; i != e; ++i)
@@ -5381,7 +5641,7 @@ namespace llvm
       Elts[CI->getZExtValue()] = EvaluateStoreIntoLocal(Elts[CI->getZExtValue()], Val, Addr, OpNo + 1);
 
       if(Init->getType()->isArrayTy())
-         return llvm::ConstantArray::get(cast<llvm::ArrayType>(InitTy), Elts);
+         return llvm::ConstantArray::get(cast<llvm::ArrayType>(initType), Elts);
       return llvm::ConstantVector::get(Elts);
    }
 
@@ -5469,11 +5729,15 @@ namespace llvm
             // Need to clear and set up cache for new initializer.
             CurrentGV = GV;
             Elts.clear();
-            unsigned NumElts;
+            unsigned NumElts = 0;
             if(auto* STy = dyn_cast<llvm::StructType>(Ty))
                NumElts = STy->getNumElements();
+            else if(auto* ATy = dyn_cast<llvm::ArrayType>(Ty))
+               NumElts = ATy->getNumElements();
+            else if(auto* VTy = dyn_cast<llvm::VectorType>(Ty))
+               NumElts = VTy->getNumElements();
             else
-               NumElts = cast<llvm::SequentialType>(Ty)->getNumElements();
+               llvm_unreachable("unexpected case");
             for(unsigned i = 0, e = NumElts; i != e; ++i)
                Elts.push_back(Init->getAggregateElement(i));
          }
@@ -5665,7 +5929,9 @@ namespace llvm
    }
    bool DumpGimpleRaw::RebuildConstants(llvm::Module& M)
    {
+#if __clang_major__ < 10
       llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
       llvm::SmallPtrSet<llvm::GlobalVariable*, 8> Invariants;
       llvm::SmallPtrSet<llvm::Instruction*, 8> Stores;
       auto res = false;
@@ -5674,15 +5940,17 @@ namespace llvm
       {
          auto fname = std::string(currFuncIterator->getName());
          auto& F = *currFuncIterator;
+#if __clang_major__ >= 10
+         llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
+#endif
          std::list<llvm::Instruction*> deadList;
          for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
          {
             for(llvm::BasicBlock::iterator II = BI->begin(), IE = BI->end(); II != IE; ++II)
             {
-               if(isa<llvm::CallInst>(II) || isa<llvm::InvokeInst>(II))
+               if(isa<llvm::IntrinsicInst>(*II))
                {
-                  llvm::CallSite CS(&*II);
-                  llvm::IntrinsicInst* IntInst = dyn_cast<llvm::IntrinsicInst>(CS.getInstruction());
+                  llvm::IntrinsicInst* IntInst = dyn_cast<llvm::IntrinsicInst>(&(*II));
                   if(IntInst && IntInst->getIntrinsicID() == llvm::Intrinsic::invariant_start)
                   {
                      llvm::ConstantInt* Size = cast<llvm::ConstantInt>(IntInst->getArgOperand(0));
@@ -5892,17 +6160,20 @@ namespace llvm
       return res;
    }
 
-   void DumpGimpleRaw::compute_eSSA(llvm::Module& M)
+   void DumpGimpleRaw::compute_eSSA(llvm::Module& M, bool* changed)
    {
       eSSA eSSAHelper;
       for(auto& fun : M.getFunctionList())
       {
          if(!fun.isIntrinsic() && !fun.isDeclaration())
-            eSSAHelper.runOnFunction(fun, modulePass);
+         {
+            bool res = eSSAHelper.runOnFunction(fun, modulePass, changed);
+            *changed = *changed || res;
+         }
       }
    }
 
-   void DumpGimpleRaw::computeValueRange(llvm::Module& M)
+   void DumpGimpleRaw::computeValueRange(const llvm::Module& M)
    {
       RA = new RangeAnalysis::InterProceduralRACropDFSHelper();
       RA->runOnModule(M, modulePass, PtoSets_AA);
@@ -5912,10 +6183,15 @@ namespace llvm
    {
       if(RA)
       {
+#if __clang_major__ < 10
          llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI();
+#endif
 
          for(llvm::Function& F : M)
          {
+#if __clang_major__ >= 10
+            llvm::TargetLibraryInfo& TLI = modulePass->getAnalysis<llvm::TargetLibraryInfoWrapperPass>().getTLI(F);
+#endif
 #ifdef DEBUG_RA
             llvm::errs() << "ValueRangeOptimizer: Analysis for function: " << F.getName() << "\n";
 #endif
@@ -6274,7 +6550,11 @@ namespace llvm
 
    void DumpGimpleRaw::computeMAEntryDefs(const llvm::Function* F, std::map<const llvm::Function*, std::map<const void*, std::set<const llvm::Instruction*>>>& CurrentListofMAEntryDef, llvm::ModulePass* modulePass)
    {
+#if __clang_major__ >= 11
+      auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F), &changed).getMSSA();
+#else
       auto& MSSA = modulePass->getAnalysis<llvm::MemorySSAWrapperPass>(*const_cast<llvm::Function*>(F)).getMSSA();
+#endif
       for(const auto& BB : F->getBasicBlockList())
       {
          for(const auto& inst : BB)
@@ -6302,13 +6582,16 @@ namespace llvm
       modulePass = _modulePass;
       moduleContext = &M.getContext();
       TopFunctionName = _TopFunctionName;
+      bool res = false;
+      compute_eSSA(M, &res);
       if(!earlyAnalysis)
          buildMetaDataMap(M);
-      auto res = !earlyAnalysis && lowerMemIntrinsics(M);
+      res = !earlyAnalysis && lowerMemIntrinsics(M);
 
-      res = res | (!earlyAnalysis && RebuildConstants(M));
-      res = res | (!earlyAnalysis && lowerIntrinsics(M));
-      compute_eSSA(M);
+      auto res_RC = (!earlyAnalysis && RebuildConstants(M));
+      res = res || res_RC;
+      auto res_LI = (!earlyAnalysis && lowerIntrinsics(M));
+      res = res || res_LI;
 #if HAVE_LIBBDD
       if(!earlyAnalysis && !onlyGlobals)
       {
@@ -6395,7 +6678,7 @@ namespace llvm
          RA->printRanges(M, llvm::errs());
          delete RA;
       }
-      //M.print(llvm::errs(), nullptr);
+      // M.print(llvm::errs(), nullptr);
       return res;
    }
 } // namespace llvm

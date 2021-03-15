@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -108,7 +108,8 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
    return relationships;
 }
 
-void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned int& bambu_address, unsigned int& taste_address, unsigned int& registers, const bool first_level, const bool little_endianess)
+void CreateAddressTranslation::ComputeAddress(const AsnTypeRef asn_type, const unsigned int tree_parameter_type, unsigned long long int& bambu_address, unsigned long long int& taste_address, unsigned int& registers, const bool first_level,
+                                              const bool little_endianess)
 {
    switch(asn_type->GetKind())
    {
@@ -383,7 +384,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
 {
    already_executed = true;
    bool changed = false;
-   const std::string tmp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
+   const auto tmp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    const auto top_functions = parameters->getOption<std::string>(OPT_top_functions_names);
    auto new_top_functions = top_functions;
    THROW_ASSERT(aadl_information->top_functions_names.size(), "");
@@ -391,7 +392,7 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing function " + top_function_name);
       /// The taste address of return (if any)
-      unsigned int taste_return_address = 0;
+      unsigned long long int taste_return_address = 0;
 
       THROW_ASSERT(aadl_information->function_parameters.find("PI_" + top_function_name) != aadl_information->function_parameters.end(), top_function_name);
       auto& function_parameters = aadl_information->function_parameters.find("PI_" + top_function_name)->second;
@@ -412,9 +413,9 @@ DesignFlowStep_Status CreateAddressTranslation::Exec()
       endianess_check->Append("unsigned int " STR_CST_taste_endianess_check + top_function_name + "(unsigned int arg)\n");
       endianess_check->Append("{\n");
       endianess_check->Append("const unsigned int endianess_check[] = {0");
-      unsigned int bambu_address = 0;
+      unsigned long long int bambu_address = 0;
       /// Taste address starts from 4, since first 4 bytes are reserved to status register
-      unsigned int taste_address = 4;
+      unsigned long long int taste_address = 4;
       /// Build the map between parameter name and index type
       CustomMap<std::string, unsigned int> parameter_to_type;
       THROW_ASSERT(function_id, "Function " + top_function_name + " not found in tree");

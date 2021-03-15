@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,7 +58,7 @@
 
 #include "exceptions.hpp" // for THROW_ERROR
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 #if HAVE_RTL_BUILT
@@ -105,8 +105,8 @@
  * Macro which writes on an output stream a string with its length. STRING_CST case
  */
 #define WRITE_STRGLNGT_STRING(os, field) \
-   (os << " "                            \
-       << "strg: \"" << (field) << "\" lngt: " << (field).size() + 1)
+   ((os) << " "                          \
+         << "strg: \"" << (field) << "\" lngt: " << (field).size() + 1)
 
 /**
  * Macro which writes on an output stream the srcp fields.
@@ -676,6 +676,18 @@ void raw_writer::operator()(const function_decl* obj, unsigned int& mask)
    if(obj->reading_memory)
    {
       WRITE_TOKEN(os, TOK_READING_MEMORY);
+   }
+   if(obj->pipeline_enabled)
+   {
+      WRITE_TOKEN(os, TOK_PIPELINE_ENABLED);
+   }
+   if(obj->simple_pipeline)
+   {
+      WRITE_TOKEN(os, TOK_SIMPLE_PIPELINE);
+   }
+   if(obj->pipeline_enabled && !obj->simple_pipeline)
+   {
+      WRITE_NFIELD(os, STOK(TOK_INITIATION_TIME), obj->initiation_time);
    }
 #if HAVE_FROM_PRAGMA_BUILT
    if(obj->omp_atomic)

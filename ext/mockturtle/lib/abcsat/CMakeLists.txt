@@ -7,7 +7,9 @@ file(GLOB ABC_SRC *.cpp)
 
 # Surpress warnings in external library
 if (UNIX)
-    set(CMAKE_CXX_FLAGS "-w")
+    add_compile_options("-w")
+elseif (MSVC)
+    string(REPLACE "/W3" "/w" CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS})
 endif()
 
 if (STATIC_LIBABC)

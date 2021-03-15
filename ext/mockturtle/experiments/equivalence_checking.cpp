@@ -81,8 +81,7 @@ int main()
     ps.cut_enumeration_ps.cut_size = 4;
     ps.progress = true;
 
-    cut_rewriting( aig, resyn, ps );
-    aig = cleanup_dangling( aig );
+    aig = cut_rewriting( aig, resyn, ps );
 
     equivalence_checking_stats st;
     auto cec = *equivalence_checking( *miter<aig_network>( orig, aig ), {}, &st );

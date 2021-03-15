@@ -1,0 +1,428 @@
+<?xml version="1.0"?>
+<synthesis>
+   <flow name="Synthesis">
+      <step id="bash_flow" config="bash_flow"/>
+   </flow>
+   <flow name="Characterization">
+      <step id="bash_flow" config="bash_flowC"/>
+   </flow>
+   <bash config="bash_flowC">
+      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects"/>
+      <cmd name="rm -rf ${OBJECTS_DIR}"/>
+      <cmd name="mkdir -p ${OBJECTS_DIR}"/>
+      <!-- Pre-process Lefs -->
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLef.py --inputLef ${TECH_LEF} ${SC_LEF} ${ADDITIONAL_LEFS} --outputLef ${OBJECTS_DIR}/merged.lef"/>
+      <!-- Pre-process libraries -->
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLib.pl ${PLATFORM}_merged  ${LIB_FILES} &gt; ${OBJECTS_DIR}/merged.lib.tmp"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${OBJECTS_DIR}/merged.lib.tmp -o ${OBJECTS_DIR}/merged.lib"/>
+       <!--Create the design setup -->
+      <!-- YOSYS -->
+      <cmd name="yosys &lt;&lt; EOT "/>
+      <cmd name="read_verilog -defer -sv ${__generic_sources_macro_list__}"/>
+      <cmd name="read_verilog ${BLACKBOX_V_FILE}"/>
+      <cmd name="read_verilog ${CLKGATE_MAP_FILE}"/>
+      <cmd name="tcl ${BLACKBOX_MAP_TCL}"/>
+      <cmd name="synth -top ${__top_id__} -flatten"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="opt -undriven -mux_undef -mux_bool"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="stat"/>
+      <cmd name="techmap -map ${LATCH_MAP_FILE}"/>
+      <cmd name="dfflibmap -liberty ${OBJECTS_DIR}/merged.lib"/>
+      <cmd name="opt -undriven -mux_undef -mux_bool"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${LIB_FILES} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
+      <!--
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
+      -->
+      <cmd name="hilomap -singleton -hicell ${TIEHI_CELL_AND_PORT} -locell ${TIELO_CELL_AND_PORT}"/>
+      <cmd name="setundef -zero"/>
+      <cmd name="splitnets"/>
+      <cmd name="insbuf -buf ${MIN_BUF_CELL_AND_PORTS}"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="stat -liberty ${LIB_FILES}"/>
+      <cmd name="write_verilog -noattr -noexpr -nohex -nodec ${__top_id__}_mapped.v"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <!-- OPENROAD -->
+      <cmd name="openroad &lt;&lt; EOT "/>
+      <cmd name="proc redirect_variable {varname cmd} {"/>
+      <cmd name="    rename puts ::tcl::orig::puts"/>
+      <cmd name="    global __puts_redirect"/>
+      <cmd name="    set __puts_redirect {}"/>
+      <cmd name="    proc puts args {"/>
+      <cmd name="        global __puts_redirect"/>
+      <cmd name="        set __puts_redirect [concat \$__puts_redirect [lindex \$args end]]"/>
+      <cmd name="        set args [lreplace \$args end end]"/>
+      <cmd name="        if {[lsearch -regexp \$args {^-nonewline}]&lt;0} {"/>
+      <cmd name="            set __puts_redirect \&quot;\$__puts_redirect\\n\&quot;"/>
+      <cmd name="        }"/>
+      <cmd name="        return"/>
+      <cmd name="    }"/>
+      <cmd name="    uplevel \$cmd"/>
+      <cmd name="    upvar \$varname destination"/>
+      <cmd name="    set destination \$__puts_redirect"/>
+      <cmd name="    unset __puts_redirect"/>
+      <cmd name="    rename puts {}"/>
+      <cmd name="    rename ::tcl::orig::puts puts"/>
+      <cmd name="}; #END PROC"/>
+      <cmd name="proc dump_statistics {  } {"/>
+      <cmd name="  redirect_variable  util_rpt {report_design_area}"/>
+      <cmd name="  set DesignArea 0"/>
+      <cmd name="  regexp --  {\s*Design area\s*([^[:blank:]]+)} \$util_rpt ignore DesignArea"/>
+      <cmd name="  set TotPower 0"/>
+      <cmd name="  redirect_variable power_rpt {report_power}"/>
+      <cmd name="  regexp --  {\s*Total [^[:blank:]]+ [^[:blank:]]+ [^[:blank:]]+ ([^[:blank:]]+)} \$power_rpt ignore TotPower"/>
+      <cmd name="  redirect_variable Timing_Paths {report_slack ${__clk_name__}}"/>
+      <cmd name="  set design_req ${__clk_period__}"/>
+      <cmd name="  set design_slack 0"/>
+      <cmd name="  regexp --  {\s*:\s*([^[:blank:]]+)} \$Timing_Paths ignore design_slack"/>
+      <cmd name="  set design_delay [expr {\$design_req - \$design_slack}]"/>
+      <cmd name="  file delete -force ${__bash_backend_report__} "/>
+      <cmd name="  set ofile_report [open ${__bash_backend_report__} w]"/>
+      <cmd name="  puts \$ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;    &lt;section stringID=\\&quot;BASH_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;      &lt;item stringID=\\&quot;BASHBACKEND_AREA\\&quot; value=\\&quot;\$DesignArea\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;      &lt;item stringID=\\&quot;BASHBACKEND_POWER\\&quot; value=\\&quot;\$TotPower\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;      &lt;item stringID=\\&quot;BASHBACKEND_DESIGN_DELAY\\&quot; value=\\&quot;\$design_delay\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="  close \$ofile_report"/>
+      <cmd name="}; #END PROC"/>
+      <cmd name="set outputDir ${__bash_outdir__}"/>
+      <cmd name="file mkdir \$outputDir"/>
+      <cmd name="read_lef ${OBJECTS_DIR}/merged.lef"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
+      <cmd name="read_verilog ${__top_id__}_mapped.v"/>
+      <cmd name="link_design ${__top_id__}"/>
+      <cmd name="read_sdc ${__sdc_file__}"/>
+      <cmd name="report_checks"/>
+      <cmd name="report_design_area"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+   </bash>
+   <bash config="bash_flow">
+      <cmd name=": ${NPROC:=1}"/>
+      <cmd name="export NPROC"/>
+      <cmd name="export RESULTS_DIR=${CURR_WORKDIR}/OpenROAD_results"/>
+      <cmd name="export OBJECTS_DIR=${CURR_WORKDIR}/OpenROAD_objects"/>
+      <cmd name="rm -rf ${RESULTS_DIR}"/>
+      <cmd name="mkdir -p ${RESULTS_DIR}"/>
+      <cmd name="rm -rf ${OBJECTS_DIR}"/>
+      <cmd name="mkdir -p ${OBJECTS_DIR}"/>
+      <cmd name="export TRITON_ROUTE_LEF=${OBJECTS_DIR}/merged_padded_spacing.lef"/>
+      <!-- Pre-process Lefs -->
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLef.py --inputLef ${TECH_LEF} ${SC_LEF} ${ADDITIONAL_LEFS} --outputLef ${OBJECTS_DIR}/merged.lef"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/padLefMacro.py -r ${CELL_PAD_IN_SITES} -l 0 -s ${PLACE_SITE} -i ${OBJECTS_DIR}/merged.lef  -o ${OBJECTS_DIR}/merged_padded.lef"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/modifyLefSpacing.py -i ${OBJECTS_DIR}/merged_padded.lef -o ${OBJECTS_DIR}/merged_padded_spacing.lef"/>
+      <!-- Pre-process libraries -->
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/mergeLib.pl ${PLATFORM}_merged  ${LIB_FILES} &gt; ${OBJECTS_DIR}/merged.lib.tmp"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/markDontUse.py -p &quot;${DONT_USE_CELLS}&quot; -i ${OBJECTS_DIR}/merged.lib.tmp -o ${OBJECTS_DIR}/merged.lib"/>
+      <!-- Pre-process KLayout tech -->
+      <cmd name="sed &quot;s,&lt;lef-files&gt;.*&lt;/lef-files&gt;,&lt;lef-files&gt;$(realpath ${OBJECTS_DIR}/merged.lef)&lt;/lef-files&gt;,g&quot; ${KLAYOUT_TECH_FILE} &gt; ${OBJECTS_DIR}/klayout.lyt"/>
+      <!-- Generate param file for TritonRoute -->
+      <cmd name="echo &quot;Generate param file for TritonRoute&quot;"/>
+      <cmd name="echo &quot;lef:${TRITON_ROUTE_LEF}&quot; > ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;def:${RESULTS_DIR}/4_cts.def&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;guide:${RESULTS_DIR}/route.guide&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;output:${RESULTS_DIR}/5_route.def&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;outputTA:${OBJECTS_DIR}/5_route_TA.def&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;outputguide:${RESULTS_DIR}/output_guide.mod&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;outputDRC:${REPORTS_DIR}/5_route_drc.rpt&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;outputMaze:${RESULTS_DIR}/maze.log&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;threads:${NPROC}&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;cpxthreads:1&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;verbose:1&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;gap:0&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <cmd name="echo &quot;timeout:2400&quot; >> ${OBJECTS_DIR}/TritonRoute.param"/>
+      <!-- YOSYS -->
+      <cmd name="yosys &lt;&lt; EOT "/>
+      <cmd name="read_verilog -defer -sv ${__generic_sources_macro_list__}"/>
+      <cmd name="read_verilog ${BLACKBOX_V_FILE}"/>
+      <cmd name="read_verilog ${CLKGATE_MAP_FILE}"/>
+      <cmd name="tcl ${BLACKBOX_MAP_TCL}"/>
+      <cmd name="synth -top ${__top_id__} -flatten"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="opt -undriven -mux_undef -mux_bool"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="stat"/>
+      <cmd name="techmap -map ${LATCH_MAP_FILE}"/>
+      <cmd name="dfflibmap -liberty ${OBJECTS_DIR}/merged.lib"/>
+      <cmd name="opt -undriven -mux_undef -mux_bool"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${LIB_FILES} -constr &quot;${__sdc_file__}&quot; -script &quot;+read_constr,${__sdc_file__};strash;ifraig;retime,-D,{D},-M,6;strash;dch,-f;map,-p,-M,1,{D},-f;topo;dnsize;buffer,-p;upsize;&quot;"/>
+      <!--
+      <cmd name="abc -D ${__clk_period_ps__} -liberty ${OBJECTS_DIR}/merged.lib -constr &quot;${__sdc_file__}&quot;"/>
+      -->
+      <cmd name="hilomap -singleton -hicell ${TIEHI_CELL_AND_PORT} -locell ${TIELO_CELL_AND_PORT}"/>
+      <cmd name="setundef -zero"/>
+      <cmd name="splitnets"/>
+      <cmd name="insbuf -buf ${MIN_BUF_CELL_AND_PORTS}"/>
+      <cmd name="opt_clean -purge"/>
+      <cmd name="stat -liberty ${LIB_FILES}"/>
+      <cmd name="write_verilog -noattr -noexpr -nohex -nodec ${__top_id__}_mapped.v"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <!-- OPENROAD -->
+      <cmd name="openroad &lt;&lt; EOT "/>
+      <cmd name="# STEP 1: Translate verilog to def"/>
+      <cmd name="read_lef ${OBJECTS_DIR}/merged.lef"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
+      <cmd name="read_verilog ${__top_id__}_mapped.v"/>
+      <cmd name="link_design ${__top_id__}"/>
+      <cmd name="read_sdc ${__sdc_file__}"/>
+      <cmd name="report_checks"/>
+      <cmd name="report_design_area"/>
+      <cmd name="if {[info exists ::env(FOOTPRINT)]} {"/>
+      <cmd name="  source ${PANDA_DATA_INSTALLDIR}/scripts/ICeWall.tcl"/>
+      <cmd name="  ICeWall load_footprint \$env(FOOTPRINT)"/>
+      <cmd name="  initialize_floorplan \\"/>
+      <cmd name="    -die_area  [ICeWall get_die_area] \\"/>
+      <cmd name="    -core_area [ICeWall get_core_area] \\"/>
+      <cmd name="    -tracks    $::env(TRACKS_INFO_FILE) \\"/>
+      <cmd name="    -site      $::env(PLACE_SITE)"/>
+      <cmd name="  ICeWall init_footprint \$env(SIG_MAP_FILE)"/>
+      <cmd name="# Initialize floorplan using CORE_UTILIZATION"/>
+      <cmd name="# ----------------------------------------------------------------------------"/>
+      <cmd name="} elseif {[info exists ::env(CORE_UTILIZATION)] &amp;&amp; $::env(CORE_UTILIZATION) != &quot;&quot; } {"/>
+      <cmd name="  initialize_floorplan -utilization $::env(CORE_UTILIZATION) \\"/>
+      <cmd name="                       -aspect_ratio $::env(CORE_ASPECT_RATIO) \\"/>
+      <cmd name="                       -core_space $::env(CORE_MARGIN) \\"/>
+      <cmd name="                       -tracks $::env(TRACKS_INFO_FILE) \\"/>
+      <cmd name="                       -site $::env(PLACE_SITE)"/>
+      <cmd name="# Initialize floorplan using DIE_AREA/CORE_AREA"/>
+      <cmd name="# ----------------------------------------------------------------------------"/>
+      <cmd name="} else {"/>
+      <cmd name="  initialize_floorplan -die_area $::env(DIE_AREA)\\"/>
+      <cmd name="                       -core_area $::env(CORE_AREA) \\"/>
+      <cmd name="                       -tracks $::env(TRACKS_INFO_FILE) \\"/>
+      <cmd name="                       -site $::env(PLACE_SITE)"/>
+      <cmd name="}"/>
+      <cmd name="# STEP 2: IO Placement"/>
+      <cmd name="if {![info exists ::env(FOOTPRINT)]} {"/>
+      <cmd name="  io_placer -hor_layer $::env(IO_PLACER_H) \\"/>
+      <cmd name="            -ver_layer $::env(IO_PLACER_V) \\"/>
+      <cmd name="            -random"/>
+      <cmd name="}"/>
+      <cmd name="write_def $::env(RESULTS_DIR)/2_2_floorplan_io.def"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <!-- OPENROAD -->
+      <cmd name="openroad &lt;&lt; EOT "/>
+      <cmd name="proc find_macros {} {"/>
+      <cmd name="  set macros &quot;&quot;"/>
+      <cmd name="  set db [::ord::get_db]"/>
+      <cmd name="  set block [[\$db getChip] getBlock]"/>
+      <cmd name="  foreach inst [\$block getInsts] {"/>
+      <cmd name="    set inst_master [\$inst getMaster]"/>
+      <cmd name="    # BLOCK means MACRO cells"/>
+      <cmd name="    if { [string match [\$inst_master getType] &quot;BLOCK&quot;] } {"/>
+      <cmd name="      append macros &quot; &quot; \$inst"/>
+      <cmd name="    }"/>
+      <cmd name="  }"/>
+      <cmd name="  return \$macros"/>
+      <cmd name="}"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
+      <cmd name="# Read lef def and sdc"/>
+      <cmd name="read_lef $::env(OBJECTS_DIR)/merged_padded.lef"/>
+      <cmd name="read_def $::env(RESULTS_DIR)/2_2_floorplan_io.def"/>
+      <cmd name="read_sdc ${__sdc_file__}"/>
+      <cmd name=" STEP 3: Timing Driven Mixed Sized Placement"/>
+      <cmd name="if {[find_macros] != &quot;&quot;} {"/>
+      <cmd name="  set_wire_rc -layer $::env(WIRE_RC_LAYER)"/>
+      <cmd name="  global_placement -timing_driven"/>
+      <cmd name="} else {"/>
+      <cmd name="  puts &quot;No macros found: Skipping global_placement&quot;"/>
+      <cmd name="}"/>
+      <cmd name="write_def $::env(RESULTS_DIR)/2_3_floorplan_tdms.def"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <cmd name="${PANDA_DATA_INSTALLDIR}/scripts/fixIoPins.py --inputDef ${RESULTS_DIR}/2_3_floorplan_tdms.def --outputDef ${RESULTS_DIR}/2_3_floorplan_tdms.def --margin ${IO_PIN_MARGIN}"/>
+      <!-- OPENROAD -->
+      <cmd name="openroad &lt;&lt; EOT "/>
+      <cmd name="proc find_macros {} {"/>
+      <cmd name="  set macros &quot;&quot;"/>
+      <cmd name="  set db [::ord::get_db]"/>
+      <cmd name="  set block [[\$db getChip] getBlock]"/>
+      <cmd name="  foreach inst [\$block getInsts] {"/>
+      <cmd name="    set inst_master [\$inst getMaster]"/>
+      <cmd name="    # BLOCK means MACRO cells"/>
+      <cmd name="    if { [string match [\$inst_master getType] &quot;BLOCK&quot;] } {"/>
+      <cmd name="      append macros &quot; &quot; \$inst"/>
+      <cmd name="    }"/>
+      <cmd name="  }"/>
+      <cmd name="  return \$macros"/>
+      <cmd name="}"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
+      <cmd name="# Read lef def and sdc"/>
+      <cmd name="read_lef $::env(OBJECTS_DIR)/merged_padded.lef"/>
+      <cmd name="read_def $::env(RESULTS_DIR)/2_3_floorplan_tdms.def"/>
+      <cmd name="read_sdc ${__sdc_file__}"/>
+      <cmd name="# STEP 4: Macro Placement"/>
+      <cmd name="if {[find_macros] != &quot;&quot;} {"/>
+      <cmd name="  macro_placement -global_config $::env(IP_GLOBAL_CFG)"/>
+      <cmd name="} else {"/>
+      <cmd name="  puts &quot;No macros found: Skipping macro_placement&quot;"/>
+      <cmd name="}"/>
+      <cmd name="# STEP 5: PDN generation"/>
+      <cmd name="if {[info exist ::env(PDN_CFG)]} {"/>
+      <cmd name="  pdngen $::env(PDN_CFG) -verbose"/>
+      <cmd name="}"/>
+      <cmd name="# STEP 6: Tapcell and Welltie insertion"/>
+      <cmd name="if {[info exist ::env(TAPCELL_TCL)]} {"/>
+      <cmd name="  source $::env(TAPCELL_TCL)"/>
+      <cmd name="}"/>
+      <cmd name="# STEP 1: Global placement"/>
+      <cmd name="set_wire_rc -layer $::env(WIRE_RC_LAYER)"/>
+      <cmd name="global_placement -timing_driven -density $::env(PLACE_DENSITY)"/>
+      <cmd name="# Perform resizing and buffering"/>
+      <cmd name="set dont_use_cells &quot;&quot;"/>
+      <cmd name="foreach cell $::env(DONT_USE_CELLS)} {"/>
+      <cmd name="  lappend dont_use_cells [get_full_name [get_lib_cells */\$cell]]"/>
+      <cmd name="}"/>
+      <cmd name="if {[info exists ::env(FOOTPRINT)]} {"/>
+      <cmd name="  # Disable input and output buffering to the io cell pads"/>
+      <cmd name="  resize -resize \\"/>
+      <cmd name="         -repair_max_cap \\"/>
+      <cmd name="         -repair_max_slew \\"/>
+      <cmd name="         -buffer_cell [get_full_name [get_lib_cells */$::env(RESIZER_BUF_CELL)]] \\"/>
+      <cmd name="         -dont_use \$dont_use_cells"/>
+      <cmd name="} else {"/>
+      <cmd name="  resize -buffer_cell [get_full_name [get_lib_cells */$::env(RESIZER_BUF_CELL)]] \\"/>
+      <cmd name="         -dont_use \$dont_use_cells"/>
+      <cmd name="}"/>
+      <cmd name="set buffer_cell [get_lib_cell */[lindex $::env(MIN_BUF_CELL_AND_PORTS) 0]]"/>
+      <cmd name="repair_max_cap -buffer_cell \$buffer_cell"/>
+      <cmd name="repair_max_slew -buffer_cell \$buffer_cell"/>
+      <cmd name="# Repair tie hi fanout"/>
+      <cmd name="set tielo_cell_name [lindex \$env(TIELO_CELL_AND_PORT) 0]"/>
+      <cmd name="set tielo_lib_name [get_name [get_property [get_lib_cell */\$tielo_cell_name] library]]"/>
+      <cmd name="set tielo_pin \$tielo_lib_name/\$tielo_cell_name/[lindex \$env(TIELO_CELL_AND_PORT) 1]"/>
+      <cmd name="repair_tie_fanout -max_fanout $::env(MAX_FANOUT) \$tielo_pin"/>
+      <cmd name="# Repair tie lo fanout"/>
+      <cmd name="set tiehi_cell_name [lindex \$env(TIEHI_CELL_AND_PORT) 0]"/>
+      <cmd name="set tiehi_lib_name [get_name [get_property [get_lib_cell */\$tiehi_cell_name] library]]"/>
+      <cmd name="set tiehi_pin \$tiehi_lib_name/\$tiehi_cell_name/[lindex \$env(TIEHI_CELL_AND_PORT) 1]"/>
+      <cmd name="repair_tie_fanout -max_fanout $::env(MAX_FANOUT) \$tiehi_pin"/>
+      <cmd name="# Repair max fanout"/>
+      <cmd name="repair_max_fanout -max_fanout $::env(MAX_FANOUT) -buffer_cell \$buffer_cell"/>
+      <cmd name="# Repair hold violations"/>
+      <cmd name="repair_hold_violations -buffer_cell \$buffer_cell"/>
+      <cmd name="# STEP 3: Detail placement"/>
+      <cmd name="legalize_placement"/>
+      <cmd name="#OpeNPDN"/>
+      <cmd name="#analyze_power_grid"/>
+      <cmd name="# Run TritonCTS"/>
+      <cmd name="clock_tree_synthesis -lut_file &quot;$::env(CTS_TECH_DIR)/lut.txt&quot; \"/>
+      <cmd name="                     -sol_list &quot;$::env(CTS_TECH_DIR)/sol_list.txt&quot; \"/>
+      <cmd name="                     -root_buf &quot;$::env(CTS_BUF_CELL)&quot; \\"/>
+      <cmd name="                     -wire_unit 20"/>
+      <cmd name="legalize_placement"/>
+      <cmd name="# STEP 1: Run global route"/>
+      <cmd name="fastroute -output_file ${RESULTS_DIR}/route.guide \\"/>
+      <cmd name="          -max_routing_layer $::env(MAX_ROUTING_LAYER) \\"/>
+      <cmd name="          -unidirectional_routing true \\"/>
+      <cmd name="          -capacity_adjustment 0.15 \\"/>
+      <cmd name="          -layers_adjustments {{2 0.7} {3 0.7}} \\"/>
+      <cmd name="          -pitches_in_tile 45"/>
+      <cmd name="# STEP 2: Run detail route"/>
+      <cmd name="write_def ${RESULTS_DIR}/4_cts.def"/>
+      <cmd name="write_sdc $::env(RESULTS_DIR)/5_route.sdc"/>
+      <cmd name="set TritonRouteResult [exec TritonRoute ${OBJECTS_DIR}/TritonRoute.param]"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <!-- OPENROAD -->
+      <cmd name="openroad &lt;&lt; EOT "/>
+      <cmd name="proc redirect_variable {varname cmd} {"/>
+      <cmd name="    rename puts ::tcl::orig::puts"/>
+      <cmd name="    global __puts_redirect"/>
+      <cmd name="    set __puts_redirect {}"/>
+      <cmd name="    proc puts args {"/>
+      <cmd name="        global __puts_redirect"/>
+      <cmd name="        set __puts_redirect [concat \$__puts_redirect [lindex \$args end]]"/>
+      <cmd name="        set args [lreplace \$args end end]"/>
+      <cmd name="        if {[lsearch -regexp \$args {^-nonewline}]&lt;0} {"/>
+      <cmd name="            set __puts_redirect \&quot;\$__puts_redirect\\n\&quot;"/>
+      <cmd name="        }"/>
+      <cmd name="        return"/>
+      <cmd name="    }"/>
+      <cmd name="    uplevel \$cmd"/>
+      <cmd name="    upvar \$varname destination"/>
+      <cmd name="    set destination \$__puts_redirect"/>
+      <cmd name="    unset __puts_redirect"/>
+      <cmd name="    rename puts {}"/>
+      <cmd name="    rename ::tcl::orig::puts puts"/>
+      <cmd name="}; #END PROC"/>
+      <cmd name="proc dump_statistics {  } {"/>
+      <cmd name="  redirect_variable  util_rpt {report_design_area}"/>
+      <cmd name="  set DesignArea 0"/>
+      <cmd name="  regexp --  {\s*Design area\s*([^[:blank:]]+)} \$util_rpt ignore DesignArea"/>
+      <cmd name="  set TotPower 0"/>
+      <cmd name="  redirect_variable power_rpt {report_power}"/>
+      <cmd name="  regexp --  {\s*Total [^[:blank:]]+ [^[:blank:]]+ [^[:blank:]]+ ([^[:blank:]]+)} \$power_rpt ignore TotPower"/>
+      <cmd name="  redirect_variable Timing_Paths {report_slack ${__clk_name__}}"/>
+      <cmd name="  set design_req ${__clk_period__}"/>
+      <cmd name="  set design_slack 0"/>
+      <cmd name="  regexp --  {\s*:\s*([^[:blank:]]+)} \$Timing_Paths ignore design_slack"/>
+      <cmd name="  set design_delay [expr {\$design_req - \$design_slack}]"/>
+      <cmd name="  file delete -force ${__bash_backend_report__} "/>
+      <cmd name="  set ofile_report [open ${__bash_backend_report__} w]"/>
+      <cmd name="  puts \$ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;    &lt;section stringID=\\&quot;BASH_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;      &lt;item stringID=\\&quot;BASHBACKEND_AREA\\&quot; value=\\&quot;\$DesignArea\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;      &lt;item stringID=\\&quot;BASHBACKEND_POWER\\&quot; value=\\&quot;\$TotPower\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;      &lt;item stringID=\\&quot;BASHBACKEND_DESIGN_DELAY\\&quot; value=\\&quot;\$design_delay\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="  puts \$ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="  close \$ofile_report"/>
+      <cmd name="}; #END PROC"/>
+      <cmd name="# Read liberty files"/>
+      <cmd name="foreach libFile $::env(LIB_FILES) {"/>
+      <cmd name="    read_liberty \$libFile"/>
+      <cmd name="}"/>
+      <cmd name="set outputDir ${__bash_outdir__}"/>
+      <cmd name="file mkdir \$outputDir"/>
+      <cmd name="# Read lef def and sdc"/>
+      <cmd name="read_lef $::env(OBJECTS_DIR)/merged.lef"/>
+      <cmd name="read_def $::env(RESULTS_DIR)/5_route.def"/>
+      <cmd name="read_sdc $::env(RESULTS_DIR)/5_route.sdc"/>
+      <cmd name="report_checks -path_delay min"/>
+      <cmd name="report_checks -path_delay max"/>
+      <cmd name="report_checks -unconstrained"/>
+      <cmd name="report_tns"/>
+      <cmd name="report_wns"/>
+      <cmd name="report_check_types -max_transition -all_violators"/>
+      <cmd name="report_power"/>
+      <cmd name="report_design_area"/>
+      <cmd name="report_checks > \$outputDir/post_route_timing_summary.rpt"/>
+      <cmd name="report_design_area"/>
+      <cmd name="report_slack clock"/>
+      <cmd name="dump_statistics"/>
+      <cmd name="exit"/>
+      <cmd name="EOT"/>
+      <cmd name="klayout -zz -rd design_name=${__top_id__} \\"/>
+      <cmd name="	        -rd in_def=${RESULTS_DIR}/5_route.def \\"/>
+      <cmd name="	        -rd in_gds=&quot;${GDS_FILES}&quot; \\"/>
+      <cmd name="	        -rd out_gds=${RESULTS_DIR}/6_1_merged.gds \\"/>
+      <cmd name="	        -rd tech_file=${OBJECTS_DIR}/klayout.lyt \\"/>
+      <cmd name="	        -rm ${PANDA_DATA_INSTALLDIR}/scripts/def2gds.py"/>
+   </bash>
+</synthesis>

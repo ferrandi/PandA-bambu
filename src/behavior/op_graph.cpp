@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,14 +64,18 @@ OpEdgeInfo::~OpEdgeInfo() = default;
 bool OpEdgeInfo::FlgEdgeT() const
 {
    if(labels.find(FLG_SELECTOR) == labels.end())
+   {
       return false;
+   }
    return labels.find(FLG_SELECTOR)->second.find(T_COND) != labels.find(FLG_SELECTOR)->second.end();
 }
 
 bool OpEdgeInfo::FlgEdgeF() const
 {
    if(labels.find(FLG_SELECTOR) == labels.end())
+   {
       return false;
+   }
    return labels.find(FLG_SELECTOR)->second.find(F_COND) != labels.find(FLG_SELECTOR)->second.end();
 }
 
@@ -124,9 +128,13 @@ const CustomSet<MemoryAddress>& OpNodeInfo::GetDynamicMemoryLocations(const Func
 const std::string OpNodeInfo::GetOperation() const
 {
    if(vertex_name == ENTRY)
+   {
       return ENTRY;
+   }
    if(vertex_name == EXIT)
+   {
       return EXIT;
+   }
    if(vertex_name.find("_#empty_") != std::string::npos)
    {
       return NOP;
@@ -140,11 +148,17 @@ const std::string OpNodeInfo::GetOperation() const
 unsigned int OpNodeInfo::GetNodeId() const
 {
    if(node)
+   {
       return node->index;
+   }
    else if(vertex_name == ENTRY)
+   {
       return ENTRY_ID;
+   }
    else if(vertex_name == EXIT)
+   {
       return EXIT_ID;
+   }
    THROW_UNREACHABLE("");
    return 0;
 }
@@ -152,18 +166,26 @@ unsigned int OpNodeInfo::GetNodeId() const
 void PrintVariablesList(std::ostream& stream, const std::string& name, const CustomSet<unsigned int> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
 {
    if(variables.size())
+   {
       stream << name << ":" << (dotty_format ? "\\n" : "\n");
+   }
 
    for(const auto& variable : variables)
+   {
       stream << behavioral_helper->PrintVariable(variable) << "(" << variable << ")" << (dotty_format ? "\\n" : "\n");
+   }
 }
 
 void PrintMemoriesList(std::ostream& stream, const std::string& name, const CustomSet<MemoryAddress> variables, const BehavioralHelperConstRef, const bool dotty_format)
 {
    if(variables.size())
+   {
       stream << name << ":" << (dotty_format ? "\\n" : "\n");
+   }
    for(const auto& variable : variables)
+   {
       stream << from_strongtype_cast<int>(variable) << (dotty_format ? "\\n" : "\n");
+   }
 }
 
 void PrintVariablesLists(std::ostream& stream, const std::string& name, const CustomMap<FunctionBehavior_VariableAccessType, CustomSet<unsigned int>> variables, const BehavioralHelperConstRef behavioral_helper, const bool dotty_format)
@@ -304,7 +326,9 @@ void OpGraph::WriteDot(const std::string& file_name, const int detail_level) con
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new OpWriter(this, detail_level));
    const EdgeWriterConstRef op_edge_property_writer(new OpEdgeWriter(this));
@@ -387,7 +411,9 @@ void OpGraph::WriteDot(const std::string& file_name, const hlsConstRef HLS, cons
    const BehavioralHelperConstRef helper = CGetOpGraphInfo()->BH;
    std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/" + helper->get_function_name() + "/";
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name;
    const VertexWriterConstRef op_label_writer(new TimedOpWriter(this, HLS, critical_paths));
    const EdgeWriterConstRef op_edge_property_writer(new TimedOpEdgeWriter(this, HLS, critical_paths));

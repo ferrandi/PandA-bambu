@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -106,7 +106,7 @@ class IndentedOutputStream
     * Append a string to the output
     * @param message is the string to be printed
     */
-   void Append(const std::string& message);
+   void Append(const std::string& str);
 
    /**
     * Manually increase the indenting of the code
@@ -129,5 +129,5 @@ class IndentedOutputStream
     */
    void WriteFile(const std::string& file_name);
 };
-typedef refcount<IndentedOutputStream> IndentedOutputStreamRef;
+using IndentedOutputStreamRef = refcount<IndentedOutputStream>;
 #endif

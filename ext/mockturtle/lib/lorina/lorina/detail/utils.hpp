@@ -80,15 +80,18 @@ public:
 
   void declare_known( const std::string& known )
   {
-    _waits_for[ known ];
+    _known.emplace( known );
   }
-  
+
   void call_deferred( const std::vector<std::string>& inputs, const std::string& output, Args... params )
   {
     /* do we have all inputs */
     std::unordered_set<std::string> unknown;
     for ( const auto& input : inputs )
     {
+      if ( _known.find( input ) != _known.end() )
+        continue;
+
       auto it = _waits_for.find( input );
       if ( it == _waits_for.end() || !it->second.empty() )
       {
@@ -110,8 +113,14 @@ public:
       return;
     }
 
-    /* trigger computation */
-    _waits_for[output]; /* init empty, makes sure nothing is waiting for this output */
+    /* trigger dependency computation */
+    compute_dependencies( output );
+  }
+
+  void compute_dependencies( const std::string& output )
+  {
+     /* init empty, makes sure nothing is waiting for this output */
+    _waits_for[output];
     std::stack<std::string> computed;
     computed.push( output );
     while ( !computed.empty() )
@@ -149,8 +158,9 @@ public:
     }
     return deps;
   }
-  
+
 private:
+  std::unordered_set<std::string> _known;
   std::unordered_map<std::string, std::unordered_set<std::string>> _triggers;
   std::unordered_map<std::string, std::unordered_set<std::string>> _waits_for;
   std::function<void(Args...)> f;
@@ -228,12 +238,22 @@ inline std::vector<std::string> split( const std::string& str, const std::string
 
   size_t last = 0;
   size_t next = 0;
+  std::string substring;
   while ( ( next = str.find( sep, last ) ) != std::string::npos )
   {
-    result.push_back( trim_copy( str.substr( last, next - last ) ) );
+    substring = str.substr( last, next - last );
+    if ( substring.length() > 0 )
+    {
+      std::string sub = str.substr( last, next - last );
+      sub.erase( std::remove( sub.begin(), sub.end(), ' ' ), sub.end() );
+      result.push_back( sub );
+    }
     last = next + 1;
   }
-  result.push_back( trim_copy( str.substr( last ) ) );
+
+  substring = str.substr( last );
+  substring.erase( std::remove( substring.begin(), substring.end(), ' ' ), substring.end() );
+  result.push_back( substring );
 
   return result;
 }
@@ -272,6 +292,11 @@ inline std::string basename( const std::string& filepath )
   return std::string( ::basename( const_cast<char*>( filepath.c_str() ) ) );
 }
 #endif
+
+inline bool starts_with( std::string const& s, std::string const& match )
+{
+  return ( s.substr( 0, match.size() ) == match );
+}
 
 } // namespace detail
 } // namespace lorina

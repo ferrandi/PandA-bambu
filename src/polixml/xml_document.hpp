@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -64,7 +64,7 @@ class xml_document : public xml_child
  public:
    /** constructor
     */
-   explicit xml_document(std::string _version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(std::move(_version))
+   explicit xml_document(const std::string& _version = "1.0") : xml_child(std::string("")), root_node(nullptr), version(_version)
    {
    }
 
@@ -75,10 +75,14 @@ class xml_document : public xml_child
    {
       os << "<?xml version=\"" << version << "\"";
       if(encoding != "")
+      {
          os << " encoding=\"" << encoding << "\"";
+      }
       os << "?>";
       if(!formatted || !pp)
+      {
          os << "\n";
+      }
       xml_child::print(os, formatted, pp);
       os << "\n";
    }

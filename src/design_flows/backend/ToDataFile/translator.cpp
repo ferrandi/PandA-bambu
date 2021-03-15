@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -42,9 +42,7 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_MODELSIM.hpp"
 #include "config_HAVE_RTL_BUILT.hpp"
-#include "config_HAVE_XILINX.hpp"
 
 /// Header include
 #include "translator.hpp"
@@ -627,24 +625,24 @@ void Translator::write_to_csv(const std::map<std::string, CustomMap<std::string,
    std::ofstream out(file_name.c_str());
    THROW_ASSERT(out, "Error in opening output file " + file_name);
    CustomOrderedSet<std::string> column_labels;
-   for(const auto row : results)
+   for(const auto& row : results)
    {
-      for(const auto column : row.second)
+      for(const auto& column : row.second)
       {
          column_labels.insert(column.first);
       }
    }
    out << "Benchmark, ";
-   for(const auto column_label : column_labels)
+   for(const auto& column_label : column_labels)
    {
       out << column_label << ", ";
    }
    out << std::endl;
-   for(const auto row : results)
+   for(const auto& row : results)
    {
-      THROW_ASSERT(column_labels.size() == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
+      THROW_ASSERT(static_cast<decltype(row.second.size())>(column_labels.size()) == row.second.size(), "Lines with different number of fields " + STR(row.second.size()) + " vs. " + STR(column_labels.size()));
       out << row.first << ", ";
-      for(const auto column_label : column_labels)
+      for(const auto& column_label : column_labels)
       {
          out << row.second.at(column_label) << ",";
       }
@@ -792,7 +790,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    /// The stream
    XMLDomParserRef parser;
 
-#if HAVE_XILINX && HAVE_MODELSIM && HAVE_EXPERIMENTAL
+#if HAVE_EXPERIMENTAL
    if(Param->isOption(OPT_evaluation) and (Param->getOption<Evaluation_Mode>(OPT_evaluation_mode) == Evaluation_Mode::EXACT and Param->isOption(OPT_evaluation_objectives)))
    {
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Case: Estimation=EXACT");
@@ -922,7 +920,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    // Checking for bold column
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking bold cells");
-   for(auto const column : latex_column_formats)
+   for(auto const& column : latex_column_formats)
    {
       if(column.compared_columns.size())
       {
@@ -1007,7 +1005,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
 
    // Transforming into exponential_notation
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking exponential notation");
-   for(auto const column : latex_column_formats)
+   for(auto const& column : latex_column_formats)
    {
       if(column.text_format == LatexColumnFormat::TF_exponential)
       {
@@ -1047,7 +1045,7 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
       if(column.text_format == LatexColumnFormat::TF_exponential or column.compared_columns.size())
       {
          data_width[column.source_name] = 0;
-         for(auto const line : results)
+         for(auto const& line : results)
          {
             if(line.second.find(column.source_name) != line.second.end() and line.second.find(column.source_name)->second.size() > data_width[column.source_name])
                data_width[column.source_name] = line.second.find(column.source_name)->second.size();
@@ -1109,11 +1107,11 @@ void Translator::write_to_latex(std::map<std::string, CustomMap<std::string, std
    }
    out << " \\\\" << std::endl;
    out << "\\hline" << std::endl;
-   for(auto const line : results)
+   for(auto const& line : results)
    {
       first_column = true;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing line for benchmark " + line.first);
-      for(auto const column : latex_column_formats)
+      for(auto const& column : latex_column_formats)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Printing column " + column.column_name + " (" + column.source_name + ")");
          if(not first_column)
@@ -1363,16 +1361,24 @@ std::string Translator::get_exponential_notation(const std::string& input) const
    std::string exponent = result.substr(result.find('e') + 1);
    std::string::size_type pos = 1;
    while(exponent[pos] == '0')
+   {
       pos++;
+   }
    if(pos != exponent.size())
    {
       if(exponent[0] == '-')
+      {
          exponent = exponent[0] + exponent.substr(pos);
+      }
       else
+      {
          exponent = exponent.substr(pos);
+      }
    }
    else
+   {
       exponent = "0";
+   }
    return mantissa + " \\cdot 10^{" + exponent + "}";
 }
 

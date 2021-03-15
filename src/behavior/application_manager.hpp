@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,9 +66,7 @@ CONSTREF_FORWARD_DECL(FunctionExpander);
 CONSTREF_FORWARD_DECL(Parameter);
 REF_FORWARD_DECL(pragma_manager);
 REF_FORWARD_DECL(tree_manager);
-#ifndef NDEBUG
 CONSTREF_FORWARD_DECL(tree_node);
-#endif
 REF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(Discrepancy);
 
@@ -108,10 +106,8 @@ class application_manager
    pragma_managerRef PM;
 #endif
 
-#ifndef NDEBUG
    /// The number of cfg transformations applied to this function
    size_t cfg_transformations;
-#endif
 
    /// debugging level of the class
    const int debug_level;
@@ -241,6 +237,11 @@ class application_manager
    const CustomOrderedSet<unsigned int>& get_written_objects() const;
 
    /**
+    * @brief clean_written_objects clean the written object data structure
+    */
+   void clean_written_objects();
+
+   /**
     * set the value of the address bitsize
     * @param value is the new value
     */
@@ -296,7 +297,6 @@ class application_manager
    void AddActorGraphManager(const unsigned int function_index, const ActorGraphManagerRef actor_graph_manager);
 #endif
 
-#ifndef NDEBUG
    /**
     * Return true if a new transformation can be applied
     */
@@ -308,7 +308,6 @@ class application_manager
     * @param new_tn is the tree node to be created
     */
    void RegisterTransformation(const std::string& step, const tree_nodeConstRef new_tn);
-#endif
 
    /**
     * @brief isParmUsed return true in case the parameter is used
@@ -333,8 +332,8 @@ class application_manager
    void clearParm2SSA();
 };
 /// refcount definition of the class
-typedef refcount<application_manager> application_managerRef;
+using application_managerRef = refcount<application_manager>;
 /// constant refcount definition of the class
-typedef refcount<const application_manager> application_managerConstRef;
+using application_managerConstRef = refcount<const application_manager>;
 
 #endif

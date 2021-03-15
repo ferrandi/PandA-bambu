@@ -24,7 +24,7 @@
  */
 
 /*!
-  \file cut_view.hpp
+  \file mffc_view.hpp
   \brief Implements an isolated view on a single cut in a network
 
   \author Mathias Soeken
@@ -37,10 +37,9 @@
 #include <vector>
 
 #include "../networks/detail/foreach.hpp"
+#include "../utils/include/spp.hpp"
 #include "../traits.hpp"
 #include "immutable_view.hpp"
-
-#include <sparsepp/spp.h>
 
 namespace mockturtle
 {

@@ -7,3 +7,4 @@ Algorithm
 ~~~~~~~~~
 
 .. doxygenfunction:: mockturtle::gates_to_nodes
+.. doxygenfunction:: mockturtle::single_node_network

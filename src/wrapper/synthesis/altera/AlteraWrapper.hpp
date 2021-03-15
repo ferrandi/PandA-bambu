@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -91,6 +91,6 @@ class AlteraWrapper : public SynthesisTool
    std::string get_command_line(const DesignParametersRef& dp) const override = 0;
 };
 /// Refcount definition for the class
-typedef refcount<AlteraWrapper> AlteraWrapperRef;
+using AlteraWrapperRef = refcount<AlteraWrapper>;
 
 #endif

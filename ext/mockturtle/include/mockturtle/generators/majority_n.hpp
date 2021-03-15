@@ -45,7 +45,7 @@ namespace mockturtle
     template <typename Ntk, typename SizeT, SizeT N>
     signal<Ntk> majority_n_bubble_sort( Ntk& ntk, std::array<signal<Ntk>, N> const& xs ) {
         std::vector<signal<Ntk>> sigs( xs.begin(), xs.end() );
-        bubble_sorting_network( sigs.size(), [&sigs, &ntk]( auto i, auto j ){
+        bubble_sorting_network( static_cast<uint32_t>( sigs.size() ), [&sigs, &ntk]( auto i, auto j ){
             signal<Ntk> lhs = ntk.create_and( sigs[i], sigs[j] );
             signal<Ntk> rhs = ntk.create_or( sigs[i], sigs[j] );
             sigs[i] = lhs;

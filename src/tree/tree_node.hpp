@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -77,6 +77,7 @@ REF_FORWARD_DECL(bloc);
 REF_FORWARD_DECL(tree_manager);
 CONSTREF_FORWARD_DECL(tree_node);
 REF_FORWARD_DECL(tree_node);
+REF_FORWARD_DECL(Range);
 template <class value>
 class TreeNodeMap;
 enum class TreeVocabularyTokenTypes_TokenEnum;
@@ -207,8 +208,8 @@ class tree_node
 /**
  * RefCount type definition of the tree_node class structure
  */
-typedef refcount<tree_node> tree_nodeRef;
-typedef refcount<const tree_node> tree_nodeConstRef;
+using tree_nodeRef = refcount<tree_node>;
+using tree_nodeConstRef = refcount<const tree_node>;
 
 /**
  * A set of const tree node
@@ -337,11 +338,11 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
  * @return the pointer to t
  */
 #ifndef NDEBUG
-#define GET_NODE(t) (t ? (GetPointer<tree_reindex>(t) ? (GetPointer<tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
-#define GET_CONST_NODE(t) (t ? (GetPointer<const tree_reindex>(t) ? (GetPointer<const tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_NODE(t) ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
+#define GET_CONST_NODE(t) ((t) ? ((t)->get_kind() == tree_reindex_K ? (GetPointerS<const tree_reindex>(t))->actual_tree_node : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__)) : throw_error(t, #t, __PRETTY_FUNCTION__, __FILE__, __LINE__))
 #else
-#define GET_NODE(t) (GetPointer<tree_reindex>(t))->actual_tree_node
-#define GET_CONST_NODE(t) (GetPointer<const tree_reindex>(t))->actual_tree_node
+#define GET_NODE(t) (GetPointerS<tree_reindex>(t))->actual_tree_node
+#define GET_CONST_NODE(t) (GetPointerS<const tree_reindex>(t))->actual_tree_node
 #endif
 
 /**
@@ -524,7 +525,9 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case vec_extractodd_expr_K:     \
    case vec_interleavehigh_expr_K: \
    case vec_interleavelow_expr_K:  \
-   case extract_bit_expr_K
+   case extract_bit_expr_K:        \
+   case sat_plus_expr_K:           \
+   case sat_minus_expr_K
 
 /**
  * This macro collects all case labels for ternary_expr objects.
@@ -976,7 +979,7 @@ struct PointToInformation
     */
    ~PointToInformation();
 };
-typedef refcount<PointToInformation> PointToInformationRef;
+using PointToInformationRef = refcount<PointToInformation>;
 
 /**
  * struct definition of the common part of an expression
@@ -1081,7 +1084,7 @@ struct PointToSolution
       GETID(variables) = 0
    };
 };
-typedef refcount<PointToSolution> PointToSolutionRef;
+using PointToSolutionRef = refcount<PointToSolution>;
 
 /**
  * struct definition of the common part of a gimple  with virtual operands
@@ -2787,6 +2790,15 @@ struct function_decl : public decl_node, public attr
    /// True if function read from memory somehow
    bool reading_memory;
 
+   /// True if pipelining is enabled for the function
+   bool pipeline_enabled;
+
+   /// True if the pipeline does not contain any unbounded operation
+   bool simple_pipeline;
+
+   /// Used for pipelined with unbounded operations
+   int initiation_time;
+
 #if HAVE_FROM_PRAGMA_BUILT
    /// If different from zero, the parallel degree of the contained openmp loop
    size_t omp_for_wrapper;
@@ -2812,6 +2824,9 @@ struct function_decl : public decl_node, public attr
 
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
+
+   /// Range information about bounds of the function return value (valid for real_type too)
+   RangeRef range;
 
    /**
     * tmpl_parms holds template parameters
@@ -2899,6 +2914,19 @@ struct function_decl : public decl_node, public attr
 
    /// returns true if is a declaration of a protected function
    bool is_protected();
+
+   /// returns true if is a declaration of a pipelined function
+   bool is_pipelined();
+
+   void set_pipelining(bool v);
+
+   bool is_simple_pipeline();
+
+   void set_simple_pipeline(bool v);
+
+   int get_initiation_time();
+
+   void set_initiation_time(int time);
 
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(function_decl)
@@ -3692,6 +3720,9 @@ struct parm_decl : public decl_node
    /// PointToInformation associated with this ssa_name if the corresponding variable is a pointer
    const PointToInformationRef point_to_information;
 
+   /// Range information about bounds of the function parameter (valid for real_type too)
+   RangeRef range;
+
    /// Redefinition of get_kind_text.
    GET_KIND_TEXT(parm_decl)
 
@@ -3730,10 +3761,10 @@ struct gimple_phi : public gimple_node
    friend class parm2ssa;
 
    /// The type of the def edge
-   typedef std::pair<tree_nodeRef, unsigned int> DefEdge;
+   using DefEdge = std::pair<tree_nodeRef, unsigned int>;
 
    /// The type of the def edge list
-   typedef std::list<DefEdge> DefEdgeList;
+   using DefEdgeList = std::list<DefEdge>;
 
  private:
    /** store the list pairs: <def, edge>. Each tuple contains the incoming reaching
@@ -3769,7 +3800,7 @@ struct gimple_phi : public gimple_node
     * @param def_edge is the def edge to be removed
     * @param update_uses specifies if the uses have to be updated
     */
-   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& def_edge);
+   void RemoveDefEdge(const tree_managerRef& TM, const DefEdge& to_be_removed);
 
    /**
     * Add a defedge
@@ -4577,6 +4608,9 @@ struct ssa_name : public tree_node
 
    /// for each bit of the ssa variable tells if it is equal to U,X,0,1
    std::string bit_values;
+
+   /// Range information about numerical values of the ssa variable
+   RangeRef range;
 
    /// point to solution
    PointToSolutionRef use_set;
@@ -6087,5 +6121,17 @@ struct lut_expr : public expr_node
  * return a boolean value
  */
 CREATE_TREE_NODE_CLASS(extract_bit_expr, binary_expr);
+
+/**
+ * This struct specifies the sat_plus_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(sat_plus_expr, binary_expr);
+
+/**
+ * This struct specifies the sat_minus_expr node.
+ * Simple arithmetic.
+ */
+CREATE_TREE_NODE_CLASS(sat_minus_expr, binary_expr);
 
 #endif

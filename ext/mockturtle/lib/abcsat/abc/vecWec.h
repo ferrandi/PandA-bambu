@@ -21,6 +21,10 @@
 #ifndef ABC__misc__vec__vecWec_h
 #define ABC__misc__vec__vecWec_h
 
+#ifdef _MSC_VER
+#pragma warning(push)
+#pragma warning(disable : 4244) // warning C4244: '+=' : conversion from 'int ' to 'unsigned short ', possible loss of data
+#endif
 
 ////////////////////////////////////////////////////////////////////////
 ///                          INCLUDES                                ///
@@ -707,6 +711,10 @@ static inline void Vec_WecRemoveEmpty( Vec_Wec_t * vCubes )
 
 
 ABC_NAMESPACE_HEADER_END
+
+#ifdef _MSC_VER
+#pragma warning(pop)
+#endif
 
 #endif
 

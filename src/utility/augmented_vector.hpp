@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -175,7 +175,9 @@ class AugmentedVector
       for(size_t index = 0; index < _size; index++)
       {
          if(this->internal_vector[index] < this->internal_vector[min])
+         {
             min = index;
+         }
       }
    }
 
@@ -192,9 +194,13 @@ class AugmentedVector
       for(size_t index = 0; index < _size; index++)
       {
          if(this->internal_vector[index] > this->internal_vector[max])
+         {
             max = index;
+         }
          if(this->internal_vector[index] < this->internal_vector[min])
+         {
             min = index;
+         }
       }
    }
 

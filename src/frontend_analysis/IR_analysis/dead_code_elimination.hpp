@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -81,6 +81,7 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     */
    const CustomUnorderedSet<std::pair<FrontendFlowStepType, FunctionRelationship>> ComputeFrontendRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
 
+   void fix_sdc_motion(tree_nodeRef removedStmt) const;
    void kill_uses(const tree_managerRef TM, tree_nodeRef op0) const;
    void kill_vdef(const tree_managerRef TM, tree_nodeRef vdef);
    unsigned move2emptyBB(const tree_managerRef TM, statement_list* sl, unsigned pred, blocRef bb_pred, unsigned cand_bb_dest, unsigned bb_dest) const;
@@ -94,7 +95,7 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   dead_code_elimination(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   dead_code_elimination(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -112,6 +113,8 @@ class dead_code_elimination : public FunctionFrontendFlowStep
     * @return true if the step has to be executed
     */
    bool HasToBeExecuted() const override;
+
+   static void fix_sdc_motion(DesignFlowManagerConstRef design_flow_manager, unsigned int function_id, tree_nodeRef removedStmt);
 };
 
 #endif

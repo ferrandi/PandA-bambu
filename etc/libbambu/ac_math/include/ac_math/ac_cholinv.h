@@ -176,7 +176,7 @@ namespace ac_math
             L_COL_Linv_ROW:
                for(unsigned k = 0; k < M; k++)
                {
-                  sum += (k < j & k >= i) ? L[j][k] * Linv[k][i] : 0;
+                  sum += (k < j & k >= i) ? (Tout)(L[j][k] * Linv[k][i]) : (Tout)0;
                   if(k >= j)
                   {
                      break;
@@ -206,7 +206,7 @@ namespace ac_math
          Linv_Linvtrans_COL:
             for(unsigned k = 0; k < M; k++)
             {
-               sum += (k < j | k < i) ? 0 : Linv[k][i] * Linv[k][j];
+               sum += (k < j | k < i) ? (Tout)0 :  (Tout)(Linv[k][i] * Linv[k][j]);
             }
             Ainv[i][j] = sum;
          }

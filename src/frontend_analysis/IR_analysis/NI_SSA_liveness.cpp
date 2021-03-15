@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -104,10 +104,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       case(DEPENDENCE_RELATIONSHIP):
       {
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COMPLETE_BB_GRAPH, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_VAR_DECL_FIX, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(EXTRACT_PATTERNS, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(HDL_VAR_DECL_FIX, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -116,11 +116,12 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       }
       case(PRECEDENCE_RELATIONSHIP):
       {
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(COND_EXPR_RESTRUCTURING, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CSE_STEP, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(ESSA, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FANOUT_OPT, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(VECTORIZE, SAME_FUNCTION));
          break;
       }
       default:
@@ -136,21 +137,33 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    /// if def(v) ∈ B (φ excluded) then return > Killed in the block, stop
    auto* v_ssa_name = GetPointer<ssa_name>(GET_NODE(v));
    if(!v_ssa_name)
+   {
       return;
+   }
    if(v_ssa_name->volatile_flag)
+   {
       return;
+   }
    THROW_ASSERT(v_ssa_name->CGetDefStmts().size() == 1, "SSA " + v_ssa_name->ToString() + " (" + STR(v_ssa_name->index) + ") is not in SSA form");
    unsigned int def_stmt = GET_INDEX_NODE(v_ssa_name->CGetDefStmt());
    if(((GET_NODE(v_ssa_name->CGetDefStmt()))->get_kind() == gimple_nop_K && GET_NODE(v_ssa_name->var)->get_kind() == parm_decl_K))
+   {
       return;
+   }
 
    for(const auto& stmt : B->CGetStmtList())
+   {
       if(def_stmt == GET_INDEX_NODE(stmt))
+      {
          return;
+      }
+   }
    /// if v ∈ LiveIn(B) then return >    Propagation already done, stop
    unsigned int v_index = GET_INDEX_NODE(v);
    if(B->live_in.find(v_index) != B->live_in.end())
+   {
       return;
+   }
    /// LiveIn(B) = LiveIn(B) ∪ {v}
    B->live_in.insert(v_index);
    /// if v ∈ PhiDefs(B) then return >   Do not propagate φ definitions
@@ -158,11 +171,13 @@ void NI_SSA_liveness::Up_and_Mark(blocRef B, tree_nodeRef v, statement_list* sl)
    {
       auto* pn = GetPointer<gimple_phi>(GET_NODE(phi));
       if(GET_INDEX_NODE(pn->res) == v_index)
+      {
          return;
+      }
    }
    /// for each P ∈ CFG_preds(B) do >   Propagate backward
-   std::vector<unsigned int>::const_iterator lp_it_end = B->list_of_pred.end();
-   for(std::vector<unsigned int>::const_iterator lp_it = B->list_of_pred.begin(); lp_it != lp_it_end; ++lp_it)
+   auto lp_it_end = B->list_of_pred.end();
+   for(auto lp_it = B->list_of_pred.begin(); lp_it != lp_it_end; ++lp_it)
    {
       const blocRef P = sl->list_of_bloc[*lp_it];
       P->live_out.insert(v_index);
@@ -185,8 +200,8 @@ DesignFlowStep_Status NI_SSA_liveness::InternalExec()
       blocRef B = B_it->second;
       unsigned int B_id = B->number;
       /// for each v ∈ PhiUses(B) do > Used in the φ of a successor block
-      std::vector<unsigned int>::const_iterator ls_it_end = B->list_of_succ.end();
-      for(std::vector<unsigned int>::const_iterator ls_it = B->list_of_succ.begin(); ls_it != ls_it_end; ++ls_it)
+      auto ls_it_end = B->list_of_succ.end();
+      for(auto ls_it = B->list_of_succ.begin(); ls_it != ls_it_end; ++ls_it)
       {
          const blocRef B_succ = sl->list_of_bloc[*ls_it];
          for(auto const& phi : B_succ->CGetPhiList())

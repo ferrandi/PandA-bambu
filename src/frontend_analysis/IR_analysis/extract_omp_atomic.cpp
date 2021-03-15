@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@
 #include "basic_block.hpp"
 #include "function_behavior.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STL include
@@ -123,7 +123,7 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
    {
       const auto block = basic_block_graph->CGetBBNodeInfo(*basic_block)->block;
       tree_nodeRef gimple_to_be_removed;
-      for(const auto stmt : block->CGetStmtList())
+      for(const auto& stmt : block->CGetStmtList())
       {
          const auto* pn = GetPointer<gimple_pragma>(GET_NODE(stmt));
          if(pn and pn->scope and GetPointer<omp_pragma>(GET_NODE(pn->scope)))
@@ -152,12 +152,14 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
          {
             auto sn = GetPointer<ssa_name>(GET_NODE(gn->memdef));
             TreeNodeMap<size_t> to_be_removeds;
-            for(const auto use : sn->CGetUseStmts())
+            for(const auto& use : sn->CGetUseStmts())
             {
                if(GET_NODE(use.first)->get_kind() != gimple_phi_K)
+               {
                   to_be_removeds.insert(use);
+               }
             }
-            for(const auto to_be_removed : to_be_removeds)
+            for(const auto& to_be_removed : to_be_removeds)
             {
                for(size_t counter = 0; counter < to_be_removed.second; counter++)
                {
@@ -165,7 +167,9 @@ DesignFlowStep_Status ExtractOmpAtomic::InternalExec()
                }
                GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->vuses.erase(gn->memdef);
                if(GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->memuse->index == gn->memdef->index)
+               {
                   GetPointer<gimple_node>(GET_NODE(to_be_removed.first))->memuse = tree_nodeRef();
+               }
             }
          }
          block->RemoveStmt(gimple_to_be_removed);

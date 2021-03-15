@@ -79,35 +79,35 @@ encrypt (int statemt[32], int key[32], int type)
   switch (type)
     {
     case 128128:
-      round = 0;
+      i_round = 0;
       nb = 4;
       break;
     case 192128:
-      round = 2;
+      i_round = 2;
       nb = 4;
       break;
     case 256128:
-      round = 4;
+      i_round = 4;
       nb = 4;
       break;
     case 128192:
     case 192192:
-      round = 2;
+      i_round = 2;
       nb = 6;
       break;
     case 256192:
-      round = 4;
+      i_round = 4;
       nb = 6;
       break;
     case 128256:
     case 192256:
     case 256256:
-      round = 4;
+      i_round = 4;
       nb = 8;
       break;
     }
   AddRoundKey (statemt, type, 0);
-  for (i = 1; i <= round + 9; ++i)
+  for (i = 1; i <= i_round + 9; ++i)
     {
       ByteSub_ShiftRow (statemt, nb);
       MixColumn_AddRoundKey (statemt, nb, i);

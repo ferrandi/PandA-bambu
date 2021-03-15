@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,8 +89,8 @@
 
 #include "basic_block.hpp"
 
-/// wrapper/treegcc include
-#include "gcc_wrapper.hpp"
+/// wrapper/compiler include
+#include "compiler_wrapper.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
 
 CSE::CSE(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
@@ -119,6 +119,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SIMPLE_CODE_MOTION, SAME_FUNCTION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(USE_COUNTING, SAME_FUNCTION));
+         relationships.insert(std::make_pair(DETERMINE_MEMORY_ACCESSES, SAME_FUNCTION)); // To postpone the step as much as possible
          break;
       }
       case(INVALIDATION_RELATIONSHIP):
@@ -128,7 +129,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             case DesignFlowStep_Status::SUCCESS:
             {
                if(restart_phi_opt)
+               {
                   relationships.insert(std::make_pair(PHI_OPT, SAME_FUNCTION));
+               }
                relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, SAME_FUNCTION));
                break;
             }
@@ -164,7 +167,9 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
    {
       auto* bfr = GetPointer<bit_field_ref>(right_part);
       if(tree_helper::is_a_vector(TM, GET_INDEX_NODE(bfr->op0)))
+      {
          is_a_vector_bitfield = true;
+      }
    }
 
    bool skip_check = right_part->get_kind() == var_decl_K || right_part->get_kind() == string_cst_K || right_part->get_kind() == constructor_K || (right_part->get_kind() == bit_field_ref_K && !is_a_vector_bitfield) ||
@@ -175,37 +180,55 @@ bool CSE::check_loads(const gimple_assign* ga, unsigned int right_part_index, tr
       enum kind code1 = GET_NODE(GetPointer<unary_expr>(right_part)->op)->get_kind();
       if((code1 == bit_field_ref_K && !is_a_vector_bitfield) || code1 == component_ref_K || code1 == indirect_ref_K || code1 == bit_field_ref_K || code1 == misaligned_indirect_ref_K || code1 == mem_ref_K || code1 == array_ref_K ||
          code1 == target_mem_ref_K || code1 == target_mem_ref461_K)
+      {
          skip_check = true;
+      }
       if(code1 == var_decl_K && fun_mem_data.find(GET_INDEX_NODE(GetPointer<unary_expr>(right_part)->op)) != fun_mem_data.end())
+      {
          skip_check = true;
+      }
    }
    if(right_part->get_kind() == view_convert_expr_K)
    {
       auto* vc = GetPointer<view_convert_expr>(right_part);
       tree_nodeRef vc_op_type = tree_helper::get_type_node(GET_NODE(vc->op));
       if(op0_type->get_kind() == record_type_K || op0_type->get_kind() == union_type_K)
+      {
          skip_check = true;
+      }
       if(vc_op_type->get_kind() == record_type_K || vc_op_type->get_kind() == union_type_K)
+      {
          skip_check = true;
+      }
 
       if(vc_op_type->get_kind() == array_type_K && op0_type->get_kind() == vector_type_K)
+      {
          skip_check = true;
+      }
       if(vc_op_type->get_kind() == vector_type_K && op0_type->get_kind() == array_type_K)
+      {
          skip_check = true;
+      }
    }
-   if(not tree_helper::is_a_vector(TM, GET_INDEX_NODE(ga->op0)) and tree_helper::is_an_array(TM, GET_INDEX_NODE(ga->op0)) and not tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op0)))
+   if((not tree_helper::is_a_vector(TM, GET_INDEX_NODE(ga->op0))) && tree_helper::is_an_array(TM, GET_INDEX_NODE(ga->op0)) && (not tree_helper::is_a_pointer(TM, GET_INDEX_NODE(ga->op0))))
+   {
       skip_check = true;
+   }
    if(fun_mem_data.find(GET_INDEX_NODE(ga->op0)) != fun_mem_data.end() || fun_mem_data.find(right_part_index) != fun_mem_data.end())
+   {
       skip_check = true;
+   }
    if(op0_type && op1_type &&
       ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K && right_part->get_kind() != view_convert_expr_K) ||
        (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K && right_part->get_kind() != view_convert_expr_K) || (op0_type->get_kind() == array_type_K)))
+   {
       skip_check = true;
+   }
 
    return skip_check;
 }
 
-tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
+tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb, std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>>& unique_table)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Checking: " + tn->ToString());
    if(GetPointer<gimple_node>(tn)->keep)
@@ -223,7 +246,9 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
    {
       unsigned int bitwidth_values = tree_helper::Size(ga->op0);
       if(GetPointer<binary_expr>(GET_NODE(ga->op1)))
+      {
          bitwidth_values = std::max(bitwidth_values, tree_helper::Size(GetPointer<binary_expr>(GET_NODE(ga->op1))->op0));
+      }
       tree_nodeRef right_part = GET_NODE(ga->op1);
       enum kind op_kind = right_part->get_kind();
       if(op_kind != extract_bit_expr_K and op_kind != lut_expr_K and parameters->IsParameter("CSE_size") and bitwidth_values < parameters->GetParameter<unsigned int>("CSE_size"))
@@ -262,7 +287,9 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
                {
                   const auto gn = GetPointer<const gimple_node>(GET_CONST_NODE(stmt));
                   if(gn->index == ga->index)
+                  {
                      break;
+                  }
                   /// For each vuse we insert def_stmt if it is before
                   if(gn->vdef and gn->vdef->index == vuse->index)
                   {
@@ -306,7 +333,9 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
          ins.push_back(GET_INDEX_NODE(te->op0));
          ins.push_back(GET_INDEX_NODE(te->op1));
          if(te->op2)
+         {
             ins.push_back(GET_INDEX_NODE(te->op2));
+         }
       }
       else if(GetPointer<call_expr>(right_part))
       {
@@ -317,7 +346,7 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
             const auto* ae = GetPointer<const addr_expr>(addr_node);
             ins.push_back(GET_INDEX_NODE(ae->op));
             auto* fd = GetPointer<function_decl>(GET_NODE(ae->op));
-            if(fd->writing_memory || fd->reading_memory || ga->vuses.size())
+            if(fd->undefined_flag || fd->writing_memory || fd->reading_memory || ga->vuses.size())
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
                return tree_nodeRef();
@@ -339,19 +368,33 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
          ins.push_back(GET_INDEX_NODE(le->op0));
          ins.push_back(GET_INDEX_NODE(le->op1));
          if(le->op2)
+         {
             ins.push_back(GET_INDEX_NODE(le->op2));
+         }
          if(le->op3)
+         {
             ins.push_back(GET_INDEX_NODE(le->op3));
+         }
          if(le->op4)
+         {
             ins.push_back(GET_INDEX_NODE(le->op4));
+         }
          if(le->op5)
+         {
             ins.push_back(GET_INDEX_NODE(le->op5));
+         }
          if(le->op6)
+         {
             ins.push_back(GET_INDEX_NODE(le->op6));
+         }
          if(le->op7)
+         {
             ins.push_back(GET_INDEX_NODE(le->op7));
+         }
          if(le->op8)
+         {
             ins.push_back(GET_INDEX_NODE(le->op8));
+         }
       }
       else
       {
@@ -380,7 +423,9 @@ tree_nodeRef CSE::hash_check(tree_nodeRef tn, vertex bb)
          return unique_table.find(bb)->second.find(t)->second;
       }
       else
+      {
          unique_table.find(bb)->second[t] = tn;
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Checked: null");
    return tree_nodeRef();
@@ -392,6 +437,8 @@ DesignFlowStep_Status CSE::InternalExec()
    restart_phi_opt = false;
    size_t n_equiv_stmt = 0;
    auto IRman = tree_manipulationRef(new tree_manipulation(TM, parameters));
+   /// define a map relating variables and columns
+   std::map<vertex, CustomUnorderedMapStable<CSE_tuple_key_type, tree_nodeRef>> unique_table;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
@@ -410,20 +457,24 @@ DesignFlowStep_Status CSE::InternalExec()
    for(auto curr_bb_pair : sl->list_of_bloc)
    {
       unsigned int curr_bb = curr_bb_pair.first;
-      std::vector<unsigned int>::const_iterator lop_it_end = sl->list_of_bloc[curr_bb]->list_of_pred.end();
-      for(std::vector<unsigned int>::const_iterator lop_it = sl->list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
+      auto lop_it_end = sl->list_of_bloc[curr_bb]->list_of_pred.end();
+      for(auto lop_it = sl->list_of_bloc[curr_bb]->list_of_pred.begin(); lop_it != lop_it_end; ++lop_it)
       {
          THROW_ASSERT(inverse_vertex_map.find(*lop_it) != inverse_vertex_map.end(), "BB" + STR(*lop_it) + " (successor of BB" + STR(curr_bb) + ") does not exist");
          GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[*lop_it], inverse_vertex_map[curr_bb], CFG_SELECTOR);
       }
-      std::vector<unsigned int>::const_iterator los_it_end = sl->list_of_bloc[curr_bb]->list_of_succ.end();
-      for(std::vector<unsigned int>::const_iterator los_it = sl->list_of_bloc[curr_bb]->list_of_succ.begin(); los_it != los_it_end; ++los_it)
+      auto los_it_end = sl->list_of_bloc[curr_bb]->list_of_succ.end();
+      for(auto los_it = sl->list_of_bloc[curr_bb]->list_of_succ.begin(); los_it != los_it_end; ++los_it)
       {
          if(*los_it == bloc::EXIT_BLOCK_ID)
+         {
             GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[*los_it], CFG_SELECTOR);
+         }
       }
       if(sl->list_of_bloc[curr_bb]->list_of_succ.empty())
+      {
          GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[curr_bb], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
+      }
    }
    /// add a connection between entry and exit thus avoiding problems with non terminating code
    GCC_bb_graphs_collection->AddEdge(inverse_vertex_map[bloc::ENTRY_BLOCK_ID], inverse_vertex_map[bloc::EXIT_BLOCK_ID], CFG_SELECTOR);
@@ -453,23 +504,23 @@ DesignFlowStep_Status CSE::InternalExec()
       unique_table[bb].clear();
       if(bb_dominator_map.find(bb) != bb_dominator_map.end())
       {
-         THROW_ASSERT(unique_table.find(bb_dominator_map.find(bb)->second) != unique_table.end(), "unexpected condition");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding dominator equiv: " + STR(bb_domGraph->CGetBBNodeInfo(bb_dominator_map.find(bb)->second)->block->number));
+         THROW_ASSERT(unique_table.find(bb_dominator_map.at(bb)) != unique_table.end(), "unexpected condition");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Adding dominator equiv: " + STR(bb_domGraph->CGetBBNodeInfo(bb_dominator_map.at(bb))->block->number));
 
-         for(auto key_value_pair : unique_table.find(bb_dominator_map.find(bb)->second)->second)
-            unique_table.find(bb)->second[key_value_pair.first] = key_value_pair.second;
+         for(auto key_value_pair : unique_table.at(bb_dominator_map.at(bb)))
+         {
+            unique_table.at(bb)[key_value_pair.first] = key_value_pair.second;
+         }
       }
       TreeNodeSet to_be_removed;
       for(const auto& stmt : B->CGetStmtList())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Analyzing " + GET_NODE(stmt)->ToString());
-#ifndef NDEBUG
          if(not AppM->ApplyNewTransformation())
          {
             break;
          }
-#endif
-         tree_nodeRef eq_tn = hash_check(GET_NODE(stmt), bb);
+         tree_nodeRef eq_tn = hash_check(GET_NODE(stmt), bb, unique_table);
          if(eq_tn)
          {
             auto* ref_ga = GetPointer<gimple_assign>(eq_tn);
@@ -482,7 +533,9 @@ DesignFlowStep_Status CSE::InternalExec()
             auto* ref_ssa = GetPointer<ssa_name>(GET_NODE(ref_ga->op0));
             auto* dead_ssa = GetPointer<ssa_name>(GET_NODE(dead_ga->op0));
             if(dead_ssa->use_set && !ref_ssa->use_set)
+            {
                ref_ssa->use_set = dead_ssa->use_set;
+            }
             auto ga_op_type = TM->GetTreeReindex(tree_helper::CGetType(GET_CONST_NODE(ref_ga->op0))->index);
             bool same_range = false;
             if(GET_NODE(ga_op_type)->get_kind() == integer_type_K && ref_ssa->min && ref_ssa->max && dead_ssa->min && dead_ssa->max)
@@ -492,7 +545,9 @@ DesignFlowStep_Status CSE::InternalExec()
                const auto dead_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(ref_ssa->max));
                const auto ref_max_ic = GetPointer<const integer_cst>(GET_CONST_NODE(dead_ssa->max));
                if(dead_min_ic->value == ref_min_ic->value && dead_max_ic->value == ref_max_ic->value)
+               {
                   same_range = true;
+               }
             }
             if(!same_range && ref_ssa->min && ref_ssa->max && GET_NODE(ga_op_type)->get_kind() == integer_type_K)
             {
@@ -502,9 +557,18 @@ DesignFlowStep_Status CSE::InternalExec()
                tree_nodeRef curr_ga = IRman->CreateGimpleAssign(ga_op_type, tree_nodeRef(), tree_nodeRef(), ssa_vd, ref_ga->bb_index, srcp_default);
                TM->ReplaceTreeNode(curr_ga, GetPointer<gimple_assign>(GET_NODE(curr_ga))->op0, ref_ga->op0);
                TM->ReplaceTreeNode(TM->GetTreeReindex(eq_tn->index), ref_ga->op0, ssa_vd);
-               B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Updated old GA: " + ref_ga->ToString());
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Created new GA: " + curr_ga->ToString());
+               if(B->number == ref_ga->bb_index)
+               {
+                  B->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
+               }
+               else
+               {
+                  THROW_ASSERT(inverse_vertex_map.find(ref_ga->bb_index) != inverse_vertex_map.end(), "unexpected condition");
+                  THROW_ASSERT(bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index)), "unexpected condition");
+                  bb_domGraph->CGetBBNodeInfo(inverse_vertex_map.at(ref_ga->bb_index))->block->PushAfter(curr_ga, TM->GetTreeReindex(eq_tn->index));
+               }
             }
             if(!same_range && dead_ssa->min && dead_ssa->max && GET_NODE(ga_op_type)->get_kind() == integer_type_K)
             {
@@ -523,9 +587,7 @@ DesignFlowStep_Status CSE::InternalExec()
                }
                to_be_removed.insert(stmt);
             }
-#ifndef NDEBUG
             AppM->RegisterTransformation(GetName(), stmt);
-#endif
             IR_changed = true;
             ++n_equiv_stmt;
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Updated/Removed duplicated statement " + STR(dead_ga->op0));
@@ -537,16 +599,22 @@ DesignFlowStep_Status CSE::InternalExec()
          B->RemoveStmt(stmt);
       }
       if(B->CGetStmtList().empty() && B->CGetPhiList().empty() && !to_be_removed.empty())
+      {
          restart_phi_opt = true;
+      }
       if(!to_be_removed.empty() && schedule)
       {
          for(const auto& stmt : B->CGetStmtList())
+         {
             schedule->UpdateTime(GET_INDEX_NODE(stmt));
+         }
       }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Considered BB" + STR(B->number));
    }
    if(!IR_changed)
+   {
       restart_phi_opt = false;
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---CSE: number of equivalent statement = " + STR(n_equiv_stmt));
    IR_changed ? function_behavior->UpdateBBVersion() : 0;
    return IR_changed ? DesignFlowStep_Status::SUCCESS : DesignFlowStep_Status::UNCHANGED;

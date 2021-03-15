@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2019-2020 Politecnico di Milano
+ *              Copyright (c) 2019-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,6 +44,7 @@
 #include "memory_initialization_writer_base.hpp"
 
 /// STD include
+#include <fstream>
 #include <string>
 
 /// utility include
@@ -59,6 +60,9 @@ class MemoryInitializationCWriter : public MemoryInitializationWriterBase
  protected:
    /// The stream where C code has to be written
    const IndentedOutputStreamRef indented_output_stream;
+
+   /// temporary file used to store the formatted memory values
+   std::ofstream memory_init_file;
 
  public:
    /**
@@ -79,5 +83,16 @@ class MemoryInitializationCWriter : public MemoryInitializationWriterBase
     * @param content is the string assocated with the string
     */
    void Process(const std::string& content) override;
+
+   /**
+    * In case the test_v has a size over a threshold write the tests on a file
+    * @param filename is the filename to use
+    */
+   void ActivateFileInit(const std::string& filename) override;
+
+   /**
+    * Copy and close the file
+    */
+   void FinalizeFileInit() override;
 };
 #endif

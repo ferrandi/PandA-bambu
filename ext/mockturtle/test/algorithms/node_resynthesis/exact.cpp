@@ -56,6 +56,30 @@ TEST_CASE( "Exact XAG for MAJ", "[exact]" )
   CHECK( simulate<kitty::dynamic_truth_table>( xag, sim )[0] == maj );
 }
 
+TEST_CASE( "Exact XMG for MAJ", "[exact]" )
+{
+  kitty::dynamic_truth_table maj( 3u );
+  kitty::create_majority( maj );
+
+  xmg_network xmg;
+  const auto a = xmg.create_pi();
+  const auto b = xmg.create_pi();
+  const auto c = xmg.create_pi();
+
+  std::vector<xmg_network::signal> pis = {a, b, c};
+
+  exact_xmg_resynthesis<xmg_network> resyn;
+  resyn( xmg, maj, pis.begin(), pis.end(), [&]( auto const& f ) {
+    xmg.create_po( f );
+    return false;
+  } );
+
+  default_simulator<kitty::dynamic_truth_table> sim( 3u );
+  CHECK( xmg.num_pos() == 1u );
+  CHECK( xmg.num_gates() == 1u );
+  CHECK( simulate<kitty::dynamic_truth_table>( xmg, sim )[0] == maj );
+}
+
 TEST_CASE( "Exact AIG for XOR", "[exact]" )
 {
   kitty::dynamic_truth_table _xor( 2u );
@@ -78,7 +102,6 @@ TEST_CASE( "Exact AIG for XOR", "[exact]" )
   CHECK( simulate<kitty::dynamic_truth_table>( xag, sim )[0] == _xor );
 }
 
-
 TEST_CASE( "Exact XAG for XOR", "[exact]" )
 {
   kitty::dynamic_truth_table _xor( 2u );
@@ -99,4 +122,51 @@ TEST_CASE( "Exact XAG for XOR", "[exact]" )
   CHECK( xag.num_pos() == 1u );
   CHECK( xag.num_gates() == 1u );
   CHECK( simulate<kitty::dynamic_truth_table>( xag, sim )[0] == _xor );
+}
+
+TEST_CASE( "Exact XMG for XOR2", "[exact]" )
+{
+  kitty::dynamic_truth_table _xor( 2u );
+  kitty::create_from_hex_string( _xor, "6" );
+
+  xmg_network xmg;
+  const auto a = xmg.create_pi();
+  const auto b = xmg.create_pi();
+
+  std::vector<xmg_network::signal> pis = {a, b};
+
+  exact_xmg_resynthesis<xmg_network> resyn;
+  resyn( xmg, _xor, pis.begin(), pis.end(), [&]( auto const& f ) {
+    xmg.create_po( f );
+    return false;
+  } );
+
+  default_simulator<kitty::dynamic_truth_table> sim( 2u );
+  CHECK( xmg.num_pos() == 1u );
+  CHECK( xmg.num_gates() == 1u );
+  CHECK( simulate<kitty::dynamic_truth_table>( xmg, sim )[0] == _xor );
+}
+
+TEST_CASE( "Exact XMG for XOR3", "[exact]" )
+{
+  kitty::dynamic_truth_table _xor( 3u );
+  kitty::create_from_hex_string( _xor, "96" );
+
+  xmg_network xmg;
+  const auto a = xmg.create_pi();
+  const auto b = xmg.create_pi();
+  const auto c = xmg.create_pi();
+
+  std::vector<xmg_network::signal> pis = {a, b, c};
+
+  exact_xmg_resynthesis<xmg_network> resyn;
+  resyn( xmg, _xor, pis.begin(), pis.end(), [&]( auto const& f ) {
+    xmg.create_po( f );
+    return false;
+  } );
+
+  default_simulator<kitty::dynamic_truth_table> sim( 3u );
+  CHECK( xmg.num_pos() == 1u );
+  CHECK( xmg.num_gates() == 1u );
+  CHECK( simulate<kitty::dynamic_truth_table>( xmg, sim )[0] == _xor );
 }

@@ -1070,6 +1070,15 @@ public:
     for ( const auto& i : inputs )
       on_action.declare_known( i );
 
+    if ( std::smatch m; std::regex_match( size, m, verilog_regex::const_size_range ) )
+    {
+      const auto a = std::stoul( m[1].str() );
+      const auto b = std::stoul( m[2].str() );
+      for ( auto j = std::min( a, b ); j <= std::max( a, b ); ++j )
+        for ( const auto& i : inputs )
+          on_action.declare_known( fmt::format( "{}[{}]", i, j ) );
+    }
+
     return true;
   }
 

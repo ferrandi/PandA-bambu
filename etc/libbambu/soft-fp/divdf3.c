@@ -49,7 +49,7 @@ DFtype __divdf3(DFtype a, DFtype b)
    return r;
 }
 
-inline DFtype __float64_divif(DFtype a, DFtype b)
+DFtype __float64_divif(DFtype a, DFtype b)
 {
    return __divdf3(a, b);
 }

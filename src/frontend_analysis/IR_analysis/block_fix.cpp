@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -123,7 +123,9 @@ DesignFlowStep_Status BlockFix::InternalExec()
          for(it2 = it3->second->list_of_pred.begin(); it2 != it2_end; ++it2)
          {
             if(*it2 == BB_ENTRY)
+            {
                succ_entry.push_back(it3->second->number);
+            }
          }
       }
    }

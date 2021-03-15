@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ class CTestbenchExecution : public HLS_step
     */
    CTestbenchExecution(const ParameterConstRef Param, const HLS_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager, const std::string& testbench_basename = "values");
 
-   void ComputeRelationships(DesignFlowStepSet& design_flow_step_set, const DesignFlowStep::RelationshipType relationship_type);
+   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type);
 
    virtual DesignFlowStep_Status Exec();
 

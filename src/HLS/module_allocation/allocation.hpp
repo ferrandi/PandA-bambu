@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -131,7 +131,7 @@ class allocation : public HLSFunctionStep
     */
    std::string get_compliant_pipelined_unit(double clock, const std::string& pipe_parameter, const technology_nodeRef current_fu, const std::string& curr_op, const std::string& library_name, const std::string& template_suffix, unsigned int module_prec);
 
-   technology_nodeRef extract_bambu_provided(const std::string& library_name, operation* curr_op, const std::string& bambu_provided_resource);
+   technology_nodeRef extract_bambu_provided(const std::string& library_name, operation* curr_op, const std::string& bambu_provided_resource_);
 
    /**
     * set the number of ports associated with the functional unit
@@ -162,17 +162,17 @@ class allocation : public HLSFunctionStep
    /**
     * Build the proxy function in Verilog
     */
-   void BuildProxyFunctionVerilog(functional_unit* orig_fu);
+   void BuildProxyFunctionVerilog(functional_unit* current_fu);
 
    /**
     * Build the proxy function in VHDL
     */
-   void BuildProxyFunctionVHDL(functional_unit* orig_fu);
+   void BuildProxyFunctionVHDL(functional_unit* current_fu);
 
    /**
     * Build the proxy function
     */
-   void BuildProxyFunction(functional_unit* orig_fu);
+   void BuildProxyFunction(functional_unit* current_fu);
 
    void add_tech_constraint(technology_nodeRef cur_fu, unsigned int tech_constrain_value, unsigned int pos, bool proxy_constrained);
    void add_resource_to_fu_list(std::string channels_type, const OpGraphConstRef g, technology_nodeRef current_fu, CustomOrderedSet<vertex> vertex_analysed, node_kind_prec_infoRef node_info, unsigned int current_id,
@@ -181,7 +181,7 @@ class allocation : public HLSFunctionStep
    bool check_templated_units(double clock_period, node_kind_prec_infoRef node_info, const library_managerRef library, technology_nodeRef current_fu, operation* curr_op);
    bool check_for_memory_compliancy(bool Has_extern_allocated_data, technology_nodeRef current_fu, const std::string& memory_ctrl_type, std::string channels_type);
    bool check_type_and_precision(operation* curr_op, node_kind_prec_infoRef node_info);
-   bool check_proxies(const library_managerRef library, std::string fu_name);
+   bool check_proxies(const library_managerRef library, const std::string& fu_name_);
    bool check_generated_bambu_flopoco(bool skip_softfloat_resources, structural_managerRef structManager_obj, std::string& bambu_provided_resource, bool skip_flopoco_resources, technology_nodeRef current_fu);
    bool is_ram_not_timing_compliant(const HLS_constraintsRef HLS_C, unsigned int var, technology_nodeRef current_fu);
    std::string get_synch_ram_latency(const std::string& ram_template, const std::string& latency_postfix, const HLS_constraintsRef HLS_C, unsigned int var);
@@ -206,7 +206,7 @@ class allocation : public HLSFunctionStep
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   allocation(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::ALLOCATION);
+   allocation(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStep_Type = HLSFlowStep_Type::ALLOCATION);
 
    /**
     * Destructor.

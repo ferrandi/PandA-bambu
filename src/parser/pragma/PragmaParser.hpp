@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -154,6 +154,6 @@ class PragmaParser
 };
 
 /// Refcount definition for the PragmaParser class
-typedef refcount<PragmaParser> PragmaParserRef;
+using PragmaParserRef = refcount<PragmaParser>;
 
 #endif

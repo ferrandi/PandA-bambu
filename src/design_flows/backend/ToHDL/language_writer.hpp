@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,6 @@ REF_FORWARD_DECL(structural_object);
 CONSTREF_FORWARD_DECL(technology_manager);
 //@}
 
-#define MEM_PREFIX "MEM_"
 #define BITSIZE_PREFIX "BITSIZE_"
 #define PORTSIZE_PREFIX "PORTSIZE_"
 #define NUM_ELEM_PREFIX "NUM_ELEM_"
@@ -97,7 +96,9 @@ class language_writer
    {
       std::string res;
       for(unsigned int i = 0; i < n_states; ++i)
+      {
          res = (val == i ? "1" : "0") + res;
+      }
       return res;
    }
 
@@ -245,6 +246,7 @@ class language_writer
     * @param sig is the attached signal.
     */
    virtual void write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig) = 0;
+   virtual void write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig) = 0;
    /**
     * Module can be parametrized with respect different features. Port vectors are parametrized with the number of port associated,
     * while ports are parametrized in case the type is a integer with the number of bits. The id of the module is modified
@@ -283,7 +285,7 @@ class language_writer
     * @param n_states is the number of states.
     */
    virtual void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                                  std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end) = 0;
+                                                  std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys) = 0;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.
@@ -348,6 +350,6 @@ class language_writer
    void WriteLicense();
 };
 /// RefCount definition of the class
-typedef refcount<language_writer> language_writerRef;
+using language_writerRef = refcount<language_writer>;
 
 #endif

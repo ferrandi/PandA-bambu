@@ -1,5 +1,10 @@
 #include "c_backend_api.h"
 
+#ifdef BAMBU_PROFILING
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();
+#endif
+
 TVMValue param0[2];
 TVMValue param1[3];
 TVMValue param2[2];

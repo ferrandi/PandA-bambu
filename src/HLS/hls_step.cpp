@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -300,6 +300,8 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::PARALLEL_CONTROLLER_CREATOR:
          return "ParallelControllerCreator";
 #endif
+      case HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR:
+         return "PipelineControllerCreator";
       case HLSFlowStep_Type::PORT_SWAPPING:
          return "PortSwapping";
       case HLSFlowStep_Type::SCHED_CHAINING:
@@ -378,8 +380,6 @@ const std::string HLS_step::EnumToName(const HLSFlowStep_Type hls_flow_step_type
       case HLSFlowStep_Type::XML_HLS_SYNTHESIS_FLOW:
          return "XMLHLSSynthesisFlow";
 #endif
-      case HLSFlowStep_Type::XML_MEMORY_ALLOCATOR:
-         return "XmlMemoryAllocator";
       default:
          THROW_UNREACHABLE("HLS flow step type does not exist");
    }
@@ -404,7 +404,7 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
       functions.insert(memcpy_function_id);
    }
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> steps_to_be_created = ComputeHLSRelationships(relationship_type);
-   for(auto const step_to_be_created : steps_to_be_created)
+   for(auto const& step_to_be_created : steps_to_be_created)
    {
       switch(std::get<2>(step_to_be_created))
       {
@@ -445,7 +445,9 @@ void HLS_step::ComputeRelationships(DesignFlowStepSet& design_flow_step_set, con
             design_flow_step_set.insert(cg_design_flow_step);
             /// Root function cannot be computed at the beginning
             if(boost::num_vertices(*(call_graph_manager->CGetCallGraph())) == 0)
+            {
                break;
+            }
             for(const auto top_function : call_graph_manager->GetRootFunctions())
             {
                vertex hls_step = design_flow_manager.lock()->GetDesignFlowStep(HLSFunctionStep::ComputeSignature(std::get<0>(step_to_be_created), std::get<1>(step_to_be_created), top_function));

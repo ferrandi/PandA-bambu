@@ -2,7 +2,6 @@ EXTRA_DIST += \
 %D%/softfloat_list\
 %D%/softfloat_list_lattice\
 %D%/ECP3_constraints/constraints.xml\
-%D%/src\
 %D%/src/fsum.c\
 %D%/src/fdiv.c\
 %D%/src/f64mul.c\

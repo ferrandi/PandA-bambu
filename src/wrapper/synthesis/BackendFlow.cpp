@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,8 +65,10 @@
 
 /// implemented flows
 #include "ASICBackendFlow.hpp"
+#include "BashBackendFlow.hpp"
 #include "LatticeBackendFlow.hpp"
 #include "NanoXploreBackendFlow.hpp"
+
 /// target devices
 #include "FPGA_device.hpp"
 #include "IC_device.hpp"
@@ -90,6 +92,8 @@
 #include "lattice_flow_wrapper.hpp"
 // NanoXplore
 #include "nxpython_flow_wrapper.hpp"
+// Generic
+#include "bash_flow_wrapper.hpp"
 
 // Under development
 #if HAVE_EXPERIMENTAL
@@ -215,7 +219,9 @@ BackendFlow::BackendFlow(const ParameterConstRef _Param, std::string _flow_name,
    debug_level = Param->get_class_debug_level(GET_CLASS(*this));
 
    if(!boost::filesystem::exists(out_dir))
+   {
       boost::filesystem::create_directories(out_dir);
+   }
 }
 
 BackendFlow::~BackendFlow() = default;
@@ -236,8 +242,10 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
        if(GetPointer<FPGA_device>(device))
    {
       if(!device->has_parameter("vendor"))
+      {
          THROW_ERROR("FPGA device vendor not specified");
-      std::string vendor = device->get_parameter<std::string>("vendor");
+      }
+      auto vendor = device->get_parameter<std::string>("vendor");
       boost::algorithm::to_lower(vendor);
       if(vendor == "xilinx")
       {
@@ -250,13 +258,25 @@ BackendFlow::type_t BackendFlow::DetermineBackendFlowType(const target_deviceRef
          return XILINX_FPGA;
       }
       else if(vendor == "altera")
+      {
          return ALTERA_FPGA;
+      }
       else if(vendor == "lattice")
+      {
          return LATTICE_FPGA;
+      }
       else if(vendor == "nanoxplore")
+      {
          return NANOXPLORE_FPGA;
+      }
+      else if(vendor == "generic")
+      {
+         return GENERIC;
+      }
       else
+      {
          THROW_ERROR("FPGA device vendor \"" + vendor + "\" not supported");
+      }
    }
    return UNKNOWN;
 }
@@ -280,6 +300,8 @@ BackendFlowRef BackendFlow::CreateFlow(const ParameterConstRef Param, const std:
          return BackendFlowRef(new LatticeBackendFlow(Param, flow_name, target));
       case NANOXPLORE_FPGA:
          return BackendFlowRef(new NanoXploreBackendFlow(Param, flow_name, target));
+      case GENERIC:
+         return BackendFlowRef(new BashBackendFlow(Param, flow_name, target));
       case UNKNOWN:
       default:
          THROW_UNREACHABLE("Backend flow not supported");
@@ -300,7 +322,9 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    actual_parameters = DesignParametersRef(new DesignParameters);
    actual_parameters->component_name = obj->get_id();
    if(flow_name.size())
+   {
       actual_parameters->chain_name = flow_name;
+   }
 
    for(const auto& aux_file : aux_files)
    {
@@ -314,8 +338,11 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    {
       const technology_nodeRef tn = TM->get_fu(resource_name, library);
       actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
+      actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
       if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
+      {
          is_combinational = true;
+      }
    }
    else
    {
@@ -324,51 +351,75 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
       {
          const technology_nodeRef tn = TM->get_fu(fu_name, library);
          actual_parameters->parameter_values[PARAM_clk_period] = STR(GetPointer<functional_unit>(tn)->get_clock_period());
+         actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * GetPointer<functional_unit>(tn)->get_clock_period());
          if(GetPointer<functional_unit>(tn)->logical_type == functional_unit::COMBINATIONAL)
+         {
             is_combinational = true;
+         }
          if(GetPointer<functional_unit>(tn)->fu_template_name.size())
+         {
             actual_parameters->parameter_values[PARAM_fu] = GetPointer<functional_unit>(tn)->fu_template_name;
+         }
          else
+         {
             actual_parameters->parameter_values[PARAM_fu] = fu_name;
+         }
       }
    }
    actual_parameters->parameter_values[PARAM_is_combinational] = STR(is_combinational);
    bool time_constrained = false;
    if(actual_parameters->parameter_values.find(PARAM_clk_period) != actual_parameters->parameter_values.end() and boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]) != 0.0)
+   {
       time_constrained = true;
+   }
    actual_parameters->parameter_values[PARAM_time_constrained] = STR(time_constrained);
    if(!time_constrained)
    {
       actual_parameters->parameter_values[PARAM_clk_period] = STR(PARAM_clk_period_default);
+      actual_parameters->parameter_values[PARAM_clk_period_ps] = STR(1000 * PARAM_clk_period_default);
    }
    actual_parameters->parameter_values[PARAM_clk_freq] = STR(1000 / boost::lexical_cast<double>(actual_parameters->parameter_values[PARAM_clk_period]));
 
    if(Param->isOption(OPT_clock_name))
+   {
       actual_parameters->parameter_values[PARAM_clk_name] = Param->getOption<std::string>(OPT_clock_name);
+   }
    else
+   {
       actual_parameters->parameter_values[PARAM_clk_name] = CLOCK_PORT_NAME;
+   }
    bool connect_iob = false;
    if(Param->isOption(OPT_connect_iob) && Param->getOption<bool>(OPT_connect_iob))
+   {
       connect_iob = true;
+   }
    actual_parameters->parameter_values[PARAM_connect_iob] = STR(connect_iob);
    if(Param->isOption(OPT_top_design_name))
+   {
       actual_parameters->parameter_values[PARAM_top_id] = Param->getOption<std::string>(OPT_top_design_name);
+   }
    else
+   {
       actual_parameters->parameter_values[PARAM_top_id] = actual_parameters->component_name;
+   }
    if(Param->isOption(OPT_backend_script_extensions))
    {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(true);
       actual_parameters->parameter_values[PARAM_backend_script_extensions] = Param->getOption<std::string>(OPT_backend_script_extensions);
    }
    else
+   {
       actual_parameters->parameter_values[PARAM_has_script_extensions] = STR(false);
+   }
    if(Param->isOption(OPT_VHDL_library))
    {
       actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(true);
       actual_parameters->parameter_values[PARAM_VHDL_library] = Param->getOption<std::string>(OPT_VHDL_library);
    }
    else
+   {
       actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(false);
+   }
 
    InitDesignParameters();
 
@@ -386,7 +437,7 @@ void BackendFlow::ExecuteSynthesis()
    }
 
    ToolManagerRef tool(new ToolManager(Param));
-   tool->configure("./" + generated_synthesis_script, "");
+   tool->configure(generated_synthesis_script, "");
    std::vector<std::string> parameters, input_files, output_files;
    const std::string synthesis_file_output = Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_output";
    tool->execute(parameters, input_files, output_files, synthesis_file_output, false);
@@ -415,11 +466,15 @@ void BackendFlow::parse_flow(const XMLDomParserRef parser)
    {
       const xml_element* child = GetPointer<xml_element>(l);
       if(!child || child->get_name() != "flow")
+      {
          continue;
+      }
       std::string name;
       LOAD_XVM(name, child);
       if(name != flow_name)
+      {
          continue;
+      }
       xload(child);
    }
 }
@@ -434,7 +489,9 @@ void BackendFlow::xload(const xml_element* node)
    {
       const xml_element* child = GetPointer<xml_element>(l);
       if(!child)
+      {
          continue;
+      }
 
       if(child->get_name() == "config")
       {
@@ -451,7 +508,9 @@ void BackendFlow::xload(const xml_element* node)
 
          std::string config;
          if(!CE_XVM(config, child))
+         {
             THROW_ERROR("Missing configuration for component " + id);
+         }
          LOAD_XVM(config, child);
          step->config_name = config;
 
@@ -467,7 +526,9 @@ void BackendFlow::xload(const xml_element* node)
          {
             type = SynthesisTool::DESIGN_COMPILER;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "script.dc";
+            }
          }
 #if HAVE_EXPERIMENTAL
          else if(id == LIBRARY_COMPILER_TOOL_ID)
@@ -485,7 +546,9 @@ void BackendFlow::xload(const xml_element* node)
          {
             type = SynthesisTool::XST;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "xst.tcl";
+            }
          }
          else if(id == NGDBUILD_TOOL_ID)
          {
@@ -507,64 +570,94 @@ void BackendFlow::xload(const xml_element* node)
          {
             type = SynthesisTool::VIVADO_FLOW;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "vivado.tcl";
+            }
          }
          else if(id == QUARTUS_SETUP_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_SETUP;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "quartus_setup.tcl";
+            }
          }
          else if(id == QUARTUS_13_SETUP_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_13_SETUP;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "quartus_setup.tcl";
+            }
          }
          else if(id == QUARTUS_FLOW_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_FLOW;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "quartus_flow.tcl";
+            }
          }
          else if(id == QUARTUS_13_FLOW_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_13_FLOW;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "quartus_flow.tcl";
+            }
          }
          else if(id == QUARTUS_POWER_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_POW;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "quartus_pow_arguments";
+            }
          }
          else if(id == QUARTUS_REPORT_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_STA;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "report_sta.tcl";
+            }
          }
          else if(id == QUARTUS_13_REPORT_TOOL_ID)
          {
             type = SynthesisTool::QUARTUS_13_STA;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "report_sta.tcl";
+            }
          }
          else if(id == LATTICE_FLOW_TOOL_ID)
          {
             type = SynthesisTool::LATTICE_FLOW;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "project.tcl";
+            }
          }
          else if(id == NXPYTHON_FLOW_TOOL_ID)
          {
             type = SynthesisTool::NXPYTHON_FLOW;
             if(step->script_name.size() == 0)
+            {
                step->script_name = "script.py";
+            }
+         }
+         else if(id == BASH_FLOW_TOOL_ID)
+         {
+            type = SynthesisTool::BASH_FLOW;
+            if(step->script_name.size() == 0)
+            {
+               step->script_name = "bash_script.sh";
+            }
          }
          else
+         {
             THROW_ERROR("Step <" + id + "> is currently not supported");
+         }
 
          step->tool = SynthesisTool::create_synthesis_tool(type, Param, flow_name, target->get_target_device());
          /// update with the actual name of the output directory
@@ -619,14 +712,16 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
       THROW_ERROR("Some parameters still need to be defined: " + STR(module_undefined_parameters.size()));
    }
    else
+   {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---all the parameters have been correctly set");
+   }
 
    std::ostringstream script;
    script << "#!/bin/bash" << std::endl;
    script << "##########################################################" << std::endl;
    script << "#     Automatically generated by the PandA framework     #" << std::endl;
    script << "##########################################################" << std::endl << std::endl;
-   script << "# COMPONENT: " << exec_params->component_name << std::endl << std::endl;
+   script << "# Synthesis script for COMPONENT: " << exec_params->component_name << std::endl << std::endl;
 
    WriteFlowConfiguration(script);
 
@@ -637,25 +732,36 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
 
       /// output directory
       if(!boost::filesystem::exists(step->out_dir))
+      {
          THROW_ERROR("Output directory \"" + step->out_dir + "\" has not been created!");
+      }
       boost::filesystem::create_directory(step->out_dir);
+
+      script << "cd " << GetCurrentPath() << std::endl;
 
       /// script file
       std::string script_path;
       if(step->script_name.size())
+      {
          script_path = step->tool->get_output_directory() + "/" + step->script_name;
+      }
       step->tool->generate_synthesis_script(exec_params, script_path);
 
       script << step->tool->get_command_line(exec_params) << std::endl;
    }
 
    // Write the synthesis script
-   generated_synthesis_script = std::string("synthesize");
+   generated_synthesis_script = std::string("./synthesize");
    if(exec_params->chain_name.size())
+   {
       generated_synthesis_script += std::string("_") + exec_params->chain_name;
+   }
    if(exec_params->component_name.size())
+   {
       generated_synthesis_script += std::string("_") + exec_params->component_name;
+   }
    generated_synthesis_script += std::string(".sh");
+   generated_synthesis_script = GetPath(generated_synthesis_script);
 
    std::ofstream file_stream;
    file_stream.open(generated_synthesis_script.c_str());
@@ -671,7 +777,9 @@ std::string BackendFlow::CreateScripts(const DesignParametersRef dp)
    tool->execute(parameters, input_files, output_files, Param->getOption<std::string>(OPT_output_temporary_directory) + "/synthesis_script_generation_output");
 
    if(debug_level >= DEBUG_LEVEL_PEDANTIC)
+   {
       create_xml_scripts("exported_flow.xml");
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--Completed the generation of scripts for module \"" + exec_params->component_name + "\" on chain \"" + exec_params->chain_name + "\"");
 
    return generated_synthesis_script;

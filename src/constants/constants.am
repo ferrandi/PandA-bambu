@@ -1,4 +1,4 @@
-noinst_HEADERS += constants/file_IO_constants.hpp constants/treegcc_xml.hpp constants/constants.hpp constants/copyrights_strings.hpp
+noinst_HEADERS += constants/file_IO_constants.hpp constants/compiler_xml.hpp constants/constants.hpp constants/copyrights_strings.hpp
 
 if BUILD_BAMBU
    noinst_HEADERS += constants/bambu_results_xml.hpp constants/testbench_generation_constants.hpp
@@ -9,7 +9,7 @@ if BUILD_LIB_FROM_AADL_ASN
 endif
 
 if BUILD_LIB_FROM_C
-   noinst_HEADERS += constants/treegcc_constants.hpp
+   noinst_HEADERS += constants/compiler_constants.hpp
 endif
 
 if BUILD_LIB_FROM_DATA_XML

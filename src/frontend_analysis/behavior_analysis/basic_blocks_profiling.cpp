@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -46,12 +46,12 @@
 #include "c_backend.hpp"
 #include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
+#include "compiler_wrapper.hpp"
 #include "custom_set.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
-#include "gcc_wrapper.hpp"
 #include "hash_helper.hpp"
 #include "host_profiling_constants.hpp"
 #include "profiling_information.hpp"
@@ -83,10 +83,10 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
    boost::filesystem::path run_name = temporary_path / ("run.tmp");
    boost::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
 
-   const GccWrapperConstRef gcc_wrapper(new GccWrapper(this->parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_host_compiler), GccWrapper_OptimizationSet::O1));
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(this->parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_host_compiler), CompilerWrapper_OptimizationSet::O1));
    CustomSet<std::string> tp_files;
    tp_files.insert(profiling_source_file);
-   gcc_wrapper->CreateExecutable(tp_files, run_name.string(), "");
+   compiler_wrapper->CreateExecutable(tp_files, run_name.string(), "");
    std::string change_directory;
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Starting dynamic profiling");
    if(parameters->isOption(OPT_path))
@@ -95,7 +95,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Changing working directory to " + parameters->getOption<std::string>(OPT_path));
    }
    const auto exec_argvs = parameters->getOption<const CustomSet<std::string>>(OPT_exec_argv);
-   for(const auto exec_argv : exec_argvs)
+   for(const auto& exec_argv : exec_argvs)
    {
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Running with parameters: " + exec_argv);
       // The argument
@@ -158,7 +158,7 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
 
    if(parameters->getOption<bool>(OPT_print_dot))
    {
-      CustomOrderedSet<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+      const auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
       for(const auto function : functions)
       {
          AppM->CGetFunctionBehavior(function)->CGetBBGraph(FunctionBehavior::FBB)->WriteDot("BB_profiling.dot");
@@ -169,8 +169,8 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
 
 void BasicBlocksProfiling::Initialize()
 {
-   CustomOrderedSet<unsigned int> functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
-   for(auto function : functions)
+   const auto functions = AppM->CGetCallGraphManager()->GetReachedBodyFunctions();
+   for(const auto function : functions)
    {
       AppM->GetFunctionBehavior(function)->profiling_information->Clear();
    }

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,7 +66,7 @@
 #endif
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 /// Utility include
 #include "Parameter.hpp"
@@ -75,7 +75,7 @@
 
 create_tree_manager::create_tree_manager(const ParameterConstRef _parameters, const application_managerRef _AppM, const DesignFlowManagerConstRef _design_flow_manager)
     : ApplicationFrontendFlowStep(_AppM, CREATE_TREE_MANAGER, _design_flow_manager, _parameters),
-      gcc_wrapper(new GccWrapper(parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler), parameters->getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set)))
+      compiler_wrapper(new CompilerWrapper(parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler), parameters->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set)))
 {
    debug_level = parameters->get_class_debug_level(GET_CLASS(*this), DEBUG_LEVEL_NONE);
 }
@@ -146,7 +146,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
    const tree_managerRef TreeM = AppM->get_tree_manager();
 
    if(!parameters->isOption(OPT_input_file))
+   {
       THROW_ERROR("At least one source file has to be passed to the tool");
+   }
 
    /// parsing of archive files
    if(parameters->isOption(OPT_archive_files))
@@ -163,13 +165,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
          temporary_directory_pattern = parameters->getOption<std::string>(OPT_output_temporary_directory) + "/temp-archive-dir";
          // The %s are required by the mkdtemp function
          boost::filesystem::path temp_path = temporary_directory_pattern + "-%%%%-%%%%-%%%%-%%%%";
-
          boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
          boost::filesystem::create_directories(temp_path_obtained);
-
-         boost::filesystem::path local_archive_file = archive_file;
-         if(local_archive_file.is_relative())
-            local_archive_file = boost::filesystem::current_path() / local_archive_file;
+         boost::filesystem::path local_archive_file = GetPath(archive_file);
 
          std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
          int ret = PandaSystem(parameters, command);
@@ -188,7 +186,9 @@ DesignFlowStep_Status create_tree_manager::Exec()
             TreeM->merge_tree_managers(TM_new);
          }
          if(not(parameters->getOption<bool>(OPT_no_clean)))
+         {
             boost::filesystem::remove_all(temp_path_obtained);
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Read " + archive_file);
       }
    }
@@ -228,15 +228,15 @@ DesignFlowStep_Status create_tree_manager::Exec()
    else
    {
 #if !RELEASE
-      // if a XML configuration file has been specified for the GCC parameters
+      // if a XML configuration file has been specified for the GCC/CLANG parameters
       if(parameters->isOption(OPT_gcc_read_xml))
-         gcc_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
+         compiler_wrapper->ReadXml(parameters->getOption<std::string>(OPT_gcc_read_xml));
 #endif
-      gcc_wrapper->FillTreeManager(TreeM, AppM->input_files);
+      compiler_wrapper->FillTreeManager(TreeM, AppM->input_files);
 
 #if !RELEASE
       if(parameters->isOption(OPT_gcc_write_xml))
-         gcc_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
+         compiler_wrapper->WriteXml(parameters->getOption<std::string>(OPT_gcc_write_xml));
 #endif
 
       if(debug_level >= DEBUG_LEVEL_PEDANTIC)

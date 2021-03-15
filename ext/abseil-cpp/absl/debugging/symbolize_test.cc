@@ -32,6 +32,7 @@
 #include "absl/base/optimization.h"
 #include "absl/debugging/internal/stack_consumption.h"
 #include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 
 using testing::Contains;
 
@@ -144,7 +145,8 @@ static const char *TrySymbolize(void *pc) {
   return TrySymbolizeWithLimit(pc, sizeof(try_symbolize_buffer));
 }
 
-#ifdef ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE
+#if defined(ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE) || \
+    defined(ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE)
 
 TEST(Symbolize, Cached) {
   // Compilers should give us pointers to them.
@@ -258,6 +260,7 @@ TEST(Symbolize, SymbolizeWithDemanglingStackConsumption) {
 
 #endif  // ABSL_INTERNAL_HAVE_DEBUGGING_STACK_CONSUMPTION
 
+#ifndef ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE
 // Use a 64K page size for PPC.
 const size_t kPageSize = 64 << 10;
 // We place a read-only symbols into the .text section and verify that we can
@@ -399,8 +402,8 @@ TEST(Symbolize, ForEachSection) {
 
   std::vector<std::string> sections;
   ASSERT_TRUE(absl::debugging_internal::ForEachSection(
-      fd, [&sections](const std::string &name, const ElfW(Shdr) &) {
-        sections.push_back(name);
+      fd, [&sections](const absl::string_view name, const ElfW(Shdr) &) {
+        sections.emplace_back(name);
         return true;
       }));
 
@@ -413,6 +416,7 @@ TEST(Symbolize, ForEachSection) {
 
   close(fd);
 }
+#endif  // !ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE
 
 // x86 specific tests.  Uses some inline assembler.
 extern "C" {
@@ -473,6 +477,7 @@ void ABSL_ATTRIBUTE_NOINLINE TestWithReturnAddress() {
 }
 
 #elif defined(_WIN32)
+#if !defined(ABSL_CONSUME_DLL)
 
 TEST(Symbolize, Basics) {
   EXPECT_STREQ("nonstatic_func", TrySymbolize((void *)(&nonstatic_func)));
@@ -511,6 +516,7 @@ TEST(Symbolize, SymbolizeWithDemangling) {
   EXPECT_TRUE(strstr(result, "Foo::func") != nullptr) << result;
 }
 
+#endif  // !defined(ABSL_CONSUME_DLL)
 #else  // Symbolizer unimplemented
 
 TEST(Symbolize, Unimplemented) {
@@ -539,7 +545,8 @@ int main(int argc, char **argv) {
   absl::InitializeSymbolizer(argv[0]);
   testing::InitGoogleTest(&argc, argv);
 
-#ifdef ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE
+#if defined(ABSL_INTERNAL_HAVE_ELF_SYMBOLIZE) || \
+    defined(ABSL_INTERNAL_HAVE_DARWIN_SYMBOLIZE)
   TestWithPCInsideInlineFunction();
   TestWithPCInsideNonInlineFunction();
   TestWithReturnAddress();

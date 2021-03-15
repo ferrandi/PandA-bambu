@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@
 /// Utility include
 #include "refcount.hpp"
 REF_FORWARD_DECL(application_manager);
-REF_FORWARD_DECL(GccWrapper);
+REF_FORWARD_DECL(CompilerWrapper);
 
 /**
  * Class that creates the tree_manager starting from the source code files
@@ -58,7 +58,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
 {
  private:
    /// The gcc wrapper
-   const GccWrapperRef gcc_wrapper;
+   const CompilerWrapperRef compiler_wrapper;
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -80,7 +80,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
     * @param AppM is the reference to the application manager
     * @param design_flow_manager is the design flow manager
     */
-   create_tree_manager(const ParameterConstRef Param, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+   create_tree_manager(const ParameterConstRef _parameters, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -88,7 +88,7 @@ class create_tree_manager : public ApplicationFrontendFlowStep
    ~create_tree_manager() override;
 
    /**
-    * Creates the tree_manager data structure by invoking the GCC wrapper
+    * Creates the tree_manager data structure by invoking the GCC/CLANG wrapper
     * @return the exit status of this step
     */
    DesignFlowStep_Status Exec() override;

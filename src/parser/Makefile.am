@@ -145,9 +145,9 @@ if BUILD_LIB_FROM_TGFF
 endif
 
 if BUILD_LIB_TREE_PARSER
-  SUBDIRS += treegcc
-  DIST_SUBDIRS += treegcc
-  lib_parser_la_LIBADD += $(top_builddir)/src/parser/treegcc/lib_treegccparser.la
+  SUBDIRS += compiler
+  DIST_SUBDIRS += compiler
+  lib_parser_la_LIBADD += $(top_builddir)/src/parser/compiler/lib_compilerparser.la
 endif
 
 if BUILD_LIB_VCD_PARSER

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,7 +73,7 @@ class ToDataFileStep : public virtual DesignFlowStep
     * @param to_data_file_step is the type of this step
     * @param parameters is the set of input parameters
     */
-   ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager, const ToDataFileStep_Type to_data_file_step, const ParameterConstRef parameters);
+   ToDataFileStep(const DesignFlowManagerConstRef design_flow_manager, const ToDataFileStep_Type _to_data_file_step_type, const ParameterConstRef parameters);
 
    /**
     * Return a unified identifier of this design step

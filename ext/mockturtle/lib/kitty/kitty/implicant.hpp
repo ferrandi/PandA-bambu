@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -37,6 +37,7 @@
 
 #include "algorithm.hpp"
 #include "cube.hpp"
+#include "traits.hpp"
 
 namespace kitty
 {
@@ -51,7 +52,7 @@ std::vector<uint32_t> get_minterms( const TT& tt )
   std::vector<uint32_t> m;
   m.reserve( count_ones( tt ) );
   for_each_one_bit( tt, [&m]( auto index ) {
-    m.emplace_back( index );
+    m.emplace_back( static_cast<uint32_t>( index ) );
   } );
   return m;
 }
@@ -235,6 +236,8 @@ inline std::vector<cube> get_prime_implicants_morreale( const std::vector<uint32
 template<typename TT>
 std::vector<cube> get_prime_implicants_morreale( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   return get_prime_implicants_morreale( get_minterms( tt ), tt.num_vars() );
 }
 } // namespace kitty

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file clean_virtual_phi.hpp
- * @brief Manipulation step which removes virtual phi introduced by GCC
+ * @brief Manipulation step which removes virtual phi introduced by GCC/CLANG
  *
  * @author Marco Lattuada <marco.lattuada@polimi.it>
  *
@@ -137,5 +137,9 @@ void CleanVirtualPhi::Initialize()
 
 bool CleanVirtualPhi::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }

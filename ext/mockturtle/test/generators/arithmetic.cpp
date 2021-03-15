@@ -33,7 +33,7 @@ TEST_CASE( "build a full adder with an AIG", "[arithmetic]" )
   aig.create_po( sum );
   aig.create_po( carry );
 
-  const auto simm = simulate<kitty::static_truth_table<3>>( aig );
+  const auto simm = simulate<kitty::static_truth_table<3u>>( aig );
   CHECK( simm.size() == 2 );
   CHECK( simm[0]._bits == 0x96 );
   CHECK( simm[1]._bits == 0xe8 );
@@ -50,7 +50,7 @@ TEST_CASE( "build a half adder with an AIG", "[arithmetic]" )
   aig.create_po( sum );
   aig.create_po( carry );
 
-  const auto simm = simulate<kitty::static_truth_table<2>>( aig );
+  const auto simm = simulate<kitty::static_truth_table<2u>>( aig );
   CHECK( simm.size() == 2 );
   CHECK( simm[0]._bits == 0x6 );
   CHECK( simm[1]._bits == 0x8 );
@@ -74,7 +74,7 @@ TEST_CASE( "build a 2-bit adder with an AIG", "[arithmetic]" )
   CHECK( aig.num_pos() == 3 );
   CHECK( aig.num_gates() == 14 );
 
-  const auto simm = simulate<kitty::static_truth_table<5>>( aig );
+  const auto simm = simulate<kitty::static_truth_table<5u>>( aig );
   CHECK( simm.size() == 3 );
   CHECK( simm[0]._bits == 0xa5a55a5a );
   CHECK( simm[1]._bits == 0xc936936c );
@@ -259,7 +259,7 @@ TEST_CASE( "build an 8-bit multiplier with different networks", "[arithmetic]" )
 }
 
 template<typename Ntk>
-Ntk create_sideways_sum_adder(int size)
+Ntk create_sideways_sum_adder(uint32_t size)
 {
   Ntk ntk;
 
@@ -279,29 +279,29 @@ Ntk create_sideways_sum_adder(int size)
 
 TEST_CASE( "build a sideways sum adder with different networks", "[arithmetic]" )
 {
-  const auto aig8 = create_sideways_sum_adder<aig_network>(8);
+  const auto aig8 = create_sideways_sum_adder<aig_network>( 8u );
   validate_network( aig8, 0b00001111, 4 );
   validate_network( aig8, 0b11111111, 8 );
   validate_network( aig8, 0b10010001, 3 );
-  const auto aig5 = create_sideways_sum_adder<aig_network>(5);
+  const auto aig5 = create_sideways_sum_adder<aig_network>( 5u );
   validate_network( aig5, 0b10111, 4 );
   validate_network( aig5, 0b00100, 1 );
   validate_network( aig5, 0b01100, 2 );
 
-  const auto mig4 = create_sideways_sum_adder<mig_network>(4);
+  const auto mig4 = create_sideways_sum_adder<mig_network>( 4u );
   validate_network( mig4, 0b0000, 0 );
   validate_network( mig4, 0b1001, 2 );
   validate_network( mig4, 0b0010, 1 );
-  const auto mig10 = create_sideways_sum_adder<mig_network>(10);
+  const auto mig10 = create_sideways_sum_adder<mig_network>( 10u );
   validate_network( mig10, 0b1111100000, 5 );
   validate_network( mig10, 0b1000000000, 1 );
   validate_network( mig10, 0b1111001111, 8 );
 
-  const auto klut11 = create_sideways_sum_adder<klut_network>(11);
+  const auto klut11 = create_sideways_sum_adder<klut_network>( 11u );
   validate_network( klut11, 0b10001000010, 3 );
   validate_network( klut11, 0b11110111101, 9 );
   validate_network( klut11, 0b10101010101, 6 );
-  const auto klut7 = create_sideways_sum_adder<klut_network>(7);
+  const auto klut7 = create_sideways_sum_adder<klut_network>( 7u );
   validate_network( klut7, 0b1111111, 7 );
   validate_network( klut7, 0b0010010, 2 );
   validate_network( klut7, 0b1001011, 4 );

@@ -43,7 +43,7 @@ DFtype __floatunsidf(USItype i)
    return a;
 }
 
-inline DFtype __uint32_to_float64if(USItype i)
+DFtype __uint32_to_float64if(USItype i)
 {
    return __floatunsidf(i);
 }

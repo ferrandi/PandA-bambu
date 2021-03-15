@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -39,6 +39,7 @@
  */
 #include "plugin_includes.hpp"
 
+#include "llvm/IR/IRBuilder.h"
 #include "llvm/IR/IntrinsicInst.h"
 #include "llvm/IR/LegacyPassManager.h"
 #include "llvm/IR/Module.h"
@@ -120,7 +121,7 @@ namespace llvm
       {
          if(llvm::VectorType* VTy = dyn_cast<llvm::VectorType>(Type))
          {
-            return VTy->getBitWidth() / 8;
+            return (VTy->getNumElements() * VTy->getElementType()->getPrimitiveSizeInBits()) / 8;
          }
          return Type->getPrimitiveSizeInBits() / 8;
       }
@@ -347,7 +348,13 @@ namespace llvm
          LoopIndex->addIncoming(llvm::ConstantInt::get(TypeOfCopyLen, 0), OrigBB);
 
          if(AlignCanBeUsed)
+         {
+#if __clang_major__ >= 11
+            LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), llvm::MaybeAlign(Align), IsVolatile);
+#else
             LoopBuilder.CreateAlignedStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), Align, IsVolatile);
+#endif
+         }
          else
             LoopBuilder.CreateStore(SetValue, LoopBuilder.CreateInBoundsGEP(SetValue->getType(), DstAddr, LoopIndex), IsVolatile);
 
@@ -367,13 +374,14 @@ namespace llvm
 
       bool runOnModule(Module& M) override
       {
+         if(skipModule(M))
+            return false;
          auto DL = &M.getDataLayout();
          auto res = false;
          auto currFuncIterator = M.getFunctionList().begin();
          while(currFuncIterator != M.getFunctionList().end())
          {
             auto& F = *currFuncIterator;
-            const llvm::TargetTransformInfo& TTI = getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
             auto fname = std::string(currFuncIterator->getName());
             llvm::SmallVector<llvm::MemIntrinsic*, 4> MemCalls;
             for(llvm::Function::iterator BI = F.begin(), BE = F.end(); BI != BE; ++BI)
@@ -423,6 +431,7 @@ namespace llvm
 #if __clang_major__ != 4
                   else
                   {
+                     const llvm::TargetTransformInfo& TTI = getAnalysis<llvm::TargetTransformInfoWrapperPass>().getTTI(F);
                      llvm::expandMemCpyAsLoop(Memcpy, TTI);
                      do_erase = true;
                   }

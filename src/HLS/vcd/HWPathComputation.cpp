@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -88,8 +88,8 @@ class HWCallPathCalculator : public boost::default_dfs_visitor
 
    ~HWCallPathCalculator();
 
-   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
-   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ucg);
+   void start_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg);
+   void discover_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph& ufcg);
    void finish_vertex(const UnfoldedVertexDescriptor& v, const UnfoldedCallGraph&);
    void examine_edge(const EdgeDescriptor& e, const UnfoldedCallGraph& cg);
 };
@@ -202,7 +202,7 @@ void HWCallPathCalculator::examine_edge(const EdgeDescriptor& e, const UnfoldedC
       return;
    }
 
-   const std::string called_fu_name = BH->get_function_name();
+   const std::string called_fu_name = functions::get_function_name_cleaned(BH->get_function_name());
    std::string called_scope;
    if(HLSMgr->Rfuns->is_a_proxied_function(called_fu_name))
    {

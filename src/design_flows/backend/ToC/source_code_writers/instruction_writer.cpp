@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -148,7 +148,9 @@ void InstructionWriter::write(const FunctionBehaviorConstRef function_behavior, 
    const std::string statement_string = function_behavior->CGetBehavioralHelper()->print_vertex(function_behavior->CGetOpGraph(FunctionBehavior::CFG), statement, varFunctor);
 
    if(statement_string.size())
+   {
       indented_output_stream->Append(statement_string);
+   }
 }
 
 void InstructionWriter::declareFunction(const unsigned int function_id)

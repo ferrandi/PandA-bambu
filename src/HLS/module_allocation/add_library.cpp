@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -131,11 +131,17 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
                   else
                   {
                      if(omp_functions->kernel_functions.find(funId) != omp_functions->kernel_functions.end())
+                     {
                         found = true;
+                     }
                      if(omp_functions->atomic_functions.find(funId) != omp_functions->atomic_functions.end())
+                     {
                         found = true;
+                     }
                      if(omp_functions->parallelized_functions.find(funId) != omp_functions->parallelized_functions.end())
+                     {
                         found = true;
+                     }
                      if(found) // use new top_entity
                      {
                         const HLSFlowStep_Type top_entity_type = HLSFlowStep_Type::TOP_ENTITY_CS_CREATION;
@@ -203,8 +209,10 @@ DesignFlowStep_Status add_library::InternalExec()
    std::string module_parameters = (HLS->top->get_circ() and GetPointer<module>(HLS->top->get_circ()) and GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()) ?
                                        GetPointer<module>(HLS->top->get_circ())->get_NP_functionality()->get_NP_functionality(NP_functionality::LIBRARY) :
                                        "";
-   if(module_parameters.find(" ") != std::string::npos)
-      module_parameters = module_parameters.substr(module_parameters.find(" "));
+   if(module_parameters.find(' ') != std::string::npos)
+   {
+      module_parameters = module_parameters.substr(module_parameters.find(' '));
+   }
    fu->CM->add_NP_functionality(HLS->top->get_circ(), NP_functionality::LIBRARY, module_name + module_parameters);
    if(!add_library_specialization->interfaced)
    {
@@ -213,6 +221,7 @@ DesignFlowStep_Status add_library::InternalExec()
       auto* op = GetPointer<operation>(fu->get_operation(function_name));
       op->time_m = time_model::create_model(device->get_type(), parameters);
       op->primary_inputs_registered = HLS->registered_inputs;
+      bool simple_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline();
       /// First computing if operation is bounded, then computing call_delay; call_delay depends on the value of bounded
       if(HLS->STG and HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->is_a_dag)
       {
@@ -223,13 +232,16 @@ DesignFlowStep_Status add_library::InternalExec()
          {
             const structural_objectRef& port_obj = mod->get_in_port(i);
             if(GetPointer<port_o>(port_obj)->get_is_memory())
+            {
                is_bounded = false; /// functions accessing memory are classified as unbounded
+            }
          }
          if(is_bounded)
          {
             unsigned int min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
             unsigned int max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
-            if(max_cycles == min_cycles && min_cycles > 0 && min_cycles < 8)
+            /// pipelined functions are always bounded
+            if(max_cycles == min_cycles && min_cycles > 0 && (min_cycles < 8 || simple_pipeline))
             {
                op->bounded = true;
             }
@@ -245,6 +257,7 @@ DesignFlowStep_Status add_library::InternalExec()
       }
       else
       {
+         THROW_ASSERT(not simple_pipeline, "A pipelined function should always generate a DAG");
          op->bounded = false;
       }
       double call_delay = HLS->allocation_information ? HLS->allocation_information->estimate_call_delay() : clock_period_value;
@@ -255,9 +268,13 @@ DesignFlowStep_Status add_library::InternalExec()
          unsigned int min_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles;
          unsigned int max_cycles = HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->max_cycles;
          if(min_cycles > 1)
+         {
             exec_time = clk * (min_cycles - 1) + call_delay;
+         }
          else
+         {
             exec_time = call_delay;
+         }
          op->time_m->set_execution_time(exec_time, min_cycles);
          if(max_cycles > 1)
          {
@@ -272,13 +289,25 @@ DesignFlowStep_Status add_library::InternalExec()
             {
                //+1 prevents chaining of two operations mapped on the same functional unit
                const ControlStep ii(max_cycles + 1);
-               op->time_m->set_initiation_time(ii);
+               const ControlStep jj(1);
+               if(not simple_pipeline)
+               {
+                  op->time_m->set_initiation_time(ii);
+               }
+               else
+               {
+                  op->time_m->set_initiation_time(jj);
+               }
             }
          }
          else
+         {
             op->time_m->set_stage_period(0.0);
+         }
          if(min_cycles <= 1 && (HLSMgr->Rmem->get_allocated_space() + HLSMgr->Rmem->get_allocated_parameters_memory()) == 0)
+         {
             fu->logical_type = functional_unit::COMBINATIONAL;
+         }
       }
       else
       {

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -82,10 +82,8 @@ void CallSitesCollectorVisitor::examine_edge(const EdgeDescriptor& e, const Call
       HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].insert(called_id);
       HLSMgr->RDiscr->call_sites_info->indirect_calls.insert(callid);
    }
-   for(const unsigned int callid : g.CGetFunctionEdgeInfo(e)->function_addresses)
-   {
-      HLSMgr->RDiscr->call_sites_info->fu_id_to_call_ids[caller_id].insert(callid);
-      HLSMgr->RDiscr->call_sites_info->call_id_to_called_id[callid].insert(called_id);
-      HLSMgr->RDiscr->call_sites_info->taken_addresses.insert(callid);
-   }
+   //   for(const unsigned int callid : g.CGetFunctionEdgeInfo(e)->function_addresses)
+   //   {
+   //      HLSMgr->RDiscr->call_sites_info->taken_addresses.insert(callid);
+   //   }
 }

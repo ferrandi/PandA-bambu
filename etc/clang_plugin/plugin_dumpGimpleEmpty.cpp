@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2018-2020 Politecnico di Milano
+ *              Copyright (C) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,7 +48,9 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Transforms/IPO/PassManagerBuilder.h"
 #include "llvm/Transforms/Utils/LoopUtils.h"
-
+#if __clang_major__ >= 10
+#include "llvm/Support/CommandLine.h"
+#endif
 namespace llvm
 {
    cl::opt<std::string> outdir_nameGE("pandaGE-outputdir", cl::desc("Specify the directory where the gimple raw file will be written"), cl::value_desc("directory path"));

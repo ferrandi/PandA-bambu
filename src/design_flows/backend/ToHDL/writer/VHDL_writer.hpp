@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -157,7 +157,7 @@ struct VHDL_writer : public language_writer
     * @param port is the port to be bounded.
     * @param top is the component owner of the component that has the port to be bounded.
     */
-   void write_port_binding(const structural_objectRef& port, const structural_objectRef& top, bool& first_port_analyzed) override;
+   void write_port_binding(const structural_objectRef& port, const structural_objectRef& object_bounded, bool& first_port_analyzed) override;
    void write_vector_port_binding(const structural_objectRef& port, bool& first_port_analyzed) override;
    /**
     * Write the end part in a module declaration.
@@ -170,6 +170,7 @@ struct VHDL_writer : public language_writer
     * @param sig is the attached signal.
     */
    void write_io_signal_post_fix(const structural_objectRef& port, const structural_objectRef& sig) override;
+   void write_io_signal_post_fix_vector(const structural_objectRef& port, const structural_objectRef& sig) override;
    /**
     * Module can be parametrized with respect different features. Port vectors are parametrized with the number of port associated,
     * while ports are parametrized in case the type is a integer with the number of bits. The id of the module is modified
@@ -209,7 +210,7 @@ struct VHDL_writer : public language_writer
     * @param n_states is the number of states.
     */
    void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end) override;
+                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool) override;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

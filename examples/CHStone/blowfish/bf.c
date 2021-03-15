@@ -813,9 +813,11 @@ const unsigned char out_key[KEYSIZE] = {
 
 #define N 40
 
+
 int
 blowfish_main ()
 {
+    
   unsigned char ukey[8];
   unsigned char indata[N];
   unsigned char outdata[N];

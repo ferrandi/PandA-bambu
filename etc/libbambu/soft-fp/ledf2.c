@@ -51,7 +51,7 @@ CMPtype __ledf2(DFtype a, DFtype b)
 
 strong_alias(__ledf2, __ltdf2);
 
-inline CMPtype __float64_leif(DFtype a, DFtype b)
+CMPtype __float64_leif(DFtype a, DFtype b)
 {
    return __ledf2(a, b);
 }

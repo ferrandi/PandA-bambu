@@ -7,6 +7,11 @@
 extern int INPUT_SIZE;
 void run_benchmark( void *args );
 
+#ifdef BAMBU_PROFILING
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();
+#endif
+
 int main(/*int argc, char **argv*/)
 {
   int status;

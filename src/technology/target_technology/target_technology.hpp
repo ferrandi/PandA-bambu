@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,13 +62,12 @@ class target_technology
 {
  public:
    /// target technologies currently implemented
-   typedef enum
-   {
+   using target_t = enum {
 #if HAVE_CMOS_BUILT
       CMOS = 0, /// integrated circuits through CMOS technology
 #endif
       FPGA = 1 /// FPGA devices
-   } target_t;
+   };
 
  protected:
    /// Class containing all the parameters
@@ -136,7 +135,9 @@ class target_technology
    G get_parameter(const std::string& key) const
    {
       if(parameters.find(key) == parameters.end())
+      {
          THROW_ERROR("Parameter \"" + key + "\" not found in target technology parameters' list");
+      }
       return boost::lexical_cast<G>(parameters.find(key)->second);
    }
 
@@ -160,6 +161,6 @@ class target_technology
 };
 
 /// refcount definition for the class
-typedef refcount<target_technology> target_technologyRef;
+using target_technologyRef = refcount<target_technology>;
 
 #endif

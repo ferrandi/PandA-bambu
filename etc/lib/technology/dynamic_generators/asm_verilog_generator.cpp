@@ -10,9 +10,9 @@
  *                              PandA Project 
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -42,18 +42,9 @@
 */
 //void fun()
 //{
-   boost::replace_all(_specializing_string, "%%", "&percent;");
-#if 0
-   for(unsigned int i=0; i < _np; ++i)
-   {
-      std::string formal_param_string, actual_param_string;
-      formal_param_string = "%" + STR(i);
-      actual_param_string = "in" + STR(i+1);
-      boost::replace_all(_specializing_string, formal_param_string, actual_param_string);
-   }
-#endif
-   boost::replace_all(_specializing_string, "&percent;", "%");
-   boost::replace_all(_specializing_string, "\n", "\\n");
+   __replaceStringInPlace(_specializing_string, "%%", "&percent;");
+   __replaceStringInPlace(_specializing_string, "&percent;", "%");
+   __replaceStringInPlace(_specializing_string, "\n", "\\n");
    ///remove possible dialects
    std::string res_asm;
    bool open_curl = false;

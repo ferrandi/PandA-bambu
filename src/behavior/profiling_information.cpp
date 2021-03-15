@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -89,35 +89,45 @@ const PathProfilingInformation& ProfilingInformation::GetPathProfiling() const
 unsigned long long int ProfilingInformation::GetBBExecutions(const vertex bb_vertex) const
 {
    if(bb_executions.find(bb_vertex) != bb_executions.end())
+   {
       return bb_executions.find(bb_vertex)->second;
+   }
    return 0.0;
 }
 
 unsigned long long int ProfilingInformation::GetEdgeExecutions(const EdgeDescriptor edge) const
 {
    if(edge_executions.find(edge) != edge_executions.end())
+   {
       return edge_executions.find(edge)->second;
+   }
    return 0.0;
 }
 
 unsigned long long int ProfilingInformation::GetLoopMaxIterations(const unsigned int loop_id) const
 {
    if(max_iterations.find(loop_id) != max_iterations.end())
+   {
       return max_iterations.find(loop_id)->second;
+   }
    return 0.0;
 }
 
 long double ProfilingInformation::GetLoopAvgIterations(const unsigned int loop_id) const
 {
    if(avg_iterations.find(loop_id) != avg_iterations.end())
+   {
       return avg_iterations.find(loop_id)->second;
+   }
    return 0.0L;
 }
 
 unsigned long long int ProfilingInformation::GetLoopAbsIterations(const unsigned int loop_id) const
 {
    if(abs_iterations.find(loop_id) != abs_iterations.end())
+   {
       return abs_iterations.find(loop_id)->second;
+   }
    return 0;
 }
 

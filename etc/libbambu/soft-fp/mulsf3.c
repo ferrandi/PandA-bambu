@@ -49,7 +49,7 @@ SFtype __mulsf3(SFtype a, SFtype b)
    return r;
 }
 
-inline SFtype __float32_mulif(SFtype a, SFtype b)
+SFtype __float32_mulif(SFtype a, SFtype b)
 {
    return __mulsf3(a, b);
 }

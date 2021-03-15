@@ -29,6 +29,11 @@ return_value=$?
 if test $return_value != 0; then
    exit $return_value
 fi
+$(dirname $0)/test_libm_sqrt.sh $@
+return_value=$?
+if test $return_value != 0; then
+   exit $return_value
+fi
 $(dirname $0)/test_libm_powf.sh $@
 return_value=$?
 if test $return_value != 0; then

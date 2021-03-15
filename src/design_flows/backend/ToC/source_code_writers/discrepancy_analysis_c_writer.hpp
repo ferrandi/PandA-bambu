@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -67,7 +67,7 @@ class DiscrepancyAnalysisCWriter : public HLSCWriter
     * Write extra information on the given statement vertex, before the
     * statement itself
     */
-   void writePreInstructionInfo(const FunctionBehaviorConstRef FB, const vertex v) override;
+   void writePreInstructionInfo(const FunctionBehaviorConstRef FB, const vertex statement) override;
 
    /**
     * Write extra information on the given statement vertex, after the

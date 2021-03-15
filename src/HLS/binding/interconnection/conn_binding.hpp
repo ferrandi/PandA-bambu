@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -68,7 +68,7 @@ class GenericObjUnsignedIntSorter;
 #include "graph.hpp"
 
 /// definition of the data transfer (tree_node, precision, from, to, data_transferred, current_op). Note that from/to can represent either chained vertices or STG states
-typedef std::tuple<unsigned int, unsigned int, vertex, vertex, vertex> data_transfer;
+using data_transfer = std::tuple<unsigned int, unsigned int, vertex, vertex, vertex>;
 
 /**
  * @class conn_binding
@@ -78,24 +78,17 @@ class conn_binding
 {
  public:
    /// direction port identifier
-   typedef enum
-   {
-      IN = 0,
-      OUT
-   } direction_type;
+   using direction_type = enum { IN = 0, OUT };
 
    /// type of the datastructure
-   typedef enum
-   {
-      STG = 0
-   } type_t;
+   using type_t = enum { STG = 0 };
 
    /// connection between two objects (<src, tgt, tgt_port, tgt_port_index>)
-   typedef std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int> connection;
+   using connection = std::tuple<generic_objRef, generic_objRef, unsigned int, unsigned int>;
 
    /// definition of the connection implementations
 #if HAVE_UNORDERED
-   typedef std::map<connection, connection_objRef> conn_implementation_map;
+   using conn_implementation_map = std::map<connection, connection_objRef>;
 #else
 
    /// Sorter for connection
@@ -114,7 +107,7 @@ class conn_binding
 #endif
 
    /// definition of the key to deal with constant parameters
-   typedef std::tuple<std::string, std::string> const_param;
+   using const_param = std::tuple<std::string, std::string>;
 
    /// definition of target of a connection
    struct ConnectionTarget : public std::tuple<generic_objRef, unsigned int, unsigned int>
@@ -138,7 +131,7 @@ class conn_binding
 
    /// definition of sources of a connection
 #if HAVE_UNORDERED
-   typedef CustomUnorderedMap<generic_objRef, CustomOrderedSet<data_transfer>> ConnectionSources;
+   using ConnectionSources = CustomUnorderedMap<generic_objRef, CustomOrderedSet<data_transfer>>;
 #else
    typedef std::map<generic_objRef, CustomOrderedSet<data_transfer>, GenericObjSorter> ConnectionSources;
 #endif
@@ -150,9 +143,11 @@ class conn_binding
    /// control the verbosity during the debugging
    int debug_level;
 
+ private:
    /// control the output verbosity
    int output_level;
 
+ private:
    /// reference to the behavioral helper associated with the specification
    const BehavioralHelperConstRef BH;
 
@@ -177,22 +172,13 @@ class conn_binding
    /// map between output port variable and generic object
    std::map<vertex, generic_objRef> command_output_ports;
 
-   /// map between interconnection elements and their number
-   std::map<std::pair<std::string, unsigned int>, unsigned int> interconnection_elements;
-
-   /// set of other command ports
-   CustomOrderedSet<generic_objRef> command_ports;
-
    /// selector ports
 #if HAVE_UNORDERED
-   typedef std::map<std::pair<generic_objRef, unsigned int>, generic_objRef> Selectors;
+   using Selectors = std::map<std::pair<generic_objRef, unsigned int>, generic_objRef>;
 #else
    typedef std::map<std::pair<generic_objRef, unsigned int>, generic_objRef, GenericObjUnsignedIntSorter> Selectors;
 #endif
    std::map<unsigned int, Selectors> selectors;
-
-   /// map between a resource name and the corresponding number of instances inside the datapath
-   std::map<std::string, unsigned int> component_num;
 
    /// set containing all the sparse logic contained into the datapath
 #if HAVE_UNORDERED
@@ -211,17 +197,11 @@ class conn_binding
    static unsigned unique_id;
 
    /**
-    * Specialise a multiplexer according to the type of the variables crossing it.
+    * Specialize a multiplexer according to the type of the variables crossing it.
     * @param mux is the multiplexer
     * @param bits_tgt is the bitwidth of the target port
     */
    void specialise_mux(const generic_objRef mux, unsigned int bits_tgt) const;
-
-   /**
-    * Specialise a multiplexer according to the type of the variables crossing it.
-    * @param mux is the multiplexer
-    */
-   unsigned int get_mux_size(const generic_objRef mux) const;
 
    /**
     * Add the mux-based interconnection
@@ -246,7 +226,7 @@ class conn_binding
    /**
     * Add a data converter, if needed, between two objects of the structural representation of the datapath
     */
-   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef conn_out, const structural_objectRef port_tgt, unsigned int conn_type);
+   void add_datapath_connection(const technology_managerRef TM, const structural_managerRef SM, const structural_objectRef src, const structural_objectRef port_tgt, unsigned int conn_type);
 
    /**
     * check if a port vector has its port bounded to something
@@ -282,7 +262,7 @@ class conn_binding
     */
    generic_objRef bind_command_port(const vertex& ver, direction_type dir, unsigned int mode, const OpGraphConstRef g);
 
-   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& ver, const OpGraphConstRef data);
+   generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const vertex& cond, const OpGraphConstRef data);
 
    generic_objRef bind_selector_port(direction_type dir, unsigned int mode, const generic_objRef elem, unsigned int op);
 
@@ -293,30 +273,6 @@ class conn_binding
     * @return reference to the generic object of the port associated to given variable, into given direction
     */
    generic_objRef get_port(unsigned int var, direction_type dir);
-
-   /**
-    * Returns reference to generic object associated to a given vertex, for a specific port direction
-    * @param ver is vertex associated to desired port
-    * @param dir is port direction
-    * @param mode is command mode (OPERATION or CONDITION)
-    * @return reference to the generic object of the port associated to given vertex, into given direction
-    */
-   generic_objRef get_command_port(const vertex& ver, direction_type dir, unsigned int mode);
-
-   /**
-    * Returns the number of connections from the datapath to the controller
-    */
-   unsigned int get_to_controller_ports() const;
-
-   /**
-    * Returns the list of connections from the controller to the datapath
-    */
-   std::map<std::pair<vertex, unsigned int>, generic_objRef> get_command_input_ports() const;
-
-   /**
-    * Returns the number of connections from the controller to the datapath
-    */
-   unsigned int get_from_controller_ports() const;
 
    /**
     * Function that prints the interconnection binding
@@ -341,26 +297,7 @@ class conn_binding
     * @param port_index is i-th port associated with the operand (different from 0 when multi-channels components are considered)
     * @param conn is the reference to the implemented connection
     */
-   void add_connection(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index, connection_objRef conn);
-
-   /**
-    * Return the current connection between two objects, if any
-    * @param op1 is reference to first object
-    * @param op2 is reference to second object
-    * @param operand is i-th operand for second object, where first one is connected
-    * @param port_index is i-th port associated with the operand (different from 0 when multi-channels components are considered)
-    * @return conn is the reference to the implemented connection
-    */
-   connection_objRef get_connection(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index) const;
-
-   /**
-    * Checks if there is a connection between two objects
-    * @param op1 is reference to first object
-    * @param op2 is reference to second object
-    * @param operand is i-th operand for second object, where first one is connected
-    * @param port_index is i-th port associated with the operand (different from 0 when multi-channels components are considered)
-    */
-   bool is_connection(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index) const;
+   void AddConnectionCB(const generic_objRef op1, const generic_objRef op2, unsigned int operand, unsigned int port_index, connection_objRef conn);
 
    /**
     * Returns the map containing all the data transfers
@@ -372,44 +309,15 @@ class conn_binding
     */
    unsigned int determine_bit_level_mux() const;
 
-   /**
-    * Returns the map containing all the connection implementations
-    */
-   const conn_implementation_map& get_connection_implementations() const;
-
-   /**
-    * Adds a generic command port to proper set
-    * @param obj is refcount to generic_obj class associated with port to be added
-    */
-   void add_command_port(const generic_objRef obj)
-   {
-      command_ports.insert(obj);
-   }
-
-   /**
-    * Returns set of generic command ports
-    * @return a set of all refcount to generic_obj's associated to ports
-    */
-   CustomOrderedSet<generic_objRef> get_command_ports() const
-   {
-      return command_ports;
-   }
-
    const std::map<unsigned int, Selectors>& GetSelectors() const
    {
       return selectors;
    }
 
-   unsigned int get_component_num(const std::string& type) const;
-
-   void add_component(const std::string& type, unsigned int num = 1);
-
    void add_sparse_logic(const generic_objRef so)
    {
       sparse_logic.insert(so);
    }
-
-   const std::map<std::string, unsigned int>& get_components() const;
 
    /**
     * Add the interconnection to the structural representation of the datapath
@@ -418,7 +326,7 @@ class conn_binding
 
    generic_objRef get_constant_obj(const std::string& value, const std::string& param, unsigned int precision);
 
-   std::map<const_param, generic_objRef> get_constant_objs() const;
+   const std::map<const_param, generic_objRef>& get_constant_objs() const;
 
    /**
     * @brief factory method to create the right conn_binding depending on the flow
@@ -429,8 +337,10 @@ class conn_binding
     * @return
     */
    static conn_bindingRef create_conn_binding(const HLS_managerRef _HLSMgr, const hlsRef _HLS, const BehavioralHelperConstRef _BH, const ParameterConstRef _parameters);
+
+   void cleanInternals();
 };
 /// Refcount definition of the class
-typedef refcount<conn_binding> conn_bindingRef;
+using conn_bindingRef = refcount<conn_binding>;
 
 #endif

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -94,8 +94,8 @@ struct FunctionEdgeInfo : public EdgeInfo
     */
    FunctionEdgeInfo();
 };
-typedef refcount<FunctionEdgeInfo> FunctionEdgeInfoRef;
-typedef refcount<const FunctionEdgeInfo> FunctionEdgeInfoConstRef;
+using FunctionEdgeInfoRef = refcount<FunctionEdgeInfo>;
+using FunctionEdgeInfoConstRef = refcount<const FunctionEdgeInfo>;
 
 /**
  * The info associated with the call graph
@@ -107,8 +107,8 @@ struct CallGraphInfo : public GraphInfo
    std::map<unsigned int, FunctionBehaviorRef> behaviors;
 };
 /// The refcount definition for CallGraphInfo
-typedef refcount<CallGraphInfo> CallGraphInfoRef;
-typedef refcount<const CallGraphInfo> CallGraphInfoConstRef;
+using CallGraphInfoRef = refcount<CallGraphInfo>;
+using CallGraphInfoConstRef = refcount<const CallGraphInfo>;
 
 /**
  * This class collects information concerning the set of functions that will be analyzed by the PandA framework
@@ -138,14 +138,18 @@ class CallGraphsCollection : public graphs_collection
    inline EdgeDescriptor AddEdge(const vertex source, const vertex target, const int selector)
    {
       if(ExistsEdge(source, target))
+      {
          return AddSelector(source, target, selector);
+      }
       else
+      {
          return InternalAddEdge(source, target, selector, EdgeInfoRef(new FunctionEdgeInfo()));
+      }
    }
 };
 /// The refcount definition for CallGraphInfo
-typedef refcount<CallGraphsCollection> CallGraphsCollectionRef;
-typedef refcount<const CallGraphsCollection> CallGraphsCollectionConstRef;
+using CallGraphsCollectionRef = refcount<CallGraphsCollection>;
+using CallGraphsCollectionConstRef = refcount<const CallGraphsCollection>;
 
 /**
  * This class is the view of a call graph
@@ -207,8 +211,8 @@ class CallGraph : public graph
    void WriteDot(const std::string& file_name) const;
 };
 /// The refcount definition for CallGraph
-typedef refcount<CallGraph> CallGraphRef;
-typedef refcount<const CallGraph> CallGraphConstRef;
+using CallGraphRef = refcount<CallGraph>;
+using CallGraphConstRef = refcount<const CallGraph>;
 
 /**
  * Functor used by write_graphviz to write the label of the vertices of a function graph

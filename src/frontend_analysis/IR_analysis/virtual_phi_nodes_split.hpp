@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,9 +74,6 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
    /// Basic block introduced after entry
    blocRef next_entry;
 
-   /// Basic block splitting information: if replace[source, target] exists, then between source and target replace[source, target] has been inserted
-   std::map<std::pair<unsigned int, unsigned int>, unsigned int> replace;
-
    /**
     * virtually split a particular phi in two or more assignments
     * @param phi is the phi
@@ -84,7 +81,7 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
     * @param list_of_bloc is basic block of the current function
     * @param TM is the tree manager
     */
-   void virtual_split_phi(tree_nodeRef phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM);
+   void virtual_split_phi(tree_nodeRef phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM, std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace);
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -100,7 +97,7 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
     * @param function_id is the index of the function
     * @param design_flow_manager is the design flow manager
     */
-   virtual_phi_nodes_split(const ParameterConstRef Param, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
+   virtual_phi_nodes_split(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor
@@ -108,7 +105,7 @@ class virtual_phi_nodes_split : public FunctionFrontendFlowStep
    ~virtual_phi_nodes_split() override;
 
    /**
-    * Performes the virtual splitting of the phi-nodes.
+    * Performs the virtual splitting of the phi-nodes.
     */
    DesignFlowStep_Status InternalExec() override;
 };

@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -83,7 +83,7 @@ struct hash
 };
 
 /*! \cond PRIVATE */
-template<int NumVars>
+template<uint32_t NumVars>
 struct hash<static_truth_table<NumVars, true>>
 {
   inline std::size_t operator()( const static_truth_table<NumVars, true>& tt ) const

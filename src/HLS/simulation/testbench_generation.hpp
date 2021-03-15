@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -73,7 +73,7 @@ class TestbenchGeneration
     * @param hls_mgr is the HLS manager
     * @param design_flow_manager is the design flow manager
     */
-   TestbenchGeneration(const ParameterConstRef parameters, const HLS_managerRef hls_mgr, const DesignFlowManagerConstRef design_flow_manager);
+   TestbenchGeneration(const ParameterConstRef parameters, const HLS_managerRef _HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

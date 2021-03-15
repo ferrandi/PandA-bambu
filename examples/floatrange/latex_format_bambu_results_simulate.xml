@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<latex_table_format max_column_size="7">
+   <column name="Benchmark Name">
+      <source_name value="benchmark_name"/>
+      <alignment value="l|"/>
+      <text_format value="text"/>
+   </column>
+   <column name="Num Cycles">
+      <source_name value="CYCLES"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="0"/>
+      <total value="overall"/>
+   </column>
+   <column name="Time(s)">
+      <source_name value="HLS_execution_time"/>
+      <alignment value="c|"/>
+      <text_format value="number"/>
+      <precision value="2"/>
+      <total value="overall"/>
+   </column>
+</latex_table_format>

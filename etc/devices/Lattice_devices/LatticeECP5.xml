@@ -1,0 +1,223 @@
+<?xml version="1.0"?>
+<synthesis>
+   <flow name="Synthesis">
+      <step id="lattice_flow" config="lattice_flow"/>
+   </flow>
+   <flow name="Characterization">
+      <step id="lattice_flow" config="lattice_flowC"/>
+   </flow>
+   <diamondc config="lattice_flowC">
+      <cmd name="proc dump_statistics_map { } {"/>
+      <cmd name="  set LSLICES 0"/>
+      <cmd name="  set Registers 0"/>
+      <cmd name="  set BRAMFIFO 0"/>
+      <cmd name="  set BIOB 0"/>
+      <cmd name="  set DSPs 0"/>
+      <cmd name="  set design_delay 0"/>
+      <cmd name="  set lse_design_delay 0"/>
+      <cmd name="  set map_design_delay 0"/>
+      <cmd name="  set map_file [open ${__lattice_outdir__}/top_top_imp.mrp r]"/>
+      <cmd name="  set map_log [read $map_file]"/>
+      <cmd name="  regexp --  {\s*Number of SLICEs:\s*([0-9]+)} $map_log ignore LSLICES"/>
+      <cmd name="  regexp --  {\s*Number of Used DSP MULT Sites:\s*([0-9]+)} $map_log ignore DSPs"/>
+      <cmd name="  regexp --  {\s*Number of registers:\s*([0-9]+)} $map_log ignore Registers"/>
+      <cmd name="  regexp --  {\s*Number of block RAMs:\s*([0-9]+)} $map_log ignore BRAMFIFO"/>
+      <cmd name="  puts $LSLICES"/>
+      <cmd name="  regexp --  {\s*Number of PIO sites used:\s*([[0-9]+)} $map_log ignore BIOB"/>
+      <cmd name="  file delete -force ${__lattice_report__} "/>
+      <cmd name="  set twr_file [open ${__lattice_outdir__}/${__top_id__}_lse.twr r]"/>
+      <cmd name="  set twr_log [read $twr_file]"/>
+      <cmd name="  regexp --  {\s*Report:\s*([[0-9.]+)} $twr_log ignore lse_design_delay"/>
+      <cmd name="  if { [expr {$lse_design_delay == 0}] } {"/>
+      <cmd name="    regexp --  {\s*Warning:\s*([[0-9.]+)} $twr_log ignore lse_design_delay"/>
+      <cmd name="  }"/>
+      <cmd name="  set map_twr_file [open ${__lattice_outdir__}/top_top_imp.tw1 r]"/>
+      <cmd name="  set map_twr_log [read $map_twr_file]"/>
+      <cmd name="  regexp --  {\s*Report:\s*([[0-9.]+)} $map_twr_log ignore map_design_delay"/>
+      <cmd name="  if { [expr {$map_design_delay == 0}] } {"/>
+      <cmd name="      regexp -- {\s*Warning:\s*([[0-9.]+MHz)} $map_twr_log ignore map_design_delay"/>
+      <cmd name="      if { [expr {$map_design_delay == 0}] } {"/>
+      <cmd name="         regexp --  {\s*Warning:\s*([[0-9.]+)} $map_twr_log ignore map_design_delay"/>
+      <cmd name="      } else {"/>
+      <cmd name="         regexp -- {\s*Warning:\s*([[0-9.]+)} $map_twr_log ignore map_design_delay"/>
+      <cmd name="         set map_design_delay [expr {1000 / $map_design_delay}]"/>
+      <cmd name="      }"/>
+      <cmd name="  } else {"/>
+      <cmd name="      set design_delay 0"/>
+      <cmd name="      regexp -- {\s*Report:\s*([[0-9.]+MHz)} $map_twr_log ignore map_design_delay"/>
+      <cmd name="      if { [expr {$map_design_delay == 0}] } {"/>
+      <cmd name="          regexp --  {\s*Report:\s*([[0-9.]+)} $map_twr_log ignore map_design_delay"/>
+      <cmd name="      } else {"/>
+      <cmd name="          regexp -- {\s*Report:\s*([[0-9.]+)} $map_twr_log ignore map_design_delay"/>
+      <cmd name="          set map_design_delay [expr {1000 / $map_design_delay}]"/>
+      <cmd name="      }"/>
+      <cmd name="  }"/>
+      <cmd name="  if { [expr {$lse_design_delay &lt; $map_design_delay &amp;&amp; $lse_design_delay != 0}] } {"/>
+      <cmd name="      set design_delay [expr {$lse_design_delay}]"/>
+      <cmd name="  } else {"/>
+      <cmd name="      set design_delay [expr {$map_design_delay}]"/>
+      <cmd name="  }"/>
+      <cmd name="  set ofile_report [open ${__lattice_report__} w]"/>
+      <cmd name="  puts $ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;LATTICE_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_SLICE\\&quot; value=\\&quot;$LSLICES\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_REGISTERS\\&quot; value=\\&quot;$Registers\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_MEM\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_DELAY\\&quot; value=\\&quot;$design_delay\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="  close $ofile_report"/>
+      <cmd name="}; #END PROC"/>
+      <cmd name="prj_project new -name top -impl top_imp -dev ${__target_device__} -impl_dir ${__lattice_outdir__}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 {lse_frequency=${__clk_freq__}}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 {lse_cmdline_args=-top ${__top_id__}}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_overmap_device=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_timing_driven=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_timing_driven_node_replication=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_timing_driven_pack=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_reg_retiming=True"/>
+      <cmd name="prj_src add ${__sdc_file__}"/>
+      <cmd name="${__sources_macro_list__}"/>
+      <cmd name="prj_syn set lse"/>
+      <cmd name="prj_run Synthesis -impl top_imp -forceOne"/>
+      <cmd name="prj_run Map -impl top_imp -forceOne"/>
+      <cmd name="prj_run Map -impl top_imp -task MapTrace -forceOne"/>
+      <cmd name="dump_statistics_map"/>
+      <cmd name="prj_project close"/>
+      <cmd name="exit"/>
+   </diamondc>
+   <diamondc config="lattice_flow">
+      <cmd name="proc dump_statistics_map { } {"/>
+      <cmd name="  set LSLICES 0"/>
+      <cmd name="  set Registers 0"/>
+      <cmd name="  set BRAMFIFO 0"/>
+      <cmd name="  set BIOB 0"/>
+      <cmd name="  set DSPs 0"/>
+      <cmd name="  set design_delay 0"/>
+      <cmd name="  set map_file [open ${__lattice_outdir__}/top_top_imp.mrp r]"/>
+      <cmd name="  set map_log [read $map_file]"/>
+      <cmd name="  regexp --  {\s*Number of SLICEs:\s*([0-9]+)} $map_log ignore LSLICES"/>
+      <cmd name="  regexp --  {\s*Number of Used DSP MULT Sites:\s*([0-9]+)} $map_log ignore DSPs"/>
+      <cmd name="  regexp --  {\s*Number of registers:\s*([0-9]+)} $map_log ignore Registers"/>
+      <cmd name="  regexp --  {\s*Number of block RAMs:\s*([0-9]+)} $map_log ignore BRAMFIFO"/>
+      <cmd name="  puts $LSLICES"/>
+      <cmd name="  regexp --  {\s*Number of PIO sites used:\s*([[0-9]+)} $map_log ignore BIOB"/>
+      <cmd name="  file delete -force ${__lattice_report__} "/>
+      <cmd name="  set twr_file [open ${__lattice_outdir__}/top_top_imp.tw1 r]"/>
+      <cmd name="  set twr_log [read $twr_file]"/>
+      <cmd name="  regexp --  {\s*Report:\s*([[0-9.]+)} $twr_log ignore design_delay"/>
+       <cmd name="  if { [expr {$design_delay == 0}] } {"/>
+      <cmd name="    regexp --  {\s*Warning:\s*([[0-9.]+)} $twr_log ignore design_delay"/>
+      <cmd name="  }"/>
+     <cmd name="  set ofile_report [open ${__lattice_report__} w]"/>
+      <cmd name="  puts $ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;LATTICE_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_SLICE\\&quot; value=\\&quot;$LSLICES\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_REGISTERS\\&quot; value=\\&quot;$Registers\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_MEM\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_DELAY\\&quot; value=\\&quot;$design_delay\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="  close $ofile_report"/>
+      <cmd name="}; #END PROC"/>
+      <cmd name="proc dump_statistics_par { } {"/>
+      <cmd name="  set LSLICES 0"/>
+      <cmd name="  set Registers 0"/>
+      <cmd name="  set BRAMFIFO 0"/>
+      <cmd name="  set BIOB 0"/>
+      <cmd name="  set ALU54s 0"/>
+      <cmd name="  set ALU24s 0"/>
+      <cmd name="  set DSP9s 0"/>
+      <cmd name="  set DSP18s 0"/>
+      <cmd name="  set DSPs 0"/>
+      <cmd name="  set design_delay 0"/>
+      <cmd name="  set par_file [open ${__lattice_outdir__}/top_top_imp.par r]"/>
+      <cmd name="  set par_log [read $par_file]"/>
+      <cmd name="  set map_file [open ${__lattice_outdir__}/top_top_imp.mrp r]"/>
+      <cmd name="  set map_log [read $map_file]"/>
+      <cmd name="  regexp --  {\s*\\n   SLICE\s*([0-9]+)} $par_log ignore LSLICES"/>
+      <cmd name="  puts $LSLICES"/>
+      <cmd name="  regexp --  {\s*\\n   EBR\s*([0-9]+)} $par_log ignore BRAMFIFO"/>
+      <cmd name="  regexp --  {\s*\\n   ALU54\s*([0-9]+)} $par_log ignore ALU54s"/>
+      <cmd name="  regexp --  {\s*\\n   ALU24\s*([0-9]+)} $par_log ignore ALU24s"/>
+      <cmd name="  regexp --  {\s*\\n   MULT9\s*([0-9]+)} $par_log ignore DSP9s"/>
+      <cmd name="  regexp --  {\s*\\n   MULT18\s*([0-9]+)} $par_log ignore DSP18s"/>
+      <cmd name="  set DSPs [expr {$DSP18s + $DSP9s + $ALU54s + $ALU24s}]"/>
+      <cmd name="  regexp --  {\s*Number of registers:\s*([0-9]+)} $map_log ignore Registers"/>
+      <cmd name="  regexp --  {\s*Number of PIO sites used:\s*([[0-9]+)} $map_log ignore BIOB"/>
+      <cmd name="  file delete -force ${__lattice_report__} "/>
+      <cmd name="  set twr_file [open ${__lattice_outdir__}/top_top_imp.twr r]"/>
+      <cmd name="  set twr_log [read $twr_file]"/>
+      <cmd name="  regexp --  {\s*Report:\s*([[0-9.]+)} $twr_log ignore design_delay"/>
+      <cmd name="  if { [expr {$design_delay == 0}] } {"/>
+      <cmd name="      regexp -- {\s*Warning:\s*([[0-9.]+MHz)} $twr_log ignore design_delay"/>
+      <cmd name="      if { [expr {$design_delay == 0}] } {"/>
+      <cmd name="          regexp --  {\s*Warning:\s*([[0-9.]+)} $twr_log ignore design_delay"/>
+      <cmd name="      } else {"/>
+      <cmd name="          regexp -- {\s*Warning:\s*([[0-9.]+)} $twr_log ignore design_delay"/>
+      <cmd name="          set design_delay [expr {1000 / $design_delay}]"/>
+      <cmd name="      }"/>
+      <cmd name="   } else {"/>
+      <cmd name="      set design_delay 0"/>
+      <cmd name="      regexp -- {\s*Report:\s*([[0-9.]+MHz)} $twr_log ignore design_delay"/>
+      <cmd name="      if { [expr {$design_delay == 0}] } {"/>
+      <cmd name="          regexp --  {\s*Report:\s*([[0-9.]+)} $twr_log ignore design_delay"/>
+      <cmd name="      } else {"/>
+      <cmd name="          regexp -- {\s*Report:\s*([[0-9.]+)} $twr_log ignore design_delay"/>
+      <cmd name="          set design_delay [expr {1000 / $design_delay}]"/>
+      <cmd name="      }"/>
+      <cmd name="   }"/>
+      <cmd name="  set ofile_report [open ${__lattice_report__} w]"/>
+      <cmd name="  puts $ofile_report &quot;&lt;?xml version=\\&quot;1.0\\&quot;?&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;document&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;section stringID=\\&quot;LATTICE_SYNTHESIS_SUMMARY\\&quot;&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_SLICE\\&quot; value=\\&quot;$LSLICES\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_REGISTERS\\&quot; value=\\&quot;$Registers\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_MEM\\&quot; value=\\&quot;$BRAMFIFO\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_IOPIN\\&quot; value=\\&quot;$BIOB\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_DSPS\\&quot; value=\\&quot;$DSPs\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;      &lt;item stringID=\\&quot;LATTICE_DELAY\\&quot; value=\\&quot;$design_delay\\&quot;/&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;    &lt;/section&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;  &lt;/application&gt;&quot;"/>
+      <cmd name="  puts $ofile_report &quot;&lt;/document&gt;&quot;"/>
+      <cmd name="  close $ofile_report"/>
+      <cmd name="}; #END PROC"/>
+      <cmd name="prj_project new -name top -impl top_imp -dev ${__target_device__} -impl_dir ${__lattice_outdir__}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 {lse_frequency=${__clk_freq__}}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 {lse_cmdline_args=-top ${__top_id__}}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_timing_driven=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_timing_driven_node_replication=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_timing_driven_pack=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 map_reg_retiming=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 par_create_delay_statistic_file=True"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 par_place_effort_level=4"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 {maptrce_analysis_option=Standard Setup With Hold Analysis on IOs}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 {partrce_analysis_option=Standard Setup With Hold Analysis on IOs}"/>
+      <cmd name="prj_strgy set_value -strategy Strategy1 {par_routing_method=CDR}"/>
+      <cmd name="prj_src add ${__sdc_file__}"/>
+      <cmd name="${__sources_macro_list__}"/>
+      <cmd name="source ${__backend_script_extensions__}" condition="${__has_script_extensions__}"/>
+      <cmd name="prj_syn set lse"/>
+      <cmd name="prj_run Synthesis -impl top_imp -forceOne"/>
+      <cmd name="prj_run Map -impl top_imp -forceOne"/>
+      <cmd name="prj_run Map -impl top_imp -task MapTrace -forceOne"/>
+      <cmd name="dump_statistics_map"/>
+      <cmd name="prj_run PAR -impl top_imp -forceOne"/>
+      <cmd name="prj_run PAR -impl top_imp -task PARTrace -forceOne"/>
+      <cmd name="dump_statistics_par"/>
+      <cmd name="prj_run Export -impl top_imp -task Bitgen -forceOne"/>
+      <cmd name="prj_project close"/>
+      <cmd name="exit"/>
+   </diamondc>
+</synthesis>

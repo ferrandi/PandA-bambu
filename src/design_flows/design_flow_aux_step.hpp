@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,11 +48,10 @@
 #include <string>               // for string
 
 /// Identifier of the auxiliary design flow steps
-typedef enum
-{
+using AuxDesignFlowStepType = enum AuxDesignFlowStepType {
    DESIGN_FLOW_ENTRY, //! Entry point for the design flow
    DESIGN_FLOW_EXIT   //! Exit point for the design flow
-} AuxDesignFlowStepType;
+};
 
 /**
  * Class describing auxiliary steps in design flow

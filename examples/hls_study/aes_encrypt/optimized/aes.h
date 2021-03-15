@@ -63,7 +63,7 @@
 /* ************* data type define ************************* */
 int type;
 int nb;
-int round;
+int i_round;
 int key[32];
 int statemt[32];
 int word[4][120];
@@ -81,3 +81,6 @@ int AddRoundKey_InversMixColumn (int *, int, int);
 int AddRoundKey (int *, int, int);
 int encrypt (int *, int *, int);
 int decrypt (int *, int *, int);
+
+extern void __builtin_bambu_time_start();
+extern void __builtin_bambu_time_stop();

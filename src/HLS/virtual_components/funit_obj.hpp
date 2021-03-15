@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -119,6 +119,6 @@ class funit_obj : public generic_obj
    }
 };
 
-typedef refcount<funit_obj> funit_objRef;
+using funit_objRef = refcount<funit_obj>;
 
 #endif

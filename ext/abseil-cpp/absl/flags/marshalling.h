@@ -33,16 +33,16 @@
 // * `double`
 // * `std::string`
 // * `std::vector<std::string>`
-// * `absl::LogSeverity` (provided here due to dependency ordering)
+// * `absl::LogSeverity` (provided natively for layering reasons)
 //
 // Note that support for integral types is implemented using overloads for
 // variable-width fundamental types (`short`, `int`, `long`, etc.). However,
 // you should prefer the fixed-width integral types (`int32_t`, `uint64_t`,
 // etc.) we've noted above within flag definitions.
-
 //
 // In addition, several Abseil libraries provide their own custom support for
-// Abseil flags.
+// Abseil flags. Documentation for these formats is provided in the type's
+// `AbslParseFlag()` definition.
 //
 // The Abseil time library provides the following support for civil time values:
 //
@@ -165,9 +165,11 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/config.h"
 #include "absl/strings/string_view.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace flags_internal {
 
 // Overloads of `AbslParseFlag()` and `AbslUnparseFlag()` for fundamental types.
@@ -256,6 +258,7 @@ enum class LogSeverity : int;
 bool AbslParseFlag(absl::string_view, absl::LogSeverity*, std::string*);
 std::string AbslUnparseFlag(absl::LogSeverity);
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_FLAGS_MARSHALLING_H_

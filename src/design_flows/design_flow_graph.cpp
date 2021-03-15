@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -109,7 +109,9 @@ void DesignFlowGraph::WriteDot(const std::string& file_name, const int) const
 {
    const std::string output_directory = collection->parameters->getOption<std::string>(OPT_dot_directory) + "/design_flow/";
    if(!boost::filesystem::exists(output_directory))
+   {
       boost::filesystem::create_directories(output_directory);
+   }
    const std::string full_name = output_directory + file_name + ".dot";
    VertexWriterConstRef design_flow_step_writer(new DesignFlowStepWriter(this));
    EdgeWriterConstRef design_flow_edge_writer(new DesignFlowEdgeWriter(this));

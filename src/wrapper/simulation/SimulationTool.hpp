@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -56,15 +56,7 @@ class SimulationTool
 {
  public:
    /// supported synthesis tools
-   typedef enum
-   {
-      UNKNOWN = 0,
-      MODELSIM,
-      ISIM,
-      XSIM,
-      ICARUS,
-      VERILATOR
-   } type_t;
+   using type_t = enum { UNKNOWN = 0, MODELSIM, ISIM, XSIM, ICARUS, VERILATOR };
 
  protected:
    /// class containing all the parameters
@@ -132,5 +124,5 @@ class SimulationTool
    virtual void Clean() const;
 };
 /// refcount definition of the class
-typedef refcount<SimulationTool> SimulationToolRef;
+using SimulationToolRef = refcount<SimulationTool>;
 #endif

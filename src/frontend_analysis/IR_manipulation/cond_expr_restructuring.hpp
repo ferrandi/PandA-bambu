@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,7 +80,7 @@ class CondExprRestructuring : public FunctionFrontendFlowStep
     * @param first is true if first operand has to be considered, false if second oeprand has to be considered
     * @return the chained gimple_assignment if all conditions hold
     */
-   tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first) const;
+   tree_nodeRef IsCondExprChain(const tree_nodeConstRef tn, const bool first, bool is_third_node) const;
 
    /**
     * Return the set of analyses in relationship with this design step

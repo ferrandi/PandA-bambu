@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -41,11 +41,7 @@
  */
 
 /// Autoheader include
-#include "config_HAVE_ALTERA.hpp"
-#include "config_HAVE_DESIGN_COMPILER.hpp"
 #include "config_HAVE_EXPERIMENTAL.hpp"
-#include "config_HAVE_LATTICE.hpp"
-#include "config_HAVE_XILINX.hpp"
 
 #include <boost/filesystem/operations.hpp>
 
@@ -64,9 +60,7 @@
 #include "target_manager.hpp"
 #include "technology_manager.hpp"
 
-#if HAVE_XILINX || HAVE_ALTERA || HAVE_LATTICE || HAVE_DESIGN_COMPILER
 #include "RTL_characterization.hpp"
-#endif
 #if HAVE_EXPERIMENTAL
 #include "core_generation.hpp"
 #endif
@@ -128,11 +122,15 @@ int main(int argc, char* argv[])
       auto output_level = parameters->getOption<int>(OPT_output_level);
       STOP_TIME(cpu_time);
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
+      {
          parameters->PrintFullHeader(std::cerr);
+      }
 
       /// eucalyptus does not perform a clock constrained synthesis
       if(!parameters->isOption(OPT_clock_period))
+      {
          parameters->setOption(OPT_clock_period, 0.0);
+      }
 
       // Technology library manager
       technology_managerRef TM = technology_managerRef(new technology_manager(parameters));
@@ -155,13 +153,11 @@ int main(int argc, char* argv[])
                                                                                    GetPointer<const TechnologyFlowStepFactory>(technology_flow_step_factory)->CreateTechnologyFlowStep(TechnologyFlowStep_Type::LOAD_TECHNOLOGY);
       design_flow_manager->AddStep(technology_design_flow_step);
 
-#if HAVE_XILINX || HAVE_ALTERA || HAVE_LATTICE || HAVE_DESIGN_COMPILER
       if(parameters->isOption(OPT_component_name))
       {
          const DesignFlowStepRef design_flow_step(new RTLCharacterization(target, parameters->getOption<std::string>(OPT_component_name), design_flow_manager, parameters));
          design_flow_manager->AddStep(design_flow_step);
       }
-#endif
       design_flow_manager->Exec();
 
 #if HAVE_EXPERIMENTAL

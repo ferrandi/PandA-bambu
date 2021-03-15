@@ -891,7 +891,7 @@ inline return_code read_aiger( std::istream& in, const aiger_reader& reader, dia
  */
 inline return_code read_aiger( const std::string& filename, const aiger_reader& reader, diagnostic_engine* diag = nullptr )
 {
-  std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::in );
+  std::ifstream in( detail::word_exp_filename( filename ), std::ifstream::binary );
   return read_aiger( in, reader, diag );
 }
 

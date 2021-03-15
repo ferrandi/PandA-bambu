@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2018-2020 Politecnico di Milano
+ *              Copyright (c) 2018-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -82,6 +82,7 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case pointer_type_K:
          base_type_index = tree_helper::get_pointed_type(TM, status.back().first->index);
          break;
+      case real_type_K:
       case integer_type_K:
          base_type_index = status.back().first->index;
          break;
@@ -89,7 +90,6 @@ void MemoryInitializationWriter::Process(const std::string& content)
       case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
-      case real_type_K:
       case complex_type_K:
       case record_type_K:
       case union_type_K:
@@ -148,12 +148,15 @@ void MemoryInitializationWriter::Process(const std::string& content)
          size = tree_helper::size(TM, base_type_index);
          binary_value = ConvertInBinary(content, size, false, tree_helper::is_unsigned(TM, base_type_index));
          break;
+      case real_type_K:
+         size = tree_helper::size(TM, base_type_index);
+         binary_value = ConvertInBinary(content, size, true, false);
+         break;
       case pointer_type_K:
       case array_type_K:
       case boolean_type_K:
       case CharType_K:
       case enumeral_type_K:
-      case real_type_K:
       case complex_type_K:
       case record_type_K:
       case union_type_K:

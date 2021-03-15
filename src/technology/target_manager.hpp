@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -108,8 +108,8 @@ class target_manager
    const target_deviceRef get_target_device() const;
 };
 /// refcount definition of the class
-typedef refcount<target_manager> target_managerRef;
+using target_managerRef = refcount<target_manager>;
 /// constant refcount definition of the class
-typedef refcount<const target_manager> target_managerConstRef;
+using target_managerConstRef = refcount<const target_manager>;
 
 #endif

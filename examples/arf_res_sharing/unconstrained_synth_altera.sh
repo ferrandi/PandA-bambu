@@ -6,7 +6,7 @@ export PATH=../../src:../../../src:/opt/panda/bin:$PATH
 mkdir -p unconstrained_synth_altera
 cd unconstrained_synth_altera
 echo "# Quartus II synthesis and ICARUS simulation"
-bambu -v4 $root_dir/module.c --generate-tb=$root_dir/test.xml --simulator=ICARUS --device-name=EP2C70F896C6 --evaluation --experimental-setup=BAMBU --generate-interface=WB4 --cprf=0.9 --skip-pipe-parameter=1
+timeout 2h bambu -v4 $root_dir/module.c --generate-tb=$root_dir/test.xml --simulator=ICARUS --device-name=EP2C70F896C6 --evaluation --experimental-setup=BAMBU --generate-interface=WB4 --cprf=0.9 --skip-pipe-parameter=1
 return_value=$?
 if test $return_value != 0; then
    exit $return_value

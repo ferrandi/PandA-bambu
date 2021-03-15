@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file phi_opt.hpp
- * @brief Analysis step that optimize the phis starting from the GCC IR
+ * @brief Analysis step that optimize the phis starting from the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$

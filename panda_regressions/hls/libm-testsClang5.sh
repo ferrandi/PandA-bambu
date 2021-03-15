@@ -1,5 +1,5 @@
 #!/bin/bash
-$(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu -llibm-tests_list -o output_libm-tests_Clang -b$(dirname $0) --table=libm-testsClang.tex --name="LibmTestsClang" \
+$(dirname $0)/../../etc/scripts/test_panda.py --tool=bambu -llibm-tests_list -o output_libm-tests_Clang5 -b$(dirname $0) --table=libm-testsClang5.tex --name="LibmTestsClang" \
    --args="--configuration-name=soft-floatC5 --compiler=I386_CLANG5 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN -O0 -DFAITHFULLY_ROUNDED" \
    --args="--configuration-name=soft-floatC5-libm --compiler=I386_CLANG5 --soft-float --simulate --experimental-setup=BAMBU -lm --reset-type=sync -DNO_MAIN --libm-std-rounding" \
   $@

@@ -103,6 +103,7 @@ namespace percy
             std::vector<int> triv_functions; ///< Trivial outputs
             std::vector<int> synth_functions; ///< Nontrivial outputs
             std::vector<kitty::dynamic_truth_table> compiled_primitives; ///< Collection of concrete truth tables induced by primitives
+            std::vector<kitty::dynamic_truth_table> compiled_functions;
 
         public:
             int fanin = 2; ///< The fanin of the Boolean chain steps
@@ -320,6 +321,28 @@ namespace percy
                 return synth_functions[i];
             }
 
+            void add_function( kitty::dynamic_truth_table const& tt )
+            {
+              /* a function is an internal function */
+              // assert( tt.num_vars() == nr_in );
+
+              /* the function must be normal */
+              assert( kitty::get_bit( tt, 0 ) == false );
+
+              compiled_functions.emplace_back( tt );
+            }
+
+            uint32_t get_nr_compiled_functions() const
+            {
+              return compiled_functions.size();
+            }
+
+            kitty::dynamic_truth_table get_compiled_function( uint32_t index ) const
+            {
+              assert( index < compiled_functions.size() );
+              return compiled_functions.at( index );
+            }
+
             void set_primitive(Primitive primitive)
             {
                 compiled_primitives.clear();
@@ -347,6 +370,18 @@ namespace percy
                 }
             }
 
+            void add_primitive( kitty::dynamic_truth_table const& tt )
+            {
+              if ( kitty::is_normal( tt ) )
+              {
+                compiled_primitives.push_back( tt );
+              }
+              else
+              {
+                compiled_primitives.push_back( ~tt ); 
+              }
+            }
+
             bool is_primitive_set() const
             {
                 return compiled_primitives.size() > 0;
@@ -358,11 +393,16 @@ namespace percy
                 return compiled_primitives;
             }
 
+            const std::vector<kitty::dynamic_truth_table>&
+            get_compiled_functions() const
+            {
+              return compiled_functions;
+            }
+
             void clear_primitive()
             {
                 compiled_primitives.clear();
             }
-
     };
 
 }

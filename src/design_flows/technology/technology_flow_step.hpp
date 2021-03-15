@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -147,7 +147,7 @@ class TechnologyFlowStep : public DesignFlowStep
     * @param dependencies is where relationships will be stored
     * @param relationship_type is the type of relationship to be computed
     */
-   void ComputeRelationships(DesignFlowStepSet& relationship, const DesignFlowStep::RelationshipType relationship_type) override;
+   void ComputeRelationships(DesignFlowStepSet& steps, const DesignFlowStep::RelationshipType relationship_type) override;
 
    /**
     * Return the factory to create this type of steps

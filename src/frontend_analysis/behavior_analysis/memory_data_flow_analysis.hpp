@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,7 +74,7 @@ class MemoryDataFlowAnalysis : public DataDependenceComputation
     * @param function_index is the index of the function
     * @param parameters is the set of the parameters
     */
-   MemoryDataFlowAnalysis(const application_managerRef AppM, const unsigned int function_index, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
+   MemoryDataFlowAnalysis(const application_managerRef AppM, const unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager, const ParameterConstRef parameters);
 
    /**
     *  Destructor

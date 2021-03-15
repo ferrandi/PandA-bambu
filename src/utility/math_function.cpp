@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -54,7 +54,7 @@
 /// Header include
 #include "math_function.hpp"
 
-long double get_point_line_distance(const AugmentedVector<long double>& point, AugmentedVector<long double>& line_point1, AugmentedVector<long double>& line_point2)
+long double get_point_line_distance(const AugmentedVector<long double>& point, const AugmentedVector<long double>& line_point1, const AugmentedVector<long double>& line_point2)
 {
    long double t;
    long double dq = 0;

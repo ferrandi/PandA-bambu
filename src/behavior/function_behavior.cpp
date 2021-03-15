@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -66,15 +66,19 @@
 #include "loops.hpp"                            // for ProfilingInformatio...
 #include "op_graph.hpp"                         // for OpGraph, OpGraphCon...
 #include "operations_graph_constructor.hpp"     // for OpGraphRef, operati...
-#include <boost/graph/adjacency_list.hpp>       // for adjacency_list
-#include <boost/graph/filtered_graph.hpp>       // for filtered_graph<>::v...
-#include <boost/iterator/filter_iterator.hpp>   // for filter_iterator
-#include <boost/iterator/iterator_facade.hpp>   // for operator!=, operator++
-#include <boost/tuple/tuple.hpp>                // for tie
-#include <list>                                 // for list, _List_const_i...
-#include <ostream>                              // for operator<<, basic_o...
-#include <string>                               // for operator+, char_traits
-#include <utility>                              // for pair
+#include "tree_helper.hpp"
+#include "tree_manager.hpp" // for pipeline_enabled
+#include "tree_node.hpp"    // for pipeline_enabled
+#include "utility.hpp"
+#include <boost/graph/adjacency_list.hpp>     // for adjacency_list
+#include <boost/graph/filtered_graph.hpp>     // for filtered_graph<>::v...
+#include <boost/iterator/filter_iterator.hpp> // for filter_iterator
+#include <boost/iterator/iterator_facade.hpp> // for operator!=, operator++
+#include <boost/tuple/tuple.hpp>              // for tie
+#include <list>                               // for list, _List_const_i...
+#include <ostream>                            // for operator<<, basic_o...
+#include <string>                             // for operator+, char_traits
+#include <utility>                            // for pair
 #if HAVE_HOST_PROFILING_BUILT
 #include "profiling_information.hpp" // for BBGraphConstRef
 #endif
@@ -164,14 +168,15 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       parm_decl_stored(),
       parameters(_parameters),
       dereference_unknown_address(false),
-      pointer_type_conversion(false),
       unaligned_accesses(false),
       bb_version(1),
       bitvalue_version(1),
       has_globals(false),
       has_undefined_function_receiveing_pointers(false),
       state_variables(),
-      pipelining_enabled(_parameters->isOption(OPT_pipelining) && _parameters->getOption<bool>(OPT_pipelining)),
+      pipeline_enabled(false),
+      simple_pipeline(false),
+      initiation_time(1),
       bb_reachability(),
       feedback_bb_reachability(),
       ogc(new operations_graph_constructor(op_graphs_collection)),
@@ -187,14 +192,71 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       memory_info(),
       packed_vars(false)
 {
+   pipeline_enabled = false;
+   THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K, "Called function_behavior on a node which is not a function_decl");
+   auto* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
+   std::string fname;
+   tree_helper::get_mangled_fname(decl_node, fname);
+   if(!_parameters->isOption(OPT_pipelining))
+   {
+      pipeline_enabled = decl_node->is_pipelined();
+      simple_pipeline = decl_node->is_simple_pipeline();
+      initiation_time = decl_node->get_initiation_time();
+      if(pipeline_enabled && simple_pipeline)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+      }
+      else if(pipeline_enabled)
+      {
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+      }
+   }
+   else
+   {
+      auto tmp_string = _parameters->getOption<std::string>(OPT_pipelining);
+      if(tmp_string == "no-@ll")
+      {
+         // force no pipelining
+      }
+      else if(tmp_string == "@ll")
+      {
+         pipeline_enabled = true;
+         simple_pipeline = true;
+         INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+      }
+      else
+      {
+         std::vector<std::string> funcs_values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
+         for(auto fun_pipeline : funcs_values)
+         {
+            std::vector<std::string> splitted = SplitString(fun_pipeline, "=");
+            if(splitted.size() == 1 && fname == splitted.at(0))
+            {
+               pipeline_enabled = true;
+               simple_pipeline = true;
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=1 for function: " + fname + "\n");
+            }
+            else if(splitted.size() == 2 && fname == splitted.at(0))
+            {
+               pipeline_enabled = true;
+               initiation_time = boost::lexical_cast<int>(splitted.at(1));
+               INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
+            }
+         }
+      }
+   }
 }
 
 FunctionBehavior::~FunctionBehavior()
 {
    if(dominators)
+   {
       delete dominators;
+   }
    if(post_dominators)
+   {
       delete post_dominators;
+   }
 }
 
 OpGraphRef FunctionBehavior::GetOpGraph(FunctionBehavior::graph_type gt)
@@ -573,12 +635,7 @@ void FunctionBehavior::add_dynamic_address(unsigned int node_id)
    /// the object may be written once you have the address
 }
 
-void FunctionBehavior::erase_dynamic_address(unsigned int node_id)
-{
-   dynamic_address.erase(node_id);
-}
-
-void FunctionBehavior::erase_all_dynamic_addresses()
+void FunctionBehavior::clean_dynamic_address()
 {
    dynamic_address.clear();
 }
@@ -611,6 +668,11 @@ const CustomOrderedSet<unsigned int>& FunctionBehavior::get_function_mem() const
    return mem_nodeID;
 }
 
+void FunctionBehavior::clean_function_mem()
+{
+   mem_nodeID.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_dynamic_address() const
 {
    return dynamic_address;
@@ -621,14 +683,29 @@ const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_copied() c
    return parm_decl_copied;
 }
 
+void FunctionBehavior::clean_parm_decl_copied()
+{
+   parm_decl_copied.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_loaded() const
 {
    return parm_decl_loaded;
 }
 
+void FunctionBehavior::clean_parm_decl_loaded()
+{
+   parm_decl_loaded.clear();
+}
+
 const CustomOrderedSet<unsigned int>& FunctionBehavior::get_parm_decl_stored() const
 {
    return parm_decl_stored;
+}
+
+void FunctionBehavior::clean_parm_decl_stored()
+{
+   parm_decl_stored.clear();
 }
 
 CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const application_managerConstRef AppM) const
@@ -647,14 +724,18 @@ CustomOrderedSet<unsigned int> FunctionBehavior::get_local_variables(const appli
    for(unsigned int funParam : funParams)
    {
       if(vars.find(funParam) != vars.end())
+      {
          vars.erase(funParam);
+      }
    }
 
    const CustomSet<unsigned int>& gblVariables = AppM->get_global_variables();
    for(unsigned int gblVariable : gblVariables)
    {
       if(vars.find(gblVariable) != vars.end())
+      {
          vars.erase(gblVariable);
+      }
    }
    return vars;
 }

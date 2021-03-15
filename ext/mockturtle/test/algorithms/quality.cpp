@@ -4,27 +4,31 @@
 
 #include <vector>
 
+#include <mockturtle/algorithms/aig_resub.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/collapse_mapped.hpp>
 #include <mockturtle/algorithms/cut_enumeration.hpp>
 #include <mockturtle/algorithms/cut_rewriting.hpp>
 #include <mockturtle/algorithms/lut_mapping.hpp>
 #include <mockturtle/algorithms/mig_algebraic_rewriting.hpp>
+#include <mockturtle/algorithms/mig_resub.hpp>
 #include <mockturtle/algorithms/node_resynthesis.hpp>
 #include <mockturtle/algorithms/node_resynthesis/akers.hpp>
 #include <mockturtle/algorithms/node_resynthesis/exact.hpp>
 #include <mockturtle/algorithms/node_resynthesis/mig_npn.hpp>
 #include <mockturtle/algorithms/node_resynthesis/xag_npn.hpp>
+#include <mockturtle/algorithms/node_resynthesis/xmg3_npn.hpp>
 #include <mockturtle/algorithms/refactoring.hpp>
 #include <mockturtle/algorithms/resubstitution.hpp>
 #include <mockturtle/algorithms/satlut_mapping.hpp>
-#include <mockturtle/algorithms/aig_resub.hpp>
-#include <mockturtle/algorithms/mig_resub.hpp>
+#include <mockturtle/algorithms/xmg_resub.hpp>
 #include <mockturtle/io/aiger_reader.hpp>
 #include <mockturtle/io/write_bench.hpp>
+#include <mockturtle/io/write_verilog.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/networks/mig.hpp>
+#include <mockturtle/networks/xmg.hpp>
 #include <mockturtle/views/depth_view.hpp>
 #include <mockturtle/views/mapping_view.hpp>
 
@@ -110,7 +114,7 @@ TEST_CASE( "Test quality improvement of cut rewriting with NPN4 resynthesis", "[
     mig_npn_resynthesis resyn;
     cut_rewriting_params ps;
     ps.cut_enumeration_ps.cut_size = 4;
-    cut_rewriting( ntk, resyn, ps );
+    cut_rewriting_with_compatibility_graph( ntk, resyn, ps );
     ntk = cleanup_dangling( ntk );
     return before - ntk.num_gates();
   } );
@@ -124,7 +128,7 @@ TEST_CASE( "Test quality improvement of cut rewriting with NPN4 resynthesis", "[
     cut_rewriting_params ps;
     ps.allow_zero_gain = true;
     ps.cut_enumeration_ps.cut_size = 4;
-    cut_rewriting( ntk, resyn, ps );
+    cut_rewriting_with_compatibility_graph( ntk, resyn, ps );
     ntk = cleanup_dangling( ntk );
     return before - ntk.num_gates();
   } );
@@ -143,7 +147,7 @@ TEST_CASE( "Test quality improvement of MIG refactoring with Akers resynthesis",
     return before - ntk.num_gates();
   } );
 
-  CHECK( v == std::vector<uint32_t>{{0, 18, 34, 22, 114, 56, 253, 113, 442, 449, 69}} );
+  CHECK( v == std::vector<uint32_t>{{0, 18, 34, 22, 114, 56, 153, 107, 432, 449, 69}} );
 
   // with zero gain
   const auto v2 = foreach_benchmark<mig_network>( []( auto& ntk, auto ) {
@@ -156,7 +160,7 @@ TEST_CASE( "Test quality improvement of MIG refactoring with Akers resynthesis",
     return before - ntk.num_gates();
   } );
 
-  CHECK( v2 == std::vector<uint32_t>{{0, 18, 34, 21, 115, 55, 254, 118, 443, 449, 66}} );
+  CHECK( v2 == std::vector<uint32_t>{{0, 18, 34, 21, 115, 55, 139, 107, 409, 449, 66}} );
 }
 
 TEST_CASE( "Test quality of MIG algebraic depth rewriting", "[quality]" )
@@ -276,7 +280,7 @@ TEST_CASE( "Test quality improvement of cut rewriting with AIG NPN4 resynthesis"
     ps.cut_enumeration_ps.cut_size = 4;
     ps.min_cand_cut_size = 2;
     ps.min_cand_cut_size_override = 3;
-    cut_rewriting( ntk, resyn, ps );
+    cut_rewriting_with_compatibility_graph( ntk, resyn, ps );
     ntk = cleanup_dangling( ntk );
     return before - ntk.num_gates();
   } );
@@ -294,12 +298,44 @@ TEST_CASE( "Test quality improvement of cut rewriting with XAG NPN4 resynthesis"
     ps.cut_enumeration_ps.cut_size = 4;
     ps.min_cand_cut_size = 2;
     ps.min_cand_cut_size_override = 3;
-    cut_rewriting( ntk, resyn, ps );
+    cut_rewriting_with_compatibility_graph( ntk, resyn, ps );
     ntk = cleanup_dangling( ntk );
     return before - ntk.num_gates();
   } );
 
   CHECK( v == std::vector<uint32_t>{{0, 31, 152, 50, 176, 79, 215, 134, 411, 869, 293}} );
+}
+
+TEST_CASE( "Test quality improvement for XMG3 rewriting with 4-input NPN database", "[quality]" )
+{
+  xmg3_npn_resynthesis<xmg_network> resyn;
+
+  const auto v = foreach_benchmark<xmg_network>( [&]( auto& ntk, auto ) {
+    const auto before = ntk.num_gates();
+    cut_rewriting_params ps;
+    ps.cut_enumeration_ps.cut_size = 4;
+    cut_rewriting_with_compatibility_graph( ntk, resyn, ps );
+    ntk = cleanup_dangling( ntk );
+    return before - ntk.num_gates();
+  } );
+
+  CHECK( v == std::vector<uint32_t>{{1, 27, 224, 70, 272, 151, 280, 195, 659, 464, 503}} );
+}
+
+TEST_CASE( "Test quality improvement for XMG3 Resubstitution", "[quality]" )
+{
+  const auto v = foreach_benchmark<xmg_network>( [&]( auto& ntk, auto ) {
+    const auto before = ntk.num_gates();
+    resubstitution_params ps;
+    resubstitution_stats st;
+    ps.max_pis = 8u;
+    ps.max_inserts = 1u;
+    xmg_resubstitution( ntk, ps, &st );
+    ntk = cleanup_dangling( ntk );
+    return before - ntk.num_gates();
+  } );
+
+  CHECK( v == std::vector<uint32_t>{{0, 38, 46, 22, 62, 72, 76, 75, 273, 865, 190}} );
 }
 
 #endif

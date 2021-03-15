@@ -36,6 +36,7 @@
 #include <string>
 #include <type_traits>
 
+#include "absl/base/config.h"
 #include "absl/base/internal/bits.h"
 #ifdef __SSE4_2__
 // TODO(jorg): Remove this when we figure out the right way
@@ -51,23 +52,26 @@
 #include "absl/strings/string_view.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 
 // SimpleAtoi()
 //
-// Converts the given string into an integer value, returning `true` if
-// successful. The string must reflect a base-10 integer (optionally followed or
-// preceded by ASCII whitespace) whose value falls within the range of the
-// integer type. If any errors are encountered, this function returns `false`,
-// leaving `out` in an unspecified state.
+// Converts the given string (optionally followed or preceded by ASCII
+// whitespace) into an integer value, returning `true` if successful. The string
+// must reflect a base-10 integer whose value falls within the range of the
+// integer type (optionally preceded by a `+` or `-`). If any errors are
+// encountered, this function returns `false`, leaving `out` in an unspecified
+// state.
 template <typename int_type>
 ABSL_MUST_USE_RESULT bool SimpleAtoi(absl::string_view str, int_type* out);
 
 // SimpleAtof()
 //
 // Converts the given string (optionally followed or preceded by ASCII
-// whitespace) into a float, which may be rounded on overflow or underflow.
+// whitespace) into a float, which may be rounded on overflow or underflow,
+// returning `true` if successful.
 // See https://en.cppreference.com/w/c/string/byte/strtof for details about the
-// allowed formats for `str`, except SimpleAtof() is locale-indepdent and will
+// allowed formats for `str`, except SimpleAtof() is locale-independent and will
 // always use the "C" locale. If any errors are encountered, this function
 // returns `false`, leaving `out` in an unspecified state.
 ABSL_MUST_USE_RESULT bool SimpleAtof(absl::string_view str, float* out);
@@ -75,7 +79,8 @@ ABSL_MUST_USE_RESULT bool SimpleAtof(absl::string_view str, float* out);
 // SimpleAtod()
 //
 // Converts the given string (optionally followed or preceded by ASCII
-// whitespace) into a double, which may be rounded on overflow or underflow.
+// whitespace) into a double, which may be rounded on overflow or underflow,
+// returning `true` if successful.
 // See https://en.cppreference.com/w/c/string/byte/strtof for details about the
 // allowed formats for `str`, except SimpleAtod is locale-independent and will
 // always use the "C" locale. If any errors are encountered, this function
@@ -92,22 +97,40 @@ ABSL_MUST_USE_RESULT bool SimpleAtod(absl::string_view str, double* out);
 // unspecified state.
 ABSL_MUST_USE_RESULT bool SimpleAtob(absl::string_view str, bool* out);
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 // End of public API.  Implementation details follow.
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace numbers_internal {
 
 // Digit conversion.
-extern const char kHexChar[17];    // 0123456789abcdef
-extern const char kHexTable[513];  // 000102030405060708090a0b0c0d0e0f1011...
+ABSL_DLL extern const char kHexChar[17];  // 0123456789abcdef
+ABSL_DLL extern const char
+    kHexTable[513];  // 000102030405060708090a0b0c0d0e0f1011...
+ABSL_DLL extern const char
+    two_ASCII_digits[100][2];  // 00, 01, 02, 03...
+
+// Writes a two-character representation of 'i' to 'buf'. 'i' must be in the
+// range 0 <= i < 100, and buf must have space for two characters. Example:
+//   char buf[2];
+//   PutTwoDigits(42, buf);
+//   // buf[0] == '4'
+//   // buf[1] == '2'
+inline void PutTwoDigits(size_t i, char* buf) {
+  assert(i < 100);
+  memcpy(buf, two_ASCII_digits[i], 2);
+}
 
 // safe_strto?() functions for implementing SimpleAtoi()
 bool safe_strto32_base(absl::string_view text, int32_t* value, int base);
 bool safe_strto64_base(absl::string_view text, int64_t* value, int base);
 bool safe_strtou32_base(absl::string_view text, uint32_t* value, int base);
 bool safe_strtou64_base(absl::string_view text, uint64_t* value, int base);
+bool safe_strtou128_base(absl::string_view text, absl::uint128* value,
+                         int base);
 
 static const int kFastToBufferSize = 32;
 static const int kSixDigitsToBufferSize = 16;
@@ -232,6 +255,12 @@ ABSL_MUST_USE_RESULT bool SimpleAtoi(absl::string_view str, int_type* out) {
   return numbers_internal::safe_strtoi_base(str, out, 10);
 }
 
+ABSL_MUST_USE_RESULT inline bool SimpleAtoi(absl::string_view str,
+                                            absl::uint128* out) {
+  return numbers_internal::safe_strtou128_base(str, out, 10);
+}
+
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #endif  // ABSL_STRINGS_NUMBERS_H_

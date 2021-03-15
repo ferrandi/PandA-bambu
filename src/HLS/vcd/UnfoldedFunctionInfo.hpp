@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -62,6 +62,6 @@ class UnfoldedFunctionInfo : public NodeInfo
    ~UnfoldedFunctionInfo() override = default;
 };
 
-typedef refcount<UnfoldedFunctionInfo> UnfoldedFunctionInfoRef;
-typedef refcount<const UnfoldedFunctionInfo> UnfoldedFunctionInfoConstRef;
+using UnfoldedFunctionInfoRef = refcount<UnfoldedFunctionInfo>;
+using UnfoldedFunctionInfoConstRef = refcount<const UnfoldedFunctionInfo>;
 #endif

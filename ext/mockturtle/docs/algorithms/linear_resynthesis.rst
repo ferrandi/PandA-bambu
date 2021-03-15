@@ -21,3 +21,6 @@ resynthesize it and then merge back the AND gates.
    xag = merge_linear_circuit( linxag, signals.size() );
 
 .. doxygenfunction:: mockturtle::linear_resynthesis_paar
+.. doxygenfunction:: mockturtle::exact_linear_resynthesis
+.. doxygenfunction:: mockturtle::get_linear_matrix
+.. doxygenfunction:: mockturtle::exact_linear_synthesis

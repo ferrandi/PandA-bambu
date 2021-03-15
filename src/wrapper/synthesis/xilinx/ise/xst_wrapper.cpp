@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,9 +44,6 @@
  */
 /// Includes the class definition
 #include "xst_wrapper.hpp"
-
-#include "config_HAVE_XILINX.hpp"
-#include "config_XILINX_SETTINGS.hpp"
 
 #include "ToolManager.hpp"
 #include "xml_script_command.hpp"

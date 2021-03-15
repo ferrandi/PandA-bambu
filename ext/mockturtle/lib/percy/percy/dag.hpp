@@ -3,10 +3,11 @@
 #ifndef DISABLE_NAUTY
 #include <nauty.h>
 #endif
-#include <vector>
+#include <array>
+#include <fstream>
 #include <ostream>
 #include <set>
-#include <array>
+#include <vector>
 
 namespace percy
 {
@@ -560,50 +561,59 @@ namespace percy
     using binary_dag = dag<2>;
     using ternary_dag = dag<3>;
 
+  /*! \brief Writes DAG in DOT format to output stream
+   *
+   *  Converts a DAG to the GraphViz DOT format and writes it to the
+   *  specified output stream
+   */
+  template<int FI>
+  void to_dot( dag<FI> const& dag, std::ostream& o )
+  {
+    o << "graph{\n";
+    o << "rankdir = BT\n";
+    dag.foreach_input([&o] (int input_idx) {
+        const auto dot_idx = input_idx +1;
+        o << "x" << dot_idx << " [shape=none,label=<x<sub>" << dot_idx
+          << "</sub>>];\n";
+      });
 
-    /***************************************************************************
-        Converts a dag to the graphviz dot format and writes it to the
-        specified output stream.
-    ***************************************************************************/
-    template<int FI>
-    void 
-    to_dot(const dag<FI>& dag, std::ostream& o)
-    {
-        o << "graph{\n";
-        o << "rankdir = BT\n";
-        dag.foreach_input([&o] (int input_idx) {
-            const auto dot_idx = input_idx +1;
-            o << "x" << dot_idx << " [shape=none,label=<x<sub>" << dot_idx 
-                << "</sub>>];\n";
-        });
+    o << "node [shape=circle];\n";
+    dag.foreach_vertex([&dag, &o] (auto v, int v_idx) {
+        const auto dot_idx = dag.get_nr_inputs() + v_idx + 1;
+        o << "x" << dot_idx << " [label=<x<sub>" << dot_idx
+          << "</sub>>];\n";
 
-        o << "node [shape=circle];\n";
-        dag.foreach_vertex([&dag, &o] (auto v, int v_idx) {
-            const auto dot_idx = dag.get_nr_inputs() + v_idx + 1;
-            o << "x" << dot_idx << " [label=<x<sub>" << dot_idx 
-                << "</sub>>];\n";
+        dag.foreach_fanin(v, [&o, dot_idx] (auto f_id, int) {
+            o << "x" << f_id+1 << " -- x" << dot_idx << ";\n";
+          });
+      });
 
-            dag.foreach_fanin(v, [&o, dot_idx] (auto f_id, int) {
-                o << "x" << f_id+1 << " -- x" << dot_idx << ";\n";
-            });
+    // Group inputs on same level.
+    o << "{rank = same; ";
+    for (int i = 0; i < dag.get_nr_inputs(); i++) {
+      o << "x" << i+1 << "; ";
+    }
+    o << "}\n";
 
-        });
-
-        // Group inputs on same level.
-        o << "{rank = same; ";
-        for (int i = 0; i < dag.get_nr_inputs(); i++) {
-            o << "x" << i+1 << "; ";
-        }
-        o << "}\n";
-
-        // Add invisible edges between PIs to enforce order.
-        o << "edge[style=invisible];\n";
-        for (int i = dag.get_nr_inputs(); i > 1; i--) {
-            o << "x" << i-1 << " -- x" << i << ";\n";
-        }
-
-        o << "}\n";
+    // Add invisible edges between PIs to enforce order.
+    o << "edge[style=invisible];\n";
+    for (int i = dag.get_nr_inputs(); i > 1; i--) {
+      o << "x" << i-1 << " -- x" << i << ";\n";
     }
 
-}
+    o << "}\n";
+  }
 
+  /*! \brief Writes DAG in DOT format into file
+   *
+   *  Converts a DAG to the GraphViz DOT format and writes it to the
+   *  specified file
+   */
+  template<int FI>
+  void to_dot( dag<FI> const& dag, std::string const& filename )
+  {
+    std::ofstream ofs( filename, std::ofstream::out );
+    to_dot( dag, ofs );
+    ofs.close();
+  }
+}

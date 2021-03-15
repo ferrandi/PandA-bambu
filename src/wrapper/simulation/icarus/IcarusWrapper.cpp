@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -44,8 +44,6 @@
 
 /// Includes the class definition
 #include "IcarusWrapper.hpp"
-
-#include "config_HAVE_ICARUS.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -94,9 +92,6 @@ IcarusWrapper::~IcarusWrapper() = default;
 
 void IcarusWrapper::CheckExecution()
 {
-#if !HAVE_ICARUS
-   THROW_ERROR("Icarus not correctly configured!");
-#endif
 }
 
 void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
@@ -108,14 +103,15 @@ void IcarusWrapper::GenerateScript(std::ostringstream& script, const std::string
    {
       script << " " << file;
    }
-   script << " -g2001-noconfig";
+   script << " -g2012";
    script << " -gstrict-ca-eval";
+   script << " -o " << GetPath("a.out");
    script << " -v >& " << log_file;
    script << std::endl << std::endl;
 
    script << "#VVP" << std::endl;
    script << VVP;
-   script << " a.out 2>&1 | tee -a " << log_file << std::endl << std::endl;
+   script << " " << GetPath("a.out") << "  2>&1 | tee -a " << log_file << std::endl << std::endl;
 }
 
 #if HAVE_EXPERIMENTAL

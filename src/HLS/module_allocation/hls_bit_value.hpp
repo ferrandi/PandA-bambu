@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2019-2020 Politecnico di Milano
+ *              Copyright (C) 2019-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,7 +65,7 @@ class HLSBitValue : public HLS_step
     * Constructor.
     * @param design_flow_manager is the design flow manager
     */
-   HLSBitValue(const ParameterConstRef Param, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
+   HLSBitValue(const ParameterConstRef _parameters, const HLS_managerRef HLSMgr, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor.

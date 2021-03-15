@@ -61,10 +61,12 @@
 #include <any>  // IWYU pragma: export
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 using std::any;
 using std::any_cast;
 using std::bad_any_cast;
 using std::make_any;
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #else  // ABSL_USES_STD_ANY
@@ -78,6 +80,7 @@ using std::make_any;
 #include <typeinfo>
 #include <utility>
 
+#include "absl/base/internal/fast_type_id.h"
 #include "absl/base/macros.h"
 #include "absl/meta/type_traits.h"
 #include "absl/types/bad_any_cast.h"
@@ -91,26 +94,7 @@ using std::make_any;
 #endif  // !defined(__GNUC__) || defined(__GXX_RTTI)
 
 namespace absl {
-
-namespace any_internal {
-
-template <typename Type>
-struct TypeTag {
-  constexpr static char dummy_var = 0;
-};
-
-template <typename Type>
-constexpr char TypeTag<Type>::dummy_var;
-
-// FastTypeId<Type>() evaluates at compile/link-time to a unique pointer for the
-// passed in type. These are meant to be good match for keys into maps or
-// straight up comparisons.
-template<typename Type>
-constexpr inline const void* FastTypeId() {
-  return &TypeTag<Type>::dummy_var;
-}
-
-}  // namespace any_internal
+ABSL_NAMESPACE_BEGIN
 
 class any;
 
@@ -420,11 +404,11 @@ class any {
     using NormalizedType =
         typename std::remove_cv<typename std::remove_reference<T>::type>::type;
 
-    return any_internal::FastTypeId<NormalizedType>();
+    return base_internal::FastTypeId<NormalizedType>();
   }
 
   const void* GetObjTypeId() const {
-    return obj_ ? obj_->ObjTypeId() : any_internal::FastTypeId<void>();
+    return obj_ ? obj_->ObjTypeId() : base_internal::FastTypeId<void>();
   }
 
   // `absl::any` nonmember functions //
@@ -534,6 +518,7 @@ T* any_cast(any* operand) noexcept {
              : nullptr;
 }
 
+ABSL_NAMESPACE_END
 }  // namespace absl
 
 #undef ABSL_ANY_DETAIL_HAS_RTTI

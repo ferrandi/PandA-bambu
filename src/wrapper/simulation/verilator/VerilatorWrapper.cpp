@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -47,7 +47,8 @@
 /// Autoheader include
 #include "config_HAVE_EXPERIMENTAL.hpp"
 #include "config_HAVE_L2_NAME.hpp"
-#include "config_HAVE_VERILATOR.hpp"
+#include "config_HAVE_THREADS.hpp"
+#include "config_USE_PARALLEL_VERILATOR.hpp"
 
 /// Constants include
 #include "file_IO_constants.hpp"
@@ -63,6 +64,7 @@
 
 #include <cerrno>
 #include <fstream>
+#include <thread>
 #include <unistd.h>
 #include <utility>
 
@@ -90,9 +92,6 @@ VerilatorWrapper::~VerilatorWrapper() = default;
 
 void VerilatorWrapper::CheckExecution()
 {
-#if !HAVE_VERILATOR
-   THROW_ERROR("VERILATOR not correctly configured!");
-#endif
 }
 
 void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::string& top_filename, const std::list<std::string>& file_list)
@@ -107,7 +106,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    bool generate_vcd_output =
        (Param->isOption(OPT_generate_vcd) && Param->getOption<bool>(OPT_generate_vcd)) || (Param->isOption(OPT_discrepancy) && Param->getOption<bool>(OPT_discrepancy)) || (Param->isOption(OPT_discrepancy_hw) && Param->getOption<bool>(OPT_discrepancy_hw));
 
-   const std::string output_directory = Param->getOption<std::string>(OPT_output_directory);
+   const auto output_directory = Param->getOption<std::string>(OPT_output_directory);
    log_file = SIM_SUBDIR + suffix + "/" + top_filename + "_verilator.log";
 #if HAVE_EXPERIMENTAL
 #ifdef _WIN32
@@ -116,7 +115,7 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #else
    script << "verilator";
 #endif
-   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET -sv";
+   script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wall -Wno-DECLFILENAME -Wno-WIDTH -Wno-UNUSED -Wno-CASEINCOMPLETE -Wno-UNOPTFLAT -Wno-PINMISSING -Wno-UNDRIVEN -Wno-SYNCASYNCNET";
 #else
 #ifdef _WIN32
    /// this removes the dependency from perl on MinGW32
@@ -126,6 +125,17 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
 #endif
    script << " --cc --exe --Mdir " + SIM_SUBDIR + suffix + "/verilator_obj -Wno-fatal -Wno-lint -sv";
    script << " -O3";
+#endif
+#if USE_PARALLEL_VERILATOR
+   unsigned int nThreads = std::thread::hardware_concurrency();
+#else
+   unsigned int nThreads = 1;
+#endif
+#if HAVE_THREADS
+   if(nThreads > 1)
+   {
+      script << " --threads " << nThreads;
+   }
 #endif
    if(generate_vcd_output)
    {
@@ -145,9 +155,15 @@ void VerilatorWrapper::GenerateScript(std::ostringstream& script, const std::str
    script << "   exit 1;" << std::endl;
    script << "fi" << std::endl;
    script << std::endl << std::endl;
-   script << "ln -s ../../../" + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
+   script << "ln -s " + output_directory + " " + SIM_SUBDIR + suffix + "/verilator_obj\n";
 
-   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j4 OPT_FAST=\"-O1 -fstrict-aliasing\" -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
+   script << "make -C " + SIM_SUBDIR + suffix + "/verilator_obj -j" << nThreads;
+#if HAVE_THREADS && USE_PARALLEL_VERILATOR
+   script << R"( OPT_FAST="-fstrict-aliasing -march=native" OPT_SLOW="-fstrict-aliasing" OPT="-march=native")";
+#else
+   script << " OPT_FAST=\"-O1 -fstrict-aliasing -march=native\"";
+#endif
+   script << " -f V" + top_filename + "_tb.mk V" + top_filename << "_tb";
 #ifdef _WIN32
    /// VM_PARALLEL_BUILDS=1 removes the dependency from perl
    script << " VM_PARALLEL_BUILDS=1 CFG_CXXFLAGS_NO_UNUSED=\"\"";

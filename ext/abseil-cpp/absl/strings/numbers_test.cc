@@ -40,6 +40,7 @@
 #include "absl/random/distributions.h"
 #include "absl/random/random.h"
 #include "absl/strings/internal/numbers_test_common.h"
+#include "absl/strings/internal/ostringstream.h"
 #include "absl/strings/internal/pow10_helper.h"
 #include "absl/strings/str_cat.h"
 
@@ -249,7 +250,9 @@ TEST(Numbers, TestFastPrints) {
 
 template <typename int_type, typename in_val_type>
 void VerifySimpleAtoiGood(in_val_type in_value, int_type exp_value) {
-  std::string s = absl::StrCat(in_value);
+  std::string s;
+  // uint128 can be streamed but not StrCat'd
+  absl::strings_internal::OStringStream(&s) << in_value;
   int_type x = static_cast<int_type>(~exp_value);
   EXPECT_TRUE(SimpleAtoi(s, &x))
       << "in_value=" << in_value << " s=" << s << " x=" << x;
@@ -324,6 +327,25 @@ TEST(NumbersTest, Atoi) {
                                  std::numeric_limits<int64_t>::max());
   VerifySimpleAtoiGood<uint64_t>(std::numeric_limits<uint64_t>::max(),
                                  std::numeric_limits<uint64_t>::max());
+
+  // SimpleAtoi(absl::string_view, absl::uint128)
+  VerifySimpleAtoiGood<absl::uint128>(0, 0);
+  VerifySimpleAtoiGood<absl::uint128>(42, 42);
+  VerifySimpleAtoiBad<absl::uint128>(-42);
+
+  VerifySimpleAtoiBad<absl::uint128>(std::numeric_limits<int32_t>::min());
+  VerifySimpleAtoiGood<absl::uint128>(std::numeric_limits<int32_t>::max(),
+                                      std::numeric_limits<int32_t>::max());
+  VerifySimpleAtoiGood<absl::uint128>(std::numeric_limits<uint32_t>::max(),
+                                      std::numeric_limits<uint32_t>::max());
+  VerifySimpleAtoiBad<absl::uint128>(std::numeric_limits<int64_t>::min());
+  VerifySimpleAtoiGood<absl::uint128>(std::numeric_limits<int64_t>::max(),
+                                      std::numeric_limits<int64_t>::max());
+  VerifySimpleAtoiGood<absl::uint128>(std::numeric_limits<uint64_t>::max(),
+                                      std::numeric_limits<uint64_t>::max());
+  VerifySimpleAtoiGood<absl::uint128>(
+      std::numeric_limits<absl::uint128>::max(),
+      std::numeric_limits<absl::uint128>::max());
 
   // Some other types
   VerifySimpleAtoiGood<int>(-42, -42);
@@ -460,7 +482,7 @@ TEST(stringtest, safe_strto32_base) {
   EXPECT_TRUE(safe_strto32_base(std::string("0x1234"), &value, 16));
   EXPECT_EQ(0x1234, value);
 
-  // Base-10 std::string version.
+  // Base-10 string version.
   EXPECT_TRUE(safe_strto32_base("1234", &value, 10));
   EXPECT_EQ(1234, value);
 }
@@ -601,7 +623,7 @@ TEST(stringtest, safe_strto64_base) {
   EXPECT_TRUE(safe_strto64_base(std::string("0x1234"), &value, 16));
   EXPECT_EQ(0x1234, value);
 
-  // Base-10 std::string version.
+  // Base-10 string version.
   EXPECT_TRUE(safe_strto64_base("1234", &value, 10));
   EXPECT_EQ(1234, value);
 }
@@ -656,6 +678,46 @@ TEST(stringtest, safe_strtou32_random) {
 }
 TEST(stringtest, safe_strtou64_random) {
   test_random_integer_parse_base<uint64_t>(&safe_strtou64_base);
+}
+TEST(stringtest, safe_strtou128_random) {
+  // random number generators don't work for uint128, and
+  // uint128 can be streamed but not StrCat'd, so this code must be custom
+  // implemented for uint128, but is generally the same as what's above.
+  // test_random_integer_parse_base<absl::uint128>(
+  //     &absl::numbers_internal::safe_strtou128_base);
+  using RandomEngine = std::minstd_rand0;
+  using IntType = absl::uint128;
+  constexpr auto parse_func = &absl::numbers_internal::safe_strtou128_base;
+
+  std::random_device rd;
+  RandomEngine rng(rd());
+  std::uniform_int_distribution<uint64_t> random_uint64(
+      std::numeric_limits<uint64_t>::min());
+  std::uniform_int_distribution<int> random_base(2, 35);
+
+  for (size_t i = 0; i < kNumRandomTests; i++) {
+    IntType value = random_uint64(rng);
+    value = (value << 64) + random_uint64(rng);
+    int base = random_base(rng);
+    std::string str_value;
+    EXPECT_TRUE(Itoa<IntType>(value, base, &str_value));
+    IntType parsed_value;
+
+    // Test successful parse
+    EXPECT_TRUE(parse_func(str_value, &parsed_value, base));
+    EXPECT_EQ(parsed_value, value);
+
+    // Test overflow
+    std::string s;
+    absl::strings_internal::OStringStream(&s)
+        << std::numeric_limits<IntType>::max() << value;
+    EXPECT_FALSE(parse_func(s, &parsed_value, base));
+
+    // Test underflow
+    s.clear();
+    absl::strings_internal::OStringStream(&s) << "-" << value;
+    EXPECT_FALSE(parse_func(s, &parsed_value, base));
+  }
 }
 
 TEST(stringtest, safe_strtou32_base) {

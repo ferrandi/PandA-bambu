@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -107,7 +107,7 @@ class HostProfiling : public ApplicationFrontendFlowStep
     * @param loop_instances is how many times each loop is executed
     * @param Parameters is the set of input parameters
     */
-   static void normalize(const application_managerRef app_man, const CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<unsigned int, long long unsigned int>>& loop_instances, const ParameterConstRef parameters);
+   static void normalize(const application_managerRef AppM, const CustomUnorderedMap<unsigned int, CustomUnorderedMapStable<unsigned int, long long unsigned int>>& loop_instances, const ParameterConstRef parameters);
 };
 
 #endif

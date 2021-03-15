@@ -6,7 +6,7 @@ export PATH=../../../../../panda/bin:../../src:../../../src:/opt/panda/bin:$PATH
 rm -rf bambu
 mkdir bambu
 cd bambu
-bambu $root_dir/09_conv2d_a.parallel.c \
+timeout 2h bambu $root_dir/09_conv2d_a.parallel.c \
       -I $root_dir/../common/ \
       -DBAMBU_PROFILING\
       -fno-inline -fno-inline-functions\

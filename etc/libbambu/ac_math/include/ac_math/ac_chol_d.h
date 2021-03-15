@@ -169,7 +169,7 @@ namespace ac_math
       ARRAY_AC_FIXED_LJJ_K:
          for(unsigned k = 0; k < M; k++)
          {
-            sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k] * L_int[j][k] : 0;
+            sum_Ajj_Ljk_sq -= (k < j) ? (i_s_t)(L_int[j][k] * L_int[j][k]) : (i_s_t)0;
          }
 
          // Use a macro to activate the AC_ASSERT
@@ -220,14 +220,14 @@ namespace ac_math
          ARRAY_AC_FIXED_LIJ_K:
             for(unsigned k = 0; k < M; k++)
             {
-               sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k] : 0;
+               sum_Aij_Lik_Ljk -= (k < j) ? (i_s_t)(L_int[i][k] * L_int[j][k]) : (i_s_t)0;
             }
             // Keep diagonal elements as they are
             // Initialize non-diagonal elements above diagonal to 0
             // Initialize non-diagonal elements below diagonal to appropriate calculated value.
             if(i != j)
             {
-               L_int[i][j] = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk) : 0;
+               L_int[i][j] = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk) : (T_out)0;
             }
          }
       }
@@ -340,7 +340,7 @@ namespace ac_math
       ARRAY_AC_COMP_AC_FIXED_LJJ_K:
          for(unsigned k = 0; k < M; k++)
          {
-            sum_Ajj_Ljk_sq -= (k < j) ? L_int[j][k].mag_sqr() : 0;
+            sum_Ajj_Ljk_sq -= (k < j) ? (i_s_t)(L_int[j][k].mag_sqr()) : (i_s_t)0;
          }
 
          // Use a macro to activate the AC_ASSERT
@@ -400,15 +400,15 @@ namespace ac_math
          ARRAY_AC_COMP_AC_FIXED_LIJ_K:
             for(unsigned k = 0; k < M; k++)
             {
-               sum_Aij_Lik_Ljk -= (k < j) ? L_int[i][k] * L_int[j][k].conj() : 0;
+               sum_Aij_Lik_Ljk -= (k < j) ? (ac_complex<i_s_t> )(L_int[i][k] * L_int[j][k].conj()) : (ac_complex<i_s_t> )0;
             }
             // Keep diagonal elements as they are
             // Initialize non-diagonal elements above diagonal to 0
             // Initialize non-diagonal elements below diagonal to appropriate calculated value.
             if(i != j)
             {
-               L_int[i][j].r() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.r()) : 0;
-               L_int[i][j].i() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.i()) : 0;
+               L_int[i][j].r() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.r()) : (T_out)0;
+               L_int[i][j].i() = (i > j) ? (T_out)(recip_Ljj * sum_Aij_Lik_Ljk.i()) : (T_out)0;
             }
          }
       }

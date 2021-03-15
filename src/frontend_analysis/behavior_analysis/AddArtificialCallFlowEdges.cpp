@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -121,9 +121,13 @@ DesignFlowStep_Status AddArtificialCallFlowEdges::InternalExec()
                   continue;
                }
                if(previous)
+               {
                   function_behavior->ogc->AddEdge(other_stmt, stmt, FLG_SELECTOR);
+               }
                else
+               {
                   function_behavior->ogc->AddEdge(stmt, other_stmt, FLG_SELECTOR);
+               }
             }
          }
       }

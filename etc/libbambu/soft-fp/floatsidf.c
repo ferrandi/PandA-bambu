@@ -43,7 +43,7 @@ DFtype __floatsidf(SItype i)
    return a;
 }
 
-inline DFtype __int32_to_float64if(SItype i)
+DFtype __int32_to_float64if(SItype i)
 {
    return __floatsidf(i);
 }

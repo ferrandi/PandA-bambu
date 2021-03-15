@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2017-2020 Politecnico di Milano
+ *              Copyright (C) 2017-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,7 +78,9 @@ bool NonDeterministicFlows::ExecuteTool(const size_t seed) const
    const auto temp_directory = parameters->getOption<std::string>(OPT_output_temporary_directory);
    const auto new_directory = temp_directory + "/" + STR(seed);
    if(boost::filesystem::exists(new_directory))
+   {
       boost::filesystem::remove_all(new_directory);
+   }
    boost::filesystem::create_directory(new_directory);
    const auto ret = PandaSystem(parameters, "cd " + new_directory + "; " + arg_string, new_directory + "/tool_execution_output");
    if(IsError(ret))

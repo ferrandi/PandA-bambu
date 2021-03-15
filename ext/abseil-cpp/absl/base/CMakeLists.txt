@@ -14,11 +14,27 @@
 # limitations under the License.
 #
 
+find_library(LIBRT rt)
+
 absl_cc_library(
   NAME
     atomic_hook
   HDRS
     "internal/atomic_hook.h"
+  DEPS
+    absl::config
+    absl::core_headers
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+)
+
+absl_cc_library(
+  NAME
+    errno_saver
+  HDRS
+    "internal/errno_saver.h"
+  DEPS
+    absl::config
   COPTS
     ${ABSL_DEFAULT_COPTS}
 )
@@ -68,6 +84,7 @@ absl_cc_library(
   DEPS
     absl::base_internal
     absl::core_headers
+    absl::errno_saver
 )
 
 absl_cc_library(
@@ -75,6 +92,7 @@ absl_cc_library(
     config
   HDRS
     "config.h"
+    "options.h"
     "policy_checks.h"
   COPTS
     ${ABSL_DEFAULT_COPTS}
@@ -88,10 +106,11 @@ absl_cc_library(
     "dynamic_annotations.h"
   SRCS
     "dynamic_annotations.cc"
+    "internal/dynamic_annotations.h"
   COPTS
     ${ABSL_DEFAULT_COPTS}
-  DEFINES
-    "__CLANG_SUPPORT_DYN_ANNOTATION__"
+  DEPS
+    absl::config
   PUBLIC
 )
 
@@ -145,6 +164,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
+    absl::config
     absl::type_traits
 )
 
@@ -162,16 +182,18 @@ absl_cc_library(
     "internal/thread_identity.h"
     "internal/tsan_mutex_interface.h"
     "internal/unscaledcycleclock.h"
-    "log_severity.h"
   SRCS
     "internal/cycleclock.cc"
     "internal/spinlock.cc"
     "internal/sysinfo.cc"
     "internal/thread_identity.cc"
     "internal/unscaledcycleclock.cc"
-    "log_severity.cc"
   COPTS
     ${ABSL_DEFAULT_COPTS}
+  LINKOPTS
+    ${ABSL_DEFAULT_LINKOPTS}
+    $<$<BOOL:${LIBRT}>:-lrt>
+    $<$<BOOL:${MINGW}>:"advapi32">
   DEPS
     absl::atomic_hook
     absl::base_internal
@@ -293,6 +315,20 @@ absl_cc_test(
   DEPS
     absl::base
     absl::core_headers
+    gtest_main
+)
+
+absl_cc_test(
+  NAME
+    errno_saver_test
+  SRCS
+    "internal/errno_saver_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::errno_saver
+    absl::strerror
+    gmock
     gtest_main
 )
 
@@ -462,6 +498,7 @@ absl_cc_test(
     ${ABSL_TEST_COPTS}
   DEPS
     absl::malloc_internal
+    absl::node_hash_map
     Threads::Threads
 )
 
@@ -488,6 +525,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
+    absl::config
     absl::core_headers
 )
 
@@ -513,6 +551,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
+    absl::config
     absl::core_headers
 )
 
@@ -531,6 +570,33 @@ absl_cc_test(
 
 absl_cc_library(
   NAME
+    periodic_sampler
+  SRCS
+    "internal/periodic_sampler.cc"
+  HDRS
+    "internal/periodic_sampler.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  DEPS
+    absl::core_headers
+    absl::exponential_biased
+)
+
+absl_cc_test(
+  NAME
+    periodic_sampler_test
+  SRCS
+    "internal/periodic_sampler_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::core_headers
+    absl::periodic_sampler
+    gmock_main
+)
+
+absl_cc_library(
+  NAME
     scoped_set_env
   SRCS
     "internal/scoped_set_env.cc"
@@ -539,6 +605,7 @@ absl_cc_library(
   COPTS
     ${ABSL_DEFAULT_COPTS}
   DEPS
+    absl::config
     absl::raw_logging_internal
 )
 
@@ -571,9 +638,79 @@ absl_cc_test(
   SRCS
     "log_severity_test.cc"
   DEPS
+    absl::flags_internal
     absl::flags_marshalling
     absl::log_severity
     absl::strings
     gmock
+    gtest_main
+)
+
+absl_cc_library(
+  NAME
+    strerror
+  SRCS
+    "internal/strerror.cc"
+  HDRS
+    "internal/strerror.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  LINKOPTS
+    ${ABSL_DEFAULT_LINKOPTS}
+  DEPS
+    absl::config
+    absl::core_headers
+    absl::errno_saver
+)
+
+absl_cc_test(
+  NAME
+    strerror_test
+  SRCS
+    "internal/strerror_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::strerror
+    absl::strings
+    gmock
+    gtest_main
+)
+
+absl_cc_library(
+  NAME
+    fast_type_id
+  HDRS
+    "internal/fast_type_id.h"
+  COPTS
+    ${ABSL_DEFAULT_COPTS}
+  LINKOPTS
+    ${ABSL_DEFAULT_LINKOPTS}
+  DEPS
+    absl::config
+)
+
+absl_cc_test(
+  NAME
+    fast_type_id_test
+  SRCS
+    "internal/fast_type_id_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::fast_type_id
+    gtest_main
+)
+
+absl_cc_test(
+  NAME
+    optimization_test
+  SRCS
+    "optimization_test.cc"
+  COPTS
+    ${ABSL_TEST_COPTS}
+  DEPS
+    absl::core_headers
+    absl::optional
     gtest_main
 )

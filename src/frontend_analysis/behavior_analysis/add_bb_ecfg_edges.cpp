@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -122,7 +122,9 @@ DesignFlowStep_Status AddBbEcfgEdges::InternalExec()
    for(loop = loops.begin(); loop != loop_end; ++loop)
    {
       if((*loop)->GetId() == 0)
+      {
          continue;
+      }
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Considering loop " + boost::lexical_cast<std::string>((*loop)->GetId()));
 
       /// add Extended edges to manage in/out dependencies when we have multi-entries in a loop (aka irreducible loop)

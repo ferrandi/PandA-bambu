@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -49,7 +49,7 @@
 #include "config_HAVE_TREE_MANIPULATION_BUILT.hpp"
 #include "config_HAVE_TREE_PARSER_BUILT.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// RTL include
@@ -102,7 +102,18 @@ enum kind tree_node::get_kind(const std::string& input_name)
    {
       // cppcheck-suppress unusedVariable
       std::string name;
-      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TREE_NODE_LIST);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, BINARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, CONST_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, CPP_STMT_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, DECL_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, GIMPLE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, MISCELLANEOUS_EXPR_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, MISCELLANEOUS_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, PANDA_EXTENSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, QUATERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(NAME_KIND, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree));
    }
    return string_to_kind[input_name];
 }
@@ -111,7 +122,19 @@ std::string tree_node::GetString(enum kind k)
 {
    if(kind_to_string.empty())
    {
-      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TREE_NODE_LIST);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, BINARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CONST_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, CPP_STMT_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, DECL_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, GIMPLE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, MISCELLANEOUS_EXPR_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, MISCELLANEOUS_OBJ_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, PANDA_EXTENSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, QUATERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TERNARY_EXPRESSION_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, TYPE_NODE_TREE_NODES);
+      BOOST_PP_SEQ_FOR_EACH(KIND_NAME, BOOST_PP_EMPTY, UNARY_EXPRESSION_TREE_NODES(last_tree));
+
       // This part has been added since boost macro does not expand correctly
       std::map<enum kind, std::string>::iterator it, it_end = kind_to_string.end();
       for(it = kind_to_string.begin(); it != it_end; ++it)
@@ -713,6 +736,9 @@ function_decl::function_decl(unsigned int i)
       reverse_restrict_flag(false),
       writing_memory(false),
       reading_memory(false),
+      pipeline_enabled(false),
+      simple_pipeline(false),
+      initiation_time(1),
 #if HAVE_FROM_PRAGMA_BUILT
       omp_for_wrapper(0),
       omp_body_loop(false),
@@ -774,6 +800,36 @@ bool function_decl::is_private()
 bool function_decl::is_protected()
 {
    return attr::is_protected();
+}
+
+bool function_decl::is_pipelined()
+{
+   return pipeline_enabled;
+}
+
+void function_decl::set_pipelining(bool v)
+{
+   pipeline_enabled = v;
+}
+
+bool function_decl::is_simple_pipeline()
+{
+   return simple_pipeline;
+}
+
+void function_decl::set_simple_pipeline(bool v)
+{
+   simple_pipeline = v;
+}
+
+int function_decl::get_initiation_time()
+{
+   return initiation_time;
+}
+
+void function_decl::set_initiation_time(int time)
+{
+   initiation_time = time;
 }
 
 void function_type::visit(tree_node_visitor* const v) const

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -142,16 +142,22 @@ const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationC
 unsigned int Scheduling::compute_b_tag_size(const OpGraphConstRef cdg, vertex controlling_vertex) const
 {
    if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_ENTRY)
+   {
       return 1;
+   }
    else if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_IF)
+   {
       return 2;
+   }
    else if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_SWITCH)
    {
       THROW_ASSERT(switch_map_size.find(controlling_vertex) != switch_map_size.end(), "missing a controlling_vertex from the switch_map_size");
       return switch_map_size.find(controlling_vertex)->second;
    }
    else
+   {
       THROW_ERROR("Not yet supported conditional vertex");
+   }
    return 0;
 }
 
@@ -159,13 +165,19 @@ unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphCon
 {
    vertex controlling_vertex = boost::source(e, *cdg);
    if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_ENTRY)
+   {
       return 0;
+   }
    else if(GET_TYPE(cdg.get(), controlling_vertex) & TYPE_IF)
    {
       if(Cget_edge_info<OpEdgeInfo>(e, *cdg) && CDG_TRUE_CHECK(cdg.get(), e))
+      {
          return 0;
+      }
       else
+      {
          return 1;
+      }
    }
    else if(GET_TYPE(cdg, controlling_vertex) & TYPE_SWITCH)
    {
@@ -175,7 +187,9 @@ unsigned int Scheduling::compute_b_tag(const EdgeDescriptor& e, const OpGraphCon
       return 2;
    }
    else
+   {
       THROW_ERROR("Not yet supported conditional vertex");
+   }
    return 0;
 }
 
@@ -199,8 +213,12 @@ void Scheduling::init_switch_maps(vertex controlling_vertex, const OpGraphConstR
       const CustomOrderedSet<unsigned int>& switch_set = EDGE_GET_NODEID(cdg, *eo, CDG_SELECTOR);
       const CustomOrderedSet<unsigned int>::const_iterator switch_it_end = switch_set.end();
       for(auto switch_it = switch_set.begin(); switch_it != switch_it_end; ++switch_it)
+      {
          if(snp_it->second.find(*switch_it) == snp_it->second.end())
+         {
             snp_it->second[*switch_it] = curr_b_tag++;
+         }
+      }
    }
    switch_map_size[controlling_vertex] = curr_b_tag;
 }
@@ -231,10 +249,14 @@ ControlStep Scheduling::anticipate_operations(const OpGraphConstRef dependence_g
             const auto ending_time = HLS->Rsch->get_cstep(source).second + HLS->allocation_information->op_et_to_cycles(HLS->allocation_information->get_execution_time(HLS->Rfu->get_assign(source), source, dependence_graph), clock_cycle);
             /// Operation can not be anticipated
             if(ending_time > HLS->Rsch->get_cstep(*v).second)
+            {
                break;
+            }
 
             if(ending_time == HLS->Rsch->get_cstep(*v).second && (GET_TYPE(dependence_graph, source) & (TYPE_IF | TYPE_WHILE | TYPE_FOR | TYPE_SWITCH)))
+            {
                break;
+            }
          }
          /// Operation can be anticipated
          if(ei == ei_end && HLS->Rsch->get_cstep(*v).second > 0)
@@ -243,7 +265,9 @@ ControlStep Scheduling::anticipate_operations(const OpGraphConstRef dependence_g
             HLS->Rsch->set_execution(*v, HLS->Rsch->get_cstep(*v).second - 1);
          }
          if(HLS->Rsch->get_cstep(*v).second > last_cs)
+         {
             last_cs = HLS->Rsch->get_cstep(*v).second;
+         }
       }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Scheduling::anticipate_operations - End");

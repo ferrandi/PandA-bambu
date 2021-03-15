@@ -4,7 +4,7 @@
 #                                                                              #
 ################################################################################
 AC_PREREQ(2.57)
-AC_INIT(PandA, 0.9.6, panda-info@polimi.it)
+AC_INIT(PandA, 0.9.7-dev, panda-info@polimi.it)
 AC_CANONICAL_SYSTEM
 AM_INIT_AUTOMAKE([-Wno-portability 1.9 tar-pax subdir-objects])
 m4_ifdef([AM_SILENT_RULES], [AM_SILENT_RULES([yes])])
@@ -13,6 +13,14 @@ AC_CONFIG_SRCDIR([configure.ac])
 AC_DISABLE_SHARED
 #AC_DISABLE_STATIC
 AC_CONFIG_MACRO_DIR(etc/macros)
+
+#Flags have to be emptied since AC_PROG_CXX and AC_PROG_CC set them to "-g -O2"
+: ${CFLAGS=""}
+: ${CXXFLAGS=""}
+CFLAGS_EXT=-O2
+CXXFLAGS_EXT=-O2
+CXXFLAGS_EXTFPLL=-O2
+CXXFLAGS_STD=-O2
 
 # Checks for programs.
 AC_PROG_CXX
@@ -26,12 +34,25 @@ AC_PROG_MAKE_SET
 AM_PROG_LEX
 AC_PROG_YACC
 AC_PROG_F77
-#Flags have to be emptied since AC_PROG_CXX and AC_PROG_CC set them to "-g -O2"
-CFLAGS=
-CXXFLAGS=
-CFLAGS_EXT=-O2
-CXXFLAGS_EXT=-O2
-CXXFLAGS_EXTFPLL=-O2
+
+AC_ARG_ENABLE(clanglibcpp,         [  --enable-clanglibcpp         Clang is going to use libc++ ],                                                          [panda_clanglibcpp="$enableval"], [panda_clanglibcpp="no"])
+AC_ARG_ENABLE(oldclangabi,         [  --enable-oldclangabi         Clang plugins are compiled with the old abi ],                                           [panda_clangoldabi="$enableval"], [panda_clangoldabi="no"])
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  CXXFLAGS+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_EXT+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_EXT+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+  CXXFLAGS_STD+=" -stdlib=libc++ "
+  if test "x$panda_clangoldabi" = xyes; then
+    CXXFLAGS_STD+=-D_GLIBCXX_USE_CXX11_ABI=0
+  fi
+fi
+
 
 # Check if compiler support c++17
 AC_COMPILE_STDCXX_17
@@ -48,25 +69,37 @@ if test "x$ac_cv_cxx_compile_cxx17_native" = xno; then
    if test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes; then
       CXXFLAGS+=" --std=c++17 "
       CXXFLAGS_EXT+=" --std=c++17 "
-   else
-if test "x$ac_cv_cxx_compile_cxx11_native" = xno; then
-   if test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
+      CXXFLAGS_STD+=" --std=c++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++17 "
+      CXXFLAGS_EXT+=" --std=g++17 "
+      CXXFLAGS_STD+=" --std=g++17 "
+   elif test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes; then
+      CXXFLAGS+=" --std=c++1z "
+      CXXFLAGS_EXT+=" --std=c++1z "
+      CXXFLAGS_STD+=" --std=c++1z "
+   elif test "x$ac_cv_cxx_compile_cxx11_native" = xyes; then
+      CXXFLAGS+=" "
+      CXXFLAGS_EXT+=" "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx" = xyes; then
       CXXFLAGS+=" --std=c++11 "
       CXXFLAGS_EXT+=" --std=c++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_gxx" = xyes; then
+      CXXFLAGS+=" --std=g++11 "
+      CXXFLAGS_EXT+=" --std=g++11 "
+   elif test "x$ac_cv_cxx_compile_cxx11_cxx1x" = xyes; then
+      CXXFLAGS+=" --std=c++1x "
+      CXXFLAGS_EXT+=" --std=c++1x "
+   elif test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
+      CXXFLAGS+=" --std=c++0x "
+      CXXFLAGS_EXT+=" --std=c++0x "
    else
-      if test "x$ac_cv_cxx_compile_cxx0x_native" != xyes; then
-         if test "x$ac_cv_cxx_compile_cxx0x_cxx" = xyes; then
-            CXXFLAGS+=" --std=c++0x "
-            CXXFLAGS_EXT+=" --std=c++0x "
-         else
-                  AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
-               fi
-            fi
-         fi
-      fi
+      AC_MSG_ERROR("Compiler does not support C++17 nor C++11 nor C++0X")
    fi
 fi
-AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes)
+AC_SUBST(CXXFLAGS_STD)
+AM_CONDITIONAL(BUILD_MOCKTURTLE, test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes)
+
 
 AM_PO_SUBDIRS
 
@@ -126,8 +159,7 @@ AC_PROG_GCC_TRADITIONAL
 AC_FUNC_STRTOD
 AC_CHECK_FUNCS([floor memset modf pow sqrt strchr strcasecmp ])
 
-
-AC_LANG([C++])
+AC_LANG_PUSH([C++])
 AC_TYPE_SIGNAL
 AC_STRUCT_TM
 
@@ -276,6 +308,7 @@ AC_ARG_ENABLE(32bits,              [  --enable-32bits              create 32bits
 AC_ARG_ENABLE(flopoco,             [  --enable-flopoco             compile FloPoCo external library],                     [panda_USE_FLOPOCO="$enableval"])
 AC_ARG_ENABLE(icarus,              [  --enable-icarus              compile Icarus Verilog compiler],                      [panda_USE_ICARUS="$enableval"])
 AC_ARG_ENABLE(verilator,           [  --enable-verilator           compile Verilator Verilog compiler],                   [panda_USE_VERILATOR="$enableval"])
+AC_ARG_ENABLE(parallel-verilator,  [  --enable-parallel-verilator  enable parallel simulation with Verilator],            [panda_PARALLEL_VERILATOR="$enableval"], [panda_PARALLEL_VERILATOR="no"])
 
 ################################################################################
 #                                                                              #
@@ -283,6 +316,7 @@ AC_ARG_ENABLE(verilator,           [  --enable-verilator           compile Veril
 #                                                                              #
 ################################################################################
 panda_USE_FRACTIONS=no;
+panda_USE_GENERIC_BASHBACKEND=no
 panda_USE_I386_GCC=no;
 panda_USE_LIB_AIG=no;
 panda_USE_LIB_ALGORITHMS=no;
@@ -377,7 +411,7 @@ MIN_GCC_VERSION=0.0.0
 MAX_GCC_VERSION=9.9.9
 
 MIN_CLANG_VERSION=0.0.0
-MAX_CLANG_VERSION=9.9.9
+MAX_CLANG_VERSION=100.9.9
 
 
 ################################################################################
@@ -433,7 +467,7 @@ if test "x$panda_USE_BAMBU" = xyes; then
   AS_VERSION_COMPARE($MIN_GCC_VERSION, [4.5.0], [MIN_GCC_VERSION=4.5.0],,)
   AS_VERSION_COMPARE($MAX_GCC_VERSION, [9.0.0],,,[MAX_GCC_VERSION=9.0.0])
   AS_VERSION_COMPARE($MIN_CLANG_VERSION, [4.0.0], [MIN_CLANG_VERSION=4.0.0],,)
-  AS_VERSION_COMPARE($MAX_CLANG_VERSION, [8.0.0],,,[MAX_CLANG_VERSION=8.0.0])
+  AS_VERSION_COMPARE($MAX_CLANG_VERSION, [12.0.0],,,[MAX_CLANG_VERSION=12.0.0])
   panda_USE_LIB_HLS=yes;
   panda_USE_LIB_HOST_PROFILING=yes;
   panda_USE_LIB_TECHNOLOGY=yes;
@@ -453,14 +487,15 @@ if test "x$panda_USE_BAMBU" = xyes; then
   panda_USE_SPIDER=yes;
   panda_USE_TASTE=yes;
   panda_USE_ABSEIL=yes;
+  panda_USE_GENERIC_BASHBACKEND=yes;
 
   #characterization requires to configure at least one synthesis toolchain
-  if test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
+  if test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
     AC_APPEND(ENABLE_DOC,"EUCALYPTUS")
     panda_USE_EUCALYPTUS=yes;
   fi
 
-AC_CHECK_HEADERS([bdd.h fdd.h bvec.h ], [panda_USE_LIBBDD=yes],[ echo "$ac_header not found: Clang/LLVM Point-to analysis will not enabled"])
+AC_CHECK_HEADERS([bdd.h fdd.h bvec.h ], [panda_USE_LIBBDD=yes],[ echo "$ac_header not found: Clang/LLVM Point-to analysis will not be enabled"])
   if test "x$panda_USE_LIBBDD" = xyes; then
   AC_DEFINE(HAVE_LIBBDD, 1, "Define if bambu is built")
   fi
@@ -573,6 +608,9 @@ if test "x$panda_USE_KOALA" = xyes; then
   fi
   if test "x$panda_USE_VERILATOR" != "xno"; then
     panda_USE_VERILATOR=yes;
+  fi
+  if test "x$panda_PARALLEL_VERILATOR" != "xno"; then
+    panda_PARALLEL_VERILATOR=yes;
   fi
   if test "x$panda_USE_CUDD" != "xno"; then
     panda_USE_CUDD=yes;
@@ -909,7 +947,7 @@ if test "x$panda_USE_LIB_TARGET_PROFILING" != xyes && test "x$panda_USE_LIB_COMP
    panda_USE_LIB_COMPARE_MODELS=no;
 fi
 
-if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
+if (test "x$panda_USE_LIB_HLS" = xyes && (test "x$panda_USE_GENERIC_BASHBACKEND" = xyes || test "x$panda_USE_WRAPPER_XILINX" = xyes || test "x$panda_USE_WRAPPER_ALTERA" = xyes || test "x$panda_USE_WRAPPER_LATTICE" = xyes || test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes)) then
    panda_USE_LIB_RTL_CHARACTERIZATION=yes;
 fi
 
@@ -928,7 +966,7 @@ if test "x$panda_USE_LIB_CODE_ESTIMATION" = xyes && test "x$panda_USE_LIB_FROM_C
    panda_USE_LIB_HOST_PROFILING=yes;
 fi
 
-if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes; then
+if test "x$panda_USE_SYNTHESIS_TOOL" = xyes || test "x$panda_USE_CORE_TOOLS" = xyes || test "x$panda_USE_DESIGN_COMPILER" = xyes || test "x$panda_USE_GENERIC_BASHBACKEND" = xyes; then
    panda_USE_LIB_SYNTHESIS_WRAPPER=yes;
 fi
 
@@ -966,6 +1004,13 @@ fi
 
 if test "x$panda_USE_TASTE" = xyes; then
    panda_USE_LIB_FROM_AADL_ASN=yes;
+fi
+
+###################### libc++ support #######################
+if test "x$panda_clanglibcpp" = xyes; then
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, " -stdlib=libc++ ", "Define extra compiler options")
+else
+  AC_DEFINE(EXTRA_CLANGPP_COMPILER_OPTION, "", "Define extra compiler options")
 fi
 
 ###################### Release and experimental checking #######################
@@ -1149,6 +1194,9 @@ fi
 if test "x$panda_USE_VERILATOR" = xyes; then
   AC_CHECK_VERILATOR
 fi
+if test "x$panda_PARALLEL_VERILATOR" = xyes; then
+  AC_DEFINE(USE_PARALLEL_VERILATOR, 1, "Define if parallel Verilator simulation is used")
+fi
 
 ################################ Xilinx checks #################################
 if test "x$panda_USE_WRAPPER_XILINX" = xyes; then
@@ -1194,7 +1242,7 @@ AM_CONDITIONAL(BUILD_BEAGLE, test "x$panda_USE_BEAGLE" = xyes)
 ################################## ARM Check ###################################
 if test "x$panda_USE_ARM_GCC" = xyes; then
    AC_CHECK_GCC_ARM_VERSION([4.5.0],[4.6.0])
-   AC_DEFINE(HAVE_ARM_COMPILER, 1, "Define if ARM-treegcc is used")
+   AC_DEFINE(HAVE_ARM_COMPILER, 1, "Define if ARM-compiler is used")
 fi
 AM_CONDITIONAL(BUILD_ARM_GCC, test "x$build_ARM_GCC" = xyes)
 AM_CONDITIONAL(BUILD_ARM_EMPTY_PLUGIN, test "x$build_ARM_EMPTY_PLUGIN" = xyes)
@@ -1217,7 +1265,7 @@ AC_SUBST(ARM_HOST_PLUGIN_COMPILER)
 if test "x$panda_USE_SPARC_GCC" = xyes; then
    AC_CHECK_SPARC_ELF
    AC_CHECK_GCC_SPARC_VERSION([4.5.0],[4.6.0])
-   AC_DEFINE(HAVE_SPARC_COMPILER, 1, "Define if SPARC-treegcc is used")
+   AC_DEFINE(HAVE_SPARC_COMPILER, 1, "Define if SPARC-compiler is used")
 fi
 AM_CONDITIONAL(BUILD_SPARC_GCC, test "x$build_SPARC_GCC" = xyes)
 AM_CONDITIONAL(BUILD_SPARC_EMPTY_PLUGIN, test "x$build_SPARC_EMPTY_PLUGIN" = xyes)
@@ -1400,6 +1448,7 @@ AM_CONDITIONAL(BUILD_ABC,  test "x$panda_USE_ABC" = xyes )
 LIB_SUITESPARSECONFIG=
 AM_CONDITIONAL(BUILD_GLPK, test "x$panda_USE_GLPK" = xyes)
 if test "x$panda_USE_GLPK" = xyes; then
+   AC_LANG_PUSH([C])
    if test "${DISTRO:0:8}" != "centos_6" && test "$DISTRO" != "ubuntu_12.04"; then
       LIB_SUITESPARSECONFIG=-lsuitesparseconfig
       AC_CHECK_LIB([suitesparseconfig],[SuiteSparse_malloc], [echo "Checking for libsuitesparseconfig... yes"], [echo "Checking for libsuitesparseconfig... no"; AC_MSG_ERROR("libsuitesparseconfig not found")])
@@ -1408,6 +1457,7 @@ if test "x$panda_USE_GLPK" = xyes; then
    AC_CHECK_LIB([colamd],[symamd], [echo "Checking for libcolamd... yes"], [echo "Checking for libcolamd... no"; AC_MSG_ERROR("libcolamd not found")], [${LIB_SUITESPARSECONFIG}])
    AC_CHECK_LIB([ltdl],[lt_dlerror], [echo "Checking for libltdl... yes"], [echo "Checking for libltd... no"; AC_MSG_ERROR("libltdl not found")])
    AC_CHECK_LIB([glpk],[glp_simplex], [echo "Checking for libglpk... yes"], [echo "Checking for libglpk... no"; AC_MSG_ERROR("libglpk not found")], [-lamd -lcolamd -lltdl -lgmp ${LIB_SUITESPARSECONFIG}])
+   AC_LANG_POP([C])
    AC_CHECK_HEADER([glpk.h],GLPK_NESTED_DIR=0,GLPK_NESTED_DIR=-1)
    if test "x$GLPK_NESTED_DIR" != "x0"; then
       AC_CHECK_HEADER([glpk/glpk.h],GLPK_NESTED_DIR=1, AC_MSG_ERROR("glpk.h not found"))
@@ -1475,7 +1525,7 @@ AC_SUBST(VFLIB_DIR)
 
 
 #################################### Ext Libraries #############################
-if test "x$panda_USE_ABC" = xyes || test "x$panda_USE_BEAGLE" = xyes || test "x$panda_USE_COIN_OR" = xyes || test "x$panda_USE_CROSSTOOL_NG" = xyes || test "x$panda_USE_CUDD" = xyes || test "x$panda_USE_FLOPOCO" = xyes ||test "x$panda_USE_GLPK" = xyes || test "x$panda_USE_LIB_FROM_LIBERTY" = xyes || test "x$panda_USE_LP_SOLVE" = xyes || test "x$panda_USE_NODELIB" = xyes || test "x$panda_USE_R" = xyes || test "x$panda_USE_RAPIDMINER" = xyes || test "x$panda_USE_SIMIT" = xyes || test "x$panda_USE_VFLIB" = xyes || test "x$build_ARM_GCC" || test "x$build_SPARC_GCC" = xyes || test "x$panda_USE_TRNG" = xyes; then
+if test test "x$ac_cv_cxx_compile_cxx17_native" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_gxx" = xyes || test "x$ac_cv_cxx_compile_cxx17_cxx1z" = xyes || "x$panda_USE_ABSEIL" = xyes || test "x$panda_USE_BEAGLE" = xyes || test "x$panda_USE_COIN_OR" = xyes || test "x$panda_USE_CROSSTOOL_NG" = xyes || test "x$panda_USE_CUDD" = xyes || test "x$panda_USE_FLOPOCO" = xyes || test "x$panda_USE_LIB_FROM_LIBERTY" = xyes || test "x$panda_USE_LP_SOLVE" = xyes || test "x$panda_USE_NODELIB" = xyes || test "x$panda_USE_R" = xyes || test "x$panda_USE_RAPIDMINER" = xyes || test "x$panda_USE_SIMIT" = xyes || test "x$panda_USE_VFLIB" = xyes || test "x$build_ARM_GCC" || test "x$build_SPARC_GCC" = xyes || test "x$panda_USE_TRNG" = xyes; then
   panda_USE_LIB_EXT=yes;
 fi
 AM_CONDITIONAL(BUILD_EXT, test "x$panda_USE_LIB_EXT" = xyes)
@@ -1493,6 +1543,7 @@ AC_CONFIG_FILES(
                  Makefile
                  panda_regressions/Makefile
                  panda_regressions/hls/Makefile
+                 panda_unit/Makefile
                  examples/Makefile
                  documentation/Makefile
                  documentation/img/Makefile
@@ -1502,6 +1553,7 @@ AC_CONFIG_FILES(
                  style/img/Makefile
                  style/img/panda.png
                  style/img/logoPoli.gif
+                 Appimage/Makefile
                )
 
 ################################################################################
@@ -2094,7 +2146,7 @@ AM_CONDITIONAL(BUILD_LIB_FROM_TGFF,  test "x$panda_USE_LIB_FROM_TGFF" = xyes)
 if test "x$panda_USE_LIB_TREE_PARSER" = xyes; then
   AC_DEFINE(HAVE_TREE_PARSER_BUILT, 1, "Define if from tree parser library is built")
   AC_CONFIG_FILES(
-                   src/parser/treegcc/Makefile
+                   src/parser/compiler/Makefile
                  )
 fi
 AM_CONDITIONAL(BUILD_LIB_TREE_PARSER, test "x$panda_USE_LIB_TREE_PARSER" = xyes)
@@ -2306,38 +2358,31 @@ AM_CONDITIONAL(BUILD_CORE_TOOLS, test "x$panda_USE_CORE_TOOLS" = xyes)
 if test "x$panda_USE_WRAPPER_XILINX" = xyes; then
   AC_DEFINE(HAVE_XILINX, 1, "Define if Xilinx wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_XILINX, test "x$panda_USE_WRAPPER_XILINX" = xyes)
 
 ################ Altera stuff ########################
 if test "x$panda_USE_WRAPPER_ALTERA" = xyes; then
   AC_DEFINE(HAVE_ALTERA, 1, "Define if Altera wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_ALTERA, test "x$panda_USE_WRAPPER_ALTERA" = xyes)
 
 ################ Lattice stuff ########################
 if test "x$panda_USE_WRAPPER_LATTICE" = xyes; then
   AC_DEFINE(HAVE_LATTICE, 1, "Define if Lattice wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_LATTICE, test "x$panda_USE_WRAPPER_LATTICE" = xyes)
 
 ################ NanoXplore stuff ########################
 if test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes; then
   AC_DEFINE(HAVE_NANOXPLORE, 1, "Define if NanoXplore wrapper library is built")
 fi
-AM_CONDITIONAL(BUILD_NANOXPLORE, test "x$panda_USE_WRAPPER_NANOXPLORE" = xyes)
-
 
 ################ Design Compiler stuff #####################
 if test "x$panda_USE_DESIGN_COMPILER" = xyes; then
   AC_DEFINE(HAVE_DESIGN_COMPILER, 1, "Define if Synopsys Design Compiler is correctly configured")
 fi
-AM_CONDITIONAL(BUILD_DESIGN_COMPILER, test "x$panda_USE_DESIGN_COMPILER" = xyes)
 
 ################ Formality stuff #########################
 if test "x$panda_USE_FORMALITY" = xyes; then
   AC_DEFINE(HAVE_FORMALITY, 1, "Define if Synopsys Formality is correctly configured")
 fi
-AM_CONDITIONAL(BUILD_FORMALITY, test "x$panda_USE_FORMALITY" = xyes)
 
 ################ Library Compiler stuff #########################
 if test "x$panda_USE_LIBRARY_COMPILER" = xyes; then
@@ -2478,6 +2523,7 @@ AC_CONFIG_FILES(
    etc/devices/ASIC_devices/Makefile
    etc/devices/Lattice_devices/Makefile
    etc/devices/NanoXplore_devices/Makefile
+   etc/devices/Generic_devices/Makefile
    )
 
 
@@ -2511,7 +2557,11 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    if test "x$MIN_GCC_VERSION" = "x"; then
       AC_MSG_ERROR("Oldest supported version of I386 gcc not set")
    fi
-   AC_CHECK_PLUGIN_DIR
+   EXTRA_CLANG_OPTIONS=
+   if test "x$panda_clangoldabi" = xyes; then
+     EXTRA_CLANG_OPTIONS=-D_GLIBCXX_USE_CXX11_ABI=0
+   fi
+   AC_CHECK_GCC_PLUGIN_DIR
    AC_CHECK_GCC45_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC46_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC47_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
@@ -2521,12 +2571,18 @@ if test "x$panda_USE_I386_GCC" = xyes; then
    AC_CHECK_GCC6_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC7_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
    AC_CHECK_GCC8_I386_VERSION($MIN_GCC_VERSION,$MAX_GCC_VERSION)
-   AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG6_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
-   AC_CHECK_CLANG7_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION)
+   AC_CHECK_CLANG_PLUGIN_DIR
+   AC_CHECK_CLANG4_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG5_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG6_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG7_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG8_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG9_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG10_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANG11_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
+   AC_CHECK_CLANGVVD_I386_VERSION($MIN_CLANG_VERSION,$MAX_CLANG_VERSION,$EXTRA_CLANG_OPTIONS)
 
-   if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x && test "x$I386_GCC8_PLUGIN_COMPILER" = x && test "x$I386_CLANG4_PLUGIN_COMPILER" = x && test "x$I386_CLANG5_PLUGIN_COMPILER" = x && test "x$I386_CLANG6_PLUGIN_COMPILER" = x && test "x$I386_CLANG7_PLUGIN_COMPILER" = x; then
+   if test "x$I386_GCC45_PLUGIN_COMPILER" = x && test "x$I386_GCC46_PLUGIN_COMPILER" = x && test "x$I386_GCC47_PLUGIN_COMPILER" = x && test "x$I386_GCC48_PLUGIN_COMPILER" = x && test "x$I386_GCC49_PLUGIN_COMPILER" = x && test "x$I386_GCC5_PLUGIN_COMPILER" = x && test "x$I386_GCC6_PLUGIN_COMPILER" = x && test "x$I386_GCC7_PLUGIN_COMPILER" = x && test "x$I386_GCC8_PLUGIN_COMPILER" = x && test "x$I386_CLANG4_PLUGIN_COMPILER" = x && test "x$I386_CLANG5_PLUGIN_COMPILER" = x && test "x$I386_CLANG6_PLUGIN_COMPILER" = x && test "x$I386_CLANG7_PLUGIN_COMPILER" = x && test "x$I386_CLANG8_PLUGIN_COMPILER" = x && test "x$I386_CLANG9_PLUGIN_COMPILER" = x && test "x$I386_CLANG10_PLUGIN_COMPILER" = x && test "x$I386_CLANG11_PLUGIN_COMPILER" = x && test "x$I386_CLANGVVD_PLUGIN_COMPILER" = x; then
       AC_MSG_ERROR("gcc with support to -m32 and plugin not found")
    fi
 fi
@@ -2628,6 +2684,57 @@ AM_CONDITIONAL(BUILD_I386_CLANG7_GEPICANON_PLUGIN, test "x$build_I386_CLANG7_GEP
 AM_CONDITIONAL(BUILD_I386_CLANG7_CSROA_PLUGIN, test "x$build_I386_CLANG7_CSROA_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG7_TOPFNAME_PLUGIN, test "x$build_I386_CLANG7_TOPFNAME_PLUGIN" = xyes)
 AM_CONDITIONAL(BUILD_I386_CLANG7_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG7_ASTANALYZER_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_CLANG8, test "x$build_I386_CLANG8" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_EMPTY_PLUGIN, test "x$build_I386_CLANG8_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_SSA_PLUGIN, test "x$build_I386_CLANG8_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_SSA_PLUGINCPP, test "x$build_I386_CLANG8_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG8_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_GEPICANON_PLUGIN, test "x$build_I386_CLANG8_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_CSROA_PLUGIN, test "x$build_I386_CLANG8_CSROA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_TOPFNAME_PLUGIN, test "x$build_I386_CLANG8_TOPFNAME_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG8_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG8_ASTANALYZER_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_CLANG9, test "x$build_I386_CLANG9" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_EMPTY_PLUGIN, test "x$build_I386_CLANG9_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_SSA_PLUGIN, test "x$build_I386_CLANG9_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_SSA_PLUGINCPP, test "x$build_I386_CLANG9_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG9_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_GEPICANON_PLUGIN, test "x$build_I386_CLANG9_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_CSROA_PLUGIN, test "x$build_I386_CLANG9_CSROA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_TOPFNAME_PLUGIN, test "x$build_I386_CLANG9_TOPFNAME_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG9_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG9_ASTANALYZER_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_CLANG10, test "x$build_I386_CLANG10" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_EMPTY_PLUGIN, test "x$build_I386_CLANG10_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_SSA_PLUGIN, test "x$build_I386_CLANG10_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_SSA_PLUGINCPP, test "x$build_I386_CLANG10_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG10_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_GEPICANON_PLUGIN, test "x$build_I386_CLANG10_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_CSROA_PLUGIN, test "x$build_I386_CLANG10_CSROA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_TOPFNAME_PLUGIN, test "x$build_I386_CLANG10_TOPFNAME_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG10_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG10_ASTANALYZER_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_CLANG11, test "x$build_I386_CLANG11" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_EMPTY_PLUGIN, test "x$build_I386_CLANG11_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_SSA_PLUGIN, test "x$build_I386_CLANG11_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_SSA_PLUGINCPP, test "x$build_I386_CLANG11_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANG11_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_GEPICANON_PLUGIN, test "x$build_I386_CLANG11_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_CSROA_PLUGIN, test "x$build_I386_CLANG11_CSROA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_TOPFNAME_PLUGIN, test "x$build_I386_CLANG11_TOPFNAME_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANG11_ASTANALYZER_PLUGIN, test "x$build_I386_CLANG11_ASTANALYZER_PLUGIN" = xyes)
+
+AM_CONDITIONAL(BUILD_I386_CLANGVVD, test "x$build_I386_CLANGVVD" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_EMPTY_PLUGIN, test "x$build_I386_CLANGVVD_EMPTY_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_SSA_PLUGIN, test "x$build_I386_CLANGVVD_SSA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_SSA_PLUGINCPP, test "x$build_I386_CLANGVVD_SSA_PLUGINCPP" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_EXPANDMEMOPS_PLUGIN, test "x$build_I386_CLANGVVD_EXPANDMEMOPS_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_GEPICANON_PLUGIN, test "x$build_I386_CLANGVVD_GEPICANON_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_CSROA_PLUGIN, test "x$build_I386_CLANGVVD_CSROA_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_TOPFNAME_PLUGIN, test "x$build_I386_CLANGVVD_TOPFNAME_PLUGIN" = xyes)
+AM_CONDITIONAL(BUILD_I386_CLANGVVD_ASTANALYZER_PLUGIN, test "x$build_I386_CLANGVVD_ASTANALYZER_PLUGIN" = xyes)
+
 
 
 if test "x$panda_USE_ARM_GCC" = xyes || test "x$panda_USE_I386_GCC" = xyes || test "x$panda_USE_SPARC_GCC" = xyes; then
@@ -2797,7 +2904,7 @@ fi
 ################ Debug checking ##############################
 if test "x$panda_DEBUG" = xyes; then
   AC_DEFINE(PANDA_DEBUG, 1, "Define if a debug version is built")
-  CXXFLAGS+=" -g3 -rdynamic "
+  CXXFLAGS+=" -g3 "
   AC_DEFINE(HAVE_PRINT_STACK,1, "Define if call stack is printed on error")
 fi
 
@@ -2831,11 +2938,40 @@ for file in `find $BUILDDIR/config_headers -name *hpp`; do
    fi
 done;
 
-for keyword in `grep "#undef" $BUILDDIR/lconfig.h.in | awk '{print $2}'`; do
-   if test ! -f config_headers/config_"$keyword".hpp.in; then
-      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp.in
+for keyword in `grep "#undef" $BUILDDIR/lconfig.h | awk '{print $3}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      echo "#define "$keyword 0 > config_headers/config_"$keyword".hpp
+   else
+      echo "#define "$keyword 0 > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
    fi
 done;
+
+for keyword in `grep "#define" $BUILDDIR/lconfig.h | awk '{print $2}'`; do
+   if test ! -f config_headers/config_"$keyword".hpp; then
+      echo Creating config_headers/config_"$keyword".hpp
+      grep $keyword $BUILDDIR/lconfig.h > config_headers/config_"$keyword".hpp
+   else
+      grep $keyword $BUILDDIR/lconfig.h > configtest.hpp
+      if diff configtest.hpp config_headers/config_"$keyword".hpp >/dev/null 2>&1; then
+      { echo config_headers/config_"$keyword".hpp is unchanged >&5
+echo config_headers/config_"$keyword".hpp is unchanged >&6;}
+    else
+      echo config_headers/config_"$keyword".hpp is changed
+      rm -f config_headers/config_"$keyword".hpp
+      mv configtest.hpp config_headers/config_"$keyword".hpp
+    fi
+   fi
+done;
+
 all_includes=" -I$BUILDDIR/config_headers"
 
 
@@ -2924,6 +3060,10 @@ AC_SUBST(all_includes)
 
 AC_OUTPUT()
 
+if test "$no_create" = yes; then
+/bin/bash ./config.status lconfig.h
+fi
+
 for keyword in `grep "#undef" $BUILDDIR/lconfig.h | awk '{print $3}'`; do
    if test ! -f config_headers/config_"$keyword".hpp; then
       echo Creating config_headers/config_"$keyword".hpp
@@ -2957,4 +3097,5 @@ echo config_headers/config_"$keyword".hpp is unchanged >&6;}
     fi
    fi
 done;
+
 

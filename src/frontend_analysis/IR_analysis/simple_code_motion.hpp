@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file simple_code_motion.hpp
- * @brief Analysis step that performs some simple code motions over GCC IR
+ * @brief Analysis step that performs some simple code motions over the IR
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$

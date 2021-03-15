@@ -31,7 +31,7 @@
  *
  * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  *
@@ -63,7 +63,7 @@
 /* ************* data type define ************************* */
 int type;
 int nb;
-int round;
+int i_round;
 int key[32];
 int statemt[32];
 int word[4][120];

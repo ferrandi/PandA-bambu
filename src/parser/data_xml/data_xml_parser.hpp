@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -85,6 +85,6 @@ class DataXmlParser
    void Parse(const CustomSet<std::string>& file_names, std::map<std::string, CustomMap<std::string, std::string>>& output) const;
 };
 /// Refcount definition for the class ParseProfilingAnalysis
-typedef refcount<const DataXmlParser> DataXmlParserConstRef;
-typedef refcount<DataXmlParser> DataXmlParserRef;
+using DataXmlParserConstRef = refcount<const DataXmlParser>;
+using DataXmlParserRef = refcount<DataXmlParser>;
 #endif

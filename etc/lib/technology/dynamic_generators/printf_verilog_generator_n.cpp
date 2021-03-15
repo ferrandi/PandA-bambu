@@ -10,9 +10,9 @@
  *                              PandA Project 
  *                 URL: http://trac.ws.dei.polimi.it/panda
  *                      Microarchitectures Laboratory
- *                       Politecnico di Milano - DEI
+ *                       Politecnico di Milano - DEIB
  *             ***********************************************
- *              Copyright (c) 2004-2020 Politecnico di Milano
+ *              Copyright (c) 2004-2021 Politecnico di Milano
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU General Public License as published by
@@ -44,11 +44,11 @@ std::string fsm;
 std::string case_statement;
 
 std::stringstream _npString;
-_npString<<(std::max(_np,2));
+_npString<<((_np < 2) ? 2 : _np);
 std::string selector_dimension=_npString.str();
 
 std::stringstream _np1String;
-_np1String<<(std::max(_np-1, 1));
+_np1String<<(((_np-1) < 1) ? 1 : (_np-1));
 std::string selector_left=_np1String.str();
 
 int selector=1;

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -116,6 +116,10 @@ void ExtractOmpFor::Initialize()
 
 bool ExtractOmpFor::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return bb_version == 0;
 }
 
@@ -136,7 +140,7 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
    }
    bool changed = false;
    const auto loops = function_behavior->CGetLoops();
-   for(const auto loop : loops->GetList())
+   for(const auto& loop : loops->GetList())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing loop " + STR(loop->GetId()));
       if(not(loop->loop_type & DOALL_LOOP))
@@ -207,12 +211,51 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             {
                const auto basic_block_info = basic_block_graph->CGetBBNodeInfo(*basic_block);
                if(*basic_block == basic_block_graph_info->entry_vertex or *basic_block == basic_block_graph_info->exit_vertex)
+               {
                   continue;
+               }
                if(basic_block_info->loop_id)
+               {
                   continue;
+               }
                if(not basic_block_info->block->CGetStmtList().size())
+               {
                   continue;
-               for(const auto statement : basic_block_info->block->CGetStmtList())
+               }
+               if(boost::in_degree(*basic_block, *basic_block_graph) == 1 && boost::source(*(boost::in_edges(*basic_block, *basic_block_graph).first), *basic_block_graph) == basic_block_graph_info->entry_vertex)
+               {
+                  const auto& stm_list = basic_block_info->block->CGetStmtList();
+                  if(stm_list.size() != 3)
+                  {
+                     THROW_ERROR("unexpected pattern");
+                  }
+                  auto stmt_iter = stm_list.begin();
+                  const auto ga1 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  if(not ga1)
+                  {
+                     THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  const auto nop1 = GetPointer<const nop_expr>(GET_NODE(ga1->op1));
+                  if(not nop1)
+                  {
+                     THROW_ERROR("First statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  ++stmt_iter;
+                  const auto ga2 = GetPointer<const gimple_assign>(GET_NODE(*stmt_iter));
+                  if(not ga2)
+                  {
+                     THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+                  if(GET_NODE(ga2->op1)->get_kind() == gt_expr_K)
+                  {
+                     continue;
+                  }
+                  else
+                  {
+                     THROW_ERROR("Second statement of pre-loop BB is " + (*stmt_iter)->ToString());
+                  }
+               }
+               for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
                   if(gr and not gr->op)
@@ -305,12 +348,18 @@ DesignFlowStep_Status ExtractOmpFor::InternalExec()
             {
                const auto basic_block_info = basic_block_graph->CGetBBNodeInfo(*basic_block);
                if(*basic_block == basic_block_graph_info->entry_vertex or *basic_block == basic_block_graph_info->exit_vertex)
+               {
                   continue;
+               }
                if(basic_block_info->loop_id)
+               {
                   continue;
+               }
                if(not basic_block_info->block->CGetStmtList().size())
+               {
                   continue;
-               for(const auto statement : basic_block_info->block->CGetStmtList())
+               }
+               for(const auto& statement : basic_block_info->block->CGetStmtList())
                {
                   const auto gr = GetPointer<const gimple_return>(GET_NODE(statement));
                   if(gr and not gr->op)

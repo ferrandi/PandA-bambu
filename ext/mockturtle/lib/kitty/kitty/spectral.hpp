@@ -1,6 +1,6 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
- * Copyright (C) 2017-2019  University of Victoria
+ * Copyright (C) 2017-2020  EPFL
+ * Copyright (C) 2017-2020  University of Victoria
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -39,7 +39,10 @@
 #pragma once
 
 #include "bit_operations.hpp"
+#include "constructors.hpp"
+#include "esop.hpp"
 #include "detail/mscfix.hpp"
+#include "traits.hpp"
 
 #include <cmath>
 #include <iomanip>
@@ -585,6 +588,8 @@ inline void exact_spectral_canonization_null_callback( const std::vector<spectra
 template<typename TT, typename Callback = decltype( detail::exact_spectral_canonization_null_callback )>
 inline TT exact_spectral_canonization( const TT& tt, Callback&& fn = detail::exact_spectral_canonization_null_callback )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   detail::miller_spectral_canonization_impl<TT> impl( tt );
   return impl.run( fn ).first;
 }
@@ -597,7 +602,7 @@ inline TT exact_spectral_canonization( const TT& tt, Callback&& fn = detail::exa
   entry is the representative, and the second entry indicates whether the
   solution is known to be exact or not.
 
-  The function can be passed as second argument a callback that is called with a
+  A function can be passed as second argument that is callback called with a
   vector of spectral operations necessary to transform the input function into
   the representative.
 
@@ -608,9 +613,250 @@ inline TT exact_spectral_canonization( const TT& tt, Callback&& fn = detail::exa
 template<typename TT, typename Callback = decltype( detail::exact_spectral_canonization_null_callback )>
 inline std::pair<TT, bool> exact_spectral_canonization_limit( const TT& tt, unsigned step_limit, Callback&& fn = detail::exact_spectral_canonization_null_callback )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   detail::miller_spectral_canonization_impl<TT> impl( tt );
   impl.set_limit( step_limit );
   return impl.run( fn );
+}
+
+namespace detail
+{
+
+template<class TT>
+struct anf_spectrum
+{
+public:
+  explicit anf_spectrum( const TT& tt )
+    : _anf( detail::algebraic_normal_form( tt ) ),
+      _khots( tt.num_vars() + 1, tt.construct() )
+  {
+    for ( auto i = 0u; i <= tt.num_vars(); ++i )
+    {
+      create_equals( _khots[i], i );
+    }
+  }
+
+private:
+  auto permutation( unsigned i, unsigned j )
+  {
+    spectral_operation op( spectral_operation::kind::permutation, 1 << i, 1 << j );
+
+    swap_inplace( _anf, i, j );
+
+    return op;
+  }
+
+  auto input_negation( unsigned i )
+  {
+    spectral_operation op( spectral_operation::kind::input_negation, 1 << i );
+
+    _anf ^= cofactor1( _anf, i ) & nth_var<TT>( _anf.num_vars(), i, true );
+
+    return op;
+  }
+
+  auto output_negation()
+  {
+    flip_bit( _anf, 0 );
+
+    return spectral_operation( spectral_operation::kind::output_negation );
+  }
+
+  auto spectral_translation( int i, int j )
+  {
+    spectral_operation op( spectral_operation::kind::spectral_translation, 1 << i, 1 << j );
+
+    _anf ^= ( cofactor1( _anf, i ) ^ cofactor0( cofactor1( _anf, i ), j ) ) & nth_var<TT>( _anf.num_vars(), j ) & nth_var<TT>( _anf.num_vars(), i, true );
+
+    return op;
+  }
+
+  auto disjoint_translation( int i )
+  {
+    spectral_operation op( spectral_operation::kind::disjoint_translation, 1 << i );
+
+    flip_bit( _anf, UINT64_C( 1 ) << i );
+
+    return op;
+  }
+
+  template<class Fn>
+  void foreach_term_of_size( uint32_t k, Fn&& fn, int64_t start = 0 )
+  {
+    auto term = find_first_one_bit( _anf & _khots[k], start );
+
+    while ( term != -1 )
+    {
+      fn( term );
+      term = find_first_one_bit( _anf & _khots[k], term + 1 );
+    }
+  }
+
+  void insert( const spectral_operation& op )
+  {
+    _transforms.push_back( op );
+  }
+
+public:
+  bool classify()
+  {
+    bool repeat = true;
+    auto rounds = 0u;
+    while ( repeat && rounds++ < 2u )
+    {
+      if ( count_ones( _anf ) < 2 )
+      {
+        break;
+      }
+
+      repeat = false;
+      for ( auto k = 2u; k < _anf.num_vars(); ++k )
+      {
+        foreach_term_of_size( k, [&]( auto term ) {
+          auto mask = _anf.construct();
+          create_from_cubes( mask, {cube( static_cast<uint32_t>( term ), static_cast<uint32_t>( term ) )} );
+
+          const auto i = find_first_one_bit( _anf & _khots[k + 1] & mask );
+          if ( i != -1 )
+          {
+            insert( input_negation( detail::log2[i & ~term] ) );
+            repeat = true;
+          }
+          else
+          {
+            foreach_term_of_size( k, [&]( auto term2 ) {
+              if ( __builtin_popcount( static_cast<uint32_t>( term ^ term2 ) ) == 2 )
+              {
+                const auto vari = detail::log2[term & ~term2];
+                const auto varj = detail::log2[term2 & ~term];
+
+                insert( spectral_translation( vari, varj ) );
+                repeat = true;
+              }
+            }, term + 1 );
+          }
+        } );
+      }
+    }
+
+    if ( get_bit( _anf, 0 ) )
+    {
+      insert( output_negation() );
+    }
+
+    for ( auto i = 0u; i < _anf.num_vars(); ++i )
+    {
+      if ( get_bit( _anf, UINT64_C( 1 ) << i ) )
+      {
+        insert( disjoint_translation( i ) );
+      }
+    }
+
+    auto mask = 0u;
+    bool disjoint = true;
+    for_each_one_bit( _anf, [&]( auto word ) {
+      if ( word & mask ) {
+        disjoint = false;
+      } else {
+        mask |= word;
+      }
+    });
+
+    if ( disjoint )
+    {
+      auto dest_var = 0;
+      for ( auto k = 2u; k < _anf.num_vars(); ++k )
+      {
+        foreach_term_of_size( k, [&]( auto term ) {
+          while ( term != 0 )
+          {
+            const auto vari = detail::log2[term & ~( term - 1 )];
+
+            // swap i with dest_var
+            if ( vari != dest_var )
+            {
+              insert( permutation( vari, dest_var ) );
+            }
+            ++dest_var;
+
+            term &= ( term - 1 );
+          }
+        } );
+      }
+
+      return true;
+    }
+
+    return false;
+  }
+
+  const TT& anf() const
+  {
+    return _anf;
+  }
+
+  TT truth_table() const
+  {
+    return detail::algebraic_normal_form( _anf );
+  }
+
+  template<class Callback>
+  void get_transformations( Callback&& fn ) const
+  {
+    fn( _transforms );
+  }
+
+private:
+  TT _anf;
+  std::vector<TT> _khots;
+  std::vector<spectral_operation> _transforms;
+};
+
+}
+
+/*! \brief Exact spectral canonization (with Reed-Muller preprocessor)
+
+  A function can be passed as second argument that is callback called with a
+  vector of spectral operations necessary to transform the input function into
+  the representative.
+
+  The algorithm is based on the paper: M. Soeken, E. Testa, D.M. Miller: A
+  hybrid spectral method for checking Boolean function equivalence, PACRIM 2019.
+
+  \param tt Truth table
+  \param fn Callback to retrieve list of transformations (optional)
+ */
+template<typename TT, typename Callback = decltype( detail::exact_spectral_canonization_null_callback )>
+inline TT hybrid_exact_spectral_canonization( const TT& tt, Callback&& fn = detail::exact_spectral_canonization_null_callback )
+{
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
+  (void)fn;
+
+  std::vector<detail::spectral_operation> transforms;
+
+  detail::anf_spectrum<TT> anf( tt );
+
+  bool is_disjoint = anf.classify();
+  anf.get_transformations( [&]( const auto& t ) { std::copy( t.begin(), t.end(), std::back_inserter( transforms ) ); } );
+
+  if ( !is_disjoint )
+  {
+    const auto miller_repr = exact_spectral_canonization( anf.truth_table(), [&]( const auto& t ) {
+      std::copy( t.begin(), t.end(), std::back_inserter( transforms ) );
+    } );
+    detail::anf_spectrum<TT> anf_post( miller_repr );
+    anf_post.classify();
+    anf_post.get_transformations( [&]( const auto& t ) { std::copy( t.begin(), t.end(), std::back_inserter( transforms ) ); } );
+    fn( transforms );
+    return anf_post.truth_table();
+  }
+  else
+  {
+    fn( transforms );
+    return anf.truth_table();
+  }
 }
 
 /*! \brief Print spectral representation of a function in RW order
@@ -621,6 +867,8 @@ inline std::pair<TT, bool> exact_spectral_canonization_limit( const TT& tt, unsi
 template<typename TT>
 inline void print_spectrum( const TT& tt, std::ostream& os = std::cout )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto spectrum = detail::spectrum::from_truth_table( tt );
   spectrum.print( os, detail::get_rw_coeffecient_order( tt.num_vars() ) );
 }
@@ -635,6 +883,8 @@ inline void print_spectrum( const TT& tt, std::ostream& os = std::cout )
 template<typename TT>
 inline std::vector<int32_t> rademacher_walsh_spectrum( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   const auto spectrum = detail::spectrum::from_truth_table( tt );
   return spectrum.coefficients();
 }
@@ -654,7 +904,9 @@ inline std::vector<int32_t> rademacher_walsh_spectrum( const TT& tt )
 template<typename TT>
 inline std::vector<int32_t> autocorrelation_spectrum( const TT& tt )
 {
-  std::vector<int32_t> spectrum( 1, tt.num_bits() );
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
+  std::vector<int32_t> spectrum( 1, static_cast<uint32_t>( tt.num_bits() ) );
   spectrum.reserve( tt.num_bits() );
 
   for ( uint64_t i = 1; i < tt.num_bits(); ++i )
@@ -705,6 +957,8 @@ inline std::vector<uint32_t> spectrum_distribution( const std::vector<int32_t>& 
 template<typename TT>
 inline uint32_t get_spectral_class( const TT& tt )
 {
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
   assert( tt.num_vars() <= 5 );
 
   const auto rwd = spectrum_distribution( rademacher_walsh_spectrum( tt ) );
@@ -910,6 +1164,37 @@ inline uint32_t get_spectral_class( const TT& tt )
   }
 
   return 48;
+}
+
+namespace detail
+{
+static std::vector<uint64_t> spectral_repr[] = {
+    {0x0},
+    {0x0},
+    {0x0, 0x8},
+    {0x00, 0x80, 0x88},
+    {0x0000, 0x8000, 0x8080, 0x0888, 0x8888, 0x2a80, 0xf888, 0x7888},
+    {0x00000000, 0x80000000, 0x80008000, 0x00808080, 0x80808080, 0x08888000, 0xaa2a2a80, 0x88080808, 0x2888a000, 0xf7788000, 0xa8202020, 0x08880888, 0xbd686868, 0xaa808080, 0x7e686868, 0x2208a208, 0x08888888, 0x88888888, 0xea404040, 0x2a802a80, 0x73d28c88, 0xea808080, 0xa28280a0, 0x13284c88, 0xa2220888, 0xaae6da80, 0x58d87888, 0x8c88ac28, 0x8880f880, 0x9ee8e888, 0x4268c268, 0x16704c80, 0x78888888, 0x4966bac0, 0x372840a0, 0x5208d288, 0x7ca00428, 0xf8880888, 0x2ec0ae40, 0xf888f888, 0x58362ec0, 0x0eb8f6c0, 0x567cea40, 0xf8887888, 0x78887888, 0xe72890a0, 0x268cea40, 0x6248eac0}};
+}
+
+/*! \brief Returns spectral representative using lookup
+ *
+ * This function returns the spectral representative for functions with up to 5
+ * variables, but does not give the possibility to obtain the transformation
+ * sequence to obtain the function from the representative.
+ *
+ * \brief func Truth table for function with at most 5 variables.
+ */
+template<class TT>
+TT spectral_representative( const TT& func )
+{
+  static_assert( is_complete_truth_table<TT>::value, "Can only be applied on complete truth tables." );
+
+  auto r = func.construct();
+  const auto index = get_spectral_class( func );
+  const auto word = detail::spectral_repr[func.num_vars()][index];
+  kitty::create_from_words( r, &word, &word + 1 );
+  return r;
 }
 
 } /* namespace kitty */

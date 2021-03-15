@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -90,12 +90,12 @@ class FunctionalUnitStep : public virtual DesignFlowStep
     * Analyze all the cells built starting from a template
     * @param fu is the corresponding functional unit
     */
-   virtual void AnalyzeFu(const technology_nodeRef fu);
+   virtual void AnalyzeFu(const technology_nodeRef f_unit);
 
    /**
     * Create a template instance to be specialized
     */
-   technology_nodeRef create_template_instance(const technology_nodeRef& fu_template, std::string& name, const target_deviceRef& device, unsigned int prec);
+   technology_nodeRef create_template_instance(const technology_nodeRef& fu_template, const std::string& name, const target_deviceRef& device, unsigned int prec);
 
  public:
    /**

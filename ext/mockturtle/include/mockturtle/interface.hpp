@@ -111,7 +111,7 @@ public:
    *
    * \param name Optional name for the input
    */
-  signal create_pi( std::string const& name = {} );
+  signal create_pi( std::string const& name = std::string() );
 
   /*! \brief Creates a primary output in the network.
    *
@@ -123,7 +123,7 @@ public:
    * \param s Signal that drives the created primary output
    * \param name Optional name for the output
    */
-  void create_po( signal const& s, std::string const& name = {} );
+  void create_po( signal const& s, std::string const& name = std::string() );
 
   /*! \brief Creates a register output in the network.
    *
@@ -141,7 +141,7 @@ public:
    *
    * \param name Optional name for the register output
    */
-  signal create_ro( std::string const& name = {} );
+  signal create_ro( std::string const& name = std::string() );
 
   /*! \brief Creates a register input in the network.
    *
@@ -163,7 +163,7 @@ public:
    * \param s Signal that drives the created primary output
    * \param name Optional name for the output
    */
-  void create_ri( signal const& s, std::string const& name = {} );
+  void create_ri( signal const& s, std::string const& name = std::string() );
 
   /*! \brief Checks whether the network is combinational.
    *
@@ -446,13 +446,13 @@ public:
   /*! \brief Returns true, if node is on critical path */
   bool is_on_critical_path( node const& n ) const;
 
-  /*! \brief Returns true if node is an AND gate. */
+  /*! \brief Returns true if node is a 2-input AND gate. */
   bool is_and( node const& n ) const;
 
-  /*! \brief Returns true if node is an OR gate. */
+  /*! \brief Returns true if node is a 2-input OR gate. */
   bool is_or( node const& n ) const;
 
-  /*! \brief Returns true if node is an XOR gate. */
+  /*! \brief Returns true if node is a 2-input XOR gate. */
   bool is_xor( node const& n ) const;
 
   /*! \brief Returns true if node is a majority-of-3 gate. */
@@ -463,6 +463,15 @@ public:
 
   /*! \brief Returns true if node is a 3-input XOR gate. */
   bool is_xor3( node const& n ) const;
+
+  /*! \brief Returns true if node is a primitive n-ary AND gate. */
+  bool is_nary_and( node const& n ) const;
+
+  /*! \brief Returns true if node is a primitive n-ary OR gate. */
+  bool is_nary_or( node const& n ) const;
+
+  /*! \brief Returns true if node is a primitive n-ary XOR gate. */
+  bool is_nary_xor( node const& n ) const;
 
   /*! \brief Returns true if node is a general function node. */
   bool is_function( node const& n ) const;

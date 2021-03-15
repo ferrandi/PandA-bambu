@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -111,6 +111,10 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 
 bool SDCCodeMotion::HasToBeExecuted() const
 {
+   if(!HasToBeExecuted0())
+   {
+      return false;
+   }
    return parameters->getOption<HLSFlowStep_Type>(OPT_scheduling_algorithm) == HLSFlowStep_Type::SDC_SCHEDULING and GetPointer<const HLS_manager>(AppM) and GetPointer<const HLS_manager>(AppM)->get_HLS(function_id) and
           GetPointer<const HLS_manager>(AppM)->get_HLS(function_id)->Rsch && FunctionFrontendFlowStep::HasToBeExecuted();
 }
@@ -139,18 +143,14 @@ DesignFlowStep_Status SDCCodeMotion::InternalExec()
       const auto old_basic_block = movement[1];
       const auto new_basic_block = movement[2];
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Moving " + STR(TM->GetTreeReindex(statement_index)) + " from BB" + STR(old_basic_block) + " to BB" + STR(new_basic_block));
-#ifndef NDEBUG
       if(not AppM->ApplyNewTransformation())
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Skipped because reached limit of cfg transformations");
          continue;
       }
-#endif
       list_of_bloc[old_basic_block]->RemoveStmt(TM->GetTreeReindex(statement_index));
       list_of_bloc[new_basic_block]->PushBack(TM->GetTreeReindex(statement_index));
-#ifndef NDEBUG
       AppM->RegisterTransformation(GetName(), TM->CGetTreeNode(statement_index));
-#endif
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Moved " + STR(statement_index));
    }
    function_behavior->UpdateBBVersion();

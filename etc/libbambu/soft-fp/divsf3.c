@@ -49,7 +49,7 @@ SFtype __divsf3(SFtype a, SFtype b)
    return r;
 }
 
-inline SFtype __float32_divif(SFtype a, SFtype b)
+SFtype __float32_divif(SFtype a, SFtype b)
 {
    return __divsf3(a, b);
 }

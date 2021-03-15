@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,8 +80,8 @@ OctetStringAsnType::OctetStringAsnType(const std::string& _size) : AsnType(AsnTy
    THROW_ASSERT(_size.find("SIZE") != std::string::npos, _size);
    THROW_ASSERT(_size.find("(") != std::string::npos, _size);
    THROW_ASSERT(_size.find(")") != std::string::npos, _size);
-   const auto temp = _size.substr(_size.find("(") + 1);
-   const auto temp2 = temp.substr(0, temp.find(")"));
+   const auto temp = _size.substr(_size.find('(') + 1);
+   const auto temp2 = temp.substr(0, temp.find(')'));
    size = boost::lexical_cast<size_t>(temp2);
 }
 
@@ -104,8 +104,8 @@ SequenceOfAsnType::SequenceOfAsnType(std::string _element, const std::string& _s
    THROW_ASSERT(_size.find("SIZE") != std::string::npos, _size);
    THROW_ASSERT(_size.find("(") != std::string::npos, _size);
    THROW_ASSERT(_size.find(")") != std::string::npos, _size);
-   const auto temp = _size.substr(_size.find("(") + 1);
-   const auto temp2 = temp.substr(0, temp.find(")"));
+   const auto temp = _size.substr(_size.find('(') + 1);
+   const auto temp2 = temp.substr(0, temp.find(')'));
    size = boost::lexical_cast<size_t>(temp2);
 }
 

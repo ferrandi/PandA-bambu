@@ -1,5 +1,7 @@
-[![Build Status](https://travis-ci.org/lsils/mockturtle.svg?branch=master)](https://travis-ci.org/lsils/mockturtle)
-[![Build status](https://ci.appveyor.com/api/projects/status/2jo09dyjl8t8psrj?svg=true)](https://ci.appveyor.com/project/msoeken/mockturtle)
+[![Actions Status](https://github.com/lsils/mockturtle/workflows/Linux%20CI/badge.svg)](https://github.com/lsils/mockturtle/actions)
+[![Actions Status](https://github.com/lsils/mockturtle/workflows/MacOS%20CI/badge.svg)](https://github.com/lsils/mockturtle/actions)
+[![Actions Status](https://github.com/lsils/mockturtle/workflows/Windows%20CI/badge.svg)](https://github.com/lsils/mockturtle/actions)
+[![Coverage Status](https://coveralls.io/repos/github/lsils/mockturtle/badge.svg?branch=master)](https://coveralls.io/github/lsils/mockturtle?branch=master)
 [![Documentation Status](https://readthedocs.org/projects/mockturtle/badge/?version=latest)](http://mockturtle.readthedocs.io/en/latest/?badge=latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -22,7 +24,7 @@ and prints them for each node.
 #include <mockturtle/mockturtle.hpp>
 #include <lorina/aiger.hpp>
 
-aig_network aig;
+mockturtle::aig_network aig;
 lorina::read_aiger( "file.aig", mockturtle::aiger_reader( aig ) );
 
 const auto cuts = cut_enumeration( aig );

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -86,7 +86,9 @@ void prettyPrintVertex::get_internal_vars(const vertex& v, const OpGraphConstRef
             break;
          }
          if(!BH->is_a_constant(var))
+         {
             list_of_variables.insert(var);
+         }
       }
    }
 }

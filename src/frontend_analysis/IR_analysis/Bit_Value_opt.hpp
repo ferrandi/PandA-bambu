@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -32,7 +32,7 @@
  */
 /**
  * @file Bit_Value_opt.hpp
- * @brief Class performing some optimizations on the GCC IR exploiting Bit Value analysis.
+ * @brief Class performing some optimizations on the IR exploiting Bit Value analysis.
  *
  * @author Fabrizio Ferrandi <fabrizio.ferrandi@polimi.it>
  * $Revision$
@@ -59,14 +59,11 @@ class statement_list;
 //@}
 
 /**
- * @brief Class performing some optimizations on the GCC IR exploiting Bit Value analysis.
+ * @brief Class performing some optimizations on the IR exploiting Bit Value analysis.
  */
 class Bit_Value_opt : public FunctionFrontendFlowStep
 {
  private:
-   /// the tree manipulation
-   tree_manipulationRef IRman;
-
    /// when true IR has been modified
    bool modified;
 
@@ -81,7 +78,7 @@ class Bit_Value_opt : public FunctionFrontendFlowStep
     * @param sl is the statement list
     * @param TM is the tree manager
     */
-   void optimize(statement_list* sl, tree_managerRef TM);
+   void optimize(statement_list* sl, tree_managerRef TM, tree_manipulationRef IRman);
 
  public:
    /**

@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -256,7 +256,7 @@ class Loop
     * @param g is the basic block control flow graph
     * @param header is the header basic block
     */
-   Loop(const BBGraphRef g, vertex header);
+   Loop(const BBGraphRef _bb_graph, vertex _header_block);
 
    /**
     * returns the loop id
@@ -397,6 +397,6 @@ class Loop
    friend class add_loop_nop;
 };
 /// refcount definition of the class
-typedef refcount<Loop> LoopRef;
+using LoopRef = refcount<Loop>;
 
 #endif // LOOP_HPP

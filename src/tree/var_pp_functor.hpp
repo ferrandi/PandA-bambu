@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -74,8 +74,8 @@ struct var_pp_functor
     */
    virtual std::string operator()(unsigned int var) const = 0;
 };
-typedef refcount<var_pp_functor> var_pp_functorRef;
-typedef refcount<const var_pp_functor> var_pp_functorConstRef;
+using var_pp_functorRef = refcount<var_pp_functor>;
+using var_pp_functorConstRef = refcount<const var_pp_functor>;
 
 /**
  * Standard functor that returns the name of a variable
@@ -183,7 +183,7 @@ struct isolated_var_pp_functor : public var_pp_functor
 
  public:
    /// Constructor
-   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, std::string _var_string) : BH(_BH), repl_var(_repl_var), var_string(std::move(_var_string))
+   isolated_var_pp_functor(const BehavioralHelperConstRef _BH, unsigned int _repl_var, const std::string& _var_string) : BH(_BH), repl_var(_repl_var), var_string(_var_string)
    {
    }
 

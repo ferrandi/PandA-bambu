@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -57,7 +57,7 @@ class InitializeHLS : public HLSFunctionStep
     * Constructor
     * @param DesignFlowManagerConstRef is the design flow manager
     */
-   InitializeHLS(const ParameterConstRef Param, const HLS_managerRef HLSMgr, unsigned int funId, const DesignFlowManagerConstRef design_flow_manager);
+   InitializeHLS(const ParameterConstRef _parameters, const HLS_managerRef _HLS_mgr, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

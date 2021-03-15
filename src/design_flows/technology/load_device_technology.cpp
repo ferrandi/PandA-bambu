@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -99,7 +99,7 @@ DesignFlowStep_Status LoadDeviceTechnology::Exec()
    // if configuration file is given, it is parsed to check for technology information
    if(parameters->isOption(OPT_xml_input_configuration))
    {
-      std::string fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
+      auto fn = parameters->getOption<std::string>(OPT_xml_input_configuration);
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "checking for technology information in the configuration file...");
       try
       {

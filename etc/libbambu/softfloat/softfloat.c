@@ -1982,9 +1982,7 @@ normalizeRoundAndPack:
 #define FP_CLS_NAN 3U
 
 #ifdef SIMPLE_CLZ25
-static __FORCE_INLINE
-    __bits8
-    __CLZ25(__bits32 v)
+static __FORCE_INLINE __bits8 __CLZ25(__bits32 v)
 {
    __bits32 r; // result of log2(v) will go here
    __bits32 shift;
@@ -2148,9 +2146,13 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
    VOLATILE_DEF __bits32 aSig, bSig, shift_0;
    VOLATILE_DEF __bits8 aExp, bExp, expDiff8;
    VOLATILE_DEF __bits8 nZeros;
-   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign, sb;
+   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
    VOLATILE_DEF __bits32 abs_a, abs_b;
-   VOLATILE_DEF __bits32 fA, fB, fB_shifted, fB_shifted_low, fBleft_shifted;
+   VOLATILE_DEF __bits32 fA, fB, fB_shifted;
+#ifndef NO_ROUNDING
+   VOLATILE_DEF _Bool sb, LSB_bit, Guard_bit, Round_bit, Sticky_bit, round;
+   VOLATILE_DEF __bits32 fB_shifted_low, fBleft_shifted;
+#endif
    VOLATILE_DEF _Bool ge_32;
    VOLATILE_DEF _Bool tmp_sign;
    VOLATILE_DEF __bits8 tmp_exp;
@@ -2158,13 +2160,22 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
    VOLATILE_DEF _Bool subnormal_exp_correction;
    VOLATILE_DEF __bits32 fB_shifted1;
    VOLATILE_DEF __bits32 fR0;
-   VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, Sticky_bit, round;
    VOLATILE_DEF _Bool R_c_zero;
    VOLATILE_DEF __bits8 RExp0, RExp1;
    VOLATILE_DEF __bits32 RSig0, RSig1, RSig2, RSig3;
    VOLATILE_DEF __bits32 RExp0RSig1, Rrounded;
    VOLATILE_DEF _Bool overflow_to_infinite;
    VOLATILE_DEF _Bool aExp255, bExp255;
+
+#ifdef NO_ROUNDING
+#define FRAC_SHIFT 0
+#define FRAC_FULL_BW 25
+#define FRAC_ALMOST_BW 24
+#else
+#define FRAC_SHIFT 2
+#define FRAC_FULL_BW 27
+#define FRAC_ALMOST_BW 26
+#endif
 
    aSign = __extractFloat32Sign(a);
    aSig = __extractFloat32Frac(a);
@@ -2207,35 +2218,45 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
    aSig = swap ? tmp_sig : aSig;
 
    tmp_sign = bSign;
-   bSign = swap ? aSign : bSign;
+   // bSign = swap ? aSign : bSign;
    aSign = swap ? tmp_sign : aSign;
 
    tmp_c_normal = b_c_normal;
    b_c_normal = swap ? a_c_normal : b_c_normal;
    a_c_normal = swap ? tmp_c_normal : a_c_normal;
 
-   fA = (aSig | (((__bits32)a_c_normal) << 23)) << 2;
-   fB = (bSig | (((__bits32)b_c_normal) << 23)) << 2;
+   fA = (aSig | (((__bits32)a_c_normal) << 23)) << FRAC_SHIFT;
+   fB = (bSig | (((__bits32)b_c_normal) << 23)) << FRAC_SHIFT;
 
    ge_32 = SELECT_BIT(expDiff8, 5) | SELECT_BIT(expDiff8, 6) | SELECT_BIT(expDiff8, 7);
+#ifdef NO_ROUNDING
+   fB_shifted = fB >> VAL_RESIZE((expDiff8 | (__bits32)(((((__sbits32)ge_32) << 31) >> 31))), 5);
+#else
    __bits64 fB_shift = ((__bits64)fB) << 32;
    fB_shift = fB_shift >> VAL_RESIZE((expDiff8 | (__bits32)(((((__sbits32)ge_32) << 31) >> 31))), 5);
    fB_shifted = fB_shift >> 32;
    fBleft_shifted = fB_shift;
 
    fB_shifted_low = fBleft_shifted;
-   BIT_RESIZE(fB_shifted, 26);
+#endif
+   BIT_RESIZE(fB_shifted, FRAC_ALMOST_BW);
 
+#ifndef NO_ROUNDING
    sb = fB_shifted_low != 0;
+#endif
    fB_shifted1 = ((__bits32)((((__sbits32)sAB) << 31) >> 31)) ^ fB_shifted;
-   BIT_RESIZE(fB_shifted1, 27);
+   BIT_RESIZE(fB_shifted1, FRAC_FULL_BW);
 
+#ifdef NO_ROUNDING
+   fR0 = fA + fB_shifted1 + sAB;
+#else
    fR0 = fA + fB_shifted1 + (sAB && (!sb));
-   BIT_RESIZE(fR0, 27);
-   count_leading_zero_macro_lshift(27, fR0, nZeros, shift_0);
+#endif
+   BIT_RESIZE(fR0, FRAC_FULL_BW);
+   count_leading_zero_macro_lshift(FRAC_FULL_BW, fR0, nZeros, shift_0);
 
    R_c_zero = nZeros == VAL_RESIZE((~0ULL), 5);
-   overflow_to_infinite = aExp == 254 && (fR0 >> 26) & 1;
+   overflow_to_infinite = aExp == 254 && (fR0 >> FRAC_ALMOST_BW) & 1;
 
 #ifdef NO_SUBNORMALS
    R_c_zero = R_c_zero || aExp < nZeros;
@@ -2245,17 +2266,23 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
    RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
    RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
 #endif
+#ifndef NO_ROUNDING
    LSB_bit = SELECT_BIT(RSig0, 3);
    Guard_bit = SELECT_BIT(RSig0, 2);
    Round_bit = SELECT_BIT(RSig0, 1);
    Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
    round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
+#endif
 
-   RSig1 = VAL_RESIZE(RSig0 >> 3, 23);
+   RSig1 = VAL_RESIZE(RSig0 >> (FRAC_SHIFT + 1), 23);
 
    RExp0RSig1 = (((__bits32)RExp0) << 23) | RSig1;
 
+#ifdef NO_ROUNDING
+   Rrounded = RExp0RSig1;
+#else
    Rrounded = RExp0RSig1 + round;
+#endif
 
    RExp1 = aExp255 || bExp255 ? 0xFF : VAL_RESIZE(Rrounded >> 23, 8);
 
@@ -2422,7 +2449,10 @@ static __FORCE_INLINE __float32 __float32_mul(__float32 a, __float32 b)
       VOLATILE_DEF __bits16 expSum = expSumPreSub - bias;
       VOLATILE_DEF __bits16 expPostNorm;
       VOLATILE_DEF SF_UDItype sigProd, sigProdExt;
-      VOLATILE_DEF _Bool norm, sticky, guard, round, expSigOvf0, expSigOvf1, expSigOvf2;
+      VOLATILE_DEF _Bool norm, expSigOvf0, expSigOvf2;
+#ifndef NO_ROUNDING
+      VOLATILE_DEF _Bool sticky, guard, round, expSigOvf1;
+#endif
       VOLATILE_DEF __bits32 expSig, expSigPostRound;
       VOLATILE_DEF __bits8 excPostNorm;
       aSig = (aSig | 0x00800000);
@@ -2433,12 +2463,17 @@ static __FORCE_INLINE __float32 __float32_mul(__float32 a, __float32 b)
       sigProdExt = norm ? (sigProd & ((1ULL << 47) - 1)) << 1 : (sigProd & ((1ULL << 46) - 1)) << 2;
       expSig = (expPostNorm << 23) | ((sigProdExt >> 25) & ((1 << 23) - 1));
       expSigOvf0 = (expPostNorm >> 9) & 1;
+#ifndef NO_ROUNDING
       sticky = (sigProdExt >> 24) & 1;
       guard = (sigProdExt & ((1 << 24) - 1)) != 0;
       round = sticky & ((guard & !((sigProdExt >> 25) & 1)) | ((sigProdExt >> 25) & 1));
       expSigPostRound = expSig + round;
       expSigOvf1 = round & (expSig == ((__bits32)-1));
       expSigOvf2 = expSigOvf0 ^ expSigOvf1;
+#else
+      expSigPostRound = expSig;
+      expSigOvf2 = expSigOvf0;
+#endif
       excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> 31) & 1);
       zSig = (((__bits32)zSign) << 31) | (expSigPostRound & ((1U << 31) - 1));
       if(z_c == FP_CLS_NORMAL)
@@ -2469,192 +2504,221 @@ static __FORCE_INLINE __float32 __float32_mul(__float32 a, __float32 b)
 #endif
 }
 
-__float32
- __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
+__float32 __float32_muladd(__float32 uiA, __float32 uiB, __float32 uiC)
 {
-    _Bool signA;
-    __int16 expA;
-    __bits32 sigA;
-    _Bool signB;
-    __int16 expB;
-    __bits32 sigB;
-    _Bool signC;
-    __int16 expC;
-    __bits32 sigC;
-    _Bool signProd;
-    __bits32 magBits, uiZ;
-    __int16 expProd;
-    __bits64 sigProd;
-    _Bool signZ;
-    __int16 expZ;
-    __bits32 sigZ;
-    __int16 expDiff;
-    __bits64 sig64Z, sig64C;
-    __int8 shiftDist;
+   _Bool signA;
+   __int16 expA;
+   __bits32 sigA;
+   _Bool signB;
+   __int16 expB;
+   __bits32 sigB;
+   _Bool signC;
+   __int16 expC;
+   __bits32 sigC;
+   _Bool signProd;
+   __bits32 magBits, uiZ;
+   __int16 expProd;
+   __bits64 sigProd;
+   _Bool signZ;
+   __int16 expZ;
+   __bits32 sigZ;
+   __int16 expDiff;
+   __bits64 sig64Z, sig64C;
+   __int8 shiftDist;
 
-    /*------------------------------------------------------------------------
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    signA = __extractFloat32Sign( uiA );
-    expA  = __extractFloat32Exp( uiA );
-    sigA  = __extractFloat32Frac( uiA );
-    signB = __extractFloat32Sign( uiB );
-    expB  = __extractFloat32Exp( uiB );
-    sigB  = __extractFloat32Frac( uiB );
-    signC = __extractFloat32Sign( uiC );
-    expC  = __extractFloat32Exp( uiC );
-    sigC  = __extractFloat32Frac( uiC );
-    signProd = signA ^ signB;
-    /*------------------------------------------------------------------------
+   signA = __extractFloat32Sign(uiA);
+   expA = __extractFloat32Exp(uiA);
+   sigA = __extractFloat32Frac(uiA);
+   signB = __extractFloat32Sign(uiB);
+   expB = __extractFloat32Exp(uiB);
+   sigB = __extractFloat32Frac(uiB);
+   signC = __extractFloat32Sign(uiC);
+   expC = __extractFloat32Exp(uiC);
+   sigC = __extractFloat32Frac(uiC);
+   signProd = signA ^ signB;
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    if ( expA == 0xFF ) {
-        if ( sigA || ((expB == 0xFF) && sigB) ) goto propagateNaN_ABC;
-        magBits = expB | sigB;
-        goto infProdArg;
-    }
-    if ( expB == 0xFF ) {
-        if ( sigB ) goto propagateNaN_ABC;
-        magBits = expA | sigA;
-        goto infProdArg;
-    }
-    if ( expC == 0xFF ) {
-        if ( sigC ) {
-            uiZ = 0;
-            goto propagateNaN_ZC;
-        }
-        uiZ = uiC;
-        goto uiZ;
-    }
-    /*------------------------------------------------------------------------
+   if(expA == 0xFF)
+   {
+      if(sigA || ((expB == 0xFF) && sigB))
+         goto propagateNaN_ABC;
+      magBits = expB | sigB;
+      goto infProdArg;
+   }
+   if(expB == 0xFF)
+   {
+      if(sigB)
+         goto propagateNaN_ABC;
+      magBits = expA | sigA;
+      goto infProdArg;
+   }
+   if(expC == 0xFF)
+   {
+      if(sigC)
+      {
+         uiZ = 0;
+         goto propagateNaN_ZC;
+      }
+      uiZ = uiC;
+      goto uiZ;
+   }
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    if ( ! expA ) {
-        if ( ! sigA ) goto zeroProd;
-        __int8 nZeros;
-        __bits32 shift_0;
-        count_leading_zero_macro_lshift(24, sigA, nZeros, shift_0);
-        expA = 1 - nZeros;
-        sigA = shift_0;
-    }
-    if ( ! expB ) {
-        if ( ! sigB ) goto zeroProd;
-        __int8 nZeros;
-        __bits32 shift_0;
-        count_leading_zero_macro_lshift(24, sigB, nZeros, shift_0);
-        expB = 1 - nZeros;
-        sigB = shift_0;
-    }
-    /*------------------------------------------------------------------------
+   if(!expA)
+   {
+      if(!sigA)
+         goto zeroProd;
+      __int8 nZeros;
+      __bits32 shift_0;
+      count_leading_zero_macro_lshift(24, sigA, nZeros, shift_0);
+      expA = 1 - nZeros;
+      sigA = shift_0;
+   }
+   if(!expB)
+   {
+      if(!sigB)
+         goto zeroProd;
+      __int8 nZeros;
+      __bits32 shift_0;
+      count_leading_zero_macro_lshift(24, sigB, nZeros, shift_0);
+      expB = 1 - nZeros;
+      sigB = shift_0;
+   }
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    expProd = expA + expB - 0x7E;
-    sigA = (sigA | 0x00800000)<<7;
-    sigB = (sigB | 0x00800000)<<7;
-    sigProd = (__bits64) sigA * sigB;
-    if ( sigProd <  0x2000000000000000ULL) {
-        --expProd;
-        sigProd <<= 1;
-    }
-    signZ = signProd;
-    if ( ! expC ) {
-        if ( ! sigC ) {
-            expZ = expProd - 1;
-            sigZ = sigProd>>31 | ((sigProd & (((__bits64) 1<<31) - 1)) != 0);
-            goto roundPack;
-        }
-        __int8 nZeros;
-        __bits32 shift_0;
-        count_leading_zero_macro_lshift(24, sigC, nZeros, shift_0);
-        expC = 1 - nZeros;
-        sigC = shift_0;
-    }
-    sigC = (sigC | 0x00800000)<<6;
-    /*------------------------------------------------------------------------
+   expProd = expA + expB - 0x7E;
+   sigA = (sigA | 0x00800000) << 7;
+   sigB = (sigB | 0x00800000) << 7;
+   sigProd = (__bits64)sigA * sigB;
+   if(sigProd < 0x2000000000000000ULL)
+   {
+      --expProd;
+      sigProd <<= 1;
+   }
+   signZ = signProd;
+   if(!expC)
+   {
+      if(!sigC)
+      {
+         expZ = expProd - 1;
+         sigZ = sigProd >> 31 | ((sigProd & (((__bits64)1 << 31) - 1)) != 0);
+         goto roundPack;
+      }
+      __int8 nZeros;
+      __bits32 shift_0;
+      count_leading_zero_macro_lshift(24, sigC, nZeros, shift_0);
+      expC = 1 - nZeros;
+      sigC = shift_0;
+   }
+   sigC = (sigC | 0x00800000) << 6;
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
-    expDiff = expProd - expC;
-    if ( signProd == signC ) {
-        /*--------------------------------------------------------------------
-        *--------------------------------------------------------------------*/
-        if ( expDiff <= 0 ) {
-            __bits32 dist = 32 - expDiff;
-            __bits64 softfloat_shiftRightJam64 = (dist < 63) ? sigProd>>dist | ((__bits64) (sigProd<<(-dist & 63)) != 0) : (sigProd != 0);
-            expZ = expC;
-            sigZ = sigC + softfloat_shiftRightJam64;
-        } else {
-            __bits64 a = (__bits64) sigC<<32;
-            __bits64 softfloat_shiftRightJam64 = (expDiff < 63) ? a>>expDiff | ((__bits64) (a<<(-expDiff & 63)) != 0) : (a != 0);
-            expZ = expProd;
-            sig64Z =
-                sigProd
-                    + softfloat_shiftRightJam64;
-            sigZ = sig64Z>>32 | ((sig64Z & (((__bits64) 1<<32) - 1)) != 0);
-        }
-        if ( sigZ < 0x40000000 ) {
-            --expZ;
-            sigZ <<= 1;
-        }
-    } else {
-        /*--------------------------------------------------------------------
-        *--------------------------------------------------------------------*/
-        sig64C = (__bits64) sigC<<32;
-        if ( expDiff < 0 ) {
-            __bits32 dist = - expDiff;
-            __bits64 softfloat_shiftRightJam64 = (dist < 63) ? sigProd>>dist | ((__bits64) (sigProd<<(-dist & 63)) != 0) : (sigProd != 0);
-            signZ = signC;
-            expZ = expC;
-            sig64Z = sig64C - softfloat_shiftRightJam64;
-        } else if ( ! expDiff ) {
-            expZ = expProd;
-            sig64Z = sigProd - sig64C;
-            if ( ! sig64Z ) goto completeCancellation;
-            if ( sig64Z & 0x8000000000000000ULL ) {
-                signZ = ! signZ;
-                sig64Z = -sig64Z;
-            }
-        } else {
-            __bits64 softfloat_shiftRightJam64 = (expDiff < 63) ? sig64C>>expDiff | ((__bits64) (sig64C<<(-expDiff & 63)) != 0) : (sig64C != 0);
-            expZ = expProd;
-        }
-        shiftDist = __countLeadingZeros64( sig64Z ) - 1;
-        expZ -= shiftDist;
-        shiftDist -= 32;
-        if ( shiftDist < 0 ) {
-            sigZ = sig64Z>>(-shiftDist) | ((sig64Z & (((__bits64) 1<<(-shiftDist)) - 1)) != 0);
-        } else {
-            sigZ = (__bits64) sig64Z<<shiftDist;
-        }
-    }
- roundPack:
-    return __roundAndPackFloat32( signZ, expZ, sigZ );
-    /*------------------------------------------------------------------------
+   expDiff = expProd - expC;
+   if(signProd == signC)
+   {
+      /*--------------------------------------------------------------------
+       *--------------------------------------------------------------------*/
+      if(expDiff <= 0)
+      {
+         __bits32 dist = 32 - expDiff;
+         __bits64 softfloat_shiftRightJam64 = (dist < 63) ? sigProd >> dist | ((__bits64)(sigProd << (-dist & 63)) != 0) : (sigProd != 0);
+         expZ = expC;
+         sigZ = sigC + softfloat_shiftRightJam64;
+      }
+      else
+      {
+         __bits64 a = (__bits64)sigC << 32;
+         __bits64 softfloat_shiftRightJam64 = (expDiff < 63) ? a >> expDiff | ((__bits64)(a << (-expDiff & 63)) != 0) : (a != 0);
+         expZ = expProd;
+         sig64Z = sigProd + softfloat_shiftRightJam64;
+         sigZ = sig64Z >> 32 | ((sig64Z & (((__bits64)1 << 32) - 1)) != 0);
+      }
+      if(sigZ < 0x40000000)
+      {
+         --expZ;
+         sigZ <<= 1;
+      }
+   }
+   else
+   {
+      /*--------------------------------------------------------------------
+       *--------------------------------------------------------------------*/
+      sig64C = (__bits64)sigC << 32;
+      if(expDiff < 0)
+      {
+         __bits32 dist = -expDiff;
+         __bits64 softfloat_shiftRightJam64 = (dist < 63) ? sigProd >> dist | ((__bits64)(sigProd << (-dist & 63)) != 0) : (sigProd != 0);
+         signZ = signC;
+         expZ = expC;
+         sig64Z = sig64C - softfloat_shiftRightJam64;
+      }
+      else if(!expDiff)
+      {
+         expZ = expProd;
+         sig64Z = sigProd - sig64C;
+         if(!sig64Z)
+            goto completeCancellation;
+         if(sig64Z & 0x8000000000000000ULL)
+         {
+            signZ = !signZ;
+            sig64Z = -sig64Z;
+         }
+      }
+      else
+      {
+         __bits64 softfloat_shiftRightJam64 = (expDiff < 63) ? sig64C >> expDiff | ((__bits64)(sig64C << (-expDiff & 63)) != 0) : (sig64C != 0);
+         expZ = expProd;
+      }
+      shiftDist = __countLeadingZeros64(sig64Z) - 1;
+      expZ -= shiftDist;
+      shiftDist -= 32;
+      if(shiftDist < 0)
+      {
+         sigZ = sig64Z >> (-shiftDist) | ((sig64Z & (((__bits64)1 << (-shiftDist)) - 1)) != 0);
+      }
+      else
+      {
+         sigZ = (__bits64)sig64Z << shiftDist;
+      }
+   }
+roundPack:
+   return __roundAndPackFloat32(signZ, expZ, sigZ);
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
- propagateNaN_ABC:
-    uiZ = __propagateFloat32NaN( uiA, uiB );
-    goto propagateNaN_ZC;
-    /*------------------------------------------------------------------------
+propagateNaN_ABC:
+   uiZ = __propagateFloat32NaN(uiA, uiB);
+   goto propagateNaN_ZC;
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
- infProdArg:
-    if ( magBits ) {
-        uiZ = __packFloat32( signProd, 0xFF, 0 );
-        if ( expC != 0xFF ) goto uiZ;
-        if ( sigC ) goto propagateNaN_ZC;
-        if ( signProd == signC ) goto uiZ;
-    }
-    __float_raise( float_flag_invalid );
-    uiZ = 0xFFC00000;
- propagateNaN_ZC:
-    uiZ = __propagateFloat32NaN( uiZ, uiC );
-    goto uiZ;
-    /*------------------------------------------------------------------------
+infProdArg:
+   if(magBits)
+   {
+      uiZ = __packFloat32(signProd, 0xFF, 0);
+      if(expC != 0xFF)
+         goto uiZ;
+      if(sigC)
+         goto propagateNaN_ZC;
+      if(signProd == signC)
+         goto uiZ;
+   }
+   __float_raise(float_flag_invalid);
+   uiZ = 0xFFC00000;
+propagateNaN_ZC:
+   uiZ = __propagateFloat32NaN(uiZ, uiC);
+   goto uiZ;
+   /*------------------------------------------------------------------------
     *------------------------------------------------------------------------*/
- zeroProd:
-    uiZ = uiC;
-    if ( ! (expC | sigC) && (signProd != signC) ) {
- completeCancellation:
-        uiZ =
-            __packFloat32(
-                (__float_rounding_mode == float_round_down), 0, 0 );
-    }
- uiZ:
-    return uiZ;
-
+zeroProd:
+   uiZ = uiC;
+   if(!(expC | sigC) && (signProd != signC))
+   {
+   completeCancellation:
+      uiZ = __packFloat32((__float_rounding_mode == float_round_down), 0, 0);
+   }
+uiZ:
+   return uiZ;
 }
 /*----------------------------------------------------------------------------
 | Returns the result of dividing the single-precision floating-point value `a'
@@ -2716,7 +2780,9 @@ static __FORCE_INLINE __float32 __float32_divSRT4(__float32 a, __float32 b)
    VOLATILE_DEF __bits32 zExpSig;
    VOLATILE_DEF __bits32 bSigx3, nbSigx3, current, w, positive = 0, negative = 0;
    VOLATILE_DEF __bits8 current_sel, q_i, index;
+#ifndef NO_ROUNDING
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
+#endif
 
    aSig = __extractFloat32Frac(a);
    aExp = __extractFloat32Exp(a);
@@ -2833,15 +2899,21 @@ static __FORCE_INLINE __float32 __float32_divSRT4(__float32 a, __float32 b)
       zSig1 = SELECT_RANGE(zSig0, 25, 2) << 1 | (SELECT_BIT(zSig0, 1)) | (SELECT_BIT(zSig0, 0));
    else
       zSig1 = SELECT_RANGE(zSig0, 24, 0);
+#ifndef NO_ROUNDING
    LSB_bit = SELECT_BIT(zSig1, 2);
    Guard_bit = SELECT_BIT(zSig1, 1);
    Round_bit = SELECT_BIT(zSig1, 0);
    round = Guard_bit & (LSB_bit | Round_bit);
+#endif
    zExp = aExp - bExp + (0x7E | correction);
    _Bool MSB1zExp = SELECT_BIT(zExp, 9);
    _Bool MSB0zExp = SELECT_BIT(zExp, 8);
    BIT_RESIZE(zExp, 9);
+#ifndef NO_ROUNDING
    zExpSig = ((((__bits32)zExp) << 23) | (zSig1 >> 2)) + round;
+#else
+   zExpSig = ((((__bits32)zExp) << 23) | (zSig1 >> 2));
+#endif
    _Bool MSBzExp = SELECT_BIT(zExpSig, 31);
    _Bool ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
    if(z_c == FP_CLS_NORMAL)
@@ -4140,9 +4212,13 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    VOLATILE_DEF __bits64 aSig, bSig, shift_0;
    VOLATILE_DEF __bits16 aExp, bExp, expDiff11;
    VOLATILE_DEF __bits16 nZeros;
-   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign, sb;
+   VOLATILE_DEF _Bool a_c_nan, b_c_nan, a_c_normal, b_c_normal, tmp_c_normal, swap, sAB, aSign;
    VOLATILE_DEF __bits64 abs_a, abs_b;
-   VOLATILE_DEF __bits64 fA, fB, fB_shifted, fB_shifted_low, fBleft_shifted;
+   VOLATILE_DEF __bits64 fA, fB, fB_shifted;
+#ifndef NO_ROUNDING
+   VOLATILE_DEF __bits64 fB_shifted_low, fBleft_shifted;
+   VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, Sticky_bit, round, sb;
+#endif
    VOLATILE_DEF _Bool ge_64;
    VOLATILE_DEF _Bool tmp_sign;
    VOLATILE_DEF __bits16 tmp_exp;
@@ -4150,13 +4226,22 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    VOLATILE_DEF _Bool subnormal_exp_correction;
    VOLATILE_DEF __bits64 fB_shifted1;
    VOLATILE_DEF __bits64 fR0;
-   VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, Sticky_bit, round;
    VOLATILE_DEF _Bool R_c_zero;
    VOLATILE_DEF __bits16 RExp0, RExp1;
    VOLATILE_DEF __bits64 RSig0, RSig1, RSig2, RSig3;
    VOLATILE_DEF __bits64 RExp0RSig1, Rrounded;
    VOLATILE_DEF _Bool overflow_to_infinite;
    VOLATILE_DEF _Bool aExp2047, bExp2047;
+
+#ifdef NO_ROUNDING
+#define FRAC_SHIFT 0
+#define FRAC_FULL_BW 54
+#define FRAC_ALMOST_BW 53
+#else
+#define FRAC_SHIFT 2
+#define FRAC_FULL_BW 56
+#define FRAC_ALMOST_BW 55
+#endif
 
    aSign = __extractFloat64Sign(a);
    aSig = __extractFloat64Frac(a);
@@ -4200,18 +4285,19 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    aSig = COND_EXPR_MACRO64(swap, tmp_sig, aSig);
 
    tmp_sign = bSign;
-   bSign = swap ? aSign : bSign;
+   // bSign = swap ? aSign : bSign;
    aSign = swap ? tmp_sign : aSign;
 
    tmp_c_normal = b_c_normal;
    b_c_normal = swap ? a_c_normal : b_c_normal;
    a_c_normal = swap ? tmp_c_normal : a_c_normal;
 
-   fA = (aSig | (((__bits64)a_c_normal) << 52)) << 2;
-   fB = (bSig | (((__bits64)b_c_normal) << 52)) << 2;
+   fA = (aSig | (((__bits64)a_c_normal) << 52)) << FRAC_SHIFT;
+   fB = (bSig | (((__bits64)b_c_normal) << 52)) << FRAC_SHIFT;
 
    ge_64 = SELECT_BIT(expDiff11, 6) | SELECT_BIT(expDiff11, 7) | SELECT_BIT(expDiff11, 8) | SELECT_BIT(expDiff11, 9) | SELECT_BIT(expDiff11, 10);
 
+#ifndef NO_ROUNDING
    fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 5), fB << 32, 0);
    fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 5), fB >> 32, fB);
    fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 4), (fB_shifted << 48) | (fBleft_shifted >> 16), fBleft_shifted);
@@ -4224,21 +4310,30 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 1), fB_shifted >> 2, fB_shifted);
    fBleft_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 0), (fB_shifted << 63) | (fBleft_shifted >> 1), fBleft_shifted);
    fB_shifted = COND_EXPR_MACRO64(ge_64 | SELECT_BIT(expDiff11, 0), fB_shifted >> 1, fB_shifted);
+#else
+   fB_shifted = fB >> VAL_RESIZE((expDiff11 | (__bits32)(((((__sbits32)ge_64) << 31) >> 31))), 6);
+#endif
 
    // fB_shifted = COND_EXPR_MACRO64(ge_64, 0, fB_shifted);
+   BIT_RESIZE(fB_shifted, FRAC_ALMOST_BW);
+
+#ifndef NO_ROUNDING
    fB_shifted_low = fBleft_shifted;
-   BIT_RESIZE(fB_shifted, 55);
-
    sb = fB_shifted_low != 0;
+#endif
    fB_shifted1 = ((__bits64)((((__sbits64)sAB) << 63) >> 63)) ^ fB_shifted;
-   BIT_RESIZE(fB_shifted1, 56);
+   BIT_RESIZE(fB_shifted1, FRAC_FULL_BW);
 
+#ifdef NO_ROUNDING
+   fR0 = fA + fB_shifted1 + sAB;
+#else
    fR0 = fA + fB_shifted1 + (sAB && (!sb));
-   BIT_RESIZE(fR0, 56);
-   count_leading_zero_macro_lshift(56, fR0, nZeros, shift_0);
+#endif
+   BIT_RESIZE(fR0, FRAC_FULL_BW);
+   count_leading_zero_macro_lshift64(FRAC_FULL_BW, fR0, nZeros, shift_0);
 
    R_c_zero = nZeros == VAL_RESIZE((~0ULL), 6);
-   overflow_to_infinite = aExp == 2046 && (fR0 >> 55) & 1;
+   overflow_to_infinite = aExp == 2046 && (fR0 >> FRAC_ALMOST_BW) & 1;
 
 #ifdef NO_SUBNORMALS
    R_c_zero = R_c_zero || aExp < nZeros;
@@ -4248,17 +4343,23 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    RExp0 = R_c_zero || aExp < nZeros ? ((aExp_null) && (bExp_null) && nZeros == 1) : aExp - nZeros + 1;
    RSig0 = aExp < nZeros ? ((aExp_null) && (bExp_null) ? (fR0 << 1) : (fR0 << aExp)) : shift_0;
 #endif
+#ifndef NO_ROUNDING
    LSB_bit = SELECT_BIT(RSig0, 3);
    Guard_bit = SELECT_BIT(RSig0, 2);
    Round_bit = SELECT_BIT(RSig0, 1);
    Sticky_bit = SELECT_BIT(RSig0, 0) | sb;
    round = Guard_bit & (LSB_bit | Round_bit | Sticky_bit);
+#endif
 
-   RSig1 = VAL_RESIZE(RSig0 >> 3, 52);
+   RSig1 = VAL_RESIZE(RSig0 >> (FRAC_SHIFT + 1), 52);
 
    RExp0RSig1 = (((__bits64)RExp0) << 52) | RSig1;
 
+#ifdef NO_ROUNDING
+   Rrounded = RExp0RSig1;
+#else
    Rrounded = RExp0RSig1 + round;
+#endif
 
    RExp1 = aExp2047 || bExp2047 ? 0x7FF : VAL_RESIZE(Rrounded >> 52, 11);
 
@@ -4441,7 +4542,10 @@ static __FORCE_INLINE __float64 __float64_mul(__float64 a, __float64 b)
    __bits16 bias = 1023;
    __bits16 expSum = expSumPreSub - bias;
    __bits16 expPostNorm;
-   _Bool norm, sticky, guard, round, expSigOvf0, expSigOvf1, expSigOvf2;
+   _Bool norm, expSigOvf0, expSigOvf2;
+#ifndef NO_ROUNDING
+   _Bool sticky, guard, round, expSigOvf1;
+#endif
    __bits64 expSig, expSigPostRound, zSig;
    __bits8 excPostNorm;
 
@@ -4500,6 +4604,7 @@ static __FORCE_INLINE __float64 __float64_mul(__float64 a, __float64 b)
    sigProdExtLow_54 = (norm ? sigProdLow_54 << 1 : sigProdLow_54 << 2) & ((1ULL << 54) - 1);
    expSig = (((__bits64)expPostNorm) << 52) | sigProdExtHigh_52;
    expSigOvf0 = (expPostNorm >> 12) & 1;
+#ifndef NO_ROUNDING
    sticky = (sigProdExtLow_54 >> 53) & 1;
    guard = (sigProdExtLow_54 & ((1ULL << 53) - 1)) != 0;
    round = sticky & ((guard & !(sigProdExtHigh_52 & 1)) | (sigProdExtHigh_52 & 1));
@@ -4507,6 +4612,10 @@ static __FORCE_INLINE __float64 __float64_mul(__float64 a, __float64 b)
    expSigPostRound = expSig + round;
    expSigOvf1 = round & (expSig == ((__bits64)-1));
    expSigOvf2 = expSigOvf0 ^ expSigOvf1;
+#else
+   expSigPostRound = expSig;
+   expSigOvf2 = expSigOvf0;
+#endif
    excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> 63) & 1);
    zSig = (((__bits64)zSign) << 63) | (expSigPostRound & ((1ULL << 63) - 1));
    if(z_c == FP_CLS_NORMAL)
@@ -4597,7 +4706,9 @@ static __FORCE_INLINE __float64 __float64_divSRT4(__float64 a, __float64 b)
    VOLATILE_DEF __bits64 zExpSig;
    VOLATILE_DEF __bits64 bSigx3, nbSigx3, current, w, positive = 0, negative = 0;
    VOLATILE_DEF __bits8 current_sel, q_i, index;
+#ifndef NO_ROUNDING
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
+#endif
 
    aSig = __extractFloat64Frac(a);
    aExp = __extractFloat64Exp(a);
@@ -4679,15 +4790,21 @@ static __FORCE_INLINE __float64 __float64_divSRT4(__float64 a, __float64 b)
       zSig1 = SELECT_RANGE(zSig0, 54, 2) << 1 | (SELECT_BIT(zSig0, 1)) | (SELECT_BIT(zSig0, 0));
    else
       zSig1 = SELECT_RANGE(zSig0, 53, 0);
+#ifndef NO_ROUNDING
    LSB_bit = SELECT_BIT(zSig1, 2);
    Guard_bit = SELECT_BIT(zSig1, 1);
    Round_bit = SELECT_BIT(zSig1, 0);
    round = Guard_bit & (LSB_bit | Round_bit);
+#endif
    zExp = aExp - bExp + (0x3FE | correction);
    _Bool MSB1zExp = SELECT_BIT(zExp, 12);
    _Bool MSB0zExp = SELECT_BIT(zExp, 11);
    BIT_RESIZE(zExp, 12);
+#ifndef NO_ROUNDING
    zExpSig = ((((__bits64)zExp) << 52) | (zSig1 >> 2)) + round;
+#else
+   zExpSig = ((((__bits64)zExp) << 52) | (zSig1 >> 2));
+#endif
    _Bool MSBzExp = SELECT_BIT(zExpSig, 63);
    _Bool ovfCond = ((((MSB0zExp & ((~MSBzExp) & 1)) & 1) ^ MSB1zExp) & 1);
    if(z_c == FP_CLS_NORMAL)

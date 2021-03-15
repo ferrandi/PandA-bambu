@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("@rules_cc//cc:defs.bzl", "cc_library", "cc_test")
+load("@rules_cc//cc:defs.bzl", "cc_binary", "cc_library", "cc_test")
 load(
     "//absl:copts/configure_copts.bzl",
     "ABSL_DEFAULT_COPTS",
@@ -27,23 +27,18 @@ package(default_visibility = ["//visibility:public"])
 licenses(["notice"])  # Apache 2.0
 
 cc_library(
-    name = "flag_internal",
-    srcs = [
-        "internal/flag.cc",
-    ],
+    name = "path_util",
     hdrs = [
-        "internal/flag.h",
+        "internal/path_util.h",
     ],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
-    visibility = ["//visibility:private"],
+    visibility = [
+        "//absl/flags:__pkg__",
+    ],
     deps = [
-        ":handle",
-        ":registry",
-        "//absl/base:core_headers",
-        "//absl/memory",
+        "//absl/base:config",
         "//absl/strings",
-        "//absl/synchronization",
     ],
 )
 
@@ -62,23 +57,10 @@ cc_library(
     ],
     deps = [
         ":path_util",
+        "//absl/base:config",
+        "//absl/base:core_headers",
         "//absl/strings",
         "//absl/synchronization",
-    ],
-)
-
-cc_library(
-    name = "path_util",
-    hdrs = [
-        "internal/path_util.h",
-    ],
-    copts = ABSL_DEFAULT_COPTS,
-    linkopts = ABSL_DEFAULT_LINKOPTS,
-    visibility = [
-        "//absl/flags:__pkg__",
-    ],
-    deps = [
-        "//absl/strings",
     ],
 )
 
@@ -96,6 +78,7 @@ cc_library(
     deps = [
         ":path_util",
         ":program_name",
+        "//absl/base:config",
         "//absl/base:core_headers",
         "//absl/strings",
         "//absl/synchronization",
@@ -113,42 +96,54 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     deps = [
+        "//absl/base:config",
         "//absl/base:core_headers",
+        "//absl/base:log_severity",
         "//absl/strings",
         "//absl/strings:str_format",
     ],
 )
 
 cc_library(
-    name = "handle",
-    srcs = [
-        "internal/commandlineflag.cc",
-    ],
+    name = "commandlineflag_internal",
     hdrs = [
         "internal/commandlineflag.h",
     ],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
-    visibility = [
-        "//absl/flags:__pkg__",
-    ],
+    visibility = ["//visibility:private"],
     deps = [
-        ":config",
-        ":marshalling",
-        "//absl/base:core_headers",
+        "//absl/base:config",
+        "//absl/base:fast_type_id",
+    ],
+)
+
+cc_library(
+    name = "commandlineflag",
+    srcs = [
+        "commandlineflag.cc",
+    ],
+    hdrs = [
+        "commandlineflag.h",
+    ],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        ":commandlineflag_internal",
+        "//absl/base:config",
+        "//absl/base:fast_type_id",
+        "//absl/strings",
         "//absl/types:optional",
     ],
 )
 
 cc_library(
-    name = "registry",
+    name = "private_handle_accessor",
     srcs = [
-        "internal/registry.cc",
-        "internal/type_erased.cc",
+        "internal/private_handle_accessor.cc",
     ],
     hdrs = [
-        "internal/registry.h",
-        "internal/type_erased.h",
+        "internal/private_handle_accessor.h",
     ],
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
@@ -156,13 +151,61 @@ cc_library(
         "//absl/flags:__pkg__",
     ],
     deps = [
+        ":commandlineflag",
+        ":commandlineflag_internal",
+        "//absl/base:config",
+        "//absl/strings",
+    ],
+)
+
+cc_library(
+    name = "reflection",
+    srcs = [
+        "reflection.cc",
+    ],
+    hdrs = [
+        "internal/registry.h",
+        "reflection.h",
+    ],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        ":commandlineflag",
+        ":commandlineflag_internal",
         ":config",
-        ":handle",
+        ":private_handle_accessor",
+        "//absl/base:config",
         "//absl/base:core_headers",
-        "//absl/base:dynamic_annotations",
-        "//absl/base:raw_logging_internal",
         "//absl/strings",
         "//absl/synchronization",
+    ],
+)
+
+cc_library(
+    name = "flag_internal",
+    srcs = [
+        "internal/flag.cc",
+    ],
+    hdrs = [
+        "internal/flag.h",
+    ],
+    copts = ABSL_DEFAULT_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    visibility = ["//absl/base:__subpackages__"],
+    deps = [
+        ":commandlineflag",
+        ":commandlineflag_internal",
+        ":config",
+        ":marshalling",
+        ":reflection",
+        "//absl/base",
+        "//absl/base:config",
+        "//absl/base:core_headers",
+        "//absl/memory",
+        "//absl/meta:type_traits",
+        "//absl/strings",
+        "//absl/synchronization",
+        "//absl/utility",
     ],
 )
 
@@ -180,11 +223,10 @@ cc_library(
     deps = [
         ":config",
         ":flag_internal",
-        ":handle",
-        ":marshalling",
+        ":reflection",
         "//absl/base",
+        "//absl/base:config",
         "//absl/base:core_headers",
-        "//absl/memory",
         "//absl/strings",
     ],
 )
@@ -203,13 +245,17 @@ cc_library(
         "//absl/flags:__pkg__",
     ],
     deps = [
+        ":commandlineflag",
         ":config",
         ":flag",
-        ":handle",
+        ":flag_internal",
         ":path_util",
+        ":private_handle_accessor",
         ":program_name",
+        ":reflection",
+        "//absl/base:config",
+        "//absl/base:core_headers",
         "//absl/strings",
-        "//absl/synchronization",
     ],
 )
 
@@ -225,6 +271,8 @@ cc_library(
     linkopts = ABSL_DEFAULT_LINKOPTS,
     deps = [
         ":usage_internal",
+        "//absl/base:config",
+        "//absl/base:core_headers",
         "//absl/strings",
         "//absl/synchronization",
     ],
@@ -240,12 +288,18 @@ cc_library(
     copts = ABSL_DEFAULT_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     deps = [
+        ":commandlineflag",
+        ":commandlineflag_internal",
         ":config",
         ":flag",
+        ":flag_internal",
+        ":private_handle_accessor",
         ":program_name",
-        ":registry",
+        ":reflection",
         ":usage",
         ":usage_internal",
+        "//absl/base:config",
+        "//absl/base:core_headers",
         "//absl/strings",
         "//absl/synchronization",
     ],
@@ -258,15 +312,17 @@ cc_test(
     name = "commandlineflag_test",
     size = "small",
     srcs = [
-        "internal/commandlineflag_test.cc",
+        "commandlineflag_test.cc",
     ],
     copts = ABSL_TEST_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     deps = [
+        ":commandlineflag",
+        ":commandlineflag_internal",
         ":config",
         ":flag",
-        ":handle",
-        ":registry",
+        ":private_handle_accessor",
+        ":reflection",
         "//absl/memory",
         "//absl/strings",
         "@com_google_googletest//:gtest_main",
@@ -299,8 +355,33 @@ cc_test(
     deps = [
         ":config",
         ":flag",
+        ":flag_internal",
+        ":marshalling",
+        ":reflection",
+        "//absl/base:core_headers",
+        "//absl/base:malloc_internal",
         "//absl/strings",
+        "//absl/time",
         "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_binary(
+    name = "flag_benchmark",
+    testonly = 1,
+    srcs = [
+        "flag_benchmark.cc",
+    ],
+    copts = ABSL_TEST_COPTS,
+    tags = ["benchmark"],
+    visibility = ["//visibility:private"],
+    deps = [
+        ":flag",
+        ":marshalling",
+        "//absl/strings",
+        "//absl/time",
+        "//absl/types:optional",
+        "@com_github_google_benchmark//:benchmark_main",
     ],
 )
 
@@ -319,20 +400,6 @@ cc_test(
 )
 
 cc_test(
-    name = "path_util_test",
-    size = "small",
-    srcs = [
-        "internal/path_util_test.cc",
-    ],
-    copts = ABSL_TEST_COPTS,
-    linkopts = ABSL_DEFAULT_LINKOPTS,
-    deps = [
-        ":path_util",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
-cc_test(
     name = "parse_test",
     size = "small",
     srcs = [
@@ -343,10 +410,25 @@ cc_test(
     deps = [
         ":flag",
         ":parse",
+        ":reflection",
         "//absl/base:raw_logging_internal",
         "//absl/base:scoped_set_env",
         "//absl/strings",
         "//absl/types:span",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_test(
+    name = "path_util_test",
+    size = "small",
+    srcs = [
+        "internal/path_util_test.cc",
+    ],
+    copts = ABSL_TEST_COPTS,
+    linkopts = ABSL_DEFAULT_LINKOPTS,
+    deps = [
+        ":path_util",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -367,18 +449,19 @@ cc_test(
 )
 
 cc_test(
-    name = "type_erased_test",
+    name = "reflection_test",
     size = "small",
     srcs = [
-        "internal/type_erased_test.cc",
+        "reflection_test.cc",
     ],
     copts = ABSL_TEST_COPTS,
     linkopts = ABSL_DEFAULT_LINKOPTS,
     deps = [
+        ":commandlineflag_internal",
         ":flag",
-        ":registry",
+        ":marshalling",
+        ":reflection",
         "//absl/memory",
-        "//absl/strings",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -414,9 +497,9 @@ cc_test(
         ":parse",
         ":path_util",
         ":program_name",
+        ":reflection",
         ":usage",
         ":usage_internal",
-        "//absl/memory",
         "//absl/strings",
         "@com_google_googletest//:gtest",
     ],

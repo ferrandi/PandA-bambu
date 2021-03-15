@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -48,7 +48,7 @@
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STD include
@@ -113,6 +113,8 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
       raw_file << TM;
       raw_file.close();
    }
+   /// Basic block splitting information: if replace[source, target] exists, then between source and target replace[source, target] has been inserted
+   std::map<std::pair<unsigned int, unsigned int>, unsigned int> replace;
 
    tree_nodeRef temp = TM->get_tree_node_const(function_id);
    auto* fd = GetPointer<function_decl>(temp);
@@ -125,7 +127,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
       blocRef& bb_block = iit->second;
       for(const auto& phi : bb_block->CGetPhiList())
       {
-         virtual_split_phi(phi, bb_block, list_of_bloc, TM);
+         virtual_split_phi(phi, bb_block, list_of_bloc, TM, replace);
       }
    }
 
@@ -141,7 +143,7 @@ DesignFlowStep_Status virtual_phi_nodes_split::InternalExec()
    return DesignFlowStep_Status::SUCCESS;
 }
 
-void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM)
+void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& bb_block, std::map<unsigned int, blocRef>& list_of_bloc, const tree_managerRef TM, std::map<std::pair<unsigned int, unsigned int>, unsigned int>& replace)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Splitting phi node " + boost::lexical_cast<std::string>(GET_INDEX_NODE(tree_phi)));
    auto* phi = GetPointer<gimple_phi>(GET_NODE(tree_phi));
@@ -167,7 +169,9 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       bool virtual_flag = false;
       ssa_IR_schema[TOK(TOK_TYPE)] = STR(type_index);
       if(ssa_var->var)
+      {
          ssa_IR_schema[TOK(TOK_VAR)] = STR(GET_INDEX_NODE(ssa_var->var));
+      }
       ssa_IR_schema[TOK(TOK_VERS)] = STR(vers);
       ssa_IR_schema[TOK(TOK_VOLATILE)] = STR(volatile_flag);
       ssa_IR_schema[TOK(TOK_VIRTUAL)] = STR(virtual_flag);
@@ -184,7 +188,9 @@ void virtual_phi_nodes_split::virtual_split_phi(tree_nodeRef tree_phi, blocRef& 
       {
          source_bb = it->second;
          if(source_bb->number != bb_source)
+         {
             continue;
+         }
          if(replace.find(std::pair<unsigned int, unsigned int>(bb_source, bb_block->number)) != replace.end())
          {
             bb_source = replace[std::pair<unsigned int, unsigned int>(bb_source, bb_block->number)];

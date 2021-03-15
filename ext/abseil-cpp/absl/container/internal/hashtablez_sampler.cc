@@ -28,6 +28,7 @@
 #include "absl/synchronization/mutex.h"
 
 namespace absl {
+ABSL_NAMESPACE_BEGIN
 namespace container_internal {
 constexpr int HashtablezInfo::kMaxStackDepth;
 
@@ -38,15 +39,16 @@ ABSL_CONST_INIT std::atomic<bool> g_hashtablez_enabled{
 ABSL_CONST_INIT std::atomic<int32_t> g_hashtablez_sample_parameter{1 << 10};
 ABSL_CONST_INIT std::atomic<int32_t> g_hashtablez_max_samples{1 << 20};
 
-#if ABSL_HAVE_THREAD_LOCAL
-thread_local absl::base_internal::ExponentialBiased
-    g_exponential_biased_generator;
-#else
-ABSL_CONST_INIT static absl::base_internal::ExponentialBiased
+#if defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
+ABSL_PER_THREAD_TLS_KEYWORD absl::base_internal::ExponentialBiased
     g_exponential_biased_generator;
 #endif
 
 }  // namespace
+
+#if defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
+ABSL_PER_THREAD_TLS_KEYWORD int64_t global_next_sample = 0;
+#endif  // defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
 
 HashtablezSampler& HashtablezSampler::Global() {
   static auto* sampler = new HashtablezSampler();
@@ -189,13 +191,15 @@ HashtablezInfo* SampleSlow(int64_t* next_sample) {
     return HashtablezSampler::Global().Register();
   }
 
+#if !defined(ABSL_INTERNAL_HASHTABLEZ_SAMPLE)
+  *next_sample = std::numeric_limits<int64_t>::max();
+  return nullptr;
+#else
   bool first = *next_sample < 0;
-  *next_sample = g_exponential_biased_generator.Get(
+  *next_sample = g_exponential_biased_generator.GetStride(
       g_hashtablez_sample_parameter.load(std::memory_order_relaxed));
   // Small values of interval are equivalent to just sampling next time.
-  if (*next_sample < 1) {
-    *next_sample = 1;
-  }
+  ABSL_ASSERT(*next_sample >= 1);
 
   // g_hashtablez_enabled can be dynamically flipped, we need to set a threshold
   // low enough that we will start sampling in a reasonable time, so we just use
@@ -210,11 +214,8 @@ HashtablezInfo* SampleSlow(int64_t* next_sample) {
   }
 
   return HashtablezSampler::Global().Register();
+#endif
 }
-
-#if ABSL_PER_THREAD_TLS == 1
-ABSL_PER_THREAD_TLS_KEYWORD int64_t global_next_sample = 0;
-#endif  // ABSL_PER_THREAD_TLS == 1
 
 void UnsampleSlow(HashtablezInfo* info) {
   HashtablezSampler::Global().Unregister(info);
@@ -225,7 +226,7 @@ void RecordInsertSlow(HashtablezInfo* info, size_t hash,
   // SwissTables probe in groups of 16, so scale this to count items probes and
   // not offset from desired.
   size_t probe_length = distance_from_desired;
-#if SWISSTABLE_HAVE_SSE2
+#if ABSL_INTERNAL_RAW_HASH_SET_HAVE_SSE2
   probe_length /= 16;
 #else
   probe_length /= 8;
@@ -264,4 +265,5 @@ void SetHashtablezMaxSamples(int32_t max) {
 }
 
 }  // namespace container_internal
+ABSL_NAMESPACE_END
 }  // namespace absl

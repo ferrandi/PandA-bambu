@@ -51,7 +51,7 @@ CMPtype __eqdf2(DFtype a, DFtype b)
 
 strong_alias(__eqdf2, __nedf2);
 
-inline CMPtype __float64_eq(DFtype a, DFtype b)
+CMPtype __float64_eq(DFtype a, DFtype b)
 {
    return __eqdf2(a, b);
 }

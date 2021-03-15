@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2015-2020 Politecnico di Milano
+ *              Copyright (C) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -78,7 +78,7 @@ struct AadlParserData
     */
    explicit AadlParserData(const ParameterConstRef parameters);
 };
-typedef refcount<AadlParserData> AadlParserDataRef;
+using AadlParserDataRef = refcount<AadlParserData>;
 
 class AadlParser : public ParserFlowStep
 {

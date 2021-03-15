@@ -289,9 +289,13 @@ bool cut<MaxLeaves, T>::dominates( cut const& that ) const
 template<int MaxLeaves, typename T>
 bool cut<MaxLeaves, T>::merge( cut const& that, cut& res, uint32_t cut_size ) const
 {
-  if ( _length + that._length > cut_size && static_cast<uint32_t>( __builtin_popcount( _signature | that._signature ) ) > cut_size )
+  if ( _length + that._length > cut_size )
   {
-    return false;
+    const auto sign = _signature + that._signature;
+    if ( uint32_t( __builtin_popcount( static_cast<uint32_t>( sign & 0xffffffff ) ) ) + uint32_t( __builtin_popcount( static_cast<uint32_t>( sign >> 32 ) ) ) > cut_size )
+    {
+      return false;
+    }
   }
 
   auto it = std::set_union( begin(), end(), that.begin(), that.end(), res.begin() );

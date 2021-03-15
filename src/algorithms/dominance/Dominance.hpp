@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -80,7 +80,7 @@
 #include <boost/version.hpp>
 
 /// Type of Basic Block aka TBB. In this case each basic block is represented with its index.
-typedef unsigned long int TBB;
+using TBB = unsigned long;
 
 /**
  * Store the intermediate information used to compute dominator or post dominator information.
@@ -93,15 +93,15 @@ class dom_info
    /// The algorithm uses two different indices for each Vertex: a generic index given by boost and the index in the dfs search
  private:
    /// Definition of Vertex
-   typedef typename boost::graph_traits<const GraphObj>::vertex_descriptor Vertex;
+   using Vertex = typename boost::graph_traits<const GraphObj>::vertex_descriptor;
    /// edge_iterator definition.
-   typedef typename boost::graph_traits<const GraphObj>::in_edge_iterator in_edge_iterator;
+   using in_edge_iterator = typename boost::graph_traits<const GraphObj>::in_edge_iterator;
    /// edge_iterator definition.
-   typedef typename boost::graph_traits<const GraphObj>::out_edge_iterator out_edge_iterator;
+   using out_edge_iterator = typename boost::graph_traits<const GraphObj>::out_edge_iterator;
    /// edge definition.
-   typedef typename boost::graph_traits<const GraphObj>::edge_descriptor edge;
+   using edge = typename boost::graph_traits<const GraphObj>::edge_descriptor;
    /// Vertex iterator definition
-   typedef typename boost::graph_traits<const GraphObj>::vertex_iterator Vertex_iterator;
+   using Vertex_iterator = typename boost::graph_traits<const GraphObj>::vertex_iterator;
 
    /// The parent of a node in the DFS tree.
    std::vector<TBB> dfs_parent;
@@ -211,10 +211,14 @@ class dom_info
 
          /* Fill the DFS tree info calculatable _before_ recursing.  */
          if(bb != en_block)
+         {
             my_i = dfs_order[index_map[bb]];
+         }
          else
+         {
             // In this way dfs_parent of entry is itself
             my_i = dfs_order[last_basic_block];
+         }
          // Computed a new dfs index for this Vertex
          child_i = dfs_order[index_map[bn]] = dfsnum++;
          dfs_to_bb[child_i] = bn;
@@ -241,7 +245,9 @@ class dom_info
       {
          compress(parent);
          if(key[path_min[parent]] < key[path_min[v]])
+         {
             path_min[v] = path_min[parent];
+         }
          set_chain[v] = set_chain[parent];
       }
    }
@@ -271,9 +277,13 @@ class dom_info
       }
 
       if(key[path_min[rep]] >= key[path_min[v]])
+      {
          return path_min[v];
+      }
       else
+      {
          return path_min[rep];
+      }
    }
 
    /**
@@ -392,11 +402,15 @@ class dom_info
             b = *vi;
             // skip entry
             if(en_block == b)
+            {
                continue;
+            }
             if(boost::in_degree(b, g) > 0)
             {
                if(dfs_order[index_map[b]] == 0)
+               {
                   saw_unconnected = true;
+               }
                continue;
             }
             fake_exit_edge.insert(index_map[b]);
@@ -414,9 +428,13 @@ class dom_info
                b = *vi;
                // skip entry
                if(en_block == b)
+               {
                   continue;
+               }
                if(dfs_order[index_map[b]])
+               {
                   continue;
+               }
                fake_exit_edge.insert(index_map[b]);
                dfs_order[index_map[b]] = dfsnum;
                dfs_to_bb[dfsnum] = b;
@@ -503,18 +521,26 @@ class dom_info
                einext++;
 
                if(b == en_block)
+               {
                   k1 = dfs_order[last_basic_block];
+               }
                else
+               {
                   k1 = dfs_order[index_map[b]];
+               }
             }
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Predecessor is " + boost::lexical_cast<std::string>(k1) + " v_" + boost::lexical_cast<std::string>(b));
             /* Call eval() only if really needed.  If k1 is above V in DFS tree,
             then we know, that eval(k1) == k1 and key[k1] == k1.  */
             // k1 is the dfs index of the predecessor, v is the dfs of this Vertex
             if(k1 > v)
+            {
                k1 = key[eval(k1)];
+            }
             if(k1 < k)
+            {
                k = k1;
+            }
 
             ei = einext;
          }
@@ -613,10 +639,10 @@ class dominance
    //@}
 
    /// Definition of Vertex
-   typedef typename boost::graph_traits<const GraphObj>::vertex_descriptor Vertex;
+   using Vertex = typename boost::graph_traits<const GraphObj>::vertex_descriptor;
 
    /// Vertex_iterator definition.
-   typedef typename boost::graph_traits<const GraphObj>::vertex_iterator Vertex_iterator;
+   using Vertex_iterator = typename boost::graph_traits<const GraphObj>::vertex_iterator;
 
    /**
     * This variable store the direction for which the calculus is done
@@ -660,7 +686,9 @@ class dominance
    void calculate_dominance_info(enum dominance::cdi_direction dir)
    {
       if(dom_computed == DOM_OK)
+      {
          return;
+      }
       if(dom_computed == DOM_NONE)
       {
          bool reverse = (dir == CDI_POST_DOMINATORS) ? true : false;
@@ -734,7 +762,7 @@ class dominance
          // for(domBeg = this->dom.begin(), domEnd = this->dom.end(); domBeg != domEnd; domBeg++)
          for(auto dom_it = dom.begin(); dom_it != dom_it_end; ++dom_it)
          {
-            typedef typename CustomUnorderedMapStable<Vertex, CustomOrderedSet<Vertex>>::iterator mSetIter;
+            using mSetIter = typename CustomUnorderedMapStable<Vertex, CustomOrderedSet<Vertex>>::iterator;
             mSetIter mSetBeg, mSetEnd;
             for(mSetBeg = dominated.begin(), mSetEnd = dominated.end(); mSetBeg != mSetEnd; ++mSetBeg)
             {

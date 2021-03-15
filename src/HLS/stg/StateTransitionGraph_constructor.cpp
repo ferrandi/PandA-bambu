@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -111,7 +111,9 @@ vertex StateTransitionGraph_constructor::create_state(const std::list<vertex>& e
 EdgeDescriptor StateTransitionGraph_constructor::connect_state(const vertex& src, const vertex& tgt, int type)
 {
    if(type == TransitionInfo::StateTransitionType::ST_EDGE_FEEDBACK)
+   {
       state_transition_graph->GetStateTransitionGraphInfo()->is_a_dag = false;
+   }
    // get the vertex iterator
    VertexIterator vIterBeg, vIterEnd;
    boost::tie(vIterBeg, vIterEnd) = boost::vertices(*state_transition_graph);

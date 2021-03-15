@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (c) 2015-2020 Politecnico di Milano
+ *              Copyright (c) 2015-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,7 @@ void ParallelMemoryConnBinding::add_to_SM(const HLS_managerRef HLSMgr, const hls
    conn_binding::add_to_SM(HLSMgr, HLS, SM);
    const auto memory_banks_number = parameters->getOption<unsigned int>(OPT_memory_banks_number);
    const structural_objectRef circuit = SM->get_circ();
-   for(const auto component : GetPointer<ParallelMemoryFuBinding>(HLS->Rfu)->component_to_allow_mem_access)
+   for(const auto& component : GetPointer<ParallelMemoryFuBinding>(HLS->Rfu)->component_to_allow_mem_access)
    {
       const auto done = component.second->find_member("done", port_o_K, component.second);
       THROW_ASSERT(done, "");

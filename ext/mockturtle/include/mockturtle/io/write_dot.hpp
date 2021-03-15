@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <string>
 
@@ -76,6 +77,16 @@ public: /* callbacks */
     }
   }
 
+  virtual uint32_t node_level( Ntk const& ntk, node<Ntk> const& n ) const
+  {
+    if ( !_depth_ntk )
+    {
+      _depth_ntk = std::make_shared<depth_view<Ntk>>( ntk );
+    }
+
+    return _depth_ntk->level( n );
+  }
+
   virtual std::string po_shape( Ntk const& ntk, uint32_t i ) const
   {
     (void)ntk;
@@ -107,6 +118,9 @@ public: /* callbacks */
   {
     return ntk.is_complemented( f ) ? "dashed" : "solid";
   }
+
+private:
+  mutable std::shared_ptr<depth_view<Ntk>> _depth_ntk;
 };
 
 template<class Ntk>
@@ -165,10 +179,34 @@ public:
       }
     }
 
+    if constexpr ( has_is_nary_and_v<Ntk> )
+    {
+      if ( ntk.is_nary_and( n ) )
+      {
+        return "AND";
+      }
+    }
+
+    if constexpr ( has_is_nary_or_v<Ntk> )
+    {
+      if ( ntk.is_nary_or( n ) )
+      {
+        return "OR";
+      }
+    }
+
+    if constexpr ( has_is_nary_xor_v<Ntk> )
+    {
+      if ( ntk.is_nary_xor( n ) )
+      {
+        return "XOR";
+      }
+    }
+
     return default_dot_drawer<Ntk>::node_label( ntk, n );
   }
 
-  virtual std::string node_fillcolor( Ntk const& ntk, node<Ntk> const& n ) const
+  virtual std::string node_fillcolor( Ntk const& ntk, node<Ntk> const& n ) const override
   {
     if constexpr ( has_is_and_v<Ntk> )
     {
@@ -220,6 +258,30 @@ public:
       }
     }
 
+    if constexpr ( has_is_nary_and_v<Ntk> )
+    {
+      if ( ntk.is_nary_and( n ) )
+      {
+        return "lightcoral";
+      }
+    }
+
+    if constexpr ( has_is_nary_or_v<Ntk> )
+    {
+      if ( ntk.is_nary_or( n ) )
+      {
+        return "palegreen2";
+      }
+    }
+
+    if constexpr ( has_is_nary_xor_v<Ntk> )
+    {
+      if ( ntk.is_nary_xor( n ) )
+      {
+        return "lightskyblue";
+      }
+    }
+
     return default_dot_drawer<Ntk>::node_fillcolor( ntk, n );
   }
 
@@ -262,9 +324,8 @@ void write_dot( Ntk const& ntk, std::ostream& os, Drawer const& drawer = {} )
   static_assert( has_foreach_po_v<Ntk>, "Ntk does not implement the foreach_po method" );
 
   std::stringstream nodes, edges, levels;
-  depth_view depth_ntk{ntk};
 
-  std::vector<std::vector<uint32_t>> level_to_node_indexes( depth_ntk.depth() + 1 );
+  std::vector<std::vector<uint32_t>> level_to_node_indexes;
 
   ntk.foreach_node( [&]( auto const& n ) {
     nodes << fmt::format( "{} [label=\"{}\",shape={},style=filled,fillcolor={}]\n",
@@ -285,7 +346,12 @@ void write_dot( Ntk const& ntk, std::ostream& os, Drawer const& drawer = {} )
       } );
     }
 
-    level_to_node_indexes[depth_ntk.level( n )].push_back( ntk.node_to_index( n ) );
+    const auto lvl = drawer.node_level( ntk, n );
+    if ( level_to_node_indexes.size() <= lvl )
+    {
+      level_to_node_indexes.resize( lvl + 1 );
+    }
+    level_to_node_indexes[lvl].push_back( ntk.node_to_index( n ) );
   } );
 
   for ( auto const& indexes : level_to_node_indexes )

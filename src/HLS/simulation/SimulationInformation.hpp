@@ -19,7 +19,7 @@ class SimulationInformation
 
    /// for a given test vector index, this map gives the address map of the
    //  paramters of the top function to be tested
-   std::map<unsigned int, std::map<unsigned int, unsigned int>> param_address;
+   std::map<unsigned int, std::map<unsigned int, unsigned long long int>> param_address;
 
    /// for a given test vector index, this map gives, for every parameter
    //  index, the total size of the memory reserved for it
@@ -54,6 +54,6 @@ class SimulationInformation
    bool results_available = false;
 };
 
-typedef refcount<SimulationInformation> SimulationInformationRef;
-typedef refcount<const SimulationInformation> SimulationInformationConstRef;
+using SimulationInformationRef = refcount<SimulationInformation>;
+using SimulationInformationConstRef = refcount<const SimulationInformation>;
 #endif

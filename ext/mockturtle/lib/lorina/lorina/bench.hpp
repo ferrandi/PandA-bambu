@@ -67,6 +67,26 @@ public:
     (void)name;
   }
 
+  /*! \brief Callback method for parsed input of DFF (before output is available).
+   *
+   * \param input Name of the input
+   */
+  virtual void on_dff_input( const std::string& input ) const
+  {
+    (void)input;
+  }
+
+  /*! \brief Callback method for parsed DFF (when input and output are available).
+   *
+   * \param input Name of the input
+   * \param output Name of the output
+   */
+  virtual void on_dff( const std::string& input, const std::string& output ) const
+  {
+    (void)input;
+    (void)output;
+  }
+
   /*! \brief Callback method for parsed gate.
    *
    * \param inputs A list of inputs
@@ -137,6 +157,7 @@ namespace bench_regex
 static std::regex input( R"(INPUT\((.*)\))" );
 static std::regex output( R"(OUTPUT\((.*)\))" );
 static std::regex gate( R"((.*)\s+=\s+(.*)\((.*)\))" );
+static std::regex dff( R"((.*)\s+=\s+DFF\((.+)\))" );
 static std::regex lut( R"((.*)\s+=\s+LUT\s+(.*)\((.*)\))" );
 static std::regex gate_asgn( R"((.*)\s+=\s+(.*))" );
 } // namespace bench_regex
@@ -160,6 +181,10 @@ inline return_code read_bench( std::istream& in, const bench_reader& reader, dia
       if ( type == "" )
       {
         reader.on_assign( inputs.front(), output );
+      }
+      else if ( type == "DFF" )
+      {
+        reader.on_dff( inputs.front(), output );
       }
       else
       {
@@ -201,6 +226,17 @@ inline return_code read_bench( std::istream& in, const bench_reader& reader, dia
       const auto args = detail::trim_copy( m[3] );
       const auto inputs = detail::split( args, "," );
       on_action.call_deferred( inputs, output, inputs, output, type );
+      return true;
+    }
+
+    /* (<string> = DFF(<string>)) */
+    if ( std::regex_search( line, m, bench_regex::dff ) )
+    {
+      const auto output = detail::trim_copy( m[1] );
+      const auto arg = detail::trim_copy( m[2] );
+      reader.on_dff_input( output );
+      on_action.declare_known( output );
+      on_action.call_deferred( { arg }, output, { arg }, output, "DFF" );
       return true;
     }
 

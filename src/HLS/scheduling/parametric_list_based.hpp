@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,7 +75,7 @@ class OpVertexSet;
 //@}
 
 #if HAVE_UNORDERED
-typedef std::vector<rehashed_heap<int>> PriorityQueues;
+using PriorityQueues = std::vector<rehashed_heap<int>>;
 #else
 /// Sorter for connection
 struct PrioritySorter : public std::binary_function<vertex, vertex, bool>
@@ -182,15 +182,14 @@ class parametric_list_based : public Scheduling
     * @param stage_period is the minimum period of the pipelined unit fu_type
     */
    void compute_starting_ending_time_asap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained, fu_bindingRef res_binding,
-                                          const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_fo_correction_map);
-   void compute_starting_ending_time_alap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& starting_time, double& ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles,
-                                          bool& has_a_store_unbounded_as_in, fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time,
-                                          CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
+                                          const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
+   void compute_starting_ending_time_alap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& starting_time, double& ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles, bool& cannot_be_chained,
+                                          fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
 
    /**
     * update starting and ending time by moving candidate_v as late as possible without increasing the whole latency
     */
-   void update_starting_ending_time(vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef op_dfg_graph, const ScheduleConstRef schedule);
+   void update_starting_ending_time(vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
 
    void update_starting_ending_time_asap(vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
 
@@ -286,7 +285,7 @@ class parametric_list_based : public Scheduling
     * @param design_flow_manager is the hls design flow
     * @param hls_flow_step_specialization specifies how specialize this step
     */
-   parametric_list_based(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int function_id, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
+   parametric_list_based(const ParameterConstRef parameters, const HLS_managerRef HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef design_flow_manager, const HLSFlowStepSpecializationConstRef hls_flow_step_specialization);
 
    /**
     * Destructor.

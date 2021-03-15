@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -58,6 +58,6 @@ struct timing_group
 
    void xwrite(xml_element* pin_node, const CustomOrderedSet<std::string>& input_set);
 };
-typedef refcount<timing_group> timing_groupRef;
+using timing_groupRef = refcount<timing_group>;
 
 #endif

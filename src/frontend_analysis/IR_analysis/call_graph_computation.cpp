@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -164,7 +164,7 @@ DesignFlowStep_Status call_graph_computation::Exec()
          const auto* sl = GetPointer<const statement_list>(GET_NODE(fd->body));
          if(sl->list_of_bloc.empty())
          {
-            THROW_ERROR("We can only work on CFG provided by GCC");
+            THROW_ERROR("We can only work on CFG provided by GCC/CLANG");
          }
          else
          {
@@ -180,7 +180,9 @@ DesignFlowStep_Status call_graph_computation::Exec()
    }
 
    if(debug_level >= DEBUG_LEVEL_PEDANTIC or parameters->getOption<bool>(OPT_print_dot))
+   {
       CGM->CGetCallGraph()->WriteDot("call_graph.dot");
+   }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Created call graph");
    return DesignFlowStep_Status::SUCCESS;
 }
@@ -190,7 +192,7 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
    THROW_ASSERT(tn->get_kind() == tree_reindex_K, "Node is not a tree reindex");
    const tree_nodeRef& curr_tn = GET_NODE(tn);
    unsigned int ind = GET_INDEX_NODE(tn);
-   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " + STR(node_stmt) + ")");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Recursive analysis of " + STR(ind) + " of type " + curr_tn->get_kind_text() + "(statement is " + tn->ToString() + ")");
 
    switch(curr_tn->get_kind())
    {
@@ -198,7 +200,9 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
       {
          unsigned int impl = TM->get_implementation_node(ind);
          if(impl)
+         {
             ind = impl;
+         }
          /// check for nested function
          auto* fd = GetPointer<function_decl>(curr_tn);
          if(fd->scpe && GET_NODE(fd->scpe)->get_kind() == function_decl_K)
@@ -257,6 +261,10 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
          }
 
          call_graph_computation_recursive(TM, fun_node, node_stmt, FunctionEdgeInfo::CallType::direct_call);
+         for(auto& arg : ce->args)
+         {
+            call_graph_computation_recursive(TM, arg, node_stmt, call_type);
+         }
          break;
       }
       case gimple_call_K:
@@ -277,6 +285,10 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
             fun_node = ce->fn;
          }
          call_graph_computation_recursive(TM, fun_node, node_stmt, FunctionEdgeInfo::CallType::direct_call);
+         for(auto& arg : ce->args)
+         {
+            call_graph_computation_recursive(TM, arg, node_stmt, call_type);
+         }
          break;
       }
       case cond_expr_K:
@@ -318,8 +330,12 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
       {
          auto* gmwi = GetPointer<gimple_multi_way_if>(curr_tn);
          for(const auto& cond : gmwi->list_of_cond)
+         {
             if(cond.first)
+            {
                call_graph_computation_recursive(TM, cond.first, node_stmt, call_type);
+            }
+         }
          break;
       }
       case obj_type_ref_K:
@@ -346,7 +362,9 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
          call_graph_computation_recursive(TM, te->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, te->op1, node_stmt, call_type);
          if(te->op2)
+         {
             call_graph_computation_recursive(TM, te->op2, node_stmt, call_type);
+         }
          break;
       }
       case CASE_QUATERNARY_EXPRESSION:
@@ -355,9 +373,13 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
          call_graph_computation_recursive(TM, qe->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, qe->op1, node_stmt, call_type);
          if(qe->op2)
+         {
             call_graph_computation_recursive(TM, qe->op2, node_stmt, call_type);
+         }
          if(qe->op3)
+         {
             call_graph_computation_recursive(TM, qe->op3, node_stmt, call_type);
+         }
          break;
       }
       case lut_expr_K:
@@ -366,19 +388,33 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
          call_graph_computation_recursive(TM, le->op0, node_stmt, call_type);
          call_graph_computation_recursive(TM, le->op1, node_stmt, call_type);
          if(le->op2)
+         {
             call_graph_computation_recursive(TM, le->op2, node_stmt, call_type);
+         }
          if(le->op3)
+         {
             call_graph_computation_recursive(TM, le->op3, node_stmt, call_type);
+         }
          if(le->op4)
+         {
             call_graph_computation_recursive(TM, le->op4, node_stmt, call_type);
+         }
          if(le->op5)
+         {
             call_graph_computation_recursive(TM, le->op5, node_stmt, call_type);
+         }
          if(le->op6)
+         {
             call_graph_computation_recursive(TM, le->op6, node_stmt, call_type);
+         }
          if(le->op7)
+         {
             call_graph_computation_recursive(TM, le->op7, node_stmt, call_type);
+         }
          if(le->op8)
+         {
             call_graph_computation_recursive(TM, le->op8, node_stmt, call_type);
+         }
          break;
       }
       case constructor_K:
@@ -395,7 +431,9 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
          /// var decl performs an assignment when init is not null
          auto* vd = GetPointer<var_decl>(curr_tn);
          if(vd->init)
+         {
             call_graph_computation_recursive(TM, vd->init, node_stmt, call_type);
+         }
       }
       case result_decl_K:
       case parm_decl_K:

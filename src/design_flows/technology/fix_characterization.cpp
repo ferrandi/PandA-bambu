@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2016-2020 Politecnico di Milano
+ *              Copyright (C) 2016-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -97,7 +97,9 @@ DesignFlowStep_Status FixCharacterization::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu.first);
          auto single_fu = GetPointer<functional_unit>(fu.second);
          if(!single_fu)
+         {
             continue;
+         }
          auto template_name = single_fu->fu_template_name;
          auto fu_name = single_fu->functional_unit_name;
          if(single_fu)
@@ -300,7 +302,9 @@ DesignFlowStep_Status FixCharacterization::Exec()
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing " + fu.first);
          auto single_fu = GetPointer<functional_unit>(fu.second);
          if(!single_fu)
+         {
             continue;
+         }
          auto template_name = single_fu->fu_template_name;
          if(single_fu)
          {

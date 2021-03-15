@@ -45,7 +45,7 @@ inline bool relevance( const dynamic_truth_table& tt0, const dynamic_truth_table
 }
 
 /*! \brief Relevance */
-template<int NumVars>
+template<uint32_t NumVars>
 inline bool relevance( const static_truth_table<NumVars>& tt0, const static_truth_table<NumVars>& tt1, const static_truth_table<NumVars>& tt2, const static_truth_table<NumVars>& tt )
 {
   return is_const0( ( ( tt0 ^ tt ) & ( tt1 ^ tt2 ) ) );
@@ -72,9 +72,6 @@ struct mig_resub_stats
 
   /*! \brief Accumulated runtime for relevance resub */
   stopwatch<>::duration time_resubR{0};
-
-  /*! \brief Accumulated runtime for 12-resub. */
-  stopwatch<>::duration time_resub12{0};
 
   /*! \brief Accumulated runtime for collecting unate divisors. */
   stopwatch<>::duration time_collect_binate_divisors{0};
@@ -103,23 +100,8 @@ struct mig_resub_stats
   /*! \brief Number of accepted single OR-resubsitutions */
   uint64_t num_div1_or_accepts{0};
 
-  /*! \brief Number of accepted two resubsitutions using triples of unate divisors */
-  uint64_t num_div12_accepts{0};
-
-  /*! \brief Number of accepted single 2AND-resubsitutions */
-  uint64_t num_div12_2and_accepts{0};
-
-  /*! \brief Number of accepted single 2OR-resubsitutions */
-  uint64_t num_div12_2or_accepts{0};
-
   /*! \brief Number of accepted two resubsitutions */
   uint64_t num_div2_accepts{0};
-
-  /*! \brief Number of accepted double AND-OR-resubsitutions */
-  uint64_t num_div2_and_or_accepts{0};
-
-  /*! \brief Number of accepted double OR-AND-resubsitutions */
-  uint64_t num_div2_or_and_accepts{0};
 
   void report() const
   {
@@ -133,17 +115,15 @@ struct mig_resub_stats
                               num_divR_accepts, to_seconds( time_resubR ) );
     std::cout << fmt::format( "[i]            1-resub {:6d} = {:6d} MAJ                      ({:>5.2f} secs)\n",
                               num_div1_accepts, num_div1_accepts, to_seconds( time_resub1 ) );
-    std::cout << fmt::format( "[i]           12-resub {:6d} = {:6d} MAJ                      ({:>5.2f} secs)\n",
-                              num_div12_accepts, num_div12_accepts, to_seconds( time_resub12 ) );
     std::cout << fmt::format( "[i]            collect binate divisors                          ({:>5.2f} secs)\n", to_seconds( time_collect_binate_divisors ) );
     std::cout << fmt::format( "[i]            2-resub {:6d} = {:6d} 2MAJ                     ({:>5.2f} secs)\n",
                                num_div2_accepts, num_div2_accepts, to_seconds( time_resub2 ) );
     std::cout << fmt::format( "[i]            total   {:6d}\n",
-                              (num_const_accepts + num_div0_accepts + num_divR_accepts + num_div1_accepts + num_div12_accepts + num_div2_accepts) );
+                              (num_const_accepts + num_div0_accepts + num_divR_accepts + num_div1_accepts + num_div2_accepts) );
   }
 }; /* mig_resub_stats */
 
-template<typename Ntk, typename Simulator>
+template<typename Ntk, typename Simulator, typename TT>
 struct mig_resub_functor
 {
 public:
@@ -199,8 +179,11 @@ public:
   {
   }
 
-  std::optional<signal> operator()( node const& root, uint32_t required, uint32_t max_inserts, uint32_t num_mffc, uint32_t& last_gain )
+  std::optional<signal> operator()( node const& root, TT care, uint32_t required, uint32_t max_inserts, uint32_t num_mffc, uint32_t& last_gain )
   {
+    (void)care;
+    assert(is_const0(~care));
+
     /* consider constants */
     auto g = call_with_stopwatch( st.time_resubC, [&]() {
         return resub_const( root, required );
@@ -255,16 +238,6 @@ public:
 
     if ( max_inserts == 1 || num_mffc == 2 )
       return std::nullopt;
-
-    /* consider triples */
-    g = call_with_stopwatch( st.time_resub12, [&]() {
-        return resub_div12( root, required ); });
-    if ( g )
-    {
-      ++st.num_div12_accepts;
-      last_gain = num_mffc - 2;
-      return g; /* accepted resub */
-    }
 
     /* collect level two divisors */
     call_with_stopwatch( st.time_collect_binate_divisors, [&]() {
@@ -519,64 +492,6 @@ public:
     return std::nullopt;
   }
 
-  std::optional<signal> resub_div12( node const& root, uint32_t required )
-  {
-    (void)required;
-
-    auto const s = ntk.make_signal( root );
-    auto const& tt = sim.get_tt( s );
-
-    /* check positive unate divisors */
-    for ( auto i = 0u; i < udivs.positive_divisors0.size(); ++i )
-    {
-      auto const& s0 = udivs.positive_divisors0.at( i );
-      auto const& s1 = udivs.positive_divisors1.at( i );
-
-      for ( auto j = i + 1; j < udivs.next_candidates.size(); ++j )
-      {
-        auto const& s2 = udivs.next_candidates.at( j );
-
-        auto const& tt_s0 = sim.get_tt( s0 );
-        auto const& tt_s1 = sim.get_tt( s1 );
-        auto const& tt_s2 = sim.get_tt( s2 );
-
-        if ( kitty::ternary_majority( tt_s0, tt_s1, tt_s2 ) == tt )
-        {
-          auto const a = sim.get_phase( ntk.get_node( s0 ) ) ? !s0 : s0;
-          auto const b = sim.get_phase( ntk.get_node( s1 ) ) ? !s1 : s1;
-          auto const c = sim.get_phase( ntk.get_node( s2 ) ) ? !s2 : s2;
-          return sim.get_phase( root ) ? !ntk.create_maj( a, b, c ) : ntk.create_maj( a, b, c );
-        }
-      }
-    }
-
-    /* check negative unate divisors */
-    for ( auto i = 0u; i < udivs.negative_divisors0.size(); ++i )
-    {
-      auto const& s0 = udivs.negative_divisors0.at( i );
-      auto const& s1 = udivs.negative_divisors1.at( i );
-
-      for ( auto j = i + 1; j < udivs.next_candidates.size(); ++j )
-      {
-        auto const& s2 = udivs.next_candidates.at( j );
-
-        auto const& tt_s0 = sim.get_tt( s0 );
-        auto const& tt_s1 = sim.get_tt( s1 );
-        auto const& tt_s2 = sim.get_tt( s2 );
-
-        if ( kitty::ternary_majority( tt_s0, tt_s1, tt_s2 ) == tt )
-        {
-          auto const a = sim.get_phase( ntk.get_node( s0 ) ) ? !s0 : s0;
-          auto const b = sim.get_phase( ntk.get_node( s1 ) ) ? !s1 : s1;
-          auto const c = sim.get_phase( ntk.get_node( s2 ) ) ? !s2 : s2;
-          return sim.get_phase( root ) ? !ntk.create_maj( a, b, c ) : ntk.create_maj( a, b, c );
-        }
-      }
-    }
-
-    return std::nullopt;
-  }
-
   void collect_binate_divisors( node const& root, uint32_t required )
   {
     bdivs.clear();
@@ -750,7 +665,7 @@ void mig_resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, resubst
   static_assert( has_value_v<Ntk>, "Ntk does not implement the has_value method" );
   static_assert( has_visited_v<Ntk>, "Ntk does not implement the has_visited method" );
 
-  using resub_view_t = fanout_view2<depth_view<Ntk>>;
+  using resub_view_t = fanout_view<depth_view<Ntk>>;
   depth_view<Ntk> depth_view{ntk};
   resub_view_t resub_view{depth_view};
 
@@ -758,10 +673,12 @@ void mig_resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, resubst
   if ( ps.max_pis == 8 )
   {
     using truthtable_t = kitty::static_truth_table<8>;
+    using truthtable_dc_t = kitty::dynamic_truth_table;
     using simulator_t = detail::simulator<resub_view_t, truthtable_t>;
-    using resubstitution_functor_t = mig_resub_functor<resub_view_t, simulator_t>;
+    using node_mffc_t = detail::node_mffc_inside<Ntk>;
+    using resubstitution_functor_t = mig_resub_functor<resub_view_t, simulator_t, truthtable_dc_t>;
     typename resubstitution_functor_t::stats resub_st;
-    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t> p( resub_view, ps, st, resub_st );
+    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t, truthtable_dc_t, node_mffc_t> p( resub_view, ps, st, resub_st );
     p.run();
     if ( ps.verbose )
     {
@@ -773,9 +690,10 @@ void mig_resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, resubst
   {
     using truthtable_t = kitty::dynamic_truth_table;
     using simulator_t = detail::simulator<resub_view_t, truthtable_t>;
-    using resubstitution_functor_t = mig_resub_functor<resub_view_t, simulator_t>;
+    using node_mffc_t = detail::node_mffc_inside<Ntk>;
+    using resubstitution_functor_t = mig_resub_functor<resub_view_t, simulator_t, truthtable_t>;
     typename resubstitution_functor_t::stats resub_st;
-    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t> p( resub_view, ps, st, resub_st );
+    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t, truthtable_t, node_mffc_t> p( resub_view, ps, st, resub_st );
     p.run();
     if ( ps.verbose )
     {

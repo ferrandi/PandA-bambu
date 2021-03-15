@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -75,8 +75,7 @@ REF_FORWARD_DECL(application_manager);
 REF_FORWARD_DECL(ArchManager);
 REF_FORWARD_DECL(DesignFlowManager);
 
-typedef enum
-{
+using FrontendFlowStepType = enum FrontendFlowStepType {
 /// Application frontend flow steps
 #if HAVE_HOST_PROFILING_BUILT
    BASIC_BLOCKS_PROFILING,
@@ -155,7 +154,6 @@ typedef enum
    COMPUTE_IMPLICIT_CALLS,
    COMMUTATIVE_EXPR_RESTRUCTURING,
    COND_EXPR_RESTRUCTURING,
-   CONSTANT_FLOP_WRAPPER,
 #endif
 #if HAVE_TASTE
    CREATE_ADDRESS_TRANSLATION,
@@ -189,6 +187,7 @@ typedef enum
 #if HAVE_BAMBU_BUILT
    EXTRACT_PATTERNS,
    FIX_STRUCTS_PASSED_BY_VALUE,
+   FUNCTION_PARM_MASK,
    FUNCTION_CALL_TYPE_CLEANUP,
    FANOUT_OPT,
 #endif
@@ -269,6 +268,10 @@ typedef enum
    PROBABILITY_PATH,
 #endif
 #if HAVE_BAMBU_BUILT
+   ESSA,
+   RANGE_ANALYSIS,
+#endif
+#if HAVE_BAMBU_BUILT
    REBUILD_INITIALIZATION,
    REBUILD_INITIALIZATION2,
 #endif
@@ -345,7 +348,7 @@ typedef enum
 #if HAVE_BAMBU_BUILT
    VIRTUAL_PHI_NODES_SPLIT
 #endif
-} FrontendFlowStepType;
+};
 
 #if NO_ABSEIL_HASH
 
@@ -369,14 +372,13 @@ class FrontendFlowStep : public DesignFlowStep
 {
  public:
    /// The different relationship type between function analysis
-   typedef enum
-   {
+   using FunctionRelationship = enum {
       ALL_FUNCTIONS,     /**! All the functions composing the application */
       CALLED_FUNCTIONS,  /**! All the functions called by the current one */
       CALLING_FUNCTIONS, /**! All the functions which call the current one */
       SAME_FUNCTION,     /**! Same function */
       WHOLE_APPLICATION  /**! The whole application */
-   } FunctionRelationship;
+   };
 
  protected:
    /// The application manager

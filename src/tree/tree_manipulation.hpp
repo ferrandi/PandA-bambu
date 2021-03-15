@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -92,15 +92,15 @@ REF_FORWARD_DECL(bloc);
 
 #define MIN_VALUE_BIT_SIZE 0
 #define MIN_VALUE_UNSIGNED_INT 0
-#define MIN_VALUE_INT -2147483648LL
+#define MIN_VALUE_INT (-2147483648LL)
 #define MIN_VALUE_LONG_LONG_INT 0
 #define MIN_VALUE_UNSIGNED_LONG_LONG_INT 0
 
-#define MAX_VALUE_BIT_SIZE -1
-#define MAX_VALUE_UNSIGNED_INT -1
+#define MAX_VALUE_BIT_SIZE (-1)
+#define MAX_VALUE_UNSIGNED_INT (-1)
 #define MAX_VALUE_INT 2147483647
-#define MAX_VALUE_LONG_LONG_INT -1
-#define MAX_VALUE_UNSIGNED_LONG_LONG_INT -1
+#define MAX_VALUE_LONG_LONG_INT (-1)
+#define MAX_VALUE_UNSIGNED_LONG_LONG_INT (-1)
 
 /**
  * This class creates a layer to add nodes and to manipulate the tree_nodes manager.
@@ -602,7 +602,7 @@ class tree_manipulation
     * @param block is the basic block in which new statement has to be added
     * @return the ssa in the left part of the created statement
     */
-   tree_nodeRef ExtractCondition(const tree_nodeRef& gc, const blocRef& block) const;
+   tree_nodeRef ExtractCondition(const tree_nodeRef& condition, const blocRef& block) const;
 
    /**
     * Create a nop_expr to perform a conversion
@@ -663,7 +663,7 @@ class tree_manipulation
    tree_nodeRef CreateVectorBooleanType(const unsigned int number_of_elements) const;
 };
 
-typedef refcount<tree_manipulation> tree_manipulationRef;
-typedef refcount<const tree_manipulation> tree_manipulationConstRef;
+using tree_manipulationRef = refcount<tree_manipulation>;
+using tree_manipulationConstRef = refcount<const tree_manipulation>;
 
 #endif /* TREE_MANIPULATION_HPP */

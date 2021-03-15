@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -97,11 +97,13 @@ DesignFlowStep_Status bb_feedback_edges_computation::InternalExec()
    const BehavioralHelperConstRef helper = function_behavior->CGetBehavioralHelper();
    /// then consider loops
    std::list<LoopConstRef> loops = function_behavior->CGetLoops()->GetList();
-   std::list<LoopConstRef>::const_iterator loop_end = loops.end();
-   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; ++loop)
+   auto loop_end = loops.end();
+   for(auto loop = loops.begin(); loop != loop_end; ++loop)
    {
       if((*loop)->GetId() == 0)
+      {
          continue;
+      }
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Analyzing loop " + STR((*loop)->GetId()));
       for(auto sp_back_edge : (*loop)->get_sp_back_edges())

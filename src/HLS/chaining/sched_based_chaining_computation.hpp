@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -69,6 +69,6 @@ class sched_based_chaining_computation : public chaining
    DesignFlowStep_Status InternalExec() override;
 };
 
-typedef refcount<sched_based_chaining_computation> sched_based_chaining_computationRef;
+using sched_based_chaining_computationRef = refcount<sched_based_chaining_computation>;
 
 #endif

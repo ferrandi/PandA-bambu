@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -149,6 +149,6 @@ class StateTransitionGraph_constructor
 };
 
 /// refcount definition to StateTransitionGraph_constructor class
-typedef refcount<StateTransitionGraph_constructor> StateTransitionGraph_constructorRef;
+using StateTransitionGraph_constructorRef = refcount<StateTransitionGraph_constructor>;
 
 #endif

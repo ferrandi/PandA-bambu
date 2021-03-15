@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2020  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -39,5 +39,8 @@ namespace kitty
 
 template<class TT>
 struct is_truth_table : std::false_type {};
+
+template<class TT>
+struct is_complete_truth_table : std::false_type {};
 
 }

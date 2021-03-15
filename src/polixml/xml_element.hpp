@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -79,7 +79,9 @@ class xml_element : public xml_child, public attribute_sequence
       }
       (*pp)(os, "<" + get_name());
       if(has_attributes())
+      {
          print_attributes(os);
+      }
       if(has_child())
       {
          const char soc[2] = {STD_OPENING_CHAR, '\0'};
@@ -94,7 +96,9 @@ class xml_element : public xml_child, public attribute_sequence
          {
             (*pp)(os, scc);
             if(get_children().size() > 1 || !get_child_text())
+            {
                (*pp)(os, "\n");
+            }
          }
          (*pp)(os, "</" + get_name() + ">");
       }

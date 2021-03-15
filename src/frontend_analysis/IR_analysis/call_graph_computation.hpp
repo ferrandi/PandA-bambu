@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -77,9 +77,6 @@ class call_graph_computation : public ApplicationFrontendFlowStep
    /// Index of current function
    unsigned int current;
 
-   /// set of already examined addr_expr used to avoid circular recursion
-   CustomOrderedSet<tree_nodeRef> already_visited;
-
    /**
     * Recursive analysis of the tree nodes looking for call expressions.
     * @param TM is the tree manager.
@@ -102,7 +99,7 @@ class call_graph_computation : public ApplicationFrontendFlowStep
     * @param AppM is the application manager
     * @param design_flow_manager is the design flow manager
     */
-   call_graph_computation(const ParameterConstRef Param, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
+   call_graph_computation(const ParameterConstRef _parameters, const application_managerRef AppM, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     *  Destructor

@@ -56,7 +56,7 @@ struct json_table
   {
     for ( auto const& column : columns )
     {
-      max_widths_.push_back( column.size() );
+      max_widths_.push_back( static_cast<uint32_t>( column.size() ) );
     }
     entries_.push_back( columns );
     for ( auto const& row : data )
@@ -105,7 +105,7 @@ private:
         cell = fmt::format( "{}", static_cast<bool>( data ) );
       }
 
-      max_widths_[ctr] = std::max<uint32_t>( max_widths_[ctr], cell.size() );
+      max_widths_[ctr] = std::max( max_widths_[ctr], static_cast<uint32_t>( cell.size() ) );
       ++ctr;
       entry.push_back( cell );
     }

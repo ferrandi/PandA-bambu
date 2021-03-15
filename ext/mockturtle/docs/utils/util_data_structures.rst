@@ -32,6 +32,8 @@ Node map
 .. doxygenclass:: mockturtle::node_map
    :members:
 
+.. doxygenfunction:: mockturtle::initialize_copy_network
+
 Cuts
 ~~~~
 

@@ -33,6 +33,7 @@ Welcome to mockturtle's documentation!
    algorithms/node_resynthesis
    algorithms/cut_rewriting
    algorithms/refactoring
+   algorithms/balancing
    algorithms/mig_algebraic_rewriting
    algorithms/akers_synthesis
    algorithms/resubstitution
@@ -40,7 +41,7 @@ Welcome to mockturtle's documentation!
    algorithms/equivalence_checking
    algorithms/miter
    algorithms/dsd_decomposition
-   algorithms/shannon_decomposition
+   algorithms/decomposition
    algorithms/cleanup
    algorithms/cnf
    algorithms/reconv_cut
@@ -48,6 +49,10 @@ Welcome to mockturtle's documentation!
    algorithms/extract_linear
    algorithms/linear_resynthesis
    algorithms/gates_to_nodes
+   algorithms/xag_optimization
+   algorithms/xmg_optimization
+   algorithms/equivalence_classes
+   algorithms/circuit_validator
 
 .. toctree::
    :maxdepth: 2
@@ -55,6 +60,7 @@ Welcome to mockturtle's documentation!
 
    io/lorina_readers
    io/writers
+   io/other
 
 .. toctree::
    :maxdepth: 2

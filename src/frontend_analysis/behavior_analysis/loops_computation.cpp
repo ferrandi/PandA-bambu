@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -95,7 +95,9 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
 void loops_computation::Initialize()
 {
    if(bb_version != 0 and bb_version != function_behavior->GetBBVersion())
+   {
       function_behavior->loops = LoopsRef();
+   }
 }
 
 DesignFlowStep_Status loops_computation::InternalExec()
@@ -109,12 +111,14 @@ DesignFlowStep_Status loops_computation::InternalExec()
       function_behavior->CGetLoops()->WriteDot("LF.dot");
    }
    std::list<LoopConstRef> loops = function_behavior->CGetLoops()->GetList();
-   std::list<LoopConstRef>::const_iterator loop_end = loops.end();
-   for(std::list<LoopConstRef>::const_iterator loop = loops.begin(); loop != loop_end; ++loop)
+   auto loop_end = loops.end();
+   for(auto loop = loops.begin(); loop != loop_end; ++loop)
    {
       /// FIXME: zero loop
       if((*loop)->GetId() == 0)
+      {
          continue;
+      }
       const CustomUnorderedSet<vertex> blocks = (*loop)->get_blocks();
       CustomUnorderedSet<vertex>::const_iterator bb_it, bb_it_end = blocks.end();
       for(bb_it = blocks.begin(); bb_it != bb_it_end; ++bb_it)

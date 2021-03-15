@@ -16,7 +16,7 @@ unsigned short icrc1(unsigned short crc, unsigned char onech)
     
     for (i=0;i<8;i++) {
         if (ans & 0x8000)
-            ans = (ans <<= 1) ^ 4129;
+            ans = (ans << 1) ^ 4129;
         else
             ans <<= 1;
     }
@@ -63,7 +63,6 @@ unsigned short icrc(unsigned short crc, unsigned char *lin, unsigned int len,
 int main(void)
 {
     unsigned short i1,i2;
-    int n;
     
     i1=icrc(0,aa,40,(short)0,1);
     i2=icrc(i1,aa,42,(short)-1,1);

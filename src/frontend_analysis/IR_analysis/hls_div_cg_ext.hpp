@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -65,8 +65,6 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
  protected:
    const tree_managerRef TreeM;
 
-   const tree_manipulationRef tree_man;
-
    /// True if already executed
    bool already_executed;
 
@@ -77,9 +75,9 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
    bool use64bitMul;
 
    /**
-    * Recursive examinate tree node
+    * Recursive examine tree node
     */
-   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement);
+   void recursive_examinate(const tree_nodeRef& current_tree_node, const tree_nodeRef& current_statement, const tree_manipulationRef tree_man);
 
    /**
     * Return the set of analyses in relationship with this design step
@@ -95,7 +93,7 @@ class hls_div_cg_ext : public FunctionFrontendFlowStep
     * @param fun_id is the function index
     * @param design_flow_manager is the design flow manager
     */
-   hls_div_cg_ext(const ParameterConstRef Param, const application_managerRef AppM, unsigned int fun_id, const DesignFlowManagerConstRef design_flow_manager);
+   hls_div_cg_ext(const ParameterConstRef _parameters, const application_managerRef AppM, unsigned int _function_id, const DesignFlowManagerConstRef design_flow_manager);
 
    /**
     * Destructor

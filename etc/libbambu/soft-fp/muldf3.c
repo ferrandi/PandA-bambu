@@ -49,7 +49,7 @@ DFtype __muldf3(DFtype a, DFtype b)
    return r;
 }
 
-inline DFtype __float64_mulif(DFtype a, DFtype b)
+DFtype __float64_mulif(DFtype a, DFtype b)
 {
    return __muldf3(a, b);
 }

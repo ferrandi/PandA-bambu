@@ -16,7 +16,7 @@ networks.  In this case the maximum number of variables for a node function is
    mig_npn_resynthesis resyn;
    cut_rewriting_params ps;
    ps.cut_enumeration_ps.cut_size = 4;
-   cut_rewriting( mig, resyn, ps );
+   mig = cut_rewriting( mig, resyn, ps );
    mig = cleanup_dangling( mig );
 
 It is possible to change the cost function of nodes in cut rewriting.  Here is
@@ -35,7 +35,7 @@ which corresponds to the multiplicative complexity of a function.
    };
 
    SomeResynthesisClass resyn;
-   cut_rewriting<SomeResynthesisClass, mc_cost>( ntk, resyn );
+   ntk = cut_rewriting<SomeResynthesisClass, mc_cost>( ntk, resyn );
 
 Parameters and statistics
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -50,6 +50,7 @@ Algorithm
 ~~~~~~~~~
 
 .. doxygenfunction:: mockturtle::cut_rewriting
+.. doxygenfunction:: mockturtle::cut_rewriting_with_compatibility_graph
 
 Rewriting functions
 ~~~~~~~~~~~~~~~~~~~

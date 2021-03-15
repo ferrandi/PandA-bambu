@@ -34,6 +34,7 @@
 
 #include <string>
 #include <type_traits>
+#include <map>
 
 #include <kitty/dynamic_truth_table.hpp>
 #include <kitty/traits.hpp>
@@ -682,6 +683,21 @@ template<class Ntk>
 inline constexpr bool has_num_cos_v = has_num_cos<Ntk>::value;
 #pragma endregion
 
+#pragma region has_num_latches
+template<class Ntk, class = void>
+struct has_num_latches : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_num_latches<Ntk, std::void_t<decltype( std::declval<Ntk>().num_latches() )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_num_latches_v = has_num_latches<Ntk>::value;
+#pragma endregion
+
 #pragma region has_num_pis
 template<class Ntk, class = void>
 struct has_num_pis : std::false_type
@@ -995,6 +1011,51 @@ struct has_is_xor3<Ntk, std::void_t<decltype( std::declval<Ntk>().is_xor3( std::
 
 template<class Ntk>
 inline constexpr bool has_is_xor3_v = has_is_xor3<Ntk>::value;
+#pragma endregion
+
+#pragma region has_is_nary_and
+template<class Ntk, class = void>
+struct has_is_nary_and : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_is_nary_and<Ntk, std::void_t<decltype( std::declval<Ntk>().is_nary_and( std::declval<node<Ntk>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_is_nary_and_v = has_is_nary_and<Ntk>::value;
+#pragma endregion
+
+#pragma region has_is_nary_or
+template<class Ntk, class = void>
+struct has_is_nary_or : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_is_nary_or<Ntk, std::void_t<decltype( std::declval<Ntk>().is_nary_or( std::declval<node<Ntk>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_is_nary_or_v = has_is_nary_or<Ntk>::value;
+#pragma endregion
+
+#pragma region has_is_nary_xor
+template<class Ntk, class = void>
+struct has_is_nary_xor : std::false_type
+{
+};
+
+template<class Ntk>
+struct has_is_nary_xor<Ntk, std::void_t<decltype( std::declval<Ntk>().is_nary_xor( std::declval<node<Ntk>>() ) )>> : std::true_type
+{
+};
+
+template<class Ntk>
+inline constexpr bool has_is_nary_xor_v = has_is_nary_xor<Ntk>::value;
 #pragma endregion
 
 #pragma region has_is_function

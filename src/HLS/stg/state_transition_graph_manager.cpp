@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -119,12 +119,14 @@ void StateTransitionGraphManager::compute_min_max()
 {
    StateTransitionGraphInfoRef info = STG_graph->GetStateTransitionGraphInfo();
    if(!info->is_a_dag)
+   {
       return;
+   }
    std::list<vertex> sorted_vertices;
    ACYCLIC_STG_graph->TopologicalSort(sorted_vertices);
    CustomUnorderedMap<vertex, unsigned int> CSteps_min;
    CustomUnorderedMap<vertex, unsigned int> CSteps_max;
-   const std::list<vertex>::iterator it_sv_end = sorted_vertices.end();
+   const auto it_sv_end = sorted_vertices.end();
    for(auto it_sv = sorted_vertices.begin(); it_sv != it_sv_end; ++it_sv)
    {
       CSteps_min[*it_sv] = 0;
@@ -137,9 +139,13 @@ void StateTransitionGraphManager::compute_min_max()
          vertex src = boost::source(*ie, *ACYCLIC_STG_graph);
          CSteps_max[*it_sv] = std::max(CSteps_max[*it_sv], 1 + CSteps_max[src]);
          if(ie == ie_first)
+         {
             CSteps_min[*it_sv] = 1 + CSteps_min[src];
+         }
          else
+         {
             CSteps_min[*it_sv] = std::min(CSteps_min[*it_sv], 1 + CSteps_max[src]);
+         }
       }
    }
    THROW_ASSERT(CSteps_min.find(info->exit_node) != CSteps_min.end(), "Exit node not reachable");
@@ -260,7 +266,7 @@ void StateTransitionGraphManager::specialise_mu(structural_objectRef& mu_mod, ge
    auto mut = GetPointer<multi_unbounded_obj>(mu);
    THROW_ASSERT(mut, "unexpected condition");
    structural_objectRef inOps = mu_mod->find_member("ops", port_vector_o_K, mu_mod);
-   port_o* port = GetPointer<port_o>(inOps);
+   auto* port = GetPointer<port_o>(inOps);
    const auto& ops = mut->get_ops();
    auto n_in_ports = static_cast<unsigned int>(ops.size());
    port->add_n_ports(n_in_ports, inOps);

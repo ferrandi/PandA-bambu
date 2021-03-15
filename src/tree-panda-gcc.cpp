@@ -12,7 +12,7 @@
  *                       Politecnico di Milano - DEIB
  *                        System Architectures Group
  *             ***********************************************
- *              Copyright (C) 2004-2020 Politecnico di Milano
+ *              Copyright (C) 2004-2021 Politecnico di Milano
  *
  *   This file is part of the PandA framework.
  *
@@ -71,7 +71,7 @@
 #include <boost/lexical_cast.hpp>
 
 /// Wrapper include
-#include "gcc_wrapper.hpp"
+#include "compiler_wrapper.hpp"
 
 static char* alloc_long_option(char* argv[], int& i, int& dec)
 {
@@ -205,9 +205,9 @@ int main(int argc, char* argv_orig[])
             }
          }
 
-         const GccWrapper_OptimizationSet optimization_set = Param->getOption<GccWrapper_OptimizationSet>(OPT_gcc_optimization_set);
-         const GccWrapper_CompilerTarget compiler_target = Param->getOption<GccWrapper_CompilerTarget>(OPT_default_compiler);
-         GccWrapperRef Wrap = GccWrapperRef(new GccWrapper(Param, compiler_target, optimization_set));
+         const CompilerWrapper_OptimizationSet optimization_set = Param->getOption<CompilerWrapper_OptimizationSet>(OPT_gcc_optimization_set);
+         const CompilerWrapper_CompilerTarget compiler_target = Param->getOption<CompilerWrapper_CompilerTarget>(OPT_default_compiler);
+         CompilerWrapperRef Wrap = CompilerWrapperRef(new CompilerWrapper(Param, compiler_target, optimization_set));
 
          const auto input_files = Param->getOption<const CustomSet<std::string>>(OPT_input_file);
 
@@ -267,11 +267,8 @@ int main(int argc, char* argv_orig[])
                boost::filesystem::path temp_path_obtained = boost::filesystem::unique_path(temp_path);
                boost::filesystem::create_directories(temp_path_obtained);
 
-               boost::filesystem::path local_archive_file = archive_file;
-               if(local_archive_file.is_relative())
-               {
-                  local_archive_file = boost::filesystem::current_path() / local_archive_file;
-               }
+               boost::filesystem::path local_archive_file = GetPath(archive_file);
+
                std::string command = "cd " + temp_path_obtained.string() + "; ar x " + local_archive_file.string();
                int ret = PandaSystem(Param, command);
                if(IsError(ret))
