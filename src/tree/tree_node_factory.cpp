@@ -44,7 +44,7 @@
 /// Autoheader include
 #include "config_HAVE_CODE_ESTIMATION_BUILT.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree includes

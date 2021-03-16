@@ -3,12 +3,13 @@ Eighth public release of PandA framework.
 
 New features introduced:
 - Added support to CLANG/LLVM compiler versions 8, 9,10 and 11.
-- Added support to Svelto methodologie. Reference paper: M. Minutoli, V. Castellana, N. Saporetti, S. Devecchi, M. Lattuada, P. Fezzardi, A. Tumeo, and F. Ferrandi, “Svelto: High-Level Synthesis of Multi-Threaded Accelerators for Graph Analytics,” IEEE Transactions on Computers, iss. 01, pp. 1-14, 2021.
+- Added support to Xilinx Vitis HLS LLVM 2020.2.  https://github.com/Xilinx/HLS
+- Added support to Svelto methodology. Reference paper: M. Minutoli, V. Castellana, N. Saporetti, S. Devecchi, M. Lattuada, P. Fezzardi, A. Tumeo, and F. Ferrandi, “Svelto: High-Level Synthesis of Multi-Threaded Accelerators for Graph Analytics,” IEEE Transactions on Computers, iss. 01, pp. 1-14, 2021.
 - Added support to Tensor flow optimization. Reference paper: M. Siracusa and F. Ferrandi, “Tensor Optimization for High-Level Synthesis Design Flows,” IEEE Transactions on Computer-Aided Design of Integrated Circuits and Systems, Best Paper Candidate of CODES+ISSS 2020, vol. 39, iss. 11, pp. 4217-4228, 2020. 
 - Improved support to discrepancy analysis. Reference paper: P. Fezzardi and F. Ferrandi, “Automated Bug Detection for High-Level Synthesis of Multi-Threaded Irregular Applications,” ACM Trans. Parallel Comput., vol. 7, iss. 4, 2020. 
 - Added initial support to ASIC flow based on Yosys+OpenROAD projects (see https://theopenroadproject.org/)
 - Simplified the simulation/synthesis backends integration. In case the used simulator or synthesizer is in the system path, the configuration can be as simple as ../configure --prefix=/opt/panda
-- Added support to multi-thread simulation when Verilator version 4 is used.
+- Added support to multi-thread simulation when Verilator version 4 is used (it is disabled by default).
 - Improved bambu memory consumption.
 - Added support to AppImage bambu binary distribution (https://appimage.org/).
 - Added support to xc7z045-2ffg900-VVD device.

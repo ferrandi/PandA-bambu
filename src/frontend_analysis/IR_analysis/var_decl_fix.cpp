@@ -55,7 +55,7 @@
 /// Parameter include
 #include "Parameter.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STD include

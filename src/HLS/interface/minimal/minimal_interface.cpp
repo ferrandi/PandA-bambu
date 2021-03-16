@@ -249,7 +249,7 @@ void minimal_interface::build_wrapper(structural_objectRef wrappedObj, structura
       }
    }
 
-   auto do_not_expose_globals_case = [&]{
+   auto do_not_expose_globals_case = [&] {
       auto manage_feedback1 = [&](const std::string& portS, const std::string& portM) {
          structural_objectRef port1, port2;
          structural_objectRef sign;

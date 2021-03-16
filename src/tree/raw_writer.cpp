@@ -58,7 +58,7 @@
 
 #include "exceptions.hpp" // for THROW_ERROR
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 #if HAVE_RTL_BUILT

@@ -32,7 +32,7 @@ endif
 
 if BUILD_LIB_FROM_C
    spider_CPPFLAGS += \
-      -I$(top_srcdir)/src/wrapper/treegcc
+      -I$(top_srcdir)/src/wrapper/compiler
 endif
 
 if BUILD_LIB_REGRESSORS

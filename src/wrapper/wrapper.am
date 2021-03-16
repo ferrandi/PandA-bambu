@@ -11,8 +11,8 @@ lib_wrapper_la_SOURCES = wrapper/ToolManager.cpp
 lib_wrapper_la_LIBADD =
 
 if BUILD_LIB_FROM_C
-  noinst_LTLIBRARIES += lib_treegccwrapper.la
-  lib_treegccwrapper_la_CPPFLAGS = \
+  noinst_LTLIBRARIES += lib_compilerwrapper.la
+  lib_compilerwrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src \
     -I$(top_srcdir)/src/behavior \
     -I$(top_srcdir)/src/constants \
@@ -20,20 +20,20 @@ if BUILD_LIB_FROM_C
     -I$(top_srcdir)/src/graph \
     -I$(top_srcdir)/src/HLS \
     -I$(top_srcdir)/src/parser/polixml \
-    -I$(top_srcdir)/src/parser/treegcc \
+    -I$(top_srcdir)/src/parser/compiler \
     -I$(top_srcdir)/src/polixml \
     -I$(top_srcdir)/src/tree \
     -I$(top_srcdir)/src/utility \
     $(AM_CPPFLAGS)
 if BUILD_LIB_RTL
-    lib_treegccwrapper_la_CPPFLAGS += -I$(top_srcdir)/src/rtl\
+    lib_compilerwrapper_la_CPPFLAGS += -I$(top_srcdir)/src/rtl\
       -I$(top_srcdir)/src/parser/rtlgcc
 endif
-  lib_treegccwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB) $(BOOST_REGEX_LIB)
-  noinst_HEADERS += wrapper/treegcc/gcc_wrapper.hpp
-  lib_treegccwrapper_la_SOURCES = wrapper/treegcc/gcc_wrapper.cpp
-  lib_wrapper_la_LIBADD += lib_treegccwrapper.la
-  PRJ_DOC += wrapper/treegcc/treegcc.doc
+  lib_compilerwrapper_la_LDFLAGS = $(BOOST_FILESYSTEM_LIB) $(BOOST_REGEX_LIB)
+  noinst_HEADERS += wrapper/compiler/compiler_wrapper.hpp
+  lib_compilerwrapper_la_SOURCES = wrapper/compiler/compiler_wrapper.cpp
+  lib_wrapper_la_LIBADD += lib_compilerwrapper.la
+  PRJ_DOC += wrapper/compiler/compiler.doc
 endif
 
 if BUILD_LIB_TARGET_PROFILING

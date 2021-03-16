@@ -46,12 +46,12 @@
 #include "c_backend.hpp"
 #include "c_backend_step_factory.hpp"
 #include "call_graph_manager.hpp"
+#include "compiler_wrapper.hpp"
 #include "custom_set.hpp"
 #include "design_flow_graph.hpp"
 #include "design_flow_manager.hpp"
 #include "fileIO.hpp"
 #include "function_behavior.hpp"
-#include "gcc_wrapper.hpp"
 #include "hash_helper.hpp"
 #include "host_profiling_constants.hpp"
 #include "profiling_information.hpp"
@@ -83,10 +83,10 @@ DesignFlowStep_Status BasicBlocksProfiling::Exec()
    boost::filesystem::path run_name = temporary_path / ("run.tmp");
    boost::filesystem::path profile_data_name = temporary_path / STR_CST_host_profiling_data;
 
-   const GccWrapperConstRef gcc_wrapper(new GccWrapper(this->parameters, parameters->getOption<GccWrapper_CompilerTarget>(OPT_host_compiler), GccWrapper_OptimizationSet::O1));
+   const CompilerWrapperConstRef compiler_wrapper(new CompilerWrapper(this->parameters, parameters->getOption<CompilerWrapper_CompilerTarget>(OPT_host_compiler), CompilerWrapper_OptimizationSet::O1));
    CustomSet<std::string> tp_files;
    tp_files.insert(profiling_source_file);
-   gcc_wrapper->CreateExecutable(tp_files, run_name.string(), "");
+   compiler_wrapper->CreateExecutable(tp_files, run_name.string(), "");
    std::string change_directory;
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Starting dynamic profiling");
    if(parameters->isOption(OPT_path))

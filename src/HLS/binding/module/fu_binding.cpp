@@ -81,9 +81,6 @@
 
 #include <boost/algorithm/string/replace.hpp>
 
-#include <fstream>
-
-///. include
 #include "Parameter.hpp"
 
 /// design_flows/backend/ToHDL include
@@ -93,18 +90,18 @@
 #include "allocation_information.hpp"
 
 /// STD include
-#include <limits>
-#include <string>
-
-/// STL includes
 #include "custom_set.hpp"
 #include <algorithm>
+#include <fstream>
+#include <limits>
+#include <string>
 #include <utility>
 #include <vector>
 
 /// utility include
 #include "fileIO.hpp"
-#include "string_manipulation.hpp" // for GET_CLASS
+#include "math_function.hpp"
+#include "string_manipulation.hpp"
 
 const unsigned int fu_binding::UNKNOWN = std::numeric_limits<unsigned int>::max();
 
@@ -1612,6 +1609,7 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
 
    if(ar)
    {
+      bool has_misaligned_indirect_ref = false;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Ar is true");
       {
          unsigned int elmt_bitsize = 1;
@@ -1650,17 +1648,36 @@ void fu_binding::specialise_fu(const HLS_managerRef HLSMgr, const hlsRef HLS, st
             {
                THROW_ASSERT(std::get<0>(vars[0]), "Expected a tree node in case of a value to store");
                required_variables[0] = std::max(required_variables[0], tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, std::get<0>(vars[0]))));
+               if(tree_helper::is_a_misaligned_vector(TreeM, std::get<0>(vars[0])))
+               {
+                  has_misaligned_indirect_ref = true;
+               }
             }
             else if(GET_TYPE(data, mapped_operation) & TYPE_LOAD)
             {
                THROW_ASSERT(out_var, "Expected a tree node in case of a value to load");
                produced_variables = std::max(produced_variables, tree_helper::size(TreeM, tree_helper::get_type_index(TreeM, out_var)));
+               if(tree_helper::is_a_misaligned_vector(TreeM, out_var))
+               {
+                  has_misaligned_indirect_ref = true;
+               }
             }
          }
       }
       if(fu_module->ExistsParameter("BRAM_BITSIZE"))
       {
-         fu_module->SetParameter("BRAM_BITSIZE", STR(HLSMgr->Rmem->get_bram_bitsize()));
+         auto bram_bitsize = HLSMgr->Rmem->get_bram_bitsize();
+         if(HLSMgr->Rmem->is_private_memory(ar))
+         {
+            unsigned int accessed_bitsize = std::max(required_variables[0], produced_variables);
+            accessed_bitsize = resize_to_1_8_16_32_64_128_256_512(accessed_bitsize);
+            bram_bitsize = has_misaligned_indirect_ref ? std::max(bram_bitsize, accessed_bitsize) : std::max(bram_bitsize, accessed_bitsize / 2);
+            if(bram_bitsize > HLSMgr->Rmem->get_maxbram_bitsize())
+            {
+               THROW_ERROR("incorrect operation mapping on memory module");
+            }
+         }
+         fu_module->SetParameter("BRAM_BITSIZE", STR(bram_bitsize));
       }
       if(fu_module->ExistsParameter("BUS_PIPELINED"))
       {
@@ -2227,7 +2244,7 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
    {
       bram_bitsize = boost::lexical_cast<unsigned int>(fu_module->GetParameter("BRAM_BITSIZE"));
       if(elts_size % 8)
-         elts_size = 8*(elts_size/8)+8;
+         elts_size = 8 * (elts_size / 8) + 8;
    }
 
    unsigned int nbyte_on_memory = bram_bitsize / 8;
@@ -2241,15 +2258,15 @@ void fu_binding::fill_array_ref_memory(std::ostream& init_file_a, std::ostream& 
       if(is_sds && (element_precision == 0 || elts_size == element_precision))
       {
          THROW_ASSERT(!is_memory_splitted, "unexpected condition");
-         for(const auto &init_value : init_string)
+         for(const auto& init_value : init_string)
          {
             THROW_ASSERT(elts_size, "unexpected condition");
             if(elts_size != init_value.size() && (init_value.size() % elts_size == 0))
             {
                const auto n_elmts = init_value.size() / elts_size;
-               for(auto index=0u; index < n_elmts; ++index)
+               for(auto index = 0u; index < n_elmts; ++index)
                {
-                   init_file_a << init_value.substr(init_value.size()-elts_size-index*elts_size, elts_size) << std::endl;
+                  init_file_a << init_value.substr(init_value.size() - elts_size - index * elts_size, elts_size) << std::endl;
                }
             }
             else

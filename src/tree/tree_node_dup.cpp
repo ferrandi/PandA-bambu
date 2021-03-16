@@ -51,7 +51,7 @@
 #include <utility>                 // for pair
 #include <vector>                  // for vector, vector<>::c...
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 #include "ext_tree_node.hpp"

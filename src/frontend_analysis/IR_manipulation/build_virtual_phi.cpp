@@ -54,7 +54,7 @@
 #include "cdfg_edge_info.hpp"
 #include "function_behavior.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree includes

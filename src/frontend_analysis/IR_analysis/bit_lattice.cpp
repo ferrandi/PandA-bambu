@@ -1009,7 +1009,7 @@ unsigned int BitLatticeManipulator::Size(const tree_nodeConstRef t)
       case gimple_call_K:
       case function_decl_K:
       {
-         return_value = 32; // static_cast<unsigned int>(GccWrapper::CGetPointerSize(parameters));
+         return_value = 32; // static_cast<unsigned int>(CompilerWrapper::CGetPointerSize(parameters));
          break;
       }
       case array_range_ref_K:

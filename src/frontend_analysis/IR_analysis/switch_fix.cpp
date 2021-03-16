@@ -51,7 +51,7 @@
 #include "application_manager.hpp"
 #include "function_behavior.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree include

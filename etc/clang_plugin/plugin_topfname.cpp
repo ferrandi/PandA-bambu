@@ -186,7 +186,7 @@ namespace llvm
          {
             std::error_code EC;
             std::string filename = outdir_name + "external-symbols.txt";
-#if __clang_major__ >= 7
+#if __clang_major__ >= 7 && !defined(VVD)
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::FA_Read | llvm::sys::fs::FA_Write);
 #else
             llvm::raw_fd_ostream stream(filename, EC, llvm::sys::fs::F_RW);

@@ -72,7 +72,7 @@
 #include "schedule.hpp"
 #endif
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STD include

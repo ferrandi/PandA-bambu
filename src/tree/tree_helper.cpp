@@ -44,7 +44,7 @@
 /// Header include
 #include "tree_helper.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STL include
@@ -53,11 +53,11 @@
 
 /// Tree include
 #include "ext_tree_node.hpp"
+#include "math_function.hpp"
 #include "tree_basic_block.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "math_function.hpp"
 
 #include "var_pp_functor.hpp"
 
@@ -519,7 +519,7 @@ unsigned int tree_helper::Size(const tree_nodeConstRef t)
       case gimple_call_K:
       case function_decl_K:
       {
-         return_value = 32; // static_cast<unsigned int>(GccWrapper::CGetPointerSize(parameters));
+         return_value = 32; // static_cast<unsigned int>(CompilerWrapper::CGetPointerSize(parameters));
          break;
       }
       case array_range_ref_K:

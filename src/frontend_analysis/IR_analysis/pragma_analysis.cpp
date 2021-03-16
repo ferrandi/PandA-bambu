@@ -51,7 +51,7 @@
 /// Constants include
 #include "pragma_constants.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// Pragma include

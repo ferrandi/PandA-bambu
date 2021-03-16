@@ -65,7 +65,7 @@
 /// HLS/scheduling include
 #include "schedule.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree includes

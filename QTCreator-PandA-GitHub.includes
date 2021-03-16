@@ -293,7 +293,7 @@ src/parser/rtlgcc
 src/parser/sdf3
 src/parser/text_data
 src/parser/TGFF
-src/parser/treegcc
+src/parser/compiler
 src/parser/vcd
 src/polixml
 src/pragma
@@ -364,7 +364,7 @@ src/wrapper/target_architectures/leon3
 src/wrapper/target_architectures/mppb
 src/wrapper/target_architectures/SimIt
 src/wrapper/target_architectures/tsim
-src/wrapper/treegcc
+src/wrapper/compiler
 etc/clang_plugin
 etc/clang_plugin/llvm
 etc/libbambu/ac_types/gdb

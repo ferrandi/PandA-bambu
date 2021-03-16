@@ -58,7 +58,7 @@
 #include "reg_binding.hpp"
 #include "storage_value_information.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// STD include

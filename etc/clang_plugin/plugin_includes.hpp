@@ -76,9 +76,12 @@
 #elif __clang_major__ == 8
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang8##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang8" #SYMBOL
-#elif __clang_major__ == 7
+#elif __clang_major__ == 7 && !defined(VVD)
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang7##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang7" #SYMBOL
+#elif __clang_major__ == 7 && defined(VVD)
+#define CLANG_VERSION_SYMBOL(SYMBOL) clangvvd##SYMBOL
+#define CLANG_VERSION_STRING(SYMBOL) "clangvvd" #SYMBOL
 #elif __clang_major__ == 6
 #define CLANG_VERSION_SYMBOL(SYMBOL) clang6##SYMBOL
 #define CLANG_VERSION_STRING(SYMBOL) "clang6" #SYMBOL

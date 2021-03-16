@@ -61,7 +61,7 @@
 #include "hls_manager.hpp"
 #include "hls_target.hpp"
 
-/// parser/treegcc include
+/// parser/compiler include
 #include "token_interface.hpp"
 
 /// tree includes
