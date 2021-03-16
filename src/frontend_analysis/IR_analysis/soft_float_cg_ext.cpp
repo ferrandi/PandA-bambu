@@ -1338,49 +1338,39 @@ tree_nodeRef soft_float_cg_ext::floatAbs(const tree_nodeRef& op, const FloatForm
    }
 }
 
-void soft_float_cg_ext::replaceWithCall(const FunctionVersionRef& fu_version, const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_srcp)
+void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_srcp)
 {
-   unsigned int called_function_id;
-   if(fu_version->ieee_format())
+   THROW_ASSERT(specFF, "FP format specialization missing");
+
+   unsigned int called_function_id = TreeM->function_index(fu_name);
+   THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
+   THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+   const auto spec_suffix = specFF->mngl();
+   auto spec_function_id = TreeM->function_index(fu_name + spec_suffix);
+   if(spec_function_id == 0)
    {
-      called_function_id = TreeM->function_index(fu_name + "_ieee");
-      THROW_ASSERT(called_function_id, "The library miss this function " + fu_name + "_ieee");
-      THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Generating specialized version of " + fu_name + " (" + STR(called_function_id) + ") with fp format " + spec_suffix);
+      const auto called_func = TreeM->GetTreeReindex(called_function_id);
+      const auto spec_func = tree_man->CloneFunction(called_func, spec_suffix);
+      spec_function_id = GET_INDEX_CONST_NODE(spec_func);
+      THROW_ASSERT(spec_function_id, "Error cloning function " + fu_name + " (" + STR(called_function_id) + ").");
+
+      auto& version_args = versioning_args[spec_function_id];
+      static const auto bool_type_index = tree_man->create_boolean_type()->index;
+      static const auto int_type_index = tree_man->create_default_integer_type()->index;
+
+      version_args[0] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bits), int_type_index);
+      version_args[1] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->frac_bits), int_type_index);
+      version_args[2] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->exp_bias), int_type_index);
+      version_args[3] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_rounding), bool_type_index);
+      version_args[4] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_nan), bool_type_index);
+      version_args[5] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_one), bool_type_index);
+      version_args[6] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->has_subnorm), bool_type_index);
+      version_args[7] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(specFF->sign == bit_lattice::U ? -1 : (specFF->sign == bit_lattice::ONE ? 1 : 0)), int_type_index);
    }
-   else
-   {
-      called_function_id = TreeM->function_index(fu_name);
-      THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-      THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
-
-      const auto spec_suffix = (fu_version->userRequired != nullptr ? fu_version->userRequired->mngl() : "");
-      auto spec_function_id = TreeM->function_index(fu_name + spec_suffix);
-      if(spec_function_id == 0)
-      {
-         const auto spec_func = tree_man->CloneFunction(TreeM->GetTreeReindex(called_function_id), spec_suffix);
-         spec_function_id = GET_INDEX_CONST_NODE(spec_func);
-         THROW_ASSERT(spec_function_id, "Error cloning function " + fu_name + " (" + STR(called_function_id) + ").");
-
-         const auto& float_version = fu_version->userRequired;
-         auto& version_args = versioning_args[spec_function_id];
-
-         static const auto bool_type_index = tree_man->create_boolean_type()->index;
-         static const auto int_type_index = tree_man->create_default_integer_type()->index;
-
-         version_args[0] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->exp_bits), int_type_index);
-         version_args[1] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->frac_bits), int_type_index);
-         version_args[2] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->exp_bias), int_type_index);
-         version_args[3] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->has_rounding), bool_type_index);
-         version_args[4] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->has_nan), bool_type_index);
-         version_args[5] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->has_one), bool_type_index);
-         version_args[6] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->has_subnorm), bool_type_index);
-         version_args[7] = TreeM->CreateUniqueIntegerCst(static_cast<long long>(float_version->sign == bit_lattice::U ? -1 : (float_version->sign == bit_lattice::ONE ? 1 : 0)), int_type_index);
-      }
-      THROW_ASSERT(static_cast<bool>(versioning_args.count(spec_function_id)), "Static arguments for specialization parameters of " + fu_name + spec_suffix + " (" + STR(spec_function_id) + ") where not specified.");
-      std::copy(versioning_args.at(spec_function_id).begin(), versioning_args.at(spec_function_id).end(), std::back_inserter(args));
-      called_function_id = spec_function_id;
-   }
-
+   THROW_ASSERT(static_cast<bool>(versioning_args.count(spec_function_id)), "Static arguments for specialization parameters of " + fu_name + spec_suffix + " (" + STR(spec_function_id) + ") where not specified.");
+   std::copy(versioning_args.at(spec_function_id).begin(), versioning_args.at(spec_function_id).end(), std::back_inserter(args));
+   called_function_id = spec_function_id;
    TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
    if(!AppM->GetCallGraphManager()->IsVertex(called_function_id))
    {
@@ -1396,7 +1386,7 @@ void soft_float_cg_ext::replaceWithCall(const FunctionVersionRef& fu_version, co
 
    // Update functions float format map
    const auto called_func_vertex = AppM->CGetCallGraphManager()->GetVertex(called_function_id);
-   const auto calledFF = FunctionVersionRef(new FunctionVersion(called_func_vertex, fu_version->userRequired));
+   const auto calledFF = FunctionVersionRef(new FunctionVersion(called_func_vertex, specFF));
 #if HAVE_ASSERTS
    const auto res =
 #endif
@@ -1686,21 +1676,21 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   }
                   auto bitsize_out = tree_helper::Size(expr_type);
                   FloatFormatRef outFF;
-                  if(bitsize_out < 32)
+                  if(bitsize_out <= 32)
                   {
                      bitsize_out = 32;
                      outFF = float32FF;
                   }
-                  else if(bitsize_out > 32 && bitsize_out < 64)
+                  else if(bitsize_out > 32 && bitsize_out <= 64)
                   {
                      bitsize_out = 64;
                      outFF = float64FF;
                   }
-                  const auto bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
+                  const auto bitsize_str_in = STR(bitsize_in);
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
-                  std::string fu_name;
                   if(op_expr_type->get_kind() != real_type_K)
                   {
+                     std::string fu_name;
                      if(tree_helper::is_unsigned(TreeM, op_expr_type->index))
                      {
                         fu_name = "__uint" + bitsize_str_in + "_to_float" + bitsize_str_out;
@@ -1709,7 +1699,8 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      {
                         fu_name = "__int" + bitsize_str_in + "_to_float" + bitsize_str_out;
                      }
-                     replaceWithCall(_version->ieee_format() ? FunctionVersionRef(new FunctionVersion(_version->function_vertex, outFF)) : _version, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                     THROW_ASSERT(!_version->ieee_format() || outFF, "");
+                     replaceWithCall(_version->ieee_format() ? outFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
                      modified = true;
                   }
                   break;
@@ -1750,9 +1741,13 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      THROW_ASSERT(bitsize_out == 32 || bitsize_out == 64, "Unhandled output floating point format (size = " + STR(bitsize_out) + ")");
                      if(tree_helper::is_real(TreeM, op_expr_type->index))
                      {
-                        const auto fu_name = "__float" + STR(bitsize_in) + "_to_float" + STR(bitsize_out);
-                        const auto inFF = bitsize_in == 32 ? float32FF : float64FF;
-                        replaceWithCall(FunctionVersionRef(new FunctionVersion(_version->function_vertex, inFF)), fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                        const auto fu_name = "__float" + STR(bitsize_in) + "_to_float" + STR(bitsize_out) + "_ieee";
+                        unsigned int called_function_id = TreeM->function_index(fu_name);
+                        THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
+                        std::vector<tree_nodeRef> args = {ue->op};
+                        TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
+                        THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
+                        AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
                      }
                      else
                      {
@@ -1860,7 +1855,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   const auto bitsize_str_in = bitsize_in == 96 ? "x80" : STR(bitsize_in);
                   const auto bitsize_str_out = bitsize_out == 96 ? "x80" : STR(bitsize_out);
                   const auto fu_name = "__float" + bitsize_str_in + "_to_" + (is_unsigned ? "u" : "") + "int" + bitsize_str_out + "_round_to_zero";
-                  replaceWithCall(_version->ieee_format() ? FunctionVersionRef(new FunctionVersion(_version->function_vertex, inFF)) : _version, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
+                  replaceWithCall(_version->ieee_format() ? inFF : _version->userRequired, fu_name, {ue->op}, current_statement, current_tree_node, current_srcp);
                   modified = true;
                   break;
                }
@@ -2147,7 +2142,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                const auto opFF = bitsize == 32 ? float32FF : (bitsize == 64 ? float64FF : nullptr);
                const auto bitsize_str = bitsize == 96 ? "x80" : STR(bitsize);
                const auto fu_name = "__float" + bitsize_str + "_" + fu_suffix;
-               replaceWithCall(_version->ieee_format() ? FunctionVersionRef(new FunctionVersion(_version->function_vertex, opFF)) : _version, fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
+               replaceWithCall(_version->ieee_format() ? opFF : _version->userRequired, fu_name, {be->op0, be->op1}, current_statement, current_tree_node, current_srcp);
                modified = true;
             }
          }

@@ -38,21 +38,23 @@ these four paragraphs for those parts of this code that are retained.
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void __shift32RightJamming( __bits32 a, __int16 count, __bits32 *zPtr )
+static __FORCE_INLINE void __shift32RightJamming(__bits32 a, __int16 count, __bits32* zPtr)
 {
-    __bits32 z;
+   __bits32 z;
 
-    if ( count == 0 ) {
-        z = a;
-    }
-    else if ( count < 32 ) {
-        z = ( a>>count ) | ( ( a<<( ( - count ) & 31 ) ) != 0 );
-    }
-    else {
-        z = ( a != 0 );
-    }
-    *zPtr = z;
-
+   if(count == 0)
+   {
+      z = a;
+   }
+   else if(count < 32)
+   {
+      z = (a >> count) | ((a << ((-count) & 31)) != 0);
+   }
+   else
+   {
+      z = (a != 0);
+   }
+   *zPtr = z;
 }
 
 /*----------------------------------------------------------------------------
@@ -64,21 +66,23 @@ static __FORCE_INLINE void __shift32RightJamming( __bits32 a, __int16 count, __b
 | The result is stored in the location pointed to by `zPtr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void __shift64RightJamming( __bits64 a, __int16 count, __bits64 *zPtr )
+static __FORCE_INLINE void __shift64RightJamming(__bits64 a, __int16 count, __bits64* zPtr)
 {
-    __bits64 z;
+   __bits64 z;
 
-    if ( count == 0 ) {
-        z = a;
-    }
-    else if ( count < 64 ) {
-        z = ( a>>count ) | ( ( a<<( ( - count ) & 63 ) ) != 0 );
-    }
-    else {
-        z = ( a != 0 );
-    }
-    *zPtr = z;
-
+   if(count == 0)
+   {
+      z = a;
+   }
+   else if(count < 64)
+   {
+      z = (a >> count) | ((a << ((-count) & 63)) != 0);
+   }
+   else
+   {
+      z = (a != 0);
+   }
+   *zPtr = z;
 }
 
 /*----------------------------------------------------------------------------
@@ -98,33 +102,35 @@ static __FORCE_INLINE void __shift64RightJamming( __bits64 a, __int16 count, __b
 | described above, and is returned at the location pointed to by `z1Ptr'.)
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __shift64ExtraRightJamming(
-     __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __shift64ExtraRightJamming(__bits64 a0, __bits64 a1, __int16 count, __bits64* z0Ptr, __bits64* z1Ptr)
 {
-    __bits64 z0, z1;
-    __int8 negCount = ( - count ) & 63;
+   __bits64 z0, z1;
+   __int8 negCount = (-count) & 63;
 
-    if ( count == 0 ) {
-        z1 = a1;
-        z0 = a0;
-    }
-    else if ( count < 64 ) {
-        z1 = ( a0<<negCount ) | ( a1 != 0 );
-        z0 = a0>>count;
-    }
-    else {
-        if ( count == 64 ) {
-            z1 = a0 | ( a1 != 0 );
-        }
-        else {
-            z1 = ( ( a0 | a1 ) != 0 );
-        }
-        z0 = 0;
-    }
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   if(count == 0)
+   {
+      z1 = a1;
+      z0 = a0;
+   }
+   else if(count < 64)
+   {
+      z1 = (a0 << negCount) | (a1 != 0);
+      z0 = a0 >> count;
+   }
+   else
+   {
+      if(count == 64)
+      {
+         z1 = a0 | (a1 != 0);
+      }
+      else
+      {
+         z1 = ((a0 | a1) != 0);
+      }
+      z0 = 0;
+   }
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -135,28 +141,28 @@ static __FORCE_INLINE void
 | which are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __shift128Right(
-     __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __shift128Right(__bits64 a0, __bits64 a1, __int16 count, __bits64* z0Ptr, __bits64* z1Ptr)
 {
-    __bits64 z0, z1;
-    __int8 negCount = ( - count ) & 63;
+   __bits64 z0, z1;
+   __int8 negCount = (-count) & 63;
 
-    if ( count == 0 ) {
-        z1 = a1;
-        z0 = a0;
-    }
-    else if ( count < 64 ) {
-        z1 = ( a0<<negCount ) | ( a1>>count );
-        z0 = a0>>count;
-    }
-    else {
-        z1 = ( count < 64 ) ? ( a0>>( count & 63 ) ) : 0;
-        z0 = 0;
-    }
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   if(count == 0)
+   {
+      z1 = a1;
+      z0 = a0;
+   }
+   else if(count < 64)
+   {
+      z1 = (a0 << negCount) | (a1 >> count);
+      z0 = a0 >> count;
+   }
+   else
+   {
+      z1 = (count < 64) ? (a0 >> (count & 63)) : 0;
+      z0 = 0;
+   }
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -170,36 +176,39 @@ static __FORCE_INLINE void
 | the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __shift128RightJamming(
-     __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __shift128RightJamming(__bits64 a0, __bits64 a1, __int16 count, __bits64* z0Ptr, __bits64* z1Ptr)
 {
-    __bits64 z0, z1;
-    __int8 negCount = ( - count ) & 63;
+   __bits64 z0, z1;
+   __int8 negCount = (-count) & 63;
 
-    if ( count == 0 ) {
-        z1 = a1;
-        z0 = a0;
-    }
-    else if ( count < 64 ) {
-        z1 = ( a0<<negCount ) | ( a1>>count ) | ( ( a1<<negCount ) != 0 );
-        z0 = a0>>count;
-    }
-    else {
-        if ( count == 64 ) {
-            z1 = a0 | ( a1 != 0 );
-        }
-        else if ( count < 128 ) {
-            z1 = ( a0>>( count & 63 ) ) | ( ( ( a0<<negCount ) | a1 ) != 0 );
-        }
-        else {
-            z1 = ( ( a0 | a1 ) != 0 );
-        }
-        z0 = 0;
-    }
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   if(count == 0)
+   {
+      z1 = a1;
+      z0 = a0;
+   }
+   else if(count < 64)
+   {
+      z1 = (a0 << negCount) | (a1 >> count) | ((a1 << negCount) != 0);
+      z0 = a0 >> count;
+   }
+   else
+   {
+      if(count == 64)
+      {
+         z1 = a0 | (a1 != 0);
+      }
+      else if(count < 128)
+      {
+         z1 = (a0 >> (count & 63)) | (((a0 << negCount) | a1) != 0);
+      }
+      else
+      {
+         z1 = ((a0 | a1) != 0);
+      }
+      z0 = 0;
+   }
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -221,55 +230,53 @@ static __FORCE_INLINE void
 | `z2Ptr'.)
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __shift128ExtraRightJamming(
-     __bits64 a0,
-     __bits64 a1,
-     __bits64 a2,
-     __int16 count,
-     __bits64 *z0Ptr,
-     __bits64 *z1Ptr,
-     __bits64 *z2Ptr
- )
+static __FORCE_INLINE void __shift128ExtraRightJamming(__bits64 a0, __bits64 a1, __bits64 a2, __int16 count, __bits64* z0Ptr, __bits64* z1Ptr, __bits64* z2Ptr)
 {
-    __bits64 z0, z1, z2;
-    __int8 negCount = ( - count ) & 63;
+   __bits64 z0, z1, z2;
+   __int8 negCount = (-count) & 63;
 
-    if ( count == 0 ) {
-        z2 = a2;
-        z1 = a1;
-        z0 = a0;
-    }
-    else {
-        if ( count < 64 ) {
-            z2 = a1<<negCount;
-            z1 = ( a0<<negCount ) | ( a1>>count );
-            z0 = a0>>count;
-        }
-        else {
-            if ( count == 64 ) {
-                z2 = a1;
-                z1 = a0;
+   if(count == 0)
+   {
+      z2 = a2;
+      z1 = a1;
+      z0 = a0;
+   }
+   else
+   {
+      if(count < 64)
+      {
+         z2 = a1 << negCount;
+         z1 = (a0 << negCount) | (a1 >> count);
+         z0 = a0 >> count;
+      }
+      else
+      {
+         if(count == 64)
+         {
+            z2 = a1;
+            z1 = a0;
+         }
+         else
+         {
+            a2 |= a1;
+            if(count < 128)
+            {
+               z2 = a0 << negCount;
+               z1 = a0 >> (count & 63);
             }
-            else {
-                a2 |= a1;
-                if ( count < 128 ) {
-                    z2 = a0<<negCount;
-                    z1 = a0>>( count & 63 );
-                }
-                else {
-                    z2 = ( count == 128 ) ? a0 : ( a0 != 0 );
-                    z1 = 0;
-                }
+            else
+            {
+               z2 = (count == 128) ? a0 : (a0 != 0);
+               z1 = 0;
             }
-            z0 = 0;
-        }
-        z2 |= ( a2 != 0 );
-    }
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+         }
+         z0 = 0;
+      }
+      z2 |= (a2 != 0);
+   }
+   *z2Ptr = z2;
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -279,15 +286,10 @@ static __FORCE_INLINE void
 | pieces which are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __shortShift128Left(
-     __bits64 a0, __bits64 a1, __int16 count, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __shortShift128Left(__bits64 a0, __bits64 a1, __int16 count, __bits64* z0Ptr, __bits64* z1Ptr)
 {
-
-    *z1Ptr = a1<<count;
-    *z0Ptr =
-        ( count == 0 ) ? a0 : ( a0<<count ) | ( a1>>( ( - count ) & 63 ) );
-
+   *z1Ptr = a1 << count;
+   *z0Ptr = (count == 0) ? a0 : (a0 << count) | (a1 >> ((-count) & 63));
 }
 
 /*----------------------------------------------------------------------------
@@ -298,32 +300,23 @@ static __FORCE_INLINE void
 | `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __shortShift192Left(
-     __bits64 a0,
-     __bits64 a1,
-     __bits64 a2,
-     __int16 count,
-     __bits64 *z0Ptr,
-     __bits64 *z1Ptr,
-     __bits64 *z2Ptr
- )
+static __FORCE_INLINE void __shortShift192Left(__bits64 a0, __bits64 a1, __bits64 a2, __int16 count, __bits64* z0Ptr, __bits64* z1Ptr, __bits64* z2Ptr)
 {
-    __bits64 z0, z1, z2;
-    __int8 negCount;
+   __bits64 z0, z1, z2;
+   __int8 negCount;
 
-    z2 = a2<<count;
-    z1 = a1<<count;
-    z0 = a0<<count;
-    if ( 0 < count ) {
-        negCount = ( ( - count ) & 63 );
-        z1 |= a2>>negCount;
-        z0 |= a1>>negCount;
-    }
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   z2 = a2 << count;
+   z1 = a1 << count;
+   z0 = a0 << count;
+   if(0 < count)
+   {
+      negCount = ((-count) & 63);
+      z1 |= a2 >> negCount;
+      z0 |= a1 >> negCount;
+   }
+   *z2Ptr = z2;
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -333,16 +326,13 @@ static __FORCE_INLINE void
 | are stored at the locations pointed to by `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __add128(
-     __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __add128(__bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1, __bits64* z0Ptr, __bits64* z1Ptr)
 {
-    __bits64 z1;
+   __bits64 z1;
 
-    z1 = a1 + b1;
-    *z1Ptr = z1;
-    *z0Ptr = a0 + b0 + ( z1 < a1 );
-
+   z1 = a1 + b1;
+   *z1Ptr = z1;
+   *z0Ptr = a0 + b0 + (z1 < a1);
 }
 
 /*----------------------------------------------------------------------------
@@ -353,34 +343,22 @@ static __FORCE_INLINE void
 | `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __add192(
-     __bits64 a0,
-     __bits64 a1,
-     __bits64 a2,
-     __bits64 b0,
-     __bits64 b1,
-     __bits64 b2,
-     __bits64 *z0Ptr,
-     __bits64 *z1Ptr,
-     __bits64 *z2Ptr
- )
+static __FORCE_INLINE void __add192(__bits64 a0, __bits64 a1, __bits64 a2, __bits64 b0, __bits64 b1, __bits64 b2, __bits64* z0Ptr, __bits64* z1Ptr, __bits64* z2Ptr)
 {
-    __bits64 z0, z1, z2;
-    __int8 carry0, carry1;
+   __bits64 z0, z1, z2;
+   __int8 carry0, carry1;
 
-    z2 = a2 + b2;
-    carry1 = ( z2 < a2 );
-    z1 = a1 + b1;
-    carry0 = ( z1 < a1 );
-    z0 = a0 + b0;
-    z1 += carry1;
-    z0 += ( z1 < carry1 );
-    z0 += carry0;
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   z2 = a2 + b2;
+   carry1 = (z2 < a2);
+   z1 = a1 + b1;
+   carry0 = (z1 < a1);
+   z0 = a0 + b0;
+   z1 += carry1;
+   z0 += (z1 < carry1);
+   z0 += carry0;
+   *z2Ptr = z2;
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -391,14 +369,10 @@ static __FORCE_INLINE void
 | `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __sub128(
-     __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __sub128(__bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1, __bits64* z0Ptr, __bits64* z1Ptr)
 {
-
-    *z1Ptr = a1 - b1;
-    *z0Ptr = a0 - b0 - ( a1 < b1 );
-
+   *z1Ptr = a1 - b1;
+   *z0Ptr = a0 - b0 - (a1 < b1);
 }
 
 /*----------------------------------------------------------------------------
@@ -409,34 +383,22 @@ static __FORCE_INLINE void
 | pointed to by `z0Ptr', `z1Ptr', and `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __sub192(
-     __bits64 a0,
-     __bits64 a1,
-     __bits64 a2,
-     __bits64 b0,
-     __bits64 b1,
-     __bits64 b2,
-     __bits64 *z0Ptr,
-     __bits64 *z1Ptr,
-     __bits64 *z2Ptr
- )
+static __FORCE_INLINE void __sub192(__bits64 a0, __bits64 a1, __bits64 a2, __bits64 b0, __bits64 b1, __bits64 b2, __bits64* z0Ptr, __bits64* z1Ptr, __bits64* z2Ptr)
 {
-    __bits64 z0, z1, z2;
-    __int8 borrow0, borrow1;
+   __bits64 z0, z1, z2;
+   __int8 borrow0, borrow1;
 
-    z2 = a2 - b2;
-    borrow1 = ( a2 < b2 );
-    z1 = a1 - b1;
-    borrow0 = ( a1 < b1 );
-    z0 = a0 - b0;
-    z0 -= ( z1 < borrow1 );
-    z1 -= borrow1;
-    z0 -= borrow0;
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   z2 = a2 - b2;
+   borrow1 = (a2 < b2);
+   z1 = a1 - b1;
+   borrow0 = (a1 < b1);
+   z0 = a0 - b0;
+   z0 -= (z1 < borrow1);
+   z1 -= borrow1;
+   z0 -= borrow0;
+   *z2Ptr = z2;
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -445,27 +407,26 @@ static __FORCE_INLINE void
 | `z0Ptr' and `z1Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void __mul64To128( __bits64 a, __bits64 b, __bits64 *z0Ptr, __bits64 *z1Ptr )
+static __FORCE_INLINE void __mul64To128(__bits64 a, __bits64 b, __bits64* z0Ptr, __bits64* z1Ptr)
 {
-    __bits32 aHigh, aLow, bHigh, bLow;
-    __bits64 z0, zMiddleA, zMiddleB, z1;
+   __bits32 aHigh, aLow, bHigh, bLow;
+   __bits64 z0, zMiddleA, zMiddleB, z1;
 
-    aLow = a;
-    aHigh = a>>32;
-    bLow = b;
-    bHigh = b>>32;
-    z1 = ( (__bits64) aLow ) * bLow;
-    zMiddleA = ( (__bits64) aLow ) * bHigh;
-    zMiddleB = ( (__bits64) aHigh ) * bLow;
-    z0 = ( (__bits64) aHigh ) * bHigh;
-    zMiddleA += zMiddleB;
-    z0 += ( ( (__bits64) ( zMiddleA < zMiddleB ) )<<32 ) + ( zMiddleA>>32 );
-    zMiddleA <<= 32;
-    z1 += zMiddleA;
-    z0 += ( z1 < zMiddleA );
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   aLow = a;
+   aHigh = a >> 32;
+   bLow = b;
+   bHigh = b >> 32;
+   z1 = ((__bits64)aLow) * bLow;
+   zMiddleA = ((__bits64)aLow) * bHigh;
+   zMiddleB = ((__bits64)aHigh) * bLow;
+   z0 = ((__bits64)aHigh) * bHigh;
+   zMiddleA += zMiddleB;
+   z0 += (((__bits64)(zMiddleA < zMiddleB)) << 32) + (zMiddleA >> 32);
+   zMiddleA <<= 32;
+   z1 += zMiddleA;
+   z0 += (z1 < zMiddleA);
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -475,25 +436,16 @@ static __FORCE_INLINE void __mul64To128( __bits64 a, __bits64 b, __bits64 *z0Ptr
 | `z2Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __mul128By64To192(
-     __bits64 a0,
-     __bits64 a1,
-     __bits64 b,
-     __bits64 *z0Ptr,
-     __bits64 *z1Ptr,
-     __bits64 *z2Ptr
- )
+static __FORCE_INLINE void __mul128By64To192(__bits64 a0, __bits64 a1, __bits64 b, __bits64* z0Ptr, __bits64* z1Ptr, __bits64* z2Ptr)
 {
-    __bits64 z0, z1, z2, more1;
+   __bits64 z0, z1, z2, more1;
 
-    __mul64To128( a1, b, &z1, &z2 );
-    __mul64To128( a0, b, &z0, &more1 );
-    __add128( z0, more1, 0, z1, &z0, &z1 );
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   __mul64To128(a1, b, &z1, &z2);
+   __mul64To128(a0, b, &z0, &more1);
+   __add128(z0, more1, 0, z1, &z0, &z1);
+   *z2Ptr = z2;
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -503,34 +455,23 @@ static __FORCE_INLINE void
 | the locations pointed to by `z0Ptr', `z1Ptr', `z2Ptr', and `z3Ptr'.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE void
- __mul128To256(
-     __bits64 a0,
-     __bits64 a1,
-     __bits64 b0,
-     __bits64 b1,
-     __bits64 *z0Ptr,
-     __bits64 *z1Ptr,
-     __bits64 *z2Ptr,
-     __bits64 *z3Ptr
- )
+static __FORCE_INLINE void __mul128To256(__bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1, __bits64* z0Ptr, __bits64* z1Ptr, __bits64* z2Ptr, __bits64* z3Ptr)
 {
-    __bits64 z0, z1, z2, z3;
-    __bits64 more1, more2;
+   __bits64 z0, z1, z2, z3;
+   __bits64 more1, more2;
 
-    __mul64To128( a1, b1, &z2, &z3 );
-    __mul64To128( a1, b0, &z1, &more2 );
-    __add128( z1, more2, 0, z2, &z1, &z2 );
-    __mul64To128( a0, b0, &z0, &more1 );
-    __add128( z0, more1, 0, z1, &z0, &z1 );
-    __mul64To128( a0, b1, &more1, &more2 );
-    __add128( more1, more2, 0, z2, &more1, &z2 );
-    __add128( z0, z1, 0, more1, &z0, &z1 );
-    *z3Ptr = z3;
-    *z2Ptr = z2;
-    *z1Ptr = z1;
-    *z0Ptr = z0;
-
+   __mul64To128(a1, b1, &z2, &z3);
+   __mul64To128(a1, b0, &z1, &more2);
+   __add128(z1, more2, 0, z2, &z1, &z2);
+   __mul64To128(a0, b0, &z0, &more1);
+   __add128(z0, more1, 0, z1, &z0, &z1);
+   __mul64To128(a0, b1, &more1, &more2);
+   __add128(more1, more2, 0, z2, &more1, &z2);
+   __add128(z0, z1, 0, more1, &z0, &z1);
+   *z3Ptr = z3;
+   *z2Ptr = z2;
+   *z1Ptr = z1;
+   *z0Ptr = z0;
 }
 
 /*----------------------------------------------------------------------------
@@ -542,26 +483,27 @@ static __FORCE_INLINE void
 | unsigned integer is returned.
 *----------------------------------------------------------------------------*/
 
-static __bits64 __estimateDiv128To64( __bits64 a0, __bits64 a1, __bits64 b )
+static __bits64 __estimateDiv128To64(__bits64 a0, __bits64 a1, __bits64 b)
 {
-    __bits64 b0, b1;
-    __bits64 rem0, rem1, term0, term1;
-    __bits64 z;
+   __bits64 b0, b1;
+   __bits64 rem0, rem1, term0, term1;
+   __bits64 z;
 
-    if ( b <= a0 ) return LIT64( 0xFFFFFFFFFFFFFFFF );
-    b0 = b>>32;
-    z = ( b0<<32 <= a0 ) ? LIT64( 0xFFFFFFFF00000000 ) : ( a0 / b0 )<<32;
-    __mul64To128( b, z, &term0, &term1 );
-    __sub128( a0, a1, term0, term1, &rem0, &rem1 );
-    while ( ( (__sbits64) rem0 ) < 0 ) {
-        z -= LIT64( 0x100000000 );
-        b1 = b<<32;
-        __add128( rem0, rem1, b0, b1, &rem0, &rem1 );
-    }
-    rem0 = ( rem0<<32 ) | ( rem1>>32 );
-    z |= ( b0<<32 <= rem0 ) ? 0xFFFFFFFF : rem0 / b0;
-    return z;
-
+   if(b <= a0)
+      return LIT64(0xFFFFFFFFFFFFFFFF);
+   b0 = b >> 32;
+   z = (b0 << 32 <= a0) ? LIT64(0xFFFFFFFF00000000) : (a0 / b0) << 32;
+   __mul64To128(b, z, &term0, &term1);
+   __sub128(a0, a1, term0, term1, &rem0, &rem1);
+   while(((__sbits64)rem0) < 0)
+   {
+      z -= LIT64(0x100000000);
+      b1 = b << 32;
+      __add128(rem0, rem1, b0, b1, &rem0, &rem1);
+   }
+   rem0 = (rem0 << 32) | (rem1 >> 32);
+   z |= (b0 << 32 <= rem0) ? 0xFFFFFFFF : rem0 / b0;
+   return z;
 }
 
 /*----------------------------------------------------------------------------
@@ -574,33 +516,29 @@ static __bits64 __estimateDiv128To64( __bits64 a0, __bits64 a1, __bits64 b )
 | value.
 *----------------------------------------------------------------------------*/
 
-static __bits32 __estimateSqrt32( __int16 aExp, __bits32 a )
+static __bits32 __estimateSqrt32(__int16 aExp, __bits32 a)
 {
-    static const __bits16 sqrtOddAdjustments[] = {
-        0x0004, 0x0022, 0x005D, 0x00B1, 0x011D, 0x019F, 0x0236, 0x02E0,
-        0x039C, 0x0468, 0x0545, 0x0631, 0x072B, 0x0832, 0x0946, 0x0A67
-    };
-    static const __bits16 sqrtEvenAdjustments[] = {
-        0x0A2D, 0x08AF, 0x075A, 0x0629, 0x051A, 0x0429, 0x0356, 0x029E,
-        0x0200, 0x0179, 0x0109, 0x00AF, 0x0068, 0x0034, 0x0012, 0x0002
-    };
-    __int8 index;
-    __bits32 z;
+   static const __bits16 sqrtOddAdjustments[] = {0x0004, 0x0022, 0x005D, 0x00B1, 0x011D, 0x019F, 0x0236, 0x02E0, 0x039C, 0x0468, 0x0545, 0x0631, 0x072B, 0x0832, 0x0946, 0x0A67};
+   static const __bits16 sqrtEvenAdjustments[] = {0x0A2D, 0x08AF, 0x075A, 0x0629, 0x051A, 0x0429, 0x0356, 0x029E, 0x0200, 0x0179, 0x0109, 0x00AF, 0x0068, 0x0034, 0x0012, 0x0002};
+   __int8 index;
+   __bits32 z;
 
-    index = ( a>>27 ) & 15;
-    if ( aExp & 1 ) {
-        z = 0x4000 + ( a>>17 ) - sqrtOddAdjustments[ index ];
-        z = ( ( a / z )<<14 ) + ( z<<15 );
-        a >>= 1;
-    }
-    else {
-        z = 0x8000 + ( a>>17 ) - sqrtEvenAdjustments[ index ];
-        z = a / z + z;
-        z = ( 0x20000 <= z ) ? 0xFFFF8000 : ( z<<15 );
-        if ( z <= a ) return (__bits32) ( ( (__sbits32) a )>>1 );
-    }
-    return ( (__bits32) ( ( ( (__bits64) a )<<31 ) / z ) ) + ( z>>1 );
-
+   index = (a >> 27) & 15;
+   if(aExp & 1)
+   {
+      z = 0x4000 + (a >> 17) - sqrtOddAdjustments[index];
+      z = ((a / z) << 14) + (z << 15);
+      a >>= 1;
+   }
+   else
+   {
+      z = 0x8000 + (a >> 17) - sqrtEvenAdjustments[index];
+      z = a / z + z;
+      z = (0x20000 <= z) ? 0xFFFF8000 : (z << 15);
+      if(z <= a)
+         return (__bits32)(((__sbits32)a) >> 1);
+   }
+   return ((__bits32)((((__bits64)a) << 31) / z)) + (z >> 1);
 }
 
 /*----------------------------------------------------------------------------
@@ -609,63 +547,50 @@ static __bits32 __estimateSqrt32( __int16 aExp, __bits32 a )
 *----------------------------------------------------------------------------*/
 
 #define NO_CLZ_TABLE
-static __attribute__((always_inline)) inline __int8 __countLeadingZeros32( __bits32 a )
+static __attribute__((always_inline)) inline __int8 __countLeadingZeros32(__bits32 a)
 {
 #if 1
    __bits8 res;
-   count_leading_zero_macro(32,a,res)
-   return res;
+   count_leading_zero_macro(32, a, res) return res;
 #elif 0
-/// Code written by Fabrizio Ferrandi - Politecnico di Milano
-    unsigned int r; // result of log2(a) will go here
-    unsigned int shift;
-    r =     (a > 0xFFFF) << 4;
-    a >>= r;
-    shift = (a > 0xFF  ) << 3;
-    a >>= shift;
-    r |= shift;
-    shift = (a > 0xF   ) << 2;
-    a >>= shift;
-    r |= shift;
-    shift = (a > 0x3   ) << 1;
-    a >>= shift;
-    r |= shift;
-    r |= (a >> 1);
+   /// Code written by Fabrizio Ferrandi - Politecnico di Milano
+   unsigned int r; // result of log2(a) will go here
+   unsigned int shift;
+   r = (a > 0xFFFF) << 4;
+   a >>= r;
+   shift = (a > 0xFF) << 3;
+   a >>= shift;
+   r |= shift;
+   shift = (a > 0xF) << 2;
+   a >>= shift;
+   r |= shift;
+   shift = (a > 0x3) << 1;
+   a >>= shift;
+   r |= shift;
+   r |= (a >> 1);
 
-    return 31 - r;
+   return 31 - r;
 ///////////////////////////////
 #else
-    static const __int8 countLeadingZerosHigh[] = {
-        8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4,
-        3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-        0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
-    };
-    __int8 shiftCount;
+   static const __int8 countLeadingZerosHigh[] = {8, 7, 6, 6, 5, 5, 5, 5, 4, 4, 4, 4, 4, 4, 4, 4, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
+                                                  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+                                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+                                                  0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+   __int8 shiftCount;
 
-    shiftCount = 0;
-    if ( a < 0x10000 ) {
-        shiftCount += 16;
-        a <<= 16;
-    }
-    if ( a < 0x1000000 ) {
-        shiftCount += 8;
-        a <<= 8;
-    }
-    shiftCount += countLeadingZerosHigh[ a>>24 ];
-    return shiftCount;
+   shiftCount = 0;
+   if(a < 0x10000)
+   {
+      shiftCount += 16;
+      a <<= 16;
+   }
+   if(a < 0x1000000)
+   {
+      shiftCount += 8;
+      a <<= 8;
+   }
+   shiftCount += countLeadingZerosHigh[a >> 24];
+   return shiftCount;
 #endif
 }
 
@@ -674,24 +599,25 @@ static __attribute__((always_inline)) inline __int8 __countLeadingZeros32( __bit
 | `a'.  If `a' is zero, 64 is returned.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __int8 __countLeadingZeros64( __bits64 a )
+static __FORCE_INLINE __int8 __countLeadingZeros64(__bits64 a)
 {
 #if 1
-  unsigned char res;
-  count_leading_zero_macro(64,a,res)
-  return res;
+   unsigned char res;
+   count_leading_zero_macro(64, a, res) return res;
 #else
-    __int8 shiftCount;
+   __int8 shiftCount;
 
-    shiftCount = 0;
-    if ( a < ( (__bits64) 1 )<<32 ) {
-        shiftCount += 32;
-    }
-    else {
-        a >>= 32;
-    }
-    shiftCount += __countLeadingZeros32( a );
-    return shiftCount;
+   shiftCount = 0;
+   if(a < ((__bits64)1) << 32)
+   {
+      shiftCount += 32;
+   }
+   else
+   {
+      a >>= 32;
+   }
+   shiftCount += __countLeadingZeros32(a);
+   return shiftCount;
 #endif
 }
 
@@ -701,11 +627,9 @@ static __FORCE_INLINE __int8 __countLeadingZeros64( __bits64 a )
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __eq128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __eq128(__bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1)
 {
-
-    return ( a0 == b0 ) && ( a1 == b1 );
-
+   return (a0 == b0) && (a1 == b1);
 }
 
 /*----------------------------------------------------------------------------
@@ -714,11 +638,9 @@ static __FORCE_INLINE __flag __eq128( __bits64 a0, __bits64 a1, __bits64 b0, __b
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __le128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __le128(__bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1)
 {
-
-    return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 <= b1 ) );
-
+   return (a0 < b0) || ((a0 == b0) && (a1 <= b1));
 }
 
 /*----------------------------------------------------------------------------
@@ -727,11 +649,9 @@ static __FORCE_INLINE __flag __le128( __bits64 a0, __bits64 a1, __bits64 b0, __b
 | returns 0.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __lt128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __lt128(__bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1)
 {
-
-    return ( a0 < b0 ) || ( ( a0 == b0 ) && ( a1 < b1 ) );
-
+   return (a0 < b0) || ((a0 == b0) && (a1 < b1));
 }
 
 /*----------------------------------------------------------------------------
@@ -740,10 +660,7 @@ static __FORCE_INLINE __flag __lt128( __bits64 a0, __bits64 a1, __bits64 b0, __b
 | Otherwise, returns 0.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE __flag __ne128( __bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1 )
+static __FORCE_INLINE __flag __ne128(__bits64 a0, __bits64 a1, __bits64 b0, __bits64 b1)
 {
-
-    return ( a0 != b0 ) || ( a1 != b1 );
-
+   return (a0 != b0) || (a1 != b1);
 }
-

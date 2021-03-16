@@ -62,7 +62,7 @@ typedef struct
 /*----------------------------------------------------------------------------
 | The pattern for a default generated arbitrary-precision quiet NaN.
 *----------------------------------------------------------------------------*/
-#define __float_nan(__exp_bits, __frac_bits, __sign) ((((__bits64)(__sign == -1)) << (__exp_bits + __frac_bits)) || (((1LL << __exp_bits) - 1) << __frac_bits) || (1LL << (__frac_bits - 1)))
+#define __float_nan(__exp_bits, __frac_bits, __sign) ((((__bits64)(__sign == -1)) << (__exp_bits + __frac_bits)) | (((1LL << __exp_bits) - 1) << __frac_bits) | (1LL << (__frac_bits - 1)))
 
 /*----------------------------------------------------------------------------
 | The pattern for a default generated single-precision NaN.
@@ -305,7 +305,7 @@ static __FORCE_INLINE __flag __float64_is_nan(__float64 a, __bits8 __exp_bits, _
 {
    if(__nan)
    {
-      return ((a >> __frac_bits) & ((1ULL << __exp_bits) - 1) == ((1ULL << __exp_bits) - 1)) && (a & ((1ULL << __frac_bits) - 1) != 0);
+      return (((a >> __frac_bits) & ((1ULL << __exp_bits) - 1)) == ((1ULL << __exp_bits) - 1)) && ((a & ((1ULL << __frac_bits) - 1)) != 0);
    }
    else
    {
@@ -332,7 +332,7 @@ __flag __float64_is_signaling_nan(__float64 a, __bits8 __exp_bits, __bits8 __fra
 {
    if(__nan)
    {
-      return (((a >> (__frac_bits - 1)) & ((1ULL << (__exp_bits + 1)) - 1)) == ((1ULL << (__exp_bits + 1)) - 2)) && (a & ((1ULL << (__frac_bits - 1)) - 1) != 0);
+      return (((a >> (__frac_bits - 1)) & ((1ULL << (__exp_bits + 1)) - 1)) == ((1ULL << (__exp_bits + 1)) - 2)) && ((a & ((1ULL << (__frac_bits - 1)) - 1)) != 0);
    }
    else
    {

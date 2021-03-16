@@ -140,13 +140,16 @@ class soft_float_cg_ext : public FunctionFrontendFlowStep
    void ssa_lowering(ssa_name* ssa, bool internal_type) const;
 
    /**
+    * Replace current_tree_node with a call_expr to fu_name function specialized with specFF fp format in current_statement
     *
-    * @param fu_name
+    * @param specFF FP format for fu_name function specialization
+    * @param fu_name Function name
+    * @param args Function arguments
     * @param current_statement
     * @param current_tree_node
     * @param current_scrp
     */
-   void replaceWithCall(const FunctionVersionRef& fu_version, const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_scrp);
+   void replaceWithCall(const FloatFormatRef& specFF, const std::string& fu_name, std::vector<tree_nodeRef> args, const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, const std::string& current_scrp);
 
    /**
     * Recursive examine tree node
