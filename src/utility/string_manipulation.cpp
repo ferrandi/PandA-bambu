@@ -105,11 +105,8 @@ std::string TrimSpaces(const std::string& value)
 }
 std::string string_demangle(std::string input)
 {
-   char buf[1024];
-   size_t size = 1024;
-   int status;
-   char* res = abi::__cxa_demangle(input.c_str(), buf, &size, &status);
-   return std::string(res);
+   std::unique_ptr<char, void (*)(void*)> res(abi::__cxa_demangle(input.c_str(), nullptr, nullptr, nullptr), std::free);
+   return std::string(res.get());
 }
 std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type)
 {
