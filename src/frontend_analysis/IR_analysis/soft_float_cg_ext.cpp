@@ -933,7 +933,7 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
          return nullptr;
       }
       const auto exp_zero = Exp == 0;
-      FExp = exp_zero ? 0 : (Exp + biasDiff);
+      FExp = exp_zero ? 0ULL : (Exp + static_cast<uint64_t>(biasDiff));
    }
    else
    {
