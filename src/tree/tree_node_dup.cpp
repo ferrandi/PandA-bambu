@@ -1317,17 +1317,29 @@ void tree_node_dup::operator()(const gimple_phi* obj, unsigned int& mask)
    for(const auto& def_edge : GetPointer<gimple_phi>(source_tn)->CGetDefEdgesList())
    {
       unsigned int node_id = GET_INDEX_NODE(def_edge.first);
-      if(remap.find(node_id) != remap.end())
+      if(deep_copy)
       {
-         node_id = remap.find(node_id)->second;
+         const auto rnode = remap.find(node_id);
+         if(rnode != remap.end())
+         {
+            node_id = rnode->second;
+         }
+         else
+         {
+            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
+            tree_nodeRef saved_source_tn = source_tn;
+            node_id = create_tree_node(GET_NODE(def_edge.first), deep_copy);
+            curr_tree_node_ptr = saved_curr_tree_node_ptr;
+            source_tn = saved_source_tn;
+         }
       }
-      else if(deep_copy)
+      else
       {
-         tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
-         tree_nodeRef saved_source_tn = source_tn;
-         node_id = create_tree_node(GET_NODE(def_edge.first), deep_copy);
-         curr_tree_node_ptr = saved_curr_tree_node_ptr;
-         source_tn = saved_source_tn;
+         const auto rnode = remap.find(node_id);
+         if(rnode != remap.end())
+         {
+            node_id = rnode->second;
+         }
       }
 
       dynamic_cast<gimple_phi*>(curr_tree_node_ptr)->AddDefEdge(TM, gimple_phi::DefEdge(TM->GetTreeReindex(node_id), def_edge.second));
@@ -1442,9 +1454,10 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
       if(deep_copy)
       {
          unsigned int node_id = GET_INDEX_NODE(def_stmt);
-         if(remap.find(node_id) != remap.end())
+         const auto rnode = remap.find(node_id);
+         if(rnode != remap.end())
          {
-            node_id = remap.find(node_id)->second;
+            node_id = rnode->second;
          }
          else
          {
@@ -1463,7 +1476,7 @@ void tree_node_dup::operator()(const ssa_name* obj, unsigned int& mask)
    }
    SET_NODE_ID(min, ssa_name);
    SET_NODE_ID(max, ssa_name);
-   if(not deep_copy)
+   if(!deep_copy)
    {
       SET_VALUE(bit_values, ssa_name);
       SET_VALUE(range, ssa_name);
@@ -1481,6 +1494,7 @@ void tree_node_dup::operator()(const statement_list* obj, unsigned int& mask)
       curr_bloc = new bloc(i->first);
       source_bloc = i->second;
       curr_bloc->visit(this);
+      THROW_ASSERT(!dynamic_cast<statement_list*>(curr_tree_node_ptr)->list_of_bloc.count(i->first), "Block already present " + STR(i->first));
       dynamic_cast<statement_list*>(curr_tree_node_ptr)->add_bloc(blocRef(curr_bloc));
       curr_bloc = nullptr;
       source_bloc = blocRef();
@@ -1706,45 +1720,61 @@ void tree_node_dup::operator()(const bloc* obj, unsigned int& mask)
    curr_bloc->list_of_succ = source_bloc->list_of_succ;
    curr_bloc->true_edge = source_bloc->true_edge;
    curr_bloc->false_edge = source_bloc->false_edge;
-   for(const auto& phi : source_bloc->CGetPhiList())
+   const auto& source_phi_list = source_bloc->CGetPhiList();
+   for(const auto& phi : source_phi_list)
    {
       unsigned int node_id = GET_INDEX_NODE(phi);
-      if(remap.find(node_id) != remap.end())
+      if(deep_copy)
       {
-         node_id = remap.find(node_id)->second;
-      }
-      else if(deep_copy)
-      {
-         tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
-         tree_nodeRef saved_source_tn = source_tn;
-         node_id = create_tree_node(GET_NODE(phi), deep_copy);
-         curr_tree_node_ptr = saved_curr_tree_node_ptr;
-         source_tn = saved_source_tn;
+         const auto rnode = remap.find(node_id);
+         if(rnode != remap.end())
+         {
+            node_id = rnode->second;
+         }
+         else
+         {
+            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
+            tree_nodeRef saved_source_tn = source_tn;
+            bloc* saved_curr_bloc = curr_bloc;
+            node_id = create_tree_node(GET_NODE(phi), deep_copy);
+            curr_tree_node_ptr = saved_curr_tree_node_ptr;
+            source_tn = saved_source_tn;
+            curr_bloc = saved_curr_bloc;
+         }
       }
       else
       {
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
+         node_id = remap.find(node_id)->second;
       }
       curr_bloc->AddPhi(TM->GetTreeReindex(node_id));
    }
-   for(const auto& stmt : source_bloc->CGetStmtList())
+   const auto& source_stmt_list = source_bloc->CGetStmtList();
+   for(const auto& stmt : source_stmt_list)
    {
       unsigned int node_id = GET_INDEX_NODE(stmt);
-      if(remap.find(node_id) != remap.end())
+      if(deep_copy)
       {
-         node_id = remap.find(node_id)->second;
-      }
-      else if(deep_copy)
-      {
-         tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
-         tree_nodeRef saved_source_tn = source_tn;
-         node_id = create_tree_node(GET_NODE(stmt), deep_copy);
-         curr_tree_node_ptr = saved_curr_tree_node_ptr;
-         source_tn = saved_source_tn;
+         const auto rnode = remap.find(node_id);
+         if(rnode != remap.end())
+         {
+            node_id = rnode->second;
+         }
+         else
+         {
+            tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
+            tree_nodeRef saved_source_tn = source_tn;
+            bloc* saved_curr_bloc = curr_bloc;
+            node_id = create_tree_node(GET_NODE(stmt), deep_copy);
+            curr_tree_node_ptr = saved_curr_tree_node_ptr;
+            source_tn = saved_source_tn;
+            curr_bloc = saved_curr_bloc;
+         }
       }
       else
       {
          THROW_ASSERT(remap.find(node_id) != remap.end(), "missing an index");
+         node_id = remap.find(node_id)->second;
       }
       curr_bloc->PushBack(TM->GetTreeReindex(node_id));
    }
@@ -1777,22 +1807,27 @@ void tree_node_dup::operator()(const gimple_multi_way_if* obj, unsigned int& mas
          if(cond.first)
          {
             unsigned int node_id = cond.first->index;
-            if(remap.find(node_id) != remap.end())
+            if(deep_copy)
             {
-               node_id = remap.find(node_id)->second;
-               THROW_ASSERT(node_id, "");
-            }
-            else if(deep_copy)
-            {
-               tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
-               tree_nodeRef saved_source_tn = source_tn;
-               node_id = create_tree_node(cond.first, deep_copy);
-               curr_tree_node_ptr = saved_curr_tree_node_ptr;
-               source_tn = saved_source_tn;
+               if(remap.find(node_id) != remap.end())
+               {
+                  node_id = remap.find(node_id)->second;
+                  THROW_ASSERT(node_id, "");
+               }
+               else
+               {
+                  tree_node* saved_curr_tree_node_ptr = curr_tree_node_ptr;
+                  tree_nodeRef saved_source_tn = source_tn;
+                  node_id = create_tree_node(cond.first, deep_copy);
+                  curr_tree_node_ptr = saved_curr_tree_node_ptr;
+                  source_tn = saved_source_tn;
+               }
             }
             else
             {
                THROW_ASSERT(remap.find(node_id) != remap.end(), "missing " + STR(TM->CGetTreeNode(node_id)));
+               node_id = remap.find(node_id)->second;
+               THROW_ASSERT(node_id, "");
             }
             dynamic_cast<gimple_multi_way_if*>(curr_tree_node_ptr)->add_cond(TM->GetTreeReindex(node_id), cond.second);
          }
