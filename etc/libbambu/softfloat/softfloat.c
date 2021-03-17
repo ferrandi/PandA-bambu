@@ -313,7 +313,7 @@ static __FORCE_INLINE __float32 __roundAndPackFloat32(__flag zSign, __int32 zExp
    __int32 roundIncrement, roundBits;
    __flag isTiny;
    __bits8 __ext_bits = (30 - __frac_bits);
-   __bits32 __exp_max = ((1 << __exp_bits) - 1);
+   __int32 __exp_max = ((1 << __exp_bits) - 1);
 
    roundingMode = __float_rounding_mode;
    roundNearestEven = (roundingMode == float_round_nearest_even);
@@ -557,7 +557,7 @@ static __FORCE_INLINE __float64 __roundAndPackFloat64(__flag zSign, __int32 zExp
    __int64 roundIncrement, roundBits;
    __flag isTiny;
    __bits8 __ext_bits = (62 - __frac_bits);
-   __bits32 __exp_max = ((1ULL << __exp_bits) - 1);
+   __int32 __exp_max = ((1LL << __exp_bits) - 1);
 
    roundingMode = __float_rounding_mode;
    roundNearestEven = (roundingMode == float_round_nearest_even);
