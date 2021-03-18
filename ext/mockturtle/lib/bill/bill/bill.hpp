@@ -14,7 +14,9 @@
 #include <bill/sat/solver.hpp>
 #include <bill/sat/solver/glucose.hpp>
 #include <bill/sat/solver/abc.hpp>
+#if !defined(BILL_WINDOWS_PLATFORM)
 #include <bill/sat/solver/maple.hpp>
+#endif
 #include <bill/sat/solver/ghack.hpp>
 #include <bill/sat/incremental_totalizer_cardinality.hpp>
 #include <bill/sat/xor_clauses.hpp>

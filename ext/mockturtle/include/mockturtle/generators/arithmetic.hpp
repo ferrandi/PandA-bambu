@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,8 @@
   \file arithmetic.hpp
   \brief Generate arithmetic logic networks
 
+  \author Heinz Riener
+  \author Jovan Blanuša
   \author Mathias Soeken
 */
 

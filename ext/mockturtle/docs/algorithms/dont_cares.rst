@@ -1,5 +1,5 @@
-Dont cares
-----------
+Don't cares
+-----------
 
 **Header:** ``mockturtle/algorithms/dont_cares.hpp``
 

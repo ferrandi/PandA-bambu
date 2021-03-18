@@ -17,5 +17,6 @@ network.
    } );
 
 .. doxygenfunction:: mockturtle::node_literals
-.. doxygenfunction:: mockturtle::generate_cnf
+.. doxygenfunction:: mockturtle::generate_cnf(Ntk const&, clause_callback_t<lit_t> const&, std::optional<node_map<lit_t, Ntk>> const&)
+.. doxygenfunction:: mockturtle::generate_cnf(Ntk const&, clause_callback_t<uint32_t> const&, std::optional<node_map<uint32_t, Ntk>> const&)
 .. doxygentypedef:: mockturtle::clause_callback_t

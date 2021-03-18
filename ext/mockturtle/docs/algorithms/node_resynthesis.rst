@@ -37,7 +37,9 @@ Parameters and statistics
 Algorithm
 ~~~~~~~~~
 
-.. doxygenfunction:: mockturtle::node_resynthesis
+.. doxygenfunction:: mockturtle::node_resynthesis(NtkSource const&, ResynthesisFn&&, node_resynthesis_params const&, node_resynthesis_stats*)
+
+.. doxygenfunction:: mockturtle::node_resynthesis(NtkDest&, NtkSource const&, ResynthesisFn&&, node_resynthesis_params const&, node_resynthesis_stats*)
 
 .. _node_resynthesis_functions:
 

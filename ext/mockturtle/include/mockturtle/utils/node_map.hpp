@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,8 +27,9 @@
   \file node_map.hpp
   \brief Map indexed by network nodes
 
-  \author Mathias Soeken
   \author Heinz Riener
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -238,6 +239,22 @@ public:
     return data->find( ntk.node_to_index( ntk.get_node( f ) ) ) != data->end();
   }
 
+  void erase( node const& n )
+  {
+    if ( has( n ) )
+    {
+      data->erase( ntk.node_to_index( n ) );
+    }
+  }
+
+  /*! \brief Make a deep copy */
+  node_map<T, Ntk, std::unordered_map<typename Ntk::node, T>> copy() const
+  {
+    node_map<T, Ntk, std::unordered_map<typename Ntk::node, T>> copy(ntk);
+    *(copy.data) = *data;
+    return copy;
+  }
+
   /*! \brief Mutable access to value by node. */
   reference operator[]( node const& n )
   {
@@ -274,10 +291,9 @@ public:
     return (*data)[ntk.node_to_index( ntk.get_node( f ) )];
   }
 
-  /*! \brief Resets the size of the map.
+  /*! \brief Clear all entries of the map.
    *
-   * This function should be called, if the network changed in size.  Then, the
-   * map is cleared, and resized to the current network's size.
+   * All data in the map is cleared.
    */
   void reset()
   {

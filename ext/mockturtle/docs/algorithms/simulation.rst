@@ -82,16 +82,34 @@ With ``partial_simulator``, adding new simulation patterns and re-simulation can
 Incremental simulation is adopted, which speeds up simulation time by only re-simulating needed nodes and only re-computing the last block of ``partial_truth_table``.
 Note that currently only AIG and XAG are supported.
 
+**Constructors**
+
 .. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( unsigned, unsigned, std::default_random_engine::result_type )
 
 .. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( std::vector<kitty::partial_truth_table> const& )
 
 .. doxygenfunction:: mockturtle::partial_simulator::partial_simulator( const std::string&, uint32_t )
 
+**Interfaces**
+
+.. doxygenfunction:: mockturtle::partial_simulator::add_pattern( std::vector<bool> const& )
+
 .. doxygenfunction:: mockturtle::partial_simulator::num_bits()
 
-.. doxygenfunction:: mockturtle::partial_simulator::write_patterns( const std::string& )
+.. doxygenfunction:: mockturtle::partial_simulator::get_patterns()
 
-.. doxygenfunction:: mockturtle::simulate_nodes( Ntk const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, partial_simulator const&, bool )
+**Simulation**
 
-.. doxygenfunction:: mockturtle::simulate_node( Ntk const&, typename Ntk::node const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, partial_simulator const& )
+.. doxygenfunction:: mockturtle::simulate_nodes( Ntk const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, Simulator const&, bool )
+
+.. doxygenfunction:: mockturtle::simulate_node( Ntk const&, typename Ntk::node const&, unordered_node_map<kitty::partial_truth_table, Ntk>&, Simulator const& )
+
+**Bit Packing**
+
+To reduce the size of simulation pattern set during pattern generation, ``bit_packed_simulator`` can be used instead of ``partial_simulator``, which has additional interfaces to specify care bits in patterns and to perform bit packing.
+
+.. doxygenclass:: mockturtle::bit_packed_simulator
+
+.. doxygenfunction:: mockturtle::bit_packed_simulator::add_pattern( std::vector<bool> const&, std::vector<bool> const& )
+
+.. doxygenfunction:: mockturtle::bit_packed_simulator::pack_bits()

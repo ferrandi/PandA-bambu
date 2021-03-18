@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,9 @@
   \file xag_npn.hpp
   \brief Replace with size-optimum XAGs and AIGs from NPN (from ABC rewrite)
 
+  \author Heinz Riener
   \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -44,8 +46,8 @@
 #include <kitty/static_truth_table.hpp>
 
 #include "../../algorithms/simulation.hpp"
-#include "../../io/index_list.hpp"
 #include "../../networks/xag.hpp"
+#include "../../utils/index_list.hpp"
 #include "../../utils/node_map.hpp"
 #include "../../utils/stopwatch.hpp"
 
@@ -210,7 +212,7 @@ private:
   {
     stopwatch t( st.time_db );
 
-    _db = create_from_binary_index_list<DatabaseNtk>( subgraphs );
+    decode( _db, xag_index_list{std::vector<uint32_t>{subgraphs, subgraphs + sizeof subgraphs / sizeof subgraphs[0]}} );
     const auto sim_res = simulate_nodes<kitty::static_truth_table<4u>>( _db );
 
     _db.foreach_node( [&]( auto n ) {

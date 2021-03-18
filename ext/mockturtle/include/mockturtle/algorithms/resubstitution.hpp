@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,9 +25,13 @@
 
 /*!
   \file resubstitution.hpp
-  \brief Resubstitution
+  \brief Generic resubstitution framework
 
+  \author Eleonora Testa
   \author Heinz Riener
+  \author Mathias Soeken
+  \author Shubham Rai
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -37,13 +41,12 @@
 #include "../utils/stopwatch.hpp"
 #include "../views/depth_view.hpp"
 #include "../views/fanout_view.hpp"
-#include "dont_cares.hpp"
-#include "reconv_cut2.hpp"
 
-#include <kitty/constructors.hpp>
-#include <kitty/print.hpp>
-#include <kitty/static_truth_table.hpp>
-#include <kitty/properties.hpp>
+#include "detail/resub_utils.hpp"
+#include "dont_cares.hpp"
+#include "reconv_cut.hpp"
+
+#include <vector>
 
 namespace mockturtle
 {
@@ -76,11 +79,42 @@ struct resubstitution_params
   /*! \brief Be verbose. */
   bool verbose{false};
 
-  /*! \brief Use don't cares for optimization. */
+  /****** window-based resub engine ******/
+
+  /*! \brief Use don't cares for optimization. Only used by window-based resub engine. */
   bool use_dont_cares{false};
 
-  /* \brief Window size for don't cares calculation */
+  /*! \brief Window size for don't cares calculation. Only used by window-based resub engine. */
   uint32_t window_size{12u};
+
+  /*! \brief Whether to prevent from increasing depth. Currently only used by window-based resub engine. */
+  bool preserve_depth{false};
+
+  /****** simulation-based resub engine ******/
+
+  /*! \brief Whether to use pre-generated patterns stored in a file.
+   * If not, by default, 1024 random pattern + 1x stuck-at patterns will be generated. Only used by simulation-based resub engine.
+   */
+  std::optional<std::string> pattern_filename{};
+
+  /*! \brief Whether to save the appended patterns (with CEXs) into file. Only used by simulation-based resub engine. */
+  std::optional<std::string> save_patterns{};
+
+  /*! \brief Conflict limit for the SAT solver. Only used by simulation-based resub engine. */
+  uint32_t conflict_limit{1000};
+
+  /*! \brief Random seed for the SAT solver (influences the randomness of counter-examples). Only used by simulation-based resub engine. */
+  uint32_t random_seed{1};
+
+  /*! \brief Whether to utilize ODC, and how many levels. 0 = no. -1 = Consider TFO until PO. Only used by simulation-based resub engine. */
+  int32_t odc_levels{0};
+
+  /*! \brief Maximum number of trials to call the resub functor. Only used by simulation-based resub engine. */
+  uint32_t max_trials{100};
+
+  /* k-resub engine specific */
+  /*! \brief Maximum number of divisors to consider in k-resub engine. Only used by `abc_resub_functor` with simulation-based resub engine. */
+  uint32_t max_divisors_k{50};
 };
 
 /*! \brief Statistics for resubstitution.
@@ -93,11 +127,66 @@ struct resubstitution_stats
   /*! \brief Total runtime. */
   stopwatch<>::duration time_total{0};
 
+  /*! \brief Accumulated runtime of the divisor collector. */
+  stopwatch<>::duration time_divs{0};
+
+  /*! \brief Accumulated runtime of the resub engine. */
+  stopwatch<>::duration time_resub{0};
+
+  /*! \brief Accumulated runtime of the callback function. */
+  stopwatch<>::duration time_callback{0};
+
+  /*! \brief Total number of divisors. */
+  uint64_t num_total_divisors{0};
+
+  /*! \brief Total number of gain. */
+  uint64_t estimated_gain{0};
+
+  /*! \brief Initial network size (before resubstitution). */
+  uint64_t initial_size{0};
+
+  void report() const
+  {
+    // clang-format off
+    std::cout <<              "[i] <Top level>\n";
+    std::cout <<              "[i]     ========  Stats  ========\n";
+    std::cout << fmt::format( "[i]     #divisors = {:8d}\n", num_total_divisors );
+    std::cout << fmt::format( "[i]     est. gain = {:8d} ({:>5.2f}%)\n", estimated_gain, ( 100.0 * estimated_gain ) / initial_size );
+    std::cout <<              "[i]     ======== Runtime ========\n";
+    std::cout << fmt::format( "[i]     total         : {:>5.2f} secs\n", to_seconds( time_total ) );
+    std::cout << fmt::format( "[i]       DivCollector: {:>5.2f} secs\n", to_seconds( time_divs ) );
+    std::cout << fmt::format( "[i]       ResubEngine : {:>5.2f} secs\n", to_seconds( time_resub ) );
+    std::cout << fmt::format( "[i]       callback    : {:>5.2f} secs\n", to_seconds( time_callback ) );
+    std::cout <<              "[i]     =========================\n\n";
+    // clang-format on
+  }
+};
+
+namespace detail
+{
+
+template<typename Ntk>
+bool substitute_fn( Ntk& ntk, typename Ntk::node const& n, typename Ntk::signal const& g )
+{
+  ntk.substitute_node( n, g );
+  return true;
+};
+
+template<typename Ntk>
+bool report_fn( Ntk& ntk, typename Ntk::node const& n, typename Ntk::signal const& g )
+{
+  (void)ntk;
+  std::cout << "substitute node " << unsigned( n ) << " with node " << unsigned( ntk.get_node( g ) ) << std::endl;
+  return false;
+};
+
+struct default_collector_stats
+{
+  /*! \brief Total number of leaves. */
+  uint64_t num_total_leaves{0};
+
   /*! \brief Accumulated runtime for cut computation. */
   stopwatch<>::duration time_cuts{0};
-
-  /*! \brief Accumulated runtime for cut evaluation/computing a resubsitution. */
-  stopwatch<>::duration time_eval{0};
 
   /*! \brief Accumulated runtime for mffc computation. */
   stopwatch<>::duration time_mffc{0};
@@ -105,358 +194,435 @@ struct resubstitution_stats
   /*! \brief Accumulated runtime for divisor computation. */
   stopwatch<>::duration time_divs{0};
 
-  /*! \brief Accumulated runtime for updating the network. */
-  stopwatch<>::duration time_substitute{0};
-
-  /*! \brief Accumulated runtime for simulation. */
-  stopwatch<>::duration time_simulation{0};
-
-  /*! \brief Initial network size (before resubstitution) */
-  uint64_t initial_size{0};
-
-  /*! \brief Total number of divisors  */
-  uint64_t num_total_divisors{0};
-
-  /*! \brief Total number of leaves  */
-  uint64_t num_total_leaves{0};
-
-  /*! \brief Total number of gain  */
-  uint64_t estimated_gain{0};
-
   void report() const
   {
-    std::cout << fmt::format( "[i] total time                                                  ({:>5.2f} secs)\n", to_seconds( time_total ) );
-    std::cout << fmt::format( "[i]   cut time                                                  ({:>5.2f} secs)\n", to_seconds( time_cuts ) );
-    std::cout << fmt::format( "[i]   mffc time                                                 ({:>5.2f} secs)\n", to_seconds( time_mffc ) );
-    std::cout << fmt::format( "[i]   divs time                                                 ({:>5.2f} secs)\n", to_seconds( time_divs ) );
-    std::cout << fmt::format( "[i]   simulation time                                           ({:>5.2f} secs)\n", to_seconds( time_simulation ) );
-    std::cout << fmt::format( "[i]   evaluation time                                           ({:>5.2f} secs)\n", to_seconds( time_eval ) );
-    std::cout << fmt::format( "[i]   substitute                                                ({:>5.2f} secs)\n", to_seconds( time_substitute ) );
-    std::cout << fmt::format( "[i] total divisors            = {:8d}\n", ( num_total_divisors ) );
-    std::cout << fmt::format( "[i] total leaves              = {:8d}\n", ( num_total_leaves ) );
-    std::cout << fmt::format( "[i] estimated gain            = {:8d} ({:>5.2f}%)\n",
-                              estimated_gain, ( ( 100.0 * estimated_gain ) / initial_size ) );
+    // clang-format off
+    std::cout <<              "[i] <DivCollector: default_divisor_collector>\n";
+    std::cout << fmt::format( "[i]     #leaves = {:6d}\n", num_total_leaves );
+    std::cout <<              "[i]     ======== Runtime ========\n";
+    std::cout << fmt::format( "[i]     reconv. cut : {:>5.2f} secs\n", to_seconds( time_cuts ) );
+    std::cout << fmt::format( "[i]     MFFC        : {:>5.2f} secs\n", to_seconds( time_mffc ) );
+    std::cout << fmt::format( "[i]     divs collect: {:>5.2f} secs\n", to_seconds( time_divs ) );
+    std::cout <<              "[i]     =========================\n\n";
+    // clang-format on
   }
 };
 
-namespace detail
-{
-
-/* based on abcRefs.c */
-template<typename Ntk>
-class node_mffc_inside
+/*! \brief Prepare the three public data members `leaves`, `divs` and `mffc`
+ * to be ready for usage.
+ *
+ * `leaves`: sufficient support for all divisors
+ * `divs`: divisor nodes that can be used for resubstitution
+ * `mffc`: MFFC nodes which are needed to do simulation from
+ * `leaves`, through `divs` and `mffc` until the root node,
+ * but should be excluded from resubstitution.
+ * The last element of `mffc` is always the root node.
+ *
+ * `divs` and `mffc` are in topological order.
+ *
+ * \param MffcMgr Manager class to compute the potential gain if a
+ * resubstitution exists (number of MFFC nodes when the cost function is circuit size).
+ * \param MffcRes Typename of the return value of `MffcMgr`.
+ * \param cut_comp Manager class to compute reconvergence-driven cuts.
+ */
+template<class Ntk, class MffcMgr = node_mffc_inside<Ntk>, typename MffcRes = uint32_t, typename cut_comp = detail::reconvergence_driven_cut_impl<Ntk>>
+class default_divisor_collector
 {
 public:
+  using stats = default_collector_stats;
+  using mffc_result_t = MffcRes;
   using node = typename Ntk::node;
 
+  using cut_comp_parameters_type = typename cut_comp::parameters_type;
+  using cut_comp_statistics_type = typename cut_comp::statistics_type;
+
 public:
-  explicit node_mffc_inside( Ntk const& ntk )
-      : ntk( ntk )
+  explicit default_divisor_collector( Ntk const& ntk, resubstitution_params const& ps, stats& st )
+    : ntk( ntk ), ps( ps ), st( st ), cuts( ntk, cut_comp_parameters_type{ps.max_pis}, cuts_st )
   {
   }
 
-  int32_t run( node const& n, std::vector<node> const& leaves, std::vector<node>& inside )
+  bool run( node const& n, mffc_result_t& potential_gain )
   {
-    /* increment the fanout counters for the leaves */
-    for ( const auto& l : leaves )
-      ntk.incr_fanout_size( l );
+    /* skip nodes with many fanouts */
+    if ( ntk.fanout_size( n ) > ps.skip_fanout_limit_for_roots )
+    {
+      return false;
+    }
 
-    /* dereference the node */
-    auto count1 = node_deref_rec( n );
+    /* compute a reconvergence-driven cut */
+    leaves = call_with_stopwatch( st.time_cuts, [&]() {
+        return cuts.run( { n } ).first;
+    });
+    st.num_total_leaves += leaves.size();
 
-    /* collect the nodes inside the MFFC */
-    node_mffc_cone( n, inside );
+    /* collect the MFFC */
+    MffcMgr mffc_mgr( ntk );
+    potential_gain = call_with_stopwatch( st.time_mffc, [&]() {
+      return mffc_mgr.run( n, leaves, mffc );
+    });
 
-    /* reference it back */
-    auto count2 = node_ref_rec( n );
-    (void)count2;
-    assert( count1 == count2 );
+    /* collect the divisor nodes in the cut */
+    bool div_comp_success = call_with_stopwatch( st.time_divs, [&]() {
+      return collect_divisors( n );
+    });
 
-    for ( const auto& l : leaves )
-      ntk.decr_fanout_size( l );
+    if ( !div_comp_success )
+    {
+      return false;
+    }
 
-    return count1;
+    return true;
   }
 
 private:
-  /* ! \brief Dereference the node's MFFC */
-  int32_t node_deref_rec( node const& n )
-  {
-    if ( ntk.is_pi( n ) )
-      return 0;
-
-    int32_t counter = 1;
-    ntk.foreach_fanin( n, [&]( const auto& f ) {
-      auto const& p = ntk.get_node( f );
-
-      ntk.decr_fanout_size( p );
-      if ( ntk.fanout_size( p ) == 0 )
-      {
-        counter += node_deref_rec( p );
-      }
-    } );
-
-    return counter;
-  }
-
-  /* ! \brief Reference the node's MFFC */
-  int32_t node_ref_rec( node const& n )
-  {
-    if ( ntk.is_pi( n ) )
-      return 0;
-
-    int32_t counter = 1;
-    ntk.foreach_fanin( n, [&]( const auto& f ) {
-      auto const& p = ntk.get_node( f );
-
-      auto v = ntk.fanout_size( p );
-      ntk.incr_fanout_size( p );
-      if ( v == 0 )
-      {
-        counter += node_ref_rec( p );
-      }
-    } );
-
-    return counter;
-  }
-
-  void node_mffc_cone_rec( node const& n, std::vector<node>& cone, bool top_most )
+  void collect_divisors_rec( node const& n )
   {
     /* skip visited nodes */
     if ( ntk.visited( n ) == ntk.trav_id() )
+    {
       return;
+    }
     ntk.set_visited( n, ntk.trav_id() );
 
-    if ( !top_most && ( ntk.is_pi( n ) || ntk.fanout_size( n ) > 0 ) )
-      return;
-
-    /* recurse on children */
     ntk.foreach_fanin( n, [&]( const auto& f ) {
-      node_mffc_cone_rec( ntk.get_node( f ), cone, false );
+      collect_divisors_rec( ntk.get_node( f ) );
     } );
 
     /* collect the internal nodes */
-    cone.emplace_back( n );
+    if ( ntk.value( n ) == 0 && n != 0 ) /* ntk.fanout_size( n ) */
+    {
+      divs.emplace_back( n );
+    }
   }
 
-  void node_mffc_cone( node const& n, std::vector<node>& cone )
+  bool collect_divisors( node const& root )
   {
-    cone.clear();
+    auto max_depth = std::numeric_limits<uint32_t>::max();
+    if ( ps.preserve_depth )
+    {
+      max_depth = ntk.level( root ) - 1;
+    }
+    /* add the leaves of the cuts to the divisors */
+    divs.clear();
+
     ntk.incr_trav_id();
-    node_mffc_cone_rec( n, cone, true );
+    for ( const auto& l : leaves )
+    {
+      divs.emplace_back( l );
+      ntk.set_visited( l, ntk.trav_id() );
+    }
+
+    /* mark nodes in the MFFC */
+    for ( const auto& t : mffc )
+    {
+      ntk.set_value( t, 1 );
+    }
+
+    /* collect the cone (without MFFC) */
+    collect_divisors_rec( root );
+
+    /* unmark the current MFFC */
+    for ( const auto& t : mffc )
+    {
+      ntk.set_value( t, 0 );
+    }
+
+    /* check if the number of divisors is not exceeded */
+    if ( divs.size() - leaves.size() + mffc.size() >= ps.max_divisors - ps.max_pis )
+    {
+      return false;
+    }
+
+    /* get the number of divisors to collect */
+    int32_t limit = ps.max_divisors - ps.max_pis - ( uint32_t( divs.size() ) + 1 - uint32_t( leaves.size() ) + uint32_t( mffc.size() ) );
+
+    /* explore the fanouts, which are not in the MFFC */
+    int32_t counter = 0;
+    bool quit = false;
+
+    /* note: this is tricky and cannot be converted to a range-based loop */
+    auto size = divs.size();
+    for ( auto i = 0u; i < size; ++i )
+    {
+      auto const d = divs.at( i );
+
+      if ( ntk.fanout_size( d ) > ps.skip_fanout_limit_for_divisors )
+      {
+        continue;
+      }
+
+      /* if the fanout has all fanins in the set, add it */
+      ntk.foreach_fanout( d, [&]( node const& p ) {
+        if ( ntk.visited( p ) == ntk.trav_id() || ntk.level( p ) > max_depth )
+        {
+          return true; /* next fanout */
+        }
+
+        bool all_fanins_visited = true;
+        ntk.foreach_fanin( p, [&]( const auto& g ) {
+          if ( ntk.visited( ntk.get_node( g ) ) != ntk.trav_id() )
+          {
+            all_fanins_visited = false;
+            return false; /* terminate fanin-loop */
+          }
+          return true; /* next fanin */
+        } );
+
+        if ( !all_fanins_visited )
+          return true; /* next fanout */
+
+        bool has_root_as_child = false;
+        ntk.foreach_fanin( p, [&]( const auto& g ) {
+          if ( ntk.get_node( g ) == root )
+          {
+            has_root_as_child = true;
+            return false; /* terminate fanin-loop */
+          }
+          return true; /* next fanin */
+        } );
+
+        if ( has_root_as_child )
+        {
+          return true; /* next fanout */
+        }
+
+        divs.emplace_back( p );
+        ++size;
+        ntk.set_visited( p, ntk.trav_id() );
+
+        /* quit computing divisors if there are too many of them */
+        if ( ++counter == limit )
+        {
+          quit = true;
+          return false; /* terminate fanout-loop */
+        }
+
+        return true; /* next fanout */
+      } );
+
+      if ( quit )
+      {
+        break;
+      }
+    }
+
+    /* note: different from the previous version, now we do not add MFFC nodes into divs */
+    assert( root == mffc.at( mffc.size() - 1u ) );
+    assert( divs.size() + mffc.size() - leaves.size() <= ps.max_divisors - ps.max_pis );
+
+    return true;
   }
 
 private:
   Ntk const& ntk;
+  resubstitution_params ps;
+  stats& st;
+
+  cut_comp cuts;
+  cut_comp_statistics_type cuts_st;
+
+public:
+  std::vector<node> leaves;
+  std::vector<node> divs;
+  std::vector<node> mffc;
 };
 
-template<typename Ntk, typename TT>
-class simulator
+template<typename ResubFnSt>
+struct window_resub_stats
 {
-public:
-  using node = typename Ntk::node;
-  using signal = typename Ntk::signal;
-  using truthtable_t = TT;
+  /*! \brief Number of successful resubstitutions. */
+  uint32_t num_resub{0};
 
-  explicit simulator( Ntk const& ntk, uint32_t num_divisors, uint32_t max_pis )
-      : ntk( ntk ), num_divisors( num_divisors ), tts( num_divisors + 1 ), node_to_index( ntk.size(), 0u ), phase( ntk.size(), false )
-  {
-    auto tt = kitty::create<truthtable_t>( max_pis );
-    tts[0] = tt;
+  /*! \brief Time for simulation. */
+  stopwatch<>::duration time_sim{0};
 
-    for ( auto i = 0u; i < tt.num_vars(); ++i )
-    {
-      kitty::create_nth_var( tt, i );
-      tts[i + 1] = tt;
-    }
-  }
+  /*! \brief Time for don't-care computation. */
+  stopwatch<>::duration time_dont_care{0};
 
-  void resize()
-  {
-    if ( ntk.size() > node_to_index.size() )
-      node_to_index.resize( ntk.size(), 0u );
-    if ( ntk.size() > phase.size() )
-      phase.resize( ntk.size(), false );
-  }
+  /*! \brief Time of the resub functor. */
+  stopwatch<>::duration time_compute_function{0};
 
-  void assign( node const& n, uint32_t index )
-  {
-    assert( n < node_to_index.size() );
-    assert( index < num_divisors + 1 );
-    node_to_index[n] = index;
-  }
-
-  truthtable_t get_tt( signal const& s ) const
-  {
-    auto const tt = tts.at( node_to_index.at( ntk.get_node( s ) ) );
-    return ntk.is_complemented( s ) ? ~tt : tt;
-  }
-
-  void set_tt( uint32_t index, truthtable_t const& tt )
-  {
-    tts[index] = tt;
-  }
-
-  void normalize( std::vector<node> const& nodes )
-  {
-    for ( const auto& n : nodes )
-    {
-      assert( n < phase.size() );
-      assert( n < node_to_index.size() );
-
-      if ( n == 0 )
-        return;
-
-      auto& tt = tts[node_to_index.at( n )];
-      if ( kitty::get_bit( tt, 0 ) )
-      {
-        tt = ~tt;
-        phase[n] = true;
-      }
-      else
-      {
-        phase[n] = false;
-      }
-    }
-  }
-
-  bool get_phase( node const& n ) const
-  {
-    assert( n < phase.size() );
-    return phase.at( n );
-  }
-
-private:
-  Ntk const& ntk;
-  uint32_t num_divisors;
-
-  std::vector<truthtable_t> tts;
-  std::vector<uint32_t> node_to_index;
-  std::vector<bool> phase;
-}; /* simulator */
-
-struct default_resub_functor_stats
-{
-  /*! \brief Accumulated runtime for const-resub */
-  stopwatch<>::duration time_resubC{0};
-
-  /*! \brief Accumulated runtime for zero-resub */
-  stopwatch<>::duration time_resub0{0};
-
-  /*! \brief Number of accepted constant resubsitutions */
-  uint32_t num_const_accepts{0};
-
-  /*! \brief Number of accepted zero resubsitutions */
-  uint32_t num_div0_accepts{0};
+  ResubFnSt functor_st;
 
   void report() const
   {
-    std::cout << "[i] kernel: default_resub_functor\n";
-    std::cout << fmt::format( "[i]     constant-resub {:6d}                                   ({:>5.2f} secs)\n",
-                              num_const_accepts, to_seconds( time_resubC ) );
-    std::cout << fmt::format( "[i]            0-resub {:6d}                                   ({:>5.2f} secs)\n",
-                              num_div0_accepts, to_seconds( time_resub0 ) );
-    std::cout << fmt::format( "[i]            total   {:6d}\n",
-                              ( num_const_accepts + num_div0_accepts ) );
+    // clang-format off
+    std::cout <<              "[i] <ResubEngine: window_based_resub_engine>\n";
+    std::cout << fmt::format( "[i]     #resub = {:6d}\n", num_resub );
+    std::cout <<              "[i]     ======== Runtime ========\n";
+    std::cout << fmt::format( "[i]     simulation: {:>5.2f} secs\n", to_seconds( time_sim ) );
+    std::cout << fmt::format( "[i]     don't care: {:>5.2f} secs\n", to_seconds( time_dont_care ) );
+    std::cout << fmt::format( "[i]     functor   : {:>5.2f} secs\n", to_seconds( time_compute_function ) );
+    std::cout <<              "[i]     ======== Details ========\n";
+    functor_st.report();
+    std::cout <<              "[i]     =========================\n\n";
+    // clang-format on
   }
 };
 
-template<typename Ntk, typename Simulator, typename TT>
-class default_resub_functor
+/*! \brief Window-based resubstitution engine.
+ *
+ * This engine computes the complete truth tables of nodes within a window
+ * with the leaves as inputs. It does not verify the resubstitution candidates
+ * given by the resubstitution functor. This engine requires the divisor
+ * collector to prepare three data members: `leaves`, `divs` and `mffc`.
+ *
+ * Required interfaces of the resubstitution functor:
+ * - Constructor: `resub_fn( Ntk const& ntk, Simulator const& sim,`
+ * `std::vector<node> const& divs, uint32_t num_divs, ResubFnSt& st )`
+ * - A public `operator()`: `std::optional<signal> operator()`
+ * `( node const& root, TTdc care, uint32_t required, uint32_t max_inserts,`
+ * `MffcRes potential_gain, uint32_t& last_gain ) const`
+ *
+ * Compatible resubstitution functors implemented:
+ * - `default_resub_functor`
+ * - `aig_resub_functor`
+ * - `mig_resub_functor`
+ * - `xmg_resub_functor`
+ * - `xag_resub_functor`
+ * - `mig_resyn_functor`
+ *
+ * \param TTsim Truth table type for simulation.
+ * \param TTdc Truth table type for don't-care computation.
+ * \param ResubFn Resubstitution functor to compute the resubstitution.
+ * \param MffcRes Typename of `potential_gain` needed by the resubstitution functor.
+ */
+template<class Ntk, class TTsim, class TTdc = kitty::dynamic_truth_table, class ResubFn = default_resub_functor<Ntk, window_simulator<Ntk, TTsim>, TTdc>, typename MffcRes = uint32_t>
+class window_based_resub_engine
 {
 public:
+  static constexpr bool require_leaves_and_mffc = true;
+  using stats = window_resub_stats<typename ResubFn::stats>;
+  using mffc_result_t = MffcRes;
+
   using node = typename Ntk::node;
   using signal = typename Ntk::signal;
-  using stats = default_resub_functor_stats;
 
-  explicit default_resub_functor( Ntk const& ntk, Simulator const& sim, std::vector<node> const& divs, uint32_t num_divs, default_resub_functor_stats& st )
-      : ntk( ntk ), sim( sim ), divs( divs ), num_divs( num_divs ), st( st )
+  explicit window_based_resub_engine( Ntk& ntk, resubstitution_params const& ps, stats& st )
+      : ntk( ntk ), ps( ps ), st( st ), sim( ntk, ps.max_divisors, ps.max_pis )
   {
   }
 
-  std::optional<signal> operator()( node const& root, TT care, uint32_t required, uint32_t max_inserts, uint32_t num_mffc, uint32_t& last_gain ) const
+  std::optional<signal> run( node const& n, std::vector<node> const& leaves, std::vector<node> const& divs, std::vector<node> const& mffc, mffc_result_t potential_gain, uint32_t& last_gain )
   {
-    /* The default resubstitution functor does not insert any gates
-       and consequently does not use the argument `max_inserts`. Other
-       functors, however, make use of this argument. */
-    (void)care;
-    (void)max_inserts;
-    assert( kitty::is_const0( ~care ) );
+    /* simulate the collected divisors */
+    call_with_stopwatch( st.time_sim, [&]() {
+      simulate( leaves, divs, mffc );
+    });
 
-    /* consider constants */
-    auto g = call_with_stopwatch( st.time_resubC, [&]() {
-      return resub_const( root, required );
-    } );
-    if ( g )
+    auto care = kitty::create<TTdc>( static_cast<unsigned int>( leaves.size() ) );
+    call_with_stopwatch( st.time_dont_care, [&]() {
+      if ( ps.use_dont_cares )
+      {
+        care = ~satisfiability_dont_cares( ntk, leaves, ps.window_size );
+      }
+      else
+      {
+        care = ~care;
+      }
+    });
+
+    ResubFn resub_fn( ntk, sim, divs, divs.size(), st.functor_st );
+    auto res = call_with_stopwatch( st.time_compute_function, [&]() {
+      auto max_depth = std::numeric_limits<uint32_t>::max();
+      if ( ps.preserve_depth )
+      {
+        max_depth = ntk.level( n ) - 1;
+      }
+      return resub_fn( n, care, max_depth, ps.max_inserts, potential_gain, last_gain );
+    });
+    if ( res )
     {
-      ++st.num_const_accepts;
-      last_gain = num_mffc;
-      return g; /* accepted resub */
+      ++st.num_resub;
     }
-
-    /* consider equal nodes */
-    g = call_with_stopwatch( st.time_resub0, [&]() {
-      return resub_div0( root, required );
-    } );
-    if ( g )
-    {
-      ++st.num_div0_accepts;
-      last_gain = num_mffc;
-      ;
-      return g; /* accepted resub */
-    }
-
-    return std::nullopt;
-  }
-
-private:
-  std::optional<signal> resub_const( node const& root, uint32_t required ) const
-  {
-    (void)required;
-    auto const tt = sim.get_tt( ntk.make_signal( root ) );
-    if ( tt == sim.get_tt( ntk.get_constant( false ) ) )
-    {
-      return sim.get_phase( root ) ? ntk.get_constant( true ) : ntk.get_constant( false );
-    }
-    return std::nullopt;
-  }
-
-  std::optional<signal> resub_div0( node const& root, uint32_t required ) const
-  {
-    (void)required;
-    auto const tt = sim.get_tt( ntk.make_signal( root ) );
-    for ( const auto& d : divs )
-    {
-      if ( root == d )
-        break;
-
-      if ( tt != sim.get_tt( ntk.make_signal( d ) ) )
-        continue; /* next */
-
-      return ( sim.get_phase( d ) ^ sim.get_phase( root ) ) ? !ntk.make_signal( d ) : ntk.make_signal( d );
-    }
-
-    return std::nullopt;
+    return res;
   }
 
 private:
-  Ntk const& ntk;
-  Simulator const& sim;
-  std::vector<node> const& divs;
-  uint32_t num_divs;
+  void simulate( std::vector<node> const& leaves, std::vector<node> const& divs, std::vector<node> const& mffc )
+  {
+    sim.resize();
+    for ( auto i = 0u; i < divs.size() + mffc.size(); ++i )
+    {
+      const auto d = i < divs.size() ? divs.at( i ) : mffc.at( i - divs.size() );
+
+      /* skip constant 0 */
+      if ( d == 0 )
+        continue;
+
+      /* assign leaves to variables */
+      if ( i < leaves.size() )
+      {
+        sim.assign( d, i + 1 );
+        continue;
+      }
+
+      /* compute truth tables of inner nodes */
+      sim.assign( d, i - uint32_t( leaves.size() ) + ps.max_pis + 1 );
+      std::vector<TTsim> tts;
+      ntk.foreach_fanin( d, [&]( const auto& s ) {
+        tts.emplace_back( sim.get_tt( ntk.make_signal( ntk.get_node( s ) ) ) ); /* ignore sign */
+      } );
+
+      auto const tt = ntk.compute( d, tts.begin(), tts.end() );
+      sim.set_tt( i - uint32_t( leaves.size() ) + ps.max_pis + 1, tt );
+    }
+
+    /* normalize truth tables */
+    sim.normalize( divs );
+    sim.normalize( mffc );
+  }
+
+private:
+  Ntk& ntk;
+  resubstitution_params const& ps;
   stats& st;
-}; /* default_resub_functor */
 
-template<class Ntk, class Simulator, class ResubFn, class TT, class Node_mffc>
+  window_simulator<Ntk, TTsim> sim;
+}; /* window_based_resub_engine */
+
+/*! \brief The top-level resubstitution framework.
+ *
+ * \param ResubEngine The engine that computes the resubtitution for a given root
+ * node and divisors. One can choose from `window_based_resub_engine` which
+ * does complete simulation within small windows, or `simulation_based_resub_engine`
+ * which does partial simulation on the whole circuit.
+ *
+ * \param DivCollector Collects divisors near a given root node, and compute
+ * the potential gain (MFFC size or its variants).
+ * Currently only `default_divisor_collector` is implemented, but
+ * a frontier-based approach may be integrated in the future.
+ * When using `window_based_resub_engine`, the `DivCollector` should prepare
+ * three public data members: `leaves`, `divs`, and `mffc` (see documentation
+ * of `default_divisor_collector` for details). When using `simulation_based_resub_engine`,
+ * only `divs` is needed.
+ */
+template<class Ntk, class ResubEngine = window_based_resub_engine<Ntk, kitty::dynamic_truth_table>, class DivCollector = default_divisor_collector<Ntk>>
 class resubstitution_impl
 {
 public:
+  using engine_st_t = typename ResubEngine::stats;
+  using collector_st_t = typename DivCollector::stats;
   using node = typename Ntk::node;
   using signal = typename Ntk::signal;
+  using resub_callback_t = std::function<bool( Ntk&, node const&, signal const& )>;
+  using mffc_result_t = typename ResubEngine::mffc_result_t;
 
-  explicit resubstitution_impl( Ntk& ntk, resubstitution_params const& ps, resubstitution_stats& st, typename ResubFn::stats& resub_st )
-      : ntk( ntk ), sim( ntk, ps.max_divisors, ps.max_pis ), ps( ps ), st( st ), resub_st( resub_st )
+  /*! \brief Constructor of the top-level resubstitution framework.
+   *
+   * \param ntk The network to be optimized.
+   * \param ps Resubstitution parameters.
+   * \param st Top-level resubstitution statistics.
+   * \param engine_st Statistics of the resubstitution engine.
+   * \param collector_st Statistics of the divisor collector.
+   * \param callback Callback function when a resubstitution is found.
+   */
+  explicit resubstitution_impl( Ntk& ntk, resubstitution_params const& ps, resubstitution_stats& st, engine_st_t& engine_st, collector_st_t& collector_st )
+      : ntk( ntk ), ps( ps ), st( st ), engine_st( engine_st ), collector_st( collector_st )
   {
+    static_assert( std::is_same_v<typename ResubEngine::mffc_result_t, typename DivCollector::mffc_result_t>, "MFFC result type of the engine and the collector are different" );
+
     st.initial_size = ntk.num_gates();
 
     auto const update_level_of_new_node = [&]( const auto& n ) {
@@ -481,38 +647,50 @@ public:
     ntk._events->on_delete.emplace_back( update_level_of_deleted_node );
   }
 
-  void run()
+  void run( resub_callback_t const& callback = substitute_fn<Ntk> )
   {
     stopwatch t( st.time_total );
 
     /* start the managers */
-    cut_manager<Ntk> mgr( ps.max_pis );
+    DivCollector collector( ntk, ps, collector_st );
+    ResubEngine resub_engine( ntk, ps, engine_st );
 
     progress_bar pbar{ntk.size(), "resub |{0}| node = {1:>4}   cand = {2:>4}   est. gain = {3:>5}", ps.progress};
 
     auto const size = ntk.num_gates();
     ntk.foreach_gate( [&]( auto const& n, auto i ) {
       if ( i >= size )
+      {
         return false; /* terminate */
+      }
 
       pbar( i, i, candidates, st.estimated_gain );
 
-      if ( ntk.is_dead( n ) )
+      /* compute cut, collect divisors, compute MFFC */
+      mffc_result_t potential_gain;
+      const auto collector_success = call_with_stopwatch( st.time_divs, [&]() {
+        return collector.run( n, potential_gain );
+      });
+      if ( !collector_success )
+      {
         return true; /* next */
+      }
 
-      /* skip nodes with many fanouts */
-      if ( ntk.fanout_size( n ) > ps.skip_fanout_limit_for_roots )
-        return true; /* next */
+      /* update statistics */
+      last_gain = 0;
+      st.num_total_divisors += collector.divs.size();
 
-      /* compute a reconvergence-driven cut */
-      auto const leaves = call_with_stopwatch( st.time_cuts, [&]() {
-        return reconv_driven_cut( mgr, ntk, n );
-      } );
-
-      /* evaluate this cut */
-      auto const g = call_with_stopwatch( st.time_eval, [&]() {
-        return evaluate( n, leaves );
-      } );
+      /* try to find a resubstitution with the divisors */
+      auto g = call_with_stopwatch( st.time_resub, [&]() {
+        if constexpr ( ResubEngine::require_leaves_and_mffc ) /* window-based */
+        {
+          return resub_engine.run( n, collector.leaves, collector.divs, collector.mffc, potential_gain, last_gain );
+        }
+        else /* simulation-based */
+        {
+          return resub_engine.run( n, collector.divs, potential_gain, last_gain );
+        }
+      });
       if ( !g )
       {
         return true; /* next */
@@ -523,8 +701,8 @@ public:
       st.estimated_gain += last_gain;
 
       /* update network */
-      call_with_stopwatch( st.time_substitute, [&]() {
-        ntk.substitute_node( n, *g );
+      call_with_stopwatch( st.time_callback, [&]() {
+        return callback( ntk, n, *g );
       } );
 
       return true; /* next */
@@ -532,6 +710,7 @@ public:
   }
 
 private:
+  /* maybe should move to depth_view */
   void update_node_level( node const& n, bool top_most = true )
   {
     uint32_t curr_level = ntk.level( n );
@@ -561,249 +740,24 @@ private:
     }
   }
 
-  void simulate( std::vector<node> const& leaves )
-  {
-    sim.resize();
-    for ( auto i = 0u; i < divs.size(); ++i )
-    {
-      const auto d = divs.at( i );
-
-      /* skip constant 0 */
-      if ( d == 0 )
-        continue;
-
-      /* assign leaves to variables */
-      if ( i < leaves.size() )
-      {
-        sim.assign( d, i + 1 );
-        continue;
-      }
-
-      /* compute truth tables of inner nodes */
-      sim.assign( d, i - uint32_t( leaves.size() ) + ps.max_pis + 1 );
-      std::vector<typename Simulator::truthtable_t> tts;
-      ntk.foreach_fanin( d, [&]( const auto& s, auto i ) {
-        (void)i;
-        tts.emplace_back( sim.get_tt( ntk.make_signal( ntk.get_node( s ) ) ) ); /* ignore sign */
-      } );
-
-      auto const tt = ntk.compute( d, tts.begin(), tts.end() );
-      sim.set_tt( i - uint32_t( leaves.size() ) + ps.max_pis + 1, tt );
-    }
-
-    /* normalize truth tables */
-    sim.normalize( divs );
-  }
-
-  std::optional<signal> evaluate( node const& root, std::vector<node> const& leaves )
-  {
-    uint32_t const required = std::numeric_limits<uint32_t>::max();
-
-    last_gain = 0;
-
-    /* collect the MFFC */
-    auto num_mffc = call_with_stopwatch( st.time_mffc, [&]() {
-      Node_mffc collector( ntk );
-      auto num_mffc = collector.run( root, leaves, temp );
-      return num_mffc;
-    } );
-
-    /* collect the divisor nodes in the cut */
-    bool div_comp_success = call_with_stopwatch( st.time_divs, [&]() {
-      return collect_divisors( root, leaves, required );
-    } );
-
-    if ( !div_comp_success )
-    {
-      return std::nullopt;
-    }
-
-    /* update statistics */
-    st.num_total_divisors += num_divs;
-    st.num_total_leaves += leaves.size();
-
-    /* simulate the collected divisors */
-    call_with_stopwatch( st.time_simulation, [&]() { simulate( leaves ); } );
-
-    auto care = kitty::create<TT>( static_cast<unsigned int>( leaves.size() ) );
-    if ( ps.use_dont_cares )
-      care = ~satisfiability_dont_cares( ntk, leaves, ps.window_size );
-    else
-      care = ~care;
-
-    ResubFn resub_fn( ntk, sim, divs, num_divs, resub_st );
-    return resub_fn( root, care, required, ps.max_inserts, num_mffc, last_gain );
-  }
-
-  void collect_divisors_rec( node const& n, std::vector<node>& internal )
-  {
-    /* skip visited nodes */
-    if ( ntk.visited( n ) == ntk.trav_id() )
-      return;
-    ntk.set_visited( n, ntk.trav_id() );
-
-    ntk.foreach_fanin( n, [&]( const auto& f ) {
-      collect_divisors_rec( ntk.get_node( f ), internal );
-    } );
-
-    /* collect the internal nodes */
-    if ( ntk.value( n ) == 0 && n != 0 ) /* ntk.fanout_size( n ) */
-      internal.emplace_back( n );
-  }
-
-  bool collect_divisors( node const& root, std::vector<node> const& leaves, uint32_t required )
-  {
-    /* add the leaves of the cuts to the divisors */
-    divs.clear();
-
-    ntk.incr_trav_id();
-    for ( const auto& l : leaves )
-    {
-      divs.emplace_back( l );
-      ntk.set_visited( l, ntk.trav_id() );
-    }
-
-    /* mark nodes in the MFFC */
-    for ( const auto& t : temp )
-      ntk.set_value( t, 1 );
-
-    /* collect the cone (without MFFC) */
-    collect_divisors_rec( root, divs );
-
-    /* unmark the current MFFC */
-    for ( const auto& t : temp )
-      ntk.set_value( t, 0 );
-
-    /* check if the number of divisors is not exceeded */
-    if ( divs.size() - leaves.size() + temp.size() >= ps.max_divisors - ps.max_pis )
-      return false;
-
-    /* get the number of divisors to collect */
-    int32_t limit = ps.max_divisors - ps.max_pis - ( uint32_t( divs.size() ) + 1 - uint32_t( leaves.size() ) + uint32_t( temp.size() ) );
-
-    /* explore the fanouts, which are not in the MFFC */
-    int32_t counter = 0;
-    bool quit = false;
-
-    /* NOTE: this is tricky and cannot be converted to a range-based loop */
-    auto size = divs.size();
-    for ( auto i = 0u; i < size; ++i )
-    {
-      auto const d = divs.at( i );
-
-      if ( ntk.fanout_size( d ) > ps.skip_fanout_limit_for_divisors )
-        continue;
-
-      /* if the fanout has all fanins in the set, add it */
-      ntk.foreach_fanout( d, [&]( node const& p ) {
-        if ( ntk.visited( p ) == ntk.trav_id() || ntk.level( p ) > required )
-          return true; /* next fanout */
-
-        bool all_fanins_visited = true;
-        ntk.foreach_fanin( p, [&]( const auto& g ) {
-          if ( ntk.visited( ntk.get_node( g ) ) != ntk.trav_id() )
-          {
-            all_fanins_visited = false;
-            return false; /* terminate fanin-loop */
-          }
-          return true; /* next fanin */
-        } );
-
-        if ( !all_fanins_visited )
-          return true; /* next fanout */
-
-        bool has_root_as_child = false;
-        ntk.foreach_fanin( p, [&]( const auto& g ) {
-          if ( ntk.get_node( g ) == root )
-          {
-            has_root_as_child = true;
-            return false; /* terminate fanin-loop */
-          }
-          return true; /* next fanin */
-        } );
-
-        if ( has_root_as_child )
-          return true; /* next fanout */
-
-        divs.emplace_back( p );
-        ++size;
-        ntk.set_visited( p, ntk.trav_id() );
-
-        /* quit computing divisors if there are too many of them */
-        if ( ++counter == limit )
-        {
-          quit = true;
-          return false; /* terminate fanout-loop */
-        }
-
-        return true; /* next fanout */
-      } );
-
-      if ( quit )
-        break;
-    }
-
-    /* get the number of divisors */
-    num_divs = uint32_t( divs.size() );
-
-    /* add the nodes in the MFFC */
-    for ( const auto& t : temp )
-    {
-      divs.emplace_back( t );
-    }
-
-    assert( root == divs.at( divs.size() - 1u ) );
-    assert( divs.size() - leaves.size() <= ps.max_divisors - ps.max_pis );
-
-    return true;
-  }
-
 private:
   Ntk& ntk;
-  Simulator sim;
 
   resubstitution_params const& ps;
   resubstitution_stats& st;
-  typename ResubFn::stats& resub_st;
+  engine_st_t& engine_st;
+  collector_st_t& collector_st;
 
   /* temporary statistics for progress bar */
   uint32_t candidates{0};
   uint32_t last_gain{0};
-
-  std::vector<node> temp;
-  std::vector<node> divs;
-  uint32_t num_divs{0};
 };
 
 } /* namespace detail */
 
-/*! \brief Boolean resubstitution.
- *
- * **Required network functions:**
- * - `clear_values`
- * - `fanout_size`
- * - `foreach_fanin`
- * - `foreach_gate`
- * - `foreach_node`
- * - `get_constant`
- * - `get_node`
- * - `is_complemented`
- * - `is_pi`
- * - `level`
- * - `make_signal`
- * - `set_value`
- * - `set_visited`
- * - `size`
- * - `substitute_node`
- * - `value`
- * - `visited`
- *
- * \param ntk Input network (will be changed in-place)
- * \param ps Resubstitution params
- * \param pst Resubstitution statistics
- */
+/*! \brief Window-based Boolean resubstitution with default resub functor (only div0). */
 template<class Ntk>
-void resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, resubstitution_stats* pst = nullptr )
+void default_resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, resubstitution_stats* pst = nullptr )
 {
   static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
   static_assert( has_clear_values_v<Ntk>, "Ntk does not implement the clear_values method" );
@@ -818,51 +772,62 @@ void resubstitution( Ntk& ntk, resubstitution_params const& ps = {}, resubstitut
   static_assert( has_make_signal_v<Ntk>, "Ntk does not implement the make_signal method" );
   static_assert( has_set_value_v<Ntk>, "Ntk does not implement the set_value method" );
   static_assert( has_set_visited_v<Ntk>, "Ntk does not implement the set_visited method" );
-  static_assert( has_size_v<Ntk>, "Ntk does not implement the has_size method" );
-  static_assert( has_substitute_node_v<Ntk>, "Ntk does not implement the has substitute_node method" );
-  static_assert( has_value_v<Ntk>, "Ntk does not implement the has_value method" );
-  static_assert( has_visited_v<Ntk>, "Ntk does not implement the has_visited method" );
+  static_assert( has_size_v<Ntk>, "Ntk does not implement the size method" );
+  static_assert( has_substitute_node_v<Ntk>, "Ntk does not implement the substitute_node method" );
+  static_assert( has_value_v<Ntk>, "Ntk does not implement the value method" );
+  static_assert( has_visited_v<Ntk>, "Ntk does not implement the visited method" );
 
   using resub_view_t = fanout_view<depth_view<Ntk>>;
   depth_view<Ntk> depth_view{ntk};
   resub_view_t resub_view{depth_view};
 
-  resubstitution_stats st;
   if ( ps.max_pis == 8 )
   {
     using truthtable_t = kitty::static_truth_table<8>;
     using truthtable_dc_t = kitty::dynamic_truth_table;
-    using simulator_t = detail::simulator<resub_view_t, truthtable_t>;
-    using node_mffc_t = detail::node_mffc_inside<Ntk>;
-    using resubstitution_functor_t = detail::default_resub_functor<resub_view_t, simulator_t, truthtable_dc_t>;
-    typename resubstitution_functor_t::stats resub_st;
-    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t, truthtable_dc_t, node_mffc_t> p( resub_view, ps, st, resub_st );
+    using resub_impl_t = detail::resubstitution_impl<resub_view_t, typename detail::window_based_resub_engine<resub_view_t, truthtable_t, truthtable_dc_t>>;
+
+    resubstitution_stats st;
+    typename resub_impl_t::engine_st_t engine_st;
+    typename resub_impl_t::collector_st_t collector_st;
+
+    resub_impl_t p( resub_view, ps, st, engine_st, collector_st );
     p.run();
+
     if ( ps.verbose )
     {
       st.report();
-      resub_st.report();
+      collector_st.report();
+      engine_st.report();
+    }
+
+    if ( pst )
+    {
+      *pst = st;
     }
   }
   else
   {
-    using truthtable_t = kitty::dynamic_truth_table;
-    using simulator_t = detail::simulator<resub_view_t, truthtable_t>;
-    using node_mffc_t = detail::node_mffc_inside<Ntk>;
-    using resubstitution_functor_t = detail::default_resub_functor<resub_view_t, simulator_t, truthtable_t>;
-    typename resubstitution_functor_t::stats resub_st;
-    detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t, truthtable_t, node_mffc_t> p( resub_view, ps, st, resub_st );
+    using resub_impl_t = detail::resubstitution_impl<resub_view_t>;
+
+    resubstitution_stats st;
+    typename resub_impl_t::engine_st_t engine_st;
+    typename resub_impl_t::collector_st_t collector_st;
+
+    resub_impl_t p( resub_view, ps, st, engine_st, collector_st );
     p.run();
+
     if ( ps.verbose )
     {
       st.report();
-      resub_st.report();
+      collector_st.report();
+      engine_st.report();
     }
-  }
 
-  if ( pst )
-  {
-    *pst = st;
+    if ( pst )
+    {
+      *pst = st;
+    }
   }
 }
 

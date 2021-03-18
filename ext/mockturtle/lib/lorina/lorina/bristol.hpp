@@ -1,5 +1,5 @@
 /* lorina: C++ parsing library
- * Copyright (C) 2018  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,14 +27,17 @@
   \file bristol.hpp
   \brief Implements a parser for Bristol fashion
 
-  \author Heinz Riener
-
   Reference: https://homes.esat.kuleuven.be/~nsmart/MPC/
+
+  \author Heinz Riener
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
 
 #include "common.hpp"
+#include "diagnostics.hpp"
 #include "detail/utils.hpp"
 
 #include <algorithm>
@@ -117,6 +120,7 @@ public:
 
       assert( tokens.size() == num_input_wires + num_output_wires + 3u );
       assert( num_output_wires == 1u );
+      (void)num_output_wires;
 
       std::vector<uint32_t> inputs;
       for ( uint32_t i = 0; i < num_input_wires; ++i )
@@ -168,9 +172,15 @@ private:
  *
  * A callback method of the reader visitor is invoked for each
  * primitive object matched in the specification.
+ *
+ * \param in Input stream
+ * \param reader A BRISTOL reader with callback methods invoked for parsed primitives
+ * \param diag An optional diagnostic engine with callback methods for parse errors
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_bristol( std::istream& is, bristol_reader const& reader )
+inline return_code read_bristol( std::istream& is, bristol_reader const& reader, diagnostic_engine* diag = nullptr )
 {
+  (void)diag;
   return bristol_parser( is, reader ).run();
 }
 
@@ -178,11 +188,30 @@ inline return_code read_bristol( std::istream& is, bristol_reader const& reader 
  *
  * A callback method of the reader visitor is invoked for each
  * primitive object matched in the specification.
+ *
+ * \param filename Name of the file
+ * \param reader A BRISTOL reader with callback methods invoked for parsed primitives
+ * \param diag An optional diagnostic engine with callback methods for parse errors
+ * \return Success if parsing has been successful, or parse error if parsing has failed
  */
-inline return_code read_bristol( std::string const& filename, bristol_reader const& reader )
+inline return_code read_bristol( std::string const& filename, bristol_reader const& reader, diagnostic_engine* diag = nullptr )
 {
-  std::ifstream is( filename, std::ifstream::in );
-  return read_bristol( is, reader );
+  std::ifstream in( filename, std::ifstream::in );
+  if ( !in.is_open() )
+  {
+    if ( diag )
+    {
+      diag->report( diagnostic_level::fatal,
+                    fmt::format( "could not open file `{0}`", filename ) );
+    }    
+    return return_code::parse_error;
+  }
+  else
+  {
+    auto const ret = read_bristol( in, reader );
+    in.close();
+    return ret;
+  }
 }
 
 } // namespace lorina

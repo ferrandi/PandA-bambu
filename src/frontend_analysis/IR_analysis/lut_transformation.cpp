@@ -60,7 +60,13 @@
 #pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
 #pragma GCC diagnostic ignored "-Woverloaded-virtual"
 #pragma GCC diagnostic ignored "-Wsign-promo"
-
+#pragma GCC diagnostic ignored "-Wmisleading-indentation"
+#pragma GCC diagnostic ignored "-Wpragmas"
+#pragma GCC diagnostic ignored "-Wclass-memaccess"
+#pragma GCC diagnostic ignored "-Wdouble-promotion"
+#pragma GCC diagnostic ignored "-Wfloat-conversion"
+#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
+#pragma GCC diagnostic ignored "-Wformat="
 #define USE_SAT 0
 
 #pragma region needed by mockturtle / algorithms / satlut_mapping.hpp
@@ -70,12 +76,8 @@
 #pragma endregion
 
 #define FMT_HEADER_ONLY 1
-#ifndef __APPLE__
-#define __APPLE__ 0
-#endif
-#ifndef __MACH__
-#define __MACH__ 0
-#endif
+
+#define PHMAP_BIDIRECTIONAL 0
 
 #include <type_traits>
 
@@ -95,6 +97,9 @@
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/views/mapping_view.hpp>
+#include <mockturtle/algorithms/balancing.hpp>
+#include <mockturtle/algorithms/balancing/sop_balancing.hpp>
+#include <mockturtle/algorithms/functional_reduction.hpp>
 #endif
 #endif
 
@@ -889,6 +894,15 @@ static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned m
    mockturtle::shannon_resynthesis<mockturtle::aig_network> fallback;
    mockturtle::dsd_resynthesis<mockturtle::aig_network, decltype(fallback)> aig_resyn(fallback);
    auto aig = mockturtle::node_resynthesis<mockturtle::aig_network>(klut_e, aig_resyn);
+
+   mockturtle::functional_reduction_params fr_ps;
+   fr_ps.saturation = true;
+   mockturtle::functional_reduction( aig, fr_ps);
+
+
+   mockturtle::balancing_params b_ps;
+   b_ps.cut_enumeration_ps.cut_size = max_lut_size;
+   aig = mockturtle::balancing( aig, {mockturtle::sop_rebalancing<mockturtle::aig_network>{}}, b_ps );
 
    auto cleanedUp = cleanup_dangling(aig);
    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_klut{cleanedUp};

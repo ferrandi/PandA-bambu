@@ -3,6 +3,7 @@
 #include <vector>
 
 #include <mockturtle/algorithms/dont_cares.hpp>
+#include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/aig.hpp>
 
 using namespace mockturtle;
@@ -56,4 +57,33 @@ TEST_CASE( "SDCs in simple AIG using satisfiability checker", "[dont_cares]" )
   CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{{false, true}} ) );
   CHECK( !checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{{true, false}} ) );
   CHECK( checker.is_dont_care( aig.get_node( f3 ), std::vector<bool>{{true, true}} ) );
+}
+
+TEST_CASE( "ODCs with partial simulation", "[dont_cares]" )
+{
+  aig_network aig;
+  auto a = aig.create_pi();
+  auto b = aig.create_pi();
+  auto c = aig.create_pi();
+  auto d = aig.create_pi();
+  auto f1 = aig.create_and( b, c );
+  auto f2 = aig.create_and( a, f1 );
+  auto f3 = aig.create_and( f1, d );
+  auto f4 = aig.create_and( f2, f3 );
+  aig.create_po( f4 );
+
+  partial_simulator sim( 4, 0 );
+  sim.add_pattern( std::vector<bool>({1, 1, 1, 1}) );
+  sim.add_pattern( std::vector<bool>({0, 0, 1, 0}) );
+  sim.add_pattern( std::vector<bool>({1, 0, 0, 0}) );
+  
+  fanout_view<aig_network> ntk( aig );
+  unordered_node_map<kitty::partial_truth_table, fanout_view<aig_network>> tts( ntk );
+
+  const auto odc_1_lev = observability_dont_cares( ntk, ntk.get_node( f1 ), sim, tts, 1 );
+  CHECK( odc_1_lev._bits[0] == 0x2 );
+
+  const auto odc_glob = observability_dont_cares( ntk, ntk.get_node( f1 ), sim, tts, -1 );
+  CHECK( odc_glob._bits[0] == 0x6 );
+
 }

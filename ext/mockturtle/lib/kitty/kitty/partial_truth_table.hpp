@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2019  EPFL
+ * Copyright (C) 2017-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -32,23 +32,24 @@
 
 #pragma once
 
+#include "detail/constants.hpp"
+#include "traits.hpp"
+
 #include <cstdint>
 #include <type_traits>
 #include <vector>
 #include <iostream>
 #include <iomanip>
-
-#include "detail/constants.hpp"
-#include "traits.hpp"
+#include <cassert>
 
 namespace kitty
 {
 
-/*! Truth table with resizable number of bits
+/*! Truth table with resizable, arbitrary number of bits
 */
 struct partial_truth_table
 {
-  /*! Standard constructor.
+  /*! \brief Standard constructor.
     \param num_bits Number of bits in use initially
   */
   explicit partial_truth_table( uint32_t num_bits )
@@ -57,7 +58,7 @@ struct partial_truth_table
   {
   }
 
-  /*! Empty constructor.
+  /*! \brief Empty constructor.
 
     Creates an empty truth table. It has no bit in use. This constructor is
     only used for convenience, if algorithms require the existence of default
@@ -65,17 +66,17 @@ struct partial_truth_table
    */
   partial_truth_table() : _num_bits( 0 ) {}
 
-  /*! Constructs a new partial truth table instance with the same number of bits and blocks. */
+  /*! \brief Constructs a new partial truth table instance with the same number of bits and blocks. */
   inline partial_truth_table construct() const
   {
     return partial_truth_table( _num_bits );
   }
 
-  /*! Returns number of (allocated) blocks.
+  /*! \brief Returns number of (allocated) blocks.
    */
   inline auto num_blocks() const noexcept { return _bits.size(); }
 
-  /*! Returns number of (used) bits.
+  /*! \brief Returns number of (used) bits.
    */
   inline auto num_bits() const noexcept { return _num_bits; }
 
@@ -136,7 +137,7 @@ struct partial_truth_table
     return *this;
   }
 
-  /*! Masks the number of valid truth table bits.
+  /*! \brief Masks the number of valid truth table bits.
 
     If not all the bits in the last block are used up,
     we block out the remaining bits (fill with zero).
@@ -144,12 +145,21 @@ struct partial_truth_table
   */
   inline void mask_bits() noexcept
   {
-    if ( _num_bits % 64 )
+    if ( _num_bits & 0x3f )
     {
-      _bits.back() &= 0xFFFFFFFFFFFFFFFF >> ( 64 - ( _num_bits % 64 ) );
+      _bits.back() &= 0xFFFFFFFFFFFFFFFF >> ( 64 - ( _num_bits & 0x3f ) );
     }
   }
 
+  /*! \brief Resize the truth table to have the given number of bits.
+
+    If the desired length is larger than the current length, zeros will
+    be filled up in the end of the truth table. If the desired length 
+    is shorter than the current length, extra bits in the end of the 
+    truth table will be discarded.
+
+    \param num_bits Desired length (number of bits)
+  */
   inline void resize( int num_bits ) noexcept
   {
     _num_bits = num_bits;
@@ -160,15 +170,21 @@ struct partial_truth_table
     mask_bits();
   }
 
+  /*! \brief Add a bit to the end of the truth table.
+    \param bit Bit to be added
+  */
   inline void add_bit( bool bit ) noexcept
   {
     resize( _num_bits + 1 );
     if ( bit )
     {
-      _bits.back() |= (uint64_t)1 << ( _num_bits % 64 - 1 );
+      _bits.back() |= (uint64_t)1 << ( ( _num_bits & 0x3f ) - 1 );
     }
   }
 
+  /*! \brief Add several bits to the end of the truth table.
+    \param bits Bits to be added
+  */
   inline void add_bits( std::vector<bool>& bits ) noexcept
   {
     for ( unsigned i = 0; i < bits.size(); ++i )
@@ -177,27 +193,86 @@ struct partial_truth_table
     }
   }
 
-  /* \param num_bits Number of bits in `bits` to be added (count from LSB) */
+  /*! \brief Add several bits to the end of the truth table.
+    \param bits Bits to be added
+    \param num_bits Number of bits in `bits` to be added (counted from LSB)
+  */
   inline void add_bits( uint64_t bits, int num_bits = 64 ) noexcept
   {
     assert( num_bits <= 64 );
 
-    if ( ( _num_bits % 64 ) + num_bits <= 64 ) /* no need for a new block */
+    if ( ( _num_bits & 0x3f ) + num_bits <= 64 ) /* no need for a new block */
     {
       if ( _bits.size() == 0u )
       {
         _bits.emplace_back( 0u );
       }
-      _bits.back() |= bits << ( _num_bits % 64 );
+      _bits.back() |= bits << ( _num_bits & 0x3f );
     }
     else
     {
-      auto first_half_len = 64 - ( _num_bits % 64 );
-      _bits.back() |= bits << ( _num_bits % 64 );
+      auto first_half_len = 64 - ( _num_bits & 0x3f );
+      _bits.back() |= bits << ( _num_bits & 0x3f );
       _bits.emplace_back( 0u );
       _bits.back() |= ( bits & ( 0xFFFFFFFFFFFFFFFF >> ( 64 - num_bits ) ) ) >> first_half_len;
     }
     _num_bits += num_bits;
+  }
+
+  /*! \brief Overwrite the value at position `from` to position `to`.
+    \param from Position of the bit to be copied
+    \param to Position of the bit to be overwritten
+  */
+  inline void copy_bit( uint32_t from, uint32_t to )
+  {
+    if ( ( _bits[from >> 6] >> ( from & 0x3f ) ) & 0x1 )
+    {
+      /* set_bit( to ) */
+      _bits[to >> 6] |= uint64_t( 1 ) << ( to & 0x3f );
+    }
+    else
+    {
+      /* clear_bit( to ) */
+      _bits[to >> 6] &= ~( uint64_t( 1 ) << ( to & 0x3f ) );
+    }
+  }
+
+  /*! \brief Erase the bit at the given position by swapping with the
+             last bit and shrinking the truth table.
+
+    This method is faster than `erase_bit` but do not keep the order
+    of the bits.
+
+    \param position Position of the bit to be erased
+  */
+  inline void erase_bit_swap( uint32_t position )
+  {
+    assert( position < _num_bits );
+    /* move the last bit (`_num_bits - 1`) to `position` */
+    copy_bit( _num_bits - 1, position );
+    resize( _num_bits - 1 );
+  }
+
+  /*! \brief Erase the bit at the given position and shift all the following bits.
+
+    This method keeps the order of the bits but is slower and 
+    do not keep the position of the bits.
+
+    \param position Position of the bit to be erased
+  */
+  inline void erase_bit_shift( uint32_t position )
+  {
+    assert( position < _num_bits );
+    uint64_t mask = 0xFFFFFFFFFFFFFFFF << ( position & 0x3f );
+    _bits[position >> 6] = ( _bits[position >> 6] & ~mask ) | ( _bits[position >> 6] >> 1 & mask );
+    uint32_t hole = position | 0x3f;
+    while ( hole < _num_bits - 1 )
+    {
+      copy_bit( hole + 1, hole );
+      hole += 64;
+      _bits[hole >> 6] >>= 1;
+    }
+    resize( _num_bits - 1 );
   }
 
   /*! \cond PRIVATE */

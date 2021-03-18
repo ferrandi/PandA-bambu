@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,8 @@
   \file cell_window.hpp
   \brief Windowing in mapped network
 
+  \author Bruno Schmitt
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -38,10 +40,11 @@
 #include <unordered_set>
 #include <vector>
 
+#include <parallel_hashmap/phmap.h>
+
 #include "../networks/detail/foreach.hpp"
 #include "../traits.hpp"
 #include "../utils/algorithm.hpp"
-#include "../utils/include/spp.hpp"
 #include "../utils/node_map.hpp"
 #include "../utils/stopwatch.hpp"
 
@@ -78,19 +81,19 @@ public:
     _gates.reserve( _max_gates );
   }
 
-  spp::sparse_hash_set<node<Ntk>> _nodes;   /* cell roots in current window */
-  spp::sparse_hash_set<node<Ntk>> _gates;   /* gates in current window */
-  spp::sparse_hash_set<node<Ntk>> _leaves;  /* leaves of current window */
-  spp::sparse_hash_set<signal<Ntk>> _roots; /* roots of current window */
+  phmap::flat_hash_set<node<Ntk>> _nodes;   /* cell roots in current window */
+  phmap::flat_hash_set<node<Ntk>> _gates;   /* gates in current window */
+  phmap::flat_hash_set<node<Ntk>> _leaves;  /* leaves of current window */
+  phmap::flat_hash_set<signal<Ntk>> _roots; /* roots of current window */
 
   std::array<uint64_t, 2> _window_mask;
-  spp::sparse_hash_set<std::array<uint64_t, 2>> _window_hash;
+  phmap::flat_hash_set<std::array<uint64_t, 2>> _window_hash;
 
   node_map<uint32_t, Ntk> _cell_refs;                  /* ref counts for cells */
   node_map<std::vector<node<Ntk>>, Ntk> _cell_parents; /* parent cells */
 
   std::vector<node<Ntk>> _index_to_node;
-  spp::sparse_hash_map<node<Ntk>, uint32_t> _node_to_index;
+  phmap::flat_hash_map<node<Ntk>, uint32_t> _node_to_index;
 
   uint32_t _num_constants{1u};
   uint32_t _max_gates{};

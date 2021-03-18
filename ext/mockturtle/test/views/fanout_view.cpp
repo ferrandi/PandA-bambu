@@ -5,6 +5,8 @@
 #include <mockturtle/traits.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/mig.hpp>
+#include <mockturtle/networks/xag.hpp>
+#include <mockturtle/networks/xmg.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/views/fanout_view.hpp>
 
@@ -31,6 +33,8 @@ TEST_CASE( "create different fanout views", "[fanout_view]" )
 {
   test_fanout_view<aig_network>();
   test_fanout_view<mig_network>();
+  test_fanout_view<xag_network>();
+  test_fanout_view<xmg_network>();
   test_fanout_view<klut_network>();
 }
 

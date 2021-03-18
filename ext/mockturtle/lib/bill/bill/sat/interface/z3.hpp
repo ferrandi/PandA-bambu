@@ -155,9 +155,11 @@ public:
 	void pop(uint32_t num_levels = 1u)
 	{
 		assert(num_levels < variable_counter_.size());
+		assert(variable_counter_.size() >= num_levels);
+		assert(clause_counter_.size() >= num_levels);
 		solver_.pop(num_levels);
-		variable_counter_.resize(variable_counter_.size() - num_levels);
-		clause_counter_.resize(clause_counter_.size() - num_levels);
+		variable_counter_.resize(uint32_t(variable_counter_.size() - num_levels));
+		clause_counter_.resize(uint32_t(clause_counter_.size() - num_levels));
 		if (vars_.size() > variable_counter_.back()) {
 			vars_.erase(vars_.begin() + variable_counter_.back(), vars_.end());
 		}
