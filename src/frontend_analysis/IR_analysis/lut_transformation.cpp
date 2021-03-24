@@ -86,8 +86,11 @@
 #include <mockturtle/mockturtle.hpp>
 #else
 #include <kitty/print.hpp>
+#include <mockturtle/algorithms/balancing.hpp>
+#include <mockturtle/algorithms/balancing/sop_balancing.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/collapse_mapped.hpp>
+#include <mockturtle/algorithms/functional_reduction.hpp>
 #include <mockturtle/algorithms/lut_mapping.hpp>
 #include <mockturtle/algorithms/node_resynthesis.hpp>
 #include <mockturtle/algorithms/node_resynthesis/dsd.hpp>
@@ -97,9 +100,6 @@
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/views/mapping_view.hpp>
-#include <mockturtle/algorithms/balancing.hpp>
-#include <mockturtle/algorithms/balancing/sop_balancing.hpp>
-#include <mockturtle/algorithms/functional_reduction.hpp>
 #endif
 #endif
 
@@ -897,12 +897,11 @@ static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned m
 
    mockturtle::functional_reduction_params fr_ps;
    fr_ps.saturation = true;
-   mockturtle::functional_reduction( aig, fr_ps);
-
+   mockturtle::functional_reduction(aig, fr_ps);
 
    mockturtle::balancing_params b_ps;
    b_ps.cut_enumeration_ps.cut_size = max_lut_size;
-   aig = mockturtle::balancing( aig, {mockturtle::sop_rebalancing<mockturtle::aig_network>{}}, b_ps );
+   aig = mockturtle::balancing(aig, {mockturtle::sop_rebalancing<mockturtle::aig_network>{}}, b_ps);
 
    auto cleanedUp = cleanup_dangling(aig);
    mockturtle::mapping_view<mockturtle::aig_network, true> mapped_klut{cleanedUp};

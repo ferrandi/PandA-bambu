@@ -1291,7 +1291,7 @@ void VHDL_writer::write_tail(const structural_objectRef&)
 {
 }
 
-void VHDL_writer::write_state_declaration(const structural_objectRef&, const std::list<std::string>& list_of_states, const std::string&, const std::string&, bool one_hot)
+void VHDL_writer::write_state_declaration(const structural_objectRef&, const std::list<std::string>& list_of_states, const std::string&, const std::string& reset_state, bool one_hot)
 {
    auto it_end = list_of_states.end();
    size_t n_states = list_of_states.size();
@@ -1323,11 +1323,13 @@ void VHDL_writer::write_state_declaration(const structural_objectRef&, const std
       }
       if(one_hot)
       {
-         indented_output_stream->Append("signal present_state, next_state : std_logic_vector(" + STR(max_value) + " downto 0);\n");
+         indented_output_stream->Append("signal present_state : std_logic_vector(" + STR(max_value) + " downto 0) := " + reset_state + ";\n");
+         indented_output_stream->Append("signal next_state : std_logic_vector(" + STR(max_value) + " downto 0);\n");
       }
       else
       {
-         indented_output_stream->Append("signal present_state, next_state : std_logic_vector(" + STR(bitsnumber - 1) + " downto 0);\n");
+         indented_output_stream->Append("signal present_state : std_logic_vector(" + STR(bitsnumber - 1) + " downto 0) := " + reset_state + ";\n");
+         indented_output_stream->Append("signal next_state : std_logic_vector(" + STR(bitsnumber - 1) + " downto 0);\n");
       }
    }
    else
