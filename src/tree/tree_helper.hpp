@@ -368,6 +368,14 @@ class tree_helper
    static bool is_an_array(const tree_managerConstRef& TM, const unsigned int index);
 
    /**
+    * @param TM is the tree_manager
+    * @param index is the treenode index
+    * @return the basetype of the array in case it is an array
+    */
+   static tree_nodeConstRef get_array_basetype(const tree_managerConstRef& TM, const unsigned int index);
+
+
+   /**
     * Return if treenode index is a pointer
     * @param TM is the tree_manager
     * @param index is the treenode index

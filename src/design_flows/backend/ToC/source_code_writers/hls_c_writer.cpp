@@ -151,11 +151,11 @@ void HLSCWriter::WriteHeader()
       {
          CustomOrderedSet<std::string> includes;
          const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
-         for(auto argInclude : DesignInterfaceArgsInclude)
+         for(const auto& argInclude : DesignInterfaceArgsInclude)
          {
             includes.insert(argInclude.second);
          }
-         for(auto inc : includes)
+         for(const auto& inc : includes)
          {
             if(inc != "")
             {
@@ -374,27 +374,6 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
          {
             var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
             std::string type_declaration = tree_helper::print_type(TM, type_id, false, false, false, p, var_functor);
-            if(flag_cpp)
-            {
-               bool reference_type_p = false;
-               tree_nodeRef pt_node = TM->get_tree_node_const(type_id);
-               if(pt_node->get_kind() == pointer_type_K)
-               {
-                  reference_type_p = false;
-               }
-               else if(pt_node->get_kind() == reference_type_K)
-               {
-                  reference_type_p = true;
-               }
-               else
-               {
-                  THROW_ERROR("A pointer type is expected");
-               }
-               if(reference_type_p)
-               {
-                  boost::replace_all(type_declaration, "/*&*/*", "");
-               }
-            }
             indented_output_stream->Append(type_declaration + ";\n");
          }
          else
@@ -693,46 +672,46 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          {
             test_v = curr_test_vector.find(param)->second;
          }
-
-         /// FIXME: for c++ code the old code is still used
-         if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         bool reference_type_p = false;
+         unsigned int base_type = tree_helper::get_type_index(TM, p);
+         auto pt_node = TM->CGetTreeNode(base_type);
+         if(pt_node->get_kind() == pointer_type_K)
          {
-            bool reference_type_p = false;
-            std::vector<std::string> splitted = SplitString(test_v, ",");
-
-            unsigned int base_type = tree_helper::get_type_index(TM, p);
-            tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            if(pt_node->get_kind() == pointer_type_K)
-            {
-               reference_type_p = false;
-               base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-            }
-            else if(pt_node->get_kind() == reference_type_K)
+            reference_type_p = false;
+            base_type = GET_INDEX_NODE(GetPointerS<const pointer_type>(pt_node)->ptd);
+         }
+         else if(pt_node->get_kind() == reference_type_K)
+         {
+            reference_type_p = true;
+            base_type = GET_INDEX_NODE(GetPointerS<const reference_type>(pt_node)->refd);
+         }
+         else
+         {
+            THROW_ERROR("A pointer type is expected");
+         }
+         unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
+         bool is_acType = false;
+         if(hasInterface)
+         {
+            auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
+            if((*argTypename.rbegin()) != '*')
             {
                reference_type_p = true;
-               base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
             }
-            else
+            bool is_signed, is_fixed;
+            auto acTypeBw = ac_type_bitwidth(argTypename, is_signed, is_fixed);
+            if(acTypeBw)
             {
-               THROW_ERROR("A pointer type is expected");
+               base_type_bitsize = acTypeBw;
+               is_acType = true;
             }
-            unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
-            if(hasInterface)
-            {
-               auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
-               if((*argTypename.rbegin()) != '*')
-               {
-                  reference_type_p = true;
-               }
-               bool is_signed, is_fixed;
-               auto acTypeBw = ac_type_bitwidth(argTypename, is_signed, is_fixed);
-               if(acTypeBw)
-               {
-                  base_type_bitsize = acTypeBw;
-               }
-            }
+         }
 
-            if((behavioral_helper->is_real(base_type) || behavioral_helper->is_a_struct(base_type) || behavioral_helper->is_an_union(base_type)))
+         if(interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         {
+            std::vector<std::string> splitted = SplitString(test_v, ",");
+
+            if(behavioral_helper->is_real(base_type) || is_acType)
             {
                if(splitted.size() == 1 && flag_cpp && reference_type_p)
                {
@@ -840,20 +819,25 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          else
          {
             /// Retrieve the space to be reserved in memory
-            const unsigned int base_type = tree_helper::get_type_index(TM, p);
-            const auto pt_node = tree_helper::CGetPointedType(TM->CGetTreeNode(base_type));
+            const auto pointedType_node = tree_helper::CGetPointedType(pt_node);
             const auto reserved_mem_bytes = hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(p);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reserved memory " + STR(reserved_mem_bytes) + " bytes");
-            const auto element_size = tree_helper::Size(pt_node) / 8;
+            const auto element_size = tree_helper::Size(pointedType_node) / 8;
             THROW_ASSERT(reserved_mem_bytes % element_size == 0, STR(reserved_mem_bytes) + "/" + STR(element_size));
             const auto num_elements = reserved_mem_bytes / element_size;
             THROW_ASSERT(num_elements, STR(reserved_mem_bytes) + "/" + STR(element_size));
             indented_output_stream->Append("{\n");
             indented_output_stream->Append("int i0;\n");
-            indented_output_stream->Append("for(i0 = 0; i0 < " + STR(num_elements) + "; i0++)\n");
-            indented_output_stream->Append("{\n");
-            WriteParamInMemory(behavioral_helper, param + "[i0]", pt_node->index, 1, false);
-            indented_output_stream->Append("}\n");
+            if(num_elements > 1 || !reference_type_p)
+            {
+               indented_output_stream->Append("for(i0 = 0; i0 < " + STR(num_elements) + "; i0++)\n");
+               indented_output_stream->Append("{\n");
+            }
+            WriteParamInMemory(behavioral_helper, param + (reference_type_p ? "" : "[i0]"), pointedType_node->index, 1, false);
+            if(num_elements > 1 || !reference_type_p)
+            {
+               indented_output_stream->Append("}\n");
+            }
             indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"e\\n\");\n");
             indented_output_stream->Append("}\n");
          }

@@ -136,7 +136,7 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
                stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
                const auto& typenameArgs = HLSMgr->design_interface_typename_signature.find(name)->second;
                bool firstPar = true;
-               for(auto argType : typenameArgs)
+               for(const auto& argType : typenameArgs)
                {
                   if(firstPar)
                   {

@@ -2499,7 +2499,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    bool is_proxied_correction = false;
    bool is_private_correction = false;
    bool is_single_variable = false;
-   auto single_var_lambda= [&](unsigned var) -> bool {
+   auto single_var_lambda = [&](unsigned var) -> bool {
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
       if(tree_helper::is_an_array(TreeM, type_index) || tree_helper::is_a_struct(TreeM, type_index) || tree_helper::is_an_union(TreeM, type_index))
       {
@@ -2628,7 +2628,6 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying memory correction for MEMORY_TYPE_SYNCHRONOUS_SDS and MEMORY_TYPE_SYNCHRONOUS_SDS_BUS");
       unsigned var = get_memory_var(fu);
       is_single_variable = single_var_lambda(var);
-
 
       elmt_bitsize = 1;
       unsigned int type_index = tree_helper::get_type_index(TreeM, var);
@@ -2877,7 +2876,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying single variable correction");
       const technology_managerRef TM = HLS_T->get_technology_manager();
-      auto fname=get_fu_name(fu).first;
+      auto fname = get_fu_name(fu).first;
       technology_nodeRef f_unit_sv = TM->get_fu(fname, TM->get_library(fname));
       auto* fu_sv = GetPointer<functional_unit>(f_unit_sv);
       technology_nodeRef op_sv_node = fu_sv->get_operation(operation_name);
