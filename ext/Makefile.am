@@ -33,7 +33,6 @@ mockturtle/include/mockturtle/algorithms/node_resynthesis/shannon.hpp\
 mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_minmc.hpp\
 mockturtle/include/mockturtle/algorithms/node_resynthesis/xag_npn.hpp\
 mockturtle/include/mockturtle/algorithms/node_resynthesis/xmg_npn.hpp\
-mockturtle/include/mockturtle/algorithms/reconv_cut2.hpp\
 mockturtle/include/mockturtle/algorithms/reconv_cut.hpp\
 mockturtle/include/mockturtle/algorithms/refactoring.hpp\
 mockturtle/include/mockturtle/algorithms/resubstitution.hpp\
@@ -107,12 +106,10 @@ mockturtle/include/mockturtle/algorithms/xmg_optimization.hpp\
 mockturtle/include/mockturtle/algorithms/xmg_resub.hpp\
 mockturtle/include/mockturtle/generators/self_dualize.hpp\
 mockturtle/include/mockturtle/io/bristol_reader.hpp\
-mockturtle/include/mockturtle/io/index_list.hpp\
 mockturtle/include/mockturtle/networks/abstract_xag.hpp\
 mockturtle/include/mockturtle/properties/xmgcost.hpp\
 mockturtle/include/mockturtle/utils/cost_functions.hpp\
 mockturtle/include/mockturtle/utils/include/percy.hpp\
-mockturtle/include/mockturtle/utils/include/spp.hpp\
 mockturtle/include/mockturtle/utils/json_utils.hpp\
 mockturtle/include/mockturtle/utils/network_cache.hpp\
 mockturtle/include/mockturtle/views/cnf_view.hpp\
@@ -261,15 +258,6 @@ mockturtle/lib/percy/percy/solvers/solver_wrapper.hpp\
 mockturtle/lib/percy/percy/spec.hpp\
 mockturtle/lib/percy/percy/tt_utils.hpp\
 mockturtle/lib/rang/rang/rang.hpp\
-mockturtle/lib/sparsepp/sparsepp/spp_config.h\
-mockturtle/lib/sparsepp/sparsepp/spp_dlalloc.h\
-mockturtle/lib/sparsepp/sparsepp/spp.h\
-mockturtle/lib/sparsepp/sparsepp/spp_memory.h\
-mockturtle/lib/sparsepp/sparsepp/spp_smartptr.h\
-mockturtle/lib/sparsepp/sparsepp/spp_stdint.h\
-mockturtle/lib/sparsepp/sparsepp/spp_timer.h\
-mockturtle/lib/sparsepp/sparsepp/spp_traits.h\
-mockturtle/lib/sparsepp/sparsepp/spp_utils.h\
 mockturtle/test/catch2/catch.hpp\
 mockturtle/test/test_networks.hpp\
 mockturtle/docs/algorithms/extract_linear.rst\
@@ -278,7 +266,7 @@ mockturtle/docs/algorithms/balancing.rst\
 mockturtle/docs/algorithms/circuit_validator.rst\
 mockturtle/docs/algorithms/decomposition.rst\
 mockturtle/docs/algorithms/equivalence_classes.rst\
-mockturtle/docs/algorithms/xmg_optimization.hpp\
+mockturtle/docs/algorithms/xmg_optimization.rst\
 mockturtle/docs/io/other.rst\
 mockturtle/docs/algorithms/functional_reduction.rst\
 mockturtle/docs/algorithms/pattern_generation.rst\
@@ -389,7 +377,6 @@ mockturtle/test/algorithms/xag_optimization.cpp\
 mockturtle/test/generators/control.cpp\
 mockturtle/test/generators/self_dualize.cpp\
 mockturtle/test/io/blif_reader.cpp\
-mockturtle/test/io/index_list.cpp\
 mockturtle/test/networks/abstract_xag.cpp\
 mockturtle/test/views/cnf_view.cpp\
 mockturtle/test/algorithms/functional_reduction.cpp\
