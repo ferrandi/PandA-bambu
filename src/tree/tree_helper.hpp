@@ -374,7 +374,6 @@ class tree_helper
     */
    static tree_nodeConstRef get_array_basetype(const tree_managerConstRef& TM, const unsigned int index);
 
-
    /**
     * Return if treenode index is a pointer
     * @param TM is the tree_manager
