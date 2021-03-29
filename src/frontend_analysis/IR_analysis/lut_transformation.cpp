@@ -44,36 +44,7 @@
 #if HAVE_STDCXX_17
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wswitch-enum"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wcast-qual"
-#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic ignored "-Wparentheses"
-#pragma GCC diagnostic ignored "-Wswitch-default"
-#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#pragma GCC diagnostic ignored "-Wsign-promo"
-#pragma GCC diagnostic ignored "-Wmisleading-indentation"
-#pragma GCC diagnostic ignored "-Wpragmas"
-#ifndef __clang_major__
-#pragma GCC diagnostic ignored "-Wclass-memaccess"
-#endif
-#pragma GCC diagnostic ignored "-Wdouble-promotion"
-#pragma GCC diagnostic ignored "-Wfloat-conversion"
-#ifndef __clang_major__
-#pragma GCC diagnostic ignored "-Wunused-but-set-variable"
-#endif
-#pragma GCC diagnostic ignored "-Wformat"
-#pragma GCC diagnostic ignored "-Wcast-align"
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wsign-compare"
-#pragma GCC diagnostic ignored "-Wunused-lambda-capture"
 
 #define USE_SAT 0
 
@@ -325,14 +296,14 @@ class klut_network_ext : public mockturtle::klut_network
       }
    }
 
-   kitty::dynamic_truth_table create_lt_tt(int bits)
+   kitty::dynamic_truth_table create_lt_tt(unsigned int bits)
    {
       kitty::dynamic_truth_table tt(bits * 2);
       kitty::clear(tt);
 
-      for(int i = 0; i < bits; ++i)
+      for(unsigned int i = 0; i < bits; ++i)
       {
-         for(int j = i + 1; j < bits; ++j)
+         for(unsigned int j = i + 1; j < bits; ++j)
          {
             kitty::set_bit(tt, j + i * bits);
          }
@@ -437,15 +408,15 @@ class klut_network_ext : public mockturtle::klut_network
     *
     * @return a `mockturtle::klut_network::signal` representing a lut between `s` with constant `f`
     */
-   signal create_lut(std::vector<signal> s, uint64_t f)
+   signal create_lut(std::vector<signal> s, long long f)
    {
-      if(f == static_cast<uint64_t>(-1LL))
+      if(f == -1LL)
       {
          return this->create_not(this->get_constant(false));
       }
-      kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
+      kitty::dynamic_truth_table tt(static_cast<unsigned>(s.size()));
       std::stringstream resHex;
-      resHex << std::hex << f;
+      resHex << std::hex << static_cast<unsigned long long>(f);
       std::string res0 = resHex.str();
       if(tt.num_vars() > 1)
       {
@@ -586,7 +557,7 @@ struct klut_network_node
    uint64_t index;
 
    /// the lut constant
-   uint64_t lut_constant;
+   long long lut_constant;
 
    /// a `std::vector` containing the indexes of all inputs of the current node
    std::vector<uint64_t> fan_in;
@@ -599,6 +570,10 @@ struct klut_network_node
 
    /// true in case the node is a constant value
    bool is_constant;
+   explicit klut_network_node(uint64_t _index, long long _lut_constant, const std::vector<uint64_t>& _fan_in, bool _is_po, uint64_t _po_index, bool _is_constant)
+       : index(_index), lut_constant(_lut_constant), fan_in(_fan_in), is_po(_is_po), po_index(_po_index), is_constant(_is_constant)
+   {
+   }
 };
 
 /**
@@ -777,7 +752,7 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
    std::vector<bool> bits;
    for(size_t i = 0; i < size; ++i)
    {
-      bits.push_back((n & (1ULL << i)) ? true : false);
+      bits.push_back((static_cast<unsigned long long int>(n) & (1ULL << i)) ? true : false);
    }
    return bits;
 }
@@ -844,9 +819,8 @@ static T ConvertHexToNumber(const std::string& hex0)
    return static_cast<T>(x);
 }
 
-static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network& klut)
+static void ParseKLutNetwork(const mockturtle::klut_network& klut, std::vector<klut_network_node>& luts)
 {
-   std::vector<klut_network_node> luts;
    std::map<mockturtle::klut_network::node, CustomOrderedSet<unsigned>> po_set;
 
    mockturtle::topo_view ntk_topo{klut};
@@ -861,8 +835,8 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
       auto func = ntk_topo.node_function(node);
 
       std::vector<uint64_t> fanIns;
-      ntk_topo.foreach_fanin(node, [&](auto const& fanin_node, auto index) { fanIns.push_back(fanin_node); });
-      auto LUT_func = ConvertHexToNumber<uint64_t>(kitty::to_hex(func));
+      ntk_topo.foreach_fanin(node, [&](auto const& fanin_node, auto) { fanIns.push_back(fanin_node); });
+      auto LUT_func = ConvertHexToNumber<long long>(kitty::to_hex(func));
       auto is_zero = LUT_func == 0;
       if(!is_zero)
       {
@@ -870,13 +844,13 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
          {
             for(auto po_i : po_set.find(node)->second)
             {
-               klut_network_node lut_node = (klut_network_node){node, LUT_func, fanIns, true, po_i, false};
+               klut_network_node lut_node(node, LUT_func, fanIns, true, po_i, false);
                luts.push_back(lut_node);
             }
          }
          else
          {
-            klut_network_node lut_node = (klut_network_node){node, LUT_func, fanIns, false, 0, false};
+            klut_network_node lut_node(node, LUT_func, fanIns, false, 0, false);
             luts.push_back(lut_node);
          }
       }
@@ -886,7 +860,7 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
       if(ntk_topo.is_constant(ntk_topo.get_node(s)))
       {
          std::vector<uint64_t> fanIns;
-         klut_network_node lut_node = (klut_network_node){s, static_cast<uint64_t>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true};
+         klut_network_node lut_node(s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true);
          luts.push_back(lut_node);
       }
       else
@@ -897,24 +871,22 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
          if(is_zero)
          {
             std::vector<uint64_t> fanIns;
-            klut_network_node lut_node = (klut_network_node){s, static_cast<uint64_t>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true};
+            klut_network_node lut_node(s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true);
             luts.push_back(lut_node);
          }
          else if(ntk_topo.is_pi(ntk_topo.get_node(s)))
          {
             std::vector<uint64_t> fanIns;
             fanIns.push_back(s);
-            klut_network_node lut_node = (klut_network_node){s, static_cast<uint64_t>(ntk_topo.is_complemented(s) ? 1 : 2), fanIns, true, i, false};
+            klut_network_node lut_node(s, static_cast<long long>(ntk_topo.is_complemented(s) ? 1 : 2), fanIns, true, i, false);
             luts.push_back(lut_node);
          }
       }
    });
-
-   return luts;
 }
 
 template <class kne>
-static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned max_lut_size)
+static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, size_t max_lut_size)
 {
 /// scripts taken from https://github.com/lnis-uofu/LSOracle
 #if MIG_SYNTHESIS
@@ -1129,7 +1101,7 @@ static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned m
    //   std::cerr << "===============\n";
 
    mockturtle::lut_mapping_params mp;
-   mp.cut_enumeration_ps.cut_size = max_lut_size;
+   mp.cut_enumeration_ps.cut_size = static_cast<uint32_t>(max_lut_size);
    mp.cut_enumeration_ps.cut_limit = 16;
 
 #ifndef NDEBUG
@@ -1173,7 +1145,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    std::map<unsigned int, std::vector<mockturtle::klut_network::signal>> nodeRefToSignalBus;
 
    std::vector<tree_nodeRef> pis;
-   std::vector<unsigned> pis_offset;
+   std::vector<int> pis_offset;
    std::vector<tree_nodeRef> pos;
    std::vector<unsigned> pos_offset;
 
@@ -1553,8 +1525,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
                op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
 
-               unsigned int index = 0;
-               std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) {
+               int index = 0;
+               std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto /*op*/) {
                   pis.push_back(binaryExpression->op0);
                   pis_offset.push_back(index);
                   ++index;
@@ -1589,8 +1561,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
                op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
 
-               unsigned int index = 0;
-               std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) {
+               int index = 0;
+               std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto /*op*/) {
                   pis.push_back(binaryExpression->op1);
                   pis_offset.push_back(index);
                   ++index;
@@ -1616,7 +1588,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             klut_e.create_po_v(res);
 
             unsigned int index = 0;
-            std::for_each(res.begin(), res.end(), [&statement, &pos, &pos_offset, &index](auto op) {
+            std::for_each(res.begin(), res.end(), [&statement, &pos, &pos_offset, &index](auto /*op*/) {
                pos.push_back(statement);
                pos_offset.push_back(index);
                ++index;
@@ -1648,7 +1620,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          mockturtle::write_bench(klut, std::cout);
 #endif
 
-      std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
+      std::vector<klut_network_node> luts;
+      ParseKLutNetwork(klut, luts);
 
       std::map<mockturtle::klut_network::node, tree_nodeRef> internal_nets;
       std::vector<tree_nodeRef> prev_stmts_to_add;

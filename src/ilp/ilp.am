@@ -7,38 +7,38 @@ lib_ilp_cbc_la_CPPFLAGS =-I$(top_srcdir)/src/utility \
 if BUILD_COIN_OR
    noinst_LTLIBRARIES += lib_ilp_cbc.la 
    lib_ilp_cbc_la_CPPFLAGS += -DHAVE_CONFIG_H \
-                              -I$(COIN_OR_DIR)/BuildTools/headers \
-                              -I$(COIN_OR_DIR)/Cbc/src \
-                              -I$(COIN_OR_DIR)/Cbc/src/OsiCbc/ \
-                              -I$(COIN_OR_DIR)/Cgl/src \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglClique \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglFlowCover \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglGomory \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglKnapsackCover \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglMixedIntegerRounding \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglMixedIntegerRounding2 \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglOddHole \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglPreProcess \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglProbing \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglRedSplit \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglTwomir \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglLandP \
-                              -I$(COIN_OR_DIR)/Cgl/src/CglResidualCapacity \
-                              -I$(COIN_OR_DIR)/Clp/src/ \
-                              -I$(COIN_OR_DIR)/Clp/src/OsiClp \
-                              -I$(COIN_OR_DIR)/CoinUtils/src \
-                              -I$(COIN_OR_DIR)/Osi/src/Osi \
-                              -I$(top_builddir)/$(COIN_OR_OBJDIR)/Cbc/src \
-                              -I$(top_builddir)/$(COIN_OR_OBJDIR)/Clp/src \
-                              -I$(top_builddir)/$(COIN_OR_OBJDIR)/Cgl/src \
-                              -I$(top_builddir)/$(COIN_OR_OBJDIR)/Osi/src \
-                              -I$(top_builddir)/$(COIN_OR_OBJDIR)/CoinUtils/src \
+                              -isystem $(COIN_OR_DIR)/BuildTools/headers \
+                              -isystem $(COIN_OR_DIR)/Cbc/src \
+                              -isystem $(COIN_OR_DIR)/Cbc/src/OsiCbc/ \
+                              -isystem $(COIN_OR_DIR)/Cgl/src \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglClique \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglFlowCover \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglGomory \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglKnapsackCover \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglMixedIntegerRounding \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglMixedIntegerRounding2 \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglOddHole \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglPreProcess \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglProbing \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglRedSplit \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglTwomir \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglLandP \
+                              -isystem $(COIN_OR_DIR)/Cgl/src/CglResidualCapacity \
+                              -isystem $(COIN_OR_DIR)/Clp/src/ \
+                              -isystem $(COIN_OR_DIR)/Clp/src/OsiClp \
+                              -isystem $(COIN_OR_DIR)/CoinUtils/src \
+                              -isystem $(COIN_OR_DIR)/Osi/src/Osi \
+                              -isystem $(top_builddir)/$(COIN_OR_OBJDIR)/Cbc/src \
+                              -isystem $(top_builddir)/$(COIN_OR_OBJDIR)/Clp/src \
+                              -isystem $(top_builddir)/$(COIN_OR_OBJDIR)/Cgl/src \
+                              -isystem $(top_builddir)/$(COIN_OR_OBJDIR)/Osi/src \
+                              -isystem $(top_builddir)/$(COIN_OR_OBJDIR)/CoinUtils/src \
                               -I$(top_srcdir)/src/ilp \
                               -I$(top_srcdir)/src/HLS/scheduling/ilp_scheduling
 endif
 
 if BUILD_LP_SOLVE
-   lib_ilp_la_CPPFLAGS += -I$(top_srcdir)/ext/lpsolve5 
+   lib_ilp_la_CPPFLAGS += -isystem $(top_srcdir)/ext/lpsolve5 
 endif
 
 lib_ilp_la_SOURCES = ilp/objective_function.cpp ilp/problem_dim.cpp ilp/meilp_solver.cpp
