@@ -6,6 +6,7 @@ f (double x[2], double y[2])
 
 main ()
 {
+#if __clang_major__ != 10
   struct { int f[3]; double x[1][2]; } tp[4][2];
   int i, j, ki, kj, mi, mj;
   float bdm[4][2][4][2];
@@ -23,5 +24,6 @@ main ()
 		  f (tp[i][ki].x[mi], tp[j][kj].x[mj]);
 	      bdm[i][ki][j][kj] = 1000.0;
 	    }
+#endif
   exit (0);
 }
