@@ -151,7 +151,7 @@ __uint32 __float32_to_uint32_round_to_zero(__float32, __bits8, __bits8, __int32,
 __int64 __float32_to_int64(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __int64 __float32_to_int64_round_to_zero(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __uint64 __float32_to_uint64_round_to_zero(__float32, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float64 __float32_to_float64_ieee(__float32);
+__float64 __float32_to_float64_ieee(__float32, __flag, __flag);
 #ifdef FLOATX80
 __floatx80 __float32_to_floatx80_ieee(__float32);
 #endif
@@ -186,7 +186,7 @@ __uint32 __float64_to_uint32_round_to_zero(__float64, __bits8, __bits8, __int32,
 __int64 __float64_to_int64(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __int64 __float64_to_int64_round_to_zero(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
 __uint64 __float64_to_uint64_round_to_zero(__float64, __bits8, __bits8, __int32, __flag, __flag, __flag, __flag, __sbits8);
-__float32 __float64_to_float32_ieee(__float64);
+__float32 __float64_to_float32_ieee(__float64, __flag, __flag);
 #ifdef FLOATX80
 __floatx80 __float64_to_floatx80_ieee(__float64);
 #endif

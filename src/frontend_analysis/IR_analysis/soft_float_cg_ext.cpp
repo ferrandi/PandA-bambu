@@ -140,8 +140,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
    {
       const auto CGM = AppM->CGetCallGraphManager();
       auto opts = SplitString(parameters->getOption<std::string>(OPT_fp_format), ",");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Soft-float fp format specialization required:");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "-->Soft-float fp format specialization required:");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "-->");
       for(const auto& opt : opts)
       {
          auto format = SplitString(opt, "*");
@@ -199,15 +199,15 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             userFF->sign = format[8] == "U" ? bit_lattice::U : (format[8] == "1" ? bit_lattice::ONE : bit_lattice::ZERO);
          }
          funcFF.insert({function_v, FunctionVersionRef(new FunctionVersion(function_v, userFF))});
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, format[0] + " specialized with fp format " + userFF->mngl());
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, format[0] + " specialized with fp format " + userFF->mngl());
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "<--");
 
       // Propagate floating-point format specialization over to called functions
       if(parameters->isOption(OPT_propagate_fp_format) && parameters->getOption<bool>(OPT_propagate_fp_format))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Soft-float fp format propagation enabled:");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "Soft-float fp format propagation enabled:");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "-->");
          for(const auto& root_func : CGM->GetRootFunctions())
          {
             std::list<CallGraph::vertex_descriptor> func_sort;
@@ -266,12 +266,10 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                   current_v->internal = *current_v->userRequired == *callers_ff;
                }
 
-#ifndef NDEBUG
                const auto func_id = AppM->CGetCallGraphManager()->get_function(func);
-#endif
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level,
                               "Analysing function " + tree_helper::print_type(TreeM, func_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(func_id)->CGetBehavioralHelper()))));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---FP format " + current_v->ToString());
+               INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "---FP format " + current_v->ToString());
 
                // Propagate current fp format to the called functions
                CallGraph::out_edge_iterator ei, ei_end;
@@ -296,9 +294,9 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+         INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
+      INDENT_OUT_MEX(OUTPUT_LEVEL_VERBOSE, debug_level, "<--");
    }
    THROW_ASSERT(AppM->CGetCallGraphManager()->IsVertex(function_id), "");
    const auto function_v = AppM->CGetCallGraphManager()->GetVertex(function_id);
@@ -932,7 +930,7 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
       const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
       const auto exp_zero = Exp == 0;
       const auto exp_val = static_cast<int32_t>(Exp) + inFF->exp_bias;
-      if((exp_val < outFF->exp_bias || exp_val > out_exp_max) && (inFF->has_nan && Exp != ((1 << inFF->exp_bits) - 1)) && !exp_zero)
+      if((exp_val < outFF->exp_bias || exp_val > out_exp_max) && (inFF->has_nan && Exp != ((1ULL << inFF->exp_bits) - 1)) && !exp_zero)
       {
          THROW_ERROR("Output fp format does not intersect with input fp format");
          return nullptr;
@@ -1788,9 +1786,11 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                      if(tree_helper::is_real(TreeM, op_expr_type->index))
                      {
                         const auto fu_name = "__float" + STR(bitsize_in) + "_to_float" + STR(bitsize_out) + "_ieee";
+                        const auto inFF = bitsize_in == 32 ? float32FF : float64FF;
                         unsigned int called_function_id = TreeM->function_index(fu_name);
                         THROW_ASSERT(called_function_id, "The library miss this function " + fu_name);
-                        std::vector<tree_nodeRef> args = {ue->op};
+                        const auto bool_type_idx = GET_INDEX_CONST_NODE(tree_man->create_boolean_type());
+                        std::vector<tree_nodeRef> args = {ue->op, TreeM->CreateUniqueIntegerCst(inFF->has_nan, bool_type_idx), TreeM->CreateUniqueIntegerCst(inFF->has_subnorm, bool_type_idx)};
                         TreeM->ReplaceTreeNode(current_statement, current_tree_node, tree_man->CreateCallExpr(TreeM->GetTreeReindex(called_function_id), args, current_srcp));
                         THROW_ASSERT(AppM->GetFunctionBehavior(called_function_id)->GetBehavioralHelper()->has_implementation(), "inconsistent behavioral helper");
                         AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);

@@ -1776,7 +1776,7 @@ __uint64 __float32_to_uint64_round_to_zero(__float32 a, __bits8 __exp_bits, __bi
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float64 __float32_to_float64_ieee(__float32 a)
+__float64 __float32_to_float64_ieee(__float32 a, __flag __nan, __flag __subnorm)
 {
    __flag aSign;
    __int16 aExp;
@@ -1785,7 +1785,7 @@ __float64 __float32_to_float64_ieee(__float32 a)
    aSig = __extractFloat32Frac(a, IEEE32_EXTRACT_FRAC);
    aExp = __extractFloat32Exp(a, IEEE32_EXTRACT_EXP);
    aSign = __extractFloat32Sign(a, IEEE32_EXTRACT_SIGN);
-   if(aExp == 0xFF)
+   if(aExp == 0xFF && __nan)
    {
       if(aSig)
          return __commonNaNToFloat64_ieee(__float32ToCommonNaN_ieee(a));
@@ -1793,14 +1793,17 @@ __float64 __float32_to_float64_ieee(__float32 a)
    }
    if(aExp == 0)
    {
-#ifdef NO_SUBNORMALS
-      return ((__bits64)aSign) << 63; // __packFloat64(aSign, 0, 0, IEEE64_PACK);
-#else
-      if(aSig == 0)
+      if(__subnorm)
+      {
+         if(aSig == 0)
+            return ((__bits64)aSign) << 63; // __packFloat64(aSign, 0, 0, IEEE64_PACK);
+         __normalizeFloat32Subnormal(aSig, aExp, aSig, IEEE32_FRAC_BITS);
+         --aExp;
+      }
+      else
+      {
          return ((__bits64)aSign) << 63; // __packFloat64(aSign, 0, 0, IEEE64_PACK);
-      __normalizeFloat32Subnormal(aSig, aExp, aSig, IEEE32_FRAC_BITS);
-#endif
-      --aExp;
+      }
    }
    return __packFloat64(aSign, aExp + ((__int16)0x380), ((__bits64)aSig) << 29, IEEE64_PACK);
 }
@@ -3534,7 +3537,7 @@ __uint64 __float64_to_uint64_round_to_zero(__float64 a, __bits8 __exp_bits, __bi
 | Arithmetic.
 *----------------------------------------------------------------------------*/
 
-__float32 __float64_to_float32_ieee(__float64 a)
+__float32 __float64_to_float32_ieee(__float64 a, __flag __nan, __flag __subnorm)
 {
    __flag aSign;
    __int16 aExp;
@@ -3544,7 +3547,7 @@ __float32 __float64_to_float32_ieee(__float64 a)
    aSig = __extractFloat64Frac(a, IEEE64_EXTRACT_FRAC);
    aExp = __extractFloat64Exp(a, IEEE64_EXTRACT_EXP);
    aSign = __extractFloat64Sign(a, IEEE64_EXTRACT_SIGN);
-   if(aExp == 0x7FF)
+   if(aExp == 0x7FF && __nan)
    {
       if(aSig)
          return __commonNaNToFloat32_ieee(__float64ToCommonNaN_ieee(a));
@@ -3557,7 +3560,7 @@ __float32 __float64_to_float32_ieee(__float64 a)
       zSig |= 0x40000000;
       aExp -= 0x381;
    }
-   return __roundAndPackFloat32_ieee(aSign, aExp, zSig);
+   return __roundAndPackFloat32(aSign, aExp, zSig, IEEE32_PACK, __nan, __subnorm);
 }
 
 #ifdef FLOATX80
