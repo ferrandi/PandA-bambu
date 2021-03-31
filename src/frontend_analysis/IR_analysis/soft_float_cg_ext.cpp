@@ -924,15 +924,18 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
 
    uint64_t FExp, SFrac;
 
+   int32_t out_exp_max = ((1 << outFF->exp_bits) - 1) + outFF->exp_bias - outFF->has_nan;
+
    if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
    {
       const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
-      if(biasDiff + ((1 << outFF->exp_bits) - 1) < 0)
+      const auto exp_zero = Exp == 0;
+      const auto exp_val = static_cast<int32_t>(Exp) + inFF->exp_bias;
+      if((exp_val < outFF->exp_bias || exp_val > out_exp_max) && (inFF->has_nan && Exp != ((1 << inFF->exp_bits) - 1)) && !exp_zero)
       {
          THROW_ERROR("Output fp format does not intersect with input fp format");
          return nullptr;
       }
-      const auto exp_zero = Exp == 0;
       FExp = exp_zero ? 0ULL : (Exp + static_cast<uint64_t>(biasDiff));
    }
    else
@@ -948,7 +951,7 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
 
       if(outFF->has_rounding)
       {
-         const auto j_bit = (Frac & ((1ULL << bits_diff) - 1)) == 0;
+         const auto j_bit = (Frac & ((1ULL << bits_diff) - 1)) != 0;
          SFrac = SFrac | j_bit;
       }
    }
@@ -2351,13 +2354,20 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             const auto bw = tree_helper::Size(curr_tn);
             const auto fp_str = (cst->valx.front() == '-' && cst->valr.front() != cst->valx.front()) ? ("-" + cst->valr) : cst->valr;
             const auto cst_val = convert_fp_to_bits(fp_str, bw);
-            const auto inFF = bw == 32 ? float32FF : float64FF;
-            const auto outFF = (_version->internal && !_version->ieee_format() && type_interface != INTERFACE_TYPE_OUTPUT) ? _version->userRequired : inFF;
+            tree_nodeRef int_cst;
+            if(type_interface == INTERFACE_TYPE_OUTPUT || _version->ieee_format())
+            {
+               int_cst = TreeM->CreateUniqueIntegerCst(static_cast<long long>(cst_val), GET_INDEX_NODE(tree_man->create_integer_type_with_prec(bw, true)));
+            }
+            else
+            {
+               const auto inFF = bw == 32 ? float32FF : float64FF;
+               int_cst = cstCast(cst_val, inFF, _version->userRequired);
+            }
 
             // Perform static constant value cast and replace real type constant with converted unsigned integer type constant
-            const auto int_cst = cstCast(cst_val, inFF, outFF);
             TreeM->ReplaceTreeNode(current_statement, current_tree_node, int_cst);
-            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Real type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_cst)->ToString());
+            INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Real type constant " + curr_tn->ToString() + " converted to " + GET_NODE(int_cst)->ToString());
          }
          break;
       }
