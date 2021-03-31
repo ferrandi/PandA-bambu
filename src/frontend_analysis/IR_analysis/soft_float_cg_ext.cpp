@@ -89,6 +89,7 @@
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
 #include "string_manipulation.hpp" // for GET_CLASS
+#include <boost/multiprecision/integer.hpp>
 
 CustomMap<CallGraph::vertex_descriptor, FunctionVersionRef> soft_float_cg_ext::funcFF;
 CustomMap<unsigned int, std::array<tree_nodeRef, 8>> soft_float_cg_ext::versioning_args;
@@ -1070,7 +1071,21 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    const auto in_type_idx = GET_INDEX_NODE(in_type);
    const auto out_type = tree_man->create_integer_type_with_prec(static_cast<unsigned int>(static_cast<uint8_t>(outFF->sign == bit_lattice::U) + outFF->exp_bits + outFF->frac_bits), true);
    const auto out_type_idx = GET_INDEX_NODE(out_type);
-   const auto exp_type = tree_man->create_integer_type_with_prec(std::max(inFF->exp_bits, uint8_t(outFF->exp_bits + 1)), false);
+   const auto needed_bits = [](int i) -> unsigned int {
+      int bits;
+      if(i > 0)
+      {
+         bits = 32 - __builtin_clz(static_cast<unsigned int>(i));
+      }
+      else
+      {
+         i = -i;
+         bits = 32 - __builtin_clz(static_cast<unsigned int>(i)) + ((i & (i - 1)) != 0);
+      }
+      return static_cast<unsigned int>(bits);
+   };
+   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits), static_cast<unsigned int>(outFF->exp_bits), needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
+   const auto exp_type = tree_man->create_integer_type_with_prec(exp_type_size, true);
    const auto exp_type_idx = GET_INDEX_NODE(exp_type);
 
    // Apply fractional bits mask
@@ -1087,27 +1102,60 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 
    // Compute out exponent bits
    tree_nodeRef FExp;
+   tree_nodeRef ExpInf;
+   const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
+   const auto rangeDiff = (1 << outFF->exp_bits) - (1 << inFF->exp_bits);
    if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
    {
-      const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
-      if(biasDiff + ((int32_t(1) << outFF->exp_bits) - 1) < 0)
-      {
-         THROW_ERROR("Output float format does not intersect with input float format");
-         return nullptr;
-      }
-      // TODO: add simplified cases for exactly scaled bias values
-
       // Cast exp bits to shrinked type
       const auto expCast = tree_man->CreateNopExpr(Exp, exp_type, tree_nodeRef(), tree_nodeRef());
       FExp = createStmt(exp_type, expCast);
+
+      // Check if in exponent is null
+      const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
+      const auto ExpNull = createStmt(bool_type, expZero);
 
       // Fix exponent for new encoding
       const auto expAdd = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(biasDiff, exp_type_idx), BUILTIN_SRCP, plus_expr_K);
       FExp = createStmt(exp_type, expAdd);
 
-      // Check if in exponent is null
-      const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
-      const auto ExpNull = createStmt(bool_type, expZero);
+      if(biasDiff < 0 || biasDiff > rangeDiff)
+      {
+         // Shift right fixed exponent
+         const auto shiftFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(outFF->exp_bits, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
+         ExpInf = createStmt(exp_type, shiftFExp);
+
+         // Mask overflow bits
+         const auto andShiftFExp = tree_man->create_binary_operation(exp_type, ExpInf, TreeM->CreateUniqueIntegerCst((1LL << (exp_type_size - outFF->exp_bits)) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+         ExpInf = createStmt(exp_type, andShiftFExp);
+
+         // Check overflow
+         const auto outRangeExp = tree_man->create_binary_operation(bool_type, ExpInf, TreeM->CreateUniqueIntegerCst(0, exp_type_idx), BUILTIN_SRCP, ne_expr_K);
+         ExpInf = createStmt(bool_type, outRangeExp);
+
+         // Shift right fixed exponent to last bit
+         const auto rshiftFExpSign = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(exp_type_size - 1, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
+         auto ExpInfSign = createStmt(exp_type, rshiftFExpSign);
+
+         // Shift left overflow sign bit
+         const auto lshiftFExpSign = tree_man->create_binary_operation(exp_type, ExpInfSign, TreeM->CreateUniqueIntegerCst(outFF->exp_bits, exp_type_idx), BUILTIN_SRCP, lshift_expr_K);
+         ExpInfSign = createStmt(exp_type, lshiftFExpSign);
+
+         // Pack overflow sign and exponent
+         const auto orInfExp = tree_man->create_binary_operation(exp_type, ExpInfSign, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, bit_ior_expr_K);
+         auto InfExp = createStmt(exp_type, orInfExp);
+
+         // Mask fix exponent
+         const auto maskFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+         FExp = createStmt(exp_type, maskFExp);
+
+         const auto expTerInf = tree_man->create_ternary_operation(exp_type, ExpInf, InfExp, FExp, BUILTIN_SRCP, cond_expr_K);
+         FExp = createStmt(exp_type, expTerInf);
+      }
+
+      // Mask fix exponent
+      const auto maskFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << (outFF->exp_bits + (biasDiff < 0 || biasDiff > rangeDiff))) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+      FExp = createStmt(exp_type, maskFExp);
 
       // Choose between zero and fixed exponent
       const auto expVal = tree_man->create_ternary_operation(exp_type, ExpNull, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), FExp, BUILTIN_SRCP, cond_expr_K);
@@ -1205,20 +1253,6 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       out_nan = createStmt(bool_type, nanOr);
    }
 
-   const auto expFix = inFF->exp_bias - outFF->exp_bias;
-   const auto rangeDiff = ((1LL << outFF->exp_bits) - 1) - ((1LL << inFF->exp_bits) - 1);
-
-   if(((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias)) && expFix > rangeDiff && outFF->has_nan)
-   {
-      // Check if fixed exponent is already greater than max output exponent value minus one
-      const auto fexpGT = tree_man->create_binary_operation(bool_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 2, tree_helper::CGetType(GET_NODE(FExp))->index), BUILTIN_SRCP, gt_expr_K);
-      auto Overflow = createStmt(bool_type, fexpGT);
-
-      // Or with the rest
-      const auto nanOr = tree_man->create_binary_operation(bool_type, Overflow, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
-      out_nan = createStmt(bool_type, nanOr);
-   }
-
    // Cast rounded exponent to output type
    const auto rexpCast = tree_man->CreateNopExpr(FExp, out_type, tree_nodeRef(), tree_nodeRef());
    auto RExp = createStmt(out_type, rexpCast);
@@ -1226,6 +1260,15 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    // Ternary if for exponent nan
    const auto terRExp = tree_man->create_ternary_operation(out_type, out_nan, TreeM->CreateUniqueIntegerCst(((1LL << outFF->exp_bits) - 1), out_type_idx), RExp, BUILTIN_SRCP, cond_expr_K);
    RExp = createStmt(out_type, terRExp);
+
+   if(biasDiff < 0 || biasDiff > rangeDiff)
+   {
+      THROW_ASSERT(ExpInf, "");
+
+      // Or with the rest
+      const auto nanOr = tree_man->create_binary_operation(bool_type, ExpInf, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
+      out_nan = createStmt(bool_type, nanOr);
+   }
 
    // Shift exponent left
    const auto expLShift = tree_man->create_binary_operation(out_type, RExp, TreeM->CreateUniqueIntegerCst(outFF->frac_bits, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
