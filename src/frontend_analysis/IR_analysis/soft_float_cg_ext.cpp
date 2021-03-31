@@ -140,8 +140,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
    {
       const auto CGM = AppM->CGetCallGraphManager();
       auto opts = SplitString(parameters->getOption<std::string>(OPT_fp_format), ",");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Soft-float fp format specialization required:");
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Soft-float fp format specialization required:");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->");
       for(const auto& opt : opts)
       {
          auto format = SplitString(opt, "*");
@@ -199,15 +199,15 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
             userFF->sign = format[8] == "U" ? bit_lattice::U : (format[8] == "1" ? bit_lattice::ONE : bit_lattice::ZERO);
          }
          funcFF.insert({function_v, FunctionVersionRef(new FunctionVersion(function_v, userFF))});
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, format[0] + " specialized with fp format " + userFF->mngl());
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, format[0] + " specialized with fp format " + userFF->mngl());
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
 
       // Propagate floating-point format specialization over to called functions
       if(parameters->isOption(OPT_propagate_fp_format) && parameters->getOption<bool>(OPT_propagate_fp_format))
       {
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Soft-float fp format propagation enabled:");
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Soft-float fp format propagation enabled:");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->");
          for(const auto& root_func : CGM->GetRootFunctions())
          {
             std::list<CallGraph::vertex_descriptor> func_sort;
@@ -269,9 +269,9 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
 #ifndef NDEBUG
                const auto func_id = AppM->CGetCallGraphManager()->get_function(func);
 #endif
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level,
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level,
                               "Analysing function " + tree_helper::print_type(TreeM, func_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(AppM->CGetFunctionBehavior(func_id)->CGetBehavioralHelper()))));
-               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---FP format " + current_v->ToString());
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "---FP format " + current_v->ToString());
 
                // Propagate current fp format to the called functions
                CallGraph::out_edge_iterator ei, ei_end;
@@ -296,9 +296,9 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                }
             }
          }
-         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
       }
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "<--");
    }
    THROW_ASSERT(AppM->CGetCallGraphManager()->IsVertex(function_id), "");
    const auto function_v = AppM->CGetCallGraphManager()->GetVertex(function_id);
@@ -410,7 +410,7 @@ DesignFlowStep_Status soft_float_cg_ext::InternalExec()
    const auto fn_name = tree_helper::print_type(TreeM, function_id, false, true, false, 0U, var_pp_functorConstRef(new std_var_pp_functor(function_behavior->CGetBehavioralHelper())));
 #endif
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Function " + fn_name + " implementing " + _version->ToString() + " floating-point format");
-   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---IO interface is " + STR((!_version->ieee_format() || _version->internal) ? "not " : "") + "necessary");
+   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---IO interface is " + STR((_version->ieee_format() || _version->internal) ? "not " : "") + "necessary");
 
    const auto sl = GetPointerS<statement_list>(GET_NODE(fd->body));
    modified = false;
