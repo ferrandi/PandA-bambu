@@ -2662,9 +2662,8 @@ static __FORCE_INLINE __float32 __addsubFloat32(__float32 a, __float32 b, __flag
    }
    else
    {
-      saturation = (Rrounded >> (__exp_bits + __frac_bits)) & 1;
-      RExp1 = saturation ? ((1 << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1 << __exp_bits) - 1));
-      RSig2 = (saturation ? (__bits32)((((__sbits32)!R_c_zero) << 31) >> 31) : Rrounded) & ((1 << __frac_bits) - 1);
+      RExp1 = overflow_to_infinite ? ((1 << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1 << __exp_bits) - 1));
+      RSig2 = (overflow_to_infinite ? (__bits32)((((__sbits32)!R_c_zero) << 31) >> 31) : Rrounded) & ((1 << __frac_bits) - 1);
    }
    aSign = aSign && (!R_c_zero || !sAB);
 
@@ -4700,9 +4699,8 @@ static __FORCE_INLINE __float64 __addsubFloat64(__float64 a, __float64 b, __flag
    }
    else
    {
-      saturation = (Rrounded >> (__exp_bits + __frac_bits)) & 1;
-      RExp1 = saturation ? ((1ULL << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1ULL << __exp_bits) - 1));
-      RSig2 = (saturation ? (__bits64)((((__sbits64)!R_c_zero) << 63) >> 63) : Rrounded) & ((1ULL << __frac_bits) - 1);
+      RExp1 = overflow_to_infinite ? ((1ULL << __exp_bits) - 1) : ((Rrounded >> __frac_bits) & ((1ULL << __exp_bits) - 1));
+      RSig2 = (overflow_to_infinite ? (__bits64)((((__sbits64)!R_c_zero) << 63) >> 63) : Rrounded) & ((1ULL << __frac_bits) - 1);
    }
 
    aSign = aSign && (!R_c_zero || !sAB);
