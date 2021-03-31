@@ -347,7 +347,7 @@ static __FORCE_INLINE __float32 __roundAndPackFloat32(__flag zSign, __int32 zExp
       if(((__exp_max - (__nan ? 2 : 1)) < zExp) || ((zExp == (__exp_max - (__nan ? 2 : 1))) && ((__sbits32)(zSig + roundIncrement) < 0)))
       {
          __float_raise(float_flag_overflow | float_flag_inexact);
-         return ((((__bits32)zSign) << (__exp_bits + __frac_bits)) | (__exp_max << __frac_bits)) - (roundIncrement == 0);
+         return ((((__bits32)zSign) << (__exp_bits + __frac_bits)) | (__exp_max << __frac_bits) | (((__bits32)!__nan << __frac_bits) - !__nan)) - (roundIncrement == 0);
       }
       if(zExp < 0)
       {
@@ -595,7 +595,7 @@ static __FORCE_INLINE __float64 __roundAndPackFloat64(__flag zSign, __int32 zExp
       if(((__exp_max - (__nan ? 2 : 1)) < zExp) || ((zExp == (__exp_max - (__nan ? 2 : 1))) && ((__sbits64)(zSig + roundIncrement) < 0)))
       {
          __float_raise(float_flag_overflow | float_flag_inexact);
-         return ((((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((__bits64)__exp_max) << __frac_bits)) - (roundIncrement == 0);
+         return ((((__bits64)zSign) << (__exp_bits + __frac_bits)) | (((__bits64)__exp_max) << __frac_bits) | (((__bits64)!__nan << __frac_bits) - !__nan)) - (roundIncrement == 0);
       }
       if(zExp < 0)
       {
@@ -1213,9 +1213,14 @@ static __FORCE_INLINE __float32 __Int32ToFloat32(__int32 a, __bits8 __exp_bits, 
       return 0;
    }
    if(a == (__sbits32)0x80000000)
-      return (1 << (__exp_bits + __frac_bits)) | (((__exp_int + 2) & ((1 << __exp_bits) - 1)) << __frac_bits); // __packFloat32(1, 0x9E, 0, IEEE32_PACK); -2^31
+   {
+      if(__exp_int + 2 >= __subnorm && ((((__exp_int + 2) >> __exp_bits) & ((1 << (32 - __exp_bits)) - 1)) == 0))
+         return (1 << (__exp_bits + __frac_bits)) | (((__exp_int + 2) & ((1 << __exp_bits) - 1)) << __frac_bits); // __packFloat32(1, 0x9E, 0, IEEE32_PACK); -2^31
+      else
+         return (1 << (__exp_bits + __frac_bits)) | (((1 << __exp_bits) - 1) << __frac_bits) | (((__bits32)!__nan << __frac_bits) - !__nan);
+   }
    zSign = (a < 0);
-   return __normalizeRoundAndPackFloat32(zSign, __exp_int & ((1 << __exp_bits) - 1), zSign ? -a : a, __exp_bits, __frac_bits, __nan, __subnorm); // 2^30 * a
+   return __normalizeRoundAndPackFloat32(zSign, __exp_int, zSign ? -a : a, __exp_bits, __frac_bits, __nan, __subnorm); // 2^30 * a
 }
 
 __float32 __int32_to_float32(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
@@ -1300,7 +1305,7 @@ static __FORCE_INLINE __float32 __UInt32ToFloat32(__uint32 a, __bits8 __exp_bits
    shiftCount = __countLeadingZeros64(absA) - (63 - __frac_bits);
    if(shiftCount >= 0)
    {
-      return __packFloat32(zSign, ((__exp_int - __shift_fix) - shiftCount) & ((1 << __exp_bits) - 1), absA << shiftCount, __exp_bits, __frac_bits);
+      return __packFloat32(zSign, (__exp_int - __shift_fix) - shiftCount, absA << shiftCount, __exp_bits, __frac_bits);
    }
    else
    {
@@ -1313,7 +1318,7 @@ static __FORCE_INLINE __float32 __UInt32ToFloat32(__uint32 a, __bits8 __exp_bits
       {
          absA <<= shiftCount;
       }
-      return __roundAndPackFloat32(zSign, (__exp_int - shiftCount) & ((1 << __exp_bits) - 1), absA, __exp_bits, __frac_bits, __nan, __subnorm);
+      return __roundAndPackFloat32(zSign, __exp_int - shiftCount, absA, __exp_bits, __frac_bits, __nan, __subnorm);
    }
 }
 
@@ -1444,9 +1449,9 @@ __float64 __int32_to_float64(__int32 a, __bits8 __exp_bits, __bits8 __frac_bits,
    zSig = absA;
    if(shiftCount < 0 && __frac_bits < 31)
    {
-      return __packFloat64(zSign, (__exp_int - shiftCount) & ((1 << __exp_bits) - 1), zSig >> -shiftCount, __exp_bits, __frac_bits);
+      return __packFloat64(zSign, __exp_int - shiftCount, zSig >> -shiftCount, __exp_bits, __frac_bits);
    }
-   return __packFloat64(zSign, (__exp_int - shiftCount) & ((1 << __exp_bits) - 1), zSig << shiftCount, __exp_bits, __frac_bits);
+   return __packFloat64(zSign, __exp_int - shiftCount, zSig << shiftCount, __exp_bits, __frac_bits);
 }
 
 __float64 __uint32_to_float64(__uint32 absA, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
@@ -1461,9 +1466,9 @@ __float64 __uint32_to_float64(__uint32 absA, __bits8 __exp_bits, __bits8 __frac_
    zSig = absA;
    if(shiftCount < 0 && __frac_bits < 31)
    {
-      return __packFloat64(0, (__exp_int - shiftCount) & ((1 << __exp_bits) - 1), zSig >> -shiftCount, __exp_bits, __frac_bits);
+      return __packFloat64(0, __exp_int - shiftCount, zSig >> -shiftCount, __exp_bits, __frac_bits);
    }
-   return __packFloat64(0, (__exp_int - shiftCount) & ((1 << __exp_bits) - 1), zSig << shiftCount, __exp_bits, __frac_bits);
+   return __packFloat64(0, __exp_int - shiftCount, zSig << shiftCount, __exp_bits, __frac_bits);
 }
 
 __float64 __int32_to_float64_ieee(__int32 a)
