@@ -1100,67 +1100,103 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 
    // Compute out exponent bits
    tree_nodeRef FExp;
-   tree_nodeRef ExpInf;
+   tree_nodeRef ExpOverflow;
    const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
-   const auto rangeDiff = (1 << outFF->exp_bits) - (1 << inFF->exp_bits);
+   const auto rangeDiff = ((1 << outFF->exp_bits) - !outFF->has_subnorm) - ((1 << inFF->exp_bits) - !inFF->has_subnorm);
    if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
    {
+      THROW_ASSERT(!inFF->has_subnorm && !outFF->has_subnorm, "Subnormal value propagation not yet supported");
       // Cast exp bits to shrinked type
       const auto expCast = tree_man->CreateNopExpr(Exp, exp_type, tree_nodeRef(), tree_nodeRef());
       FExp = createStmt(exp_type, expCast);
-
-      // Check if in exponent is null
-      const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
-      const auto ExpNull = createStmt(bool_type, expZero);
 
       // Fix exponent for new encoding
       const auto expAdd = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(biasDiff, exp_type_idx), BUILTIN_SRCP, plus_expr_K);
       FExp = createStmt(exp_type, expAdd);
 
+      tree_nodeRef ExpUnderflow;
       if(biasDiff < 0 || biasDiff > rangeDiff)
       {
          // Shift right fixed exponent
          const auto shiftFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(outFF->exp_bits, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         ExpInf = createStmt(exp_type, shiftFExp);
+         ExpOverflow = createStmt(exp_type, shiftFExp);
 
          // Mask overflow bits
-         const auto andShiftFExp = tree_man->create_binary_operation(exp_type, ExpInf, TreeM->CreateUniqueIntegerCst((1LL << (exp_type_size - outFF->exp_bits)) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-         ExpInf = createStmt(exp_type, andShiftFExp);
+         const auto andShiftFExp = tree_man->create_binary_operation(exp_type, ExpOverflow, TreeM->CreateUniqueIntegerCst((1LL << (exp_type_size - outFF->exp_bits - 1)) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+         ExpOverflow = createStmt(exp_type, andShiftFExp);
 
          // Check overflow
-         const auto outRangeExp = tree_man->create_binary_operation(bool_type, ExpInf, TreeM->CreateUniqueIntegerCst(0, exp_type_idx), BUILTIN_SRCP, ne_expr_K);
-         ExpInf = createStmt(bool_type, outRangeExp);
+         const auto expOverflow = tree_man->create_binary_operation(bool_type, ExpOverflow, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, ne_expr_K);
+         ExpOverflow = createStmt(bool_type, expOverflow);
 
          // Shift right fixed exponent to last bit
-         const auto rshiftFExpSign = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(exp_type_size - 1, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
-         auto ExpInfSign = createStmt(exp_type, rshiftFExpSign);
+         const auto underflowBit = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst(exp_type_size - 1, exp_type_idx), BUILTIN_SRCP, rshift_expr_K);
+         ExpUnderflow = createStmt(exp_type, underflowBit);
 
-         // Shift left overflow sign bit
-         const auto lshiftFExpSign = tree_man->create_binary_operation(exp_type, ExpInfSign, TreeM->CreateUniqueIntegerCst(outFF->exp_bits, exp_type_idx), BUILTIN_SRCP, lshift_expr_K);
-         ExpInfSign = createStmt(exp_type, lshiftFExpSign);
+         // Cast fixed exponent underflow bit to bool
+         const auto castUnderBit = tree_man->CreateNopExpr(ExpUnderflow, bool_type, tree_nodeRef(), tree_nodeRef());
+         ExpUnderflow = createStmt(exp_type, castUnderBit);
 
-         // Pack overflow sign and exponent
-         const auto orInfExp = tree_man->create_binary_operation(exp_type, ExpInfSign, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, bit_ior_expr_K);
-         auto InfExp = createStmt(exp_type, orInfExp);
+         // Switch between underflow and overflow exponent
+         const auto underOverExp = tree_man->create_ternary_operation(exp_type, ExpUnderflow, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, cond_expr_K);
+         const auto ExExp = createStmt(exp_type, underOverExp);
 
          // Mask fix exponent
          const auto maskFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
          FExp = createStmt(exp_type, maskFExp);
 
-         const auto expTerInf = tree_man->create_ternary_operation(exp_type, ExpInf, InfExp, FExp, BUILTIN_SRCP, cond_expr_K);
+         // Switch between fixed and exception exponent
+         const auto expTerInf = tree_man->create_ternary_operation(exp_type, ExpOverflow, ExExp, FExp, BUILTIN_SRCP, cond_expr_K);
          FExp = createStmt(exp_type, expTerInf);
+
+         // Set underflow significand if necessary
+         const auto underflowFrac = tree_man->create_ternary_operation(in_type, ExpUnderflow, TreeM->CreateUniqueIntegerCst(0LL, in_type_idx), Frac, BUILTIN_SRCP, cond_expr_K);
+         Frac = createStmt(in_type, underflowFrac);
+
+         // Fix overflow flag when already in underflow condition
+         const auto overXorUnder = tree_man->create_binary_operation(bool_type, ExpOverflow, ExpUnderflow, BUILTIN_SRCP, bit_xor_expr_K);
+         ExpOverflow = createStmt(bool_type, overXorUnder);
       }
 
       // Mask fix exponent
-      const auto maskFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << (outFF->exp_bits + (biasDiff < 0 || biasDiff > rangeDiff))) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+      const auto maskFExp = tree_man->create_binary_operation(exp_type, FExp, TreeM->CreateUniqueIntegerCst((1LL << outFF->exp_bits) - 1, exp_type_idx), BUILTIN_SRCP, bit_and_expr_K);
       FExp = createStmt(exp_type, maskFExp);
 
+      // Check if exponent is zero
+      const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
+      const auto ExpNull = createStmt(bool_type, expZero);
+
+      // Check if significand is zero
+      const auto fracEqZero = tree_man->create_binary_operation(bool_type, Frac, TreeM->CreateUniqueIntegerCst(0LL, in_type_idx), BUILTIN_SRCP, eq_expr_K);
+      const auto FracNull = createStmt(bool_type, fracEqZero);
+
+      // Check if input is zero
+      const auto expOrFrac = tree_man->create_binary_operation(bool_type, ExpNull, FracNull, BUILTIN_SRCP, bit_and_expr_K);
+      auto inputZero = createStmt(bool_type, expOrFrac);
+
+      if(ExpUnderflow)
+      {
+         const auto zeroOrUnder = tree_man->create_binary_operation(bool_type, inputZero, ExpUnderflow, BUILTIN_SRCP, bit_and_expr_K);
+         inputZero = createStmt(bool_type, zeroOrUnder);
+      }
+
       // Choose between zero and fixed exponent
-      const auto expVal = tree_man->create_ternary_operation(exp_type, ExpNull, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), FExp, BUILTIN_SRCP, cond_expr_K);
+      const auto expVal = tree_man->create_ternary_operation(exp_type, inputZero, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), FExp, BUILTIN_SRCP, cond_expr_K);
       FExp = createStmt(exp_type, expVal);
    }
    else
    {
+      if(inFF->has_subnorm && !outFF->has_subnorm)
+      {
+         // Check if exponent is zero
+         const auto expZero = tree_man->create_binary_operation(bool_type, Exp, TreeM->CreateUniqueIntegerCst(0LL, exp_type_idx), BUILTIN_SRCP, eq_expr_K);
+         const auto ExpNull = createStmt(bool_type, expZero);
+
+         // Set underflow significand if necessary
+         const auto underflowFrac = tree_man->create_ternary_operation(in_type, ExpNull, TreeM->CreateUniqueIntegerCst(0LL, in_type_idx), Frac, BUILTIN_SRCP, cond_expr_K);
+         Frac = createStmt(in_type, underflowFrac);
+      }
+
       FExp = Exp;
    }
 
@@ -1186,6 +1222,10 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
          // Jam discarded bits
          const auto fracRJam = tree_man->create_binary_operation(bool_type, JBit, TreeM->CreateUniqueIntegerCst(0, in_type_idx), BUILTIN_SRCP, ne_expr_K);
          JBit = createStmt(bool_type, fracRJam);
+
+         // Cast jam bit to out_type
+         const auto castJBit = tree_man->CreateNopExpr(JBit, out_type, tree_nodeRef(), tree_nodeRef());
+         JBit = createStmt(out_type, JBit);
 
          // Or jamming with output significand
          const auto fracJam = tree_man->create_binary_operation(out_type, SFrac, JBit, BUILTIN_SRCP, bit_ior_expr_K);
@@ -1261,10 +1301,10 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 
    if(biasDiff < 0 || biasDiff > rangeDiff)
    {
-      THROW_ASSERT(ExpInf, "");
+      THROW_ASSERT(ExpOverflow, "");
 
       // Or with the rest
-      const auto nanOr = tree_man->create_binary_operation(bool_type, ExpInf, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
+      const auto nanOr = tree_man->create_binary_operation(bool_type, ExpOverflow, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
       out_nan = createStmt(bool_type, nanOr);
    }
 
