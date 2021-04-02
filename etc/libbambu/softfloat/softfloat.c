@@ -2685,7 +2685,14 @@ __float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits
       round = Guard_bit & (LSB_bit | Round_bit);
    }
 
-   zExp = aExp - bExp + ((-1 - __exp_bias) | correction);
+   if(__exp_bias & 1)
+   {
+      zExp = aExp - bExp + ((~__exp_bias) | correction); // ~__exp_bias = -1 - __exp_bias
+   }
+   else
+   {
+      zExp = aExp - bExp - __exp_bias - !correction;
+   }
    MSB1zExp = zExp >> (__exp_bits + 1);
    MSB0zExp = zExp >> __exp_bits;
    zExp = zExp & ((1 << (__exp_bits + 1)) - 1);
@@ -4261,7 +4268,14 @@ __float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits
       round = Guard_bit & (LSB_bit | Round_bit);
    }
 
-   zExp = aExp - bExp + ((~__exp_bias) | correction); // ~__exp_bias = -1 - __exp_bias
+   if(__exp_bias & 1)
+   {
+      zExp = aExp - bExp + ((~__exp_bias) | correction); // ~__exp_bias = -1 - __exp_bias
+   }
+   else
+   {
+      zExp = aExp - bExp - __exp_bias - !correction;
+   }
    MSB1zExp = zExp >> (__exp_bits + 1);
    MSB0zExp = zExp >> __exp_bits;
    zExp = zExp & ((1ULL << (__exp_bits + 1)) - 1);
