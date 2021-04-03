@@ -2883,7 +2883,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       auto* op_sv = GetPointer<operation>(op_sv_node);
       double setup_time = get_setup_hold_time();
       double cur_sv_exec_time = op_sv->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_sv) : time_m_execution_time(op_sv);
-      double sv_delay = cur_sv_exec_time - setup_time;
+      double sv_delay = cur_sv_exec_time - 2 * setup_time;
       double correction = sv_delay;
       res_value = res_value + correction;
    }
