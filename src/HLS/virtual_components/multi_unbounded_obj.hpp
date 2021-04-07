@@ -56,6 +56,7 @@ class multi_unbounded_obj : public generic_obj
 {
    vertex fsm_state;
    CustomOrderedSet<vertex> ops;
+   generic_objRef mu_enable;
 
  public:
    /**
@@ -82,6 +83,23 @@ class multi_unbounded_obj : public generic_obj
    const CustomOrderedSet<vertex>& get_ops()
    {
       return ops;
+   }
+   /**
+    * Gets the write enable object for the given register
+    * @return a set of sets where each of them can enable register write (when all conditions contained are
+    *        true)
+    */
+   generic_objRef get_mu_enable() const
+   {
+      return mu_enable;
+   }
+
+   /**
+    * Sets the write enable for given register
+    */
+   void set_mu_enable(const generic_objRef& mu_en)
+   {
+      mu_enable = mu_en;
    }
 };
 

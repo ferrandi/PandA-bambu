@@ -1019,6 +1019,18 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
                SM->add_connection(port_wenable, sel_obj);
                break;
             }
+            case generic_obj::MULTI_UNBOUNDED_OBJ:
+            {
+               structural_objectRef mu_mod = elem->get_structural_obj();
+
+               THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
+               structural_objectRef sel_obj = SM->add_port("muenable_" + mu_mod->get_id(), port_o::IN, circuit, boolean_port_type);
+               (j->second)->set_structural_obj(sel_obj);
+
+               structural_objectRef port_enable = mu_mod->find_member("enable", port_o_K, mu_mod);
+               SM->add_connection(port_enable, sel_obj);
+               break;
+            }
             case generic_obj::COMMAND_PORT:
             case generic_obj::CONNECTION_ELEMENT:
             {
@@ -1129,7 +1141,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added calls connections");
    std::map<structural_objectRef, structural_objectRef> sig;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding multi-unbounded controllers connections");
-   for(auto state2mu : HLS->STG->get_mu_ctrls())
+   for(const auto& state2mu : HLS->STG->get_mu_ctrls())
    {
       auto mu = state2mu.second;
       structural_objectRef mu_mod = mu->get_structural_obj();

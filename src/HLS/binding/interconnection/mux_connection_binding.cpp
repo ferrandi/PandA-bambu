@@ -83,6 +83,7 @@
 #include "connection_obj.hpp"
 #include "conv_conn_obj.hpp"
 #include "funit_obj.hpp"
+#include "multi_unbounded_obj.hpp"
 #include "multiplier_conn_obj.hpp"
 #include "mux_obj.hpp"
 #include "register_obj.hpp"
@@ -1829,6 +1830,15 @@ void mux_connection_binding::create_connections()
    }
 
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Starting execution of interconnection binding");
+
+   for(const auto& state2mu : HLS->STG->get_mu_ctrls())
+   {
+      auto mu = state2mu.second;
+      structural_objectRef mu_mod = mu->get_structural_obj();
+      auto mut = GetPointer<multi_unbounded_obj>(mu);
+      generic_objRef en_port = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::MULTI_UNBOUNDED_ENABLE, mu, 0);
+      mut->set_mu_enable(en_port);
+   }
 
    unsigned int num_regs = HLS->Rreg->get_used_regs();
    for(unsigned int r = 0; r < num_regs; r++)

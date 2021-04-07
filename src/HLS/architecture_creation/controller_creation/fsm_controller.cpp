@@ -53,6 +53,7 @@
 #include "connection_obj.hpp"
 #include "fu_binding.hpp"
 #include "funit_obj.hpp"
+#include "multi_unbounded_obj.hpp"
 #include "mux_obj.hpp"
 #include "reg_binding.hpp"
 #include "register_obj.hpp"
@@ -654,7 +655,16 @@ void fsm_controller::create_state_machine(std::string& parse)
             {
                for(const auto& s : selectors.at(conn_binding::IN))
                {
-                  const auto& activations = GetPointer<commandport_obj>(s.second)->get_activations();
+                  auto current_port = GetPointer<commandport_obj>(s.second);
+                  if(current_port->get_command_type() == commandport_obj::command_type::MULTI_UNBOUNDED_ENABLE)
+                  {
+                     auto mu_obj = GetPointer<multi_unbounded_obj>(current_port->get_elem());
+                     if(v == mu_obj->get_fsm_state())
+                     {
+                        transition_outputs[out_ports[s.second]] = 1;
+                     }
+                  }
+                  const auto& activations = current_port->get_activations();
                   for(const auto& a : activations)
                   {
                      THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");

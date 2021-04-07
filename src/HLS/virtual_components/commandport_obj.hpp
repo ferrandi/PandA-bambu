@@ -72,15 +72,16 @@ class commandport_obj : public generic_obj
  public:
    /// Available command types
    using command_type = enum {
-      OPERATION = 0,   /// operation enable
-      CONDITION,       /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes to the datapath
-      SWITCH,          /// switch value, it represents the value of the switch statement
-      MULTIIF,         /// represents the multi conditions
-      SELECTOR,        /// mux selector
-      ALUSELECTOR,     /// ALU selector
-      UNBOUNDED,       /// signal representing a communication for an unbounded object (function call)
-      MULTI_UNBOUNDED, /// signal representing when a multi unbounded call ends
-      WRENABLE         /// enable for register writing
+      OPERATION = 0,          /// operation enable
+      CONDITION,              /// conditional value. it represents a readcond if it goes to the controller or a condition if it goes to the datapath
+      SWITCH,                 /// switch value, it represents the value of the switch statement
+      MULTIIF,                /// represents the multi conditions
+      SELECTOR,               /// mux selector
+      ALUSELECTOR,            /// ALU selector
+      UNBOUNDED,              /// signal representing a communication for an unbounded object (function call)
+      MULTI_UNBOUNDED,        /// signal representing when a multi unbounded call ends
+      MULTI_UNBOUNDED_ENABLE, /// signal enabling the multi unbounded component
+      WRENABLE                /// enable for register writing
    };
 
    using data_operation_pair = std::pair<unsigned int, vertex>;
@@ -118,7 +119,7 @@ class commandport_obj : public generic_obj
 
    commandport_obj(generic_objRef _elem, unsigned int _mode, const std::string& _name) : generic_obj(COMMAND_PORT, _name), elem(_elem), mode(_mode), is_a_phi_write_enable(false)
    {
-      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR or mode == MULTI_UNBOUNDED, "Selector port is wrong");
+      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR or mode == MULTI_UNBOUNDED or mode == MULTI_UNBOUNDED_ENABLE, "Selector port is wrong");
    }
 
    /**
@@ -175,7 +176,7 @@ class commandport_obj : public generic_obj
 
    const generic_objRef& get_elem() const
    {
-      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR || mode == MULTI_UNBOUNDED, "Selector port is wrong");
+      THROW_ASSERT(mode == SELECTOR || mode == WRENABLE || mode == ALUSELECTOR || mode == MULTI_UNBOUNDED or mode == MULTI_UNBOUNDED_ENABLE, "Selector port is wrong");
       return elem;
    }
 
@@ -195,6 +196,8 @@ class commandport_obj : public generic_obj
             return "UNBOUNDED";
          case MULTI_UNBOUNDED:
             return "MULTI_UNBOUNDED";
+         case MULTI_UNBOUNDED_ENABLE:
+            return "MULTI_UNBOUNDED_ENABLE";
          case SELECTOR:
             return "SELECTOR";
          case WRENABLE:

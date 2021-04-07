@@ -20,6 +20,10 @@
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
             <connected_objects/>
           </port_o>
+          <port_o id="enable" dir="IN">
+            <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
+            <connected_objects/>
+          </port_o>
           <port_vector_o id="ops" dir="IN">
             <structural_type_descriptor type="BOOL" size="1" id_type="bool"/>
           </port_vector_o>
@@ -29,7 +33,9 @@
           </port_o>
           <NP_functionality LIBRARY="SIMPLEJOIN_FU ops" VERILOG_PROVIDED="
 // synthesis attribute use_sync_reset of current is no;
-reg  [PORTSIZE_ops-1:0] current 1INIT_ZERO_VALUE;
+reg [PORTSIZE_ops-1:0] current 1INIT_ZERO_VALUE;
+reg started 1INIT_ZERO_VALUE;
+wire started0 1INIT_ZERO_VALUE;
 wire [PORTSIZE_ops-1:0] or_temp;
 wire sop_temp;
 function reduce_INs;
@@ -47,14 +53,21 @@ function [PORTSIZE_ops-1:0] NEXT_CURR ;
 input sop_temp1;
 input [PORTSIZE_ops-1 : 0] ops1;
 input [PORTSIZE_ops-1 : 0] current1;
+input st;
 integer i;
 begin
    for(i = 0; i &lt; PORTSIZE_ops; i = i + 1)
    begin
-      NEXT_CURR[i] = ~sop_temp1 &amp; ((current1[i]) | ops1[i]);
+      NEXT_CURR[i] = ~sop_temp1 &amp; ((current1[i]) | (st &amp; ops1[i]));
    end
 end
 endfunction
+always @(posedge clock 1RESET_EDGE)
+  if (1RESET_VALUE)
+    started &lt;= 0;
+  else
+    started &lt;= started0;
+assign started0 = (started | enable) &amp; !sop_temp;
 assign or_temp = current | ops;
 assign sop_temp = reduce_INs(or_temp);
 assign sop = sop_temp;
@@ -66,7 +79,7 @@ if(1RESET_VALUE)
   end
 else
   begin
-    current &lt;= NEXT_CURR(sop_temp,ops,current);
+    current &lt;= NEXT_CURR(sop_temp,ops,current,started0);
   end
 end
 "/>
