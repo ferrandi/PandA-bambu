@@ -2241,14 +2241,18 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
 
    expSum = aExp + bExp + __exp_bias;
 
-   aSig = (aSig | (1 << __frac_bits));
-   bSig = (bSig | (1 << __frac_bits));
+   aSig = (aSig | (((__bits32)__one) << __frac_bits));
+   bSig = (bSig | (((__bits32)__one) << __frac_bits));
    sigProd = (SF_UDItype)(SF_USItype)(aSig) * (SF_USItype)(bSig);
    norm = (sigProd >> (__frac_mul)) & 1;
    expPostNorm = expSum + norm;
    sigProdExt = sigProd << !norm;
    sigProdExt = (sigProdExt & ((1ULL << __frac_mul) - 1)) << 1;
    expSig = (expPostNorm << __frac_bits) | ((sigProdExt >> __frac_full) & ((1 << __frac_bits) - 1));
+   if((__exp_bits + __frac_bits) < 30)
+   {
+      expSig = expSig & ((1 << (__exp_bits + __frac_bits + 2) - 1));
+   }
    expSigOvf0 = (expPostNorm >> (__exp_bits + 1)) & 1;
 
    if(__rounding)
@@ -2257,7 +2261,14 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
       guard = (sigProdExt & ((1 << __frac_almost) - 1)) != 0;
       round = sticky & ((guard & !((sigProdExt >> __frac_full) & 1)) | ((sigProdExt >> __frac_full) & 1));
       expSigPostRound = expSig + round;
-      expSigOvf1 = round & (expSig == (((__bits32)-1) >> (31 - __exp_bits - __frac_bits)));
+      if((__exp_bits + __frac_bits) == 31)
+      {
+         expSigOvf1 = round & (expSig == ((__bits32)-1));
+      }
+      else
+      {
+         expSigOvf1 = round & (expSigPostRound >> (__exp_bits + __frac_bits + 1));
+      }
       expSigOvf2 = expSigOvf0 ^ expSigOvf1;
    }
    else
@@ -2265,7 +2276,7 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
       expSigPostRound = expSig;
       expSigOvf2 = expSigOvf0;
    }
-   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1);
+   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1) | ((expSigPostRound >> __frac_bits) & ((1 << __exp_bits) - 1)) == ((1 << __exp_bits) - 1);
    zSig = (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (expSigPostRound & ((1U << (__exp_bits + __frac_bits)) - 1));
    if(z_c == FP_CLS_NORMAL)
       z_c = ((excPostNorm == 1) << 1) | (excPostNorm == 0);
@@ -4006,8 +4017,8 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
 
    expSum = aExp + bExp + ((__bits32)__exp_bias);
 
-   aSig = (aSig | (1ULL << __frac_bits));
-   bSig = (bSig | (1ULL << __frac_bits));
+   aSig = (aSig | (((__bits64)__one) << __frac_bits));
+   bSig = (bSig | (((__bits64)__one) << __frac_bits));
 
    if(__frac_bits > 32)
    {
@@ -4070,6 +4081,10 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
       sigProdExt = (sigProdExt & ((1ULL << __frac_mul) - 1)) << 1;
       expSig = (expPostNorm << __frac_bits) | ((sigProdExt >> __frac_full) & ((1ULL << __frac_bits) - 1));
    }
+   if((__exp_bits + __frac_bits) < 62)
+   {
+      expSig = expSig & ((1ULL << (__exp_bits + __frac_bits + 2) - 1));
+   }
    expSigOvf0 = (expPostNorm >> (__exp_bits + 1)) & 1;
 
    if(__rounding)
@@ -4088,7 +4103,14 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
       }
 
       expSigPostRound = expSig + round;
-      expSigOvf1 = round & (expSig == (((__bits64)-1) >> (63 - __exp_bits - __frac_bits)));
+      if((__exp_bits + __frac_bits) == 63)
+      {
+         expSigOvf1 = round & (expSig == ((__bits64)-1));
+      }
+      else
+      {
+         expSigOvf1 = round & (expSigPostRound >> (__exp_bits + __frac_bits + 1));
+      }
       expSigOvf2 = expSigOvf0 ^ expSigOvf1;
    }
    else
@@ -4097,7 +4119,7 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
       expSigOvf2 = expSigOvf0;
    }
 
-   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1);
+   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1) | ((expSigPostRound >> __frac_bits) & ((1ULL << __exp_bits) - 1)) == ((1ULL << __exp_bits) - 1);
    zSig = (((__bits64)zSign) << (__exp_bits + __frac_bits)) | (expSigPostRound & ((1ULL << (__exp_bits + __frac_bits)) - 1));
    if(z_c == FP_CLS_NORMAL)
       z_c = ((excPostNorm == 1) << 1) | (excPostNorm == 0);
