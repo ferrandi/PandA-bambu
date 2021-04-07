@@ -370,8 +370,11 @@ namespace clang
       {
          auto typeName = t->getCanonicalTypeInternal().getAsString();
          auto key = std::string("class ");
+         auto constkey = std::string("const class ");
          if(typeName.find(key) == 0)
             typeName = typeName.substr(key.size());
+         else if(typeName.find(constkey) == 0)
+            typeName = typeName.substr(constkey.size());
          return typeName;
       }
 
