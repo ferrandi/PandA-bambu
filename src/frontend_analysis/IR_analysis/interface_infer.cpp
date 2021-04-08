@@ -1594,6 +1594,7 @@ DesignFlowStep_Status interface_infer::InternalExec()
                               std::string interfaceAttribute3;
                               bool interfaceAttribute3_p = false;
                               std::string interfaceTypename;
+                              std::string interfaceTypenameOrig;
                               std::string interfaceTypenameInclude;
                               for(auto attrArg : EnodeArg->get_attributes())
                               {
@@ -1625,6 +1626,11 @@ DesignFlowStep_Status interface_infer::InternalExec()
                                  {
                                     interfaceTypename = value;
                                     xml_node::convert_escaped(interfaceTypename);
+                                 }
+                                 if(key == "interface_typename_orig")
+                                 {
+                                    interfaceTypenameOrig = value;
+                                    xml_node::convert_escaped(interfaceTypenameOrig);
                                  }
                                  if(key == "interface_typename_include")
                                  {
@@ -1659,11 +1665,12 @@ DesignFlowStep_Status interface_infer::InternalExec()
 
                               HLSMgr->design_interface_typename[fname][argName] = interfaceTypename;
                               HLSMgr->design_interface_typename_signature[fname].push_back(interfaceTypename);
-                              if((interfaceTypename.find("ap_int<") != std::string::npos || interfaceTypename.find("ap_uint<") != std::string::npos) && interfaceTypenameInclude.find("ac_int.h") != std::string::npos)
+                              HLSMgr->design_interface_typename_orig_signature[fname].push_back(interfaceTypenameOrig);
+                              if((interfaceTypenameOrig.find("ap_int<") != std::string::npos || interfaceTypenameOrig.find("ap_uint<") != std::string::npos) && interfaceTypenameInclude.find("ac_int.h") != std::string::npos)
                               {
                                  boost::replace_all(interfaceTypenameInclude, "ac_int.h", "ap_int.h");
                               }
-                              if((interfaceTypename.find("ap_fixed<") != std::string::npos || interfaceTypename.find("ap_ufixed<") != std::string::npos) && interfaceTypenameInclude.find("ac_fixed.h") != std::string::npos)
+                              if((interfaceTypenameOrig.find("ap_fixed<") != std::string::npos || interfaceTypenameOrig.find("ap_ufixed<") != std::string::npos) && interfaceTypenameInclude.find("ac_fixed.h") != std::string::npos)
                               {
                                  boost::replace_all(interfaceTypenameInclude, "ac_fixed.h", "ap_fixed.h");
                               }

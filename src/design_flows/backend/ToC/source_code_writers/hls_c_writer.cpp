@@ -614,6 +614,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    if(function_name != "system")
    {
       bool is_first_argument = true;
+      unsigned par_index=0;
       for(const auto& p : behavioral_helper->get_parameters())
       {
          if(!is_first_argument)
@@ -624,8 +625,23 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
          {
             is_first_argument = false;
          }
+         if(flag_cpp && behavioral_helper->is_a_pointer(p))
+         {
+            auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
+            auto fd = GetPointer<function_decl>(fnode);
+            std::string fname;
+            tree_helper::get_mangled_fname(fd, fname);
+            const auto& DesignInterfaceTypenameOrig = hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature;
+            if(DesignInterfaceTypenameOrig.find(fname) != DesignInterfaceTypenameOrig.end())
+            {
+               indented_output_stream->Append("(");
+               indented_output_stream->Append(DesignInterfaceTypenameOrig.find(fname)->second.at(par_index));
+               indented_output_stream->Append(") ");
+            }
+         }
          std::string param = behavioral_helper->PrintVariable(p);
          indented_output_stream->Append(param);
+         ++par_index;
       }
    }
    else
@@ -657,7 +673,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
    std::string fname;
    tree_helper::get_mangled_fname(fd, fname);
    auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-   bool hasInterface = flag_cpp && DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
+   bool hasInterface = DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
+   bool is_fortran = (Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_FORTRAN);
 
    const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(behavioral_helper->get_function_index());
 
@@ -682,7 +699,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          }
          else if(pt_node->get_kind() == reference_type_K)
          {
-            reference_type_p = true;
+            reference_type_p = !is_fortran;
             base_type = GET_INDEX_NODE(GetPointerS<const reference_type>(pt_node)->refd);
          }
          else
@@ -691,7 +708,7 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          }
          unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
          bool is_acType = false;
-         if(hasInterface)
+         if(flag_cpp && hasInterface)
          {
             auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
             if((*argTypename.rbegin()) != '*')

@@ -107,6 +107,7 @@ namespace clang
 
       std::map<std::string, std::vector<std::string>> Fun2Params;
       std::map<std::string, std::vector<std::string>> Fun2ParamType;
+      std::map<std::string, std::vector<std::string>> Fun2ParamTypeOrig;
       std::map<std::string, std::map<std::string, std::string>> Fun2ParamSize;
       std::map<std::string, std::map<std::string, std::string>> Fun2ParamAttribute2;
       std::map<std::string, std::map<std::string, std::string>> Fun2ParamAttribute3;
@@ -250,13 +251,16 @@ namespace clang
                stream << "  <function id=\"" << funArgPair.first << "\">\n";
                const auto& interfaceTypeVec = HLS_interfaceMap.find(funArgPair.first)->second;
                const auto& interfaceTypenameVec = Fun2ParamType.find(funArgPair.first)->second;
+               const auto& interfaceTypenameOrigVec = Fun2ParamTypeOrig.find(funArgPair.first)->second;
                const auto& interfaceTypenameIncludeVec = Fun2ParamInclude.find(funArgPair.first)->second;
                unsigned int ArgIndex = 0;
                for(const auto& par : funArgPair.second)
                {
                   std::string typenameArg = interfaceTypenameVec.at(ArgIndex);
+                  std::string typenameOrigArg = interfaceTypenameOrigVec.at(ArgIndex);
                   convert_unescaped(typenameArg);
-                  stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex) << "\" interface_typename=\"" << typenameArg << "\"";
+                  convert_unescaped(typenameOrigArg);
+                  stream << "    <arg id=\"" << par << "\" interface_type=\"" << interfaceTypeVec.at(ArgIndex) << "\" interface_typename=\"" << typenameArg << "\" interface_typename_orig=\"" << typenameOrigArg << "\"";
                   if(Fun2ParamSize.find(funArgPair.first) != Fun2ParamSize.end() && Fun2ParamSize.find(funArgPair.first)->second.find(par) != Fun2ParamSize.find(funArgPair.first)->second.end())
                      stream << " size=\"" << Fun2ParamSize.find(funArgPair.first)->second.find(par)->second << "\"";
                   if(Fun2ParamAttribute2.find(funArgPair.first) != Fun2ParamAttribute2.end() && Fun2ParamAttribute2.find(funArgPair.first)->second.find(par) != Fun2ParamAttribute2.find(funArgPair.first)->second.end())
@@ -750,6 +754,7 @@ namespace clang
                   if(ParamTypeName.empty())
                      ParamTypeName = GetTypeNameCanonical(ND->getType());
                   Fun2ParamType[funName].push_back(ParamTypeName);
+                  Fun2ParamTypeOrig[funName].push_back(argType.getAsString());
                   if(interfaceType == "array")
                      Fun2ParamSize[funName][parName] = arraySize;
                   if(interfaceType == "m_axi" && UDIT_attribute2_p)

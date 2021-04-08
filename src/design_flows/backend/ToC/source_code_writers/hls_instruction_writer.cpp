@@ -63,6 +63,7 @@
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
+#include "tree_helper.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -81,6 +82,10 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 
    bool flag_cpp = AppM->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print) && (!parameters->isOption(OPT_discrepancy) || !parameters->getOption<bool>(OPT_discrepancy));
 
+   tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
+   auto* fd = GetPointer<function_decl>(fd_node);
+   std::string fname;
+   tree_helper::get_mangled_fname(fd, fname);
    std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
    if(name == "main")
    {
@@ -88,75 +93,28 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
    }
    if(flag_cpp)
    {
-      tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
-      auto* fd = GetPointer<function_decl>(fd_node);
-      std::string simple_name;
-      std::string mangled_name;
-      tree_nodeRef id_name = GET_NODE(fd->name);
-      if(id_name->get_kind() == identifier_node_K)
+      auto HLSMgr = GetPointer<const HLS_manager>(AppM);
+      if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) != HLSMgr->design_interface_typename_orig_signature.end())
       {
-         auto* in = GetPointer<identifier_node>(id_name);
-         if(!in->operator_flag)
+         auto searchString = " " + name + "(";
+         stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
+         const auto& typenameArgs = HLSMgr->design_interface_typename_orig_signature.find(fname)->second;
+         bool firstPar = true;
+         for(const auto& argType : typenameArgs)
          {
-            simple_name = in->strg;
-         }
-      }
-      if(fd->mngl)
-      {
-         tree_nodeRef mangled_id_name = GET_NODE(fd->mngl);
-         if(mangled_id_name->get_kind() == identifier_node_K)
-         {
-            auto* in = GetPointer<identifier_node>(mangled_id_name);
-            if(!in->operator_flag)
+            if(firstPar)
             {
-               mangled_name = in->strg;
-            }
-         }
-      }
-      if(mangled_name != "")
-      {
-         auto pos = stringTemp.find(mangled_name.c_str());
-         if(pos == std::string::npos)
-         {
-            pos = stringTemp.find(name.c_str());
-            THROW_ASSERT(pos != std::string::npos, "unexpected condition");
-         }
-         auto newStr = stringTemp.substr(0, pos);
-         newStr += string_demangle(mangled_name);
-         stringTemp = newStr;
-      }
-      else
-      {
-         if(simple_name != "")
-         {
-            auto HLSMgr = GetPointer<const HLS_manager>(AppM);
-            if(HLSMgr && simple_name == name && HLSMgr->design_interface_typename_signature.find(name) != HLSMgr->design_interface_typename_signature.end())
-            {
-               auto searchString = " " + name + "(";
-               stringTemp = stringTemp.substr(0, stringTemp.find(searchString) + searchString.size());
-               const auto& typenameArgs = HLSMgr->design_interface_typename_signature.find(name)->second;
-               bool firstPar = true;
-               for(const auto& argType : typenameArgs)
-               {
-                  if(firstPar)
-                  {
-                     stringTemp += argType;
-                     firstPar = false;
-                  }
-                  else
-                  {
-                     stringTemp += ", " + argType;
-                  }
-               }
-               stringTemp += ")";
+               stringTemp += argType;
+               firstPar = false;
             }
             else
             {
-               boost::replace_all(stringTemp, " " + name + "(", " " + simple_name + "(");
+               stringTemp += ", " + argType;
             }
          }
-         boost::replace_all(stringTemp, "/*&*/*", "&");
+         stringTemp += ")";
       }
+      boost::replace_all(stringTemp, "/*&*/*", "&");
    }
 
    indented_output_stream->Append(stringTemp);
