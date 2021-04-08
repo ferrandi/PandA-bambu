@@ -526,7 +526,7 @@ void CompilerWrapper::CompileFile(const std::string& original_file_name, std::st
                   xml_files.push_back(XMLfilename);
                }
             }
-            for(auto XMLfilename : xml_files)
+            for(const auto& XMLfilename : xml_files)
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->parsing " + XMLfilename);
                XMLDomParser parser(XMLfilename);
