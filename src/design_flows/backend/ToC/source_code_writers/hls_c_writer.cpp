@@ -136,31 +136,28 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("#endif\n\n");
    indented_output_stream->Append("#include <sys/types.h>\n");
 
-   if(flag_cpp)
+   // get the root function to be tested by the testbench
+   const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
+   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
+   const auto function_id = *(top_function_ids.begin());
+   auto fnode = TM->get_tree_node_const(function_id);
+   auto fd = GetPointer<function_decl>(fnode);
+   std::string fname;
+   tree_helper::get_mangled_fname(fd, fname);
+   auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
+   if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
    {
-      // get the root function to be tested by the testbench
-      const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
-      THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
-      const auto function_id = *(top_function_ids.begin());
-      auto fnode = TM->get_tree_node_const(function_id);
-      auto fd = GetPointer<function_decl>(fnode);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
-      auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
-      if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
+      CustomOrderedSet<std::string> includes;
+      const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
+      for(const auto& argInclude : DesignInterfaceArgsInclude)
       {
-         CustomOrderedSet<std::string> includes;
-         const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
-         for(const auto& argInclude : DesignInterfaceArgsInclude)
+         includes.insert(argInclude.second);
+      }
+      for(const auto& inc : includes)
+      {
+         if(inc != "")
          {
-            includes.insert(argInclude.second);
-         }
-         for(const auto& inc : includes)
-         {
-            if(inc != "")
-            {
-               indented_output_stream->Append("#include \"" + inc + "\"\n");
-            }
+            indented_output_stream->Append("#include \"" + inc + "\"\n");
          }
       }
       indented_output_stream->Append("\n");
@@ -527,35 +524,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    const unsigned int function_index = behavioral_helper->get_function_index();
    const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(function_index);
 
-   std::string function_name;
-
-   if(flag_cpp)
-   {
-      tree_nodeRef fd_node = TM->get_tree_node_const(function_index);
-      auto* fd = GetPointer<function_decl>(fd_node);
-      std::string simple_name;
-      tree_nodeRef id_name = GET_NODE(fd->name);
-      if(id_name->get_kind() == identifier_node_K)
-      {
-         auto* in = GetPointer<identifier_node>(id_name);
-         if(!in->operator_flag)
-         {
-            simple_name = in->strg;
-         }
-      }
-      if(simple_name != "")
-      {
-         function_name = simple_name;
-      }
-      else
-      {
-         function_name = behavioral_helper->get_function_name();
-      }
-   }
-   else
-   {
-      function_name = behavioral_helper->get_function_name();
-   }
+   std::string function_name = behavioral_helper->get_function_name();
    // avoid collision with the main
    if(function_name == "main")
    {
@@ -614,7 +583,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    if(function_name != "system")
    {
       bool is_first_argument = true;
-      unsigned par_index=0;
+      unsigned par_index = 0;
       for(const auto& p : behavioral_helper->get_parameters())
       {
          if(!is_first_argument)

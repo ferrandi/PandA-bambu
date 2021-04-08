@@ -629,6 +629,7 @@ namespace clang
                   std::string attribute3;
                   std::string UserDefinedInterfaceType;
                   std::string ParamTypeName;
+                  std::string ParamTypeNameOrig;
                   auto parName = ND->getNameAsString();
                   bool UDIT_p = false;
                   bool UDIT_attribute2_p = false;
@@ -662,18 +663,25 @@ namespace clang
                      {
                         auto CA = cast<ConstantArrayType>(DT->getOriginalType());
                         auto OrigTotArraySize = CA->getSize();
+                        std::string Dimensions;
                         while(CA->getElementType()->isConstantArrayType())
                         {
                            CA = cast<ConstantArrayType>(CA->getElementType());
-                           OrigTotArraySize *= CA->getSize();
+                           auto n_el = CA->getSize();
+                           Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
+                           OrigTotArraySize *=n_el;
                         }
-                        if(CA->getElementType()->getTypeClass() == Type::Typedef)
-                           ParamTypeName = GetTypeNameCanonical(RemoveTypedef(CA->getElementType())) + " *";
-                        else
-                           ParamTypeName = GetTypeNameCanonical(CA->getElementType()) + " *";
+                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(CA->getElementType())) + " *";
+                        ParamTypeNameOrig = RemoveTypedef(CA->getElementType()).getAsString() + (Dimensions ==  "" ? " *" : " (*)"+Dimensions);
+
                         interfaceType = "array";
                         arraySize = OrigTotArraySize.toString(10, false);
                         assert(arraySize != "0");
+                     }
+                     else
+                     {
+                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(ND->getType()));
+                        ParamTypeNameOrig = RemoveTypedef(ND->getType()).getAsString();
                      }
                      if(UDIT_p)
                      {
@@ -702,11 +710,17 @@ namespace clang
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
                      auto PT = dyn_cast<PointerType>(argType);
-                     if(PT && PT->getPointeeType()->getTypeClass() == Type::Typedef)
+                     if(PT)
+                     {
                         ParamTypeName = GetTypeNameCanonical(RemoveTypedef(PT->getPointeeType())) + " *";
+                        ParamTypeNameOrig = RemoveTypedef(PT->getPointeeType()).getAsString() + " *";
+                     }
                      auto RT = dyn_cast<ReferenceType>(argType);
-                     if(RT && RT->getPointeeType()->getTypeClass() == Type::Typedef)
+                     if(RT)
+                     {
                         ParamTypeName = GetTypeNameCanonical(RemoveTypedef(RT->getPointeeType())) + " &";
+                        ParamTypeNameOrig = RemoveTypedef(RT->getPointeeType()).getAsString() + " &";
+                     }
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
                      {
@@ -724,8 +738,8 @@ namespace clang
                   }
                   else
                   {
-                     if(argType->getTypeClass() == Type::Typedef)
-                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(argType));
+                     ParamTypeName = GetTypeNameCanonical(RemoveTypedef(argType));
+                     ParamTypeNameOrig = RemoveTypedef(argType).getAsString();
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interfaceType = "none";
@@ -751,10 +765,8 @@ namespace clang
 
                   HLS_interfaceMap[funName].push_back(interfaceType);
                   Fun2Params[funName].push_back(parName);
-                  if(ParamTypeName.empty())
-                     ParamTypeName = GetTypeNameCanonical(ND->getType());
                   Fun2ParamType[funName].push_back(ParamTypeName);
-                  Fun2ParamTypeOrig[funName].push_back(argType.getAsString());
+                  Fun2ParamTypeOrig[funName].push_back(ParamTypeNameOrig);
                   if(interfaceType == "array")
                      Fun2ParamSize[funName][parName] = arraySize;
                   if(interfaceType == "m_axi" && UDIT_attribute2_p)

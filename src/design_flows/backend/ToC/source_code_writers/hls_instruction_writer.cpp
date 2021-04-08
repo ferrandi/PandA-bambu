@@ -60,10 +60,10 @@
 
 /// Backend include
 #include "c_writer.hpp"
+#include "tree_helper.hpp"
 #include "tree_manager.hpp"
 #include "tree_node.hpp"
 #include "tree_reindex.hpp"
-#include "tree_helper.hpp"
 
 /// Parameter include
 #include "Parameter.hpp"
@@ -76,23 +76,18 @@ HLSInstructionWriter::~HLSInstructionWriter() = default;
 
 void HLSInstructionWriter::declareFunction(const unsigned int function_id)
 {
+   bool flag_pp = parameters->isOption(OPT_pretty_print) || (parameters->isOption(OPT_discrepancy) && parameters->getOption<bool>(OPT_discrepancy));
    // All I have to do is to change main in _main
    const BehavioralHelperConstRef behavioral_helper = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper();
    std::string stringTemp = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->print_type(function_id, false, true, false, 0, var_pp_functorConstRef(new std_var_pp_functor(behavioral_helper)));
-
-   bool flag_cpp = AppM->get_tree_manager()->is_CPP() && !parameters->isOption(OPT_pretty_print) && (!parameters->isOption(OPT_discrepancy) || !parameters->getOption<bool>(OPT_discrepancy));
-
-   tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
-   auto* fd = GetPointer<function_decl>(fd_node);
-   std::string fname;
-   tree_helper::get_mangled_fname(fd, fname);
    std::string name = AppM->CGetFunctionBehavior(function_id)->CGetBehavioralHelper()->get_function_name();
-   if(name == "main")
+
+   if(!flag_pp)
    {
-      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the name of the function is under our control ;-)
-   }
-   if(flag_cpp)
-   {
+      tree_nodeRef fd_node = AppM->get_tree_manager()->get_tree_node_const(function_id);
+      auto* fd = GetPointer<function_decl>(fd_node);
+      std::string fname;
+      tree_helper::get_mangled_fname(fd, fname);
       auto HLSMgr = GetPointer<const HLS_manager>(AppM);
       if(HLSMgr && HLSMgr->design_interface_typename_orig_signature.find(fname) != HLSMgr->design_interface_typename_orig_signature.end())
       {
@@ -114,7 +109,11 @@ void HLSInstructionWriter::declareFunction(const unsigned int function_id)
          }
          stringTemp += ")";
       }
-      boost::replace_all(stringTemp, "/*&*/*", "&");
+   }
+   // boost::replace_all(stringTemp, "/*&*/*", "&");
+   if(name == "main")
+   {
+      boost::replace_all(stringTemp, " main(", " _main("); /// the assumption is strong but the code that prints the name of the function is under our control ;-)
    }
 
    indented_output_stream->Append(stringTemp);
