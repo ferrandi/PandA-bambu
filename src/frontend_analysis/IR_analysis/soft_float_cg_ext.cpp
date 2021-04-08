@@ -950,8 +950,23 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
 
       if(outFF->has_rounding)
       {
-         const auto j_bit = (Frac & ((1ULL << bits_diff) - 1)) != 0;
-         SFrac = SFrac | j_bit;
+         const auto GuardBit = (Frac >> (bits_diff - 1)) & 1;
+
+         auto LSB = 0;
+         if(bits_diff > 1)
+         {
+            const auto RoundBit = (Frac >> (bits_diff - 2)) & 1;
+            LSB = LSB | RoundBit;
+         }
+
+         if(bits_diff > 2)
+         {
+            const auto Sticky = (Frac & ((1ULL << (bits_diff - 2)) - 1)) != 0;
+            LSB = LSB | Sticky;
+         }
+
+         const auto Round = GuardBit & LSB;
+         SFrac = SFrac | Round;
       }
    }
    else if(inFF->frac_bits < outFF->frac_bits)
@@ -1063,6 +1078,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    };
 
    const auto bool_type = tree_man->create_boolean_type();
+   const auto bool_type_idx = GET_INDEX_NODE(bool_type);
    const auto in_type = GetPointerS<ssa_name>(GET_NODE(ssa))->type;
    THROW_ASSERT(tree_helper::Size(GET_NODE(in_type)) == static_cast<unsigned int>(static_cast<uint8_t>(inFF->sign == bit_lattice::U) + inFF->exp_bits + inFF->frac_bits),
                 "Input type size " + STR(tree_helper::Size(GET_NODE(in_type))) + "bits with fp format " + inFF->mngl());
@@ -1201,6 +1217,7 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    }
 
    tree_nodeRef SFrac;
+   tree_nodeRef Round;
    if(inFF->frac_bits > outFF->frac_bits)
    {
       const auto bits_diff = inFF->frac_bits - outFF->frac_bits;
@@ -1215,20 +1232,53 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
 
       if(outFF->has_rounding)
       {
-         // Mask discarded bits
-         const auto fracRMask = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst((1LL << bits_diff) - 1, in_type_idx), BUILTIN_SRCP, bit_and_expr_K);
-         auto JBit = createStmt(in_type, fracRMask);
+         const auto shiftGuard = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff - 1, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
+         auto GuardBit = createStmt(in_type, shiftGuard);
 
-         // Jam discarded bits
-         const auto fracRJam = tree_man->create_binary_operation(bool_type, JBit, TreeM->CreateUniqueIntegerCst(0, in_type_idx), BUILTIN_SRCP, ne_expr_K);
-         JBit = createStmt(bool_type, fracRJam);
+         const auto castGuard = tree_man->CreateNopExpr(GuardBit, bool_type, tree_nodeRef(), tree_nodeRef());
+         GuardBit = createStmt(bool_type, castGuard);
 
-         // Cast jam bit to out_type
-         const auto castJBit = tree_man->CreateNopExpr(JBit, out_type, tree_nodeRef(), tree_nodeRef());
-         JBit = createStmt(out_type, JBit);
+         // const auto shiftLSB = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
+         // auto LSB = createStmt(in_type, shiftLSB);
+         //
+         // const auto castLSB = tree_man->CreateNopExpr(LSB, bool_type, tree_nodeRef(), tree_nodeRef());
+         // LSB = createStmt(bool_type, castLSB);
+
+         tree_nodeRef LSB = TreeM->CreateUniqueIntegerCst(0, bool_type_idx);
+         if(bits_diff > 1)
+         {
+            const auto shiftRound = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst(biasDiff - 2, in_type_idx), BUILTIN_SRCP, rshift_expr_K);
+            auto RoundBit = createStmt(in_type, shiftRound);
+
+            const auto castRound = tree_man->CreateNopExpr(RoundBit, bool_type, tree_nodeRef(), tree_nodeRef());
+            RoundBit = createStmt(bool_type, castRound);
+
+            const auto orLSB = tree_man->create_binary_operation(bool_type, LSB, RoundBit, BUILTIN_SRCP, bit_ior_expr_K);
+            LSB = createStmt(bool_type, orLSB);
+         }
+
+         if(bits_diff > 2)
+         {
+            // Mask discarded bits
+            const auto fracRMask = tree_man->create_binary_operation(in_type, Frac, TreeM->CreateUniqueIntegerCst((1LL << (bits_diff - 2)) - 1, in_type_idx), BUILTIN_SRCP, bit_and_expr_K);
+            auto Sticky = createStmt(in_type, fracRMask);
+
+            // Jam discarded bits
+            const auto fracRJam = tree_man->create_binary_operation(bool_type, Sticky, TreeM->CreateUniqueIntegerCst(0, in_type_idx), BUILTIN_SRCP, ne_expr_K);
+            Sticky = createStmt(bool_type, fracRJam);
+
+            const auto orLSB = tree_man->create_binary_operation(bool_type, LSB, Sticky, BUILTIN_SRCP, bit_ior_expr_K);
+            LSB = createStmt(bool_type, orLSB);
+         }
+
+         const auto andRound = tree_man->create_binary_operation(bool_type, GuardBit, LSB, BUILTIN_SRCP, bit_and_expr_K);
+         Round = createStmt(bool_type, andRound);
+
+         const auto castRound = tree_man->CreateNopExpr(Round, out_type, tree_nodeRef(), tree_nodeRef());
+         Round = createStmt(out_type, castRound);
 
          // Or jamming with output significand
-         const auto fracJam = tree_man->create_binary_operation(out_type, SFrac, JBit, BUILTIN_SRCP, bit_ior_expr_K);
+         const auto fracJam = tree_man->create_binary_operation(out_type, SFrac, Round, BUILTIN_SRCP, bit_ior_expr_K);
          SFrac = createStmt(out_type, fracJam);
       }
    }
