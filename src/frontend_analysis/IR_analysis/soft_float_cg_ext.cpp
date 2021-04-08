@@ -922,23 +922,60 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    Frac = bits & ((1ULL << inFF->frac_bits) - 1);
 
    uint64_t FExp, SFrac;
+   bool ExpOverflow;
 
-   int32_t out_exp_max = ((1 << outFF->exp_bits) - 1) + outFF->exp_bias - outFF->has_nan;
+   const auto needed_bits = [](int i) -> unsigned int {
+      int bits;
+      if(i > 0)
+      {
+         bits = 32 - __builtin_clz(static_cast<unsigned int>(i));
+      }
+      else
+      {
+         i = -i;
+         bits = 32 - __builtin_clz(static_cast<unsigned int>(i)) + ((i & (i - 1)) != 0);
+      }
+      return static_cast<unsigned int>(bits);
+   };
+   const auto exp_bits_diff = inFF->exp_bits > outFF->exp_bits ? (inFF->exp_bits - outFF->exp_bits) : (outFF->exp_bits - inFF->exp_bits);
+   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1), static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1), needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
 
+   const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
+   const auto rangeDiff = ((1 << outFF->exp_bits) - !outFF->has_subnorm) - ((1 << inFF->exp_bits) - !inFF->has_subnorm);
    if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
    {
-      const auto biasDiff = inFF->exp_bias - outFF->exp_bias;
-      const auto exp_zero = Exp == 0;
-      const auto exp_val = static_cast<int32_t>(Exp) + inFF->exp_bias;
-      if((exp_val < outFF->exp_bias || exp_val > out_exp_max) && (inFF->has_nan && Exp != ((1ULL << inFF->exp_bits) - 1)) && !exp_zero)
+      FExp = Exp + static_cast<uint64_t>(biasDiff);
+      bool ExpUnderflow;
+      if(biasDiff < 0 || biasDiff > rangeDiff)
       {
-         THROW_ERROR("Output fp format does not intersect with input fp format");
-         return nullptr;
+         const auto expOverflow = (FExp >> outFF->exp_bits) & ((1ULL << (exp_type_size - outFF->exp_bits - 1)) - 1);
+         ExpOverflow = expOverflow != 0ULL;
+         ExpUnderflow = (FExp >> (exp_type_size - 1)) & 1;
+         THROW_ASSERT(!ExpOverflow && !ExpUnderflow || bits == 0, "Target FP format can not represent a program constant.");
+         const auto ExExp = ExpUnderflow ? 0ULL : ((1ULL << outFF->exp_bits) - 1);
+         FExp = FExp & ((1 << outFF->exp_bits) - 1);
+         FExp = ExpOverflow ? ExExp : FExp;
+         Frac = ExpUnderflow ? 0 : Frac;
+         ExpOverflow = ExpOverflow ^ ExpUnderflow;
       }
-      FExp = exp_zero ? 0ULL : (Exp + static_cast<uint64_t>(biasDiff));
+
+      FExp = FExp & ((1 << outFF->exp_bits) - 1);
+      const bool ExpNull = Exp == 0;
+      const bool FracNull = Frac == 0;
+      bool inputZero = ExpNull && FracNull;
+      if(biasDiff < 0 || biasDiff > rangeDiff)
+      {
+         inputZero = inputZero || ExpUnderflow;
+      }
+      FExp = inputZero ? 0ULL : FExp;
    }
    else
    {
+      if(inFF->has_subnorm && !outFF->has_subnorm)
+      {
+         const bool ExpNull = Exp == 0;
+         Frac = ExpNull ? 0ULL : Frac;
+      }
       FExp = Exp;
    }
 
@@ -950,23 +987,23 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
 
       if(outFF->has_rounding)
       {
-         const auto GuardBit = (Frac >> (bits_diff - 1)) & 1;
+         const bool GuardBit = (Frac >> (bits_diff - 1)) & 1;
 
-         auto LSB = 0;
+         bool LSB = 0;
          if(bits_diff > 1)
          {
-            const auto RoundBit = (Frac >> (bits_diff - 2)) & 1;
+            const bool RoundBit = (Frac >> (bits_diff - 2)) & 1;
             LSB = LSB | RoundBit;
          }
 
          if(bits_diff > 2)
          {
-            const auto Sticky = (Frac & ((1ULL << (bits_diff - 2)) - 1)) != 0;
+            const bool Sticky = (Frac & ((1ULL << (bits_diff - 2)) - 1)) != 0;
             LSB = LSB | Sticky;
          }
 
-         const auto Round = GuardBit & LSB;
-         SFrac = SFrac | Round;
+         const bool Round = GuardBit & LSB;
+         SFrac = SFrac | static_cast<uint64_t>(Round);
       }
    }
    else if(inFF->frac_bits < outFF->frac_bits)
@@ -997,23 +1034,16 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    {
       out_nan |= Exp == ((1ULL << inFF->exp_bits) - 1);
    }
-
-   const auto expFix = inFF->exp_bias - outFF->exp_bias;
-   const auto rangeDiff = ((1LL << outFF->exp_bits) - 1) - ((1LL << inFF->exp_bits) - 1);
-   if(((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias)) && expFix > rangeDiff && outFF->has_nan)
-   {
-      out_nan |= FExp > ((1ULL << outFF->exp_bits) - 2);
-   }
-
    uint64_t RExp, NFrac, RFrac;
 
    RExp = out_nan ? ((1ULL << outFF->exp_bits) - 1) : FExp;
    RExp <<= outFF->frac_bits;
 
-   if(outFF->sign != bit_lattice::U && inFF->sign != outFF->sign)
+   if(biasDiff < 0 || biasDiff > rangeDiff)
    {
-      out_nan |= Sign;
+      out_nan |= ExpOverflow;
    }
+
    if(outFF->has_nan)
    {
       if(inFF->has_nan)
@@ -1098,7 +1128,8 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       }
       return static_cast<unsigned int>(bits);
    };
-   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits), static_cast<unsigned int>(outFF->exp_bits), needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
+   const auto exp_bits_diff = inFF->exp_bits > outFF->exp_bits ? (inFF->exp_bits - outFF->exp_bits) : (outFF->exp_bits - inFF->exp_bits);
+   const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1), static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1), needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
    const auto exp_type = tree_man->create_integer_type_with_prec(exp_type_size, true);
    const auto exp_type_idx = GET_INDEX_NODE(exp_type);
 
@@ -1349,6 +1380,10 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
    const auto terRExp = tree_man->create_ternary_operation(out_type, out_nan, TreeM->CreateUniqueIntegerCst(((1LL << outFF->exp_bits) - 1), out_type_idx), RExp, BUILTIN_SRCP, cond_expr_K);
    RExp = createStmt(out_type, terRExp);
 
+   // Shift exponent left
+   const auto expLShift = tree_man->create_binary_operation(out_type, RExp, TreeM->CreateUniqueIntegerCst(outFF->frac_bits, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
+   RExp = createStmt(out_type, expLShift);
+
    if(biasDiff < 0 || biasDiff > rangeDiff)
    {
       THROW_ASSERT(ExpOverflow, "");
@@ -1358,18 +1393,6 @@ tree_nodeRef soft_float_cg_ext::generate_interface(const blocRef& bb, tree_nodeR
       out_nan = createStmt(bool_type, nanOr);
    }
 
-   // Shift exponent left
-   const auto expLShift = tree_man->create_binary_operation(out_type, RExp, TreeM->CreateUniqueIntegerCst(outFF->frac_bits, out_type_idx), BUILTIN_SRCP, lshift_expr_K);
-   RExp = createStmt(out_type, expLShift);
-
-   if(outFF->sign != bit_lattice::U && inFF->sign != outFF->sign)
-   {
-      THROW_ASSERT(sign_test, "Sign test should have been computed here.");
-
-      // Add sign test to out_nan for significand nan test
-      const auto nanOr = tree_man->create_binary_operation(bool_type, sign_test, out_nan, BUILTIN_SRCP, bit_ior_expr_K);
-      out_nan = createStmt(bool_type, nanOr);
-   }
    tree_nodeRef NFrac;
    if(outFF->has_nan)
    {
