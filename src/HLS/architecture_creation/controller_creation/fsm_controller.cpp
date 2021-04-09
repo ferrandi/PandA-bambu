@@ -211,7 +211,7 @@ void fsm_controller::create_state_machine(std::string& parse)
    std::map<unsigned int, vertex> loop_last_state;
 
    // group vertices under their respective loopId
-   if(FB->is_pipelining_enabled())
+   if(FB->is_pipeline_enabled())
    {
       for(const auto& v : working_list)
       {
@@ -286,7 +286,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "Analyzing loop " + std::to_string(stg->CGetStateInfo(v)->loopId));
          present_state[v] = std::vector<long long int>(out_num, 0);
-         if(stg->CGetStateInfo(v)->loopId != 0 && FB->is_pipelining_enabled())
+         if(stg->CGetStateInfo(v)->loopId != 0 && FB->is_pipeline_enabled())
          {
             analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
          }
@@ -321,11 +321,11 @@ void fsm_controller::create_state_machine(std::string& parse)
                   else
                      activations_check[std::get<0>(a)].insert(std::get<1>(a));
 #endif
-                  if(std::get<0>(a) == v && (stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled()))
+                  if(std::get<0>(a) == v && (stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled()))
                   {
                      present_state[v][out_ports[s.second]] = 1;
                   }
-                  else if(loop_map[stg->CGetStateInfo(v)->loopId].find(std::get<0>(a)) != loop_map[stg->CGetStateInfo(v)->loopId].end() && stg->CGetStateInfo(v)->loopId != 0 && FB->is_pipelining_enabled())
+                  else if(loop_map[stg->CGetStateInfo(v)->loopId].find(std::get<0>(a)) != loop_map[stg->CGetStateInfo(v)->loopId].end() && stg->CGetStateInfo(v)->loopId != 0 && FB->is_pipeline_enabled())
                   {
                      present_state[v][out_ports[s.second]] = 1;
                   }
@@ -335,7 +335,7 @@ void fsm_controller::create_state_machine(std::string& parse)
 
          CustomOrderedSet<generic_objRef> active_fu;
          const tree_managerRef TreeM = HLSMgr->get_tree_manager();
-         const auto& operations = (stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled()) ? astg->CGetStateInfo(v)->executing_operations : loop_executing_ops[stg->CGetStateInfo(v)->loopId];
+         const auto& operations = (stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled()) ? astg->CGetStateInfo(v)->executing_operations : loop_executing_ops[stg->CGetStateInfo(v)->loopId];
          for(const auto& op : operations)
          {
             active_fu.insert(HLS->Rfu->get(op));
@@ -359,7 +359,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                THROW_ERROR("Unbounded operations have to have both done_port and start_port ports!" + STR(TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId())));
             }
             bool is_starting_operation;
-            if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
+            if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled())
             {
                is_starting_operation = std::find(stg->CGetStateInfo(v)->starting_operations.begin(), stg->CGetStateInfo(v)->starting_operations.end(), op) != stg->CGetStateInfo(v)->starting_operations.end();
             }
@@ -375,7 +375,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                present_state[v][unbounded_port] = 1;
             }
          }
-         if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
+         if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled())
          {
             for(auto in0 : HLS->Rliv->get_live_in(v))
             {
@@ -463,7 +463,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       // skip all but one state per loop
       if(analyzed_loops.find(stg->CGetStateInfo(v)->loopId) == analyzed_loops.end())
       {
-         if(stg->CGetStateInfo(v)->loopId != 0 && FB->is_pipelining_enabled())
+         if(stg->CGetStateInfo(v)->loopId != 0 && FB->is_pipeline_enabled())
          {
             analyzed_loops.insert(stg->CGetStateInfo(v)->loopId);
          }
@@ -475,7 +475,7 @@ void fsm_controller::create_state_machine(std::string& parse)
          EdgeDescriptor default_edge;
          bool found_default = false;
          vertex ver;
-         if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
+         if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled())
          {
             ver = v;
          }
@@ -669,7 +669,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                   {
                      THROW_ASSERT(v != NULL_VERTEX && std::get<0>(a) != NULL_VERTEX, "error on source vertex");
                      bool source_activation = false;
-                     if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipelining_enabled())
+                     if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled())
                      {
                         source_activation = std::get<0>(a) == v;
                      }

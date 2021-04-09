@@ -261,7 +261,7 @@ void reg_binding::bind(unsigned int sv, unsigned int index)
    if(unique_table.find(index) == unique_table.end())
    {
       unique_table[index] = generic_objRef(new register_obj(index));
-      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
+      if(HLSMgr->GetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
       {
          for(vertex v : HLS->Rliv->get_support())
          {
@@ -304,7 +304,7 @@ void reg_binding::add_to_SM(structural_objectRef clock_port, structural_objectRe
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug, "reg_binding::add_registers - Start");
 
-   bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipelining_enabled() && !HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline();
+   bool stallable_pipeline = HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_pipeline_enabled() && !HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline();
 
    if(stallable_pipeline)
    {
@@ -377,7 +377,7 @@ std::string reg_binding::CalculateRegisterName(unsigned int i)
 {
    std::string register_type_name;
    auto synch_reset = HLS->Param->getOption<std::string>(OPT_sync_reset);
-   if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->build_simple_pipeline())
+   if((is_without_enable.find(i) != is_without_enable.end()) | HLSMgr->CGetFunctionBehavior(HLS->functionId)->is_simple_pipeline())
    {
       register_type_name = register_STD;
    }

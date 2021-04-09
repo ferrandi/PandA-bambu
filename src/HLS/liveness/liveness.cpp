@@ -248,7 +248,7 @@ bool liveness::are_in_conflict(vertex op1, vertex op2) const
    const CustomOrderedSet<vertex>& op2_run = get_state_where_run(op2);
 
    auto FB = HLSMgr->GetFunctionBehavior(HLS->functionId);
-   if(FB->is_pipelining_enabled() && !FB->build_simple_pipeline())
+   if(FB->is_pipeline_enabled() && !FB->is_simple_pipeline())
    {
       const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
       unsigned int bb_index1 = GET_BB_INDEX(dfg, op1);

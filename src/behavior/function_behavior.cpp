@@ -192,7 +192,6 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       memory_info(),
       packed_vars(false)
 {
-   pipeline_enabled = false;
    THROW_ASSERT(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index())->get_kind() == function_decl_K, "Called function_behavior on a node which is not a function_decl");
    auto* decl_node = GetPointer<function_decl>(_AppM->get_tree_manager()->GetTreeNode(_helper->get_function_index()));
    std::string fname;
@@ -227,7 +226,7 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
       else
       {
          std::vector<std::string> funcs_values = convert_string_to_vector<std::string>(tmp_string, std::string(","));
-         for(auto fun_pipeline : funcs_values)
+         for(const auto& fun_pipeline : funcs_values)
          {
             std::vector<std::string> splitted = SplitString(fun_pipeline, "=");
             if(splitted.size() == 1 && fname == splitted.at(0))
@@ -240,6 +239,10 @@ FunctionBehavior::FunctionBehavior(const application_managerConstRef _AppM, cons
             {
                pipeline_enabled = true;
                initiation_time = boost::lexical_cast<int>(splitted.at(1));
+               if(initiation_time == 1)
+               {
+                  simple_pipeline = true;
+               }
                INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, _parameters->getOption<int>(OPT_output_level), "Pipelining with II=" + STR(initiation_time) + " for function: " + fname + "\n");
             }
          }

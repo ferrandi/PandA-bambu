@@ -207,7 +207,7 @@ FunctionFrontendFlowStep_Movable simple_code_motion::CheckMovable(const unsigned
                                                                   ,
                                                                   tree_nodeRef tn, bool& zero_delay, const tree_managerRef TM)
 {
-   if(AppM->CGetFunctionBehavior(function_id)->build_simple_pipeline())
+   if(AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline())
    {
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Yes because we aim to full pipelining");
       return FunctionFrontendFlowStep_Movable::MOVABLE;
@@ -653,7 +653,7 @@ DesignFlowStep_Status simple_code_motion::InternalExec()
    const auto BVP_computation_step = design_flow_graph->CGetDesignFlowStepInfo(BVP_computation_vertex)->design_flow_step;
    auto BVP_executed = GetPointer<const FunctionFrontendFlowStep>(BVP_computation_step)->CGetBBVersion() != 0;
 
-   bool isFunctionPipelined = BVP_executed ? AppM->CGetFunctionBehavior(function_id)->build_simple_pipeline() : false;
+   bool isFunctionPipelined = BVP_executed ? AppM->CGetFunctionBehavior(function_id)->is_simple_pipeline() : false;
 
    /// store the GCC BB graph ala boost::graph
    auto bb_graph_info = BBGraphInfoRef(new BBGraphInfo(AppM, function_id));

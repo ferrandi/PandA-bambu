@@ -219,7 +219,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Warning: " + fname + " is empty or the compiler killed all the statements");
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + fname);
-      if(not function_behavior->build_simple_pipeline())
+      if(not function_behavior->is_simple_pipeline())
       {
          HLSMgr->global_resource_constraints[std::make_pair(fname, WORK_LIBRARY)] = 1;
       }

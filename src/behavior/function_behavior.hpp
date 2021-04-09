@@ -423,9 +423,10 @@ class FunctionBehavior
     * Constructor
     * @param AppM is the application manager
     * @param _helper is the helper associated with the function
-    * @param parameters is the set of input paramters
+    * @param parameters is the set of input parameters
     */
    FunctionBehavior(const application_managerConstRef AppM, const BehavioralHelperRef _helper, const ParameterConstRef parameters);
+   FunctionBehavior(const FunctionBehavior&) = delete;
 
    /**
     * Destructor
@@ -856,12 +857,12 @@ class FunctionBehavior
       return packed_vars;
    }
 
-   bool is_pipelining_enabled() const
+   bool is_pipeline_enabled() const
    {
       return pipeline_enabled;
    }
 
-   bool build_simple_pipeline() const
+   bool is_simple_pipeline() const
    {
       if(simple_pipeline)
       {

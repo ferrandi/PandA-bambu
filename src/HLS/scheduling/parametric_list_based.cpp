@@ -672,7 +672,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          else
          {
             const auto II = HLS->allocation_information->get_initiation_time(res_binding->get_assign(*live_vertex_it), *live_vertex_it);
-            if(FB->build_simple_pipeline() && (II > 1 || II == 0))
+            if(FB->is_simple_pipeline() && (II > 1 || II == 0))
             {
                auto lat = ending_time[*live_vertex_it] - starting_time[*live_vertex_it];
                THROW_ERROR("Timing of Vertex " + GET_NAME(flow_graph, *live_vertex_it) + " is not compatible with II=1.\nActual vertex latency is " + STR(lat) + " greater than the clock period");
