@@ -354,7 +354,7 @@ void parametric_list_based::Initialize()
 
 void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
                                                           CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
-                                                          double scheduling_mux_margins, bool unbounded, bool unbounded_Functions, bool nonDirectLoadStore, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
+                                                          double scheduling_mux_margins, bool unbounded, bool RWFunctions, bool nonDirectLoadStore, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
                                                           const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond,
                                                           bool& cannotBeChained2, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond)
 {
@@ -410,12 +410,12 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    {
       return;
    }
-   nonDirectMemCond = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && unbounded_Functions;
+   nonDirectMemCond = (curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type) && RWFunctions;
    if(nonDirectMemCond)
    {
       return;
    }
-   unboundedFunctionsCond = (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && nonDirectLoadStore;
+   unboundedFunctionsCond = (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (nonDirectLoadStore || RWFunctions);
    if(unboundedFunctionsCond)
    {
       return;
@@ -641,7 +641,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    while((schedule->num_scheduled() - already_sch) != operations_number)
    {
       bool unbounded = false;
-      bool unbounded_Functions = false;
+      bool RWFunctions = false;
       bool unbounded_RW = false;
       bool nonDirectLoadStore = false;
       unsigned int n_scheduled_ops = 0;
@@ -886,8 +886,8 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond;
 
                CheckSchedulabilityConditions(current_vertex, current_cycle, current_starting_time, current_ending_time, current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time, setup_hold_time, phi_extra_time,
-                                             scheduling_mux_margins, unbounded, unbounded_Functions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0,
-                                             chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond);
+                                             scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond,
+                                             cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1074,7 +1074,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                               double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
                               CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
                               CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
-                                                            setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, unbounded_Functions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
+                                                            setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
                                                             predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local,
                                                             nonDirectMemCondLocal, unboundedFunctionsCond);
                               if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
@@ -1124,7 +1124,14 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                ++n_scheduled_ops;
                /// update resource usage
                used_resources[fu_type]++;
-               /// check if there exist enough resources available
+
+               /// check if we have functions accessing the memory
+               if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && RW_stmts.find(current_vertex) == RW_stmts.end())
+               {
+                  RWFunctions = true;
+               }
+
+               /// check if we have unbounded resources
                if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) == RW_stmts.end())
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  " + GET_NAME(flow_graph, current_vertex) + " is unbounded");
@@ -1136,10 +1143,6 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                                    " of type " + flow_graph->CGetOpNodeInfo(current_vertex)->GetOperation() + "\nThis may prevent meeting the timing constraints.\n");
                   }
                   unbounded = true;
-                  if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
-                  {
-                     unbounded_Functions = true;
-                  }
                }
                else if(!HLS->allocation_information->is_operation_bounded(flow_graph, current_vertex, fu_type) && RW_stmts.find(current_vertex) != RW_stmts.end())
                {
@@ -1149,6 +1152,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                {
                   INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---" + GET_NAME(flow_graph, current_vertex) + " is bounded");
                }
+               /// check if we have non-direct memory accesses
                if((curr_vertex_type & (TYPE_LOAD | TYPE_STORE)) && !HLS->allocation_information->is_direct_access_memory_unit(fu_type))
                {
                   nonDirectLoadStore = true;
