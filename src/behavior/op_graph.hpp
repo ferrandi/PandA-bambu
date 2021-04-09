@@ -214,6 +214,11 @@ UINT_STRONG_TYPEDEF(MemoryAddress);
  */
 #define TYPE_PREDICATED 1 << 27
 
+/**
+ * Constant identifying if a TYPE_EXTERNAL write  or read memory
+ */
+#define TYPE_RW 1 << 28
+
 //@}
 
 /**

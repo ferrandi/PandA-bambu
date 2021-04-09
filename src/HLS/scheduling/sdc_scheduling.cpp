@@ -1296,33 +1296,34 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          for(const auto loop_operation : basic_block_graph->CGetBBNodeInfo(loop_bb)->statements_list)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if " + GET_NAME(filtered_op_graph, loop_operation) + " has to be moved");
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_IF | TYPE_MULTIIF)) != 0)
+            auto curr_vertex_type = GET_TYPE(filtered_op_graph, loop_operation);
+            if((curr_vertex_type & (TYPE_IF | TYPE_MULTIIF)) != 0)
             {
                /// IF is not a barrier for controlled operations
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & TYPE_PHI) != 0)
+            if((curr_vertex_type & TYPE_PHI) != 0)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_SWITCH | TYPE_RET | TYPE_VPHI | TYPE_LAST_OP | TYPE_LABEL)) != 0)
+            if((curr_vertex_type & (TYPE_SWITCH | TYPE_RET | TYPE_VPHI | TYPE_LAST_OP | TYPE_LABEL)) != 0)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_STORE)) != 0)
+            if((curr_vertex_type & (TYPE_STORE)) != 0)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_EXTERNAL)) != 0)
+            if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
             /// Loads which do not have resource limitation can be moved but not speculated; speculation should be prevented by control edges
-            if(((GET_TYPE(filtered_op_graph, loop_operation) & TYPE_LOAD) != 0) and limited_resources.find(allocation_information->GetFuType(loop_operation)) != limited_resources.end())
+            if(((curr_vertex_type & TYPE_LOAD) != 0) and limited_resources.find(allocation_information->GetFuType(loop_operation)) != limited_resources.end())
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;

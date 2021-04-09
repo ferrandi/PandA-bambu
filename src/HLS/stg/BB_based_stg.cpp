@@ -1240,7 +1240,12 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          for(auto next_ops : global_starting_ops[first_state[tempBb]])
          {
             const auto operation = dfgRef->CGetOpNodeInfo(next_ops);
-            if((GET_TYPE(dfgRef, next_ops) & (TYPE_STORE | TYPE_LOAD | TYPE_EXTERNAL)) != 0)
+            auto curr_vertex_type = GET_TYPE(dfgRef, next_ops);
+            if((curr_vertex_type & (TYPE_STORE | TYPE_LOAD)) != 0)
+            {
+               return;
+            }
+            if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
             {
                return;
             }

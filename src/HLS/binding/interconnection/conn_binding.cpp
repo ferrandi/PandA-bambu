@@ -962,7 +962,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       auto* fu_module = GetPointer<module>(top);
       THROW_ASSERT(fu_module, "expected");
       structural_objectRef start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
-      if((GET_TYPE(data, j) & TYPE_EXTERNAL && start_port_i) || !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
+      if(((GET_TYPE(data, j) & TYPE_EXTERNAL) && start_port_i) || !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
       {
          bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, j, data);
          bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, j, data);
