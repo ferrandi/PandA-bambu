@@ -35,7 +35,7 @@
 // synthesis attribute use_sync_reset of current is no;
 reg [PORTSIZE_ops-1:0] current 1INIT_ZERO_VALUE;
 reg started 1INIT_ZERO_VALUE;
-wire started0 1INIT_ZERO_VALUE;
+wire started0;
 wire [PORTSIZE_ops-1:0] or_temp;
 wire sop_temp;
 function reduce_INs;
@@ -67,7 +67,7 @@ always @(posedge clock 1RESET_EDGE)
     started &lt;= 0;
   else
     started &lt;= started0;
-assign started0 = (started | enable) &amp; !sop_temp;
+assign started0 = ~sop_temp &amp; (started | enable);
 assign or_temp = current | ops;
 assign sop_temp = reduce_INs(or_temp);
 assign sop = sop_temp;
