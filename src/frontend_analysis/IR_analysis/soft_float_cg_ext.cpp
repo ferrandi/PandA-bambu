@@ -950,17 +950,17 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    bool ExpOverflow;
 
    const auto needed_bits = [](int i) -> unsigned int {
-      int bits;
+      int lz;
       if(i > 0)
       {
-         bits = 32 - __builtin_clz(static_cast<unsigned int>(i));
+         lz = 32 - __builtin_clz(static_cast<unsigned int>(i));
       }
       else
       {
          i = -i;
-         bits = 32 - __builtin_clz(static_cast<unsigned int>(i)) + ((i & (i - 1)) != 0);
+         lz = 32 - __builtin_clz(static_cast<unsigned int>(i)) + ((i & (i - 1)) != 0);
       }
-      return static_cast<unsigned int>(bits);
+      return static_cast<unsigned int>(lz);
    };
    const auto exp_bits_diff = inFF->exp_bits > outFF->exp_bits ? (inFF->exp_bits - outFF->exp_bits) : (outFF->exp_bits - inFF->exp_bits);
    const unsigned int exp_type_size = std::max({static_cast<unsigned int>(inFF->exp_bits) + (exp_bits_diff == 1), static_cast<unsigned int>(outFF->exp_bits) + (exp_bits_diff == 1), needed_bits(inFF->exp_bias), needed_bits(outFF->exp_bias)});
@@ -976,15 +976,15 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
          const auto expOverflow = (FExp >> outFF->exp_bits) & ((1ULL << (exp_type_size - outFF->exp_bits - 1)) - 1);
          ExpOverflow = expOverflow != 0ULL;
          ExpUnderflow = (FExp >> (exp_type_size - 1)) & 1;
-         THROW_ASSERT(!ExpOverflow && !ExpUnderflow || bits == 0, "Target FP format can not represent a program constant.");
+         THROW_ASSERT((!ExpOverflow && !ExpUnderflow) || bits == 0, "Target FP format can not represent a program constant.");
          const auto ExExp = ExpUnderflow ? 0ULL : ((1ULL << outFF->exp_bits) - 1);
-         FExp = FExp & ((1 << outFF->exp_bits) - 1);
+         FExp = FExp & ((1ULL << outFF->exp_bits) - 1);
          FExp = ExpOverflow ? ExExp : FExp;
          Frac = ExpUnderflow ? 0 : Frac;
          ExpOverflow = ExpOverflow ^ ExpUnderflow;
       }
 
-      FExp = FExp & ((1 << outFF->exp_bits) - 1);
+      FExp = FExp & ((1ULL << outFF->exp_bits) - 1);
       const bool ExpNull = Exp == 0;
       const bool FracNull = Frac == 0;
       bool inputZero = ExpNull && FracNull;
