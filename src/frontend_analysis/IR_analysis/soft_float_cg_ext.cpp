@@ -71,6 +71,7 @@
 #include "custom_map.hpp"
 #include <deque>
 #include <list>
+#include <set>
 #include <string>
 
 /// Tree include
@@ -100,6 +101,12 @@ tree_nodeRef soft_float_cg_ext::float64_ptr_type;
 
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
+
+static const std::set<std::string> supported_libm_calls = {};
+
+static const std::set<std::string> libm_func = {"acos",      "acosh",     "asin",       "asinh", "atan",      "atanh",  "atan2", "cbrt",  "ceil",    "copysign", "cos",     "cosh", "erf",    "erfc",  "exp",  "exp2", "expm1",  "fabs",   "fdim",  "floor",
+                                                "fma",       "fmax",      "fmin",       "fmod",  "frexp",     "hypot",  "ilogb", "ldexp", "lgamma",  "llrint",   "llround", "log",  "log10",  "log1p", "log2", "logb", "lrint",  "lround", "modf",  "nan",
+                                                "nearbyint", "nextafter", "nexttoward", "pow",   "remainder", "remquo", "rint",  "round", "scalbln", "scalbn",   "sin",     "sinh", "sincos", "sqrt",  "tan",  "tanh", "tgamma", "trunc",  "isinf", "isnan"};
 
 soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters),
@@ -276,6 +283,24 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                for(boost::tie(ei, ei_end) = boost::out_edges(func, *TopCG); ei != ei_end; ++ei)
                {
                   const auto called = boost::target(*ei, *TopCG);
+                  const auto called_fname = [&]() -> std::string {
+                     auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
+                     if(fname.substr(0, sizeof("__internal_")).compare("__internal_"))
+                     {
+                        fname = fname.substr(sizeof("__internal_") - 1);
+                     }
+                     if(fname.back() == 'f')
+                     {
+                        fname = fname.substr(0, fname.size() - 1);
+                     }
+                     return fname;
+                  }();
+
+                  if(static_cast<bool>(libm_func.count(called_fname)))
+                  {
+                     // Do not propagate format to libm functions, specialization will be handled succesively
+                     continue;
+                  }
                   FunctionVersionRef called_v;
                   if(static_cast<bool>(funcFF.count(called)))
                   {
@@ -1506,7 +1531,7 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    auto spec_function_id = TreeM->function_index(fu_name + spec_suffix);
    if(spec_function_id == 0)
    {
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Generating specialized version of " + fu_name + " (" + STR(called_function_id) + ") with fp format " + spec_suffix);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Generating specialized version of " + fu_name + " (" + STR(called_function_id) + ") with fp format " + spec_suffix);
       const auto called_func = TreeM->GetTreeReindex(called_function_id);
       const auto spec_func = tree_man->CloneFunction(called_func, spec_suffix);
       spec_function_id = GET_INDEX_CONST_NODE(spec_func);
@@ -1534,11 +1559,12 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
       const auto helper = BehavioralHelperRef(new BehavioralHelper(AppM, called_function_id, true, parameters));
       const auto fb = FunctionBehaviorRef(new FunctionBehavior(AppM, helper, parameters));
       AppM->GetCallGraphManager()->AddFunctionAndCallPoint(function_id, called_function_id, current_statement->index, fb, FunctionEdgeInfo::CallType::direct_call);
-      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Call graph updated with call to " + STR(called_function_id));
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Call graph updated with call to " + STR(called_function_id));
    }
    else
    {
       AppM->GetCallGraphManager()->AddCallPoint(function_id, called_function_id, current_statement->index, FunctionEdgeInfo::CallType::direct_call);
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Added call point for " + STR(called_function_id));
    }
 
    // Update functions float format map
@@ -1658,18 +1684,42 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          {
             const auto ce = GetPointerS<const call_expr>(GET_NODE(ga->op1));
             const auto fn = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn)) ? GetPointerS<const addr_expr>(GET_CONST_NODE(ce->fn))->op : ce->fn;
-            const auto type_i = [&]() {
-               // Return values associated to non-internal calls need to be cast renamed to local float format
-               int ti = is_internal_call(fn) ? type_interface : INTERFACE_TYPE_INPUT;
-
-               // Hardware implemented functions need the return value to still be real_type, thus it is necessary to add a view_convert operation after
-               if(tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn))) != BUILTIN_WAIT_CALL && !AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
+            const auto fu_name = [&]() -> std::string {
+               auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn)));
+               if(fname.substr(0, sizeof("__internal_")).compare("__internal_"))
                {
-                  ti |= INTERFACE_TYPE_REAL;
+                  fname = fname.substr(sizeof("__internal_") - 1);
                }
-               return ti;
+               if(fname.back() == 'f')
+               {
+                  fname = fname.substr(0, fname.size() - 1);
+               }
+               return fname;
             }();
-            RecursiveExaminate(current_statement, ga->op0, type_i);
+            if(supported_libm_calls.count(fu_name))
+            {
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
+               // libm function calls may be replaced with their templatized version if available, avoiding conversion
+               AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), current_statement->index);
+               const auto specFF = _version->ieee_format() ? (fu_name.back() == 'f' ? float32FF : float64FF) : _version->userRequired;
+               replaceWithCall(specFF, fu_name, ce->args, current_statement, ga->op1, current_srcp);
+               RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
+            }
+            else
+            {
+               const auto type_i = [&]() {
+                  // Return values associated to non-internal calls need to be cast renamed to local float format
+                  int ti = is_internal_call(fn) ? type_interface : INTERFACE_TYPE_INPUT;
+
+                  // Hardware implemented functions need the return value to still be real_type, thus it is necessary to add a view_convert operation after
+                  if(fu_name != BUILTIN_WAIT_CALL && !AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
+                  {
+                     ti |= INTERFACE_TYPE_REAL;
+                  }
+                  return ti;
+               }();
+               RecursiveExaminate(current_statement, ga->op0, type_i);
+            }
          }
          else if(tree_helper::IsLoad(TreeM, current_statement, function_behavior->get_function_mem()))
          {

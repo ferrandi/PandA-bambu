@@ -232,7 +232,7 @@ static __FORCE_INLINE __int64 __roundAndPackInt64(__flag zSign, __bits64 absZ0, 
 
 static __FORCE_INLINE __bits32 __extractFloat32Frac(__float32 a, __bits8 __frac_bits)
 {
-   return a & ((1 << __frac_bits) - 1);
+   return a & ((1U << __frac_bits) - 1);
 }
 
 /*----------------------------------------------------------------------------
@@ -241,7 +241,7 @@ static __FORCE_INLINE __bits32 __extractFloat32Frac(__float32 a, __bits8 __frac_
 
 static __FORCE_INLINE __bits32 __extractFloat32Exp(__float32 a, __bits8 __exp_bits, __bits8 __frac_bits)
 {
-   return (a >> __frac_bits) & ((1 << __exp_bits) - 1);
+   return (a >> __frac_bits) & ((1U << __exp_bits) - 1);
 }
 
 /*----------------------------------------------------------------------------
@@ -2221,7 +2221,7 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
    bSign = __extractFloat32Sign(b, __exp_bits, __frac_bits, __sign);
    zSign = aSign ^ bSign;
 
-   aExpMax = aExp == ((1 << __exp_bits) - 1);
+   aExpMax = aExp == ((1U << __exp_bits) - 1);
    a_c_zero = (aExp == 0) && (aSig == 0);
    a_c_zero = __subnorm ? (aExp == 0) : a_c_zero;
    a_c_inf = aExpMax && aSig == 0;
@@ -2232,7 +2232,7 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
    a_c_normal = __nan ? a_c_normal : !a_c_zero;
    a_c = /*((a_c_zero << 1 | a_c_zero) & FP_CLS_ZERO) |*/ ((a_c_normal << 1 | a_c_normal) & FP_CLS_NORMAL) | ((a_c_inf << 1 | a_c_inf) & FP_CLS_INF) | ((a_c_nan << 1 | a_c_nan) & FP_CLS_NAN);
 
-   bExpMax = bExp == ((1 << __exp_bits) - 1);
+   bExpMax = bExp == ((1U << __exp_bits) - 1);
    b_c_zero = (bExp == 0) && (bSig == 0);
    b_c_zero = __subnorm ? (bExp == 0) : b_c_zero;
    b_c_inf = bExpMax && bSig == 0;
@@ -2252,12 +2252,13 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
    sigProd = (SF_UDItype)(SF_USItype)(aSig) * (SF_USItype)(bSig);
    norm = (sigProd >> (__frac_mul)) & 1;
    expPostNorm = expSum + norm;
+   // expPostNorm &= (1U << (__exp_bits + 1) - 1);
    sigProdExt = sigProd << !norm;
    sigProdExt = (sigProdExt & ((1ULL << __frac_mul) - 1)) << 1;
-   expSig = (expPostNorm << __frac_bits) | ((sigProdExt >> __frac_full) & ((1 << __frac_bits) - 1));
+   expSig = (expPostNorm << __frac_bits) | ((sigProdExt >> __frac_full) & ((1U << __frac_bits) - 1));
    if((__exp_bits + __frac_bits) < 30)
    {
-      expSig = expSig & ((1 << (__exp_bits + __frac_bits + 2)) - 1);
+      expSig = expSig & ((1U << (__exp_bits + __frac_bits + 2)) - 1);
    }
    expSigOvf0 = (expPostNorm >> (__exp_bits + 1)) & 1;
 
@@ -2282,7 +2283,7 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
       expSigPostRound = expSig;
       expSigOvf2 = expSigOvf0;
    }
-   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1) | ((expSigPostRound >> __frac_bits) & ((1 << __exp_bits) - 1)) == ((1 << __exp_bits) - 1);
+   excPostNorm = (expSigOvf2 << 1) | ((expSigPostRound >> (__exp_bits + __frac_bits)) & 1) | ((expSigPostRound >> __frac_bits) & ((1U << __exp_bits) - 1)) == ((1U << __exp_bits) - 1);
    zSig = (((__bits32)zSign) << (__exp_bits + __frac_bits)) | (expSigPostRound & ((1U << (__exp_bits + __frac_bits)) - 1));
    if(z_c == FP_CLS_NORMAL)
       z_c = ((excPostNorm == 1) << 1) | (excPostNorm == 0);
@@ -2294,7 +2295,7 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
    else if(z_c == FP_CLS_NAN && __nan)
       return __float_nan(__exp_bits, __frac_bits, __sign);
    else
-      return ((__bits32)zSign) << (__exp_bits + __frac_bits) | (((1 << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1 << __frac_bits) - 1));
+      return ((__bits32)zSign) << (__exp_bits + __frac_bits) | (((1U << __exp_bits) - 1) << __frac_bits) | (__nan ? 0 : ((1U << __frac_bits) - 1));
 }
 
 __float32 __float32_muladd_ieee(__float32 uiA, __float32 uiB, __float32 uiC)
