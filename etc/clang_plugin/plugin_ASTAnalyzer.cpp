@@ -630,6 +630,7 @@ namespace clang
                   std::string UserDefinedInterfaceType;
                   std::string ParamTypeName;
                   std::string ParamTypeNameOrig;
+                  std::string ParamTypeInclude;
                   auto parName = ND->getNameAsString();
                   bool UDIT_p = false;
                   bool UDIT_attribute2_p = false;
@@ -671,17 +672,22 @@ namespace clang
                            Dimensions = Dimensions + "[" + n_el.toString(10, false) + "]";
                            OrigTotArraySize *=n_el;
                         }
-                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(CA->getElementType())) + " *";
-                        ParamTypeNameOrig = RemoveTypedef(CA->getElementType()).getAsString() + (Dimensions ==  "" ? " *" : " (*)"+Dimensions);
-
+                        auto paramTypeRemTD = RemoveTypedef(CA->getElementType());
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + (Dimensions ==  "" ? " *" : " (*)"+Dimensions);
+                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                         interfaceType = "array";
                         arraySize = OrigTotArraySize.toString(10, false);
                         assert(arraySize != "0");
                      }
                      else
                      {
-                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(ND->getType()));
-                        ParamTypeNameOrig = RemoveTypedef(ND->getType()).getAsString();
+                        auto paramTypeRemTD = RemoveTypedef(argType);
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString();
+                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      }
                      if(UDIT_p)
                      {
@@ -712,14 +718,20 @@ namespace clang
                      auto PT = dyn_cast<PointerType>(argType);
                      if(PT)
                      {
-                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(PT->getPointeeType())) + " *";
-                        ParamTypeNameOrig = RemoveTypedef(PT->getPointeeType()).getAsString() + " *";
+                        auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + " *";
+                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      }
                      auto RT = dyn_cast<ReferenceType>(argType);
                      if(RT)
                      {
-                        ParamTypeName = GetTypeNameCanonical(RemoveTypedef(RT->getPointeeType())) + " &";
-                        ParamTypeNameOrig = RemoveTypedef(RT->getPointeeType()).getAsString() + " &";
+                        auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
+                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " &";
+                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + " &";
+                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      }
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
@@ -738,8 +750,11 @@ namespace clang
                   }
                   else
                   {
-                     ParamTypeName = GetTypeNameCanonical(RemoveTypedef(argType));
-                     ParamTypeNameOrig = RemoveTypedef(argType).getAsString();
+                     auto paramTypeRemTD = RemoveTypedef(argType);
+                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
+                     ParamTypeNameOrig = paramTypeRemTD.getAsString();
+                     if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      if(!argType->isBuiltinType() && !argType->isEnumeralType())
                      {
                         interfaceType = "none";
@@ -773,14 +788,7 @@ namespace clang
                      Fun2ParamAttribute2[funName][parName] = attribute2;
                   if(interfaceType == "m_axi" && UDIT_attribute3_p)
                      Fun2ParamAttribute3[funName][parName] = attribute3;
-                  if(auto BTD = getBaseTypeDecl(ND->getType()))
-                  {
-                     Fun2ParamInclude[funName].push_back(SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename());
-                  }
-                  else
-                  {
-                     Fun2ParamInclude[funName].push_back("");
-                  }
+                  Fun2ParamInclude[funName].push_back(ParamTypeInclude);
                }
                ++par_index;
             }
