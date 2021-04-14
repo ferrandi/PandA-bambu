@@ -285,7 +285,7 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                   const auto called = boost::target(*ei, *TopCG);
                   const auto called_fname = [&]() -> std::string {
                      auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
-                     if(fname.substr(0, sizeof("__internal_")).compare("__internal_"))
+                     if(fname.size() > sizeof("__internal") && fname.substr(0, sizeof("__internal_")).compare("__internal_") == 0)
                      {
                         fname = fname.substr(sizeof("__internal_") - 1);
                      }
@@ -1686,7 +1686,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             const auto fn = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn)) ? GetPointerS<const addr_expr>(GET_CONST_NODE(ce->fn))->op : ce->fn;
             const auto fu_name = [&]() -> std::string {
                auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn)));
-               if(fname.substr(0, sizeof("__internal_")).compare("__internal_"))
+               if(fname.size() > sizeof("__internal") && fname.substr(0, sizeof("__internal_")).compare("__internal_") == 0)
                {
                   fname = fname.substr(sizeof("__internal_") - 1);
                }
