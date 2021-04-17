@@ -1572,7 +1572,7 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                   {
                      case '1':
                      {
-                        if(bypass_signals.find(i) != bypass_signals.end() || bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
+                        if(bypass_signals.find(i) == bypass_signals.end() || bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
                         {
                            indented_output_stream->Append(port_name + " <= '1';\n");
                         }
