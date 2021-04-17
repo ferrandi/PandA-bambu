@@ -1404,7 +1404,7 @@ void VHDL_writer::write_present_state_update(const structural_objectRef, const s
 }
 
 void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                                    std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool)
+                                                    std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool, const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Writing transition output function");
    auto* mod = GetPointer<module>(cir);
@@ -1525,6 +1525,14 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
          indented_output_stream->Append("if(" + start_port + " /= '1') then\n");
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
+            if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+            {
+               continue;
+            }
+            if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+            {
+               continue;
+            }
             if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
@@ -1555,7 +1563,6 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             {
                continue;
             }
-
             std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
             if(default_output[i] != current_output[i])
             {
@@ -1564,9 +1571,39 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                   switch(current_output[i])
                   {
                      case '1':
-                        indented_output_stream->Append(port_name + " <= '" + current_output[i] + "';\n");
+                     {
+                        if(bypass_signals.find(i) != bypass_signals.end() || bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
+                        {
+                           indented_output_stream->Append(port_name + " <= '1';\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " <= ");
+                           for(const auto& stateIns : bypass_signals.find(i)->second)
+                           {
+                              if(stateIns.first != present_state)
+                              {
+                                 continue;
+                              }
+                              bool first_i = true;
+                              for(const auto& in : stateIns.second)
+                              {
+                                 if(first_i)
+                                 {
+                                    first_i = false;
+                                 }
+                                 else
+                                 {
+                                    indented_output_stream->Append(" or ");
+                                 }
+                                 auto in_port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
+                                 indented_output_stream->Append(in_port_name);
+                              }
+                           }
+                           indented_output_stream->Append(";\n");
+                        }
                         break;
-
+                     }
                      case '2':
                         indented_output_stream->Append(port_name + " <= 'X';\n");
                         break;
@@ -1704,6 +1741,14 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
             }
             for(unsigned int i2 = 0; i2 < mod->get_out_port_size(); i2++)
             {
+               if(mod->get_out_port(i2)->get_id() == PRESENT_STATE_PORT_NAME)
+               {
+                  continue;
+               }
+               if(mod->get_out_port(i2)->get_id() == NEXT_STATE_PORT_NAME)
+               {
+                  continue;
+               }
                if(transition_outputs[i2] != '-')
                {
                   std::string port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i2)->get_id());
@@ -1713,9 +1758,42 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
                      {
                         indented_output_stream->Append(port_name + " <= 'X';\n");
                      }
+                     else if(transition_outputs[i2] == '1')
+                     {
+                        if(bypass_signals.find(i2) == bypass_signals.end() || bypass_signals.find(i2)->second.find(present_state) == bypass_signals.find(i2)->second.end())
+                        {
+                           indented_output_stream->Append(port_name + " <= '1';\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " <= ");
+                           for(const auto& stateIns : bypass_signals.find(i2)->second)
+                           {
+                              if(stateIns.first != present_state)
+                              {
+                                 continue;
+                              }
+                              bool first_i = true;
+                              for(const auto& in : stateIns.second)
+                              {
+                                 if(first_i)
+                                 {
+                                    first_i = false;
+                                 }
+                                 else
+                                 {
+                                    indented_output_stream->Append(" or ");
+                                 }
+                                 auto in_port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
+                                 indented_output_stream->Append(in_port_name);
+                              }
+                           }
+                           indented_output_stream->Append(";\n");
+                        }
+                     }
                      else
                      {
-                        indented_output_stream->Append(port_name + " <= '" + transition_outputs[i2] + "';\n");
+                        indented_output_stream->Append(port_name + " <= '0';\n");
                      }
                   }
                }
@@ -1745,6 +1823,14 @@ void VHDL_writer::write_transition_output_functions(bool single_proc, unsigned i
    indented_output_stream->Append("when others =>\n");
    for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
    {
+      if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+      {
+         continue;
+      }
+      if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+      {
+         continue;
+      }
       if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
       {
          auto port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());

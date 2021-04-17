@@ -185,7 +185,7 @@ void fsm_controller::create_state_machine(std::string& parse)
    /// Getting first state (initial one). It will be also first state for resetting
    vertex first_state = boost::target(*oe, *stg);
    /// adding reset state to machine encoding
-   parse += stg->CGetStateInfo(first_state)->name + " " + RESET_PORT_NAME + " " + START_PORT_NAME + " " + CLOCK_PORT_NAME + "; ";
+   parse += stg->CGetStateInfo(first_state)->name + " " + RESET_PORT_NAME + " " + START_PORT_NAME + " " + CLOCK_PORT_NAME + ";\n";
 
    const auto& selectors = HLS->Rconn->GetSelectors();
 
@@ -277,6 +277,7 @@ void fsm_controller::create_state_machine(std::string& parse)
       loop_starting_ops[get<0>(loop)] = stg->CGetStateInfo(loop_first_state)->starting_operations;
    }
 
+   std::map<unsigned int, std::map<vertex, std::set<unsigned int>>> bypass_signals;
    for(const auto& v : working_list)
    {
       state_Xregs[v] = std::vector<bool>(HLS->Rreg->get_used_regs(), true);
@@ -368,13 +369,43 @@ void fsm_controller::create_state_machine(std::string& parse)
                // since v now has to wait for loop completion, every operation will be unbounded
                is_starting_operation = true;
             }
-            if((((GET_TYPE(data, op) & TYPE_EXTERNAL) && start_port_i) or !GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and !stg->CGetStateInfo(v)->is_dummy and is_starting_operation)
+
+            if((!GetPointer<operation>(op_tn)->is_bounded() or start_port_i))
+            {
+               auto node = TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId());
+               if(node->get_kind() == gimple_assign_K)
+               {
+                  //                  std::cerr << "NODE " << node->ToString() << "\n";
+                  auto nodeGA = GetPointerS<const gimple_assign>(node);
+                  //                  std::cerr << "SSA " << nodeGA->op0->ToString() << "\n";
+                  auto ssaIndex = GET_INDEX_CONST_NODE(nodeGA->op0);
+                  if(HLS->storage_value_information->is_a_storage_value(v, ssaIndex))
+                  {
+                     auto storage_value_index = HLS->storage_value_information->get_storage_value_index(v, ssaIndex);
+                     auto written_reg = HLS->Rreg->get_register(storage_value_index);
+                     //                     std::cerr << "written_reg " << written_reg << "\n";
+                     auto doneCommand = HLS->Rconn->bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, op, data);
+                     auto doneVertex = GetPointer<commandport_obj>(doneCommand)->get_vertex();
+                     THROW_ASSERT(cond_ports.find(doneVertex) != cond_ports.end(), "unexpected condition");
+                     //                     std::cerr << "inPort " << cond_ports.find(doneVertex)->second << "\n";
+                     generic_objRef reg_obj = HLS->Rreg->get(written_reg);
+                     generic_objRef sel_port = HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::WRENABLE, reg_obj, written_reg);
+                     THROW_ASSERT(out_ports.find(sel_port) != out_ports.end(), "");
+                     //                     std::cerr << "outPort " << out_ports.find(sel_port)->second << "\n";
+                     //                     std::cerr << "state " << stg->CGetStateInfo(v)->name << "\n";
+                     bypass_signals[1 + out_ports.find(sel_port)->second][v].insert(cond_ports.find(doneVertex)->second);
+                  }
+               }
+            }
+
+            if((!GetPointer<operation>(op_tn)->is_bounded() or start_port_i) and !stg->CGetStateInfo(v)->is_dummy and is_starting_operation)
             {
                unsigned int unbounded_port = out_ports[HLS->Rconn->bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, op, data)];
                unbounded_ports.insert(unbounded_port);
                present_state[v][unbounded_port] = 1;
             }
          }
+
          if(stg->CGetStateInfo(v)->loopId == 0 || !FB->is_pipeline_enabled())
          {
             for(auto in0 : HLS->Rliv->get_live_in(v))
@@ -447,7 +478,47 @@ void fsm_controller::create_state_machine(std::string& parse)
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Computed default output of each state");
 
-   parse += "\n";
+   /// write bypass assignments
+   bool first_io = true;
+   for(const auto& vio : bypass_signals)
+   {
+      if(first_io)
+      {
+         first_io = false;
+      }
+      else
+      {
+         parse += ":";
+      }
+      parse += STR(vio.first) + "=";
+      bool first_vi = true;
+      for(const auto& vi : vio.second)
+      {
+         if(first_vi)
+         {
+            first_vi = false;
+         }
+         else
+         {
+            parse += ",";
+         }
+         parse += stg->CGetStateInfo(vi.first)->name + ">";
+         bool first_i = true;
+         for(const auto& i : vi.second)
+         {
+            if(first_i)
+            {
+               first_i = false;
+            }
+            else
+            {
+               parse += "<";
+            }
+            parse += STR(i);
+         }
+      }
+   }
+   parse += ";\n";
 
    analyzed_loops.clear();
 
@@ -607,7 +678,7 @@ void fsm_controller::create_state_machine(std::string& parse)
             {
                THROW_ERROR("transition type not supported yet");
             }
-            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed conditions: " + parse);
+            INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Analyzed conditions");
 
             parse += " : ";
             for(auto in_it = in.begin(); in_it != in.end(); ++in_it)
@@ -721,9 +792,8 @@ void fsm_controller::create_state_machine(std::string& parse)
       }
    }
 
-   // std::cerr << "Finite_state_machine representation: " << std::endl;
-   // std::cerr << parse << std::endl << std::endl;
    INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "<--Created state machine");
+   INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---Finite_state_machine representation\n" + parse);
 }
 
 std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsigned int index, vertex op, const OpGraphConstRef data)
@@ -773,7 +843,7 @@ std::string fsm_controller::get_guard_value(const tree_managerRef TM, const unsi
    }
 }
 
-void fsm_controller::add_correct_transition_memory(std::string state_representation, structural_managerRef SM)
+void fsm_controller::add_correct_transition_memory(const std::string& state_representation, structural_managerRef SM)
 {
    structural_objectRef circuit = SM->get_circ();
    SM->add_NP_functionality(circuit, NP_functionality::FSM, state_representation);

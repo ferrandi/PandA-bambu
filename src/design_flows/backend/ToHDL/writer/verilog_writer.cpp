@@ -1324,7 +1324,8 @@ void verilog_writer::write_present_state_update(const structural_objectRef cir, 
 }
 
 void verilog_writer::write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port,
-                                                       const std::string& clock_port, std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys)
+                                                       const std::string& clock_port, std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys,
+                                                       const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals)
 {
    using tokenizer = boost::tokenizer<boost::char_separator<char>>;
    const char soc[3] = {STD_OPENING_CHAR, '\n', '\0'};
@@ -1499,9 +1500,39 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                   switch(current_output[i])
                   {
                      case '1':
-                        indented_output_stream->Append(port_name + " = 1'b" + current_output[i] + ";\n");
+                     {
+                        if(bypass_signals.find(i) == bypass_signals.end() || bypass_signals.find(i)->second.find(present_state) == bypass_signals.find(i)->second.end())
+                        {
+                           indented_output_stream->Append(port_name + " = 1'b1;\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " = ");
+                           for(const auto& stateIns : bypass_signals.find(i)->second)
+                           {
+                              if(stateIns.first != present_state)
+                              {
+                                 continue;
+                              }
+                              bool first_i = true;
+                              for(const auto& in : stateIns.second)
+                              {
+                                 if(first_i)
+                                 {
+                                    first_i = false;
+                                 }
+                                 else
+                                 {
+                                    indented_output_stream->Append(" || ");
+                                 }
+                                 auto in_port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
+                                 indented_output_stream->Append(in_port_name);
+                              }
+                           }
+                           indented_output_stream->Append(";\n");
+                        }
                         break;
-
+                     }
                      case '2':
                         indented_output_stream->Append(port_name + " = 1'bX;\n");
                         break;
@@ -1653,7 +1684,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                {
                   if(unique_case_condition)
                   {
-                     indented_output_stream->Append("default");
+                     indented_output_stream->Append("default:");
                   }
                   else
                   {
@@ -1789,7 +1820,36 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
                      }
                      else
                      {
-                        indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+                        if(bypass_signals.find(ind) == bypass_signals.end() || bypass_signals.find(ind)->second.find(present_state) == bypass_signals.find(ind)->second.end())
+                        {
+                           indented_output_stream->Append(port_name + " = 1'b" + transition_outputs[ind] + ";\n");
+                        }
+                        else
+                        {
+                           indented_output_stream->Append(port_name + " = ");
+                           for(const auto& stateIns : bypass_signals.find(ind)->second)
+                           {
+                              if(stateIns.first != present_state)
+                              {
+                                 continue;
+                              }
+                              bool first_i = true;
+                              for(const auto& in : stateIns.second)
+                              {
+                                 if(first_i)
+                                 {
+                                    first_i = false;
+                                 }
+                                 else
+                                 {
+                                    indented_output_stream->Append(" || ");
+                                 }
+                                 auto in_port_name = HDL_manager::convert_to_identifier(this, mod->get_in_port(in)->get_id());
+                                 indented_output_stream->Append(in_port_name);
+                              }
+                           }
+                           indented_output_stream->Append(";\n");
+                        }
                      }
                   }
                }
@@ -1822,16 +1882,20 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
 
          for(unsigned int i = 0; i < mod->get_out_port_size(); i++)
          {
+            if(mod->get_out_port(i)->get_id() == PRESENT_STATE_PORT_NAME)
+            {
+               continue;
+            }
+            if(mod->get_out_port(i)->get_id() == NEXT_STATE_PORT_NAME)
+            {
+               continue;
+            }
             if(boost::starts_with(mod->get_out_port(i)->get_id(), "selector_MUX") || boost::starts_with(mod->get_out_port(i)->get_id(), "wrenable_reg"))
             {
                port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
                if((single_proc || output_index == i) && (parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1))
                {
-                  indented_output_stream->Append(port_name + " = 1'bX;");
-               }
-               if(single_proc)
-               {
-                  indented_output_stream->Append("\n");
+                  indented_output_stream->Append(port_name + " = 1'bX;\n");
                }
             }
          }
@@ -1867,11 +1931,7 @@ void verilog_writer::write_transition_output_functions(bool single_proc, unsigne
             port_name = HDL_manager::convert_to_identifier(this, mod->get_out_port(i)->get_id());
             if((single_proc || output_index == i) && (parameters->IsParameter("enable-FSMX") && parameters->GetParameter<int>("enable-FSMX") == 1))
             {
-               indented_output_stream->Append(port_name + " = 1'bX;");
-            }
-            if(single_proc)
-            {
-               indented_output_stream->Append("\n");
+               indented_output_stream->Append(port_name + " = 1'bX;\n");
             }
          }
       }
