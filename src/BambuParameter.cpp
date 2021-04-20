@@ -3472,6 +3472,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      setOption(OPT_disable_function_proxy, true);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-PERFORMANCE")
    {
@@ -3488,6 +3489,7 @@ void BambuParameter::CheckParameters()
          setOption(OPT_distram_threshold, 512);
       }
       add_experimental_setup_compiler_options(!flag_cpp);
+      setOption(OPT_disable_function_proxy, true);
    }
    else if(getOption<std::string>(OPT_experimental_setup) == "BAMBU-AREA-MP")
    {
