@@ -172,6 +172,9 @@ class parametric_list_based : public Scheduling
    /// Number of executions
    size_t executions_number;
 
+   /// reachable proxy from a given function
+   std::map<std::string, std::set<std::string>> reachable_proxy_functions;
+
    /**
     * Given the control step in which an operation is scheduled, compute the exact starting and ending time of an operation
     * @param v is the vertex of the operation
@@ -267,15 +270,20 @@ class parametric_list_based : public Scheduling
 
    void CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
                                       CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
-                                      double scheduling_mux_margins, bool unbounded, bool unbounded_Functions, bool nonDirectLoadStore, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
-                                      const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2,
-                                      bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond);
+                                      double scheduling_mux_margins, bool unbounded, bool unbounded_Functions, bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
+                                      const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
+                                      bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond);
    /**
     * Compute the relationship of this step
     * @param relationship_type is the type of relationship to be considered
     * @return the steps in relationship with this
     */
    const CustomUnorderedSet<std::tuple<HLSFlowStep_Type, HLSFlowStepSpecializationConstRef, HLSFlowStep_Relationship>> ComputeHLSRelationships(const DesignFlowStep::RelationshipType relationship_type) const override;
+
+   /**
+    * @brief compute_function_topological_order compute reachable function topological order
+    */
+   void compute_function_topological_order();
 
  public:
    /**

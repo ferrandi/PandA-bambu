@@ -67,6 +67,7 @@
 
 #include "BambuParameter.hpp"
 #include "cpu_time.hpp"
+#include "functions.hpp"
 #include "memory.hpp"
 
 /// circuit include
@@ -352,11 +353,32 @@ void parametric_list_based::Initialize()
    ending_time = OpVertexMap<double>(FB->CGetOpGraph(FunctionBehavior::CFG));
 }
 
+static bool has_element_in_common(const std::set<std::string>& set1, const std::set<std::string>& set2)
+{
+   std::set<std::string>::const_iterator first1 = set1.begin(), last1 = set1.end(), first2 = set2.begin(), last2 = set2.end();
+   while(first1 != last1 and first2 != last2)
+   {
+      if(*first1 < *first2)
+      {
+         ++first1;
+      }
+      else if(*first2 < *first1)
+      {
+         ++first2;
+      }
+      else
+      {
+         return true;
+      }
+   }
+   return false;
+}
+
 void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
                                                           CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
-                                                          double scheduling_mux_margins, bool unbounded, bool RWFunctions, bool nonDirectLoadStore, bool cstep_has_RET_conflict, unsigned int fu_type, const vertex2obj<ControlStep>& current_ASAP,
-                                                          const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond, bool& cannotBeChained1, bool& asyncCond,
-                                                          bool& cannotBeChained2, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond)
+                                                          double scheduling_mux_margins, bool unbounded, bool RWFunctions, bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
+                                                          const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
+                                                          bool& cannotBeChained1, bool& asyncCond, bool& cannotBeChained2, bool& MultiCond0, bool& MultiCond1, bool& nonDirectMemCond, bool& unboundedFunctionsCond, bool& proxyFunCond)
 {
    predecessorsCond = current_ASAP.find(current_vertex) != current_ASAP.end() and current_ASAP.find(current_vertex)->second > current_cycle;
    if(predecessorsCond)
@@ -417,6 +439,13 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    }
    unboundedFunctionsCond = (curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && (nonDirectLoadStore || RWFunctions);
    if(unboundedFunctionsCond)
+   {
+      return;
+   }
+   auto curr_node_name = flow_graph->CGetOpNodeInfo(current_vertex)->GetOperation();
+   proxyFunCond = (curr_vertex_type & TYPE_EXTERNAL) && (proxy_functions_used.find(curr_node_name) != proxy_functions_used.end() ||
+                                                         (reachable_proxy_functions.find(curr_node_name) != reachable_proxy_functions.end() && has_element_in_common(proxy_functions_used, reachable_proxy_functions.at(curr_node_name))));
+   if(proxyFunCond)
    {
       return;
    }
@@ -645,6 +674,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       bool unbounded_RW = false;
       bool nonDirectLoadStore = false;
       unsigned int n_scheduled_ops = 0;
+      std::set<std::string> proxy_functions_used;
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      schedule->num_scheduled() " + std::to_string(schedule->num_scheduled()));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      already_sch " + std::to_string(already_sch));
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "      operations_number " + std::to_string(operations_number));
@@ -883,11 +913,11 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
 
-               bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond;
+               bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond, proxyFunCond;
 
                CheckSchedulabilityConditions(current_vertex, current_cycle, current_starting_time, current_ending_time, current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time, setup_hold_time, phi_extra_time,
-                                             scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond,
-                                             cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond);
+                                             scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0,
+                                             chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond, proxyFunCond);
 
                /// checking if predecessors have finished
                if(predecessorsCond)
@@ -1035,6 +1065,16 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                   black_list.at(fu_type).insert(current_vertex);
                   continue;
                }
+               else if(proxyFunCond)
+               {
+                  PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  proxy function may conflict with other functions calling the same proxy function ");
+                  if(black_list.find(fu_type) == black_list.end())
+                  {
+                     black_list.emplace(fu_type, OpVertexSet(flow_graph));
+                  }
+                  black_list.at(fu_type).insert(current_vertex);
+                  continue;
+               }
                /*else if(store_in_chaining_with_load_in(current_cycle, current_vertex))
                {
                   PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  Load and store cannot be chained");
@@ -1070,15 +1110,16 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                            }
                            else if(std::find(queue.begin(), queue.end(), op) != queue.end())
                            {
-                              bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal;
+                              bool predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local, nonDirectMemCondLocal,
+                                  unboundedFunctionsCondLocal, proxyFunCondLocal;
                               double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
                               CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
                               CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
-                                                            setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule,
-                                                            predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local,
-                                                            nonDirectMemCondLocal, unboundedFunctionsCond);
+                                                            setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding,
+                                                            schedule, predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local,
+                                                            nonDirectMemCondLocal, unboundedFunctionsCondLocal, proxyFunCondLocal);
                               if(!predecessorsCondLocal && !pipeliningCondLocal && !cannotBeChained0Local && !chainingRetCondLocal && !cannotBeChained1Local && !asyncCondLocal && !cannotBeChained2Local && !MultiCond0Local && !MultiCond1Local &&
-                                 !nonDirectMemCondLocal && !unboundedFunctionsCond)
+                                 !nonDirectMemCondLocal && !unboundedFunctionsCondLocal && !proxyFunCondLocal)
                               {
                                  ++numReadyOrScheduled;
                               }
@@ -1129,6 +1170,22 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW) && RW_stmts.find(current_vertex) == RW_stmts.end())
                {
                   RWFunctions = true;
+               }
+
+               if((curr_vertex_type & TYPE_EXTERNAL))
+               {
+                  auto curr_op_name = flow_graph->CGetOpNodeInfo(current_vertex)->GetOperation();
+                  if(HLSMgr->Rfuns->is_a_proxied_function(curr_op_name))
+                  {
+                     proxy_functions_used.insert(curr_op_name);
+                  }
+                  if(reachable_proxy_functions.find(curr_op_name) != reachable_proxy_functions.end())
+                  {
+                     for(const auto& p : reachable_proxy_functions.at(curr_op_name))
+                     {
+                        proxy_functions_used.insert(p);
+                     }
+                  }
                }
 
                /// check if we have unbounded resources
@@ -1647,6 +1704,50 @@ void parametric_list_based::add_to_priority_queues(PriorityQueues& priority_queu
    }
 }
 
+void parametric_list_based::compute_function_topological_order()
+{
+   PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "compute function topological order...");
+   std::list<vertex> topology_sorted_vertex;
+   const CallGraphManagerConstRef CG = HLSMgr->CGetCallGraphManager();
+   CG->CGetCallGraph()->TopologicalSort(topology_sorted_vertex);
+
+   CustomOrderedSet<unsigned> reachable_functions = CG->GetReachedBodyFunctionsFrom(funId);
+
+   std::list<unsigned int> topological_sorted_functions;
+   for(auto v : topology_sorted_vertex)
+   {
+      auto fun_id = CG->get_function(v);
+      if(reachable_functions.find(fun_id) != reachable_functions.end())
+      {
+         topological_sorted_functions.push_front(fun_id);
+      }
+   }
+   reachable_proxy_functions.clear();
+   for(auto v : topological_sorted_functions)
+   {
+      auto curr_v_name = HLSMgr->CGetFunctionBehavior(v)->CGetBehavioralHelper()->get_function_name();
+      if(HLSMgr->Rfuns->has_proxied_shared_functions(v))
+      {
+         for(const auto& p : HLSMgr->Rfuns->get_proxied_shared_functions(v))
+         {
+            reachable_proxy_functions[curr_v_name].insert(p);
+         }
+      }
+
+      for(auto c : CG->get_called_by(v))
+      {
+         auto called_name = HLSMgr->CGetFunctionBehavior(c)->CGetBehavioralHelper()->get_function_name();
+         if(reachable_proxy_functions.find(called_name) != reachable_proxy_functions.end())
+         {
+            for(const auto& cp : reachable_proxy_functions.at(called_name))
+            {
+               reachable_proxy_functions[curr_v_name].insert(cp);
+            }
+         }
+      }
+   }
+}
+
 DesignFlowStep_Status parametric_list_based::InternalExec()
 {
    executions_number++;
@@ -1662,6 +1763,8 @@ DesignFlowStep_Status parametric_list_based::InternalExec()
    boost::topological_sort(*bbg, std::front_inserter(vertices));
    auto viend = vertices.end();
    ControlStep ctrl_steps = ControlStep(0u);
+   /// initialize topological_sorted_functions
+   compute_function_topological_order();
    for(auto vi = vertices.begin(); vi != viend; ++vi)
    {
       OpVertexSet operations(op_graph);
