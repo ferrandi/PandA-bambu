@@ -947,7 +947,7 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    Frac = bits & ((1ULL << inFF->frac_bits) - 1);
 
    uint64_t FExp, SFrac;
-   bool ExpOverflow;
+   bool ExpOverflow = false;
 
    const auto needed_bits = [](int i) -> unsigned int {
       int lz;
@@ -970,7 +970,7 @@ tree_nodeRef soft_float_cg_ext::cstCast(uint64_t bits, const FloatFormatRef& inF
    if((inFF->exp_bits != outFF->exp_bits) || (inFF->exp_bias != outFF->exp_bias))
    {
       FExp = Exp + static_cast<uint64_t>(biasDiff);
-      bool ExpUnderflow;
+      bool ExpUnderflow = false;
       if(biasDiff < 0 || biasDiff > rangeDiff)
       {
          const auto expOverflow = (FExp >> outFF->exp_bits) & ((1ULL << (exp_type_size - outFF->exp_bits - 1)) - 1);

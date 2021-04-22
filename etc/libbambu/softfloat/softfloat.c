@@ -2266,7 +2266,7 @@ __float32 __float32_mul(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __
    {
       sticky = (sigProdExt >> __frac_almost) & 1;
       guard = (sigProdExt & ((1 << __frac_almost) - 1)) != 0;
-      round = sticky & ((guard & !((sigProdExt >> __frac_full) & 1)) | ((sigProdExt >> __frac_full) & 1));
+      round = sticky & (guard | ((sigProdExt >> __frac_full) & 1));
       expSigPostRound = expSig + round;
       if((__exp_bits + __frac_bits) == 31)
       {
@@ -3953,25 +3953,6 @@ __float64 __float64_sub(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
 | for Binary Floating-Point Arithmetic.
 *----------------------------------------------------------------------------*/
 
-static __FORCE_INLINE SF_UDItype _umul64(SF_UDItype u, SF_UDItype v)
-{
-   SF_UDItype t;
-   SF_USItype u0, u1, v0, v1, k;
-   SF_USItype w0, w1;
-   SF_USItype tlast;
-   u1 = u >> 32;
-   u0 = u;
-   v1 = v >> 32;
-   v0 = v;
-   t = (SF_UDItype)u0 * v0;
-   w0 = t;
-   k = t >> 32;
-   tlast = u1 * v0 + k;
-   w1 = tlast;
-   tlast = u0 * v1 + w1;
-   return (((SF_UDItype)tlast) << 32) | ((SF_UDItype)w0);
-}
-
 __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    __flag aSign, bSign, zSign;
@@ -4036,8 +4017,9 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
    aSig = (aSig | (((__bits64)__one) << __frac_bits));
    bSig = (bSig | (((__bits64)__one) << __frac_bits));
 
-   if(__frac_bits > 32)
+   if(__frac_almost > 32)
    {
+#if 0
       // start multi-part multiplication __frac_almostx__frac_almost=>2*__frac_almost
       // karatsuba
       // u = 2^K*u1+u0; //__frac_almost-bit -> u1=(__frac_almost-__k_bits)bit u0=__k_bits-bit
@@ -4063,12 +4045,12 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
       res_2K_0 = (k1 & ((1ULL << __k_bits) - 1)) | ((k7 & ((1ULL << __k_bits) - 1)) << __k_bits);
       res_full_2K = (k7 >> __k_bits) + k0;
 
-      if(__k_bits == 27)
+      if((2 * __k_bits) == __frac_full)
       {
          sigProdLow = res_2K_0;
          sigProdHigh = res_full_2K;
       }
-      else if(__k_bits < 27)
+      else if((2 * __k_bits) < __frac_full)
       {
          sigProdLow = ((res_full_2K & ((1ULL << (__frac_full - 2 * __k_bits)) - 1)) << (2 * __k_bits)) | res_2K_0;
          sigProdHigh = res_full_2K >> (__frac_full - 2 * __k_bits);
@@ -4078,6 +4060,26 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
          sigProdLow = res_2K_0 & ((1ULL << __frac_full) - 1);
          sigProdHigh = (res_full_2K << (2 * __k_bits - __frac_full)) | ((res_2K_0 >> __frac_full) & ((1ULL << (2 * __k_bits - __frac_full)) - 1));
       }
+#else
+      __bits64 u0, u1, v1, v0, ts, ks, k, t, w1, w2, w3, w_0, w_1;
+      __bits8 __low_high = __frac_bits - (__frac_mul - 63);
+      u0 = aSig >> 32;
+      u1 = aSig & 0xFFFFFFFF;
+      v0 = bSig >> 32;
+      v1 = bSig & 0xFFFFFFFF;
+      t = u1 * v1;
+      w3 = t & 0xFFFFFFFF;
+      k = t >> 32;
+      t = u0 * v1 + k;
+      w2 = t & 0xFFFFFFFF;
+      w1 = t >> 32;
+      ts = u1 * v0 + w2;
+      ks = ts >> 32;
+      w_0 = u0 * v0 + w1 + ks;
+      w_1 = (ts << 32) + w3;
+      sigProdLow = w_1 & ((1ULL << (64 - __low_high)) - 1);
+      sigProdHigh = ((w_0 << __low_high) | ((w_1 >> (64 - __low_high)) & ((1ULL << __low_high) - 1))) & ((1ULL << __frac_bits) - 1);
+#endif
 
       norm = (sigProdHigh >> (__frac_bits - 1)) & 1;
       expPostNorm = expSum + norm;
@@ -4095,7 +4097,7 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
       expPostNorm = expSum + norm;
       sigProdExt = sigProd << !norm;
       sigProdExt = (sigProdExt & ((1ULL << __frac_mul) - 1)) << 1;
-      expSig = (expPostNorm << __frac_bits) | ((sigProdExt >> __frac_full) & ((1ULL << __frac_bits) - 1));
+      expSig = (((__bits64)expPostNorm) << __frac_bits) | ((sigProdExt >> __frac_full) & ((1ULL << __frac_bits) - 1));
    }
    if((__exp_bits + __frac_bits) < 62)
    {
@@ -4105,17 +4107,17 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
 
    if(__rounding)
    {
-      if(__frac_bits > 32)
+      if(__frac_almost > 32)
       {
          sticky = (sigProdExtLow >> __frac_almost) & 1;
          guard = (sigProdExtLow & ((1ULL << __frac_almost) - 1)) != 0;
-         round = sticky & ((guard & !(sigProdExtHigh & 1)) | (sigProdExtHigh & 1));
+         round = sticky & (guard | (sigProdExtHigh & 1));
       }
       else
       {
          sticky = (sigProdExt >> __frac_almost) & 1;
          guard = (sigProdExt & ((1ULL << __frac_almost) - 1)) != 0;
-         round = sticky & ((guard & !((sigProdExt >> __frac_full) & 1)) | ((sigProdExt >> __frac_full) & 1));
+         round = sticky & (guard | ((sigProdExt >> __frac_full) & 1));
       }
 
       expSigPostRound = expSig + round;
