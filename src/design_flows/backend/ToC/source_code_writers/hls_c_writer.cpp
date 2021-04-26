@@ -881,6 +881,12 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       mem.push_back(ma.second);
    }
 
+   std::string fname;
+   tree_helper::get_mangled_fname(GetPointer<const function_decl>(TM->CGetTreeNode(function_id)), fname);
+   const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
+   THROW_ASSERT(DesignInterfaceTypename.count(fname), "Design interface for function " + STR(function_id) + " should be present.");
+   const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.at(fname);
+
    const std::list<unsigned int>& parameters = behavioral_helper->get_parameters();
    for(const auto& p : parameters)
    {
@@ -902,6 +908,16 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       for(const auto& l : mem)
       {
          std::string param = behavioral_helper->PrintVariable(l);
+         std::string argTypename = "";
+         if(std::find(parameters.begin(), parameters.end(), l) != parameters.end())
+         {
+            THROW_ASSERT(DesignInterfaceArgsTypename.count(param), "Parameter should be present in design interface.");
+            argTypename = DesignInterfaceArgsTypename.at(param) + " ";
+            if(argTypename.size() < 8 || argTypename.compare(0, 8, "ac_fixed") != 0)
+            {
+               argTypename = "";
+            }
+         }
          INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "-->Considering memory variable " + param);
          if(param[0] == '"')
          {
@@ -1128,11 +1144,11 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                               unsigned int field_size = tree_helper::Size(field_type);
                               if(index < n_values)
                               {
-                                 binary_string = ConvertInBinary(splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                                 binary_string = ConvertInBinary(argTypename + splitted_fields[index], field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
                               }
                               else
                               {
-                                 binary_string = ConvertInBinary("0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
+                                 binary_string = ConvertInBinary(argTypename + "0", field_size, behavioral_helper->is_real(field_type->index), behavioral_helper->is_unsigned(field_type->index));
                               }
 
                               printed_bytes += WriteBinaryMemoryInit(binary_string, field_size, bits_offset);
@@ -1142,7 +1158,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
                         {
                            unsigned int max_bitsize_field = 0;
                            tree_helper::accessed_greatest_bitsize(TM, ptd_base_type_node, ptd_base_type, max_bitsize_field);
-                           binary_string = ConvertInBinary("0", max_bitsize_field, false, false);
+                           binary_string = ConvertInBinary(argTypename + "0", max_bitsize_field, false, false);
                            printed_bytes += WriteBinaryMemoryInit(binary_string, max_bitsize_field, bits_offset);
                         }
                         else if(behavioral_helper->is_an_array(ptd_base_type))
@@ -1164,13 +1180,13 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
 
                            indented_output_stream->Append("for (__testbench_index0 = 0; __testbench_index0 < " + STR(num_elements) + "; ++__testbench_index0)\n{\n");
 
-                           binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
+                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, behavioral_helper->is_real(elmts_type), behavioral_helper->is_unsigned(elmts_type));
                            printed_bytes += WriteBinaryMemoryInit(binary_string, data_bitsize, bits_offset);
                            indented_output_stream->Append("}\n");
                         }
                         else
                         {
-                           binary_string = ConvertInBinary(initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
+                           binary_string = ConvertInBinary(argTypename + initial_string, data_bitsize, behavioral_helper->is_real(ptd_base_type), behavioral_helper->is_unsigned(ptd_base_type));
 
                            if(data_bitsize == 1)
                            {

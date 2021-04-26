@@ -44,6 +44,7 @@
 #include "exceptions.hpp"
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/regex.hpp>
 #include <cxxabi.h>
 
 void add_escape(std::string& ioString, const std::string& to_be_escaped)
@@ -111,13 +112,35 @@ std::string string_demangle(std::string input)
    char* res = abi::__cxa_demangle(input.c_str(), buf, &size, &status);
    return std::string(res);
 }
+static boost::regex fixed_def("ac_fixed<\\s*(\\d+),\\s*(\\d+),?\\s*(\\w+)?.*\\s+(-?\\d+.\\d*)");
 std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type)
 {
    std::string trimmed_value;
+   boost::cmatch what;
    THROW_ASSERT(C_value != "", "Empty string for binary conversion");
+
    if(real_type)
    {
       trimmed_value = convert_fp_to_string(C_value, precision);
+   }
+   else if(boost::regex_search(C_value.c_str(), what, fixed_def))
+   {
+      const auto w = boost::lexical_cast<unsigned int>(what[1].first, static_cast<size_t>(what[1].second - what[1].first));
+      const auto d = boost::lexical_cast<unsigned int>(what[2].first, static_cast<size_t>(what[2].second - what[2].first));
+      bool is_signed = (what[3].second - what[3].first) == 0 || strncmp(what[3].first, "true", 4) == 0;
+      THROW_ASSERT(d < w, "Decimal part should be smaller then total length");
+      const long double val = strtold(what[4].first, NULL) * powl(2, w - d);
+      long long fixp = static_cast<long long>(val);
+      is_signed &= val < 0;
+      while(trimmed_value.size() < w)
+      {
+         trimmed_value = ((fixp & 1) ? "1" : "0") + trimmed_value;
+         fixp >>= 1;
+      }
+      while(trimmed_value.size() < precision)
+      {
+         trimmed_value = (is_signed ? trimmed_value.front() : '0') + trimmed_value;
+      }
    }
    else
    {
