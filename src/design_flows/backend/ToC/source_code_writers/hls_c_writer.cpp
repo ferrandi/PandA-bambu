@@ -884,8 +884,7 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
    std::string fname;
    tree_helper::get_mangled_fname(GetPointer<const function_decl>(TM->CGetTreeNode(function_id)), fname);
    const auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-   THROW_ASSERT(DesignInterfaceTypename.count(fname), "Design interface for function " + STR(function_id) + " should be present.");
-   const auto& DesignInterfaceArgsTypename = DesignInterfaceTypename.at(fname);
+   const auto& DesignInterfaceArgsTypename_it = DesignInterfaceTypename.find(fname);
 
    const std::list<unsigned int>& parameters = behavioral_helper->get_parameters();
    for(const auto& p : parameters)
@@ -909,11 +908,11 @@ void HLSCWriter::WriteSimulatorInitMemory(const unsigned int function_id)
       {
          std::string param = behavioral_helper->PrintVariable(l);
          std::string argTypename = "";
-         if(std::find(parameters.begin(), parameters.end(), l) != parameters.end())
+         if(DesignInterfaceArgsTypename_it != DesignInterfaceTypename.end() && std::find(parameters.begin(), parameters.end(), l) != parameters.end())
          {
-            THROW_ASSERT(DesignInterfaceArgsTypename.count(param), "Parameter should be present in design interface.");
-            argTypename = DesignInterfaceArgsTypename.at(param) + " ";
-            if(argTypename.size() < 8 || argTypename.compare(0, 8, "ac_fixed") != 0)
+            THROW_ASSERT(DesignInterfaceArgsTypename_it->second.count(param), "Parameter should be present in design interface.");
+            argTypename = DesignInterfaceArgsTypename_it->second.at(param) + " ";
+            if(argTypename.size() < 8 || argTypename.compare(2, 6, "_fixed") != 0)
             {
                argTypename = "";
             }

@@ -112,7 +112,7 @@ std::string string_demangle(std::string input)
    char* res = abi::__cxa_demangle(input.c_str(), buf, &size, &status);
    return std::string(res);
 }
-static boost::regex fixed_def("ac_fixed<\\s*(\\d+),\\s*(\\d+),?\\s*(\\w+)?.*\\s+(-?\\d+.\\d*)");
+static boost::regex fixed_def("a[cp]_fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^\\d]*(-?\\d+\\.\\d*)");
 std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type)
 {
    std::string trimmed_value;
