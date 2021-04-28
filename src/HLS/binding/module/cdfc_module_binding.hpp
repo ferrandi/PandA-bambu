@@ -100,7 +100,7 @@ struct cdfc_graph_vertex_selector
 {
  public:
    using vertex_descriptor = typename boost::graph_traits<Graph>::vertex_descriptor;
-   using SET_container = CustomSet<vertex_descriptor>;
+   using SET_container = CustomUnorderedSet<vertex_descriptor>;
    /// constructor
    cdfc_graph_vertex_selector() : all(true), support(nullptr)
    {
@@ -236,7 +236,7 @@ using CdfcEdgeInfoConstRef = refcount<const CdfcEdgeInfo>;
  */
 struct CdfcGraphInfo : public GraphInfo
 {
-   const std::map<vertex, vertex>& c2s;
+   const CustomUnorderedMap<vertex, vertex>& c2s;
 
    /// The operation graph associated with the cdfc graph
    const OpGraphConstRef operation_graph;
@@ -244,7 +244,7 @@ struct CdfcGraphInfo : public GraphInfo
    /**
     * Constructor
     */
-   CdfcGraphInfo(const std::map<vertex, vertex>& c2s, const OpGraphConstRef operation_graph);
+   CdfcGraphInfo(const CustomUnorderedMap<vertex, vertex>& c2s, const OpGraphConstRef operation_graph);
 };
 using CdfcGraphInfoRef = refcount<CdfcGraphInfo>;
 using CdfcGraphInfoConstRef = refcount<const CdfcGraphInfo>;

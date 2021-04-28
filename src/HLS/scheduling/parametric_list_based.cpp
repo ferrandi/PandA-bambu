@@ -374,7 +374,7 @@ static bool has_element_in_common(const std::set<std::string>& set1, const std::
    return false;
 }
 
-void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
+void parametric_list_based::CheckSchedulabilityConditions(const CustomUnorderedSet<vertex>& operations, const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
                                                           CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
                                                           double scheduling_mux_margins, bool unbounded, bool RWFunctions, bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
                                                           const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,
@@ -385,7 +385,7 @@ void parametric_list_based::CheckSchedulabilityConditions(const vertex& current_
    {
       return;
    }
-   compute_starting_ending_time_asap(current_vertex, fu_type, current_cycle, current_starting_time, current_ending_time, current_stage_period, cannotBeChained1, res_binding, schedule, phi_extra_time, setup_hold_time, local_connection_map);
+   compute_starting_ending_time_asap(operations, current_vertex, fu_type, current_cycle, current_starting_time, current_ending_time, current_stage_period, cannotBeChained1, res_binding, schedule, phi_extra_time, setup_hold_time, local_connection_map);
    bool is_pipelined = HLS->allocation_information->get_initiation_time(fu_type, current_vertex) != 0;
    auto n_cycles = HLS->allocation_information->get_cycles(fu_type, current_vertex, flow_graph);
    pipeliningCond = is_pipelined and (current_starting_time > current_cycle_starting_time) and ((current_stage_period + current_starting_time + setup_hold_time + phi_extra_time + scheduling_mux_margins > (current_cycle_ending_time) || unbounded));
@@ -455,15 +455,20 @@ const double parametric_list_based::EPSILON = 0.000000001;
 
 #define CTRL_STEP_MULTIPLIER 1000
 
-void parametric_list_based::exec(const OpVertexSet& operations, ControlStep current_cycle)
+void parametric_list_based::exec(const OpVertexSet& Operations, ControlStep current_cycle)
 {
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "Executing parametric_list_based::exec...");
-   THROW_ASSERT(operations.size(), "At least one vertex is expected");
+   THROW_ASSERT(Operations.size(), "At least one vertex is expected");
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(funId);
    const OpGraphConstRef op_graph = FB->CGetOpGraph(FunctionBehavior::CFG);
    const auto top_function_ids = HLSMgr->CGetCallGraphManager()->GetRootFunctions();
    const unsigned int return_type_index = FB->CGetBehavioralHelper()->GetFunctionReturnType(funId);
    auto registering_output_p = top_function_ids.find(funId) != top_function_ids.end() && return_type_index && parameters->getOption<std::string>(OPT_registered_inputs) == "top";
+   CustomUnorderedSet<vertex> operations;
+   for(auto op: Operations)
+   {
+      operations.insert(op);
+   }
 
    /// The scheduling
    const ScheduleRef schedule = HLS->Rsch;
@@ -507,22 +512,22 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
 
    if(speculation)
    {
-      flow_graph = FB->CGetOpGraph(FunctionBehavior::SG, operations);
+      flow_graph = FB->CGetOpGraph(FunctionBehavior::SG);
       flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::SG);
    }
    else
    {
-      flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG, operations);
+      flow_graph = FB->CGetOpGraph(FunctionBehavior::FLSAODG);
       flow_graph_with_feedbacks = FB->CGetOpGraph(FunctionBehavior::FFLSAODG);
    }
 
    /// Number of operation to be scheduled
-   size_t operations_number = operations.size();
+   size_t operations_number = Operations.size();
 
-   //   long int cpu_time;
+   //long int cpu_time;
    /// compute asap and alap
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing asap and alap...");
-   //   START_TIME(cpu_time);
+   //START_TIME(cpu_time);
    ASLAPRef aslap;
    if(parametric_list_based_metric == ParametricListBased_Metric::STATIC_MOBILITY or parametric_list_based_metric == ParametricListBased_Metric::DYNAMIC_MOBILITY)
    {
@@ -539,14 +544,14 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          aslap->compute_ALAP(ASLAP::ALAP_with_partial_scheduling, HLS->Rsch, nullptr, est_upper_bound);
       }
    }
-   //   STOP_TIME(cpu_time);
-   //   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
-   //      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Time to perform ASAP+ALAP scheduling: " + print_cpu_time(cpu_time) + " seconds");
+//   STOP_TIME(cpu_time);
+//   if(output_level >= OUTPUT_LEVEL_VERY_PEDANTIC)
+//      INDENT_OUT_MEX(OUTPUT_LEVEL_VERY_PEDANTIC, output_level, "---Time to perform ASAP+ALAP scheduling: " + print_cpu_time(cpu_time) + " seconds");
 
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   Computing free input vertices...");
    /// compute the set of vertices without input edges.
    /// At least one vertex is expected
-   for(auto operation : operations)
+   for(auto operation : Operations)
    {
       /// Updating structure for already scheduled operations
       if(schedule->is_scheduled(operation))
@@ -559,8 +564,8 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          InEdgeIterator ei, ei_end;
          for(boost::tie(ei, ei_end) = boost::in_edges(operation, *flow_graph); ei != ei_end; ei++)
          {
-            vertex source = boost::source(*ei, *flow_graph);
-            if(!schedule->is_scheduled(source))
+            vertex source = boost::source(*ei, *flow_graph);               
+            if(operations.find(source) != operations.end() && !schedule->is_scheduled(source))
             {
                break;
             }
@@ -593,9 +598,9 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          CustomUnorderedMapUnstable<vertex, int> priority_value;
          CustomMap<std::string, int> string_priority_value = HLS->HLS_C->get_scheduling_priority();
          VertexIterator ki, ki_end;
-         for(boost::tie(ki, ki_end) = boost::vertices(*flow_graph); ki != ki_end; ki++)
+         for(auto op : Operations)
          {
-            priority_value[*ki] = string_priority_value[GET_NAME(flow_graph, *ki)];
+            priority_value[op] = string_priority_value[GET_NAME(flow_graph, op)];
          }
          Priority = refcount<priority_data<int>>(new priority_fixed(priority_value));
          break;
@@ -915,7 +920,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
 
                bool predecessorsCond, pipeliningCond, cannotBeChained0, chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond, proxyFunCond;
 
-               CheckSchedulabilityConditions(current_vertex, current_cycle, current_starting_time, current_ending_time, current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time, setup_hold_time, phi_extra_time,
+               CheckSchedulabilityConditions(operations, current_vertex, current_cycle, current_starting_time, current_ending_time, current_stage_period, local_connection_map, current_cycle_starting_time, current_cycle_ending_time, setup_hold_time, phi_extra_time,
                                              scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding, schedule, predecessorsCond, pipeliningCond, cannotBeChained0,
                                              chainingRetCond, cannotBeChained1, asyncCond, cannotBeChained2, MultiCond0, MultiCond1, nonDirectMemCond, unboundedFunctionsCond, proxyFunCond);
 
@@ -1114,7 +1119,7 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                                   unboundedFunctionsCondLocal, proxyFunCondLocal;
                               double current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, phi_extra_timeLocal;
                               CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_mapLocal;
-                              CheckSchedulabilityConditions(op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
+                              CheckSchedulabilityConditions(operations, op, current_cycle, current_starting_timeLocal, current_ending_timeLocal, current_stage_periodLocal, local_connection_mapLocal, current_cycle_starting_time, current_cycle_ending_time,
                                                             setup_hold_time, phi_extra_timeLocal, scheduling_mux_margins, unbounded, RWFunctions, nonDirectLoadStore, proxy_functions_used, cstep_has_RET_conflict, fu_type, current_ASAP, res_binding,
                                                             schedule, predecessorsCondLocal, pipeliningCondLocal, cannotBeChained0Local, chainingRetCondLocal, cannotBeChained1Local, asyncCondLocal, cannotBeChained2Local, MultiCond0Local, MultiCond1Local,
                                                             nonDirectMemCondLocal, unboundedFunctionsCondLocal, proxyFunCondLocal);
@@ -1287,7 +1292,10 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                for(boost::tie(eo, eo_end) = boost::out_edges(current_vertex, *flow_graph); eo != eo_end; eo++)
                {
                   vertex target = boost::target(*eo, *flow_graph);
-                  successors.push_back(std::make_pair(GET_NAME(flow_graph, target), target));
+                  if(operations.find(target) != operations.end())
+                  {
+                     successors.push_back(std::make_pair(GET_NAME(flow_graph, target), target));
+                  }
                }
                // successors.sort();
 
@@ -1304,7 +1312,17 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
                      current_ASAP.emplace(successor.second, ControlStep(static_cast<unsigned int>(floor(ending_time.find(current_vertex)->second / clock_cycle))));
                   }
                   /// check if to_v should be considered as ready
-                  if(boost::in_degree(successor.second, *flow_graph) == scheduled_predecessors(successor.second))
+                  CustomUnorderedSet<vertex> in_set;
+                  InEdgeIterator ei, ei_end;
+                  for(boost::tie(ei, ei_end) = boost::in_edges(successor.second, *flow_graph); ei != ei_end; ei++)
+                  {
+                     vertex source = boost::source(*ei, *flow_graph);
+                     if(operations.find(source) != operations.end())
+                     {
+                        in_set.insert(source);
+                     }
+                  }
+                  if(in_set.size() == scheduled_predecessors(successor.second))
                   {
                      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Become ready");
                      ready_vertices.insert(successor.second);
@@ -1403,18 +1421,17 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
       /// update starting and ending time of operations
       /// by running them as late as possible
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   update starting ending time");
-      const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG, operations);
+      const OpGraphConstRef opDFG = FB->CGetOpGraph(FunctionBehavior::DFG);
       const std::deque<vertex>& levels = FB->get_levels();
       std::deque<vertex> sub_levels;
       for(auto rit = levels.rbegin(); rit != levels.rend(); ++rit)
       {
          vertex candidate_v = *rit;
-         if(operations.find(candidate_v) == operations.end())
+         if(operations.find(candidate_v) != operations.end())
          {
-            continue;
+            sub_levels.push_back(candidate_v);
+            update_starting_ending_time(operations, candidate_v, res_binding, opDFG, schedule);
          }
-         sub_levels.push_back(candidate_v);
-         update_starting_ending_time(candidate_v, res_binding, opDFG, schedule);
       }
       PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   compute vertices slack");
       /// compute the vertices slack
@@ -1425,14 +1442,14 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
          {
             continue;
          }
-         update_vertices_slack(sub_level, schedule, vertices_analyzed, setup_hold_time, opDFG);
+         update_vertices_slack(operations, sub_level, schedule, vertices_analyzed, setup_hold_time, opDFG);
       }
 
-      do_balanced_scheduling1(sub_levels, schedule, res_binding, setup_hold_time, scheduling_mux_margins, opDFG, seen_cstep_has_RET_conflict);
+      do_balanced_scheduling1(operations, sub_levels, schedule, res_binding, setup_hold_time, scheduling_mux_margins, opDFG, seen_cstep_has_RET_conflict);
 
       for(auto vi = sub_levels.rbegin(); vi != sub_levels.rend(); ++vi)
       {
-         update_starting_ending_time_asap(*vi, res_binding, opDFG, schedule);
+         update_starting_ending_time_asap(operations, *vi, res_binding, opDFG, schedule);
          schedule->starting_times[flow_graph->CGetOpNodeInfo(*vi)->GetNodeId()] = starting_time[*vi];
          schedule->ending_times[flow_graph->CGetOpNodeInfo(*vi)->GetNodeId()] = ending_time[*vi];
       }
@@ -1443,19 +1460,23 @@ void parametric_list_based::exec(const OpVertexSet& operations, ControlStep curr
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "   List Based finished");
 }
 
-void parametric_list_based::compute_starting_ending_time_asap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained,
+void parametric_list_based::compute_starting_ending_time_asap(const CustomUnorderedSet<vertex>& operations, const vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained,
                                                               fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map)
 {
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing starting and ending time " + GET_NAME(flow_graph, v));
    current_starting_time = from_strongtype_cast<double>(cs) * clock_cycle;
    bool is_load_store = GET_TYPE(flow_graph, v) & (TYPE_LOAD | TYPE_STORE);
-   bool no_chaining_of_load_and_store = parameters->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule) || is_load_store);
-   cannot_be_chained = is_load_store && check_non_direct_operation_chaining(v, fu_type, cs, schedule, res_binding);
+   bool no_chaining_of_load_and_store = parameters->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(operations, v, cs, schedule) || is_load_store);
+   cannot_be_chained = is_load_store && check_non_direct_operation_chaining(operations, v, fu_type, cs, schedule, res_binding);
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "                  Initial value of cannot_be_chained=" + (cannot_be_chained ? std::string("T") : std::string("F")));
    InEdgeIterator ei, ei_end;
    for(boost::tie(ei, ei_end) = boost::in_edges(v, *flow_graph); ei != ei_end; ei++)
    {
       vertex from_vertex = boost::source(*ei, *flow_graph);
+      if(operations.find(from_vertex) == operations.end())
+      {
+         continue;
+      }
       if(GET_TYPE(flow_graph, from_vertex) & (TYPE_PHI | TYPE_VPHI))
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Skipping phi predecessor " + GET_NAME(flow_graph, from_vertex));
@@ -1592,19 +1613,23 @@ void parametric_list_based::compute_exec_stage_time(const unsigned int fu_type, 
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Execution time is " + STR(op_execution_time));
 }
 
-void parametric_list_based::compute_starting_ending_time_alap(vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& max_ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles,
+void parametric_list_based::compute_starting_ending_time_alap(const CustomUnorderedSet<vertex> &operations, vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& max_ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles,
                                                               bool& cannot_be_chained, fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time,
                                                               CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map)
 {
    InEdgeIterator ei, ei_end;
    current_starting_time = from_strongtype_cast<double>(cs) * clock_cycle;
    bool is_load_store = (GET_TYPE(flow_graph, v) & (TYPE_STORE | TYPE_LOAD));
-   bool no_chaining_of_load_and_store = parameters->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(v, cs, schedule) || is_load_store);
-   cannot_be_chained = is_load_store && check_non_direct_operation_chaining(v, fu_type, cs, schedule, res_binding);
+   bool no_chaining_of_load_and_store = parameters->getOption<bool>(OPT_do_not_chain_memories) && (check_LOAD_chaining(operations, v, cs, schedule) || is_load_store);
+   cannot_be_chained = is_load_store && check_non_direct_operation_chaining(operations, v, fu_type, cs, schedule, res_binding);
    bool is_operation_unbounded_and_registered = !HLS->allocation_information->is_operation_bounded(flow_graph, v, fu_type) && HLS->allocation_information->is_operation_PI_registered(flow_graph, v, fu_type);
    for(boost::tie(ei, ei_end) = boost::in_edges(v, *flow_graph); ei != ei_end; ei++)
    {
       vertex from_vertex = boost::source(*ei, *flow_graph);
+      if(operations.find(from_vertex) == operations.end())
+      {
+         continue;
+      }
       unsigned int from_fu_type = res_binding->get_assign(from_vertex);
       const auto cs_prev = schedule->get_cstep(from_vertex).second;
       const double fsm_correction = [&]() -> double {
@@ -1650,6 +1675,10 @@ void parametric_list_based::compute_starting_ending_time_alap(vertex v, const un
    for(boost::tie(oi, oi_end) = boost::out_edges(v, *flow_graph); oi != oi_end; oi++)
    {
       vertex to_vertex = boost::target(*oi, *flow_graph);
+      if(operations.find(to_vertex) == operations.end())
+      {
+         continue;
+      }
       max_ending_time = std::min(max_ending_time, starting_time(to_vertex));
    }
 
@@ -1868,7 +1897,7 @@ double parametric_list_based::compute_slack(vertex current_op, const ControlStep
    return slack;
 }
 
-void parametric_list_based::update_vertices_slack(vertex current_v, const ScheduleRef schedule, OpVertexSet& vertices_analyzed, double setup_hold_time, const OpGraphConstRef opDFG)
+void parametric_list_based::update_vertices_slack(const CustomUnorderedSet<vertex> &operations, vertex current_v, const ScheduleRef schedule, OpVertexSet& vertices_analyzed, double setup_hold_time, const OpGraphConstRef opDFG)
 {
    /// compute the set of operations on the clock frontier
    const auto current_vertex_cstep = schedule->get_cstep(current_v).second;
@@ -1878,7 +1907,11 @@ void parametric_list_based::update_vertices_slack(vertex current_v, const Schedu
    InEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::in_edges(current_v, *opDFG); eo != eo_end; eo++)
    {
-      fifo.push(boost::source(*eo, *opDFG));
+      auto v = boost::source(*eo, *opDFG);
+      if(operations.find(v) == operations.end())
+      {
+         fifo.push(v);
+      }
    }
    while(!fifo.empty())
    {
@@ -1890,7 +1923,11 @@ void parametric_list_based::update_vertices_slack(vertex current_v, const Schedu
          worst_slack = std::min(worst_slack, compute_slack(current_op, current_vertex_cstep, setup_hold_time));
          for(boost::tie(eo, eo_end) = boost::in_edges(current_op, *opDFG); eo != eo_end; eo++)
          {
-            fifo.push(boost::source(*eo, *opDFG));
+            auto v = boost::source(*eo, *opDFG);
+            if(operations.find(v) == operations.end())
+            {
+               fifo.push(v);
+            }
          }
       }
    }
@@ -1904,16 +1941,20 @@ void parametric_list_based::update_vertices_slack(vertex current_v, const Schedu
    schedule->set_slack(current_v, worst_slack);
 }
 
-void parametric_list_based::update_vertices_timing(const ControlStep vertex_cstep, vertex current_v, const ScheduleConstRef schedule, std::list<vertex>& vertices_analyzed, fu_bindingRef res_binding, const OpGraphConstRef opDFG)
+void parametric_list_based::update_vertices_timing(const CustomUnorderedSet<vertex> &operations, const ControlStep vertex_cstep, vertex current_v, const ScheduleConstRef schedule, std::list<vertex>& vertices_analyzed, fu_bindingRef res_binding, const OpGraphConstRef opDFG)
 {
    /// compute the set of operations on the clock frontier
    std::queue<vertex> fifo;
-   update_starting_ending_time(current_v, res_binding, opDFG, schedule);
+   update_starting_ending_time(operations, current_v, res_binding, opDFG, schedule);
    vertices_analyzed.push_back(current_v);
    InEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::in_edges(current_v, *opDFG); eo != eo_end; eo++)
    {
-      fifo.push(boost::source(*eo, *opDFG));
+      auto v = boost::source(*eo, *opDFG);
+      if(operations.find(v) == operations.end())
+      {
+         fifo.push(v);
+      }
    }
    while(!fifo.empty())
    {
@@ -1922,16 +1963,20 @@ void parametric_list_based::update_vertices_timing(const ControlStep vertex_cste
       if(vertex_cstep - 1u <= schedule->get_cstep(current_op).second)
       {
          vertices_analyzed.push_back(current_op);
-         update_starting_ending_time(current_op, res_binding, opDFG, schedule);
+         update_starting_ending_time(operations, current_op, res_binding, opDFG, schedule);
          for(boost::tie(eo, eo_end) = boost::in_edges(current_op, *opDFG); eo != eo_end; eo++)
          {
-            fifo.push(boost::source(*eo, *opDFG));
+            auto v = boost::source(*eo, *opDFG);
+            if(operations.find(v) == operations.end())
+            {
+               fifo.push(v);
+            }
          }
       }
    }
 }
 
-void parametric_list_based::update_starting_ending_time(vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule)
+void parametric_list_based::update_starting_ending_time(const CustomUnorderedSet<vertex> &operations, vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule)
 {
    unsigned int fu_type = res_binding->get_assign(candidate_v);
    if(!HLS->allocation_information->is_operation_bounded(opDFG, candidate_v, fu_type))
@@ -1948,8 +1993,11 @@ void parametric_list_based::update_starting_ending_time(vertex candidate_v, fu_b
    for(boost::tie(eo, eo_end) = boost::out_edges(candidate_v, *opDFG); eo != eo_end; eo++)
    {
       vertex target = boost::target(*eo, *opDFG);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      starting time target " + GET_NAME(opDFG, target) + " = " + STR(starting_time(target)));
-      current_ending_time = std::min(current_ending_time, starting_time(target));
+      if(operations.find(target) != operations.end())
+      {
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      starting time target " + GET_NAME(opDFG, target) + " = " + STR(starting_time(target)));
+         current_ending_time = std::min(current_ending_time, starting_time(target));
+      }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      current_ending_time = " + STR(current_ending_time));
 
@@ -1977,7 +2025,7 @@ void parametric_list_based::update_starting_ending_time(vertex candidate_v, fu_b
    }
 }
 
-void parametric_list_based::update_starting_ending_time_asap(vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule)
+void parametric_list_based::update_starting_ending_time_asap(const CustomUnorderedSet<vertex> &operations, vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule)
 {
    unsigned int fu_type = res_binding->get_assign(candidate_v);
    if(!HLS->allocation_information->is_operation_bounded(opDFG, candidate_v, fu_type))
@@ -1993,8 +2041,11 @@ void parametric_list_based::update_starting_ending_time_asap(vertex candidate_v,
    for(boost::tie(eo, eo_end) = boost::in_edges(candidate_v, *opDFG); eo != eo_end; eo++)
    {
       vertex src = boost::source(*eo, *opDFG);
-      PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      asap ending time src " + GET_NAME(opDFG, src) + " = " + STR(ending_time.find(src)->second));
-      current_starting_time = std::max(current_starting_time, ending_time.find(src)->second);
+      if(operations.find(src) != operations.end())
+      {
+         PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      asap ending time src " + GET_NAME(opDFG, src) + " = " + STR(ending_time.find(src)->second));
+         current_starting_time = std::max(current_starting_time, ending_time.find(src)->second);
+      }
    }
    PRINT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "      asap current_ending_time = " + STR(current_starting_time));
 
@@ -2020,7 +2071,7 @@ void parametric_list_based::update_starting_ending_time_asap(vertex candidate_v,
    }
 }
 
-bool parametric_list_based::store_in_chaining_with_load_in(unsigned int current_vertex_cstep, vertex v)
+bool parametric_list_based::store_in_chaining_with_load_in(const CustomUnorderedSet<vertex> &operations, unsigned int current_vertex_cstep, vertex v)
 {
    const auto operation = flow_graph->CGetOpNodeInfo(v)->GetOperation();
    bool is_load_store = GET_TYPE(flow_graph, v) & (TYPE_LOAD | TYPE_STORE);
@@ -2032,7 +2083,11 @@ bool parametric_list_based::store_in_chaining_with_load_in(unsigned int current_
    InEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::in_edges(v, *flow_graph); eo != eo_end; eo++)
    {
-      fifo.push(boost::source(*eo, *flow_graph));
+      auto s = boost::source(*eo, *flow_graph);
+      if(operations.find(s) != operations.end())
+      {
+         fifo.push(s);
+      }
    }
    while(!fifo.empty())
    {
@@ -2046,14 +2101,18 @@ bool parametric_list_based::store_in_chaining_with_load_in(unsigned int current_
          }
          for(boost::tie(eo, eo_end) = boost::in_edges(current_op, *flow_graph); eo != eo_end; eo++)
          {
-            fifo.push(boost::source(*eo, *flow_graph));
+            auto s = boost::source(*eo, *flow_graph);
+            if(operations.find(s) != operations.end())
+            {
+               fifo.push(s);
+            }
          }
       }
    }
    return false;
 }
 
-bool parametric_list_based::store_in_chaining_with_load_out(unsigned int current_vertex_cstep, vertex v)
+bool parametric_list_based::store_in_chaining_with_load_out(const CustomUnorderedSet<vertex> &operations, unsigned int current_vertex_cstep, vertex v)
 {
    const auto operation = flow_graph->CGetOpNodeInfo(v)->GetOperation();
    bool is_load_store = GET_TYPE(flow_graph, v) & (TYPE_LOAD | TYPE_STORE);
@@ -2065,7 +2124,11 @@ bool parametric_list_based::store_in_chaining_with_load_out(unsigned int current
    OutEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::out_edges(v, *flow_graph); eo != eo_end; eo++)
    {
-      fifo.push(boost::source(*eo, *flow_graph));
+      auto s = boost::source(*eo, *flow_graph);
+      if(operations.find(s) != operations.end())
+      {
+         fifo.push(s);
+      }
    }
    while(!fifo.empty())
    {
@@ -2079,14 +2142,18 @@ bool parametric_list_based::store_in_chaining_with_load_out(unsigned int current
          }
          for(boost::tie(eo, eo_end) = boost::out_edges(current_op, *flow_graph); eo != eo_end; eo++)
          {
-            fifo.push(boost::source(*eo, *flow_graph));
+            auto s = boost::source(*eo, *flow_graph);
+            if(operations.find(s) != operations.end())
+            {
+               fifo.push(s);
+            }
          }
       }
    }
    return false;
 }
 
-void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG)
+void parametric_list_based::do_balanced_scheduling(const CustomUnorderedSet<vertex> &operations, std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG)
 {
    /// balanced scheduling
    /// step 1: dependencies computation
@@ -2100,12 +2167,15 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
       for(boost::tie(ei, ei_end) = boost::in_edges(candidate_v, *opDFG); ei != ei_end; ++ei)
       {
          vertex src = boost::source(*ei, *opDFG);
-         auto insertResult = DMAP.insert(std::make_pair(candidate_v, OpVertexSet(opDFG)));
-         if(DMAP.find(src) != DMAP.end())
+         if(operations.find(src) != operations.end())
          {
-            insertResult.first->second.insert(DMAP.find(src)->second.begin(), DMAP.find(src)->second.end());
+            auto insertResult = DMAP.insert(std::make_pair(candidate_v, OpVertexSet(opDFG)));
+            if(DMAP.find(src) != DMAP.end())
+            {
+               insertResult.first->second.insert(DMAP.find(src)->second.begin(), DMAP.find(src)->second.end());
+            }
+            insertResult.first->second.insert(src);
          }
-         insertResult.first->second.insert(src);
       }
       D[candidate_v] = DMAP.find(candidate_v)->second.size();
    }
@@ -2207,8 +2277,8 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
                unsigned int n_cycles;
                double phi_extra_time;
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
-               update_starting_ending_time(candidate_v, res_binding, opDFG, schedule);
-               compute_starting_ending_time_alap(candidate_v, fu_type, time, candidate_starting_time, max_ending_time, candidate_op_execution_time, candidate_stage_period, n_cycles, cannot_be_chained, res_binding, schedule, phi_extra_time, setup_hold_time,
+               update_starting_ending_time(operations, candidate_v, res_binding, opDFG, schedule);
+               compute_starting_ending_time_alap(operations, candidate_v, fu_type, time, candidate_starting_time, max_ending_time, candidate_op_execution_time, candidate_stage_period, n_cycles, cannot_be_chained, res_binding, schedule, phi_extra_time, setup_hold_time,
                                                  local_connection_map);
 
                if((candidate_starting_time > (from_strongtype_cast<double>(time) * clock_cycle)) && !parameters->getOption<bool>(OPT_chaining))
@@ -2263,7 +2333,7 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
                for(boost::tie(eo, eo_end) = boost::out_edges(candidate_v, *opDFG); forward_node_p && eo != eo_end; eo++)
                {
                   vertex target = boost::target(*eo, *opDFG);
-                  if(candidate_ending_time > starting_time[target])
+                  if(operations.find(target) != operations.end() && candidate_ending_time > starting_time[target])
                   {
                      forward_node_p = false;
                   }
@@ -2292,7 +2362,7 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
                THROW_ASSERT(ending_time[best_node] >= starting_time[best_node], "unexpected condition");
                THROW_ASSERT(floor(ending_time[best_node] / clock_cycle) >= from_strongtype_cast<double>(time), "unexpected condition");
                schedule->set_execution_end(best_node, time + ControlStep(static_cast<unsigned int>(floor(ending_time[best_node] / clock_cycle) - from_strongtype_cast<double>(time))));
-               update_starting_ending_time(best_node, res_binding, opDFG, schedule);
+               update_starting_ending_time(operations, best_node, res_binding, opDFG, schedule);
                T[ptime].erase(std::find(T[ptime].begin(), T[ptime].end(), best_node));
                T[time].push_back(best_node);
                unsigned int fu_type = res_binding->get_assign(best_node);
@@ -2303,7 +2373,10 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
                for(boost::tie(ei, ei_end) = boost::in_edges(best_node, *opDFG); ei != ei_end; ++ei)
                {
                   vertex from_vertex = boost::source(*ei, *opDFG);
-                  update_starting_ending_time(from_vertex, res_binding, opDFG, schedule);
+                  if(operations.find(from_vertex) != operations.end())
+                  {
+                     update_starting_ending_time(operations, from_vertex, res_binding, opDFG, schedule);
+                  }
                }
             }
             else
@@ -2325,11 +2398,11 @@ void parametric_list_based::do_balanced_scheduling(std::deque<vertex>& sub_level
       {
          continue;
       }
-      update_vertices_slack(sub_level, schedule, vertices_analyzed, setup_hold_time, opDFG);
+      update_vertices_slack(operations, sub_level, schedule, vertices_analyzed, setup_hold_time, opDFG);
    }
 }
 
-void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG,
+void parametric_list_based::do_balanced_scheduling1(const CustomUnorderedSet<vertex> &operations, std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG,
                                                     bool seen_cstep_has_RET_conflict)
 {
    //#define SLACK_BASED
@@ -2348,12 +2421,15 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
       for(boost::tie(ei, ei_end) = boost::in_edges(candidate_v, *opDFG); ei != ei_end; ++ei)
       {
          vertex src = boost::source(*ei, *opDFG);
-         auto insertResult = DMAP.insert(std::make_pair(candidate_v, OpVertexSet(opDFG)));
-         if(DMAP.find(src) != DMAP.end())
+         if(operations.find(src) != operations.end())
          {
-            insertResult.first->second.insert(DMAP.find(src)->second.begin(), DMAP.find(src)->second.end());
+            auto insertResult = DMAP.insert(std::make_pair(candidate_v, OpVertexSet(opDFG)));
+            if(DMAP.find(src) != DMAP.end())
+            {
+               insertResult.first->second.insert(DMAP.find(src)->second.begin(), DMAP.find(src)->second.end());
+            }
+            insertResult.first->second.insert(src);
          }
-         insertResult.first->second.insert(src);
       }
       D[candidate_v] = DMAP.find(candidate_v)->second.size();
    }
@@ -2491,7 +2567,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
                double phi_extra_time;
                double normalized_area = HLS->allocation_information->compute_normalized_area(fu_type);
                CustomMap<std::pair<unsigned int, unsigned int>, double> local_connection_map;
-               compute_starting_ending_time_alap(candidate_v, fu_type, time, candidate_starting_time, max_ending_time, candidate_op_execution_time, candidate_stage_period, n_cycles, cannot_be_chained, res_binding, schedule, phi_extra_time, setup_hold_time,
+               compute_starting_ending_time_alap(operations, candidate_v, fu_type, time, candidate_starting_time, max_ending_time, candidate_op_execution_time, candidate_stage_period, n_cycles, cannot_be_chained, res_binding, schedule, phi_extra_time, setup_hold_time,
                                                  local_connection_map);
 
                if(T_obj.find(fu_type) != T_obj.end() && T_obj.find(fu_type)->second.find(time) != T_obj.find(fu_type)->second.end() &&
@@ -2589,7 +2665,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
                for(boost::tie(eo, eo_end) = boost::out_edges(candidate_v, *opDFG); forward_node_p && eo != eo_end; eo++)
                {
                   vertex target = boost::target(*eo, *opDFG);
-                  if(candidate_ending_time > starting_time[target])
+                  if(operations.find(target) != operations.end() && candidate_ending_time > starting_time[target])
                   {
                      forward_node_p = false;
                   }
@@ -2635,7 +2711,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
                THROW_ASSERT(floor(ending_time[best_node] / clock_cycle) >= from_strongtype_cast<double>(time), "unexpected condition");
                schedule->set_execution_end(best_node, time + ControlStep(static_cast<unsigned int>(floor(ending_time[best_node] / clock_cycle) - from_strongtype_cast<double>(time))));
                PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "                  " + GET_NAME(opDFG, best_node) + " re-scheduled at " + STR(time_clock_cycle_starting));
-               update_starting_ending_time(best_node, res_binding, opDFG, schedule);
+               update_starting_ending_time(operations, best_node, res_binding, opDFG, schedule);
 
                T[ptime].erase(std::find(T[ptime].begin(), T[ptime].end(), best_node));
                T[time].push_back(best_node);
@@ -2712,7 +2788,7 @@ void parametric_list_based::do_balanced_scheduling1(std::deque<vertex>& sub_leve
 }
 
 #define REMOVE_DIRECT_TO_INDIRECT 1
-bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v, unsigned int v_fu_type, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const
+bool parametric_list_based::check_non_direct_operation_chaining(const CustomUnorderedSet<vertex> &operations, vertex current_v, unsigned int v_fu_type, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const
 {
    bool v_is_indirect = REMOVE_DIRECT_TO_INDIRECT && HLS->allocation_information->is_indirect_access_memory_unit(v_fu_type);
    bool v_is_one_cycle_direct_access = (HLS->allocation_information->is_one_cycle_direct_access_memory_unit(v_fu_type) &&
@@ -2721,14 +2797,18 @@ bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v
                                            HLS->allocation_information->get_number_channels(v_fu_type);
 
    /// Set of already analyzed operations
-   OpVertexSet already_analyzed_operations(flow_graph);
+   CustomUnorderedSet<vertex> already_analyzed_operations;
 
    /// compute the set of operations on the control step frontier
    OpVertexSet to_be_analyzed(flow_graph);
    InEdgeIterator ie, ie_end;
    for(boost::tie(ie, ie_end) = boost::in_edges(current_v, *flow_graph); ie != ie_end; ie++)
    {
-      to_be_analyzed.insert(boost::source(*ie, *flow_graph));
+      auto v = boost::source(*ie, *flow_graph);
+      if(operations.find(v) != operations.end())
+      {
+         to_be_analyzed.insert(v);
+      }
    }
    while(!to_be_analyzed.empty())
    {
@@ -2746,7 +2826,7 @@ bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v
          for(boost::tie(ie, ie_end) = boost::in_edges(current_op, *flow_graph); ie != ie_end; ie++)
          {
             const auto source = boost::source(*ie, *flow_graph);
-            if(already_analyzed_operations.find(source) == already_analyzed_operations.end())
+            if(operations.find(source) != operations.end() && already_analyzed_operations.find(source) == already_analyzed_operations.end())
             {
                to_be_analyzed.insert(source);
             }
@@ -2756,14 +2836,18 @@ bool parametric_list_based::check_non_direct_operation_chaining(vertex current_v
    return false;
 }
 
-bool parametric_list_based::check_direct_operation_chaining(vertex current_v, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const
+bool parametric_list_based::check_direct_operation_chaining(const CustomUnorderedSet<vertex> &operations, vertex current_v, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const
 {
    /// compute the set of operations on the control step frontier
    std::queue<vertex> fifo;
    InEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::in_edges(current_v, *flow_graph); eo != eo_end; eo++)
    {
-      fifo.push(boost::source(*eo, *flow_graph));
+      auto v = boost::source(*eo, *flow_graph);
+      if(operations.find(v) != operations.end())
+      {
+         fifo.push(v);
+      }
    }
    while(!fifo.empty())
    {
@@ -2778,21 +2862,29 @@ bool parametric_list_based::check_direct_operation_chaining(vertex current_v, co
          }
          for(boost::tie(eo, eo_end) = boost::in_edges(current_op, *flow_graph); eo != eo_end; eo++)
          {
-            fifo.push(boost::source(*eo, *flow_graph));
+            auto v = boost::source(*eo, *flow_graph);
+            if(operations.find(v) != operations.end())
+            {
+               fifo.push(v);
+            }
          }
       }
    }
    return false;
 }
 
-bool parametric_list_based::check_LOAD_chaining(vertex current_v, const ControlStep cs, const ScheduleConstRef schedule) const
+bool parametric_list_based::check_LOAD_chaining(const CustomUnorderedSet<vertex> &operations, vertex current_v, const ControlStep cs, const ScheduleConstRef schedule) const
 {
    /// compute the set of operations on the control step frontier
    std::queue<vertex> fifo;
    InEdgeIterator eo, eo_end;
    for(boost::tie(eo, eo_end) = boost::in_edges(current_v, *flow_graph); eo != eo_end; eo++)
    {
-      fifo.push(boost::source(*eo, *flow_graph));
+      auto v = boost::source(*eo, *flow_graph);
+      if(operations.find(v) != operations.end())
+      {
+         fifo.push(v);
+      }
    }
    while(!fifo.empty())
    {
@@ -2806,7 +2898,11 @@ bool parametric_list_based::check_LOAD_chaining(vertex current_v, const ControlS
          }
          for(boost::tie(eo, eo_end) = boost::in_edges(current_op, *flow_graph); eo != eo_end; eo++)
          {
-            fifo.push(boost::source(*eo, *flow_graph));
+            auto v = boost::source(*eo, *flow_graph);
+            if(operations.find(v) != operations.end())
+            {
+               fifo.push(v);
+            }
          }
       }
    }

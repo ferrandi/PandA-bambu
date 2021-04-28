@@ -142,7 +142,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       no_check_clique<CG_vertex_descriptor> cq;
       register_clique->exec(no_filter_clique<CG_vertex_descriptor>(), cq);
       /// vertex to clique map
-      std::map<CG_vertex_descriptor, unsigned int> v2c;
+      CustomUnorderedMap<CG_vertex_descriptor, unsigned int> v2c;
       /// retrieve the solution
       num_registers = static_cast<unsigned int>(register_clique->num_vertices());
       for(unsigned int i = 0; i < num_registers; ++i)

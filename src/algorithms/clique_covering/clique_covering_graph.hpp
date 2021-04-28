@@ -51,6 +51,8 @@
 #include <boost/version.hpp>
 
 #include "custom_set.hpp"
+#include "custom_map.hpp"
+#include "refcount.hpp"
 
 /// Predicate functor object used to select the proper set of vertices
 template <typename Graph>

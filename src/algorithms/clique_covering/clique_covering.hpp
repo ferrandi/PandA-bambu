@@ -301,11 +301,11 @@ class compatibility_node_info_writer
 {
  private:
    /// names of the vertices
-   const std::map<C_vertex, std::string>& names;
+   const CustomUnorderedMap<C_vertex, std::string>& names;
 
  public:
    /// Constructor
-   explicit compatibility_node_info_writer(const std::map<C_vertex, std::string>& _names) : names(_names)
+   explicit compatibility_node_info_writer(const CustomUnorderedMap<C_vertex, std::string>& _names) : names(_names)
    {
    }
 
@@ -340,7 +340,7 @@ class TTT_maximal_weighted_clique
    /// weight of Q_max
    int W_Q_max;
 
-   std::map<C_vertex, std::string>& names;
+   CustomUnorderedMap<C_vertex, std::string>& names;
 
    /// return the vertex of subg with the maximum intersection with cand
    vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg, const CustomUnorderedSet<vertex>& cand, const Graph& g)
@@ -497,7 +497,7 @@ class TTT_maximal_weighted_clique
    {
       return W_Q_max;
    }
-   explicit TTT_maximal_weighted_clique(std::map<C_vertex, std::string>& _names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
+   explicit TTT_maximal_weighted_clique(CustomUnorderedMap<C_vertex, std::string>& _names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
    {
    }
 };
@@ -526,7 +526,7 @@ class TTT_maximal_weighted_clique_fast
    /// weight of Q_max
    int W_Q_max;
 
-   std::map<C_vertex, std::string>& names;
+   CustomUnorderedMap<C_vertex, std::string>& names;
 
    /// return the vertex of subg with the maximum intersection with cand
    vertex get_max_weighted_adiacent_intersection(const CustomUnorderedSet<vertex>& subg, const CustomUnorderedSet<vertex>& cand, const Graph& g)
@@ -680,7 +680,7 @@ class TTT_maximal_weighted_clique_fast
       return Q_max;
    }
 
-   explicit TTT_maximal_weighted_clique_fast(std::map<typename boost::graph_traits<Graph>::vertex_descriptor, std::string>& _names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
+   explicit TTT_maximal_weighted_clique_fast(CustomUnorderedMap<typename boost::graph_traits<Graph>::vertex_descriptor, std::string>& _names) : W_Q(0), W_Q_max(std::numeric_limits<int>::min()), names(_names)
    {
    }
 };
@@ -693,7 +693,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
    /// set of maximal clique computed
    std::vector<CustomOrderedSet<C_vertex>> cliques;
    /// map between vertex_type and C_vertex
-   std::map<vertex_type, C_vertex> v2uv;
+   CustomUnorderedMap<vertex_type, C_vertex> v2uv;
    /// edge selector to select all edges of the compatibility graph
    static const int COMPATIBILITY_ALL_EDGES = ~0;
    int max_level;
@@ -701,9 +701,9 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
 
  protected:
    /// map between C_vertex and vertex_type
-   std::map<C_vertex, vertex_type> uv2v;
+   CustomUnorderedMap<C_vertex, vertex_type> uv2v;
    /// name map for the C_vertex vertices
-   std::map<C_vertex, std::string> names;
+   CustomUnorderedMap<C_vertex, std::string> names;
 
  public:
    /// constructor
@@ -770,7 +770,7 @@ class coloring_based_clique_covering : public clique_covering<vertex_type>
       conflict_graph cg;
 
       using vertex_descriptor_cg = boost::graph_traits<conflict_graph>::vertex_descriptor;
-      std::map<C_vertex, vertex_descriptor_cg> vmap;
+      CustomUnorderedMap<C_vertex, vertex_descriptor_cg> vmap;
       std::vector<C_vertex> reverse_map;
 
       unsigned int vertex_index = 0;
@@ -1494,11 +1494,11 @@ class bipartite_matching_clique_covering : public clique_covering<vertex_type>
    /// set of maximal clique computed
    std::vector<CustomUnorderedSet<C_vertex>> cliques;
    /// map between vertex_type and C_vertex
-   std::map<vertex_type, C_vertex> v2uv;
+   CustomUnorderedMap<vertex_type, C_vertex> v2uv;
    /// map between C_vertex and vertex_type
-   std::map<C_vertex, vertex_type> uv2v;
+   CustomUnorderedMap<C_vertex, vertex_type> uv2v;
    /// name map for the C_vertex vertices
-   std::map<C_vertex, std::string> names;
+   CustomUnorderedMap<C_vertex, std::string> names;
    /// maximum weight
    int max_weight;
    /// edge selector
@@ -1830,7 +1830,7 @@ class randomized_clique_covering : public clique_covering<vertex_type>
    std::vector<CustomOrderedSet<vertex_type>> cliques;
 
    /// map between vertex_type and C_vertex
-   std::map<vertex_type, C_vertex> Rv2uv;
+   CustomUnorderedMap<vertex_type, C_vertex> Rv2uv;
 
    /// minimum number of cliques
    size_t minimum_number_of_cliques;
@@ -1840,9 +1840,9 @@ class randomized_clique_covering : public clique_covering<vertex_type>
 
  protected:
    /// map between C_vertex and vertex_type
-   std::map<C_vertex, vertex_type> Ruv2v;
+   CustomUnorderedMap<C_vertex, vertex_type> Ruv2v;
    /// name map for the C_vertex vertices
-   std::map<C_vertex, std::string> names;
+   CustomUnorderedMap<C_vertex, std::string> names;
 
    /// vertices index type
    typedef boost::graph_traits<boost_cc_compatibility_graph>::vertices_size_type VertexIndex;
