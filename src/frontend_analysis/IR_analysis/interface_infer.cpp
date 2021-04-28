@@ -95,6 +95,9 @@
 
 #include "hls_step.hpp" // for HLSFlowStep_Type
 
+#include "config_PANDA_DATA_INSTALLDIR.hpp"
+#include <boost/regex.hpp>
+
 #define EPSILON 0.000000001
 #define ENCODE_FDNAME(argName_string, MODE, interfaceType) ((argName_string) + STR_CST_interface_parameter_keyword + (MODE) + (interfaceType))
 
@@ -1528,6 +1531,8 @@ void interface_infer::addGimpleNOPxVirtual(tree_nodeRef origStmt, const tree_man
    sl->list_of_bloc[origGN->bb_index]->RemoveStmt(origStmt);
 }
 
+static boost::regex signature_param_typename("((?:\\w+\\s*)+(?:<[^>]*>)?\\s*[\\*&]?\\s*)");
+
 DesignFlowStep_Status interface_infer::InternalExec()
 {
    CustomOrderedSet<unsigned> writeVdef;
@@ -1684,16 +1689,46 @@ DesignFlowStep_Status interface_infer::InternalExec()
             }
          }
 
+         const auto TM = AppM->get_tree_manager();
+         const auto fnode = TM->CGetTreeNode(function_id);
+         const auto fd = GetPointer<const function_decl>(fnode);
+         std::string fname;
+         tree_helper::get_mangled_fname(fd, fname);
+         auto& DesignInterface = HLSMgr->design_interface;
+         const auto top_design_it = HLSMgr->design_interface.find(fname);
+         if(top_design_it == HLSMgr->design_interface.end())
+         {
+            std::string dfname = string_demangle(fname);
+            boost::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
+            ++typename_it; // First match is the function name
+            auto& top_design_interface_typename = HLSMgr->design_interface_typename[fname];
+            auto& top_design_interface_typename_signature = HLSMgr->design_interface_typename_signature[fname];
+            auto& top_design_interface_typename_orig_signature = HLSMgr->design_interface_typename_orig_signature[fname];
+            for(const auto& arg : fd->list_of_args)
+            {
+               THROW_ASSERT(typename_it != end, "");
+               std::stringstream pname;
+               pname << arg;
+               const std::string tname(*typename_it);
+               top_design_interface_typename[pname.str()] = tname;
+               top_design_interface_typename_signature.push_back(tname);
+               top_design_interface_typename_orig_signature.push_back(tname);
+               if(tname.find("fixed<") != std::string::npos)
+               {
+                  HLSMgr->design_interface_typenameinclude[fname][pname.str()] = std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_fixed.h");
+               }
+               if(tname.find("int<") != std::string::npos)
+               {
+                  HLSMgr->design_interface_typenameinclude[fname][pname.str()] = std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_int.h");
+               }
+               ++typename_it;
+            }
+         }
+
          if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
          {
             bool modified = false;
-            auto& DesignInterface = HLSMgr->design_interface;
             auto& DesignInterfaceTypename = HLSMgr->design_interface_typename;
-            const auto TM = AppM->get_tree_manager();
-            auto fnode = TM->get_tree_node_const(function_id);
-            auto fd = GetPointer<function_decl>(fnode);
-            std::string fname;
-            tree_helper::get_mangled_fname(fd, fname);
             if(DesignInterface.find(fname) != DesignInterface.end())
             {
                const tree_manipulationRef tree_man = tree_manipulationRef(new tree_manipulation(TM, parameters));
