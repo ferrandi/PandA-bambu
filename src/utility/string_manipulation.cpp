@@ -148,7 +148,6 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
       {
          trimmed_value = (is_signed ? trimmed_value.front() : '0') + trimmed_value;
       }
-      printf("val: %s -> %s\n", what[0].second, trimmed_value.c_str());
    }
    else
    {
