@@ -377,10 +377,12 @@ void ASLAP::add_constraints_to_ALAP()
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "");
 
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Reverse ALAP:");
+#ifndef NDEBUG
       for(auto level : levels)
       {
          PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, GET_NAME(beh_graph, level) + " - " + STR(ALAP->get_cstep(level).second));
       }
+#endif
       PRINT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "end");
    }
 }
