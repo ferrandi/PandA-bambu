@@ -161,5 +161,7 @@ std::string convert_fp_to_string(std::string num, unsigned int precision);
  */
 std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type);
 
+std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename);
+
 unsigned int ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed);
 #endif
