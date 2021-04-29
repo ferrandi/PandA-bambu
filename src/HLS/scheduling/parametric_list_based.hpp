@@ -184,17 +184,17 @@ class parametric_list_based : public Scheduling
     * @param current_ending_time is where ending_time will be stored
     * @param stage_period is the minimum period of the pipelined unit fu_type
     */
-   void compute_starting_ending_time_asap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained, fu_bindingRef res_binding,
+   void compute_starting_ending_time_asap(const CustomUnorderedSet<vertex> &operations, const vertex v, const unsigned int fu_type, const ControlStep cs, double& current_starting_time, double& current_ending_time, double& stage_period, bool& cannot_be_chained, fu_bindingRef res_binding,
                                           const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
-   void compute_starting_ending_time_alap(const vertex v, const unsigned int fu_type, const ControlStep cs, double& starting_time, double& ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles, bool& cannot_be_chained,
+   void compute_starting_ending_time_alap(const CustomUnorderedSet<vertex> &operations, const vertex v, const unsigned int fu_type, const ControlStep cs, double& starting_time, double& ending_time, double& op_execution_time, double& stage_period, unsigned int& n_cycles, bool& cannot_be_chained,
                                           fu_bindingRef res_binding, const ScheduleConstRef schedule, double& phi_extra_time, double setup_hold_time, CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map);
 
    /**
     * update starting and ending time by moving candidate_v as late as possible without increasing the whole latency
     */
-   void update_starting_ending_time(vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
+   void update_starting_ending_time(const CustomUnorderedSet<vertex> &operations, vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
 
-   void update_starting_ending_time_asap(vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
+   void update_starting_ending_time_asap(const CustomUnorderedSet<vertex> &operations, vertex candidate_v, fu_bindingRef res_binding, OpGraphConstRef opDFG, const ScheduleConstRef schedule);
 
    /**
     * @brief update the starting and ending time of the vertices scheduled in the same cs of current_v
@@ -204,7 +204,7 @@ class parametric_list_based : public Scheduling
     * @param vertices_analyzed is the set of vertices updated
     * @param res_binding is the current resource binding
     */
-   void update_vertices_timing(const ControlStep vertex_cstep, vertex current_v, const ScheduleConstRef schedule, std::list<vertex>& vertices_analyzed, fu_bindingRef res_binding, const OpGraphConstRef opDFG);
+   void update_vertices_timing(const CustomUnorderedSet<vertex> &operations, const ControlStep vertex_cstep, vertex current_v, const ScheduleConstRef schedule, std::list<vertex>& vertices_analyzed, fu_bindingRef res_binding, const OpGraphConstRef opDFG);
 
    /**
     * Update the resource map
@@ -233,7 +233,7 @@ class parametric_list_based : public Scheduling
     * @param schedule is the scheduling data structure
     * @param vertices_analyzed is the set of vertices having the slack updated
     */
-   void update_vertices_slack(vertex current_v, const ScheduleRef schedule, OpVertexSet& vertices_analyzed, double setup_hold_time, const OpGraphConstRef opDFG);
+   void update_vertices_slack(const CustomUnorderedSet<vertex> &operations, vertex current_v, const ScheduleRef schedule, OpVertexSet& vertices_analyzed, double setup_hold_time, const OpGraphConstRef opDFG);
 
    /**
     * @brief store_in_chaining_with_load checks if a store is chained with a load operation or vice versa
@@ -241,8 +241,8 @@ class parametric_list_based : public Scheduling
     * @param v vertex considered
     * @return true in case vertex v is a store or a load operation and it is chained with a load or store operation
     */
-   bool store_in_chaining_with_load_in(unsigned int current_vertex_cstep, vertex v);
-   bool store_in_chaining_with_load_out(unsigned int current_vertex_cstep, vertex v);
+   bool store_in_chaining_with_load_in(const CustomUnorderedSet<vertex> &operations, unsigned int current_vertex_cstep, vertex v);
+   bool store_in_chaining_with_load_out(const CustomUnorderedSet<vertex> &operations, unsigned int current_vertex_cstep, vertex v);
 
    /**
     * perform balanced scheduling on an existing solution
@@ -251,7 +251,7 @@ class parametric_list_based : public Scheduling
     * @param res_binding is the current resource binding
     * @param setup_hold_time is the delay for the setup and hold of registers
     */
-   void do_balanced_scheduling(std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG);
+   void do_balanced_scheduling(const CustomUnorderedSet<vertex> &operations, std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG);
 
    /**
     * different version of balanced scheduling. It re-schedules the operation trying to improve their slack.
@@ -260,15 +260,15 @@ class parametric_list_based : public Scheduling
     * @param res_binding is the current resource binding
     * @param setup_hold_time is the delay for the setup and hold of registers
     */
-   void do_balanced_scheduling1(std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG, bool seen_cstep_has_RET_conflict);
+   void do_balanced_scheduling1(const CustomUnorderedSet<vertex> &operations, std::deque<vertex>& sub_levels, const ScheduleRef schedule, const fu_bindingRef res_binding, const double setup_hold_time, const double scheduling_mux_margins, const OpGraphConstRef opDFG, bool seen_cstep_has_RET_conflict);
 
-   bool check_non_direct_operation_chaining(vertex current_v, unsigned int v_fu_type, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const;
+   bool check_non_direct_operation_chaining(const CustomUnorderedSet<vertex> &operations, vertex current_v, unsigned int v_fu_type, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const;
 
-   bool check_direct_operation_chaining(vertex current_v, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const;
+   bool check_direct_operation_chaining(const CustomUnorderedSet<vertex> &operations, vertex current_v, const ControlStep cs, const ScheduleConstRef schedule, fu_bindingRef res_binding) const;
 
-   bool check_LOAD_chaining(vertex current_v, const ControlStep cs, const ScheduleConstRef schedule) const;
+   bool check_LOAD_chaining(const CustomUnorderedSet<vertex> &operations, vertex current_v, const ControlStep cs, const ScheduleConstRef schedule) const;
 
-   void CheckSchedulabilityConditions(const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
+   void CheckSchedulabilityConditions(const CustomUnorderedSet<vertex>& operations, const vertex& current_vertex, ControlStep current_cycle, double& current_starting_time, double& current_ending_time, double& current_stage_period,
                                       CustomMap<std::pair<unsigned int, unsigned int>, double>& local_connection_map, double current_cycle_starting_time, double current_cycle_ending_time, double setup_hold_time, double& phi_extra_time,
                                       double scheduling_mux_margins, bool unbounded, bool unbounded_Functions, bool nonDirectLoadStore, const std::set<std::string>& proxy_functions_used, bool cstep_has_RET_conflict, unsigned int fu_type,
                                       const vertex2obj<ControlStep>& current_ASAP, const fu_bindingRef res_binding, const ScheduleRef schedule, bool& predecessorsCond, bool& pipeliningCond, bool& cannotBeChained0, bool& chainingRetCond,

@@ -570,13 +570,17 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       const bb_vertex_order_by_map comp_i(bb_map_levels);
       std::set<vertex, bb_vertex_order_by_map> loop_bbs(comp_i);
       OpVertexSet loop_operations(op_graph);
+      CustomUnorderedSet<vertex> Loop_operations;
       VertexIterator bb, bb_end;
       for(boost::tie(bb, bb_end) = boost::vertices(*basic_block_graph); bb != bb_end; bb++)
       {
          if(basic_block_graph->CGetBBNodeInfo(*bb)->loop_id == loop_id)
          {
             loop_bbs.insert(*bb);
-            loop_operations.insert(basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.begin(), basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.end());
+            auto vit = basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.begin();
+            auto vit_end = basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.end();
+            loop_operations.insert(vit, vit_end);
+            Loop_operations.insert(vit, vit_end);
          }
       }
       /// FIXME: for the moment the considered graph contains control dependence edges
@@ -701,7 +705,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                           loop_bbs);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added delay constraint");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraint");
-      const ASLAPRef aslap(new ASLAP(HLSMgr, HLS, true, loop_operations, parameters, 1000));
+      const ASLAPRef aslap(new ASLAP(HLSMgr, HLS, true, Loop_operations, parameters, 1000));
       aslap->compute_ASAP();
       aslap->compute_ALAP(ASLAP::ALAP_fast);
       SDCSorter sdc_sorter = SDCSorter(aslap->CGetASAP(), aslap->CGetALAP(), FB, filtered_op_graph, loop_bbs, parameters);

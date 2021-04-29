@@ -158,6 +158,7 @@ struct spec_hierarchical_clustering : public hierarchical_clustering<>
 #define MODULE_BINDING_MUX_MARGIN 1.0
 #define DSP_MARGIN 1.0
 #define CLOCK_MARGIN 0.97
+#define OP_THRESHOLD 1000
 
 template <typename OutputIterator>
 struct topological_based_sorting_visitor : public boost::dfs_visitor<>
@@ -316,7 +317,7 @@ void cdfc_module_binding::initialize_connection_relation(connection_relation& co
 
 template <bool do_estimation, bool do_conversion, typename vertex_type, class cluster_type, bool IS_DEBUGGING = true>
 void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, double& tot_mux_delay, double& tot_mux_area, const cluster_type& cluster, unsigned int& total_muxes, unsigned int& n_shared,
-                    const typename std::map<vertex_type, vertex>& converter, const HLS_managerRef HLSMgr, const hlsRef HLS,
+                    const CustomUnorderedMap<vertex_type, vertex>& converter, const HLS_managerRef HLSMgr, const hlsRef HLS,
                     int
 #ifndef NDEBUG
                         debug_level
@@ -327,13 +328,13 @@ void estimate_muxes(const connection_relation& con_rel, unsigned int mux_prec, d
    const FunctionBehaviorConstRef FB = HLSMgr->CGetFunctionBehavior(HLS->functionId);
    const OpGraphConstRef data = FB->CGetOpGraph(FunctionBehavior::FDFG);
    bool has_register_done = HLS->Rreg && HLS->Rreg->size() != 0;
-   std::vector<CustomOrderedSet<unsigned int>> regs_in;
-   std::vector<CustomOrderedSet<unsigned int>> chained_in;
-   std::vector<CustomOrderedSet<std::pair<unsigned int, unsigned int>>> module_in;
-   std::vector<CustomOrderedSet<std::pair<unsigned int, unsigned int>>> module_in_reg;
-   CustomOrderedSet<unsigned int> regs_out;
-   CustomOrderedSet<vertex> chained_out;
-   CustomOrderedSet<std::pair<unsigned int, unsigned int>> module_out;
+   std::vector<CustomUnorderedSet<unsigned int>> regs_in;
+   std::vector<CustomUnorderedSet<unsigned int>> chained_in;
+   std::vector<CustomUnorderedSet<std::pair<unsigned int, unsigned int>>> module_in;
+   std::vector<CustomUnorderedSet<std::pair<unsigned int, unsigned int>>> module_in_reg;
+   CustomUnorderedSet<unsigned int> regs_out;
+   CustomUnorderedSet<vertex> chained_out;
+   CustomUnorderedSet<std::pair<unsigned int, unsigned int>> module_out;
    unsigned int n_tot_outgoing_edges = 0, n_tot_outgoing_unbound_operations = 0, n_tot_shared = 0;
    unsigned int max_port_index = 0;
    for(auto cv : cluster)
@@ -556,7 +557,7 @@ struct slack_based_filtering : public filter_clique<vertex>
    {
    }
 
-   bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>& candidate_clique, C_vertex& v, const std::map<C_vertex, vertex>& converter, const cc_compatibility_graph& cg) const override
+   bool select_candidate_to_remove(const CustomOrderedSet<C_vertex>& candidate_clique, C_vertex& v, const CustomUnorderedMap<C_vertex, vertex>& converter, const cc_compatibility_graph& cg) const override
    {
       THROW_ASSERT(!candidate_clique.empty(), "candidate clique cannot be empty");
       double min_slack = std::numeric_limits<double>::max();
@@ -649,7 +650,7 @@ struct slack_based_filtering : public filter_clique<vertex>
       }
    }
 
-   size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique, const std::map<C_vertex, vertex>& converter) const
+   size_t clique_cost(const CustomOrderedSet<C_vertex>& candidate_clique, const CustomUnorderedMap<C_vertex, vertex>& converter) const
    {
       unsigned int total_muxes;
       unsigned int n_shared;
@@ -680,7 +681,7 @@ class CdfcWriter : public VertexWriter
    /// The info associated with the graph to be printed
    const CdfcGraphInfo* cdfc_graph_info;
 
-   const std::map<vertex, vertex>& c2s;
+   const CustomUnorderedMap<vertex, vertex>& c2s;
 
    /// The functor used to print labels which correspond to vertices of the graph to be printed
    const OpWriter operation_writer;
@@ -737,7 +738,7 @@ class CdfcEdgeWriter : public EdgeWriter
    }
 };
 
-CdfcGraphInfo::CdfcGraphInfo(const std::map<vertex, vertex>& _c2s, const OpGraphConstRef _operation_graph) : c2s(_c2s), operation_graph(_operation_graph)
+CdfcGraphInfo::CdfcGraphInfo(const CustomUnorderedMap<vertex, vertex>& _c2s, const OpGraphConstRef _operation_graph) : c2s(_c2s), operation_graph(_operation_graph)
 {
 }
 
@@ -918,7 +919,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    unsigned int fu_unit;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Computing non-shared resources");
    /// compute non-shared resources
-   std::map<unsigned int, unsigned int> n_shared_fu;
+   CustomUnorderedMap<unsigned int, unsigned int> n_shared_fu;
    // HLS->Rliv->compute_conflicts_with_reachability(HLS);
    for(const auto operation : fdfg->CGetOperations())
    {
@@ -1005,7 +1006,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
    {
       std::vector<vertex> c2s;
       c2s.reserve(boost::num_vertices(*fdfg));
-      std::map<vertex, cdfc_vertex> s2c;
+      CustomUnorderedMap<vertex, cdfc_vertex> s2c;
 
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Creating the cdfc for the module binding...");
       connection_relation con_rel;
@@ -1148,6 +1149,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       }
 
       /// merge easy bound vertices
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---merge easy bound vertices");
       for(const auto& fu_eb : easy_bound_vertices)
       {
          std::map<unsigned int, vertex> rep_vertex;
@@ -1169,6 +1171,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       }
 
       /// add the vertices to the cdfc graph
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add the vertices to the cdfc graph");
       for(boost::tie(vi, vi_end) = boost::vertices(*fdfg); vi != vi_end; ++vi)
       {
          vertex s = *vi;
@@ -1195,6 +1198,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       }
 
       /// add the control dependencies edges and the chained edges to the cdfc graph
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---add the control dependencies edges and the chained edges to the cdfc graph");
       const OpGraphConstRef dfg = FB->CGetOpGraph(FunctionBehavior::DFG);
       EdgeIterator ei, ei_end;
       for(boost::tie(ei, ei_end) = boost::edges(*sdg); ei != ei_end; ++ei)
@@ -1332,10 +1336,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       int _w = 1;
 
       // Do a preliminary register binding to help the sharing of complex operations
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Do a preliminary register binding to help the sharing of complex operations");
       {
          DesignFlowStepRef regb;
-         regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-                    ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
+            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+                       ->CreateHLSFlowStep(HLSFlowStep_Type::COLORING_REGISTER_BINDING, funId);
+//         {
+//            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+//                       ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
+//         }
+
          regb->Initialize();
          regb->Exec();
       }
@@ -1485,6 +1495,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       }
 
       /// remove all cycles from the cdfc graph
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---remove all cycles from the cdfc graph");
       const cdfc_graphConstRef cdfc = cdfc_graphConstRef(new cdfc_graph(*cdfc_bulk_graph, cdfc_graph_edge_selector<boost_cdfc_graph>(CD_EDGE | COMPATIBILITY_EDGE, &*cdfc_bulk_graph), cdfc_graph_vertex_selector<boost_cdfc_graph>()));
 
       if(output_level >= OUTPUT_LEVEL_MINIMUM)
@@ -1614,11 +1625,12 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
          // cdfc->WriteDot("HLS_CD_COMP.dot");
       }
 
-      std::map<vertex, vertex> identity_converter;
+      CustomUnorderedMap<vertex, vertex> identity_converter;
 
       /// partition vertices for clique covering or bind the easy functional units
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---partition vertices for clique covering or bind the easy functional units");
       std::map<unsigned int, unsigned int> numModule;
-      std::map<unsigned int, CustomSet<cdfc_vertex>, cdfc_resource_ordering_functor> partitions(r_functor);
+      std::map<unsigned int, CustomUnorderedSet<cdfc_vertex>, cdfc_resource_ordering_functor> partitions(r_functor);
       for(const auto& fu_cv : candidate_vertices)
       {
          fu_unit = fu_cv.first;
@@ -1655,7 +1667,8 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       }
 
       /// solve the binding problem for all the partitions
-      const unsigned int number_of_iterations = 10;
+      INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---solve the binding problem for all the partitions");
+      const unsigned int number_of_iterations = n_vert > OP_THRESHOLD ? 1 : 10;
       const std::map<unsigned int, unsigned int> numModule_initial = numModule;
       const size_t total_modules_allocated_initial = total_modules_allocated;
       const double total_resource_area_initial = total_resource_area;
@@ -1704,8 +1717,10 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
             DesignFlowStepRef regb;
             // if(iteration%2)
-            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-                       ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
+               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+                          ->CreateHLSFlowStep(HLSFlowStep_Type::COLORING_REGISTER_BINDING, funId);
+//               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+//                          ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
             // else
             //   regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new
             //   WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::BIPARTITE_MATCHING)));
@@ -1756,7 +1771,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
             if(clique_covering_method_used == CliqueCovering_Algorithm::BIPARTITE_MATCHING)
             {
-               std::map<vertex, size_t> v2id;
+               CustomUnorderedMap<vertex, size_t> v2id;
                size_t max_id = 0, curr_id;
                for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                {
@@ -1870,7 +1885,7 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
                      std::string el1_name = GET_NAME(sdg, c2s[boost::get(boost::vertex_index, *CG, *vert_it)]) + "(" + sdg->CGetOpNodeInfo(c2s[boost::get(boost::vertex_index, *CG, *vert_it)])->GetOperation() + ")";
                      module_clique->add_vertex(c2s[boost::get(boost::vertex_index, *CG, *vert_it)], el1_name);
                   }
-                  std::map<vertex, size_t> v2id;
+                  CustomUnorderedMap<vertex, size_t> v2id;
                   size_t max_id = 0, curr_id;
                   for(auto vert_it = partition.second.begin(); vert_it != vert_it_end; ++vert_it)
                   {
@@ -2372,7 +2387,7 @@ int cdfc_module_binding::weight_computation(bool cond1, bool cond2, vertex v1, v
       // std::cerr << "same number of operand" << std::endl;
       size_t n_inputs = in1;
       threshold1 = 2 * n_inputs;
-      std::map<vertex, vertex> converter;
+      CustomUnorderedMap<vertex, vertex> converter;
       std::vector<vertex> cluster(2);
       converter[v1] = v1;
       cluster[0] = v1;

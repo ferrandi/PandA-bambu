@@ -80,6 +80,7 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
       START_TIME(step_time);
    }
    create_conflict_graph();
+
    /// coloring based on DSATUR 2 heuristic
    cg_vertices_size_type num_colors = dsatur2_coloring(cg, color);
 

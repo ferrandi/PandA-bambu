@@ -202,7 +202,7 @@ struct module_binding_check : public check_clique<vertex_type>
 
    ~module_binding_check() override = default;
 
-   void initialize_structures(boost_cc_compatibility_graph& graph, std::map<C_vertex, vertex_type>& Ruv2v) override
+   void initialize_structures(boost_cc_compatibility_graph& graph, CustomUnorderedMap<C_vertex, vertex_type>& Ruv2v) override
    {
       BOOST_FOREACH(C_vertex tempVertex, boost::vertices(graph))
       {
