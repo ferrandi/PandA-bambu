@@ -74,7 +74,7 @@ void remove_escaped(std::string& ioString);
 
 std::string TrimSpaces(const std::string& value);
 
-std::string string_demangle(std::string input);
+std::string string_demangle(const std::string& input);
 
 /**
  * Function with print number in desired format

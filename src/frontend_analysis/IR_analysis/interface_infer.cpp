@@ -1699,29 +1699,39 @@ DesignFlowStep_Status interface_infer::InternalExec()
          if(top_design_it == HLSMgr->design_interface.end())
          {
             std::string dfname = string_demangle(fname);
-            boost::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
-            ++typename_it; // First match is the function name
-            auto& top_design_interface_typename = HLSMgr->design_interface_typename[fname];
-            auto& top_design_interface_typename_signature = HLSMgr->design_interface_typename_signature[fname];
-            auto& top_design_interface_typename_orig_signature = HLSMgr->design_interface_typename_orig_signature[fname];
-            for(const auto& arg : fd->list_of_args)
+            if(!dfname.empty())
             {
-               THROW_ASSERT(typename_it != end, "");
-               std::stringstream pname;
-               pname << arg;
-               const std::string tname(*typename_it);
-               top_design_interface_typename[pname.str()] = tname;
-               top_design_interface_typename_signature.push_back(tname);
-               top_design_interface_typename_orig_signature.push_back(tname);
-               if(tname.find("fixed<") != std::string::npos)
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Extracting interface from signature " + fname);
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Demangled as " + dfname);
+               boost::sregex_token_iterator typename_it(dfname.begin(), dfname.end(), signature_param_typename, 0), end;
+               ++typename_it; // First match is the function name
+               auto& top_design_interface_typename = HLSMgr->design_interface_typename[fname];
+               auto& top_design_interface_typename_signature = HLSMgr->design_interface_typename_signature[fname];
+               auto& top_design_interface_typename_orig_signature = HLSMgr->design_interface_typename_orig_signature[fname];
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Iterating arguments: ");
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
+               for(const auto& arg : fd->list_of_args)
                {
-                  HLSMgr->design_interface_typenameinclude[fname][pname.str()] = std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_fixed.h");
+                  THROW_ASSERT(typename_it != end, "");
+                  std::stringstream pname;
+                  pname << arg;
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "Argument " + pname.str());
+                  const std::string tname(*typename_it);
+                  INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Typename " + tname);
+                  top_design_interface_typename[pname.str()] = tname;
+                  top_design_interface_typename_signature.push_back(tname);
+                  top_design_interface_typename_orig_signature.push_back(tname);
+                  if(tname.find("fixed<") != std::string::npos)
+                  {
+                     HLSMgr->design_interface_typenameinclude[fname][pname.str()] = std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_fixed.h");
+                  }
+                  if(tname.find("int<") != std::string::npos)
+                  {
+                     HLSMgr->design_interface_typenameinclude[fname][pname.str()] = std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_int.h");
+                  }
+                  ++typename_it;
                }
-               if(tname.find("int<") != std::string::npos)
-               {
-                  HLSMgr->design_interface_typenameinclude[fname][pname.str()] = std::string(PANDA_DATA_INSTALLDIR "/panda/ac_types/include/" + tname.substr(0, 2) + "_int.h");
-               }
-               ++typename_it;
+               INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--");
             }
          }
 

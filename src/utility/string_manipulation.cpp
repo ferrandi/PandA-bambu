@@ -104,13 +104,13 @@ std::string TrimSpaces(const std::string& value)
    }
    return temp;
 }
-std::string string_demangle(std::string input)
+std::string string_demangle(const std::string& input)
 {
    char buf[1024];
    size_t size = 1024;
    int status;
-   char* res = abi::__cxa_demangle(input.c_str(), buf, &size, &status);
-   return std::string(res);
+   char* res = abi::__cxa_demangle(input.data(), buf, &size, &status);
+   return std::string(status == 0 ? res : "");
 }
 
 static boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^>]*>[^\\d-]*");
