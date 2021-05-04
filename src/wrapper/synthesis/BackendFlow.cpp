@@ -420,6 +420,17 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    {
       actual_parameters->parameter_values[PARAM_has_VHDL_library] = STR(false);
    }
+   if(Param->isOption(OPT_parallel_backend))
+   {
+      if( Param->getOption<bool>(OPT_parallel_backend))
+      {
+         actual_parameters->parameter_values[PARAM_parallel_backend] = STR(true);
+      }
+      else
+      {
+         actual_parameters->parameter_values[PARAM_parallel_backend] = STR(false);
+      }
+   }
 
    InitDesignParameters();
 

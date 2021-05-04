@@ -340,6 +340,7 @@
 #define OPT_XML_CONFIG (1 + OPT_VISUALIZER)
 #define OPT_RANGE_ANALYSIS_MODE (1 + OPT_XML_CONFIG)
 #define OPT_MASK (1 + OPT_RANGE_ANALYSIS_MODE)
+#define OPT_PARALLEL_BACKEND (1 + OPT_MASK)
 
 /// constant correspond to the "parametric list based option"
 #define PAR_LIST_BASED_OPT "parametric-list-based"
@@ -775,6 +776,8 @@ void BambuParameter::PrintHelp(std::ostream& os) const
       << "    --backend-sdc-extensions=file\n"
       << "        Specify a file that will be included in the Synopsys Design Constraints\n"
       << "        file (SDC).\n\n"
+      << "   --parallel-backend\n"
+      << "        when possible enable a parallel synthesis backend"
       << "    --VHDL-library=libraryname\n"
       << "        Specify the library in which the VHDL generated files are compiled.\n\n"
       << "    --device-name=value\n"
@@ -1193,6 +1196,7 @@ int BambuParameter::Exec()
       {"aligned-access", no_argument, nullptr, OPT_ALIGNED_ACCESS_PARAMETER},
       {"backend-script-extensions", required_argument, nullptr, OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER},
       {"backend-sdc-extensions", required_argument, nullptr, OPT_BACKEND_SDC_EXTENSIONS_PARAMETER},
+      {"parallel-backend", required_argument, nullptr, OPT_PARALLEL_BACKEND},
       {"VHDL-library", required_argument, nullptr, OPT_VHDL_LIBRARY_PARAMETER},
       {"do-not-use-asynchronous-memories", no_argument, nullptr, OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES},
       {"do-not-chain-memories", no_argument, nullptr, OPT_DO_NOT_CHAIN_MEMORIES},
@@ -2114,6 +2118,11 @@ int BambuParameter::Exec()
          case OPT_BACKEND_SDC_EXTENSIONS_PARAMETER:
          {
             setOption(OPT_backend_sdc_extensions, optarg);
+            break;
+         }
+         case OPT_PARALLEL_BACKEND:
+         {
+            setOption(OPT_parallel_backend, true);
             break;
          }
          case OPT_VHDL_LIBRARY_PARAMETER:
@@ -4184,6 +4193,7 @@ void BambuParameter::SetDefaults()
    setOption(OPT_bitvalue_ipa, true);
    setOption(OPT_range_analysis_mode, "");
    setOption(OPT_mask, "");
+   setOption(OPT_parallel_backend, false);
 
 #if HAVE_HOST_PROFILING_BUILT
    setOption(OPT_exec_argv, STR_CST_string_separator);
