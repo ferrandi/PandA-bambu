@@ -148,7 +148,7 @@ namespace boost
          // to the current vertex.
          size_type j = 0;
 
-         // Scan through all useable colors, find the smallest possible
+         // Scan through all usable colors, find the smallest possible
          // color that is not used by neighbors.  Note that if mark[j]
          // is equal to i, color j is used by one of the current vertex's
          // neighbors.

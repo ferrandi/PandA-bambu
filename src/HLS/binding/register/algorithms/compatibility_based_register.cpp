@@ -60,7 +60,7 @@
 
 compatibility_based_register::compatibility_based_register(const ParameterConstRef _Param, const HLS_managerRef _HLSMgr, unsigned int _funId, const DesignFlowManagerConstRef _design_flow_manager, const HLSFlowStep_Type _hls_flow_step_type,
                                                            const HLSFlowStepSpecializationConstRef _hls_flow_step_specialization)
-    : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization)
+    : reg_binding_creator(_Param, _HLSMgr, _funId, _design_flow_manager, _hls_flow_step_type, _hls_flow_step_specialization), CG(nullptr)
 {
 }
 
@@ -69,15 +69,15 @@ compatibility_based_register::~compatibility_based_register() = default;
 void compatibility_based_register::create_compatibility_graph()
 {
    verts.clear();
-   CG.clear();
    THROW_ASSERT(HLS->Rliv, "Liveness analysis not yet computed");
    unsigned int CG_num_vertices = HLS->storage_value_information->get_number_of_storage_values();
+   CG = new compatibility_graph(CG_num_vertices);
    boost::numeric::ublas::matrix<bool> conflict_map(CG_num_vertices, CG_num_vertices);
 
    boost::numeric::ublas::noalias(conflict_map) = boost::numeric::ublas::zero_matrix<bool>(CG_num_vertices, CG_num_vertices);
    for(unsigned int vi = 0; vi < CG_num_vertices; ++vi)
    {
-      verts.push_back(boost::add_vertex(CG));
+      verts.push_back(boost::vertex(vi, *CG));
    }
 
    /// compatibility graph creation
@@ -122,7 +122,7 @@ void compatibility_based_register::create_compatibility_graph()
             if(edge_weight > 1)
             {
                bool in1;
-               boost::tie(e1, in1) = boost::add_edge(verts[vi], verts[vj], edge_compatibility_property(edge_weight), CG);
+               boost::tie(e1, in1) = boost::add_edge(verts[vi], verts[vj], edge_compatibility_property(edge_weight), *CG);
                THROW_ASSERT(in1, "unable to add edge");
             }
          }
@@ -132,6 +132,6 @@ void compatibility_based_register::create_compatibility_graph()
 
 bool compatibility_based_register::is_compatible(unsigned int sv1, unsigned int sv2) const
 {
-   std::pair<boost::graph_traits<compatibility_graph>::edge_descriptor, bool> edge = boost::edge(verts[sv1], verts[sv2], CG);
+   std::pair<boost::graph_traits<compatibility_graph>::edge_descriptor, bool> edge = boost::edge(verts[sv1], verts[sv2], *CG);
    return edge.second;
 }

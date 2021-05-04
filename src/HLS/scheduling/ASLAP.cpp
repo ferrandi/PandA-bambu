@@ -75,9 +75,9 @@
 /// tree include
 #include "behavioral_helper.hpp"
 
+#include "cpu_time.hpp"
 #include "dbgPrintHelper.hpp"      // for DEBUG_LEVEL_
 #include "string_manipulation.hpp" // for GET_CLASS
-#include "cpu_time.hpp"
 
 // in case asap and alap are computed with/without constraints on the resources available
 #define WITH_CONSTRAINT 0
@@ -551,7 +551,6 @@ void ASLAP::compute_ALAP_worst_case()
    } while(levelr != 0u);
    for(auto level : levels)
    {
-
       ALAP->set_execution(level, rev_levels_to_cycles.find(ALAP->get_cstep(level).second)->second -
                                      ControlStep(static_cast<unsigned int>(allocation_information->get_attribute_of_fu_per_op(level, beh_graph, Allocation_MinMax::MAX, AllocationInformation::initiation_time))));
       max_tot_csteps = std::max(max_tot_csteps, ALAP->get_cstep(level).second);
