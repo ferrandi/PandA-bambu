@@ -306,7 +306,7 @@ class FunctionVersion
 
    bool ieee_format() const
    {
-      return userRequired == nullptr || userRequired->ieee_format();
+      return userRequired == nullptr /*|| userRequired->ieee_format()*/;
    }
 
    std::string ToString() const
