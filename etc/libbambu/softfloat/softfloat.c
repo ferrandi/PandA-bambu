@@ -2560,6 +2560,8 @@ uiZ:
    current = current & ((1 << (__frac_p3 - 1)) - 1);                \
    current <<= 1;
 
+#define FLOAT32_SRT4_UNROLL 1
+
 __float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    // static const __bits8 tableR4[]= {0, 0, 1, 1, 2, 1, 3, 2, 3, 3, 3, 3, 3, 3, 3, 3, 5, 5, 5, 5, 5, 5, 5, 5, 5, 6, 6, 6, 7, 7, 7, 7};
@@ -2574,8 +2576,14 @@ __float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits
    VOLATILE_DEF __bits8 current_sel, q_i, index;
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
    VOLATILE_DEF _Bool MSB1zExp, MSB0zExp, MSBzExp, ovfCond;
-   VOLATILE_DEF __bits8 __frac_p3;
+   VOLATILE_DEF __bits8 __frac_p3, __div_it, __div_bits, __div_waste;
+   VOLATILE_DEF _Bool __frac_odd;
    __frac_p3 = __rounding ? (__frac_bits + 3) : (__frac_bits + 1);
+   __frac_odd = __frac_p3 & 1;
+   __div_it = __frac_p3 / (FLOAT32_SRT4_UNROLL * 2);
+   __div_it = (__frac_p3 % (FLOAT32_SRT4_UNROLL * 2)) != 0 ? (__div_it + 1) : __div_it;
+   __div_bits = __div_it * FLOAT32_SRT4_UNROLL * 2;
+   __div_waste = __div_bits - __frac_p3 - __frac_odd;
 
    if(__sign == 1)
    {
@@ -2682,9 +2690,14 @@ __float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits
    bSigx3 = bSigx2 + bSig;
    nbSigx3 = -bSigx3;
    current = aSig;
-   for(index = 0; index < ((__frac_p3 >> 1) + (__frac_p3 & 1)); ++index)
+   for(index = 0; index < __div_it; ++index)
    {
-      BOOST_PP_REPEAT(1, LOOP_BODY_F32_DIV, index);
+      BOOST_PP_REPEAT(FLOAT32_SRT4_UNROLL, LOOP_BODY_F32_DIV, index);
+   }
+   if(__div_waste > 1)
+   {
+      positive >>= __div_waste;
+      negative >>= __div_waste;
    }
 
    positive |= (current != 0) << 1;
@@ -2693,7 +2706,7 @@ __float32 __float32_divSRT4(__float32 a, __float32 b, __bits8 __exp_bits, __bits
    negative <<= 1;
    negative = negative & ((1 << (__frac_p3 + 2)) - 1);
    zSig0 = positive - negative;
-   zSig0 = (__frac_p3 & 1) ? ((zSig0 >> 2) | ((zSig0 >> 1) & 1)) : (zSig0 >> 1);
+   zSig0 = (__frac_odd) ? ((zSig0 >> 2) | ((zSig0 >> 1) & 1)) : (zSig0 >> 1);
    zSig0 = zSig0 & ((1 << (__frac_p3 + 1)) - 1);
    correction = (zSig0 >> __frac_p3) & 1;
    zSig1 = (zSig0 >> correction) | (zSig0 & 1);
@@ -4198,6 +4211,8 @@ __float64 __float64_mul(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __
    current = current & ((1ULL << (__frac_p3 - 1)) - 1);             \
    current <<= 1;
 
+#define FLOAT64_SRT4_UNROLL 1
+
 __float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits8 __frac_bits, __sbits32 __exp_bias, __flag __rounding, __flag __nan, __flag __one, __flag __subnorm, __sbits8 __sign)
 {
    VOLATILE_DEF __bits8 a_c, b_c, z_c;
@@ -4211,8 +4226,14 @@ __float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits
    VOLATILE_DEF __bits8 current_sel, q_i, index;
    VOLATILE_DEF _Bool LSB_bit, Guard_bit, Round_bit, round;
    VOLATILE_DEF _Bool MSB1zExp, MSB0zExp, MSBzExp, ovfCond;
-   VOLATILE_DEF __bits8 __frac_p3;
+   VOLATILE_DEF __bits8 __frac_p3, __div_it, __div_bits, __div_waste;
+   VOLATILE_DEF _Bool __frac_odd;
    __frac_p3 = __rounding ? (__frac_bits + 3) : (__frac_bits + 1);
+   __frac_odd = __frac_p3 & 1;
+   __div_it = __frac_p3 / (FLOAT64_SRT4_UNROLL * 2);
+   __div_it = (__frac_p3 % (FLOAT64_SRT4_UNROLL * 2)) != 0 ? (__div_it + 1) : __div_it;
+   __div_bits = __div_it * FLOAT64_SRT4_UNROLL * 2;
+   __div_waste = __div_bits - __frac_p3 - __frac_odd;
 
    if(__sign == 1)
    {
@@ -4283,9 +4304,14 @@ __float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits
    bSigx3 = bSigx2 + bSig;
    nbSigx3 = -bSigx3;
    current = aSig;
-   for(index = 0; index < ((__frac_p3 >> 1) + (__frac_p3 & 1)); ++index)
+   for(index = 0; index < __div_it; ++index)
    {
-      BOOST_PP_REPEAT(1, LOOP_BODY_F64_DIV, index);
+      BOOST_PP_REPEAT(FLOAT64_SRT4_UNROLL, LOOP_BODY_F64_DIV, index);
+   }
+   if(__div_waste > 1)
+   {
+      positive >>= __div_waste;
+      negative >>= __div_waste;
    }
 
    positive |= (current != 0) << 1;
@@ -4295,7 +4321,7 @@ __float64 __float64_divSRT4(__float64 a, __float64 b, __bits8 __exp_bits, __bits
    negative = negative & ((1ULL << (__frac_p3 + 2)) - 1);
    zSig0 = positive - negative;
    zSig0 >>= 1;
-   zSig0 = (__frac_p3 & 1) ? ((zSig0 >> 1) | (zSig0 & 1)) : zSig0;
+   zSig0 = (__frac_odd) ? ((zSig0 >> 1) | (zSig0 & 1)) : zSig0;
    zSig0 = zSig0 & ((1ULL << (__frac_p3 + 1)) - 1);
    correction = (zSig0 >> __frac_p3) & 1;
    zSig1 = (zSig0 >> correction) | (zSig0 & 1);
