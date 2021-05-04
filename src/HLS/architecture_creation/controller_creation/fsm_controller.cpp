@@ -370,7 +370,7 @@ void fsm_controller::create_state_machine(std::string& parse)
                is_starting_operation = true;
             }
 
-            if((!GetPointer<operation>(op_tn)->is_bounded() or start_port_i))
+            if((!GetPointer<operation>(op_tn)->is_bounded()))
             {
                auto node = TreeM->CGetTreeNode(data->CGetOpNodeInfo(op)->GetNodeId());
                if(node->get_kind() == gimple_assign_K)
