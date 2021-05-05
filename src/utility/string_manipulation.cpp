@@ -44,6 +44,7 @@
 #include "exceptions.hpp"
 #include <boost/algorithm/string/classification.hpp>
 #include <boost/algorithm/string/split.hpp>
+#include <boost/regex.hpp>
 #include <cxxabi.h>
 
 void add_escape(std::string& ioString, const std::string& to_be_escaped)
@@ -103,18 +104,48 @@ std::string TrimSpaces(const std::string& value)
    }
    return temp;
 }
-std::string string_demangle(std::string input)
+std::string string_demangle(const std::string& input)
 {
-   std::unique_ptr<char, void (*)(void*)> res(abi::__cxa_demangle(input.c_str(), nullptr, nullptr, nullptr), std::free);
-   return std::string(res.get());
+   int status;
+   std::unique_ptr<char, void (*)(void*)> res(abi::__cxa_demangle(input.data(), nullptr, nullptr, &status), std::free);
+   return status == 0 ? std::string(res.get()) : "";
 }
+
+static boost::regex fixed_def("a[cp]_(u)?fixed<\\s*(\\d+)\\s*,\\s*(\\d+),?\\s*(\\w+)?[^>]*>[^\\d-]*");
+#define FD_GROUP_U 1
+#define FD_GROUP_W 2
+#define FD_GROUP_D 3
+#define FD_GROUP_SIGN 4
+
 std::string ConvertInBinary(const std::string& C_value, const unsigned int precision, const bool real_type, const bool unsigned_type)
 {
    std::string trimmed_value;
+   boost::cmatch what;
    THROW_ASSERT(C_value != "", "Empty string for binary conversion");
+
    if(real_type)
    {
       trimmed_value = convert_fp_to_string(C_value, precision);
+   }
+   else if(boost::regex_search(C_value.c_str(), what, fixed_def))
+   {
+      const auto w = boost::lexical_cast<unsigned int>(what[FD_GROUP_W].first, static_cast<size_t>(what[FD_GROUP_W].second - what[FD_GROUP_W].first));
+      const auto d = boost::lexical_cast<unsigned int>(what[FD_GROUP_D].first, static_cast<size_t>(what[FD_GROUP_D].second - what[FD_GROUP_D].first));
+      bool is_signed = (what[FD_GROUP_U].second - what[FD_GROUP_U].first) == 0 && ((what[FD_GROUP_SIGN].second - what[FD_GROUP_SIGN].first) == 0 || strncmp(what[FD_GROUP_SIGN].first, "true", 4) == 0);
+      THROW_ASSERT(d < w, "Decimal part should be smaller then total length");
+      const long double val = strtold(what[0].second, nullptr) * powl(2, w - d);
+      // TODO: update regex to handle overflow correctly
+      long long fixp = static_cast<long long>(val);
+      is_signed &= val < 0;
+      while(trimmed_value.size() < w)
+      {
+         trimmed_value = ((fixp & 1) ? "1" : "0") + trimmed_value;
+         fixp >>= 1;
+      }
+      while(trimmed_value.size() < precision)
+      {
+         trimmed_value = (is_signed ? trimmed_value.front() : '0') + trimmed_value;
+      }
    }
    else
    {
@@ -232,6 +263,33 @@ std::string ConvertInBinary(const std::string& C_value, const unsigned int preci
       }
    }
    return trimmed_value;
+}
+
+static boost::regex fixp_val("(\\d+\\.?\\d*)");
+
+std::string FixedPointReinterpret(const std::string& FP_vector, const std::string& fp_typename)
+{
+   boost::cmatch what;
+   if(boost::regex_search(fp_typename.c_str(), what, fixed_def))
+   {
+      const auto w = boost::lexical_cast<unsigned int>(what[FD_GROUP_W].first, static_cast<size_t>(what[FD_GROUP_W].second - what[FD_GROUP_W].first));
+      const auto d = boost::lexical_cast<unsigned int>(what[FD_GROUP_D].first, static_cast<size_t>(what[FD_GROUP_D].second - what[FD_GROUP_D].first));
+      THROW_ASSERT(d < w, "Decimal part should be smaller then total length");
+      boost::sregex_token_iterator fix_val_it(FP_vector.begin(), FP_vector.end(), fixp_val), end;
+      std::string new_vector = "{";
+      while(fix_val_it != end)
+      {
+         const long double val = strtold(fix_val_it->str().c_str(), nullptr) * powl(2, w - d);
+         // TODO: update regex to handle overflow correctly
+         const long long fixp = static_cast<long long>(val);
+         new_vector += "{{{" + STR(fixp) + "}}}, ";
+         ++fix_val_it;
+      }
+      new_vector.erase(new_vector.size() - 2, 2);
+      new_vector += "}";
+      return new_vector;
+   }
+   return FP_vector;
 }
 
 const std::vector<std::string> SplitString(const std::string&
@@ -377,96 +435,26 @@ unsigned long long convert_fp_to_bits(std::string num, unsigned int precision)
    return 0;
 }
 
+static boost::regex ac_type_def("a[cp]_(u)?(\\w+)<\\s*(\\d+)\\s*,?\\s*(\\d+)?,?\\s*(\\w+)?[^>]*>");
+#define AC_GROUP_U 1
+#define AC_GROUP_T 2
+#define AC_GROUP_W 3
+#define AC_GROUP_SIGN 4
+
 unsigned int ac_type_bitwidth(const std::string& intType, bool& is_signed, bool& is_fixed)
 {
-   is_fixed = false;
-   is_signed = false;
-   unsigned int inputBitWidth = 0;
-   auto interfaceTypename = intType;
-   if(interfaceTypename.find("const ") == 0)
+   boost::cmatch what;
+   if(boost::regex_search(intType.c_str(), what, ac_type_def))
    {
-      interfaceTypename = interfaceTypename.substr(std::string("const ").size());
+      unsigned int w = boost::lexical_cast<unsigned int>(what[AC_GROUP_W].first, static_cast<size_t>(what[AC_GROUP_W].second - what[AC_GROUP_W].first));
+      is_signed = (what[AC_GROUP_U].second - what[AC_GROUP_U].first) == 0 && ((what[AC_GROUP_SIGN].second - what[AC_GROUP_SIGN].first) == 0 || strncmp(what[AC_GROUP_SIGN].first, "true", 4) == 0);
+      is_fixed = std::string(what[AC_GROUP_T].first, static_cast<size_t>(what[AC_GROUP_T].second - what[AC_GROUP_T].first)).find("fixed") != std::string::npos;
+      // if(is_fixed && (w % 32) != 0)
+      // {
+      //    w = w - (w % 32) + 32;
+      // }
+      // std::cout << "AC type " << intType << " is " << w << " bits" << std::endl;
+      return w;
    }
-   if(interfaceTypename.find("ac_int<") == 0)
-   {
-      auto subtypeArg = interfaceTypename.substr(std::string("ac_int<").size());
-      auto terminate = subtypeArg.find_first_of(",> ");
-      if(subtypeArg.at(terminate) == '>')
-      {
-         is_signed = true;
-      }
-      else
-      {
-         auto signString = subtypeArg.substr(terminate + 2);
-         signString = signString.substr(0, signString.find_first_of(",> "));
-         if(signString == "true" || signString == "1")
-         {
-            is_signed = true;
-         }
-         else
-         {
-            is_signed = false;
-         }
-      }
-      auto sizeString = subtypeArg.substr(0, terminate);
-      inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
-   }
-   else if(interfaceTypename.find("ac_fixed<") == 0)
-   {
-      is_fixed = true;
-      auto subtypeArg = interfaceTypename.substr(std::string("ac_fixed<").size());
-      auto terminate = subtypeArg.find_first_of(",> ");
-      auto secondPartType = subtypeArg.substr(terminate + 2);
-      auto terminate2 = secondPartType.find_first_of(",> ");
-      if(secondPartType.at(terminate2) == '>')
-      {
-         is_signed = true;
-      }
-      else
-      {
-         auto signString = secondPartType.substr(terminate2 + 2);
-         signString = signString.substr(0, signString.find_first_of(",> "));
-         if(signString == "true" || signString == "1")
-         {
-            is_signed = true;
-         }
-         else
-         {
-            is_signed = false;
-         }
-      }
-      auto sizeString = subtypeArg.substr(0, terminate);
-      inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
-   }
-   else if(interfaceTypename.find("ap_int<") == 0)
-   {
-      auto subtypeArg = interfaceTypename.substr(std::string("ap_int<").size());
-      auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
-      inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
-      is_signed = true;
-   }
-   else if(interfaceTypename.find("ap_uint<") == 0)
-   {
-      auto subtypeArg = interfaceTypename.substr(std::string("ap_uint<").size());
-      auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
-      inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
-      is_signed = false;
-   }
-   else if(interfaceTypename.find("ap_fixed<") == 0)
-   {
-      is_fixed = true;
-      auto subtypeArg = interfaceTypename.substr(std::string("ap_fixed<").size());
-      auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
-      inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
-      is_signed = true;
-   }
-   else if(interfaceTypename.find("ap_ufixed<") == 0)
-   {
-      is_fixed = true;
-      auto subtypeArg = interfaceTypename.substr(std::string("ap_ufixed<").size());
-      auto sizeString = subtypeArg.substr(0, subtypeArg.find_first_of(",> "));
-      inputBitWidth = boost::lexical_cast<unsigned>(sizeString);
-      is_signed = false;
-   }
-   return inputBitWidth;
+   return 0;
 }
