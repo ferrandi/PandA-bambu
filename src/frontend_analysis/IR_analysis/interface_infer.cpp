@@ -1293,11 +1293,11 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       CM->add_NP_functionality(interface_top, NP_functionality::LIBRARY, "in1 in2 in3 out1");
       CM->add_NP_functionality(interface_top, NP_functionality::VERILOG_GENERATOR, "ReadWrite_" + interfaceType + ".cpp");
       TechMan->add_resource(INTERFACE_LIBRARY, ResourceName, CM);
-      for(auto fdName : operationsR)
+      for(const auto& fdName : operationsR)
       {
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
-      for(auto fdName : operationsW)
+      for(const auto& fdName : operationsW)
       {
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
@@ -1306,7 +1306,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       fu->area_m = area_model::create_model(device->get_type(), parameters);
       fu->area_m->set_area_value(0);
 
-      for(auto fdName : operationsR)
+      for(const auto& fdName : operationsR)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -1314,7 +1314,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
          op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
          op->time_m->set_synthesis_dependent(true);
       }
-      for(auto fdName : operationsW)
+      for(const auto& fdName : operationsW)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -1328,7 +1328,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
    }
    else
    {
-      for(auto fdName : operationsR)
+      for(const auto& fdName : operationsR)
       {
          TechMan->add_operation(INTERFACE_LIBRARY, ResourceName, fdName);
       }
@@ -1339,7 +1339,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
       auto* fu = GetPointer<functional_unit>(TechMan->get_fu(ResourceName, INTERFACE_LIBRARY));
       const target_deviceRef device = HLS_T->get_target_device();
 
-      for(auto fdName : operationsR)
+      for(const auto& fdName : operationsR)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -1347,7 +1347,7 @@ void interface_infer::create_resource_m_axi(const std::set<std::string>& operati
          op->time_m->set_execution_time(HLS_T->get_technology_manager()->CGetSetupHoldTime() + EPSILON, 0);
          op->time_m->set_synthesis_dependent(true);
       }
-      for(auto fdName : operationsW)
+      for(const auto& fdName : operationsW)
       {
          auto* op = GetPointer<operation>(fu->get_operation(fdName));
          op->time_m = time_model::create_model(device->get_type(), parameters);
@@ -1742,7 +1742,16 @@ DesignFlowStep_Status interface_infer::InternalExec()
                      {
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---is a pointer\n");
                         INDENT_DBG_MEX(DEBUG_LEVEL_PEDANTIC, debug_level, "---list of statement that use this parameter\n");
-                        auto inputBitWidth = tree_helper::size(TM, tree_helper::get_pointed_type(TM, GET_INDEX_NODE(aType)));
+                        auto ptd = tree_helper::get_pointed_type(TM, GET_INDEX_NODE(aType));
+                        unsigned inputBitWidth;
+                        if(tree_helper::is_an_array(TM, ptd))
+                        {
+                           inputBitWidth = tree_helper::get_array_data_bitsize(TM, ptd);
+                        }
+                        else
+                        {
+                           inputBitWidth = tree_helper::size(TM, ptd);
+                        }
                         bool is_signed;
                         bool is_fixed;
                         auto acTypeBw = ac_type_bitwidth(interfaceTypename, is_signed, is_fixed);
