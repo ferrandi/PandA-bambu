@@ -2497,6 +2497,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    unsigned int elmt_bitsize = 0;
    bool is_read_only_correction = false;
    bool is_proxied_correction = false;
+   bool is_a_proxy = false;
    bool is_private_correction = false;
    bool is_single_variable = false;
    auto single_var_lambda = [&](unsigned var) -> bool {
@@ -2662,6 +2663,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
    }
    else if(memory_ctrl_type == MEMORY_CTRL_TYPE_PROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_PROXYN || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXY || memory_ctrl_type == MEMORY_CTRL_TYPE_DPROXYN)
    {
+      is_a_proxy = true;
       unsigned var = proxy_memory_units.find(fu)->second;
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Applying memory correction for PROXY for var:" + STR(var));
       if(Rmem->is_read_only_variable(var))
@@ -2883,9 +2885,16 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       auto* op_sv = GetPointer<operation>(op_sv_node);
       double setup_time = get_setup_hold_time();
       double cur_sv_exec_time = op_sv->time_m->get_initiation_time() != 0u ? time_m_stage_period(op_sv) : time_m_execution_time(op_sv);
-      double sv_delay = cur_sv_exec_time - 2 * setup_time;
-      double correction = sv_delay;
-      res_value = res_value + correction;
+      if(is_a_proxy || is_proxied_correction)
+      {
+         res_value = cur_sv_exec_time - setup_time;
+      }
+      else
+      {
+         double sv_delay = cur_sv_exec_time - 2 * setup_time;
+         double correction = sv_delay;
+         res_value = res_value + correction;
+      }
    }
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Correction is " + STR(res_value));
    return res_value;

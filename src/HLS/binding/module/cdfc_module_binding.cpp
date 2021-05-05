@@ -1339,12 +1339,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Do a preliminary register binding to help the sharing of complex operations");
       {
          DesignFlowStepRef regb;
-         regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::COLORING_REGISTER_BINDING, funId);
-         //         {
-         //            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-         //                       ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::TS_WEIGHTED_CLIQUE_COVERING)));
-         //         }
-
+         if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) == HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
+         {
+            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+                       ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
+                                           HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(parameters->getOption<CliqueCovering_Algorithm>(OPT_weighted_clique_register_algorithm))));
+         }
+         else
+         {
+            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
+         }
          regb->Initialize();
          regb->Exec();
       }
@@ -1716,12 +1720,16 @@ DesignFlowStep_Status cdfc_module_binding::InternalExec()
 
             DesignFlowStepRef regb;
             // if(iteration%2)
-            regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::COLORING_REGISTER_BINDING, funId);
-            //               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
-            //                          ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::WEIGHTED_COLORING)));
-            // else
-            //   regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId, HLSFlowStepSpecializationConstRef(new
-            //   WeightedCliqueRegisterBindingSpecialization(CliqueCovering_Algorithm::BIPARTITE_MATCHING)));
+            if(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm) == HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING)
+            {
+               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))
+                          ->CreateHLSFlowStep(HLSFlowStep_Type::WEIGHTED_CLIQUE_REGISTER_BINDING, funId,
+                                              HLSFlowStepSpecializationConstRef(new WeightedCliqueRegisterBindingSpecialization(parameters->getOption<CliqueCovering_Algorithm>(OPT_weighted_clique_register_algorithm))));
+            }
+            else
+            {
+               regb = GetPointer<const HLSFlowStepFactory>(design_flow_manager.lock()->CGetDesignFlowStepFactory("HLS"))->CreateHLSFlowStep(parameters->getOption<HLSFlowStep_Type>(OPT_register_allocation_algorithm), funId);
+            }
             regb->Initialize();
             regb->Exec();
          }
