@@ -81,6 +81,7 @@ class xml_element;
 #define PARAM_VHDL_library "VHDL_library"
 #define PARAM_connect_iob "connect_iob"
 #define PARAM_power_optimization "power_optimization"
+#define PARAM_parallel_backend "parallel_backend"
 
 /// used by Intel/Altera Characterization
 #define PARAM_fu "fu"

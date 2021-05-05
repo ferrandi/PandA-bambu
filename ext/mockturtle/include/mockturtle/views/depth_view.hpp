@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file depth_view.hpp
   \brief Implements depth and level for a network
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -176,6 +177,11 @@ public:
   void set_level( node const& n, uint32_t level )
   {
     _levels[n] = level;
+  }
+
+  void set_depth( uint32_t level )
+  {
+    _depth = level;
   }
 
   void update_levels()

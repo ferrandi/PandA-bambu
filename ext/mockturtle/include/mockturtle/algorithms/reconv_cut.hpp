@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -25,193 +25,335 @@
 
 /*!
   \file reconv_cut.hpp
-  \brief Reconvergence-driven cut
+  \brief Implements reconvergence-driven cuts (based on ABC's
+  implementation in `abcReconv.c` by Alan Mishchenko).
 
   \author Heinz Riener
 */
 
 #pragma once
 
-#include <algorithm>
-#include <cassert>
-
 #include "../traits.hpp"
-#include "../utils/node_map.hpp"
+
+#include <optional>
+#include <cassert>
+#include <iostream>
 
 namespace mockturtle
 {
 
-/*! \brief Parameters for reconvergence_driven_cut.
+/*! \brief Parameters for reconvergence-driven cut computation
  *
- * The data structure `reconv_cut_params` holds configurable parameters
- * with default arguments for `reconv_cut`.
+ * The data structure `reconvergence_driven_cut_parameters` holds configurable parameters
+ * with default arguments for `reconvergence_driven_cut_impl*`.
  */
-struct reconv_cut_params
+struct reconvergence_driven_cut_parameters
 {
-  /*! \brief Maximum number of leaves for a cut. */
-  uint32_t cut_size{10u};
+  /* Maximum number of leaves */
+  uint64_t max_leaves{8u};
+
+  /* Skip nodes with many fanouts */
+  uint64_t max_fanouts{100000u};
+
+  /* Initially reserve memory for a fixed number of nodes */
+  uint64_t reserve_memory_for_nodes{300u};
+};
+
+/*! \brief Statistics for reconvergence-driven cut computation
+ *
+ * The data structure `reconvergence_driven_cut_statistics` holds data
+ * collected when running a reconvergence-driven cut computation
+ * algorithm.
+ */
+struct reconvergence_driven_cut_statistics
+{
+  /* Total number of calls */
+  uint64_t num_calls{0};
+
+  /* Total number of leaves */
+  uint64_t num_leaves{0};
+
+  /* Total number of nodes */
+  uint64_t num_nodes{0};
 };
 
 /*! \cond PRIVATE */
 namespace detail
 {
 
-template<typename Ntk>
-class compute_fanin_cut
+template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = true>
+class reconvergence_driven_cut_impl
 {
 public:
-  explicit compute_fanin_cut( Ntk const& ntk, std::vector<node<Ntk>> const& pivots, reconv_cut_params const& ps )
-      : _ntk( ntk ), _pivots( pivots ), _ps( ps ), _values( ntk )
-  {
-    assert( _pivots.size() > 0 );
-  }
+  using parameters_type = reconvergence_driven_cut_parameters;
+  using statistics_type = reconvergence_driven_cut_statistics;
+
+  using node = typename Ntk::node;
+  using signal = typename Ntk::signal;
 
 public:
-  std::vector<node<Ntk>> run()
+  explicit reconvergence_driven_cut_impl( Ntk const& ntk, reconvergence_driven_cut_parameters const& ps, reconvergence_driven_cut_statistics& st )
+    : ntk( ntk )
+    , ps( ps )
+    , st( st )
   {
-    _values.reset();
-    std::vector<node<Ntk>> cut( _pivots );
-    for ( const auto& p : _pivots )
+    leaves.reserve( ps.max_leaves );
+    if constexpr( compute_nodes )
     {
-      _values[p] = 1;
+      nodes.reserve( ps.reserve_memory_for_nodes );
     }
-    compute_cut_recur( cut );
-    return cut;
   }
 
-protected:
-  void compute_cut_recur( std::vector<node<Ntk>>& cut )
+  std::pair<std::vector<node>, std::vector<node>> run( std::vector<node> const& pivots )
   {
-    assert( cut.size() <= _ps.cut_size && "cut-size overflow" );
-    std::sort( cut.begin(), cut.end(), [this]( node<Ntk> const& a, node<Ntk> const& b ) { return cost( a ) < cost( b ); } );
+    assert( pivots.size() > 0u );
 
-    /* find the first non-pi node to extend the cut (because the vector is sorted, the non-pi is cost-minimal) */
-    auto const it = std::find_if( cut.begin(), cut.end(), [&]( auto const& node ) { return !_ntk.is_pi( node ); } );
-    if ( cut.end() == it )
+    /* prepare for traversal and clean internal state */
+    ntk.incr_trav_id();
+    nodes.clear();
+    leaves.clear();
+
+    /* collect and mark all pivots */
+    for ( const auto& pivot : pivots )
+    {
+      if constexpr ( compute_nodes )
+      {
+        nodes.emplace_back( pivot );
+      }
+      ntk.set_visited( pivot, ntk.trav_id() );
+    }
+
+    leaves = pivots;
+
+    if ( leaves.size() > ps.max_leaves )
+    {
+      /* special case: cut already overflows at the current node because the cut size limit is very low */
+      leaves.clear();
+      nodes.clear();
+      return { leaves, nodes };
+    }
+
+    /* compute the cut */
+    while ( construct_cut() );
+    assert( leaves.size() <= ps.max_leaves );
+
+    /* update statistics */
+    ++st.num_calls;
+    st.num_leaves += leaves.size();
+    st.num_nodes += nodes.size();
+
+    return { leaves, nodes };
+  }
+
+private:
+  bool construct_cut()
+  {
+    uint64_t best_cost{std::numeric_limits<uint64_t>::max()};
+    std::optional<node> best_fanin;
+    uint64_t best_position;
+
+    /* evaluate fanins of the cut */
+    uint64_t position{0};
+    for ( const auto& l : leaves )
+    {
+      uint64_t const current_cost{cost( l )};
+      if constexpr ( sort_equal_cost_by_level )
+      {
+        if ( best_cost > current_cost ||
+             ( best_cost == current_cost && best_fanin && ntk.level( l ) > ntk.level( *best_fanin ) ) )
+        {
+          best_cost = current_cost;
+          best_fanin = std::make_optional( l );
+          best_position = position;
+        }
+      }
+      else
+      {
+        if ( best_cost > current_cost )
+        {
+          best_cost = current_cost;
+          best_fanin = std::make_optional( l );
+          best_position = position;
+        }
+      }
+
+      if ( best_cost == 0u )
+      {
+        break;
+      }
+
+      ++position;
+    }
+
+    if ( !best_fanin )
+    {
+      return false;
+    }
+
+    if ( leaves.size() - 1 + best_cost > ps.max_leaves )
+    {
+      return false;
+    }
+
+    /* remove the best node from the array */
+    leaves.erase( std::begin( leaves ) + best_position );
+
+    /* add the fanins of best to leaves and nodes */
+    ntk.foreach_fanin( *best_fanin, [&]( signal const& fi ){
+        node const& n = ntk.get_node( fi );
+        if ( n != 0 && ( ntk.visited( n ) != ntk.trav_id() ) )
+        {
+          ntk.set_visited( n, ntk.trav_id() );
+          if constexpr ( compute_nodes )
+          {
+            nodes.emplace_back( n );
+          }
+          leaves.emplace_back( n );
+        }
+      });
+
+    assert( leaves.size() <= ps.max_leaves );
+    return true;
+  }
+
+  uint64_t cost( node const& n ) const
+  {
+    /* make sure the node is in the construction zone */
+    assert( ntk.visited( n ) == ntk.trav_id() );
+
+    /* cannot expand over a constant or CI node */
+    if ( ntk.is_constant( n ) || ntk.is_ci( n ) )
+    {
+      return std::numeric_limits<uint64_t>::max();
+    }
+
+    /* count the number of leaves that we haven't visited */
+    uint64_t cost{0};
+    ntk.foreach_fanin( n, [&]( signal const& fi ){
+        cost += ntk.visited( ntk.get_node( fi ) ) != ntk.trav_id();
+      });
+
+    /* always accept if the number of leaves does not increase */
+    if ( cost < ntk.fanin_size( n ) )
+    {
+      return cost;
+    }
+
+    /* skip nodes with many fanouts */
+    if ( ntk.fanout_size( n ) > ps.max_fanouts )
+    {
+      return std::numeric_limits<uint64_t>::max();
+    }
+
+    /* return the number of nodes that will be on the leaves if this node is removed */
+    return cost;
+  }
+
+private:
+  Ntk const& ntk;
+  reconvergence_driven_cut_parameters ps;
+  reconvergence_driven_cut_statistics& st;
+
+  std::vector<node> leaves;
+  std::vector<node> nodes;
+}; /* reconvergence_drive_cut_impl */
+
+template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = false>
+class reconvergence_driven_cut_impl2
+{
+public:
+  using parameters_type = reconvergence_driven_cut_parameters;
+  using statistics_type = reconvergence_driven_cut_statistics;
+
+  using node = typename Ntk::node;
+  using signal = typename Ntk::signal;
+
+public:
+  explicit reconvergence_driven_cut_impl2( Ntk const& ntk, reconvergence_driven_cut_parameters const& ps, reconvergence_driven_cut_statistics& st )
+    : ntk( ntk )
+    , ps( ps )
+    , st( st )
+  {
+  }
+
+  std::pair<std::vector<node>, std::vector<node>> run( std::vector<node> const& pivots )
+  {
+    assert( pivots.size() > 0u );
+
+    /* prepare for traversal and clean internal state */
+    ntk.incr_trav_id();
+    nodes.clear();
+    leaves.clear();
+    assert( nodes.empty() );
+
+    for ( const auto& pivot : pivots )
+    {
+      ntk.set_visited( pivot, ntk.trav_id() );
+    }
+
+    while ( construct_cut() );
+    assert( leaves.size() <= ps.max_leaves );
+
+    /* update statistics */
+    ++st.num_calls;
+    st.num_leaves += leaves.size();
+    st.num_nodes += nodes.size();
+
+    return { leaves, nodes };
+  }
+
+  bool construct_cut()
+  {
+    assert( leaves.size() <= ps.max_leaves && "cut-size overflow" );
+    std::sort( std::begin( leaves ), std::end( leaves ),
+               [this]( node const& a, node const& b )
+               {
+                 return cost( a ) < cost( b );
+               } );
+
+    /* find the first non-pi node to extend the cut (because the vector is sorted, this non-pi is cost-minimal) */
+    auto const it = std::find_if( std::begin( leaves ), std::end( leaves ),
+                                 [&]( node const& n )
+                                 {
+                                   return !ntk.is_ci( n );
+                                 } );
+    if ( std::end( leaves ) == it )
     {
       /* if all nodes are pis, then the cut cannot be extended */
-      return;
-    }
-
-    /* the cost is identical to the number of nodes added to the cut if *it is used to expand the cut */
-    auto const c = cost( *it );
-    if ( cut.size() + c > _ps.cut_size )
-    {
-      /* if the expansion exceeds the cut_size, then the cut cannot be extended */
-      return;
-    }
-
-    /* otherwise expand the cut with the children of *it and mark *it visited (by setting a value) */
-    const auto n = *it;
-    cut.erase( it );
-    _ntk.foreach_fanin( n, [&]( signal<Ntk> const& s ) {
-      auto const& child = _ntk.get_node( s );
-      if ( !_ntk.is_constant( child ) && std::find( cut.begin(), cut.end(), child ) == cut.end() && !_values[child] )
-      {
-        cut.push_back( child );
-        _values[child] = 1;
-      }
-    } );
-
-    assert( cut.size() <= _ps.cut_size );
-    compute_cut_recur( cut );
-  }
-
-  inline int32_t cost( node<Ntk> const& n ) const
-  {
-    int32_t current_cost = -1;
-    _ntk.foreach_fanin( n, [&]( signal<Ntk> const& s ) {
-      auto const& child = _ntk.get_node( s );
-      if ( !_ntk.is_constant( child ) && !_values[child] )
-      {
-        ++current_cost;
-      }
-    } );
-    return current_cost;
-  }
-
-protected:
-  Ntk const& _ntk;
-  std::vector<node<Ntk>> _pivots;
-  reconv_cut_params const& _ps;
-  node_map<uint32_t, Ntk> _values;
-};
-
-template<typename Ntk>
-class compute_fanout_cut
-{
-public:
-  explicit compute_fanout_cut( Ntk const& ntk, std::vector<node<Ntk>> const& pivots, reconv_cut_params const& ps )
-      : _ntk( ntk ), _pivots( pivots ), _ps( ps ), _values( ntk )
-  {
-    assert( _pivots.size() > 0 );
-  }
-
-public:
-  std::vector<node<Ntk>> run()
-  {
-    _values.reset();
-    std::vector<node<Ntk>> cut( _pivots );
-    for ( const auto& p : _pivots )
-    {
-      _values[p] = 1;
-    }
-    compute_cut_recur( cut );
-    return cut;
-  }
-
-protected:
-  bool has_internal_fanout( node<Ntk> const& n )
-  {
-    bool has = false;
-    _ntk.foreach_fanout( n, [&]( const auto& ) {
-      has = true;
       return false;
-    } );
-    return has;
-  }
-
-  void compute_cut_recur( std::vector<node<Ntk>>& cut )
-  {
-    assert( cut.size() <= _ps.cut_size && "cut-size overflow" );
-    std::sort( cut.begin(), cut.end(), [this]( node<Ntk> const& a, node<Ntk> const& b ) { return cost( a ) < cost( b ); } );
-
-    /* find the first non-po node to extend the cut (because the vector is sorted, the non-po is cost-minimal) */
-    auto const it = std::find_if( cut.begin(), cut.end(), [&]( auto const& node ) { return has_internal_fanout( node ); } );
-    if ( cut.end() == it )
-    {
-      /* if all nodes are pos, then the cut cannot be extended */
-      return;
     }
 
-    /* the cost is identical to the number of nodes added to the cut if *it is used to expand the cut */
-    auto const c = cost( *it );
-    if ( cut.size() + c > _ps.cut_size )
+    /* the cost is identical to the number of nodes added to `leaves` if *it is used to expand leaves */
+    int64_t const c = cost( *it );
+    if ( leaves.size() + c > ps.max_leaves )
     {
       /* if the expansion exceeds the cut_size, then the cut cannot be extended */
-      return;
+      return false;
     }
 
-    /* otherwise expand the cut with the parents of *it and mark *it visited (by setting a value) */
-    const auto n = *it;
-    cut.erase( it );
-    _ntk.foreach_fanout( n, [&]( node<Ntk> const& parent ) {
-      if ( std::find( cut.begin(), cut.end(), parent ) == cut.end() && !_values[parent] )
-      {
-        cut.push_back( parent );
-        _values[parent] = 1;
-      }
-    } );
+    /* otherwise expand the cut with the children of *it and mark *it visited */
+    node const n = *it;
+    leaves.erase( it );
+    ntk.foreach_fanin( n, [&]( signal const& fi ){
+        node const& child = ntk.get_node( fi );
+        if ( !ntk.is_constant( child ) && std::find( std::begin( leaves ), std::end( leaves ), child ) == std::end( leaves ) && ntk.visited( child ) != ntk.trav_id() )
+        {
+          leaves.emplace_back( child );
+          ntk.set_visited( child, ntk.trav_id() );
+        }
+      });
 
-    assert( cut.size() <= _ps.cut_size );
-    compute_cut_recur( cut );
+    assert( leaves.size() <= ps.max_leaves );
+    return true;
   }
 
-  inline int32_t cost( node<Ntk> const& n ) const
+  /* counts the number of non-constant leaves */
+  int64_t cost( node const &n ) const
   {
     int32_t current_cost = -1;
-    _ntk.foreach_fanout( n, [&]( node<Ntk> const& parent ) {
-      if ( !_values[parent] )
+    ntk.foreach_fanin( n, [&]( signal const& s ) {
+      auto const& child = ntk.get_node( s );
+      if ( !ntk.is_constant( child ) )
       {
         ++current_cost;
       }
@@ -219,122 +361,105 @@ protected:
     return current_cost;
   }
 
-protected:
-  Ntk const& _ntk;
-  std::vector<node<Ntk>> _pivots;
-  reconv_cut_params const& _ps;
-  node_map<uint32_t, Ntk> _values;
-};
+private:
+  Ntk const& ntk;
+  reconvergence_driven_cut_parameters ps;
+  reconvergence_driven_cut_statistics& st;
 
-} /* namespace detail */
+  std::vector<node> leaves;
+  std::vector<node> nodes;
+}; /* reconvergence_drive_cut_impl2 */
+
+template<typename Ntk, typename Impl>
+std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, std::vector<node<Ntk>> const& pivots, reconvergence_driven_cut_parameters const& ps, reconvergence_driven_cut_statistics& st )
+{
+  return Impl( ntk, ps, st ).run( pivots );
+}
+
+} /* detail */
 /*! \endcond */
 
-/*! \brief Reconvergence-driven cuts towards inputs.
+/*! \brief Reconvergence-driven cut towards inputs.
  *
  * This class implements a generation algorithm for
  * reconvergence-driven cuts.  The cut grows towards the primary
- * inputs starting from a pivot node.
+ * inputs starting from a set of pivot nodes.
  *
  * **Required network functions:**
  * - `is_constant`
  * - `is_pi`
  * - `get_node`
+ * - `visited`
+ * - `has_visited`
  * - `foreach_fanin`
  *
  */
-struct reconv_cut
+template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = true>
+std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, std::vector<node<Ntk>> const& pivots, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics *pst = nullptr )
 {
-public:
-  explicit reconv_cut( reconv_cut_params const& ps = {} )
-      : _ps( ps )
+  static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
+  static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
+  static_assert( has_is_ci_v<Ntk>, "Ntk does not implement the is_ci method" );
+  static_assert( has_get_node_v<Ntk>, "Ntk does not implement the get_node method" );
+  static_assert( has_visited_v<Ntk>, "Ntk does not implement the has_visited method" );
+  static_assert( has_set_visited_v<Ntk>, "Ntk does not implement the set_visited method" );
+  static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the foreach_fanin method" );
+  if constexpr ( sort_equal_cost_by_level )
   {
+    static_assert( has_level_v<Ntk>, "Ntk does not implement the level method" );
   }
 
-  template<typename Ntk>
-  std::vector<node<Ntk>> operator()( Ntk const& ntk, node<Ntk> const& pivot )
+  using Impl = detail::reconvergence_driven_cut_impl<Ntk, compute_nodes, sort_equal_cost_by_level>;
+
+  reconvergence_driven_cut_statistics st;
+  auto const result = detail::reconvergence_driven_cut<Ntk, Impl>( ntk, pivots, ps, st );
+  if ( pst )
   {
-    static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
-    static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
-    static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_get_node_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the is_pi method" );
-
-    detail::compute_fanin_cut cut_generator( ntk, {pivot}, _ps );
-
-    return cut_generator.run();
+    *pst = st;
   }
+  return result;
+}
 
-  template<typename Ntk>
-  std::vector<node<Ntk>> operator()( Ntk const& ntk, std::vector<node<Ntk>> const& pivots )
-  {
-    assert( pivots.size() > 0u && "pivots must not be empty" );
-
-    static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
-    static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
-    static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_get_node_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_foreach_fanin_v<Ntk>, "Ntk does not implement the is_pi method" );
-
-    detail::compute_fanin_cut cut_generator( ntk, pivots, _ps );
-
-    return cut_generator.run();
-  }
-
-private:
-  reconv_cut_params _ps;
-};
-
-/*! \brief Reconvergence-driven cuts towards outputs.
+/*! \brief Reconvergence-driven cut towards inputs.
  *
  * This class implements a generation algorithm for
  * reconvergence-driven cuts.  The cut grows towards the primary
- * outputs starting from a pivot node.
+ * inputs starting from a single pivot node.
  *
  * **Required network functions:**
  * - `is_constant`
  * - `is_pi`
  * - `get_node`
- * - `foreach_fanout`
+ * - `visited`
+ * - `has_visited`
+ * - `foreach_fanin`
  *
  */
-struct reconv_fanout_cut
+template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = true>
+std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, node<Ntk> const& pivot, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics *pst = nullptr )
 {
-public:
-  explicit reconv_fanout_cut( reconv_cut_params const& ps = {} )
-      : _ps( ps )
-  {
-  }
+  return reconvergence_driven_cut<Ntk, compute_nodes, sort_equal_cost_by_level>( ntk, std::vector<node<Ntk>>{ pivot }, ps, pst );
+}
 
-  template<typename Ntk>
-  std::vector<node<Ntk>> operator()( Ntk const& ntk, node<Ntk> const& pivot )
-  {
-    static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
-    static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
-    static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_get_node_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_foreach_fanout_v<Ntk>, "Ntk does not implement the foreach_fanout method" );
+/*! \brief Reconvergence-driven cut towards inputs.
+ *
+ * This class implements a generation algorithm for
+ * reconvergence-driven cuts.  The cut grows towards the primary
+ * inputs starting from a single pivot signal.
+ *
+ * **Required network functions:**
+ * - `is_constant`
+ * - `is_pi`
+ * - `get_node`
+ * - `visited`
+ * - `has_visited`
+ * - `foreach_fanin`
+ *
+ */
+template<typename Ntk, bool compute_nodes = false, bool sort_equal_cost_by_level = true>
+std::pair<std::vector<node<Ntk>>, std::vector<node<Ntk>>> reconvergence_driven_cut( Ntk const& ntk, signal<Ntk> const& pivot, reconvergence_driven_cut_parameters const& ps = {}, reconvergence_driven_cut_statistics *pst = nullptr )
+{
+  return reconvergence_driven_cut<Ntk, compute_nodes, sort_equal_cost_by_level>( ntk, std::vector<node<Ntk>>{ ntk.get_node( pivot ) }, ps, pst );
+}
 
-    detail::compute_fanout_cut cut_generator( ntk, {pivot}, _ps );
-    return cut_generator.run();
-  }
-
-  template<typename Ntk>
-  std::vector<node<Ntk>> operator()( Ntk const& ntk, std::vector<node<Ntk>> const& pivots )
-  {
-    assert( pivots.size() > 0u && "pivots must not be empty" );
-
-    static_assert( is_network_type_v<Ntk>, "Ntk is not a network type" );
-    static_assert( has_is_constant_v<Ntk>, "Ntk does not implement the is_constant method" );
-    static_assert( has_is_pi_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_get_node_v<Ntk>, "Ntk does not implement the is_pi method" );
-    static_assert( has_foreach_fanout_v<Ntk>, "Ntk does not implement the foreach_fanout method" );
-
-    detail::compute_fanout_cut cut_generator( ntk, pivots, _ps );
-    return cut_generator.run();
-  }
-
-private:
-  reconv_cut_params _ps;
-};
-
-} /* namespace mockturtle */
+} /* mockturtle */

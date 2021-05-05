@@ -17,6 +17,8 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
+#pragma once
+
 #ifndef Minisat_IntTypes_h
 #define Minisat_IntTypes_h
 
@@ -5832,3 +5834,11 @@ inline void SimpSolver::garbageCollect()
     to.moveTo(ca);
 }
 }
+
+#undef ANTI_EXPLORATION
+#undef BIN_DRUP
+#undef INT_QUEUE_AVG
+#undef LOOSE_PROP_STAT
+#undef LOCAL
+#undef TIER2
+#undef COR

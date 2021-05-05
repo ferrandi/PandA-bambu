@@ -99,9 +99,6 @@ class TestbenchGenerationBaseStep : public HLS_step
    /// testbench basename
    std::string hdl_testbench_basename;
 
-   /// true if the c testbench is generated to wrap c++
-   bool flag_cpp;
-
    /**
     * Creates the HDL testbench file associated with the given component
     */

@@ -191,3 +191,66 @@ TEST_CASE( "Incremental simulation with partial_simulator", "[simulation]" )
   simulate_node( aig, aig.get_node( f5 ), node_to_value, sim );
   CHECK( ( aig.is_complemented( f5 ) ? ~node_to_value[f5] : node_to_value[f5] ) == kitty::partial_truth_table( 65 ) );
 }
+
+TEST_CASE( "Bit packing", "[simulation]" )
+{
+  std::vector<kitty::partial_truth_table> pats( 5 );
+  pats[0].add_bits( 0x1, 2 ); /* x0 = 01 */
+  pats[1].add_bits( 0x1, 2 ); /* x1 = 01 */
+  pats[2].add_bits( 0x1, 2 ); /* x2 = 01 */
+  pats[3].add_bits( 0x1, 2 ); /* x3 = 01 */
+  pats[4].add_bits( 0x1, 2 ); /* x4 = 01 */
+  bit_packed_simulator sim( pats ); /* initial patterns are not packable (all bits are cared) */
+
+  std::vector<bool> p( 5 ); /* pattern */
+  std::vector<bool> c( 5 ); /* care */
+
+  /* first pattern */
+  p[0] = 0; p[1] = 1; p[2] = 0; p[3] = 1; p[4] = 1;
+  c[0] = 0; c[1] = 0; c[2] = 0; c[3] = 1; c[4] = 1;
+  sim.add_pattern( p, c );
+
+  /* second pattern */
+  p[0] = 1; p[1] = 0; p[2] = 1; p[3] = 0; p[4] = 1;
+  c[0] = 0; c[1] = 0; c[2] = 1; c[3] = 0; c[4] = 1;
+  sim.add_pattern( p, c );
+
+  CHECK( sim.pack_bits() == false );
+  CHECK( sim.num_bits() == 4u );
+
+  /* third pattern: can be packed into the third bit */
+  p[0] = 1; p[1] = 0; p[2] = 1; p[3] = 0; p[4] = 0;
+  c[0] = 0; c[1] = 1; c[2] = 1; c[3] = 0; c[4] = 0;
+  sim.add_pattern( p, c );
+
+  CHECK( sim.pack_bits() == true );
+  CHECK( sim.num_bits() == 4u );
+  CHECK( ( sim.compute_pi( 0 )._bits[0] & 0x3 ) == 0x1 ); /* x0 = xxx01 -> xx01 */
+  CHECK( ( sim.compute_pi( 1 )._bits[0] & 0x7 ) == 0x1 ); /* x1 = 0xx01 -> x001 */
+  CHECK( ( sim.compute_pi( 2 )._bits[0] & 0xf ) == 0xd ); /* x2 = 11x01 -> 1101 */
+  CHECK( ( sim.compute_pi( 3 )._bits[0] & 0x7 ) == 0x5 ); /* x3 = xx101 -> x101 */
+  CHECK( ( sim.compute_pi( 4 )._bits[0] & 0xf ) == 0xd ); /* x4 = x1101 -> 1101 */
+
+  /* fourth pattern: can be packed into the fourth bit */
+  p[0] = 1; p[1] = 0; p[2] = 0; p[3] = 1; p[4] = 0;
+  c[0] = 1; c[1] = 1; c[2] = 0; c[3] = 1; c[4] = 0;
+  sim.add_pattern( p, c );
+
+  /* fifth pattern */
+  p[0] = 0; p[1] = 1; p[2] = 0; p[3] = 1; p[4] = 1;
+  c[0] = 1; c[1] = 0; c[2] = 0; c[3] = 0; c[4] = 1;
+  sim.add_pattern( p, c );
+
+  /* sixth pattern: can be packed into the third bit */
+  p[0] = 1; p[1] = 0; p[2] = 0; p[3] = 1; p[4] = 0;
+  c[0] = 1; c[1] = 0; c[2] = 0; c[3] = 0; c[4] = 0;
+  sim.add_pattern( p, c );
+
+  CHECK( sim.pack_bits() == true );
+  CHECK( sim.num_bits() == 5u );
+  CHECK( ( sim.compute_pi( 0 )._bits[0] & 0x1f ) == 0x0d ); /* x0 = 101xx01 -> 01101 */
+  CHECK( ( sim.compute_pi( 1 )._bits[0] & 0x0f ) == 0x01 ); /* x1 = xx0x001 -> x0001 */
+  CHECK( ( sim.compute_pi( 2 )._bits[0] & 0x0f ) == 0x0d ); /* x2 = xxx1101 -> x1101 */
+  CHECK( ( sim.compute_pi( 3 )._bits[0] & 0x0f ) == 0x0d ); /* x3 = xx1x101 -> x1101 */
+  CHECK( ( sim.compute_pi( 4 )._bits[0] & 0x1f ) == 0x1d ); /* x4 = x1x1101 -> 11101 */
+}

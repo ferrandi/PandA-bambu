@@ -162,6 +162,8 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
 HLS_step::ComputeRelationships(relationship, relationship_type);
 }
 
+const std::set<std::string> fun_dominator_allocation::simple_functions = {"__builtin_signbit", "__builtin_signbitf", "fabs", "__builtin_fabs", "fabsf", "__builtin_fabsf", "__builtin_cond_expr32", "llabs", "__builtin_llabs", "labs", "__builtin_labs"};
+
 DesignFlowStep_Status fun_dominator_allocation::Exec()
 {
    already_executed = true;
@@ -219,7 +221,7 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
          INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---Warning: " + fname + " is empty or the compiler killed all the statements");
       }
       INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "---" + fname);
-      if(not function_behavior->build_simple_pipeline())
+      if(not function_behavior->is_simple_pipeline())
       {
          HLSMgr->global_resource_constraints[std::make_pair(fname, WORK_LIBRARY)] = 1;
       }
@@ -268,8 +270,8 @@ DesignFlowStep_Status fun_dominator_allocation::Exec()
       BOOST_FOREACH(EdgeDescriptor eo, boost::out_edges(current_vertex, *cg))
       {
          std::string called_fu_name = functions::get_function_name_cleaned(CG->get_function(boost::target(eo, *cg)), HLSMgr);
-         if(HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
-            HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1)               // or single instance functions
+         if(simple_functions.find(called_fu_name) == simple_functions.end() && (HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == INFINITE_UINT || // without constraints
+                                                                                HLS_C->get_number_fu(called_fu_name, WORK_LIBRARY) == 1))              // or single instance functions
          {
             fun_dom_map[called_fu_name].insert(vert_dominator);
             const auto* info = Cget_edge_info<FunctionEdgeInfo, const CallGraph>(eo, *cg);

@@ -212,12 +212,12 @@ class verilog_writer : public language_writer
     * @param cir is the component.
     * @param reset_port is the reset port.
     * @param clock_port is the clock port.
-    * @param first if the first iterator of the state table.
-    * @param end if the end iterator of the state table.
-    * @param n_states is the number of states.
+    * @param first is the first iterator of the state table.
+    * @param end is the end iterator of the state table.
+    * @param is_yosys is true when the transition table is meant for YOSYS.
     */
    void write_transition_output_functions(bool single_proc, unsigned int output_index, const structural_objectRef& cir, const std::string& reset_state, const std::string& reset_port, const std::string& start_port, const std::string& clock_port,
-                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys) override;
+                                          std::vector<std::string>::const_iterator& first, std::vector<std::string>::const_iterator& end, bool is_yosys, const std::map<unsigned int, std::map<std::string, std::set<unsigned int>>>& bypass_signals) override;
 
    /**
     * Write in the proper language the behavioral description of the module described in "Not Parsed" form.

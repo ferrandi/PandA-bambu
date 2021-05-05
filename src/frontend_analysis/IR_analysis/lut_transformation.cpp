@@ -44,22 +44,7 @@
 #if HAVE_STDCXX_17
 
 #pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wshadow"
 #pragma GCC diagnostic ignored "-Wswitch-enum"
-#pragma GCC diagnostic ignored "-Wunused-parameter"
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wcast-qual"
-#pragma GCC diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma GCC diagnostic ignored "-Wnon-virtual-dtor"
-#pragma GCC diagnostic ignored "-Wpedantic"
-#pragma GCC diagnostic ignored "-Wparentheses"
-#pragma GCC diagnostic ignored "-Wswitch-default"
-#pragma GCC diagnostic ignored "-Wctor-dtor-privacy"
-#pragma GCC diagnostic ignored "-Woverloaded-virtual"
-#pragma GCC diagnostic ignored "-Wsign-promo"
 
 #define USE_SAT 0
 
@@ -70,31 +55,47 @@
 #pragma endregion
 
 #define FMT_HEADER_ONLY 1
-#ifndef __APPLE__
-#define __APPLE__ 0
-#endif
-#ifndef __MACH__
-#define __MACH__ 0
-#endif
+
+#define PHMAP_BIDIRECTIONAL 0
+#define MCDBGQ_NOLOCKFREE_FREELIST 0
+#define MCDBGQ_TRACKMEM 0
+#define MCDBGQ_NOLOCKFREE_IMPLICITPRODBLOCKINDEX 0
+#define MCDBGQ_NOLOCKFREE_IMPLICITPRODHASH 0
+#define MCDBGQ_USEDEBUGFREELIST 0
+#define DISABLE_NAUTY
+
+#define MIG_SYNTHESIS 0
 
 #include <type_traits>
 
-#if USE_SAT
-#include <mockturtle/algorithms/satlut_mapping.hpp>
-#include <mockturtle/mockturtle.hpp>
-#else
 #include <kitty/print.hpp>
+#include <mockturtle/algorithms/aig_resub.hpp>
+#include <mockturtle/algorithms/balancing.hpp>
+#include <mockturtle/algorithms/balancing/sop_balancing.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/collapse_mapped.hpp>
+#include <mockturtle/algorithms/cut_rewriting.hpp>
+#include <mockturtle/algorithms/functional_reduction.hpp>
 #include <mockturtle/algorithms/lut_mapping.hpp>
 #include <mockturtle/algorithms/node_resynthesis.hpp>
+#include <mockturtle/algorithms/node_resynthesis/bidecomposition.hpp>
 #include <mockturtle/algorithms/node_resynthesis/dsd.hpp>
 #include <mockturtle/algorithms/node_resynthesis/shannon.hpp>
+#include <mockturtle/algorithms/node_resynthesis/xag_npn.hpp>
+#include <mockturtle/algorithms/refactoring.hpp>
 #include <mockturtle/generators/arithmetic.hpp>
 #include <mockturtle/io/write_bench.hpp>
 #include <mockturtle/networks/aig.hpp>
 #include <mockturtle/networks/klut.hpp>
 #include <mockturtle/views/mapping_view.hpp>
+
+#if MIG_SYNTHESIS
+#include <mockturtle/algorithms/mig_algebraic_rewriting.hpp>
+#include <mockturtle/algorithms/node_resynthesis/mig_npn.hpp>
+#endif
+
+#if USE_SAT
+#include <mockturtle/algorithms/satlut_mapping.hpp>
 #endif
 #endif
 
@@ -295,14 +296,14 @@ class klut_network_ext : public mockturtle::klut_network
       }
    }
 
-   kitty::dynamic_truth_table create_lt_tt(int bits)
+   kitty::dynamic_truth_table create_lt_tt(unsigned int bits)
    {
       kitty::dynamic_truth_table tt(bits * 2);
       kitty::clear(tt);
 
-      for(int i = 0; i < bits; ++i)
+      for(unsigned int i = 0; i < bits; ++i)
       {
-         for(int j = i + 1; j < bits; ++j)
+         for(unsigned int j = i + 1; j < bits; ++j)
          {
             kitty::set_bit(tt, j + i * bits);
          }
@@ -407,15 +408,15 @@ class klut_network_ext : public mockturtle::klut_network
     *
     * @return a `mockturtle::klut_network::signal` representing a lut between `s` with constant `f`
     */
-   signal create_lut(std::vector<signal> s, uint64_t f)
+   signal create_lut(std::vector<signal> s, long long f)
    {
-      if(f == static_cast<uint64_t>(-1LL))
+      if(f == -1LL)
       {
          return this->create_not(this->get_constant(false));
       }
-      kitty::dynamic_truth_table tt(static_cast<int>(s.size()));
+      kitty::dynamic_truth_table tt(static_cast<unsigned>(s.size()));
       std::stringstream resHex;
-      resHex << std::hex << f;
+      resHex << std::hex << static_cast<unsigned long long>(f);
       std::string res0 = resHex.str();
       if(tt.num_vars() > 1)
       {
@@ -556,7 +557,7 @@ struct klut_network_node
    uint64_t index;
 
    /// the lut constant
-   uint64_t lut_constant;
+   long long lut_constant;
 
    /// a `std::vector` containing the indexes of all inputs of the current node
    std::vector<uint64_t> fan_in;
@@ -569,6 +570,10 @@ struct klut_network_node
 
    /// true in case the node is a constant value
    bool is_constant;
+   explicit klut_network_node(uint64_t _index, long long _lut_constant, const std::vector<uint64_t>& _fan_in, bool _is_po, uint64_t _po_index, bool _is_constant)
+       : index(_index), lut_constant(_lut_constant), fan_in(_fan_in), is_po(_is_po), po_index(_po_index), is_constant(_is_constant)
+   {
+   }
 };
 
 /**
@@ -747,7 +752,7 @@ static std::vector<bool> IntegerToBitArray(long long int n, size_t size)
    std::vector<bool> bits;
    for(size_t i = 0; i < size; ++i)
    {
-      bits.push_back((n & (1ULL << i)) ? true : false);
+      bits.push_back((static_cast<unsigned long long int>(n) & (1ULL << i)) ? true : false);
    }
    return bits;
 }
@@ -814,9 +819,8 @@ static T ConvertHexToNumber(const std::string& hex0)
    return static_cast<T>(x);
 }
 
-static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_network& klut)
+static void ParseKLutNetwork(const mockturtle::klut_network& klut, std::vector<klut_network_node>& luts)
 {
-   std::vector<klut_network_node> luts;
    std::map<mockturtle::klut_network::node, CustomOrderedSet<unsigned>> po_set;
 
    mockturtle::topo_view ntk_topo{klut};
@@ -831,8 +835,8 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
       auto func = ntk_topo.node_function(node);
 
       std::vector<uint64_t> fanIns;
-      ntk_topo.foreach_fanin(node, [&](auto const& fanin_node, auto index) { fanIns.push_back(fanin_node); });
-      auto LUT_func = ConvertHexToNumber<uint64_t>(kitty::to_hex(func));
+      ntk_topo.foreach_fanin(node, [&](auto const& fanin_node, auto) { fanIns.push_back(fanin_node); });
+      auto LUT_func = ConvertHexToNumber<long long>(kitty::to_hex(func));
       auto is_zero = LUT_func == 0;
       if(!is_zero)
       {
@@ -840,13 +844,13 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
          {
             for(auto po_i : po_set.find(node)->second)
             {
-               klut_network_node lut_node = (klut_network_node){node, LUT_func, fanIns, true, po_i, false};
+               klut_network_node lut_node(node, LUT_func, fanIns, true, po_i, false);
                luts.push_back(lut_node);
             }
          }
          else
          {
-            klut_network_node lut_node = (klut_network_node){node, LUT_func, fanIns, false, 0, false};
+            klut_network_node lut_node(node, LUT_func, fanIns, false, 0, false);
             luts.push_back(lut_node);
          }
       }
@@ -856,7 +860,7 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
       if(ntk_topo.is_constant(ntk_topo.get_node(s)))
       {
          std::vector<uint64_t> fanIns;
-         klut_network_node lut_node = (klut_network_node){s, static_cast<uint64_t>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true};
+         klut_network_node lut_node(s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true);
          luts.push_back(lut_node);
       }
       else
@@ -867,53 +871,121 @@ static std::vector<klut_network_node> ParseKLutNetwork(const mockturtle::klut_ne
          if(is_zero)
          {
             std::vector<uint64_t> fanIns;
-            klut_network_node lut_node = (klut_network_node){s, static_cast<uint64_t>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true};
+            klut_network_node lut_node(s, static_cast<long long>(ntk_topo.constant_value(ntk_topo.get_node(s)) ^ ntk_topo.is_complemented(s)), fanIns, true, i, true);
             luts.push_back(lut_node);
          }
          else if(ntk_topo.is_pi(ntk_topo.get_node(s)))
          {
             std::vector<uint64_t> fanIns;
             fanIns.push_back(s);
-            klut_network_node lut_node = (klut_network_node){s, static_cast<uint64_t>(ntk_topo.is_complemented(s) ? 1 : 2), fanIns, true, i, false};
+            klut_network_node lut_node(s, static_cast<long long>(ntk_topo.is_complemented(s) ? 1 : 2), fanIns, true, i, false);
             luts.push_back(lut_node);
          }
       }
    });
-
-   return luts;
 }
 
 template <class kne>
-static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned max_lut_size)
+static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, size_t max_lut_size)
 {
-   mockturtle::shannon_resynthesis<mockturtle::aig_network> fallback;
-   mockturtle::dsd_resynthesis<mockturtle::aig_network, decltype(fallback)> aig_resyn(fallback);
-   auto aig = mockturtle::node_resynthesis<mockturtle::aig_network>(klut_e, aig_resyn);
+/// scripts taken from https://github.com/lnis-uofu/LSOracle
+#if MIG_SYNTHESIS
+   mockturtle::shannon_resynthesis<mockturtle::mig_network> fallback;
+   mockturtle::dsd_resynthesis<mockturtle::mig_network, decltype(fallback)> mig_resyn(fallback);
+   auto mig = mockturtle::node_resynthesis<mockturtle::mig_network>(klut_e, mig_resyn);
+   auto resyn2 = [&](mockturtle::mig_network& mig) -> mockturtle::mig_network {
+      mockturtle::depth_view mig_depth{mig};
 
-   auto cleanedUp = cleanup_dangling(aig);
-   mockturtle::mapping_view<mockturtle::aig_network, true> mapped_klut{cleanedUp};
+      mockturtle::mig_algebraic_depth_rewriting_params pm;
+      // pm.strategy = mockturtle::mig_algebraic_depth_rewriting_params::selective;
 
-#if USE_SAT
-   mockturtle::satlut_mapping_params mp;
-   mp.cut_enumeration_ps.cut_size = max_lut_size;
-   // mp.verbose = true;
-   // mp.very_verbose = true;
+      // std::cout << "1st round depth optimization " << std::endl;
 
-   mockturtle::satlut_mapping<decltype(mapped_klut), true>(mapped_klut, mp);
-   // std::cerr << "sat\n";
-   // mockturtle::write_bench(mapped_klut, std::cout);
-   mockturtle::lut_mapping_params lmp;
-   mp.cut_enumeration_ps.cut_size = max_lut_size;
-   mockturtle::lut_mapping<decltype(mapped_klut), true>(mapped_klut, lmp);
-   // std::cerr << "lut\n";
-   // mockturtle::write_bench(mapped_klut, std::cout);
-#else
-   //   std::cerr << "std\n";
-   //   mockturtle::write_bench(mapped_klut, std::cout);
-   //   std::cerr << "===============\n";
+      mockturtle::mig_algebraic_depth_rewriting(mig_depth, pm);
+
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "1st round area recovering " << std::endl;
+
+      // AREA RECOVERING
+      mockturtle::mig_npn_resynthesis resyn;
+      mockturtle::cut_rewriting_params ps;
+
+      ps.cut_enumeration_ps.cut_size = 4;
+
+      mockturtle::cut_rewriting(mig, resyn, ps);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "2nd round area recovering " << std::endl;
+
+      // AREA RECOVERING
+      mockturtle::cut_rewriting(mig, resyn, ps);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "2nd round depth optimization" << std::endl;
+
+      // DEPTH REWRITING
+      mockturtle::depth_view mig_depth1{mig};
+
+      mockturtle::mig_algebraic_depth_rewriting(mig_depth1, pm);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "3rd round area recovering" << std::endl;
+
+      // AREA RECOVERING
+      mockturtle::cut_rewriting(mig, resyn, ps);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "4th round area recovering" << std::endl;
+
+      // AREA RECOVERING
+      mockturtle::cut_rewriting(mig, resyn, ps);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "3rd round depth optimization" << std::endl;
+
+      // DEPTH REWRITING
+      mockturtle::depth_view mig_depth2{mig};
+
+      mockturtle::mig_algebraic_depth_rewriting(mig_depth2, pm);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "5th round area recovering" << std::endl;
+
+      // AREA RECOVERING
+      mockturtle::cut_rewriting(mig, resyn, ps);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "6th round area recovering" << std::endl;
+
+      // AREA RECOVERING
+      mockturtle::cut_rewriting(mig, resyn, ps);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "Final depth optimization" << std::endl;
+
+      // DEPTH REWRITING
+      mockturtle::depth_view mig_depth3{mig};
+
+      // std::cout << "Network Optimized" << std::endl;
+
+      mockturtle::mig_algebraic_depth_rewriting(mig_depth3, pm);
+      mig = mockturtle::cleanup_dangling(mig);
+
+      // std::cout << "Majority nodes " << mig.num_gates() << " MIG depth " << mig_depth3.depth() << std::endl;
+
+      return mig;
+   };
+   auto cleanedUp = mockturtle::cleanup_dangling(mig);
+
+   mockturtle::mapping_view<mockturtle::mig_network, true> mapped_klut{cleanedUp};
+   std::cerr << "std\n";
+   mockturtle::write_bench(mapped_klut, std::cout);
+   std::cerr << "===============\n";
 
    mockturtle::lut_mapping_params mp;
    mp.cut_enumeration_ps.cut_size = max_lut_size;
+   mp.cut_enumeration_ps.cut_limit = 16;
 
 #ifndef NDEBUG
    mp.verbose = false;
@@ -921,9 +993,146 @@ static mockturtle::klut_network SimplifyLutNetwork(const kne& klut_e, unsigned m
 #endif
 
    mockturtle::lut_mapping<decltype(mapped_klut), true>(mapped_klut, mp);
+   std::cerr << "lut\n";
+   std::cerr << "===============\n";
+   mockturtle::write_bench(mapped_klut, std::cout);
+
+   auto collapsed = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
+   collapsed = mockturtle::cleanup_luts(collapsed);
+   std::cerr << "res\n";
+   mockturtle::write_bench(collapsed, std::cout);
+   std::cerr << "===============\n";
+
+#else
+   mockturtle::shannon_resynthesis<mockturtle::aig_network> fallback;
+   mockturtle::dsd_resynthesis<mockturtle::aig_network, decltype(fallback)> aig_resyn(fallback);
+   auto aig = mockturtle::node_resynthesis<mockturtle::aig_network>(klut_e, aig_resyn);
+
+#if 0
+   auto resyn2 = [&](mockturtle::aig_network& aig) -> mockturtle::aig_network {
+      mockturtle::xag_npn_resynthesis<mockturtle::aig_network> resyn;
+      mockturtle::cut_rewriting_params ps;
+      ps.cut_enumeration_ps.cut_size = 4;
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      return aig;
+   };
+
+   auto resyn2_v2 = [&](mockturtle::aig_network& aig) -> mockturtle::aig_network {
+      mockturtle::xag_npn_resynthesis<mockturtle::aig_network> resyn;
+      mockturtle::bidecomposition_resynthesis<mockturtle::aig_network> fallback;
+      mockturtle::dsd_resynthesis<mockturtle::aig_network, decltype( fallback )> rf_resyn( fallback );
+      mockturtle::cut_rewriting_params ps;
+      mockturtle::refactoring_params rp;
+
+      ps.cut_enumeration_ps.cut_size = 4;
+      rp.allow_zero_gain = false;
+
+      aig= mockturtle::balancing(aig, {mockturtle::sop_rebalancing<mockturtle::aig_network>{}});
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::refactoring(aig, rf_resyn, rp);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      aig= mockturtle::balancing(aig, {mockturtle::sop_rebalancing<mockturtle::aig_network>{}});
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      ps.allow_zero_gain = true;
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      aig= mockturtle::balancing(aig, {mockturtle::sop_rebalancing<mockturtle::aig_network>{}});
+      aig = mockturtle::cleanup_dangling(aig);
+
+      rp.allow_zero_gain = true;
+      mockturtle::refactoring(aig, rf_resyn, rp);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      mockturtle::cut_rewriting(aig, resyn, ps);
+      aig = mockturtle::cleanup_dangling(aig);
+
+      aig= mockturtle::balancing(aig, {mockturtle::sop_rebalancing<mockturtle::aig_network>{}});
+      aig = mockturtle::cleanup_dangling(aig);
+
+      return aig;
+   };
+
+   auto cleanedUp = resyn2(aig);
+#else
+   auto cleanedUp = cleanup_dangling(aig);
+#endif
+   mockturtle::mapping_view<mockturtle::aig_network, true> mapped_klut{cleanedUp};
+   //   std::cerr << "std\n";
+   //   mockturtle::write_bench(mapped_klut, std::cout);
+   //   std::cerr << "===============\n";
+
+   mockturtle::lut_mapping_params mp;
+   mp.cut_enumeration_ps.cut_size = static_cast<uint32_t>(max_lut_size);
+   mp.cut_enumeration_ps.cut_limit = 16;
+
+#ifndef NDEBUG
+   mp.verbose = false;
+   mp.cut_enumeration_ps.very_verbose = false;
+#endif
+
+   mockturtle::lut_mapping<decltype(mapped_klut), true>(mapped_klut, mp);
+   //   std::cerr << "lut\n";
+   //   std::cerr << "===============\n";
+   //   mockturtle::write_bench(mapped_klut, std::cout);
+
+#if USE_SAT
+   mockturtle::satlut_mapping_params satlut_mp;
+   satlut_mp.cut_enumeration_ps.cut_size = max_lut_size;
+   satlut_mp.cut_enumeration_ps.cut_limit = 16;
+   satlut_mp.conflict_limit = 100;
+   satlut_mp.progress = true;
+   mockturtle::satlut_mapping_stats st;
+
+   mockturtle::satlut_mapping<decltype(mapped_klut), true>(mapped_klut, 32, satlut_mp, &st);
+   std::cerr << "sat\n";
+   std::cerr << "===============\n";
+   mockturtle::write_bench(mapped_klut, std::cout);
 #endif
    auto collapsed = *mockturtle::collapse_mapped_network<mockturtle::klut_network>(mapped_klut);
    collapsed = mockturtle::cleanup_luts(collapsed);
+//   std::cerr << "res\n";
+//   mockturtle::write_bench(collapsed, std::cout);
+//   std::cerr << "===============\n";
+#endif
    return collapsed;
 }
 
@@ -936,7 +1145,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
    std::map<unsigned int, std::vector<mockturtle::klut_network::signal>> nodeRefToSignalBus;
 
    std::vector<tree_nodeRef> pis;
-   std::vector<unsigned> pis_offset;
+   std::vector<int> pis_offset;
    std::vector<tree_nodeRef> pos;
    std::vector<unsigned> pos_offset;
 
@@ -1316,8 +1525,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op0)->ToString());
                op1 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op0)));
 
-               unsigned int index = 0;
-               std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) {
+               int index = 0;
+               std::for_each(op1.begin(), op1.end(), [&binaryExpression, &pis, &pis_offset, &index](auto /*op*/) {
                   pis.push_back(binaryExpression->op0);
                   pis_offset.push_back(index);
                   ++index;
@@ -1352,8 +1561,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---used PIs " + GET_NODE(binaryExpression->op1)->ToString());
                op2 = klut_e.create_pi_v(tree_helper::Size(GET_NODE(binaryExpression->op1)));
 
-               unsigned int index = 0;
-               std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto op) {
+               int index = 0;
+               std::for_each(op2.begin(), op2.end(), [&binaryExpression, &pis, &pis_offset, &index](auto /*op*/) {
                   pis.push_back(binaryExpression->op1);
                   pis_offset.push_back(index);
                   ++index;
@@ -1379,7 +1588,7 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
             klut_e.create_po_v(res);
 
             unsigned int index = 0;
-            std::for_each(res.begin(), res.end(), [&statement, &pos, &pos_offset, &index](auto op) {
+            std::for_each(res.begin(), res.end(), [&statement, &pos, &pos_offset, &index](auto /*op*/) {
                pos.push_back(statement);
                pos_offset.push_back(index);
                ++index;
@@ -1411,7 +1620,8 @@ bool lut_transformation::ProcessBasicBlock(std::pair<unsigned int, blocRef> bloc
          mockturtle::write_bench(klut, std::cout);
 #endif
 
-      std::vector<klut_network_node> luts = ParseKLutNetwork(klut);
+      std::vector<klut_network_node> luts;
+      ParseKLutNetwork(klut, luts);
 
       std::map<mockturtle::klut_network::node, tree_nodeRef> internal_nets;
       std::vector<tree_nodeRef> prev_stmts_to_add;

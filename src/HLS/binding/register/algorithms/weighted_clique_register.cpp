@@ -107,7 +107,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       START_TIME(step_time);
    }
    const CliqueCovering_Algorithm clique_covering_algorithm = GetPointer<const WeightedCliqueRegisterBindingSpecialization>(hls_flow_step_specialization)->clique_covering_algorithm;
-   refcount<clique_covering<CG_vertex_descriptor>> register_clique = clique_covering<CG_vertex_descriptor>::create_solver(clique_covering_algorithm);
+   refcount<clique_covering<CG_vertex_descriptor>> register_clique = clique_covering<CG_vertex_descriptor>::create_solver(clique_covering_algorithm, HLS->storage_value_information->get_number_of_storage_values());
    create_compatibility_graph();
 
    auto v_it_end = verts.end();
@@ -121,11 +121,11 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
    {
       HLS->Rreg->set_used_regs(num_registers);
       boost::graph_traits<compatibility_graph>::edge_iterator cg_ei, cg_ei_end;
-      for(boost::tie(cg_ei, cg_ei_end) = boost::edges(CG); cg_ei != cg_ei_end; ++cg_ei)
+      for(boost::tie(cg_ei, cg_ei_end) = boost::edges(*CG); cg_ei != cg_ei_end; ++cg_ei)
       {
-         CG_vertex_descriptor src = boost::source(*cg_ei, CG);
-         CG_vertex_descriptor tgt = boost::target(*cg_ei, CG);
-         register_clique->add_edge(src, tgt, CG[*cg_ei].weight);
+         CG_vertex_descriptor src = boost::source(*cg_ei, *CG);
+         CG_vertex_descriptor tgt = boost::target(*cg_ei, *CG);
+         register_clique->add_edge(src, tgt, (*CG)[*cg_ei].weight);
       }
       if(parameters->getOption<bool>(OPT_print_dot))
       {
@@ -142,7 +142,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       no_check_clique<CG_vertex_descriptor> cq;
       register_clique->exec(no_filter_clique<CG_vertex_descriptor>(), cq);
       /// vertex to clique map
-      std::map<CG_vertex_descriptor, unsigned int> v2c;
+      CustomUnorderedMap<CG_vertex_descriptor, unsigned int> v2c;
       /// retrieve the solution
       num_registers = static_cast<unsigned int>(register_clique->num_vertices());
       for(unsigned int i = 0; i < num_registers; ++i)
@@ -175,6 +175,7 @@ DesignFlowStep_Status weighted_clique_register::InternalExec()
       HLS->Rreg = reg_binding::create_reg_binding(HLS, HLSMgr);
       num_registers = 0;
    }
+   delete CG;
    HLS->Rreg->set_used_regs(num_registers);
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {

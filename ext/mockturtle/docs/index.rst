@@ -27,23 +27,28 @@ Welcome to mockturtle's documentation!
    :maxdepth: 2
    :caption: Algorithms
 
-   algorithms/cut_enumeration
    algorithms/lut_mapping
    algorithms/collapse_mapped
    algorithms/node_resynthesis
+   algorithms/dsd_decomposition
+   algorithms/decomposition
+   algorithms/bi_decomposition
    algorithms/cut_rewriting
    algorithms/refactoring
    algorithms/balancing
+   algorithms/resubstitution
+   algorithms/resyn_engines
+   algorithms/functional_reduction
    algorithms/mig_algebraic_rewriting
    algorithms/akers_synthesis
-   algorithms/resubstitution
    algorithms/simulation
    algorithms/equivalence_checking
-   algorithms/miter
-   algorithms/dsd_decomposition
-   algorithms/decomposition
-   algorithms/cleanup
+   algorithms/pattern_generation   
+   algorithms/circuit_validator
    algorithms/cnf
+   algorithms/miter
+   algorithms/cleanup
+   algorithms/cut_enumeration
    algorithms/reconv_cut
    algorithms/dont_cares
    algorithms/extract_linear
@@ -52,7 +57,6 @@ Welcome to mockturtle's documentation!
    algorithms/xag_optimization
    algorithms/xmg_optimization
    algorithms/equivalence_classes
-   algorithms/circuit_validator
 
 .. toctree::
    :maxdepth: 2

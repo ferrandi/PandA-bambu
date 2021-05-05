@@ -53,6 +53,8 @@
       <cmd name="set_global_assignment -name AUTO_PACKED_REGISTERS_STRATIX NORMAL"/>
       <cmd name="set_global_assignment -name PRE_MAPPING_RESYNTHESIS ON"/>
       -->
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1" condition="!${__parallel_backend__}"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL" condition="${__parallel_backend__}"/>
 
       <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
       <cmd name="create_base_clock -fmax ${__clk_freq__} -target ${__clk_name__} ${__clk_name__}"/>
@@ -70,6 +72,8 @@
       <cmd name="set_global_assignment -name NUMBER_OF_PATHS_TO_REPORT 100000"/>
       <cmd name="set_global_assignment -name TIMEQUEST_DO_REPORT_TIMING On"/>
       <cmd name="set_global_assignment -name DSP_BLOCK_BALANCING Auto"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS 1" condition="!${__parallel_backend__}"/>
+      <cmd name="set_global_assignment -name NUM_PARALLEL_PROCESSORS ALL" condition="${__parallel_backend__}"/>
       <!--
       <cmd name="set_global_assignment -name CYCLONEII_OPTIMIZATION_TECHNIQUE SPEED"/>
       <cmd name="set_global_assignment -name SYNTH_TIMING_DRIVEN_SYNTHESIS ON"/>

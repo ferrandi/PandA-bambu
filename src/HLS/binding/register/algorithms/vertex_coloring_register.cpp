@@ -80,8 +80,9 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
       START_TIME(step_time);
    }
    create_conflict_graph();
+
    /// coloring based on DSATUR 2 heuristic
-   cg_vertices_size_type num_colors = dsatur2_coloring(cg, color);
+   cg_vertices_size_type num_colors = dsatur2_coloring(*cg, color);
 
    /// finalize
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
@@ -98,6 +99,7 @@ DesignFlowStep_Status vertex_coloring_register::InternalExec()
          HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[storage_value_index]));
       }
    }
+   delete cg;
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {

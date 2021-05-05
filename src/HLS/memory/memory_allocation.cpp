@@ -282,7 +282,10 @@ void memory_allocation::finalize_memory_allocation()
             if(!use_unknown_address && is_interfaced && tree_helper::is_a_pointer(TreeM, function_parameter))
             {
                use_unknown_address = true;
-               THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
+               if(output_level > OUTPUT_LEVEL_NONE)
+               {
+                  THROW_WARNING("This function uses unknown addresses: " + behavioral_helper->get_function_name());
+               }
             }
          }
       }

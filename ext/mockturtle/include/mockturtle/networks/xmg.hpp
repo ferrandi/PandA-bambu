@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,12 @@
   \file xmg.hpp
   \brief XMG logic network implementation
 
+  \author Heinz Riener
+  \author Jinzheng Tu
   \author Mathias Soeken
+  \author Max Austin
+  \author Siang-Yun (Sonia) Lee
+  \author Walter Lau Neto
 */
 
 #pragma once
@@ -149,6 +154,13 @@ public:
     {
       return {index, complement};
     }
+
+#if __cplusplus > 201703L
+    bool operator==( xmg_storage::node_type::pointer_type const& other ) const
+    {
+      return data == other.data;
+    }
+#endif
   };
 
   xmg_network()
@@ -296,10 +308,6 @@ public:
     {
       return ( b.complement == c.complement ) ? b : a;
     }
-    else if ( a.index == b.index == c.index )
-    {
-      return ( a.complement == b.complement ) ? a : c;
-    }
 
     /*  complemented edges minimization */
     auto node_complement = false;
@@ -376,10 +384,6 @@ public:
       return c ^ fcompl;
     }
     else if ( b.index == c.index )
-    {
-      return a ^ fcompl;
-    }
-    else if ( ( a.index == b.index ) && ( b.index == c.index ) )
     {
       return a ^ fcompl;
     }
@@ -620,10 +624,6 @@ public:
         return std::make_pair( n, child2 ^ node_complement );
       }
       else if ( child1.index == child2.index )
-      {
-        return std::make_pair( n, child0 ^ node_complement );
-      }
-      else if ( ( child0.index == child1.index ) && ( child1.index == child2.index ) )
       {
         return std::make_pair( n, child0 ^ node_complement );
       }
@@ -1202,6 +1202,47 @@ public:
     {
       return kitty::ternary_majority( c1.weight ? ~tt1 : tt1, c2.weight ? ~tt2 : tt2, c3.weight ? ~tt3 : tt3 );
     }
+  }
+
+  /*! \brief Re-compute the last block. */
+  template<typename Iterator>
+  void compute( node const& n, kitty::partial_truth_table& result, Iterator begin, Iterator end ) const
+  {
+    static_assert( iterates_over_v<Iterator, kitty::partial_truth_table>, "begin and end have to iterate over partial_truth_tables" );
+
+    (void)end;
+    assert( n != 0 && !is_ci( n ) );
+
+    auto const& c1 = _storage->nodes[n].children[0];
+    auto const& c2 = _storage->nodes[n].children[1];
+    auto const& c3 = _storage->nodes[n].children[2];
+
+    auto tt1 = *begin++;
+    auto tt2 = *begin++;
+    auto tt3 = *begin++;
+
+    assert( tt1.num_bits() > 0 && "truth tables must not be empty" );
+    assert( tt1.num_bits() == tt2.num_bits() );
+    assert( tt1.num_bits() == tt3.num_bits() );
+    assert( tt1.num_bits() >= result.num_bits() );
+    assert( result.num_blocks() == tt1.num_blocks() || ( result.num_blocks() == tt1.num_blocks() - 1 && result.num_bits() % 64 == 0 ) );
+
+    result.resize( tt1.num_bits() );
+    if ( is_xor3( n ) )
+    {
+      result._bits.back() =
+        ( c1.weight ? ~tt1._bits.back() : tt1._bits.back() ) ^
+        ( c2.weight ? ~tt2._bits.back() : tt2._bits.back() ) ^
+        ( c3.weight ? ~tt3._bits.back() : tt3._bits.back() );
+    }
+    else
+    {
+      result._bits.back() =
+        ( ( c1.weight ? ~tt1._bits.back() : tt1._bits.back() ) & ( c2.weight ? ~tt2._bits.back() : tt2._bits.back() ) ) |
+        ( ( c1.weight ? ~tt1._bits.back() : tt1._bits.back() ) & ( c3.weight ? ~tt3._bits.back() : tt3._bits.back() ) ) |
+        ( ( c2.weight ? ~tt2._bits.back() : tt2._bits.back() ) & ( c3.weight ? ~tt3._bits.back() : tt3._bits.back() ) );
+    }
+    result.mask_bits();
   }
 #pragma endregion
 

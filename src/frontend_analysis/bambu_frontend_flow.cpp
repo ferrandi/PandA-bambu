@@ -190,10 +190,7 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(CREATE_ADDRESS_TRANSLATION, WHOLE_APPLICATION));
          }
 #endif
-         if(parameters->getOption<HLSFlowStep_Type>(OPT_interface_type) == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(INTERFACE_INFER, WHOLE_APPLICATION));
-         }
+         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(INTERFACE_INFER, WHOLE_APPLICATION));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

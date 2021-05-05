@@ -2827,6 +2827,27 @@ bool tree_helper::is_an_array(const tree_managerConstRef& TM, const unsigned int
    }
 }
 
+tree_nodeConstRef tree_helper::get_array_basetype(const tree_managerConstRef& TM, const unsigned int index)
+{
+   std::list<tree_nodeConstRef> listOfTypes;
+   CustomUnorderedSet<unsigned int> already_visited;
+   const tree_nodeRef T = TM->get_tree_node_const(index);
+   tree_nodeRef Type;
+   if(GetPointer<type_node>(T))
+   {
+      Type = T;
+   }
+   else
+   {
+      unsigned int type_index = 0;
+      Type = get_type_node(T, type_index);
+      THROW_ASSERT(type_index > 0, "expected a type index");
+   }
+   getBuiltinFieldTypes(Type, listOfTypes, already_visited);
+   THROW_ASSERT(!listOfTypes.empty(), "at least one type is expected");
+   return listOfTypes.front();
+}
+
 bool tree_helper::is_a_pointer(const tree_managerConstRef& TM, const unsigned int index)
 {
    long long int vec_size;

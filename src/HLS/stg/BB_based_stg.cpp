@@ -227,6 +227,8 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    CustomOrderedSet<vertex> already_analyzed;
    VertexIterator vit, vend;
 
+   bool is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->is_simple_pipeline();
+
    /// contains the list of operations which are executing, starting, ending and "on-fly" in every state of the STG
    std::map<vertex, std::list<vertex>> global_executing_ops, global_starting_ops, global_ending_ops, global_onfly_ops;
 
@@ -280,12 +282,11 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          ;
       }
       double mux_time_estimation = (n_levels * HLS->allocation_information->mux_time_unit(32)) + (n_levels > 0 ? controller_delay : 0);
-      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack())
+      if(mux_time_estimation > HLS->allocation_information->getMinimumSlack() && !is_pipelined)
       {
          has_registered_inputs = true;
       }
    }
-
    auto omp_functions = GetPointer<OmpFunctions>(HLSMgr->Rfuns);
    if(HLS->Param->isOption(OPT_context_switch))
    {
@@ -296,6 +297,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    }
    HLS->registered_inputs = has_registered_inputs;
 
+   /// build portion of STG associated with each BBs
    for(boost::tie(vit, vend) = boost::vertices(*fbb); vit != vend; ++vit)
    {
       if(*vit == bb_entry)
@@ -418,6 +420,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
          executing_ops[cstep].push_back(op);
          starting_ops[cstep].push_back(op);
          const auto initiation_time = HLS->allocation_information->get_initiation_time(fu_name, op);
+         INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---initiation_time " + STR(initiation_time));
          if(initiation_time == 0 || initiation_time > delay)
          {
             for(auto c = cstep + 1u; c <= end_step; c++)
@@ -677,7 +680,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Analyzed BB" + STR(fbb->CGetBBNodeInfo(bb_src)->block->number) + "-->" + STR(fbb->CGetBBNodeInfo(bb_tgt)->block->number));
    }
    ///*****************************************************
-   if(parameters->getOption<bool>(OPT_print_dot))
+   if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
    {
       HLS->STG->CGetStg()->WriteDot("HLS_STGraph-pre-opt.dot");
    }
@@ -695,7 +698,7 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
             // std::cerr << "begin cycles optimization" << std::endl;
             optimize_cycles(bbEndingCycle, first_state, last_state, global_starting_ops, global_ending_ops, global_executing_ops, global_onfly_ops);
             // std::cerr << "end cycles optimization " << STR(instance) << std::endl;
-            if(parameters->getOption<bool>(OPT_print_dot))
+            if(parameters->getOption<bool>(OPT_print_dot) && DEBUG_LEVEL_VERY_PEDANTIC <= debug_level)
             {
                HLS->STG->CGetStg()->WriteDot("HLS_STGraph-post" + STR(instance) + ".dot");
             }
@@ -709,7 +712,6 @@ DesignFlowStep_Status BB_based_stg::InternalExec()
    ///*****************************************************
 
    HLS->STG->compute_min_max();
-   bool is_pipelined = HLSMgr->CGetFunctionBehavior(funId)->build_simple_pipeline();
    if(HLS->STG->CGetStg()->CGetStateTransitionGraphInfo()->min_cycles != 1 && !is_pipelined)
    {
       HLS->registered_done_port = true;
@@ -1240,7 +1242,12 @@ void BB_based_stg::optimize_cycles(vertex bbEndingCycle, CustomUnorderedMap<vert
          for(auto next_ops : global_starting_ops[first_state[tempBb]])
          {
             const auto operation = dfgRef->CGetOpNodeInfo(next_ops);
-            if((GET_TYPE(dfgRef, next_ops) & (TYPE_STORE | TYPE_LOAD | TYPE_EXTERNAL)) != 0)
+            auto curr_vertex_type = GET_TYPE(dfgRef, next_ops);
+            if((curr_vertex_type & (TYPE_STORE | TYPE_LOAD)) != 0)
+            {
+               return;
+            }
+            if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
             {
                return;
             }

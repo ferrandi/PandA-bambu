@@ -962,7 +962,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
       auto* fu_module = GetPointer<module>(top);
       THROW_ASSERT(fu_module, "expected");
       structural_objectRef start_port_i = fu_module->find_member(START_PORT_NAME, port_o_K, top);
-      if((GET_TYPE(data, j) & TYPE_EXTERNAL && start_port_i) || !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
+      if(((GET_TYPE(data, j) & TYPE_EXTERNAL) && start_port_i) || !GetPointer<operation>(op_tn)->is_bounded() || start_port_i)
       {
          bind_selector_port(conn_binding::IN, commandport_obj::UNBOUNDED, j, data);
          bind_selector_port(conn_binding::OUT, commandport_obj::UNBOUNDED, j, data);
@@ -1017,6 +1017,18 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
 
                structural_objectRef port_wenable = reg_mod->find_member(WENABLE_PORT_NAME, port_o_K, reg_mod);
                SM->add_connection(port_wenable, sel_obj);
+               break;
+            }
+            case generic_obj::MULTI_UNBOUNDED_OBJ:
+            {
+               structural_objectRef mu_mod = elem->get_structural_obj();
+
+               THROW_ASSERT(GetPointer<commandport_obj>(j->second), "Not valid command port");
+               structural_objectRef sel_obj = SM->add_port("muenable_" + mu_mod->get_id(), port_o::IN, circuit, boolean_port_type);
+               (j->second)->set_structural_obj(sel_obj);
+
+               structural_objectRef port_enable = mu_mod->find_member("enable", port_o_K, mu_mod);
+               SM->add_connection(port_enable, sel_obj);
                break;
             }
             case generic_obj::COMMAND_PORT:
@@ -1129,7 +1141,7 @@ void conn_binding::add_command_ports(const HLS_managerRef HLSMgr, const hlsRef H
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added calls connections");
    std::map<structural_objectRef, structural_objectRef> sig;
    INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding multi-unbounded controllers connections");
-   for(auto state2mu : HLS->STG->get_mu_ctrls())
+   for(const auto& state2mu : HLS->STG->get_mu_ctrls())
    {
       auto mu = state2mu.second;
       structural_objectRef mu_mod = mu->get_structural_obj();

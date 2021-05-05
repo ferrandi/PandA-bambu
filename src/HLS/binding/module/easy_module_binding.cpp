@@ -177,7 +177,7 @@ DesignFlowStep_Status easy_module_binding::InternalExec()
    }
    INDENT_OUT_MEX(OUTPUT_LEVEL_MINIMUM, output_level, "-->Easy binding information for function " + FB->CGetBehavioralHelper()->get_function_name() + ":");
    /// check easy binding and compute the list of vertices for which a sharing is possible
-   if(HLSMgr->GetFunctionBehavior(funId)->build_simple_pipeline())
+   if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
    {
       std::set<vertex> bound_vertices;
       std::map<unsigned int, unsigned int> fu_instances;

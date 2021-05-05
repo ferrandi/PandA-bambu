@@ -587,7 +587,7 @@ if BUILD_LIB_VCD
 endif
 if BUILD_TRNG
    lib_hls_flow_la_CPPFLAGS += \
-      -I$(top_builddir)/ext/trng-4.17
+      -isystem $(top_builddir)/ext/trng-4.17
 endif
 
 noinst_LTLIBRARIES += lib_interface.la
@@ -808,6 +808,7 @@ lib_scheduling_la_CPPFLAGS = \
    -I$(top_srcdir)/src/HLS/binding/interconnection \
    -I$(top_srcdir)/src/HLS/binding/module \
    -I$(top_srcdir)/src/HLS/binding/register \
+   -I$(top_srcdir)/src/HLS/function_allocation \
    -I$(top_srcdir)/src/HLS/memory \
    -I$(top_srcdir)/src/HLS/scheduling \
    -I$(top_srcdir)/src/HLS/stg \
@@ -1006,10 +1007,10 @@ if BUILD_LIB_VCD
       -I$(top_srcdir)/src/HLS/vcd
 endif
 if BUILD_BEAGLE
-  lib_HLS_la_CPPFLAGS += -I$(BEAGLE_DIR)/beagle/include/  \
-                         -I$(top_builddir)/ext/beagle/beagle/include/ \
-                         -I$(BEAGLE_DIR)/beagle/GA/include/ \
-                         -I$(BEAGLE_DIR)/PACC
+  lib_HLS_la_CPPFLAGS += -isystem $(BEAGLE_DIR)/beagle/include/  \
+                         -isystem $(top_builddir)/ext/beagle/beagle/include/ \
+                         -isystem $(BEAGLE_DIR)/beagle/GA/include/ \
+                         -isystem $(BEAGLE_DIR)/PACC
 endif
 if BUILD_LIB_ILP
   lib_HLS_la_CPPFLAGS += \

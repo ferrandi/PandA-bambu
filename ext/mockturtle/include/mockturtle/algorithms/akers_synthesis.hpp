@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,7 +27,12 @@
   \file akers_synthesis.hpp
   \brief Akers synthesis
 
+  \author Alessandro Tempia Calvino
   \author Eleonora Testa
+  \author Heinz Riener
+  \author Marcel Walter
+  \author Mathias Soeken
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -815,12 +820,10 @@ signal<Ntk> akers_synthesis( Ntk& ntk, kitty::dynamic_truth_table const& func, k
 
   if ( is_const0( func ) )
     return ntk.get_constant( 0 );
-  auto tt_1 = func;
-  unary_not( tt_1 );
+  auto tt_1 = unary_not( func );
   if ( is_const0( tt_1 ) )
     return ntk.get_constant( 1 );
 
-  tt_1 = func;
   for ( auto i = 0u; i < func.num_vars(); i++ )
   {
     create_nth_var( tt_1, i );
@@ -829,7 +832,7 @@ signal<Ntk> akers_synthesis( Ntk& ntk, kitty::dynamic_truth_table const& func, k
     {
       return it;
     }
-    unary_not( tt_1 );
+    tt_1 = unary_not( tt_1 );
     if ( tt_1 == func )
     {
       return !it;

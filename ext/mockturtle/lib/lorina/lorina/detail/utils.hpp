@@ -1,5 +1,5 @@
 /* lorina: C++ parsing library
- * Copyright (C) 2017-2018  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -54,6 +54,50 @@ namespace lorina
 
 namespace detail
 {
+
+/* https://stackoverflow.com/questions/6089231/getting-std-ifstream-to-handle-lf-cr-and-crlf */
+inline std::istream& getline( std::istream& is, std::string& t )
+{
+  t.clear();
+
+  /* The characters in the stream are read one-by-one using a std::streambuf.
+   * That is faster than reading them one-by-one using the std::istream.
+   * Code that uses streambuf this way must be guarded by a sentry object.
+   * The sentry object performs various tasks,
+   * such as thread synchronization and updating the stream state.
+   */
+
+  std::istream::sentry se( is, true );
+  std::streambuf* sb = is.rdbuf();
+
+  for ( ;; )
+  {
+    int const c = sb->sbumpc();
+    switch ( c )
+    {
+    /* deal with file endings */
+    case '\n':
+      return is;
+    case '\r':
+      if ( sb->sgetc() == '\n' )
+      {
+        sb->sbumpc();
+      }
+      return is;
+
+    /* handle the case when the last line has no line ending */
+    case std::streambuf::traits_type::eof():
+      if ( t.empty() )
+      {
+        is.setstate( std::ios::eofbit );
+      }
+      return is;
+
+    default:
+      t += (char)c;
+    }
+  }
+}
 
 /* std::apply in C++14 taken from https://stackoverflow.com/a/36656413 */
 template<typename Function, typename Tuple, size_t ... I>
@@ -209,7 +253,7 @@ inline void foreach_line_in_file_escape( std::istream& in, const std::function<b
 {
   std::string line, line2;
 
-  while ( getline( in, line ) )
+  while ( !getline( in, line ).eof() )
   {
     trim( line );
 
@@ -217,9 +261,12 @@ inline void foreach_line_in_file_escape( std::istream& in, const std::function<b
     {
       line.pop_back();
       trim( line );
+
+      /* check if failbit has been set */
       if ( !getline( in, line2 ) )
       {
         assert( false );
+        std::abort();
       }
       line += line2;
     }

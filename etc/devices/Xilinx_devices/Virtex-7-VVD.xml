@@ -112,7 +112,7 @@
       <cmd name="  close $ofile_report"/>
       <cmd name="}; #END PROC"/>
       <!--Let's start with the real job -->
-      <cmd name="set_param general.maxThreads 1"/>
+      <cmd name="set_param general.maxThreads 1" condition="!${__parallel_backend__}"/>
       <cmd name="set outputDir ${__vivado_outdir__}"/>
       <cmd name="file mkdir $outputDir"/>
       <cmd name="create_project ${__top_id__} -part ${__target_device__} -force"/>
@@ -221,7 +221,7 @@
       <cmd name="  close $ofile_report"/>
       <cmd name="}; #END PROC"/>
       <!--Let's start with the real job -->
-      <cmd name="set_param general.maxThreads 1"/>
+      <cmd name="set_param general.maxThreads 1" condition="!${__parallel_backend__}"/>
       <cmd name="set outputDir ${__vivado_outdir__}"/>
       <cmd name="file mkdir $outputDir"/>
       <cmd name="create_project ${__top_id__} -part ${__target_device__} -force"/>

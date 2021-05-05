@@ -136,31 +136,28 @@ void HLSCWriter::WriteHeader()
    indented_output_stream->Append("#endif\n\n");
    indented_output_stream->Append("#include <sys/types.h>\n");
 
-   if(flag_cpp)
+   // get the root function to be tested by the testbench
+   const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
+   THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
+   const auto function_id = *(top_function_ids.begin());
+   auto fnode = TM->get_tree_node_const(function_id);
+   auto fd = GetPointer<function_decl>(fnode);
+   std::string fname;
+   tree_helper::get_mangled_fname(fd, fname);
+   auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
+   if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
    {
-      // get the root function to be tested by the testbench
-      const auto top_function_ids = AppM->CGetCallGraphManager()->GetRootFunctions();
-      THROW_ASSERT(top_function_ids.size() == 1, "Multiple top function");
-      const auto function_id = *(top_function_ids.begin());
-      auto fnode = TM->get_tree_node_const(function_id);
-      auto fd = GetPointer<function_decl>(fnode);
-      std::string fname;
-      tree_helper::get_mangled_fname(fd, fname);
-      auto& DesignInterfaceInclude = hls_c_backend_information->HLSMgr->design_interface_typenameinclude;
-      if(DesignInterfaceInclude.find(fname) != DesignInterfaceInclude.end())
+      CustomOrderedSet<std::string> includes;
+      const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
+      for(const auto& argInclude : DesignInterfaceArgsInclude)
       {
-         CustomOrderedSet<std::string> includes;
-         const auto& DesignInterfaceArgsInclude = DesignInterfaceInclude.find(fname)->second;
-         for(auto argInclude : DesignInterfaceArgsInclude)
+         includes.insert(argInclude.second);
+      }
+      for(const auto& inc : includes)
+      {
+         if(inc != "")
          {
-            includes.insert(argInclude.second);
-         }
-         for(auto inc : includes)
-         {
-            if(inc != "")
-            {
-               indented_output_stream->Append("#include \"" + inc + "\"\n");
-            }
+            indented_output_stream->Append("#include \"" + inc + "\"\n");
          }
       }
       indented_output_stream->Append("\n");
@@ -395,27 +392,6 @@ void HLSCWriter::WriteParamDecl(const BehavioralHelperConstRef behavioral_helper
          {
             var_pp_functorRef var_functor = var_pp_functorRef(new std_var_pp_functor(behavioral_helper));
             std::string type_declaration = tree_helper::print_type(TM, type_id, false, false, false, p, var_functor);
-            if(flag_cpp)
-            {
-               bool reference_type_p = false;
-               tree_nodeRef pt_node = TM->get_tree_node_const(type_id);
-               if(pt_node->get_kind() == pointer_type_K)
-               {
-                  reference_type_p = false;
-               }
-               else if(pt_node->get_kind() == reference_type_K)
-               {
-                  reference_type_p = true;
-               }
-               else
-               {
-                  THROW_ERROR("A pointer type is expected");
-               }
-               if(reference_type_p)
-               {
-                  boost::replace_all(type_declaration, "/*&*/*", "");
-               }
-            }
             indented_output_stream->Append(type_declaration + ";\n");
          }
          else
@@ -569,35 +545,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    const unsigned int function_index = behavioral_helper->get_function_index();
    const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(function_index);
 
-   std::string function_name;
-
-   if(flag_cpp)
-   {
-      tree_nodeRef fd_node = TM->get_tree_node_const(function_index);
-      auto* fd = GetPointer<function_decl>(fd_node);
-      std::string simple_name;
-      tree_nodeRef id_name = GET_NODE(fd->name);
-      if(id_name->get_kind() == identifier_node_K)
-      {
-         auto* in = GetPointer<identifier_node>(id_name);
-         if(!in->operator_flag)
-         {
-            simple_name = in->strg;
-         }
-      }
-      if(simple_name != "")
-      {
-         function_name = simple_name;
-      }
-      else
-      {
-         function_name = behavioral_helper->get_function_name();
-      }
-   }
-   else
-   {
-      function_name = behavioral_helper->get_function_name();
-   }
+   std::string function_name = behavioral_helper->get_function_name();
    // avoid collision with the main
    if(function_name == "main")
    {
@@ -656,6 +604,7 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
    if(function_name != "system")
    {
       bool is_first_argument = true;
+      unsigned par_index = 0;
       for(const auto& p : behavioral_helper->get_parameters())
       {
          if(!is_first_argument)
@@ -666,8 +615,23 @@ void HLSCWriter::WriteTestbenchFunctionCall(const BehavioralHelperConstRef behav
          {
             is_first_argument = false;
          }
+         if(flag_cpp && behavioral_helper->is_a_pointer(p))
+         {
+            auto fnode = TM->get_tree_node_const(behavioral_helper->get_function_index());
+            auto fd = GetPointer<function_decl>(fnode);
+            std::string fname;
+            tree_helper::get_mangled_fname(fd, fname);
+            const auto& DesignInterfaceTypenameOrig = hls_c_backend_information->HLSMgr->design_interface_typename_orig_signature;
+            if(DesignInterfaceTypenameOrig.find(fname) != DesignInterfaceTypenameOrig.end())
+            {
+               indented_output_stream->Append("(");
+               indented_output_stream->Append(DesignInterfaceTypenameOrig.find(fname)->second.at(par_index));
+               indented_output_stream->Append(") ");
+            }
+         }
          std::string param = behavioral_helper->PrintVariable(p);
          indented_output_stream->Append(param);
+         ++par_index;
       }
    }
    else
@@ -699,7 +663,8 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
    std::string fname;
    tree_helper::get_mangled_fname(fd, fname);
    auto& DesignInterfaceTypename = hls_c_backend_information->HLSMgr->design_interface_typename;
-   bool hasInterface = flag_cpp && DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
+   bool hasInterface = DesignInterfaceTypename.find(fname) != DesignInterfaceTypename.end();
+   bool is_fortran = (Param->isOption(OPT_input_format) && Param->getOption<Parameters_FileFormat>(OPT_input_format) == Parameters_FileFormat::FF_FORTRAN);
 
    const unsigned int return_type_index = behavioral_helper->GetFunctionReturnType(behavioral_helper->get_function_index());
 
@@ -714,46 +679,46 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          {
             test_v = curr_test_vector.find(param)->second;
          }
-
-         /// FIXME: for c++ code the old code is still used
-         if(flag_cpp or interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         bool reference_type_p = false;
+         unsigned int base_type = tree_helper::get_type_index(TM, p);
+         auto pt_node = TM->CGetTreeNode(base_type);
+         if(pt_node->get_kind() == pointer_type_K)
          {
-            bool reference_type_p = false;
-            std::vector<std::string> splitted = SplitString(test_v, ",");
-
-            unsigned int base_type = tree_helper::get_type_index(TM, p);
-            tree_nodeRef pt_node = TM->get_tree_node_const(base_type);
-            if(pt_node->get_kind() == pointer_type_K)
-            {
-               reference_type_p = false;
-               base_type = GET_INDEX_NODE(GetPointer<pointer_type>(pt_node)->ptd);
-            }
-            else if(pt_node->get_kind() == reference_type_K)
+            reference_type_p = false;
+            base_type = GET_INDEX_NODE(GetPointerS<const pointer_type>(pt_node)->ptd);
+         }
+         else if(pt_node->get_kind() == reference_type_K)
+         {
+            reference_type_p = !is_fortran;
+            base_type = GET_INDEX_NODE(GetPointerS<const reference_type>(pt_node)->refd);
+         }
+         else
+         {
+            THROW_ERROR("A pointer type is expected");
+         }
+         unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
+         bool is_acType = false;
+         if(flag_cpp && hasInterface)
+         {
+            auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
+            if((*argTypename.rbegin()) != '*')
             {
                reference_type_p = true;
-               base_type = GET_INDEX_NODE(GetPointer<reference_type>(pt_node)->refd);
             }
-            else
+            bool is_signed, is_fixed;
+            auto acTypeBw = ac_type_bitwidth(argTypename, is_signed, is_fixed);
+            if(acTypeBw)
             {
-               THROW_ERROR("A pointer type is expected");
+               base_type_bitsize = acTypeBw;
+               is_acType = true;
             }
-            unsigned int base_type_bitsize = tree_helper::size(TM, base_type);
-            if(hasInterface)
-            {
-               auto argTypename = DesignInterfaceTypename.find(fname)->second.find(param)->second;
-               if((*argTypename.rbegin()) != '*')
-               {
-                  reference_type_p = true;
-               }
-               bool is_signed, is_fixed;
-               auto acTypeBw = ac_type_bitwidth(argTypename, is_signed, is_fixed);
-               if(acTypeBw)
-               {
-                  base_type_bitsize = acTypeBw;
-               }
-            }
+         }
 
-            if((behavioral_helper->is_real(base_type) || behavioral_helper->is_a_struct(base_type) || behavioral_helper->is_an_union(base_type)))
+         if(interface_type == HLSFlowStep_Type::INFERRED_INTERFACE_GENERATION)
+         {
+            std::vector<std::string> splitted = SplitString(test_v, ",");
+
+            if(behavioral_helper->is_real(base_type) || is_acType)
             {
                if(splitted.size() == 1 && flag_cpp && reference_type_p)
                {
@@ -861,20 +826,25 @@ void HLSCWriter::WriteExpectedResults(const BehavioralHelperConstRef behavioral_
          else
          {
             /// Retrieve the space to be reserved in memory
-            const unsigned int base_type = tree_helper::get_type_index(TM, p);
-            const auto pt_node = tree_helper::CGetPointedType(TM->CGetTreeNode(base_type));
+            const auto pointedType_node = tree_helper::CGetPointedType(pt_node);
             const auto reserved_mem_bytes = hls_c_backend_information->HLSMgr->RSim->param_mem_size.at(v_idx).at(p);
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Reserved memory " + STR(reserved_mem_bytes) + " bytes");
-            const auto element_size = tree_helper::Size(pt_node) / 8;
+            const auto element_size = tree_helper::Size(pointedType_node) / 8;
             THROW_ASSERT(reserved_mem_bytes % element_size == 0, STR(reserved_mem_bytes) + "/" + STR(element_size));
             const auto num_elements = reserved_mem_bytes / element_size;
             THROW_ASSERT(num_elements, STR(reserved_mem_bytes) + "/" + STR(element_size));
             indented_output_stream->Append("{\n");
             indented_output_stream->Append("int i0;\n");
-            indented_output_stream->Append("for(i0 = 0; i0 < " + STR(num_elements) + "; i0++)\n");
-            indented_output_stream->Append("{\n");
-            WriteParamInMemory(behavioral_helper, param + "[i0]", pt_node->index, 1, false);
-            indented_output_stream->Append("}\n");
+            if(num_elements > 1 || !reference_type_p)
+            {
+               indented_output_stream->Append("for(i0 = 0; i0 < " + STR(num_elements) + "; i0++)\n");
+               indented_output_stream->Append("{\n");
+            }
+            WriteParamInMemory(behavioral_helper, param + (reference_type_p ? "" : "[i0]"), pointedType_node->index, 1, false);
+            if(num_elements > 1 || !reference_type_p)
+            {
+               indented_output_stream->Append("}\n");
+            }
             indented_output_stream->Append("fprintf(__bambu_testbench_fp, \"e\\n\");\n");
             indented_output_stream->Append("}\n");
          }

@@ -14,4 +14,6 @@ The following example shows how to collapse a mapped network into a
    const auto klut = collapse_mapped_network<klut_network>( mapped_aig );
    write_bench( klut, "/tmp/test.bench" );
 
-.. doxygenfunction:: mockturtle::collapse_mapped_network
+.. doxygenfunction:: mockturtle::collapse_mapped_network(NtkDest&, NtkSource const&)
+.. doxygenfunction:: mockturtle::collapse_mapped_network(NtkSource const&)
+

@@ -1608,17 +1608,18 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          }
          return _version->ieee_format();
       }
-      if(fn_fd->builtin_flag || fn_fd->index == mcpy_id || fn_fd->index == mset_id)
+      const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
+      const auto ff_it = funcFF.find(fn_v);
+      if(ff_it != funcFF.end())
+      {
+         return ff_it->second->internal && _version->ieee_format() == ff_it->second->ieee_format();
+      }
+      else if(fn_fd->builtin_flag || fn_fd->index == mcpy_id || fn_fd->index == mset_id)
       {
          return _version->ieee_format();
       }
-      else
-      {
-         const auto fn_v = AppM->CGetCallGraphManager()->GetVertex(GET_INDEX_CONST_NODE(fn));
-         THROW_ASSERT(static_cast<bool>(funcFF.count(fn_v)), "Called function should have been already computed.");
-         const auto& fn_FF = funcFF.at(fn_v);
-         return fn_FF->internal && _version->ieee_format() == fn_FF->ieee_format();
-      }
+      THROW_UNREACHABLE("");
+      return false;
    };
    const auto ExaminateFunctionCall = [&](tree_nodeRef fn) -> int {
       const auto ae = GetPointer<addr_expr>(GET_NODE(fn));
@@ -1701,7 +1702,6 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                }
                return func;
             }();
-            std::cout << "Searching function " << fname << std::endl;
             if(supported_libm_calls.count(tf_fname))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");

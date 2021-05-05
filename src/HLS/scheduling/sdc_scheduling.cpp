@@ -570,13 +570,17 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
       const bb_vertex_order_by_map comp_i(bb_map_levels);
       std::set<vertex, bb_vertex_order_by_map> loop_bbs(comp_i);
       OpVertexSet loop_operations(op_graph);
+      CustomUnorderedSet<vertex> Loop_operations;
       VertexIterator bb, bb_end;
       for(boost::tie(bb, bb_end) = boost::vertices(*basic_block_graph); bb != bb_end; bb++)
       {
          if(basic_block_graph->CGetBBNodeInfo(*bb)->loop_id == loop_id)
          {
             loop_bbs.insert(*bb);
-            loop_operations.insert(basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.begin(), basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.end());
+            auto vit = basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.begin();
+            auto vit_end = basic_block_graph->CGetBBNodeInfo(*bb)->statements_list.end();
+            loop_operations.insert(vit, vit_end);
+            Loop_operations.insert(vit, vit_end);
          }
       }
       /// FIXME: for the moment the considered graph contains control dependence edges
@@ -701,7 +705,7 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
                           loop_bbs);
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Added delay constraint");
       INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->Adding sorting constraint");
-      const ASLAPRef aslap(new ASLAP(HLSMgr, HLS, true, loop_operations, parameters, 1000));
+      const ASLAPRef aslap(new ASLAP(HLSMgr, HLS, true, Loop_operations, parameters, 1000));
       aslap->compute_ASAP();
       aslap->compute_ALAP(ASLAP::ALAP_fast);
       SDCSorter sdc_sorter = SDCSorter(aslap->CGetASAP(), aslap->CGetALAP(), FB, filtered_op_graph, loop_bbs, parameters);
@@ -1296,33 +1300,34 @@ DesignFlowStep_Status SDCScheduling::InternalExec()
          for(const auto loop_operation : basic_block_graph->CGetBBNodeInfo(loop_bb)->statements_list)
          {
             INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Checking if " + GET_NAME(filtered_op_graph, loop_operation) + " has to be moved");
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_IF | TYPE_MULTIIF)) != 0)
+            auto curr_vertex_type = GET_TYPE(filtered_op_graph, loop_operation);
+            if((curr_vertex_type & (TYPE_IF | TYPE_MULTIIF)) != 0)
             {
                /// IF is not a barrier for controlled operations
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & TYPE_PHI) != 0)
+            if((curr_vertex_type & TYPE_PHI) != 0)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_SWITCH | TYPE_RET | TYPE_VPHI | TYPE_LAST_OP | TYPE_LABEL)) != 0)
+            if((curr_vertex_type & (TYPE_SWITCH | TYPE_RET | TYPE_VPHI | TYPE_LAST_OP | TYPE_LABEL)) != 0)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_STORE)) != 0)
+            if((curr_vertex_type & (TYPE_STORE)) != 0)
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
-            if((GET_TYPE(filtered_op_graph, loop_operation) & (TYPE_EXTERNAL)) != 0)
+            if((curr_vertex_type & TYPE_EXTERNAL) && (curr_vertex_type & TYPE_RW))
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;
             }
             /// Loads which do not have resource limitation can be moved but not speculated; speculation should be prevented by control edges
-            if(((GET_TYPE(filtered_op_graph, loop_operation) & TYPE_LOAD) != 0) and limited_resources.find(allocation_information->GetFuType(loop_operation)) != limited_resources.end())
+            if(((curr_vertex_type & TYPE_LOAD) != 0) and limited_resources.find(allocation_information->GetFuType(loop_operation)) != limited_resources.end())
             {
                bb_barrier[loop_operation].insert(loop_bb);
                continue;

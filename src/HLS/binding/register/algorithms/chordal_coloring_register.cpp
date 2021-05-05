@@ -157,14 +157,14 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
       }
       THROW_ASSERT(found, "maximal not found");
       seq[vx_index] = i;
-      cg_vertex_descriptor vx = boost::vertex(vx_index, cg);
+      cg_vertex_descriptor vx = boost::vertex(vx_index, *cg);
       vertex_order[i] = vx;
       // for each unnumbered vertex v adjacent to vx
       // label(v)=label(v) + i
       boost::graph_traits<conflict_graph>::adjacency_iterator adj_i, adj_e;
-      for(boost::tie(adj_i, adj_e) = boost::adjacent_vertices(vx, cg); adj_i != adj_e; ++adj_i)
+      for(boost::tie(adj_i, adj_e) = boost::adjacent_vertices(vx, *cg); adj_i != adj_e; ++adj_i)
       {
-         long unsigned int vindex = get(boost::vertex_index, cg, *adj_i);
+         long unsigned int vindex = get(boost::vertex_index, *cg, *adj_i);
          if(seq[vindex] == NO_ORDER)
          {
             bool add;
@@ -186,7 +186,7 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
    }
 
    /// sequential vertex coloring based on left edge sorting
-   cg_vertices_size_type num_colors = boost::sequential_vertex_coloring(cg, boost::make_iterator_property_map(vertex_order.begin(), boost::identity_property_map(), boost::graph_traits<conflict_graph>::null_vertex()), color);
+   cg_vertices_size_type num_colors = boost::sequential_vertex_coloring(*cg, boost::make_iterator_property_map(vertex_order.begin(), boost::identity_property_map(), boost::graph_traits<conflict_graph>::null_vertex()), color);
 
    /// finalize
    HLS->Rreg = reg_bindingRef(new reg_binding(HLS, HLSMgr));
@@ -200,9 +200,10 @@ DesignFlowStep_Status chordal_coloring_register::InternalExec()
       for(auto k = live.begin(); k != k_end; ++k)
       {
          unsigned int storage_value_index = HLS->storage_value_information->get_storage_value_index(*vIt, *k);
-         HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[boost::vertex(storage_value_index, cg)]));
+         HLS->Rreg->bind(storage_value_index, static_cast<unsigned int>(color[boost::vertex(storage_value_index, *cg)]));
       }
    }
+   delete cg;
    HLS->Rreg->set_used_regs(static_cast<unsigned int>(num_colors));
    if(output_level >= OUTPUT_LEVEL_MINIMUM and output_level <= OUTPUT_LEVEL_PEDANTIC)
    {

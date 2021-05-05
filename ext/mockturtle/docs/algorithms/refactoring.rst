@@ -23,14 +23,14 @@ XOR gates are considered "for free".
 
 .. code-block:: c++
 
-template<class Ntk>
-struct free_xor_cost
-{
-  uint32_t operator()( Ntk const& ntk, node<Ntk> const& n ) const
-  {
-    return ntk.is_xor( n ) ? 0 : 1;
-  }
-};
+   template<class Ntk>
+   struct free_xor_cost
+   {
+     uint32_t operator()( Ntk const& ntk, node<Ntk> const& n ) const
+     {
+       return ntk.is_xor( n ) ? 0 : 1;
+     }
+   };
 
    SomeResynthesisClass resyn;
    refactoring( ntk, resyn, free_xor_cost<Ntk>());

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file extract_linear.hpp
   \brief Extract linear subcircuit in XAGs
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -98,6 +99,7 @@ extract_linear_circuit( xag_network const& xag )
   } );
   for ( auto const& [a, b, _] : and_tuples )
   {
+    (void)_;
     dest.create_po( a );
     dest.create_po( b );
   }

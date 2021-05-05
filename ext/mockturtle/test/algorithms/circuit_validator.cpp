@@ -5,6 +5,7 @@
 #include <mockturtle/networks/xag.hpp>
 #include <mockturtle/networks/mig.hpp>
 #include <mockturtle/views/fanout_view.hpp>
+#include <mockturtle/utils/index_list.hpp>
 #include <bill/sat/interface/abc_bsat2.hpp>
 
 using namespace mockturtle;
@@ -71,12 +72,13 @@ TEST_CASE( "Validating with non-existing circuit", "[validator]" )
 
   circuit_validator v( aig );
 
-  circuit_validator<aig_network>::gate::fanin gi1{0, true};
-  circuit_validator<aig_network>::gate::fanin gi2{1, true};
-  circuit_validator<aig_network>::gate g{{gi1, gi2}, circuit_validator<aig_network>::gate_type::AND};
+  xag_index_list id_list;
+  id_list.add_inputs( 2 );
+  id_list.add_and( 3, 5 );
+  id_list.add_output( 6 );
 
-  CHECK( *( v.validate( f3, {aig.get_node( f1 ), aig.get_node( f2 )}, {g}, true ) ) == true );
-  CHECK( *( v.validate( aig.get_node( f3 ), {aig.get_node( f1 ), aig.get_node( f2 )}, {g}, false ) ) == true );
+  CHECK( *( v.validate( f3, {aig.get_node( f1 ), aig.get_node( f2 )}, id_list, true ) ) == true );
+  CHECK( *( v.validate( aig.get_node( f3 ), {aig.get_node( f1 ), aig.get_node( f2 )}, id_list, false ) ) == true );
 }
 
 TEST_CASE( "Validating after circuit update", "[validator]" )

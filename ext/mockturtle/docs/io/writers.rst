@@ -1,6 +1,15 @@
 Write into file formats
 -----------------------
 
+Write into AIGER files
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/io/write_aiger.hpp``
+
+.. doxygenfunction:: mockturtle::write_aiger(Ntk const&, std::string const&)
+
+.. doxygenfunction:: mockturtle::write_aiger(Ntk const&, std::ostream&)
+
 Write into BENCH files
 ~~~~~~~~~~~~~~~~~~~~~~
 
@@ -9,6 +18,15 @@ Write into BENCH files
 .. doxygenfunction:: mockturtle::write_bench(Ntk const&, std::string const&)
 
 .. doxygenfunction:: mockturtle::write_bench(Ntk const&, std::ostream&)
+
+Write into BLIF files
+~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/io/write_blif.hpp``
+
+.. doxygenfunction:: mockturtle::write_blif(Ntk const&, std::string const&)
+
+.. doxygenfunction:: mockturtle::write_blif(Ntk const&, std::ostream&)
 
 Write into structural Verilog files
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -36,3 +54,12 @@ Write into DOT files (Graphviz)
 .. doxygenfunction:: mockturtle::write_dot(Ntk const&, std::string const&, Drawer const&)
 
 .. doxygenfunction:: mockturtle::write_dot(Ntk const&, std::ostream&, Drawer const&)
+
+Write simulation patterns into file
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Header:** ``mockturtle/io/write_patterns.hpp``
+
+.. doxygenfunction:: mockturtle::write_patterns(partial_simulator const&, std::string const&)
+
+.. doxygenfunction:: mockturtle::write_patterns(partial_simulator const&, std::ostream&)
