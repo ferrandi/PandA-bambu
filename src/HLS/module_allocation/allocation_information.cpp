@@ -2891,7 +2891,7 @@ double AllocationInformation::get_correction_time(unsigned int fu, const std::st
       }
       else
       {
-         double sv_delay = cur_sv_exec_time - setup_time;
+         double sv_delay = cur_sv_exec_time - 2 * setup_time;
          double correction = sv_delay;
          res_value = res_value + correction;
       }
