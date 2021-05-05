@@ -5918,3 +5918,10 @@ inline void glucose_print_stats(Gluco::SimpSolver& s, abctime clk)
 ////////////////////////////////////////////////////////////////////////
 
 ABC_NAMESPACE_IMPL_END
+
+#undef SAT_USE_ANALYZE_FINAL
+#undef L_IND
+#undef L_ind
+#undef L_LIT
+#undef L_lit
+#undef USE_SIMP_SOLVER

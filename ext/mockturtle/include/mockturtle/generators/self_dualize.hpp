@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -28,6 +28,7 @@
   \brief Self-dualize a logic network
 
   \author Heinz Riener
+  \author Mathias Soeken
 */
 
 #include "../networks/aig.hpp"
@@ -70,12 +71,13 @@ aig_network self_dualize_aig( aig_network const& src_aig )
       node_to_signal_two[n] = !pi;
     });
 
-  reconv_cut_params ps;
-  ps.cut_size = 99999999u;
-  src_aig.foreach_po( [&]( const auto& f ){
-      reconv_cut cutgen( ps );
+  reconvergence_driven_cut_parameters ps;
+  ps.max_leaves = 99999999u;
+  reconvergence_driven_cut_statistics st;
+  detail::reconvergence_driven_cut_impl<aig_network, false, false> cut_generator( src_aig, ps, st );
 
-      auto leaves = cutgen( src_aig, src_aig.get_node( f ) );
+  src_aig.foreach_po( [&]( const auto& f ){
+      auto leaves = cut_generator.run( { src_aig.get_node( f ) } ).first;
       std::sort( std::begin( leaves ), std::end( leaves ) );
 
       /* check if all leaves are pis */

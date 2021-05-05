@@ -138,7 +138,7 @@ namespace boost
          for(i = 0; i < num_node; i++)
          {
             Vertex v = boost::vertex(i, G);
-            DegreeCount[i] = degree(v, _G);
+            DegreeCount[i] = out_degree(v, _G);
             heap_container[iheap] = i;
             iheap++;
          }

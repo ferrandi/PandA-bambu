@@ -132,7 +132,7 @@ DesignFlowStep_Status InitializeHLS::InternalExec()
 #endif
    {
       HLS->controller_type = static_cast<HLSFlowStep_Type>(parameters->getOption<int>(OPT_controller_architecture));
-      if(HLSMgr->GetFunctionBehavior(funId)->build_simple_pipeline())
+      if(HLSMgr->GetFunctionBehavior(funId)->is_simple_pipeline())
       {
          HLS->controller_type = HLSFlowStep_Type::PIPELINE_CONTROLLER_CREATOR;
       }

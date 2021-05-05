@@ -323,7 +323,7 @@ class AllocationInformation : public HLSFunctionIR
    CustomSet<unsigned int> ComputeDrivenCondExpr(const unsigned int ssa) const;
 
    /**
-    * Compute the values for the initialization of the multiplxer characteristics database
+    * Compute the values for the initialization of the multiplexer characteristics database
     * @param allocation_information is a reference to an instance of this class
     * @return the pair mux_timing_db, mux_area_db
     */

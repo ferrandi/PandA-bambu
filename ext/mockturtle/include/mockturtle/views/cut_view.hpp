@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,8 @@
   \file cut_view.hpp
   \brief Implements an isolated view on a single cut in a network
 
+  \author Bruno Schmitt
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -37,8 +39,9 @@
 #include <type_traits>
 #include <vector>
 
+#include <parallel_hashmap/phmap.h>
+
 #include "../networks/detail/foreach.hpp"
-#include "../utils/include/spp.hpp"
 #include "../traits.hpp"
 #include "immutable_view.hpp"
 
@@ -216,7 +219,7 @@ public:
   unsigned _num_constants{1};
   unsigned _num_leaves{0};
   std::vector<node> _nodes;
-  spp::sparse_hash_map<node, uint32_t> _node_to_index;
+  phmap::flat_hash_map<node, uint32_t> _node_to_index;
   signal _root;
 };
 

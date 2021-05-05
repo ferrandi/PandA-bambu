@@ -406,3 +406,11 @@ ext/mockturtle/lib/abcsat/abc
 ext/abseil-cpp
 /usr/local/llvm-10.0.0/include
 
+ext/mockturtle/lib/abcresub/abcresub
+ext/mockturtle/lib/parallel_hashmap/parallel_hashmap
+ext/mockturtle/lib/bill/bill/sat
+ext/mockturtle/lib/bill/bill/sat/interface
+ext/mockturtle/lib/bill/bill/sat/solver
+ext/mockturtle/lib/bill/bill/sat/solver/abc
+ext/mockturtle/lib/bill/bill/utils
+ext/mockturtle/lib/bill/bill/dd

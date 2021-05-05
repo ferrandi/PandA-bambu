@@ -24,7 +24,7 @@ lib_technology_la_LIBADD =
 
 if BUILD_LIBERTY_PARSER
    lib_technology_la_CPPFLAGS += \
-      -I$(top_srcdir)/ext/liberty_parser
+      -isystem $(top_srcdir)/ext/liberty_parser
 endif
 
 if BUILD_LIB_TARGET

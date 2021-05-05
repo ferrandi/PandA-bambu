@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -156,6 +156,18 @@ public:
 
     auto r = signals_[rhs.first];
     signals_[lhs] = rhs.second ? ntk_.create_not( r ) : r;
+  }
+
+  void on_nand( const std::string& lhs, const std::pair<std::string, bool>& op1, const std::pair<std::string, bool>& op2 ) const override
+  {
+    if ( signals_.find( op1.first ) == signals_.end()  )
+      std::cerr << fmt::format( "[w] undefined signal {} assigned 0", op1.first ) << std::endl;
+    if ( signals_.find( op2.first ) == signals_.end()  )
+      std::cerr << fmt::format( "[w] undefined signal {} assigned 0", op2.first ) << std::endl;
+
+    auto a = signals_[op1.first];
+    auto b = signals_[op2.first];
+    signals_[lhs] = ntk_.create_nand( op1.second ? ntk_.create_not( a ) : a, op2.second ? ntk_.create_not( b ) : b );
   }
 
   void on_and( const std::string& lhs, const std::pair<std::string, bool>& op1, const std::pair<std::string, bool>& op2 ) const override

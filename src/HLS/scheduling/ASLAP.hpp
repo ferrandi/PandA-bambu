@@ -111,6 +111,9 @@ class ASLAP
 
    /// multiplier used to take into account chaining during asap/alap computation
    unsigned int ctrl_step_multiplier;
+
+   /// relevant vertex for the aslap scheduling
+   const CustomUnorderedSet<vertex>& operations;
    /**
     * Modify the ALAP scheduling taking into account also technology constraints.
     * @param ALL is the allocation manager.
@@ -182,7 +185,7 @@ class ASLAP
     * @param beh_graph is the graph on which asap and alap is computed.
     * @param parameters is the set of input parameters
     */
-   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS, const bool speculation, const OpVertexSet& operations, const ParameterConstRef parameters, unsigned int _ctrl_step_multiplier);
+   ASLAP(const HLS_managerConstRef hls_manager, const hlsRef HLS, const bool speculation, const CustomUnorderedSet<vertex>& operations, const ParameterConstRef parameters, unsigned int _ctrl_step_multiplier);
 
    /**
     * Destructor.

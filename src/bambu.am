@@ -82,10 +82,10 @@ if BUILD_BEAGLE
         -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration \
         -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/common \
         -I$(top_srcdir)/src/HLS/hls_flow/design_space_exploration/GA \
-        -I$(top_builddir)/ext/beagle/beagle/include/ \
-        -I$(BEAGLE_DIR)/beagle/include/ \
-        -I$(BEAGLE_DIR)/beagle/GA/include/ \
-        -I$(BEAGLE_DIR)/PACC
+        -isystem $(top_builddir)/ext/beagle/beagle/include/ \
+        -isystem $(BEAGLE_DIR)/beagle/include/ \
+        -isystem $(BEAGLE_DIR)/beagle/GA/include/ \
+        -isystem $(BEAGLE_DIR)/PACC
 endif
 if BUILD_LIB_CODE_ESTIMATION
    bambu_CPPFLAGS += \
@@ -101,7 +101,7 @@ endif
 
 if BUILD_TRNG
    bambu_CPPFLAGS += \
-      -I$(top_builddir)/ext/trng-4.17
+      -isystem $(top_builddir)/ext/trng-4.17
 endif
 
 lib_bambu_la_LIBADD += \

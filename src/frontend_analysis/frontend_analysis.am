@@ -237,14 +237,15 @@ if BUILD_BAMBU
      frontend_analysis/IR_analysis/vectorize.cpp \
      frontend_analysis/IR_analysis/virtual_phi_nodes_split.cpp
    lib_IR_analysis_la_CPPFLAGS += \
-      -I$(top_srcdir)/ext/mockturtle/include/\
-      -I$(top_srcdir)/ext/mockturtle/lib/kitty/\
-      -I$(top_srcdir)/ext/mockturtle/lib/fmt/\
-      -I$(top_srcdir)/ext/mockturtle/lib/sparsepp\
-      -I$(top_srcdir)/ext/mockturtle/lib/lorina\
-      -I$(top_srcdir)/ext/mockturtle/lib/rang\
-      -I$(top_srcdir)/ext/mockturtle/lib/percy\
-      -I$(top_srcdir)/ext/mockturtle/lib/abcsat\
+      -isystem $(top_srcdir)/ext/mockturtle/include/\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/kitty/\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/fmt/\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/parallel_hashmap\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/lorina\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/rang\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/percy\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/abcsat\
+      -isystem $(top_srcdir)/ext/mockturtle/lib/bill\
       -I$(top_srcdir)/src/circuit \
       -I$(top_srcdir)/src/design_flows/backend/ToHDL \
       -I$(top_srcdir)/src/design_flows/technology \

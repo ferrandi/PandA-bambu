@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -24,10 +24,12 @@
  */
 
 /*!
-  \file  xag_resub_withDC.hpp
+  \file xag_resub_withDC.hpp
   \brief Resubstitution with free xor (works for XAGs, XOR gates are considered for free)
 
-  \author Eleonora Testa (inspired by aig_resub.hpp from Heinz Riener)
+  \author Eleonora Testa
+  \author Heinz Riener
+  \author Siang-Yun (Sonia) Lee
 */
 
 #pragma once
@@ -960,19 +962,22 @@ void resubstitution_minmc_withDC( Ntk& ntk, resubstitution_params const& ps = {}
   depth_view<Ntk> depth_view{ntk};
   resub_view_t resub_view{depth_view};
 
-  resubstitution_stats st;
-
   using truthtable_t = kitty::dynamic_truth_table;
-  using simulator_t = detail::simulator<resub_view_t, truthtable_t>;
-  using node_mffc_t = detail::node_mffc_inside_xag<Ntk>;
-  using resubstitution_functor_t = xag_resub_functor<resub_view_t, simulator_t, truthtable_t>; 
-  typename resubstitution_functor_t::stats resub_st;
-  detail::resubstitution_impl<resub_view_t, simulator_t, resubstitution_functor_t, truthtable_t, node_mffc_t> p( resub_view, ps, st, resub_st );
+  using mffc_result_t = std::pair<uint32_t, uint32_t>;
+  using resub_impl_t = detail::resubstitution_impl<resub_view_t, typename detail::window_based_resub_engine<resub_view_t, truthtable_t, truthtable_t, xag_resub_functor<resub_view_t, typename detail::window_simulator<resub_view_t, truthtable_t>, truthtable_t>, mffc_result_t>, typename detail::default_divisor_collector<Ntk, typename detail::node_mffc_inside_xag<Ntk>, mffc_result_t>>;
+
+  resubstitution_stats st;
+  typename resub_impl_t::engine_st_t engine_st;
+  typename resub_impl_t::collector_st_t collector_st;
+
+  resub_impl_t p( resub_view, ps, st, engine_st, collector_st );
   p.run();
+
   if ( ps.verbose )
   {
     st.report();
-    resub_st.report();
+    collector_st.report();
+    engine_st.report();
   }
 
   if ( pst )

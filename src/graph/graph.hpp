@@ -107,9 +107,8 @@ struct RawGraph : public boost_raw_graph
    {
       size_t index = boost::num_vertices(*this);
       boost::graph_traits<boost_raw_graph>::vertex_descriptor new_v = boost::add_vertex(*this);
-      boost::property_map<boost_raw_graph, boost::vertex_index_t>::type index_map = boost::get(boost::vertex_index_t(), *this);
       (*this)[new_v] = v_info;
-      index_map[new_v] = index;
+      boost::get(boost::vertex_index_t(), *this)[new_v] = index;
       return new_v;
    };
 
@@ -449,8 +448,7 @@ struct undirected_graphs_collection : public undirected_boost_graphs_collection
    {
       size_t index = boost::num_vertices(*this);
       boost::graph_traits<undirected_boost_graphs_collection>::vertex_descriptor v = boost::add_vertex(*this);
-      boost::property_map<undirected_boost_graphs_collection, boost::vertex_index_t>::type index_map = boost::get(boost::vertex_index_t(), *this);
-      index_map[v] = index;
+      boost::get(boost::vertex_index_t(), *this)[v] = index;
       return v;
    }
 
@@ -668,6 +666,9 @@ struct SelectEdge
    /// The vertices of subgraph
    CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor> subgraph_vertices;
 
+   /// true when the subvertices set is empty
+   bool empty;
+
  public:
    /**
     * Default constructor
@@ -681,7 +682,7 @@ struct SelectEdge
     * @param _selector is the selector of the filtered graph
     * @param _g is the graph
     */
-   SelectEdge(const int _selector, Graph* _g) : selector(_selector), g(_g), subgraph_vertices()
+   SelectEdge(const int _selector, Graph* _g) : selector(_selector), g(_g), subgraph_vertices(), empty(true)
    {
    }
 
@@ -691,14 +692,14 @@ struct SelectEdge
     * @param _g is the graph
     * @param _subgraph_vertices is the set of vertices of the filtered graph
     */
-   SelectEdge(const int _selector, Graph* _g, const CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor>& _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(_subgraph_vertices)
+   SelectEdge(const int _selector, Graph* _g, const CustomUnorderedSet<typename boost::graph_traits<Graph>::vertex_descriptor>& _subgraph_vertices) : selector(_selector), g(_g), subgraph_vertices(_subgraph_vertices), empty(false)
    {
    }
 
    template <typename Edge>
    bool operator()(const Edge& e) const
    {
-      if(subgraph_vertices.empty())
+      if(empty)
       {
          return selector & (*g)[e].selector;
       }
@@ -707,9 +708,9 @@ struct SelectEdge
          typename boost::graph_traits<Graph>::vertex_descriptor u, v;
          u = boost::source(e, *g);
          v = boost::target(e, *g);
-         if(subgraph_vertices.find(v) != subgraph_vertices.end() && subgraph_vertices.find(u) != subgraph_vertices.end())
+         if((selector & (*g)[e].selector) && subgraph_vertices.find(v) != subgraph_vertices.end() && subgraph_vertices.find(u) != subgraph_vertices.end())
          {
-            return selector & (*g)[e].selector;
+            return true;
          }
          else
          {

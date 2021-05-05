@@ -541,8 +541,8 @@ lib_flopocowrapper_la_CPPFLAGS = \
     -I$(top_srcdir)/src/utility \
     -I$(top_srcdir)/src/technology/physical_library \
     -I$(top_srcdir)/src/technology/target_device \
-    -I$(FLOPOCO_OBJDIR) \
-    -I$(FLOPOCO_DIR)/src \
+    -isystem $(FLOPOCO_OBJDIR) \
+    -isystem $(FLOPOCO_DIR)/src \
     $(AM_CPPFLAGS)
   lib_wrapper_la_LIBADD += lib_flopocowrapper.la
 endif

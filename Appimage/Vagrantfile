@@ -26,7 +26,7 @@ Vagrant.configure(2) do |config|
      wget https://github.com/AppImage/AppImageKit/releases/download/12/AppRun-x86_64 
      chmod +x AppRun-x86_64
      wget https://github.com/niess/python-appimage/releases/download/python3.9/python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage
-     chmod +x python3.9.2-cp39-cp39-manylinux1_x86_64.AppImage
+     chmod +x python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage
      ./python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage --appimage-extract
      mv squashfs-root python3.9
      rm -f python3.9.1-cp39-cp39-manylinux1_x86_64.AppImage
@@ -63,7 +63,6 @@ Vagrant.configure(2) do |config|
      cd usr/lib/
      ln -s libbdd.so.0.0.0 libbdd.so.0
      cd ../..
-     cp ../../../AppRun-x86_64 AppRun
      cp ../../style/img/panda.png.in bambu.png
      echo "[Desktop Entry]" > bambu.desktop
      echo "Name=bambu" >> bambu.desktop
@@ -79,7 +78,7 @@ Vagrant.configure(2) do |config|
      echo "if [ \\\"\\\$#\\\" -eq 0 ]; then" >> usr/bin/bambu_wrapper.sh
      echo "    \\\$APPDIR/usr/bin/bambu" >> usr/bin/bambu_wrapper.sh
      echo "else" >> usr/bin/bambu_wrapper.sh
-     echo "   \\\$APPDIR/usr/bin/bambu \\\$@ --range-analysis-mode=skip --compiler=I386_CLANG6" >> usr/bin/bambu_wrapper.sh
+     echo "   \\\$APPDIR/usr/bin/bambu \\\$@ --compiler=I386_CLANG6" >> usr/bin/bambu_wrapper.sh
      echo "   return_value=\\\$?" >> usr/bin/bambu_wrapper.sh
      echo "   if test \\\$return_value != 0; then" >> usr/bin/bambu_wrapper.sh
      echo "      exit \\\$return_value" >> usr/bin/bambu_wrapper.sh
@@ -88,6 +87,9 @@ Vagrant.configure(2) do |config|
      echo "fi" >> usr/bin/bambu_wrapper.sh
      chmod +x usr/bin/bambu_wrapper.sh
      tar xvf ../../../python3.9.tar.xz
+     cp ../../../AppRun-x86_64 AppRun
+     rm python.png  python3.9.1.desktop
+     rm usr/share/metainfo/python3.9.1.appdata.xml
      cd ..
      ../../appimagetool-x86_64.AppImage dist
      dd if=/dev/zero of=/EMPTY bs=1M

@@ -277,7 +277,7 @@ void StateTransitionGraphManager::add_to_SM(structural_objectRef clock_port, str
    const auto& SM = HLS->datapath;
    const auto& circuit = SM->get_circ();
    INDENT_DBG_MEX(DEBUG_LEVEL_VERBOSE, debug_level, "-->Adding :multi-unbounded controllers");
-   for(auto state2mu : multi_unbounded_table)
+   for(const auto& state2mu : multi_unbounded_table)
    {
       auto mu = state2mu.second;
       std::string name = mu->get_string();

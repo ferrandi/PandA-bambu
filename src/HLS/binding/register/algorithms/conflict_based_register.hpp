@@ -45,18 +45,18 @@
 
 #include "reg_binding_creator.hpp"
 
-#include <boost/graph/adjacency_list.hpp>
+#include <boost/graph/adjacency_matrix.hpp>
 
 class conflict_based_register : public reg_binding_creator
 {
  protected:
-   using conflict_graph = boost::adjacency_list<boost::vecS, boost::vecS, boost::undirectedS>;
+   using conflict_graph = boost::adjacency_matrix<boost::undirectedS>;
    using cg_vertex_descriptor = boost::graph_traits<conflict_graph>::vertex_descriptor;
    using cg_vertices_size_type = boost::graph_traits<conflict_graph>::vertices_size_type;
    using cg_vertex_index_map = boost::property_map<conflict_graph, boost::vertex_index_t>::const_type;
 
    /// conflict graph
-   conflict_graph cg;
+   conflict_graph* cg;
 
    boost::iterator_property_map<cg_vertices_size_type*, cg_vertex_index_map, cg_vertices_size_type, cg_vertices_size_type&> color;
 

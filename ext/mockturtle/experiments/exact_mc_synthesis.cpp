@@ -36,7 +36,7 @@
 #include <mockturtle/algorithms/detail/minmc_xags.hpp>
 #include <mockturtle/algorithms/exact_mc_synthesis.hpp>
 #include <mockturtle/algorithms/xag_optimization.hpp>
-#include <mockturtle/io/index_list.hpp>
+#include <mockturtle/utils/index_list.hpp>
 #include <mockturtle/io/write_verilog.hpp>
 #include <mockturtle/properties/mccost.hpp>
 #include <mockturtle/utils/progress_bar.hpp>

@@ -3,7 +3,6 @@
 #include <mockturtle/views/depth_view.hpp>
 #include <mockturtle/views/fanout_view.hpp>
 #include <mockturtle/algorithms/resubstitution.hpp>
-#include <mockturtle/algorithms/xmg_resub.hpp>
 #include <mockturtle/algorithms/cleanup.hpp>
 #include <mockturtle/algorithms/simulation.hpp>
 #include <mockturtle/networks/aig.hpp>
@@ -12,11 +11,13 @@
 #include <mockturtle/traits.hpp>
 #include <mockturtle/io/write_verilog.hpp>
 
-#include <kitty/static_truth_table.hpp>
-
 #include <mockturtle/algorithms/aig_resub.hpp>
 #include <mockturtle/algorithms/mig_resub.hpp>
+#include <mockturtle/algorithms/xmg_resub.hpp>
 #include <mockturtle/algorithms/xag_resub_withDC.hpp>
+#include <mockturtle/algorithms/sim_resub.hpp>
+
+#include <kitty/static_truth_table.hpp>
 
 using namespace mockturtle;
 
@@ -171,4 +172,36 @@ TEST_CASE( "Resubstitution of XAG to minimize ANDs", "[resubstitution]" )
   CHECK( xag.num_pis() == 3 );
   CHECK( xag.num_pos() == 1 );
   CHECK( xag.num_gates() == 2 );
+}
+
+TEST_CASE( "Simulation-guided resubstitution", "[resubstitution]" )
+{
+  aig_network aig;
+
+  const auto a = aig.create_pi();
+  const auto b = aig.create_pi();
+
+  const auto f = aig.create_and( a, aig.create_and( b, a ) );
+  aig.create_po( f );
+
+  CHECK( aig.size() == 5 );
+  CHECK( aig.num_pis() == 2 );
+  CHECK( aig.num_pos() == 1 );
+  CHECK( aig.num_gates() == 2 );
+
+  const auto tt = simulate<kitty::static_truth_table<2u>>( aig )[0];
+  CHECK( tt._bits == 0x8 );
+
+  sim_resubstitution( aig );
+
+  aig = cleanup_dangling( aig );
+
+  /* check equivalence */
+  const auto tt_opt = simulate<kitty::static_truth_table<2u>>( aig )[0];
+  CHECK( tt_opt._bits == tt._bits );
+
+  CHECK( aig.size() == 4 );
+  CHECK( aig.num_pis() == 2 );
+  CHECK( aig.num_pos() == 1 );
+  CHECK( aig.num_gates() == 1 );
 }

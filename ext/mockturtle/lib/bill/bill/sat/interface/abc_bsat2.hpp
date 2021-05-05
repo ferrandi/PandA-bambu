@@ -67,6 +67,7 @@ public:
 	auto add_clause(std::vector<lit_type>::const_iterator it,
 	                std::vector<lit_type>::const_iterator ie)
 	{
+		literals.resize(ie - it);
 		++clause_counter.back();
 		auto counter = 0u;
 		while (it != ie) {
@@ -74,7 +75,7 @@ public:
 			                                        it->is_complemented());
 			++it;
 		}
-		auto const result = pabc::sat_solver_addclause(solver_, literals, literals + counter);
+		auto const result = pabc::sat_solver_addclause(solver_, literals.data(), literals.data() + counter);
 		state_ = result ? result::states::dirty : result::states::unsatisfiable;
 		return result;
 	}
@@ -138,13 +139,14 @@ public:
 		if (assumptions.size() > 0u) {
 			/* solve with assumptions */
 			uint32_t counter = 0u;
+			literals.resize(assumptions.size());
 			auto it = assumptions.begin();
 			while (it != assumptions.end()) {
 				literals[counter++] = pabc::Abc_Var2Lit(it->variable(),
 				                                        it->is_complemented());
 				++it;
 			}
-			result = pabc::sat_solver_solve(solver_, literals, literals + counter,
+			result = pabc::sat_solver_solve(solver_, literals.data(), literals.data() + counter,
 			                                conflict_limit, 0, 0, 0);
 		} else {
 			/* solve without assumptions */
@@ -187,9 +189,11 @@ public:
 	void pop(uint32_t num_levels = 1u)
 	{
 		assert(num_levels == 1u && "bsat does not support multiple step pop");
+		assert(variable_counter.size() >= num_levels);
+		assert(clause_counter.size() >= num_levels);
 		pabc::sat_solver_rollback(solver_);
-		variable_counter.resize(variable_counter.size() - num_levels);
-		clause_counter.resize(clause_counter.size() - num_levels);
+		variable_counter.resize(uint32_t(variable_counter.size() - num_levels));
+		clause_counter.resize(uint32_t(clause_counter.size() - num_levels));
 	}
 
 	void set_random_phase(uint32_t seed = 0u)
@@ -207,7 +211,7 @@ private:
 	result::states state_ = result::states::undefined;
 
 	/*! \brief Temporary storage for one clause */
-	pabc::lit literals[2048];
+	std::vector<pabc::lit> literals;
 
 	/*! \brief Whether to randomize initial variable values */
 	bool randomize = false;

@@ -17,6 +17,8 @@ DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE,
 OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 **************************************************************************************************/
 
+#pragma once
+
 #ifndef Ghack_IntTypes_h
 #define Ghack_IntTypes_h
 
@@ -1472,10 +1474,6 @@ OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWA
 #ifndef Ghack_System_h
 #define Ghack_System_h
 
-#if defined(__linux__)
-#include <fpu_control.h>
-#endif
-
 
 
 //-------------------------------------------------------------------------------------------------
@@ -2793,13 +2791,12 @@ inline void Solver::write_char (unsigned char ch) {
   b[e++] = ch; }
   //if (putc_unlocked ((int)
 #define write_char b[e++] =
-#define DD fwrite(b, 1, e, certifiedOutput), e = 0;
   //= EOF) exit(1); }
 
 inline void Solver::write_lit (int n) {
   for (; n > 127; n >>= 7)
     write_char (128 | (n & 127));
-   write_char (n); if (e > 1048576) DD }
+   write_char (n); if (e > 1048576) fwrite(b, 1, e, certifiedOutput), e = 0; }
 
 inline bool Solver::addClause_(vec<Lit>& ps)
 {
@@ -3933,7 +3930,7 @@ printf("c ==================================[ Search Statistics (every %6d confl
         if (vbyte) {
           write_char('a');
           write_lit(0);
-          DD
+          fwrite(b, 1, e, certifiedOutput), e = 0;
         }
         else {
   	  fprintf(certifiedOutput, "0\n");
@@ -5074,7 +5071,16 @@ inline void SimpSolver::garbageCollect()
 }
 
 #undef write_char
-
-inline void function()
-{
-}
+#undef var_Undef
+#undef DYNAMICNBLEVEL
+#undef CONSTANTREMOVECLAUSE
+#undef UPDATEVARACTIVITY
+#undef RATIOREMOVECLAUSES
+#undef LOWER_BOUND_FOR_BLOCKING_RESTART
+#undef M
+#undef Q
+#undef P
+#undef B
+#undef S
+#undef EE
+#undef X

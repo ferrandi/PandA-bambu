@@ -1,5 +1,5 @@
 /* kitty: C++ truth table library
- * Copyright (C) 2017-2020  EPFL
+ * Copyright (C) 2017-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -972,20 +972,19 @@ inline void create_characteristic( TT& tt, const TTFrom& from )
 
 /*! \brief Creates truth table from textual expression
 
-  An expression `E` is a constant `0` or `1`, or a variable `a`, `b`, ..., `p`,
-  the negation of an expression `!E`, the conjunction of multiple expressions
-  `(E...E)`, the disjunction of multiple expressions `{E...E}`, the exclusive
-  OR of multiple expressions `[E...E]`, or the majority of three expressions
-  `<EEE>`.  Examples are `[(ab)(!ac)]` to describe if-then-else, or `!{!a!b}`
-  to describe the application of De Morgan's law to `(ab)`.  The size of the
-  truth table must fit the largest variable in the expression, e.g., if `c` is
-  the largest variable, then the truth table have at least three variables.
+  An expression `E` is a constant `0` or `1`, or a truth table `a`,
+  `b`, ..., `p` from the vector `input_tts`, the negation of an
+  expression `!E`, the conjunction of multiple expressions `(E...E)`,
+  the disjunction of multiple expressions `{E...E}`, the exclusive OR
+  of multiple expressions `[E...E]`, or the majority of three
+  expressions `<EEE>`.
 
   \param tt Truth table
   \param from Expression as string
+  \param input_tts Input truth tables assigned to a, b, ...
 */
 template<typename TT, typename = std::enable_if_t<is_complete_truth_table<TT>::value>>
-bool create_from_expression( TT& tt, const std::string& expression )
+bool create_from_expression( TT& tt, const std::string& expression, std::vector<TT> const& input_tts )
 {
   enum stack_symbols
   {
@@ -1016,8 +1015,8 @@ bool create_from_expression( TT& tt, const std::string& expression )
     default:
       if ( c >= 'a' && c <= 'p' )
       {
-        auto var = tt.construct();
-        create_nth_var( var, c - 'a' );
+        assert( input_tts.size() > uint64_t( c - 'a' ) );
+        auto var = input_tts[c - 'a'];
         push_tt( var );
       }
       else
@@ -1142,6 +1141,33 @@ bool create_from_expression( TT& tt, const std::string& expression )
 
   tt = truth_tables.top();
   return true;
+}
+
+/*! \brief Creates truth table from textual expression
+
+  An expression `E` is a constant `0` or `1`, or a variable `a`, `b`, ..., `p`,
+  the negation of an expression `!E`, the conjunction of multiple expressions
+  `(E...E)`, the disjunction of multiple expressions `{E...E}`, the exclusive
+  OR of multiple expressions `[E...E]`, or the majority of three expressions
+  `<EEE>`.  Examples are `[(ab)(!ac)]` to describe if-then-else, or `!{!a!b}`
+  to describe the application of De Morgan's law to `(ab)`.  The size of the
+  truth table must fit the largest variable in the expression, e.g., if `c` is
+  the largest variable, then the truth table have at least three variables.
+
+  \param tt Truth table
+  \param from Expression as string
+*/
+template<typename TT, typename = std::enable_if_t<is_complete_truth_table<TT>::value>>
+bool create_from_expression( TT& tt, const std::string& expression )
+{
+  std::vector<TT> inputs_tts( tt.num_vars() );
+  for ( uint8_t i = 0u; i < tt.num_vars(); ++i )
+  {
+    auto var = tt.construct();
+    create_nth_var( var, i );
+    inputs_tts[i] = var;
+  }
+  return create_from_expression( tt, expression, inputs_tts );
 }
 
 /*! \brief Creates function where on-set corresponds to prime numbers

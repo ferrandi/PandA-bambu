@@ -775,8 +775,7 @@ void MinimalInterfaceTestbench::write_input_signal_declaration(const tree_manage
                }
             }
 
-            /// FIXME: real numbers at the moment have to be considered differently because of computation of ulp; c++ code is still managed in the old way
-            if(tree_helper::is_real(TreeM, pt_type_index) or flag_cpp)
+            if(tree_helper::is_real(TreeM, pt_type_index))
             {
                long long int bitsize = tree_helper::size(TreeM, pt_type_index);
                writer->write("reg [" + STR(bitsize - 1) + ":0] ex_" + port_obj->get_id() + ";\n");

@@ -1,5 +1,5 @@
 /* mockturtle: C++ logic network library
- * Copyright (C) 2018-2019  EPFL
+ * Copyright (C) 2018-2021  EPFL
  *
  * Permission is hereby granted, free of charge, to any person
  * obtaining a copy of this software and associated documentation
@@ -27,6 +27,7 @@
   \file sop_balancing.hpp
   \brief SOP-based balancing engine for `balancing` algorithm
 
+  \author Heinz Riener
   \author Mathias Soeken
 */
 
@@ -49,21 +50,10 @@
 #include "../../traits.hpp"
 #include "../../utils/stopwatch.hpp"
 #include "../balancing.hpp"
+#include "utils.hpp"
 
 namespace mockturtle
 {
-
-template<class Ntk>
-struct arrival_time_compare
-{
-  bool operator()( arrival_time_pair<Ntk> const& p1, arrival_time_pair<Ntk> const& p2 ) const
-  {
-    return p1.level > p2.level;
-  }
-};
-
-template<class Ntk>
-using arrival_time_queue = std::priority_queue<arrival_time_pair<Ntk>, std::vector<arrival_time_pair<Ntk>>, arrival_time_compare<Ntk>>;
 
 /*! \brief SOP rebalancing function
  *
