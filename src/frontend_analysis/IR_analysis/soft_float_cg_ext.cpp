@@ -102,11 +102,15 @@ tree_nodeRef soft_float_cg_ext::float64_ptr_type;
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
 
-static const std::set<std::string> supported_libm_calls = {};
+static const std::set<std::string> supported_libm_calls = {"isnan", "isinf", "copysign", "nan", "infinity", "signbit", "fpclassify", "finite"};
 
-static const std::set<std::string> libm_func = {"acos",      "acosh",     "asin",       "asinh", "atan",      "atanh",  "atan2", "cbrt",  "ceil",    "copysign", "cos",     "cosh", "erf",    "erfc",  "exp",  "exp2", "expm1",  "fabs",   "fdim",  "floor",
-                                                "fma",       "fmax",      "fmin",       "fmod",  "frexp",     "hypot",  "ilogb", "ldexp", "lgamma",  "llrint",   "llround", "log",  "log10",  "log1p", "log2", "logb", "lrint",  "lround", "modf",  "nan",
-                                                "nearbyint", "nextafter", "nexttoward", "pow",   "remainder", "remquo", "rint",  "round", "scalbln", "scalbn",   "sin",     "sinh", "sincos", "sqrt",  "tan",  "tanh", "tgamma", "trunc",  "isinf", "isnan"};
+/**
+ * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be safely propagated there.
+ *
+ */
+static const std::set<std::string> libm_func = {"acos",       "acosh", "asin",      "asinh",  "atan",  "atanh", "atan2",   "cbrt",   "ceil",    "copysign", "cos",    "cosh",  "erf",  "erfc", "exp",    "exp2",   "expm1", "fabs", "fdim",      "floor",
+                                                "fma",        "fmod",  "frexp",     "hypot",  "ilogb", "ldexp", "lgamma",  "llrint", "llround", "log",      "log10",  "log1p", "log2", "logb", "lrint",  "lround", "modf",  "nan",  "nearbyint", "nextafter",
+                                                "nexttoward", "pow",   "remainder", "remquo", "rint",  "round", "scalbln", "scalbn", "sin",     "sinh",     "sincos", "sqrt",  "tan",  "tanh", "tgamma", "trunc",  "isinf", "isnan"};
 
 soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters),
@@ -1684,25 +1688,27 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
          {
             const auto ce = GetPointerS<const call_expr>(GET_NODE(ga->op1));
             const auto fn = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn)) ? GetPointerS<const addr_expr>(GET_CONST_NODE(ce->fn))->op : ce->fn;
-            const auto fu_name = [&]() -> std::string {
-               auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn)));
-               if(fname.size() > sizeof("__internal") && fname.substr(0, sizeof("__internal_")).compare("__internal_") == 0)
+            const auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn)));
+            const auto tf_fname = [&]() -> std::string {
+               auto func = fname;
+               if(func.find("__internal_") == 0)
                {
-                  fname = fname.substr(sizeof("__internal_") - 1);
+                  func = func.substr(sizeof("__internal_") - 1);
                }
-               if(fname.back() == 'f')
+               if(func.back() == 'f')
                {
-                  fname = fname.substr(0, fname.size() - 1);
+                  func = func.substr(0, func.size() - 1);
                }
-               return fname;
+               return func;
             }();
-            if(supported_libm_calls.count(fu_name))
+            std::cout << "Searching function " << fname << std::endl;
+            if(supported_libm_calls.count(tf_fname))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
                AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), current_statement->index);
-               const auto specFF = _version->ieee_format() ? (fu_name.back() == 'f' ? float32FF : float64FF) : _version->userRequired;
-               replaceWithCall(specFF, fu_name, ce->args, current_statement, ga->op1, current_srcp);
+               const auto specFF = _version->ieee_format() ? (fname.back() == 'f' ? float32FF : float64FF) : _version->userRequired;
+               replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
                RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
             }
             else
@@ -1712,7 +1718,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                   int ti = is_internal_call(fn) ? type_interface : INTERFACE_TYPE_INPUT;
 
                   // Hardware implemented functions need the return value to still be real_type, thus it is necessary to add a view_convert operation after
-                  if(fu_name != BUILTIN_WAIT_CALL && !AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
+                  if(fname != BUILTIN_WAIT_CALL && !AppM->CGetFunctionBehavior(GET_INDEX_CONST_NODE(fn))->CGetBehavioralHelper()->has_implementation())
                   {
                      ti |= INTERFACE_TYPE_REAL;
                   }

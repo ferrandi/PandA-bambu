@@ -33,9 +33,9 @@ float __hide_ieee754_scalbf(float x, float fn)
 #ifdef _SCALB_INT
    return scalbnf(x, fn);
 #else
-   if(isnan(x) || isnan(fn))
+   if(isnanf(x) || isnanf(fn))
       return x * fn;
-   if(!__finitef(fn))
+   if(!finitef(fn))
    {
       if(fn > (float)0.0)
          return x * fn;

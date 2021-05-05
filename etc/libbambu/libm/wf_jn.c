@@ -34,7 +34,7 @@ float jnf(int n, float x) /* wrapper jnf */
    float z;
    struct exception exc;
    z = __hide_ieee754_jnf(n, x);
-   if(_LIB_VERSION == _IEEE_ || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(x))
       return z;
    if(fabsf(x) > (float)X_TLOSS)
    {
@@ -68,7 +68,7 @@ float ynf(int n, float x) /* wrapper ynf */
    float z;
    struct exception exc;
    z = __hide_ieee754_ynf(n, x);
-   if(_LIB_VERSION == _IEEE_ || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(x, IEEE32_SPEC))
       return z;
    if(x <= (float)0.0)
    {

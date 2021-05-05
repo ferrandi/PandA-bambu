@@ -38,7 +38,7 @@ float sqrtf(float x) /* wrapper sqrtf */
    float z;
    struct exception exc;
    z = __hide_ieee754_sqrtf(x);
-   if(_LIB_VERSION == _IEEE_ || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(x))
       return z;
    if(x < (float)0.0)
    {

@@ -37,7 +37,7 @@ float j0f(float x) /* wrapper j0f */
 #else
    struct exception exc;
    float z = __hide_ieee754_j0f(x);
-   if(_LIB_VERSION == _IEEE_ || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(x))
       return z;
    if(fabsf(x) > (float)X_TLOSS)
    {
@@ -70,7 +70,7 @@ float y0f(float x) /* wrapper y0f */
    float z;
    struct exception exc;
    z = __hide_ieee754_y0f(x);
-   if(_LIB_VERSION == _IEEE_ || isnan(x))
+   if(_LIB_VERSION == _IEEE_ || isnanf(x, IEEE32_SPEC))
       return z;
    if(x <= (float)0.0)
    {

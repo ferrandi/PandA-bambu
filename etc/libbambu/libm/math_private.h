@@ -33,7 +33,8 @@
 // we use IEEE LIBM and _IEEE_MODE
 #define _IEEE_LIBM
 
-typedef union {
+typedef union
+{
    double dvalue;
    unsigned long long int ull_value;
 } ieee_double_shape_type;
@@ -166,7 +167,10 @@ extern double erfc(double);
 extern double gamma(double);
 extern double hypot(double, double);
 extern int isnan(double);
-extern int __finite(double);
+extern int isinf(double);
+extern int finite(double);
+extern int signbit(double);
+extern int fpclassify(double);
 extern double j0(double);
 extern double j1(double);
 extern double jn(int, double);
@@ -194,6 +198,9 @@ extern int matherr(struct exception*);
  * IEEE Test Vector
  */
 extern double significand(double);
+
+extern double nan(const char*);
+extern double infinity(const char*);
 
 /*
  * Functions callable from C, intended to support IEEE arithmetic.

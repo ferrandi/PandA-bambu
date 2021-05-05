@@ -352,13 +352,13 @@ double pow(double x, double y) /* wrapper pow */
    {
       if(y == 0.0)
          return __hide_kernel_standard(x, y, 20); /* pow(0.0,0.0) */
-      if(__finite(y) && y < 0.0)
+      if(finite(y) && y < 0.0)
          return __hide_kernel_standard(x, y, 23); /* pow(0.0,negative) */
       return z;
    }
-   if(!__finite(z))
+   if(!finite(z))
    {
-      if(__finite(x) && __finite(y))
+      if(finite(x) && finite(y))
       {
          if(isnan(z))
             return __hide_kernel_standard(x, y, 24); /* pow neg**non-int */
@@ -366,7 +366,7 @@ double pow(double x, double y) /* wrapper pow */
             return __hide_kernel_standard(x, y, 21); /* pow overflow */
       }
    }
-   if(z == 0.0 && __finite(x) && __finite(y))
+   if(z == 0.0 && finite(x) && finite(y))
       return __hide_kernel_standard(x, y, 22); /* pow underflow */
    return z;
 #endif
