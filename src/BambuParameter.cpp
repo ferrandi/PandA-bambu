@@ -1196,7 +1196,7 @@ int BambuParameter::Exec()
       {"aligned-access", no_argument, nullptr, OPT_ALIGNED_ACCESS_PARAMETER},
       {"backend-script-extensions", required_argument, nullptr, OPT_BACKEND_SCRIPT_EXTENSIONS_PARAMETER},
       {"backend-sdc-extensions", required_argument, nullptr, OPT_BACKEND_SDC_EXTENSIONS_PARAMETER},
-      {"parallel-backend", required_argument, nullptr, OPT_PARALLEL_BACKEND},
+      {"parallel-backend", no_argument, nullptr, OPT_PARALLEL_BACKEND},
       {"VHDL-library", required_argument, nullptr, OPT_VHDL_LIBRARY_PARAMETER},
       {"do-not-use-asynchronous-memories", no_argument, nullptr, OPT_DO_NOT_USE_ASYNCHRONOUS_MEMORIES},
       {"do-not-chain-memories", no_argument, nullptr, OPT_DO_NOT_CHAIN_MEMORIES},

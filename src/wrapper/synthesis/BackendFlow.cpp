@@ -422,7 +422,7 @@ std::string BackendFlow::GenerateSynthesisScripts(const std::string& fu_name, co
    }
    if(Param->isOption(OPT_parallel_backend))
    {
-      if( Param->getOption<bool>(OPT_parallel_backend))
+      if(Param->getOption<bool>(OPT_parallel_backend))
       {
          actual_parameters->parameter_values[PARAM_parallel_backend] = STR(true);
       }
