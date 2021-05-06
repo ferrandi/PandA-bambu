@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file tf_finite.c
+ * @file tf_isnormal.c
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
@@ -43,15 +43,10 @@
 
 #include "math_privatetf.h"
 
-int __finite(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+int __isnormal(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
    unsigned long long exp = (x >> __frac_bits) & ((1ULL << __exp_bits) - 1);
-   if(__nan)
-   {
-      return exp != ((1ULL << __exp_bits) - 1);
-   }
-   else
-   {
-      return 1;
-   }
+   _Bool expMax = __nan && (exp == ((1ULL << __exp_bits) - 1));
+   _Bool expNull = exp == 0;
+   return !__one || !expMax && !expNull;
 }

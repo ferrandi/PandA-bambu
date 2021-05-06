@@ -63,10 +63,14 @@
 #define FP_NORMAL 4
 
 extern unsigned long long __copysign(unsigned long long, unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
-extern int __isnan(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
-extern int __isinf(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
-extern int __finite(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
 extern unsigned long long __nan(const char*, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+extern unsigned long long __inf(unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
 extern unsigned long long __infinity(unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+
 extern int __fpclassify(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
-extern int __signbit(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+extern int __isfinite(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+extern int __finite(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+extern int __isinf(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+extern int __isnan(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+extern int __isnormal(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);
+extern int __signbit(unsigned long long, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign);

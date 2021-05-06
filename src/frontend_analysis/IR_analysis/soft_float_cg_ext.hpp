@@ -294,14 +294,20 @@ class FunctionVersion
    {
    }
 
+   int compare(const FunctionVersion& other, bool format_only = false) const
+   {
+      return ((function_vertex != other.function_vertex || internal != other.internal) && !format_only) ||
+             !((userRequired == nullptr && other.userRequired == nullptr) || (userRequired != nullptr && other.userRequired != nullptr && *userRequired == *other.userRequired));
+   }
+
    bool operator==(const FunctionVersion& other) const
    {
-      return function_vertex == other.function_vertex && internal == other.internal && ((userRequired == nullptr && other.userRequired == nullptr) || (userRequired != nullptr && other.userRequired != nullptr && *userRequired == *other.userRequired));
+      return compare(other) == 0;
    }
 
    bool operator!=(const FunctionVersion& other) const
    {
-      return !(this->operator==(other));
+      return compare(other) != 0;
    }
 
    bool ieee_format() const

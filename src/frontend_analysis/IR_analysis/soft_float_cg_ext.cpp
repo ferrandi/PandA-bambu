@@ -89,6 +89,7 @@
 /// Utility include
 #include "dbgPrintHelper.hpp"
 #include "exceptions.hpp"
+#include "math.h"
 #include "string_manipulation.hpp" // for GET_CLASS
 #include <boost/multiprecision/integer.hpp>
 
@@ -102,15 +103,41 @@ tree_nodeRef soft_float_cg_ext::float64_ptr_type;
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
 
-static const std::set<std::string> supported_libm_calls = {"isnan", "isinf", "copysign", "nan", "infinity", "signbit", "fpclassify", "finite"};
+static const std::set<std::string> supported_libm_calls = {"copysign", "finite", "fpclassify", "inf", "infinity", "isfinite", "isinf", "isnan", "isnormal", "nan", "signbit"};
 
 /**
  * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be safely propagated there.
  *
  */
-static const std::set<std::string> libm_func = {"acos",       "acosh", "asin",      "asinh",  "atan",  "atanh", "atan2",   "cbrt",   "ceil",    "copysign", "cos",    "cosh",  "erf",  "erfc", "exp",    "exp2",   "expm1", "fabs", "fdim",      "floor",
-                                                "fma",        "fmod",  "frexp",     "hypot",  "ilogb", "ldexp", "lgamma",  "llrint", "llround", "log",      "log10",  "log1p", "log2", "logb", "lrint",  "lround", "modf",  "nan",  "nearbyint", "nextafter",
-                                                "nexttoward", "pow",   "remainder", "remquo", "rint",  "round", "scalbln", "scalbn", "sin",     "sinh",     "sincos", "sqrt",  "tan",  "tanh", "tgamma", "trunc",  "isinf", "isnan"};
+static const std::set<std::string> libm_func = {"acos",   "acosh",  "asin",    "asinh",   "atan",   "atanh", "atan2",      "cbrt",  "ceil",   "copysign", "cos",  "cosh",     "erf",       "erfc",      "exp",        "exp2",     "expm1",
+                                                "fabs",   "fdim",   "finite",  "floor",   "fma",    "fmod",  "fpclassify", "frexp", "hypot",  "ilogb",    "inf",  "infinity", "isfinite",  "isinf",     "isnan",      "isnormal", "ldexp",
+                                                "lgamma", "llrint", "llround", "log",     "log10",  "log1p", "log2",       "logb",  "lrint",  "lround",   "modf", "nan",      "nearbyint", "nextafter", "nexttoward", "pow",      "remainder",
+                                                "remquo", "rint",   "round",   "scalbln", "scalbn", "sin",   "signbit",    "sinh",  "sincos", "sqrt",     "tan",  "tanh",     "tgamma",    "trunc"};
+
+static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
+{
+   if(single_prec)
+   {
+      *single_prec = false;
+   }
+   if(fname.find("__internal_") == 0)
+   {
+      fname = fname.substr(sizeof("__internal_") - 1);
+   }
+   if(fname.find("__builtin_") == 0)
+   {
+      fname = fname.substr(sizeof("__builtin_") - 1);
+   }
+   if(fname.back() == 'f' && libm_func.count(fname.substr(0, fname.size() - 1)))
+   {
+      fname = fname.substr(0, fname.size() - 1);
+      if(single_prec)
+      {
+         *single_prec = true;
+      }
+   }
+   return fname;
+}
 
 soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const application_managerRef _AppM, unsigned int _function_id, const DesignFlowManagerConstRef _design_flow_manager)
     : FunctionFrontendFlowStep(_AppM, _function_id, SOFT_FLOAT_CG_EXT, _design_flow_manager, _parameters),
@@ -287,18 +314,8 @@ soft_float_cg_ext::soft_float_cg_ext(const ParameterConstRef _parameters, const 
                for(boost::tie(ei, ei_end) = boost::out_edges(func, *TopCG); ei != ei_end; ++ei)
                {
                   const auto called = boost::target(*ei, *TopCG);
-                  const auto called_fname = [&]() -> std::string {
-                     auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
-                     if(fname.size() > sizeof("__internal") && fname.substr(0, sizeof("__internal_")).compare("__internal_") == 0)
-                     {
-                        fname = fname.substr(sizeof("__internal_") - 1);
-                     }
-                     if(fname.back() == 'f')
-                     {
-                        fname = fname.substr(0, fname.size() - 1);
-                     }
-                     return fname;
-                  }();
+                  const auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(TreeM->CGetTreeNode(CGM->get_function(called))));
+                  const auto called_fname = strip_fname(fname);
 
                   if(static_cast<bool>(libm_func.count(called_fname)))
                   {
@@ -1578,7 +1595,7 @@ void soft_float_cg_ext::replaceWithCall(const FloatFormatRef& specFF, const std:
    const auto res =
 #endif
        funcFF.insert(std::make_pair(called_func_vertex, calledFF));
-   THROW_ASSERT(res.second || *res.first->second == *calledFF, "Same function registered with different formats: " + res.first->second->ToString() + " and " + calledFF->ToString());
+   THROW_ASSERT(res.second || res.first->second->compare(*calledFF, true) == 0, "Same function registered with different formats: " + res.first->second->ToString() + " and " + calledFF->ToString() + " (" + fu_name + ")");
 }
 
 void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement, const tree_nodeRef& current_tree_node, int type_interface)
@@ -1690,24 +1707,15 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             const auto ce = GetPointerS<const call_expr>(GET_NODE(ga->op1));
             const auto fn = GetPointer<const addr_expr>(GET_CONST_NODE(ce->fn)) ? GetPointerS<const addr_expr>(GET_CONST_NODE(ce->fn))->op : ce->fn;
             const auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn)));
-            const auto tf_fname = [&]() -> std::string {
-               auto func = fname;
-               if(func.find("__internal_") == 0)
-               {
-                  func = func.substr(sizeof("__internal_") - 1);
-               }
-               if(func.back() == 'f')
-               {
-                  func = func.substr(0, func.size() - 1);
-               }
-               return func;
-            }();
+            bool is_f32 = false;
+            const auto tf_fname = strip_fname(fname, &is_f32);
+            std::cout << "Searching func: " << tf_fname << "  " << fname << std::endl;
             if(supported_libm_calls.count(tf_fname))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
                AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), current_statement->index);
-               const auto specFF = _version->ieee_format() ? (fname.back() == 'f' ? float32FF : float64FF) : _version->userRequired;
+               const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
                replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
                RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
             }
