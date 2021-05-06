@@ -266,7 +266,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                   store_candidate = true;
                }
             }
-            if(!gm->clobber && !gm->init_assignment && op0_type && op1_type &&
+            if(!gm->clobber && !gm->init_assignment && op0_type && op1_type && op1->get_kind() != insertvalue_expr_K && op1->get_kind() != extractvalue_expr_K &&
                ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K && op1->get_kind() != view_convert_expr_K) ||
                 (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K && op1->get_kind() != view_convert_expr_K) || (op0_type->get_kind() == array_type_K) ||
                 (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) && function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op1))) || (function_behavior->is_variable_mem(GET_INDEX_NODE(gm->op0)) && load_candidate) ||
@@ -696,15 +696,18 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          if(re->op)
          {
             tree_nodeRef res = GET_NODE(re->op);
-            tree_nodeRef res_type = tree_helper::get_type_node(res);
-            if(res_type->get_kind() == record_type_K || // records have to be allocated
-               res_type->get_kind() == union_type_K     // unions have to be allocated
-            )
+            if(res->get_kind() != ssa_name_K)
             {
-               THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "structs or unions returned by copy are not yet supported: @" + STR(node_id) + " in function " + function_name);
-               function_behavior->add_function_mem(node_id);
-               function_behavior->add_parm_decl_copied(node_id);
-               AppM->add_written_object(node_id);
+               tree_nodeRef res_type = tree_helper::get_type_node(res);
+               if(res_type->get_kind() == record_type_K || // records have to be allocated
+                  res_type->get_kind() == union_type_K     // unions have to be allocated
+               )
+               {
+                  THROW_ERROR_CODE(NODE_NOT_YET_SUPPORTED_EC, "structs or unions returned by copy are not yet supported: @" + STR(node_id) + " in function " + function_name);
+                  function_behavior->add_function_mem(node_id);
+                  function_behavior->add_parm_decl_copied(node_id);
+                  AppM->add_written_object(node_id);
+               }
             }
             analyze_node(GET_INDEX_NODE(re->op), left_p, dynamic_address, no_dynamic_address);
          }
@@ -1161,7 +1164,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
          auto* sn = GetPointer<ssa_name>(tn);
          if(sn->use_set->is_fully_resolved())
          {
-            for(auto var : sn->use_set->variables)
+            for(const auto& var : sn->use_set->variables)
             {
                function_behavior->add_function_mem(GET_INDEX_NODE(var));
             }

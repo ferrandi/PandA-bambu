@@ -609,7 +609,7 @@ void operations_cfg_computation::build_operation_recursive(const tree_managerRef
             ogc->AddOperation(TM, actual_name, op0->get_kind_text() + "_write", bb_index, me->index);
             ogc->add_type(actual_name, TYPE_GENERIC);
          }
-         else if(op0_type && op1_type &&
+         else if(op0_type && op1_type && op1->get_kind() != insertvalue_expr_K && op1->get_kind() != extractvalue_expr_K &&
                  ((op0_type->get_kind() == record_type_K && op1_type->get_kind() == record_type_K && op1->get_kind() != view_convert_expr_K) ||
                   (op0_type->get_kind() == union_type_K && op1_type->get_kind() == union_type_K && op1->get_kind() != view_convert_expr_K) || (op0_type->get_kind() == array_type_K) ||
                   (fun_mem_data.find(GET_INDEX_NODE(me->op0)) != fun_mem_data.end() && fun_mem_data.find(GET_INDEX_NODE(me->op1)) != fun_mem_data.end()) || (fun_mem_data.find(GET_INDEX_NODE(me->op0)) != fun_mem_data.end() && load_candidate) ||
