@@ -51,7 +51,7 @@ int __signbit(unsigned long long x, unsigned char __exp_bits, unsigned char __fr
 {
    if(__sign == -1)
    {
-      return x & (1ULL << (__exp_bits + __frac_bits));
+      return (x >> (__exp_bits + __frac_bits)) & 1ULL;
    }
    else
    {
