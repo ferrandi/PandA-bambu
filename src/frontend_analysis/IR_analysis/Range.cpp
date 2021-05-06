@@ -2621,6 +2621,7 @@ RangeRef Range::makeSatisfyingCmpRegion(kind pred, const RangeConstRef& Other)
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
       case CASE_UNARY_EXPRESSION:
       case CASE_TERNARY_EXPRESSION:
       case CASE_QUATERNARY_EXPRESSION:

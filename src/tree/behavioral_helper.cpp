@@ -527,6 +527,7 @@ std::string BehavioralHelper::print_init(unsigned int var, const var_pp_functorC
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
       default:
          THROW_ERROR("Currently not supported nodeID " + boost::lexical_cast<std::string>(var));
    }
@@ -1728,6 +1729,32 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
          res += print_node(right_op, v, vppf) + ") & 1)";
          break;
       }
+      case extractvalue_expr_K:
+      {
+         auto* be = GetPointer<binary_expr>(node);
+         unsigned int left_op = GET_INDEX_NODE(be->op0);
+         unsigned int right_op = GET_INDEX_NODE(be->op1);
+         unsigned int return_index;
+         tree_helper::get_type_node(node, return_index);
+         res += "(_Bool)(((unsigned long long int)(" + tree_helper::print_type(TM, return_index) + " " + print_node(left_op, v, vppf);
+         res += std::string(") >> ");
+         res += print_node(right_op, v, vppf) + ") & 1)";
+         break;
+      }
+      case insertvalue_expr_K:
+      {
+         auto* te = GetPointer<ternary_expr>(node);
+         unsigned int op0 = GET_INDEX_NODE(te->op0);
+         unsigned int op1 = GET_INDEX_NODE(te->op1);
+         unsigned int op2 = GET_INDEX_NODE(te->op2);
+         unsigned int return_index;
+         tree_helper::get_type_node(node, return_index);
+         res += "(_Bool)(((unsigned long long int)(" + tree_helper::print_type(TM, return_index) + " " + print_node(op0, v, vppf);
+         res += std::string(") >> ");
+         res += print_node(op1, v, vppf) + ") &";
+         res += print_node(op2, v, vppf) + ") ";
+         break;
+      }
       case pointer_plus_expr_K:
       {
          INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "-->");
@@ -2052,6 +2079,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
                   case extract_bit_expr_K:
                   case sat_plus_expr_K:
                   case sat_minus_expr_K:
+                  case extractvalue_expr_K:
                   case CASE_CPP_NODES:
                   case CASE_CST_NODES:
                   case CASE_DECL_NODES:
@@ -3495,6 +3523,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case error_mark_K:
             case paren_expr_K:
             case lut_expr_K:
+            case insertvalue_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -3687,6 +3716,7 @@ std::string BehavioralHelper::print_node(unsigned int index, vertex v, const var
             case error_mark_K:
             case paren_expr_K:
             case lut_expr_K:
+            case insertvalue_expr_K:
             case CASE_BINARY_EXPRESSION:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
@@ -5577,6 +5607,7 @@ unsigned int BehavioralHelper::get_intermediate_var(unsigned int obj) const
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -6284,6 +6315,7 @@ bool BehavioralHelper::CanBeSpeculated(const unsigned int node_index) const
             case extract_bit_expr_K:
             case sat_plus_expr_K:
             case sat_minus_expr_K:
+            case extractvalue_expr_K:
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "<--Yes because it is a gimple_assign with " + GET_NODE(ga->op1)->get_kind_text() + " in right part of assignment");
                return true;

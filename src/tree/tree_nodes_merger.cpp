@@ -1389,6 +1389,10 @@ void tree_node_index_factory::create_tree_node(const unsigned int node_id, const
          CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
       case sat_minus_expr_K:
          CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
+      case extractvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extractvalue_expr, node_id)
+      case insertvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(insertvalue_expr, node_id)
       case do_stmt_K:
       case for_stmt_K:
       case if_stmt_K:

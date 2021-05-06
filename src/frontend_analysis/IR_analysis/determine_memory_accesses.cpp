@@ -907,6 +907,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case target_expr_K:
                      case error_mark_K:
                      case lut_expr_K:
+                     case insertvalue_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:
@@ -1128,6 +1129,7 @@ void determine_memory_accesses::analyze_node(unsigned int node_id, bool left_p, 
                      case target_expr_K:
                      case error_mark_K:
                      case lut_expr_K:
+                     case insertvalue_expr_K:
                      case CASE_BINARY_EXPRESSION:
                      case CASE_CPP_NODES:
                      case CASE_DECL_NODES:

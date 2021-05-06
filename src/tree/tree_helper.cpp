@@ -3711,6 +3711,8 @@ static unsigned int check_for_simple_pointer_arithmetic(const tree_nodeRef& node
       case paren_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
       {
          return 0;
       }
@@ -4205,6 +4207,8 @@ unsigned int tree_helper::get_base_index(const tree_managerConstRef& TM, const u
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -4484,6 +4488,8 @@ bool tree_helper::is_fully_resolved(const tree_managerConstRef& TM, const unsign
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -5168,6 +5174,7 @@ std::string tree_helper::op_symbol(const tree_node* op)
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
       case CASE_DECL_NODES:
@@ -6288,6 +6295,7 @@ std::string tree_helper::print_type(const tree_managerConstRef& TM, unsigned int
       case bit_ior_concat_expr_K:
       case error_mark_K:
       case lut_expr_K:
+      case insertvalue_expr_K:
       case CASE_BINARY_EXPRESSION:
       case CASE_CPP_NODES:
       case CASE_CST_NODES:
@@ -6896,6 +6904,12 @@ bool tree_helper::is_packed_access(const tree_managerConstRef& TreeM, unsigned i
          res = false;
          break;
       }
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
+      {
+         res = true;
+         break;
+      }
       default:
          THROW_ERROR("elements not yet supported: " + t->get_kind_text());
    }
@@ -7332,6 +7346,8 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
             case extract_bit_expr_K:
             case sat_plus_expr_K:
             case sat_minus_expr_K:
+            case extractvalue_expr_K:
+            case insertvalue_expr_K:
             case CASE_CPP_NODES:
             case CASE_FAKE_NODES:
             case CASE_GIMPLE_NODES:
@@ -7623,6 +7639,8 @@ size_t tree_helper::AllocatedMemorySize(const tree_nodeConstRef& parameter)
       case extract_bit_expr_K:
       case sat_plus_expr_K:
       case sat_minus_expr_K:
+      case extractvalue_expr_K:
+      case insertvalue_expr_K:
       case CASE_CPP_NODES:
       case CASE_FAKE_NODES:
       case CASE_GIMPLE_NODES:
@@ -8585,6 +8603,7 @@ void tree_helper::get_required_values(const tree_managerConstRef& TM, std::vecto
       case vec_cond_expr_K:
       case vec_perm_expr_K:
       case dot_prod_expr_K:
+      case insertvalue_expr_K:
       {
          auto* te = GetPointer<ternary_expr>(tn);
          get_required_values(TM, required, GET_NODE(te->op0), GET_INDEX_NODE(te->op0));

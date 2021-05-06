@@ -141,7 +141,7 @@ namespace llvm
               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)
+                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -158,7 +158,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 2) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 2) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -173,7 +173,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -188,7 +188,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 
@@ -218,7 +218,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)  DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)  DEFTREECODE(INSERTVALUE, "insertvalue_expr", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue_expr", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 

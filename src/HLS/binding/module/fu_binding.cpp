@@ -3066,6 +3066,7 @@ void fu_binding::write_init(const tree_managerConstRef TreeM, tree_nodeRef var_n
             case ternary_pm_expr_K:
             case ternary_mp_expr_K:
             case ternary_mm_expr_K:
+            case insertvalue_expr_K:
             case bit_ior_concat_expr_K:
             case field_decl_K:
             case identifier_node_K:

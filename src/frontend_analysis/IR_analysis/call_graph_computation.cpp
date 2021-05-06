@@ -357,6 +357,7 @@ void call_graph_computation::call_graph_computation_recursive(const tree_manager
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
       case bit_ior_concat_expr_K:
+      case insertvalue_expr_K:
       {
          auto* te = GetPointer<ternary_expr>(curr_tn);
          call_graph_computation_recursive(TM, te->op0, node_stmt, call_type);

@@ -527,7 +527,8 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case vec_interleavelow_expr_K:  \
    case extract_bit_expr_K:        \
    case sat_plus_expr_K:           \
-   case sat_minus_expr_K
+   case sat_minus_expr_K:          \
+   case extractvalue_expr_K
 
 /**
  * This macro collects all case labels for ternary_expr objects.
@@ -547,7 +548,8 @@ class TreeNodeMap : public OrderedMapStd<tree_nodeRef, value, TreeNodeSorter>
    case ternary_plus_expr_K:    \
    case ternary_pm_expr_K:      \
    case ternary_mp_expr_K:      \
-   case ternary_mm_expr_K
+   case ternary_mm_expr_K:      \
+   case insertvalue_expr_K
 
 /**
  * This macro collects all case labels for quaternary_expr objects.
@@ -6133,5 +6135,17 @@ CREATE_TREE_NODE_CLASS(sat_plus_expr, binary_expr);
  * Simple arithmetic.
  */
 CREATE_TREE_NODE_CLASS(sat_minus_expr, binary_expr);
+
+/**
+ * This struct specifies the extractvalue_expr node.
+ * extract a value from an aggregate.
+ */
+CREATE_TREE_NODE_CLASS(extractvalue_expr, binary_expr);
+
+/**
+ * This struct specifies the insertvalue_expr node.
+ * insert a value into an aggregate.
+ */
+CREATE_TREE_NODE_CLASS(insertvalue_expr, ternary_expr);
 
 #endif

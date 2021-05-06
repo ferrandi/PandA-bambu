@@ -417,6 +417,14 @@ void GimpleWriter::operator()(const binary_expr* obj, unsigned int& mask)
          obj->op1->visit(this);
          break;
       }
+      case extractvalue_expr_K:
+      {
+         obj->op0->visit(this);
+         const std::string op = "EXTRACTVALUE_EXPR";
+         os << " " << op << " ";
+         obj->op1->visit(this);
+         break;
+      }
       case ltgt_expr_K:
       {
          obj->op0->visit(this);
@@ -566,6 +574,16 @@ void GimpleWriter::operator()(const ternary_expr* obj, unsigned int& mask)
       {
          obj->op0->visit(this);
          os << " | ";
+         obj->op1->visit(this);
+         os << " ( ";
+         obj->op2->visit(this);
+         os << " ) ";
+         break;
+      }
+      case insertvalue_expr_K:
+      {
+         obj->op0->visit(this);
+         os << " INSERTVALUE_EXPR ";
          obj->op1->visit(this);
          os << " ( ";
          obj->op2->visit(this);

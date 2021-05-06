@@ -584,6 +584,10 @@ void tree_node_factory::create_tree_node(unsigned int node_id, enum kind tree_no
          CREATE_TREE_NODE_CASE_BODY(sat_plus_expr, node_id)
       case sat_minus_expr_K:
          CREATE_TREE_NODE_CASE_BODY(sat_minus_expr, node_id)
+      case extractvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(extractvalue_expr, node_id)
+      case insertvalue_expr_K:
+         CREATE_TREE_NODE_CASE_BODY(insertvalue_expr, node_id)
       case assert_expr_K:
       case do_stmt_K:
       case for_stmt_K:

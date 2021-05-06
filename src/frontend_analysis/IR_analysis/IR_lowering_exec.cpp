@@ -913,6 +913,7 @@ void IR_lowering::division_by_a_constant(const std::pair<unsigned int, blocRef>&
             case extract_bit_expr_K:
             case sat_plus_expr_K:
             case sat_minus_expr_K:
+            case extractvalue_expr_K:
             case CASE_CPP_NODES:
             case CASE_CST_NODES:
             case CASE_DECL_NODES:

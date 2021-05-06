@@ -569,6 +569,7 @@ void Vectorize::ClassifyTreeNode(const unsigned int loop_id, const tree_nodeCons
       case ternary_pm_expr_K:
       case ternary_mp_expr_K:
       case ternary_mm_expr_K:
+      case insertvalue_expr_K:
       {
          const auto te = GetPointer<const ternary_expr>(tree_node);
          ClassifyTreeNode(loop_id, GET_NODE(te->op0));
@@ -3051,6 +3052,7 @@ unsigned int Vectorize::Transform(const unsigned int tree_node_index, const size
             case lut_expr_K:
             case bit_ior_concat_expr_K:
             case error_mark_K:
+            case insertvalue_expr_K:
             {
                if(debug_level >= DEBUG_LEVEL_PEDANTIC)
                {
