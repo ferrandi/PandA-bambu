@@ -1709,7 +1709,6 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
             const auto fname = tree_helper::print_function_name(TreeM, GetPointerS<const function_decl>(GET_CONST_NODE(fn)));
             bool is_f32 = false;
             const auto tf_fname = strip_fname(fname, &is_f32);
-            std::cout << "Searching func: " << tf_fname << "  " << fname << std::endl;
             if(supported_libm_calls.count(tf_fname))
             {
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
