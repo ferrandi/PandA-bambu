@@ -141,7 +141,7 @@ namespace llvm
               DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                   DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                       DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)
+                          DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)
    };
 #undef DEFTREECODE
 #undef DEFGSCODE
@@ -158,7 +158,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 2) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) TYPE,
@@ -173,7 +173,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 #define DEFTREECODE(SYM, STRING, TYPE, NARGS) NARGS,
@@ -188,7 +188,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2) DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef DEFGSCODE
 
@@ -218,7 +218,7 @@ namespace llvm
                DEFTREECODE(SIGNEDPOINTERTYPE, "integer_type", tcc_type, 0) DEFTREECODE(MISALIGNED_INDIRECT_REF, "misaligned_indirect_ref", tcc_reference, 2) DEFTREECODE(FCMP_OEQ, "truth_andif_expr", tcc_expression, 2)
                    DEFTREECODE(FCMP_ONE, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_ORD, "truth_andif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UEQ, "truth_orif_expr", tcc_expression, 2)
                        DEFTREECODE(FCMP_UNE, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(FCMP_UNO, "truth_orif_expr", tcc_expression, 2) DEFTREECODE(SAT_PLUS_EXPR, "sat_plus_expr", tcc_binary, 2)
-                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)};
+                           DEFTREECODE(SAT_MINUS_EXPR, "sat_minus_expr", tcc_binary, 2)  DEFTREECODE(INSERTVALUE, "insertvalue", tcc_expression, 3) DEFTREECODE(EXTRACTVALUE, "extractvalue", tcc_expression, 2)};
 #undef DEFTREECODE
 #undef END_OF_BASE_TREE_CODE
 
@@ -509,6 +509,10 @@ namespace llvm
             return assignCode(t, GT(GIMPLE_SWITCH));
          case llvm::Value::InstructionVal + llvm::Instruction::Unreachable:
             return assignCode(t, GT(GIMPLE_RETURN));
+         case llvm::Value::InstructionVal + llvm::Instruction::InsertValue:
+            return assignCode(t, GT(GIMPLE_ASSIGN));
+         case llvm::Value::InstructionVal + llvm::Instruction::ExtractValue:
+            return assignCode(t, GT(GIMPLE_ASSIGN));
          default:
             llvm::errs() << "assignCodeAuto kind not supported: " << ValueTyNames[vid] << "\n";
             stream.close();
@@ -1207,6 +1211,14 @@ namespace llvm
             assert(cast<const llvm::BranchInst>(inst)->isConditional());
             return GT(SSA_NAME);
          }
+         case llvm::Instruction::InsertValue:
+         {
+            return GT(INSERTVALUE);
+         }
+         case llvm::Instruction::ExtractValue:
+         {
+            return GT(EXTRACTVALUE);
+         }
          default:
             llvm::errs() << "gimple_expr_code kind not supported: " << ValueTyNames[llvm::Value::InstructionVal + opcode] << "\n";
             stream.close();
@@ -1297,6 +1309,71 @@ namespace llvm
       llvm::Instruction* inst = const_cast<llvm::Instruction*>(reinterpret_cast<const llvm::Instruction*>(g));
       llvm::Function* currentFunction = inst->getFunction();
       return LowerGetElementPtr(inst->getType(), inst, currentFunction);
+   }
+   template<class insert_or_extract>
+   void accumulateConstantOffset(const llvm::DataLayout *DL, llvm::APInt &Offset, insert_or_extract* ioe)
+   {
+      auto AccumulateOffset = [&](uint64_t Index, uint64_t Size) {
+         llvm::APInt step = APInt(Offset.getBitWidth(), Index*Size);
+         // For array or vector indices, scale the index by the size of the type.
+         Offset += step;
+      };
+      auto currTy = ioe->getType();
+      StructType *STy = dyn_cast<llvm::StructType>(ioe->getType());
+      for (auto idx: ioe->indices()) {
+
+            if (idx == 0)
+               continue;
+            if (STy)
+            {
+               const StructLayout *SL = DL->getStructLayout(STy);
+               AccumulateOffset(SL->getElementOffsetInBits(idx), 1);
+               currTy = STy->getStructElementType(idx);
+               continue;
+            }
+            if(llvm::isa<llvm::ArrayType>(currTy))
+            {
+               currTy = llvm::cast<llvm::ArrayType>(currTy)->getElementType();
+            }
+            else if(llvm::isa<llvm::StructType>(currTy))
+            {
+               currTy = llvm::dyn_cast<llvm::StructType>(currTy)->getElementType(idx);
+            }
+            else
+            {
+               llvm_unreachable("type not supported");
+            }
+            AccumulateOffset(idx, DL->getTypeSizeInBits(currTy));
+            continue;
+      }
+   }
+   const void* DumpGimpleRaw::gimple_assign_rhs_insertvalue(const void* g)
+   {
+      auto inst = const_cast<llvm::InsertValueInst*>(reinterpret_cast<const llvm::InsertValueInst*>(g));
+      auto ty = inst->getType();
+      auto type = assignCodeType(ty);
+      auto currentFunction = inst->getFunction();
+      auto op0Value = inst->getAggregateOperand();
+      auto op0 = getOperand(op0Value, currentFunction);
+      auto op1 = getOperand(inst->getInsertedValueOperand(), currentFunction);
+      llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
+      accumulateConstantOffset(DL,Offset, inst);
+      auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
+      return build3(GT(INSERTVALUE), type, op0, op1, offset_node);
+   }
+
+   const void* DumpGimpleRaw::gimple_assign_rhs_extractvalue(const void* g)
+   {
+      auto inst = const_cast<llvm::ExtractValueInst*>(reinterpret_cast<const llvm::ExtractValueInst*>(g));
+      auto ty = inst->getType();
+      auto type = assignCodeType(ty);
+      auto currentFunction = inst->getFunction();
+      auto op0 = getOperand(inst->getAggregateOperand(), currentFunction);
+      auto op0Value = inst->getAggregateOperand();
+      llvm::APInt Offset(DL->getPointerTypeSizeInBits(op0Value->getType()), 0);
+      accumulateConstantOffset(DL,Offset, inst);
+      auto offset_node = assignCodeAuto(llvm::ConstantInt::get(inst->getContext(), Offset));
+      return build2(GT(EXTRACTVALUE), type, op0, offset_node);
    }
 
    bool DumpGimpleRaw::temporary_addr_check(const llvm::User* inst, std::set<const llvm::User*>& visited, const llvm::TargetLibraryInfo& TLI)
@@ -1722,7 +1799,8 @@ namespace llvm
       if(gep_op->hasAllConstantIndices())
       {
          llvm::APInt OffsetAI(DL->getPointerTypeSizeInBits(gep_op->getType()), 0);
-         assert(gep_op->accumulateConstantOffset(*DL, OffsetAI));
+         auto resVal = gep_op->accumulateConstantOffset(*DL, OffsetAI);
+         assert(resVal);
          isZero = !OffsetAI;
          return assignCodeAuto(llvm::ConstantInt::get(gep_op->getContext(), OffsetAI));
       }
@@ -4315,6 +4393,19 @@ namespace llvm
                }
                serialize_child("op", rhs);
             }
+            else if(gimple_expr_code(g) == GT(INSERTVALUE))
+            {
+               serialize_child("op", gimple_assign_lhs(g));
+               auto rhs = gimple_assign_rhs_insertvalue(g);
+               serialize_child("op", rhs);
+
+            }
+            else if(gimple_expr_code(g) == GT(EXTRACTVALUE))
+            {
+               serialize_child("op", gimple_assign_lhs(g));
+               auto rhs = gimple_assign_rhs_extractvalue(g);
+               serialize_child("op", rhs);
+            }
             else
                llvm_unreachable("unexpected condition");
             break;
@@ -5029,6 +5120,19 @@ namespace llvm
             serialize_child("op", TREE_OPERAND(t, 1));
             break;
 
+         case GT(INSERTVALUE):
+         {
+            serialize_child("op", TREE_OPERAND(t, 0));
+            serialize_child("op", TREE_OPERAND(t, 1));
+            serialize_child("op", TREE_OPERAND(t, 2));
+            break;
+         }
+         case GT(EXTRACTVALUE):
+         {
+            serialize_child("op", TREE_OPERAND(t, 0));
+            serialize_child("op", TREE_OPERAND(t, 1));
+            break;
+         }
          default:
             /* There are no additional fields to print.  */
             break;
