@@ -715,24 +715,11 @@ namespace clang
                   }
                   else if(argType->isPointerType() || argType->isReferenceType())
                   {
-                     auto PT = dyn_cast<PointerType>(argType);
-                     if(PT)
-                     {
-                        auto paramTypeRemTD = RemoveTypedef(PT->getPointeeType());
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " *";
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + " *";
-                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                     }
-                     auto RT = dyn_cast<ReferenceType>(argType);
-                     if(RT)
-                     {
-                        auto paramTypeRemTD = RemoveTypedef(RT->getPointeeType());
-                        ParamTypeName = GetTypeNameCanonical(paramTypeRemTD) + " &";
-                        ParamTypeNameOrig = paramTypeRemTD.getAsString() + " &";
-                        if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
-                           ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
-                     }
+                     auto paramTypeRemTD = RemoveTypedef(argType);
+                     ParamTypeName = GetTypeNameCanonical(paramTypeRemTD);
+                     ParamTypeNameOrig = paramTypeRemTD.getAsString();
+                     if(auto BTD = getBaseTypeDecl(paramTypeRemTD))
+                        ParamTypeInclude = SM.getPresumedLoc(BTD->getSourceRange().getBegin(), false).getFilename();
                      interfaceType = "ptrdefault";
                      if(UDIT_p)
                      {
@@ -777,7 +764,6 @@ namespace clang
                         }
                      }
                   }
-
                   HLS_interfaceMap[funName].push_back(interfaceType);
                   Fun2Params[funName].push_back(parName);
                   Fun2ParamType[funName].push_back(ParamTypeName);
