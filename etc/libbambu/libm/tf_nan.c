@@ -45,5 +45,12 @@
 
 unsigned long long __nan(const char* unused, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
-   return ((1ULL << (__exp_bits + 1)) - 1) << (__frac_bits - 1);
+   if(__frac_bits > 0)
+   {
+      return ((1ULL << (__exp_bits + 1)) - 1) << (__frac_bits - 1);
+   }
+   else
+   {
+      return ((1ULL << __exp_bits) - 1);
+   }
 }

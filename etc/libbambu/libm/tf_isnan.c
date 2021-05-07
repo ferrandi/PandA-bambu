@@ -52,9 +52,7 @@ int __isnan(unsigned long long x, unsigned char __exp_bits, unsigned char __frac
 {
    if(__nan)
    {
-      unsigned long long ix = x;
-      ix &= (1ULL << (__exp_bits + __frac_bits)) - 1;
-      return ix > (((1ULL << __exp_bits) - 1) << __frac_bits);
+      return (x & (1ULL << (__exp_bits + __frac_bits)) - 1) > (((1ULL << __exp_bits) - 1) << __frac_bits);
    }
    else
    {

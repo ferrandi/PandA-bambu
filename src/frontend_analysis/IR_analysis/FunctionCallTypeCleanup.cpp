@@ -240,6 +240,10 @@ DesignFlowStep_Status FunctionCallTypeCleanup::InternalExec()
                         }
                      }
                   }
+                  else
+                  {
+                     INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Function " + STR(called_id) + " does not have a body");
+                  }
                }
                else if(GET_NODE(ce->fn)->get_kind() != ssa_name_K)
                {

@@ -4323,7 +4323,7 @@ static
     scalb_test(void)
 {
    initialize();
-#ifndef TEST_LDOUBLE /* uclibc doesn't have scalbl */
+#ifndef TEST_LDOUBLE           /* uclibc doesn't have scalbl */
 #ifdef __UCLIBC_SUSV3_LEGACY__ /* scalbf is susv3 legacy */
 
    check_float("scalb (2.0, 0.5) == NaN plus invalid exception", FUNC(scalb)(identityFloat(2.0), identityFloat(0.5)), nan_value, 0, 0, INVALID_EXCEPTION);

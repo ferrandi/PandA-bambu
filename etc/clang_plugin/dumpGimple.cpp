@@ -4587,7 +4587,8 @@ namespace llvm
             declname == "fmax" or declname == "fmin" or declname == "fmod" or declname == "frexp" or declname == "hypot" or declname == "ilogb" or declname == "ldexp" or declname == "lgamma" or declname == "llrint" or declname == "llround" or
             declname == "log" or declname == "log10" or declname == "log1p" or declname == "log2" or declname == "logb" or declname == "lrint" or declname == "lround" or declname == "modf" or declname == "nan" or declname == "nearbyint" or
             declname == "nextafter" or declname == "nexttoward" or declname == "pow" or declname == "remainder" or declname == "remquo" or declname == "rint" or declname == "round" or declname == "scalbln" or declname == "scalbn" or declname == "sin" or
-            declname == "sinh" or declname == "sincos" or declname == "sqrt" or declname == "tan" or declname == "tanh" or declname == "tgamma" or declname == "trunc" or declname == "isinf" or declname == "isnan")
+            declname == "sinh" or declname == "sincos" or declname == "sqrt" or declname == "tan" or declname == "tanh" or declname == "tgamma" or declname == "trunc" or declname == "isinf" or declname == "isinf_sign" or declname == "isnan" or
+            declname == "isnormal" or declname == "isfinite" or declname == "huge_val")
             return "/usr/include/math.h";
          else if(declname == "cabs" or declname == "cacos" or declname == "cacosh" or declname == "carg" or declname == "casin" or declname == "casinh" or declname == "catan" or declname == "catanh" or declname == "ccos" or declname == "ccosh" or
                  declname == "cexp" or declname == "cimag" or declname == "clog" or declname == "conj" or declname == "cpow" or declname == "cproj" or declname == "creal" or declname == "csin" or declname == "csinh" or declname == "csqrt" or

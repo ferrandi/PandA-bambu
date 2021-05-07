@@ -22,7 +22,7 @@ common_libm_src = math_private_kernels.c s_tanh.c s_modf.c s_ilogb.c s_sin.c s_s
  wf_acos.c wf_asin.c wf_atanh.c wf_drem.c wf_gamma.c wf_j0.c wf_jn.c wf_log10.c wf_scalb.c wf_sinh.c wf_tgamma.c \
  wf_acosh.c wf_atan2.c wf_cosh.c wf_exp2.c wf_fmod.c wf_hypot.c wf_j1.c wf_lgamma.c wf_remainder.c \
  wrf_gamma.c wrf_lgamma.c \
-tf_copysign.c tf_fpclassify.c tf_inf.c tf_isfinite.c tf_isinf.c tf_isnan.c tf_isnormal.c tf_nan.c tf_signbit.c 
+ tf_copysign.c tf_fpclassify.c tf_inf.c tf_isfinite.c tf_isinf.c tf_isinf_sign.c tf_isnan.c tf_isnormal.c tf_nan.c tf_nans.c tf_signbit.c 
 
 common_libm_src_fr=hotbm_sine_cosine.c hotbm_logf.c hotbm_expf.c poly_sqrtf.c poly_sqrt.c wf_pow_opt.c
 common_libm_src_std=sf_trigon.c wf_log.c ef_log.c wf_exp.c ef_exp.c wf_sqrt.c ef_sqrt.c ew_sqrt.c wf_pow.c ef_pow.c 

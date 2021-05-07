@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file tf_isinf.c
+ * @file tf_nans.c
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
@@ -41,20 +41,20 @@
  *
  */
 
-/*
- * isinf(x) returns 1 if x is inf or -inf, else 0;
- */
-
 #include "math_privatetf.h"
 
-int __isinf(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+unsigned long long __nans(const char* unused, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
-   if(__nan)
+   if(__frac_bits > 1)
    {
-      return (x & ((1ULL << (__exp_bits + __frac_bits)) - 1)) == (((1ULL << __exp_bits) - 1) << __frac_bits);
+      return ((((1ULL << __exp_bits) - 1) << 2) | 1ULL) << (__frac_bits - 2);
+   }
+   else if(__frac_bits == 1)
+   {
+      return ((1ULL << (__exp_bits + 1)) - 1);
    }
    else
    {
-      return 0;
+      return ((1ULL << __exp_bits) - 1);
    }
 }

@@ -71,3 +71,8 @@ unsigned long long __infinity(unsigned char __exp_bits, unsigned char __frac_bit
 {
    return __local_inf(__exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
 }
+
+unsigned long long __huge_val(unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+{
+   return __local_inf(__exp_bits, __frac_bits, __exp_bias, __rounding, __nan, __one, __subnorm, __sign);
+}

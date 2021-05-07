@@ -31,7 +31,7 @@
  *
  */
 /**
- * @file tf_isinf.c
+ * @file tf_isinf_sign.c
  * @brief
  *
  * @author Michele Fiorito <michele.fiorito@polimi.it>
@@ -42,16 +42,42 @@
  */
 
 /*
- * isinf(x) returns 1 if x is inf or -inf, else 0;
+ * isinf_sign(x) returns 1 if x is inf, -1 if x is -inf, else 0;
+ * no branching!
  */
 
 #include "math_privatetf.h"
 
-int __isinf(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
+int __isinf_sign(unsigned long long x, unsigned char __exp_bits, unsigned char __frac_bits, int __exp_bias, _Bool __rounding, _Bool __nan, _Bool __one, _Bool __subnorm, signed char __sign)
 {
+   unsigned char __bw = (__sign == -1) + __exp_bits + __frac_bits;
    if(__nan)
    {
-      return (x & ((1ULL << (__exp_bits + __frac_bits)) - 1)) == (((1ULL << __exp_bits) - 1) << __frac_bits);
+      long long ix, t;
+      int it;
+      ix = x;
+      t = ix & ((1ULL << (__exp_bits + __frac_bits)) - 1);
+      if(__sign == 0)
+      {
+         return t == (((1ULL << __exp_bits) - 1) << __frac_bits);
+      }
+      else if(__sign == 1)
+      {
+         return (((int)(t == (((1ULL << __exp_bits) - 1) << __frac_bits))) << 31) >> 31;
+      }
+      it = ((t == (((1ULL << __exp_bits) - 1) << __frac_bits)) << 31) >> 31;
+      if(__bw > 32)
+      {
+         ix = (ix << (64 - __bw)) >> (64 - __bw);
+         return it & (ix >> (__bw - 2));
+      }
+      else
+      {
+         int iix;
+         iix = ix;
+         ix = (ix << (32 - __bw)) >> (32 - __bw);
+         return it & (ix >> (__bw - 2));
+      }
    }
    else
    {

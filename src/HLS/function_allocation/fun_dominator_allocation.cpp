@@ -162,7 +162,7 @@ void fun_dominator_allocation::ComputeRelationships(DesignFlowStepSet& relations
 HLS_step::ComputeRelationships(relationship, relationship_type);
 }
 
-const std::set<std::string> fun_dominator_allocation::simple_functions = {"__builtin_signbit", "__builtin_signbitf", "fabs", "__builtin_fabs", "fabsf", "__builtin_fabsf", "__builtin_cond_expr32", "llabs", "__builtin_llabs", "labs", "__builtin_labs"};
+const std::set<std::string> fun_dominator_allocation::simple_functions = {"__builtin_cond_expr32", "llabs", "__builtin_llabs", "labs", "__builtin_labs"};
 
 DesignFlowStep_Status fun_dominator_allocation::Exec()
 {

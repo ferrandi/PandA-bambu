@@ -103,16 +103,16 @@ tree_nodeRef soft_float_cg_ext::float64_ptr_type;
 static const FloatFormatRef float32FF(new FloatFormat(8, 23, -127));
 static const FloatFormatRef float64FF(new FloatFormat(11, 52, -1023));
 
-static const std::set<std::string> supported_libm_calls = {"copysign", "finite", "fpclassify", "inf", "infinity", "isfinite", "isinf", "isnan", "isnormal", "nan", "signbit"};
+static const std::set<std::string> supported_libm_calls = {"copysign", "finite", "fpclassify", "huge_val", "inf", "infinity", "isfinite", "isinf", "isinf_sign", "isnan", "isnormal", "nan", "nans", "signbit"};
 
 /**
  * @brief List of low level implementation libm functions. Composite functions are not present since fp format can be safely propagated there.
  *
  */
-static const std::set<std::string> libm_func = {"acos",   "acosh",  "asin",    "asinh",   "atan",   "atanh", "atan2",      "cbrt",  "ceil",   "copysign", "cos",  "cosh",     "erf",       "erfc",      "exp",        "exp2",     "expm1",
-                                                "fabs",   "fdim",   "finite",  "floor",   "fma",    "fmod",  "fpclassify", "frexp", "hypot",  "ilogb",    "inf",  "infinity", "isfinite",  "isinf",     "isnan",      "isnormal", "ldexp",
-                                                "lgamma", "llrint", "llround", "log",     "log10",  "log1p", "log2",       "logb",  "lrint",  "lround",   "modf", "nan",      "nearbyint", "nextafter", "nexttoward", "pow",      "remainder",
-                                                "remquo", "rint",   "round",   "scalbln", "scalbn", "sin",   "signbit",    "sinh",  "sincos", "sqrt",     "tan",  "tanh",     "tgamma",    "trunc"};
+static const std::set<std::string> libm_func = {"acos",       "acosh", "asin",      "asinh",  "atan",    "atanh", "atan2",      "cbrt",   "ceil",     "copysign", "cos",   "cosh",   "erf",      "erfc",     "exp",   "exp2",       "expm1",
+                                                "fabs",       "fdim",  "finite",    "floor",  "fma",     "fmod",  "fpclassify", "frexp",  "huge_val", "hypot",    "ilogb", "inf",    "infinity", "isfinite", "isinf", "isinf_sign", "isnan",
+                                                "isnormal",   "ldexp", "lgamma",    "llrint", "llround", "log",   "log10",      "log1p",  "log2",     "logb",     "lrint", "lround", "modf",     "nan",      "nans",  "nearbyint",  "nextafter",
+                                                "nexttoward", "pow",   "remainder", "remquo", "rint",    "round", "scalbln",    "scalbn", "sin",      "signbit",  "sinh",  "sincos", "sqrt",     "tan",      "tanh",  "tgamma",     "trunc"};
 
 static std::string strip_fname(std::string fname, bool* single_prec = nullptr)
 {
@@ -1714,6 +1714,7 @@ void soft_float_cg_ext::RecursiveExaminate(const tree_nodeRef& current_statement
                INDENT_DBG_MEX(DEBUG_LEVEL_VERY_PEDANTIC, debug_level, "---Replacing libm call with templatized version");
                // libm function calls may be replaced with their templatized version if available, avoiding conversion
                AppM->GetCallGraphManager()->RemoveCallPoint(function_id, GET_INDEX_CONST_NODE(fn), current_statement->index);
+               is_f32 |= !ce->args.empty() && tree_helper::Size(GET_CONST_NODE(ce->args.front())) == 32;
                const auto specFF = _version->ieee_format() ? (is_f32 ? float32FF : float64FF) : _version->userRequired;
                replaceWithCall(specFF, "__" + tf_fname, ce->args, current_statement, ga->op1, current_srcp);
                RecursiveExaminate(current_statement, ga->op0, INTERFACE_TYPE_NONE);
