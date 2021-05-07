@@ -2772,7 +2772,9 @@ static void getBuiltinFieldTypes(const tree_nodeConstRef& type, std::list<tree_n
       getBuiltinFieldTypes(GET_NODE(vt->elts), listOfTypes, already_visited);
    }
    else
+   {
       listOfTypes.push_back(type);
+   }
 }
 
 static bool same_size_fields(const tree_nodeConstRef& t)
@@ -2782,7 +2784,7 @@ static bool same_size_fields(const tree_nodeConstRef& t)
    getBuiltinFieldTypes(t, listOfTypes, already_visited);
    THROW_ASSERT(!listOfTypes.empty(), "at least one type is expected");
    auto sizeFlds = 0u;
-   for(auto fldType : listOfTypes)
+   for(const auto& fldType : listOfTypes)
    {
       if(!sizeFlds)
          sizeFlds = tree_helper::Size(fldType);
