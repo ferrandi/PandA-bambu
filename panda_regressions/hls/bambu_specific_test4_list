@@ -42,4 +42,6 @@ bambu_specific_test4/simple_c4_array_64bits.c --generate-tb=a="{1,2,3,4,5,6,7,8}
 bambu_specific_test4/simple_test.c --generate-tb=a="-7" --top-fname=test
 bambu_specific_test4/iterative_merge_sort.c --generate-tb=arr="{8,7,6,5,4,3,2,1}",n=8 --top-fname=mergeSort  -fno-unroll-loops --benchmark-name=mergeSort
 bambu_specific_test4/iterative_merge_sort_sum.c --generate-tb=arr="{8,7,6,5,4,3,2,1}",n=8 --top-fname=mergeSort  -fno-unroll-loops --benchmark-name=mergeSortAndSum
-
+bambu_specific_test4/ac_fixed1.cpp --generate-tb=a={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},b={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},c={0.1,1.1,2.2,3.3,4.4,5.5,6.6,7.7},d={0,0,0,0,0,0,0,0} --top-fname=sum3numbers
+bambu_specific_test4/ac_fixed1.cpp --generate-tb=BENCHMARKS_ROOT/bambu_specific_test4/ac_fixed1_tb.xml --top-fname=sum3numbers  --benchmark-name=ac_fixed1_with_test_xml
+bambu_specific_test4/ac_fixed2.cpp --generate-tb=a=1.1,b=2.2,c=3.3,d={0.0} --top-fname=sum3numbers
