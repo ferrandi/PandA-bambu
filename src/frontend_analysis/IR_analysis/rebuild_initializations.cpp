@@ -138,7 +138,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                      {
                         const auto gimple_nop_id = TM->new_tree_node_id();
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-                        gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                        gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                         GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                      }
@@ -146,7 +146,7 @@ DesignFlowStep_Status rebuild_initialization::InternalExec()
                      {
                         const auto gimple_nop_id = TM->new_tree_node_id();
                         std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-                        gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                        gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                         TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                         GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                      }
@@ -1224,7 +1224,7 @@ bool rebuild_initialization2::look_for_ROMs()
                   {
                      const auto gimple_nop_id = TM->new_tree_node_id();
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-                     gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                     gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                      GetPointerS<ssa_name>(GET_NODE(ga->memdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                   }
@@ -1232,7 +1232,7 @@ bool rebuild_initialization2::look_for_ROMs()
                   {
                      const auto gimple_nop_id = TM->new_tree_node_id();
                      std::map<TreeVocabularyTokenTypes_TokenEnum, std::string> gimple_nop_schema;
-                     gimple_nop_schema[TOK(TOK_SRCP)] = "<built-in>:0:0";
+                     gimple_nop_schema[TOK(TOK_SRCP)] = BUILTIN_SRCP;
                      TM->create_tree_node(gimple_nop_id, gimple_nop_K, gimple_nop_schema);
                      GetPointerS<ssa_name>(GET_NODE(ga->vdef))->SetDefStmt(TM->GetTreeReindex(gimple_nop_id));
                   }

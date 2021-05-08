@@ -133,12 +133,11 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SPLIT_RETURN, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(SHORT_CIRCUIT_TAF, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(PHI_OPT, WHOLE_APPLICATION));
-         if(not parameters->getOption<int>(OPT_gcc_openmp_simd))
+         if(!parameters->getOption<int>(OPT_gcc_openmp_simd))
          {
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE, WHOLE_APPLICATION));
             relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(BIT_VALUE_OPT, WHOLE_APPLICATION));
          }
-         relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(FUNCTION_PARM_MASK, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(RANGE_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(MULTIPLE_ENTRY_IF_REDUCTION, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FunctionRelationship>(DEAD_CODE_ELIMINATION, WHOLE_APPLICATION));

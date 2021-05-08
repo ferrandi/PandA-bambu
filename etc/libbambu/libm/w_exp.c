@@ -30,7 +30,7 @@ double exp(double x) /* wrapper exp */
    z = __ieee754_exp(x);
    if(_LIB_VERSION == _IEEE_)
       return z;
-   if(__finite(x))
+   if(finite(x))
    {
       if(x > o_threshold)
          return __hide_kernel_standard(x, x, 6); /* exp overflow */

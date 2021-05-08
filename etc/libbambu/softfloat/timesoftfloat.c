@@ -1999,10 +1999,10 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
    switch(functionCode)
    {
       case INT32_TO_FLOAT32:
-         time_a_int32_z_float32(__int32_to_float32);
+         time_a_int32_z_float32(__int32_to_float32_ieee);
          break;
       case INT32_TO_FLOAT64:
-         time_a_int32_z_float64(__int32_to_float64);
+         time_a_int32_z_float64(__int32_to_float64_ieee);
          break;
 #ifdef FLOATX80
       case INT32_TO_FLOATX80:
@@ -2015,10 +2015,10 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          break;
 #endif
       case INT64_TO_FLOAT32:
-         time_a_int64_z_float32(__int64_to_float32);
+         time_a_int64_z_float32(__int64_to_float32_ieee);
          break;
       case INT64_TO_FLOAT64:
-         time_a_int64_z_float64(__int64_to_float64);
+         time_a_int64_z_float64(__int64_to_float64_ieee);
          break;
 #ifdef FLOATX80
       case INT64_TO_FLOATX80:
@@ -2031,19 +2031,19 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          break;
 #endif
       case FLOAT32_TO_INT32:
-         time_a_float32_z_int32(__float32_to_int32);
+         time_a_float32_z_int32(__float32_to_int32_ieee);
          break;
       case FLOAT32_TO_INT32_ROUND_TO_ZERO:
-         time_a_float32_z_int32(__float32_to_int32_round_to_zero);
+         time_a_float32_z_int32(__float32_to_int32_round_to_zero_ieee);
          break;
       case FLOAT32_TO_INT64:
-         time_a_float32_z_int64(__float32_to_int64);
+         time_a_float32_z_int64(__float32_to_int64_ieee);
          break;
       case FLOAT32_TO_INT64_ROUND_TO_ZERO:
-         time_a_float32_z_int64(__float32_to_int64_round_to_zero);
+         time_a_float32_z_int64(__float32_to_int64_round_to_zero_ieee);
          break;
       case FLOAT32_TO_FLOAT64:
-         time_a_float32_z_float64(__float32_to_float64);
+         time_a_float32_z_float64(__float32_to_float64_ieee);
          break;
 #ifdef FLOATX80
       case FLOAT32_TO_FLOATX80:
@@ -2056,7 +2056,7 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          break;
 #endif
       case FLOAT32_ROUND_TO_INT:
-         time_az_float32(__float32_round_to_int);
+         time_az_float32(__float32_round_to_int_ieee);
          break;
       case FLOAT32_ADD:
          time_abz_float32(__float32_add);
@@ -2068,10 +2068,10 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          time_abz_float32(__float32_mul);
          break;
       case FLOAT32_DIV:
-         time_abz_float32(__float32_div);
+         time_abz_float32(__float32_divSRT4_ieee);
          break;
       case FLOAT32_REM:
-         time_abz_float32(__float32_rem);
+         time_abz_float32(__float32_rem_ieee);
          break;
       case FLOAT32_SQRT:
          time_az_float32_pos(__float32_sqrt);
@@ -2086,28 +2086,28 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          time_ab_float32_z_flag(__float32_lt);
          break;
       case FLOAT32_EQ_SIGNALING:
-         time_ab_float32_z_flag(__float32_eq_signaling);
+         time_ab_float32_z_flag(__float32_eq_signaling_ieee);
          break;
       case FLOAT32_LE_QUIET:
-         time_ab_float32_z_flag(__float32_le_quiet);
+         time_ab_float32_z_flag(__float32_le_quiet_ieee);
          break;
       case FLOAT32_LT_QUIET:
-         time_ab_float32_z_flag(__float32_lt_quiet);
+         time_ab_float32_z_flag(__float32_lt_quiet_ieee);
          break;
       case FLOAT64_TO_INT32:
-         time_a_float64_z_int32(__float64_to_int32);
+         time_a_float64_z_int32(__float64_to_int32_ieee);
          break;
       case FLOAT64_TO_INT32_ROUND_TO_ZERO:
-         time_a_float64_z_int32(__float64_to_int32_round_to_zero);
+         time_a_float64_z_int32(__float64_to_int32_round_to_zero_ieee);
          break;
       case FLOAT64_TO_INT64:
-         time_a_float64_z_int64(__float64_to_int64);
+         time_a_float64_z_int64(__float64_to_int64_ieee);
          break;
       case FLOAT64_TO_INT64_ROUND_TO_ZERO:
-         time_a_float64_z_int64(__float64_to_int64_round_to_zero);
+         time_a_float64_z_int64(__float64_to_int64_round_to_zero_ieee);
          break;
       case FLOAT64_TO_FLOAT32:
-         time_a_float64_z_float32(__float64_to_float32);
+         time_a_float64_z_float32(__float64_to_float32_ieee);
          break;
 #ifdef FLOATX80
       case FLOAT64_TO_FLOATX80:
@@ -2120,7 +2120,7 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          break;
 #endif
       case FLOAT64_ROUND_TO_INT:
-         time_az_float64(__float64_round_to_int);
+         time_az_float64(__float64_round_to_int_ieee);
          break;
       case FLOAT64_ADD:
          time_abz_float64(__float64_add);
@@ -2132,10 +2132,10 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          time_abz_float64(__float64_mul);
          break;
       case FLOAT64_DIV:
-         time_abz_float64(__float64_div);
+         time_abz_float64(__float64_divSRT4_ieee);
          break;
       case FLOAT64_REM:
-         time_abz_float64(__float64_rem);
+         time_abz_float64(__float64_rem_ieee);
          break;
       case FLOAT64_SQRT:
          time_az_float64_pos(__float64_sqrt);
@@ -2150,13 +2150,13 @@ static void timeFunctionVariety(__uint8 functionCode, __int8 roundingPrecision, 
          time_ab_float64_z_flag(__float64_lt);
          break;
       case FLOAT64_EQ_SIGNALING:
-         time_ab_float64_z_flag(__float64_eq_signaling);
+         time_ab_float64_z_flag(__float64_eq_signaling_ieee);
          break;
       case FLOAT64_LE_QUIET:
-         time_ab_float64_z_flag(__float64_le_quiet);
+         time_ab_float64_z_flag(__float64_le_quiet_ieee);
          break;
       case FLOAT64_LT_QUIET:
-         time_ab_float64_z_flag(__float64_lt_quiet);
+         time_ab_float64_z_flag(__float64_lt_quiet_ieee);
          break;
 #ifdef FLOATX80
       case FLOATX80_TO_INT32:

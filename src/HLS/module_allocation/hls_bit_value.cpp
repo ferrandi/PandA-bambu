@@ -95,9 +95,9 @@ void HLSBitValue::ComputeRelationships(DesignFlowStepSet& relationship, const De
             THROW_ASSERT(status == DesignFlowStep_Status::UNCHANGED, "");
          }
       }
-      if(parameters->isOption(OPT_bitvalue_ipa) and parameters->getOption<bool>(OPT_bitvalue_ipa))
+      if(parameters->isOption(OPT_bitvalue_ipa) && parameters->getOption<bool>(OPT_bitvalue_ipa))
       {
-         if(not changed_functions.empty())
+         if(!changed_functions.empty())
          {
             vertex frontend_step = design_flow_manager.lock()->GetDesignFlowStep(ApplicationFrontendFlowStep::ComputeSignature(FrontendFlowStepType::BIT_VALUE_IPA));
             const DesignFlowGraphConstRef design_flow_graph = design_flow_manager.lock()->CGetDesignFlowGraph();

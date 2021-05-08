@@ -24,14 +24,14 @@
 
 double ldexp(double value, int exp)
 {
-   if(!__finite(value) || value == 0.0)
+   if(!finite(value) || value == 0.0)
       return value;
    value = scalbn(value, exp);
 #ifdef WITH_ERRNO
-   if(!__finite(value) || value == 0.0)
+   if(!finite(value) || value == 0.0)
       errno = ERANGE;
 #else
-   if(!__finite(value) || value == 0.0)
+   if(!finite(value) || value == 0.0)
       return (value - value) / (value - value);
 #endif
    return value;

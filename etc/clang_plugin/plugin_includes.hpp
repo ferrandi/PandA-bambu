@@ -48,6 +48,7 @@
 
 #include "llvm/ADT/APFloat.h"
 #include "llvm/ADT/Hashing.h"
+#include "llvm/IR/GlobalObject.h"
 #include "llvm/IR/LLVMContext.h"
 #include "llvm/Support/raw_ostream.h"
 #if __clang_major__ != 4
@@ -169,6 +170,8 @@ namespace llvm
       static const gimple_rhs_class gimple_rhs_class_table[];
       static const char* ValueTyNames[];
       static const std::set<std::string> builtinsNames;
+
+      static std::string getName(const llvm::GlobalObject*);
 
       struct tree_list
       {

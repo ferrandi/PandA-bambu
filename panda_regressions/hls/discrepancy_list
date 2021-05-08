@@ -740,7 +740,6 @@ gcc_regression_simple/pr42269-2.c
 gcc_regression_simple/pr42512.c
 gcc_regression_simple/pr42570.c
 gcc_regression_simple/pr42614.c
-gcc_regression_simple/pr42691.c
 gcc_regression_simple/pr42721.c
 gcc_regression_simple/pr43008.c
 gcc_regression_simple/pr43236.c

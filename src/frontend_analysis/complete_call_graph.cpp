@@ -67,16 +67,16 @@ const CustomUnorderedSet<std::pair<FrontendFlowStepType, FrontendFlowStep::Funct
       {
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(FUNCTION_ANALYSIS, WHOLE_APPLICATION));
          relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(CALL_GRAPH_BUILTIN_CALL, ALL_FUNCTIONS));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(MEM_CG_EXT, WHOLE_APPLICATION));
-         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
-         if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
-         {
-            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
-         }
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(COMPUTE_IMPLICIT_CALLS, ALL_FUNCTIONS));
          if(parameters->isOption(OPT_hls_div) && parameters->getOption<std::string>(OPT_hls_div) != "none")
          {
             relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(HLS_DIV_CG_EXT, ALL_FUNCTIONS));
          }
+         if(parameters->isOption(OPT_soft_float) and parameters->getOption<bool>(OPT_soft_float))
+         {
+            relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(SOFT_FLOAT_CG_EXT, ALL_FUNCTIONS));
+         }
+         relationships.insert(std::pair<FrontendFlowStepType, FrontendFlowStep::FunctionRelationship>(UN_COMPARISON_LOWERING, ALL_FUNCTIONS));
          break;
       }
       case(INVALIDATION_RELATIONSHIP):

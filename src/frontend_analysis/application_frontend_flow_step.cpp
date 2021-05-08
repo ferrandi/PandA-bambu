@@ -183,7 +183,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #if HAVE_BAMBU_BUILT
       case LUT_TRANSFORMATION:
 #endif
-      case MEM_CG_EXT:
       case MEMORY_DATA_FLOW_ANALYSIS:
 #if HAVE_BAMBU_BUILT
       case MULTI_WAY_IF:
@@ -311,7 +310,6 @@ const std::string ApplicationFrontendFlowStep::ComputeSignature(const FrontendFl
 #endif
 #if HAVE_BAMBU_BUILT
       case FIND_MAX_CFG_TRANSFORMATIONS:
-      case FUNCTION_PARM_MASK:
 #endif
       case(FUNCTION_ANALYSIS):
 #if HAVE_ZEBU_BUILT
